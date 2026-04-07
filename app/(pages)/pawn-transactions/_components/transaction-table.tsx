@@ -16,6 +16,30 @@ interface TransactionRow {
   storage: string;
 }
 
+const columns = [
+  { key: "transactionNo", label: "Transaction #" },
+  { key: "purpose", label: "Purpose" },
+  { key: "date", label: "Date" },
+  { key: "time", label: "Time" },
+  { key: "cashIn", label: "Cash In", align: "right" as const },
+  { key: "cashOut", label: "Cash Out", align: "right" as const },
+  { key: "returnVal", label: "Return", align: "right" as const },
+  { key: "unit", label: "Unit" },
+  { key: "unitCode", label: "Unit Code" },
+  { key: "pawn", label: "Pawn", align: "right" as const },
+  { key: "storage", label: "Storage", align: "right" as const },
+];
+
+function isHighlightedPawn(value: string): boolean {
+  const num = Number(value);
+  return !isNaN(num) && num > 0;
+}
+
+function isHighlightedStorage(value: string): boolean {
+  const num = Number(value);
+  return !isNaN(num) && num > 0;
+}
+
 const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple" | "black"> = {
   Start: "black",
   "Buy Back": "blue",
@@ -23,6 +47,10 @@ const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple"
   "Sold Item": "orange",
   Pawn: "purple",
 };
+
+interface TransactionTableProps {
+  data?: TransactionRow[];
+}
 
 const mockData: TransactionRow[] = [
   {
@@ -196,31 +224,7 @@ const mockData: TransactionRow[] = [
   },
 ];
 
-const columns = [
-  { key: "transactionNo", label: "Transaction #" },
-  { key: "purpose", label: "Purpose" },
-  { key: "date", label: "Date" },
-  { key: "time", label: "Time" },
-  { key: "cashIn", label: "Cash In", align: "right" as const },
-  { key: "cashOut", label: "Cash Out", align: "right" as const },
-  { key: "returnVal", label: "Return", align: "right" as const },
-  { key: "unit", label: "Unit" },
-  { key: "unitCode", label: "Unit Code" },
-  { key: "pawn", label: "Pawn", align: "right" as const },
-  { key: "storage", label: "Storage", align: "right" as const },
-];
-
-function isHighlightedPawn(value: string): boolean {
-  const num = Number(value);
-  return !isNaN(num) && num > 0;
-}
-
-function isHighlightedStorage(value: string): boolean {
-  const num = Number(value);
-  return !isNaN(num) && num > 0;
-}
-
-export function TransactionTable() {
+export function TransactionTable({ data = [] }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <div className="flex items-center justify-between bg-white px-4 py-3">
@@ -244,15 +248,22 @@ export function TransactionTable() {
             </tr>
           </thead>
           <tbody>
-            {mockData.map((row, idx) => {
-              const isStartRow = row.purpose === "Start";
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="py-4 text-center text-sm text-zinc-500">
+                  No transactions found
+                </td>
+              </tr>
+            ) : (
+              data.map((row, idx) => {
+                const isStartRow = row.purpose === "Start";
 
               return (
                 <tr
                   key={row.transactionNo}
                   className={`border-t border-zinc-100 ${
                     isStartRow
-                      ? "border-l-4 border-l-amber-400 bg-amber-50/60"
+                      ? "border-l-4 border-l-emerald-700 bg-emerald-50/60"
                       : idx % 2 === 0
                         ? "bg-white"
                         : "bg-zinc-50"
@@ -282,16 +293,17 @@ export function TransactionTable() {
                   </td>
 
                   {/* Cash In */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-zinc-700">
-                    {isStartRow && row.cashIn ? (
-                      <span className="font-bold text-emerald-700">{row.cashIn}</span>
-                    ) : (
-                      row.cashIn
-                    )}
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
+                    <input 
+                      type="text" 
+                      defaultValue={row.cashIn}
+                      placeholder="0"
+                      className="w-16 ml-auto block text-right border-b border-zinc-200 outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
+                    />
                   </td>
 
                   {/* Cash Out */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-zinc-700">
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
                     {row.cashOut}
                   </td>
 
@@ -306,7 +318,7 @@ export function TransactionTable() {
                   </td>
 
                   {/* Unit Code */}
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">
+                  <td className="whitespace-nowrap px-3 py-1.5 text-xs text-zinc-500">
                     {row.unitCode}
                   </td>
 
@@ -322,14 +334,15 @@ export function TransactionTable() {
                   {/* Storage */}
                   <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
                     {isHighlightedStorage(row.storage) ? (
-                      <span className="font-bold text-emerald-600">{row.storage}</span>
+                      <span className="font-bold text-purple-700">{row.storage}</span>
                     ) : (
                       <span className="text-zinc-700">{row.storage}</span>
                     )}
                   </td>
                 </tr>
               );
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>

@@ -83,44 +83,82 @@ const balanceIcon = (
   </svg>
 );
 
-export function TransactionStats() {
+export interface TransactionStatsData {
+  pawnedToday: number;
+  buyBack: number;
+  renewed: number;
+  soldItem: number;
+  startingBalance: number;
+  endingBalance: number;
+}
+
+interface TransactionStatsProps {
+  data?: TransactionStatsData;
+}
+
+export function TransactionStats({ data }: TransactionStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
       <StatCard
         label="Pawned Today"
-        value={28}
+        value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
         borderColor="bg-emerald-600"
       />
       <StatCard
         label="Buy Back"
-        value={12}
+        value={data?.buyBack || 0}
         subtitle="Purchased today"
         icon={buyBackIcon}
         borderColor="bg-blue-600"
       />
       <StatCard
         label="Renewed"
-        value={8}
+        value={data?.renewed || 0}
         subtitle="Contracts renewed"
         icon={renewedIcon}
         borderColor="bg-amber-500"
       />
       <StatCard
         label="Sold Item"
-        value={28}
+        value={data?.soldItem || 0}
         subtitle="Units sold"
         icon={soldIcon}
         borderColor="bg-orange-500"
       />
-      <StatCard
-        label="Branch Balance"
-        value={12}
-        subtitle="Current cash"
-        icon={balanceIcon}
-        borderColor="bg-zinc-800"
-      />
+      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-4">
+        <div className="mb-3 h-1 w-full rounded-full bg-zinc-800" />
+        
+        {/* Starting Balance */}
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+              Start Balance
+            </p>
+            <p className="mt-0.5 text-xl font-bold text-zinc-900">
+              ₱ {data?.startingBalance?.toLocaleString() || "0"}
+            </p>
+          </div>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-600">
+            {balanceIcon}
+          </div>
+        </div>
+
+        <div className="my-2.5 border-t border-dashed border-zinc-200" />
+
+        {/* Ending Balance */}
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+              End Balance
+            </p>
+            <p className="mt-0.5 text-xl font-bold text-emerald-600">
+              ₱ {data?.endingBalance?.toLocaleString() || "0"}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

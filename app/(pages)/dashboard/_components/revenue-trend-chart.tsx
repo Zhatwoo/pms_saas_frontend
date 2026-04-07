@@ -10,16 +10,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { month: "Jan", revenue: 800 },
-  { month: "Feb", revenue: 1800 },
-  { month: "Mar", revenue: 2000 },
-  { month: "Apr", revenue: 1900 },
-  { month: "May", revenue: 2100 },
-  { month: "Jun", revenue: 2500 },
-];
+interface RevenueTrendData {
+  month: string;
+  revenue: number;
+}
 
-export function RevenueTrendChart() {
+interface RevenueTrendChartProps {
+  data?: RevenueTrendData[];
+}
+
+export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-5">
       <div className="mb-4">

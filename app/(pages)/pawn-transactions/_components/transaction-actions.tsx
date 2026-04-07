@@ -52,7 +52,7 @@ export function TransactionActions() {
             Export CSV
           </span>
         </ActionButton>
-        <ActionButton variant="primary">
+        <ActionButton variant="primary" className="bg-emerald-700 border-pawn-gold text-pawn-gold">
           <span className="flex items-center gap-1.5">
             {printerIcon}
             Print Report
