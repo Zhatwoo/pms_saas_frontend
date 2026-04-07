@@ -1,8 +1,8 @@
 "use client";
 
-import { TransactionActions } from "@/components/transactions/transaction-actions";
-import { TransactionStats } from "@/components/transactions/transaction-stats";
-import { TransactionTable } from "@/components/transactions/transaction-table";
+import { TransactionActions } from "./_components/transaction-actions";
+import { TransactionStats } from "./_components/transaction-stats";
+import { TransactionTable } from "./_components/transaction-table";
 
 export default function PawnTransactionsPage() {
   return (

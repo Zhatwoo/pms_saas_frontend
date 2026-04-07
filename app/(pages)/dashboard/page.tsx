@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { PeriodTabs } from "@/components/shared/period-tabs";
-import { AutoResetBanner } from "@/components/dashboard/auto-reset-banner";
-import { DashboardStats } from "@/components/dashboard/dashboard-stats";
-import { ContractTrendsChart } from "@/components/dashboard/contract-trends-chart";
-import { RevenueTrendChart } from "@/components/dashboard/revenue-trend-chart";
-import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
-import { ItemsAttention } from "@/components/dashboard/items-attention";
+import { AutoResetBanner } from "./_components/auto-reset-banner";
+import { DashboardStats } from "./_components/dashboard-stats";
+import { ContractTrendsChart } from "./_components/contract-trends-chart";
+import { RevenueTrendChart } from "./_components/revenue-trend-chart";
+import { NotificationsPanel } from "./_components/notifications-panel";
+import { ItemsAttention } from "./_components/items-attention";
 
 const periods = ["Daily", "Weekly", "Monthly", "Yearly"];
 

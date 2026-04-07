@@ -1,7 +1,7 @@
 "use client";
 
-import { InventoryFilters } from "@/components/inventory/inventory-filters";
-import { InventoryTable } from "@/components/inventory/inventory-table";
+import { InventoryFilters } from "./_components/inventory-filters";
+import { InventoryTable } from "./_components/inventory-table";
 
 export default function InventoryPage() {
   return (

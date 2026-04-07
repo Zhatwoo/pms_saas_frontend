@@ -1,4 +1,4 @@
-import { CustomerTable } from "@/components/customers/customer-table";
+import { CustomerTable } from "./_components/customer-table";
 
 export default function CustomersPage() {
   return (

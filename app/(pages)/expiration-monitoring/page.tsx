@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ExpirationStats } from "@/components/expiration/expiration-stats";
-import { ExpirationTabs } from "@/components/expiration/expiration-tabs";
-import { ExpirationTable } from "@/components/expiration/expiration-table";
+import { ExpirationStats } from "./_components/expiration-stats";
+import { ExpirationTabs } from "./_components/expiration-tabs";
+import { ExpirationTable } from "./_components/expiration-table";
 
 export default function ExpirationMonitoringPage() {
   const [activeTab, setActiveTab] = useState("30days");
