@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import type { NavGroup } from "@/types";
+import type { NavGroup, NavItem } from "@/types";
 import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
 import { LogoutIcon } from "@/lib/icons";
 
@@ -12,6 +13,101 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   onLogout?: () => void;
+}
+
+function NavItemComponent({
+  item,
+  collapsed,
+  pathname,
+}: {
+  item: NavItem;
+  collapsed: boolean;
+  pathname: string;
+}) {
+  const hasSubItems = item.subItems && item.subItems.length > 0;
+  
+  // For parent item, check if itself or any subitem is active
+  const isSelfActive = pathname === item.href || pathname.startsWith(item.href + "/");
+  const isAnySubActive = hasSubItems && item.subItems?.some(
+    (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/")
+  );
+  const isParentActive = isSelfActive || isAnySubActive;
+
+  const [expanded, setExpanded] = useState(isAnySubActive);
+
+  if (hasSubItems) {
+    return (
+      <div className="space-y-1">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          title={collapsed ? item.label : undefined}
+          className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
+            collapsed ? "justify-center" : ""
+          } text-white/80 hover:bg-pawn-sidebar-light hover:text-white`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="flex-shrink-0 text-pawn-gold">{item.icon}</span>
+            {!collapsed && item.label}
+          </div>
+          {!collapsed && (
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
+        </button>
+        
+        {expanded && !collapsed && (
+          <div className="ml-9 space-y-1">
+            {item.subItems?.map((sub) => {
+              const isSubActive =
+                pathname === sub.href || pathname.startsWith(sub.href + "/");
+              return (
+                <Link
+                  key={sub.href}
+                  href={sub.href}
+                  className={`block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                    isSubActive
+                      ? "bg-pawn-gold text-zinc-900"
+                      : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
+                  }`}
+                >
+                  {sub.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Regular non-nested link
+  return (
+    <Link
+      href={item.href}
+      title={collapsed ? item.label : undefined}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+        collapsed ? "justify-center" : ""
+      } ${
+        isSelfActive
+          ? "bg-pawn-gold font-medium text-zinc-900"
+          : "text-white/80 hover:bg-pawn-sidebar-light hover:text-white"
+      }`}
+    >
+      <span className="flex-shrink-0">{item.icon}</span>
+      {!collapsed && item.label}
+    </Link>
+  );
 }
 
 export function Sidebar({ navGroups, collapsed, onToggle, onLogout }: SidebarProps) {
@@ -62,28 +158,14 @@ export function Sidebar({ navGroups, collapsed, onToggle, onLogout }: SidebarPro
               <div className="mx-auto mb-2 h-px w-8 bg-white/10" />
             )}
             <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + "/");
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={collapsed ? item.label : undefined}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                      collapsed ? "justify-center" : ""
-                    } ${
-                      isActive
-                        ? "bg-pawn-gold font-medium text-zinc-900"
-                        : "text-white/80 hover:bg-pawn-sidebar-light hover:text-white"
-                    }`}
-                  >
-                    <span className="flex-shrink-0">{item.icon}</span>
-                    {!collapsed && item.label}
-                  </Link>
-                );
-              })}
+              {group.items.map((item) => (
+                <NavItemComponent
+                  key={item.href ?? item.label}
+                  item={item}
+                  collapsed={collapsed}
+                  pathname={pathname}
+                />
+              ))}
             </div>
           </div>
         ))}
