@@ -52,22 +52,43 @@ function ActionsDropdown({
   onDeactivate: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        btnRef.current &&
+        !btnRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [open]);
+
+  function toggleMenu() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + 4,
+        left: rect.right - 132, // 132 = menu width (w-32 = 8rem)
+      });
+    }
+    setOpen(!open);
+  }
 
   return (
-    <div ref={ref} className="relative inline-block">
+    <div className="relative inline-block">
       <button
-        onClick={() => setOpen(!open)}
+        ref={btnRef}
+        onClick={toggleMenu}
         className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100"
         title={`Actions for ${branchId}`}
       >
@@ -78,7 +99,11 @@ function ActionsDropdown({
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-1 w-32 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
+        <div
+          ref={menuRef}
+          className="fixed z-50 w-32 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg"
+          style={{ top: pos.top, left: pos.left }}
+        >
           <button
             onClick={() => {
               setOpen(false);
