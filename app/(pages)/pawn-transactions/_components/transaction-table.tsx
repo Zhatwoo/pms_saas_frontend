@@ -16,186 +16,6 @@ interface TransactionRow {
   storage: string;
 }
 
-const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple" | "black"> = {
-  Start: "black",
-  "Buy Back": "blue",
-  Renew: "green",
-  "Sold Item": "orange",
-  Pawn: "purple",
-};
-
-const mockData: TransactionRow[] = [
-  {
-    transactionNo: "SJS007610",
-    purpose: "Start",
-    date: "4/1/2026",
-    time: "8:21 AM",
-    cashIn: "28",
-    cashOut: "0",
-    returnVal: "0",
-    unit: "----",
-    unitCode: "---",
-    pawn: "0",
-    storage: "0",
-  },
-  {
-    transactionNo: "SJS007611",
-    purpose: "Buy Back",
-    date: "4/1/2026",
-    time: "9:39 AM",
-    cashIn: "",
-    cashOut: "0",
-    returnVal: "0",
-    unit: "IPHONE...",
-    unitCode: "10-JCLB-11529",
-    pawn: "0",
-    storage: "0",
-  },
-  {
-    transactionNo: "SJS007612",
-    purpose: "Buy Back",
-    date: "4/1/2026",
-    time: "10:27 AM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "iPhone 1...",
-    unitCode: "10-JCLB-11492",
-    pawn: "",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007613",
-    purpose: "Renew",
-    date: "4/1/2026",
-    time: "10:27 AM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "Suzuki U...",
-    unitCode: "10-JCLB-11327",
-    pawn: "",
-    storage: "400",
-  },
-  {
-    transactionNo: "SJS007614",
-    purpose: "Sold Item",
-    date: "4/1/2026",
-    time: "10:44 AM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "Oppo ren...",
-    unitCode: "10-JCLB-10582",
-    pawn: "",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007615",
-    purpose: "Buy Back",
-    date: "4/1/2026",
-    time: "10:54 AM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "Infinix ho...",
-    unitCode: "10-JCLB-11523",
-    pawn: "0",
-    storage: "0",
-  },
-  {
-    transactionNo: "SJS007616",
-    purpose: "Pawn",
-    date: "4/1/2026",
-    time: "11:36 AM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "RealMe C...",
-    unitCode: "10-JCLB-11539",
-    pawn: "1000",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007617",
-    purpose: "Pawn",
-    date: "4/1/2026",
-    time: "12:03 PM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "TECNO S...",
-    unitCode: "10-JCLB-11540",
-    pawn: "1000",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007618",
-    purpose: "Buy Back",
-    date: "4/1/2026",
-    time: "12:14 PM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "Xiaomi R...",
-    unitCode: "10-JCLB-11460",
-    pawn: "",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007619",
-    purpose: "Buy Back",
-    date: "4/1/2026",
-    time: "1:10 PM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "ITEL A90...",
-    unitCode: "10-JCLB-11407",
-    pawn: "",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007620",
-    purpose: "Renew",
-    date: "4/1/2026",
-    time: "1:52 PM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "TECNO S...",
-    unitCode: "10-JCLB-11425",
-    pawn: "",
-    storage: "120",
-  },
-  {
-    transactionNo: "SJS007621",
-    purpose: "Pawn",
-    date: "4/1/2026",
-    time: "2:07 PM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "REDMI N...",
-    unitCode: "10-JCLB-11541",
-    pawn: "1700",
-    storage: "",
-  },
-  {
-    transactionNo: "SJS007622",
-    purpose: "Buy Back",
-    date: "4/1/2026",
-    time: "2:27 PM",
-    cashIn: "",
-    cashOut: "",
-    returnVal: "",
-    unit: "Samsung...",
-    unitCode: "10-JCLB-11369",
-    pawn: "",
-    storage: "",
-  },
-];
-
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
   { key: "purpose", label: "Purpose" },
@@ -220,7 +40,21 @@ function isHighlightedStorage(value: string): boolean {
   return !isNaN(num) && num > 0;
 }
 
-export function TransactionTable() {
+const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple" | "black"> = {
+  Start: "black",
+  "Buy Back": "blue",
+  Renew: "green",
+  "Sold Item": "orange",
+  Pawn: "purple",
+};
+
+interface TransactionTableProps {
+  data?: TransactionRow[];
+}
+
+
+
+export function TransactionTable({ data = [] }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <div className="flex items-center justify-between bg-white px-4 py-3">
@@ -244,15 +78,22 @@ export function TransactionTable() {
             </tr>
           </thead>
           <tbody>
-            {mockData.map((row, idx) => {
-              const isStartRow = row.purpose === "Start";
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="py-4 text-center text-sm text-zinc-500">
+                  No transactions found
+                </td>
+              </tr>
+            ) : (
+              data.map((row, idx) => {
+                const isStartRow = row.purpose === "Start";
 
               return (
                 <tr
                   key={row.transactionNo}
                   className={`border-t border-zinc-100 ${
                     isStartRow
-                      ? "border-l-4 border-l-amber-400 bg-amber-50/60"
+                      ? "border-l-4 border-l-emerald-700 bg-emerald-50/60"
                       : idx % 2 === 0
                         ? "bg-white"
                         : "bg-zinc-50"
@@ -282,16 +123,17 @@ export function TransactionTable() {
                   </td>
 
                   {/* Cash In */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-zinc-700">
-                    {isStartRow && row.cashIn ? (
-                      <span className="font-bold text-emerald-700">{row.cashIn}</span>
-                    ) : (
-                      row.cashIn
-                    )}
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
+                    <input 
+                      type="text" 
+                      defaultValue={row.cashIn}
+                      placeholder="0"
+                      className="w-16 ml-auto block text-right border-b border-zinc-200 outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
+                    />
                   </td>
 
                   {/* Cash Out */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-zinc-700">
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
                     {row.cashOut}
                   </td>
 
@@ -306,7 +148,7 @@ export function TransactionTable() {
                   </td>
 
                   {/* Unit Code */}
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">
+                  <td className="whitespace-nowrap px-3 py-1.5 text-xs text-zinc-500">
                     {row.unitCode}
                   </td>
 
@@ -322,14 +164,15 @@ export function TransactionTable() {
                   {/* Storage */}
                   <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
                     {isHighlightedStorage(row.storage) ? (
-                      <span className="font-bold text-emerald-600">{row.storage}</span>
+                      <span className="font-bold text-purple-700">{row.storage}</span>
                     ) : (
                       <span className="text-zinc-700">{row.storage}</span>
                     )}
                   </td>
                 </tr>
               );
-            })}
+            })
+            )}
           </tbody>
         </table>
       </div>

@@ -65,33 +65,44 @@ const dollarIcon = (
   </svg>
 );
 
-export function DashboardStats() {
+export interface DashboardStatData {
+  activeContracts: number;
+  itemsNearExpiration: number;
+  itemsReadyForSale: number;
+  monthlyRevenue: string;
+}
+
+interface DashboardStatsProps {
+  data?: DashboardStatData;
+}
+
+export function DashboardStats({ data }: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Active Pawn Contracts"
-        value={247}
-        change="+12% from last month"
+        value={data?.activeContracts || 0}
+        change="0% from last month"
         changeType="positive"
         icon={clipboardIcon}
       />
       <StatCard
         label="Items Near Expiration"
-        value={32}
-        change="8% from last month"
+        value={data?.itemsNearExpiration || 0}
+        change="0% from last month"
         changeType="positive"
         icon={clockIcon}
       />
       <StatCard
         label="Items Ready for Sale"
-        value={18}
+        value={data?.itemsReadyForSale || 0}
         subtitle="No change"
         icon={cartIcon}
       />
       <StatCard
         label="Monthly Revenue"
-        value="$ 45,890"
-        change="+15% from last month"
+        value={data?.monthlyRevenue || "$ 0"}
+        change="0% from last month"
         changeType="positive"
         icon={dollarIcon}
       />

@@ -10,16 +10,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const data = [
-  { month: "Jan", contracts: 60, redeemed: 30 },
-  { month: "Feb", contracts: 85, redeemed: 65 },
-  { month: "Mar", contracts: 95, redeemed: 55 },
-  { month: "Apr", contracts: 60, redeemed: 45 },
-  { month: "May", contracts: 110, redeemed: 80 },
-  { month: "Jun", contracts: 130, redeemed: 95 },
-];
+interface ContractTrendData {
+  month: string;
+  contracts: number;
+  redeemed: number;
+}
 
-export function ContractTrendsChart() {
+interface ContractTrendsChartProps {
+  data?: ContractTrendData[];
+}
+
+export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-5">
       <div className="mb-4 flex items-center justify-between">

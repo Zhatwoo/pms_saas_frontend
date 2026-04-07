@@ -1,0 +1,65 @@
+-- PMS PostgreSQL Database Schema
+
+-- 1. ENUMS (For Roles and Transaction Purposes)
+CREATE TYPE user_role AS ENUM ('employee', 'admin', 'super_admin');
+CREATE TYPE transaction_purpose AS ENUM ('Start', 'Buy Back', 'Renew', 'Sold Item', 'Pawn');
+
+-- 2. BRANCHES TABLE (Supports Multi-Branch)
+CREATE TABLE branches (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    location VARCHAR(255),
+    -- Balance caching optionally handled here, but proper historical balance is in daily_balances
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. USERS TABLE (Supports 3 Roles)
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role user_role NOT NULL DEFAULT 'employee',
+    branch_id INT REFERENCES branches(id) ON DELETE SET NULL, -- Super admin = null, regular = specific branch
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. DAILY BALANCES TABLE (For the 12:00 AM Carry-Over Logic)
+CREATE TABLE daily_balances (
+    id SERIAL PRIMARY KEY,
+    branch_id INT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    record_date DATE NOT NULL,
+    starting_balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    ending_balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    UNIQUE(branch_id, record_date) 
+);
+
+-- 5. TRANSACTIONS TABLE (The Core Transactions Logic)
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    transaction_no VARCHAR(50) UNIQUE NOT NULL, -- e.g., 'SJS007610'
+    branch_id INT NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id), -- Who created the transaction
+    
+    purpose transaction_purpose NOT NULL,
+    transaction_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    transaction_time TIME NOT NULL DEFAULT CURRENT_TIME,
+    
+    -- Cash In Logic (Now editable with details)
+    cash_in NUMERIC(12, 2) DEFAULT 0.00,
+    cash_in_details VARCHAR(255), -- "Cash from management", "Downpayment", etc.
+    
+    cash_out NUMERIC(12, 2) DEFAULT 0.00,
+    return_val NUMERIC(12, 2) DEFAULT 0.00,
+    
+    -- Item Properties
+    unit VARCHAR(255),
+    unit_code VARCHAR(100),
+    pawn NUMERIC(12, 2) DEFAULT 0.00,
+    storage NUMERIC(12, 2) DEFAULT 0.00,
+    
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- INDEXES for fast querying by branch and dashboard calculations
+CREATE INDEX idx_transactions_branch_date ON transactions(branch_id, transaction_date);
+CREATE INDEX idx_daily_balances_branch_date ON daily_balances(branch_id, record_date);
