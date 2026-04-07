@@ -109,7 +109,7 @@ export default function ItemsForSalePage() {
         params.set("limit", String(itemsPerPage));
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/inventory/for-sale?${params}`
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/for-sale?${params}`
         );
         const data = await res.json();
         setSaleItems(data.items || []);
@@ -127,7 +127,7 @@ export default function ItemsForSalePage() {
     if (!confirm("Are you sure you want to delete this sale item? This cannot be undone.")) return;
     try {
       await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/inventory/for-sale/${itemId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/for-sale/${itemId}`,
         { method: "DELETE" }
       );
       setSaleItems((prev) => prev.filter((i) => i.id !== itemId));

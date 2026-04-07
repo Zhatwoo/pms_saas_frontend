@@ -123,8 +123,8 @@ const BRANCH_NAV: NavGroup[] = [
         href: "/inventory",
         icon: <InventoryIcon />,
         subItems: [
-          { label: "Pawned Items", href: "/inventory" },
-          { label: "Items For Sale", href: "/items-for-sale" },
+          { label: "Pawned Items", href: "/inventory/pawned-items" },
+          { label: "Items For Sale", href: "/inventory/items-for-sale" },
         ],
       },
       { label: "Expiration Monitoring", href: "/expiration-monitoring", icon: <ExpirationIcon /> },

@@ -182,7 +182,7 @@ export default function PawnedItemsPage() {
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/inventory/pawned?${params}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned?${params}`);
         const data = await res.json();
         setPawnedItems(data.items || []);
         setTotalItems(data.total || 0);
@@ -197,7 +197,7 @@ export default function PawnedItemsPage() {
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/inventory/pawned/${itemId}/remarks`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}/remarks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remark: remarks }),
@@ -211,7 +211,7 @@ export default function PawnedItemsPage() {
   const handleMarkExpired = useCallback(async (itemId: string) => {
     if (!confirm("Mark this item as Expired? It will be auto-transferred to Items For Sale.")) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/inventory/pawned/${itemId}/expire`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}/expire`, {
         method: "POST",
       });
       setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: "Expired" as PawnedStatus } : i)));
@@ -223,7 +223,7 @@ export default function PawnedItemsPage() {
   const handleDelete = useCallback(async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this pawned item? This cannot be undone.")) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/inventory/pawned/${itemId}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}`, {
         method: "DELETE",
       });
       setPawnedItems((prev) => prev.filter((i) => i.id !== itemId));
