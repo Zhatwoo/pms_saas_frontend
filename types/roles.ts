@@ -15,6 +15,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: ReactNode;
+  subItems?: { label: string; href: string }[];
 }
 
 export interface NavGroup {
