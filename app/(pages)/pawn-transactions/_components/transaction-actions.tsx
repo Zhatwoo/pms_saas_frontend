@@ -34,25 +34,49 @@ const printerIcon = (
   </svg>
 );
 
-export function TransactionActions() {
+type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
+
+interface TransactionActionsProps {
+  activeFilter?: FilterType;
+  onFilterChange?: (filter: FilterType) => void;
+  onExportCSV?: () => void;
+  onPrintReport?: () => void;
+}
+
+const filters: FilterType[] = ["Renew", "Redeem", "New Pawn", "Sales / Transfer", "Buy Back"];
+
+const filterVariantMap: Record<string, string> = {
+  "Renew": "renew",
+  "Redeem": "redeem",
+  "New Pawn": "pawn",
+  "Sales / Transfer": "sales",
+  "Buy Back": "buyback",
+};
+
+export function TransactionActions({ activeFilter = "All", onFilterChange, onExportCSV, onPrintReport }: TransactionActionsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <ActionButton variant="renew">Renew</ActionButton>
-        <ActionButton variant="redeem">Redeem</ActionButton>
-        <ActionButton variant="pawn">New Pawn</ActionButton>
-        <ActionButton variant="sales">Sales / Transfer</ActionButton>
-        <ActionButton variant="buyback">Buy Back</ActionButton>
+        {filters.map((f) => (
+          <ActionButton
+            key={f}
+            variant={filterVariantMap[f] as any}
+            className={activeFilter === f ? "ring-2 ring-offset-1 ring-emerald-600 opacity-100" : "opacity-70 hover:opacity-100"}
+            onClick={() => onFilterChange?.(activeFilter === f ? "All" : f)}
+          >
+            {f}
+          </ActionButton>
+        ))}
       </div>
 
       <div className="flex items-center gap-2">
-        <ActionButton variant="outline">
+        <ActionButton variant="outline" onClick={onExportCSV}>
           <span className="flex items-center gap-1.5">
             {downloadIcon}
             Export CSV
           </span>
         </ActionButton>
-        <ActionButton variant="primary" className="bg-emerald-700 border-pawn-gold text-pawn-gold">
+        <ActionButton variant="primary" className="bg-emerald-700 border-pawn-gold text-pawn-gold" onClick={onPrintReport}>
           <span className="flex items-center gap-1.5">
             {printerIcon}
             Print Report
@@ -62,3 +86,4 @@ export function TransactionActions() {
     </div>
   );
 }
+
