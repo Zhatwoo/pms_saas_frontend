@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { PeriodTabs } from "@/components/shared/period-tabs";
-import { useBranch } from "@/contexts/branch-context";
 import { AutoResetBanner } from "./_components/auto-reset-banner";
 import { DashboardStats } from "./_components/dashboard-stats";
 import { ContractTrendsChart } from "./_components/contract-trends-chart";
@@ -15,7 +14,6 @@ const periods = ["Daily", "Weekly", "Monthly", "Yearly"];
 
 export default function DashboardPage() {
   const [activePeriod, setActivePeriod] = useState("Monthly");
-  const { selectedBranch, isAllBranches } = useBranch();
 
   // Data ready to be fetched from API
   const overallData = {
@@ -44,13 +42,6 @@ export default function DashboardPage() {
         <div>
           <p className="text-sm text-text-tertiary">
             Overview of performance, transactions, and inventory.
-          </p>
-          {/* Branch context indicator */}
-          <p className="mt-0.5 text-xs text-text-muted">
-            Showing data for:{" "}
-            <span className="font-semibold text-emerald-text">
-              {isAllBranches ? "All Branches" : selectedBranch.name}
-            </span>
           </p>
         </div>
         <div className="flex items-center gap-4">

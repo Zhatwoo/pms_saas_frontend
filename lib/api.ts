@@ -22,8 +22,10 @@ class ApiClient {
 
     const res = await fetch(`/api${path}`, { ...options, headers });
     
-    if (res.status === 401) {
-      console.error(`[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token length: ${token?.length}`);
+    if (res.status === 401 && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token length: ${token?.length}`,
+      );
     }
 
     if (!res.ok) {
