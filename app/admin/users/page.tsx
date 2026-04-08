@@ -78,7 +78,6 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserRecord[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
-  const [branchFilter, setBranchFilter] = useState("All");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   function handleCreateUser(input: CreateUserInput) {
@@ -112,12 +111,10 @@ export default function UsersPage() {
       user.fullName.toLowerCase().includes(query) ||
       user.email.toLowerCase().includes(query);
     const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
-    const matchesBranch = branchFilter === "All" || user.branch === branchFilter;
 
-    return matchesSearch && matchesRole && matchesBranch;
+    return matchesSearch && matchesRole;
   });
 
-  const totalBranches = new Set(users.map((user) => user.branch)).size;
   const activeUsers = users.filter((user) => user.status === "Active").length;
 
   return (
@@ -129,15 +126,9 @@ export default function UsersPage() {
         onSearchChange={setSearch}
         roleFilter={roleFilter}
         onRoleFilterChange={setRoleFilter}
-        branchFilter={branchFilter}
-        onBranchFilterChange={setBranchFilter}
         onCreateUser={() => setIsCreateModalOpen(true)}
       />
-      <UserStats
-        totalUsers={users.length}
-        totalBranches={totalBranches}
-        activeUsers={activeUsers}
-      />
+      <UserStats totalUsers={users.length} activeUsers={activeUsers} />
       <UserTable users={filteredUsers} totalUsers={users.length} />
 
       {isCreateModalOpen && (

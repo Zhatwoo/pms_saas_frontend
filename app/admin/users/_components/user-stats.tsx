@@ -2,7 +2,6 @@ import { StatCard } from "@/components/shared/stat-card";
 
 interface UserStatsProps {
   totalUsers: number;
-  totalBranches: number;
   activeUsers: number;
 }
 
@@ -55,24 +54,16 @@ const activeUsersIcon = (
 
 export function UserStats({
   totalUsers,
-  totalBranches,
   activeUsers,
 }: UserStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <StatCard
         label="Total Users"
         value={totalUsers}
         subtitle="Registered system users"
         icon={totalUsersIcon}
         borderColor="bg-blue-600"
-      />
-      <StatCard
-        label="Branches"
-        value={totalBranches}
-        subtitle="Branches with assigned users"
-        icon={branchIcon}
-        borderColor="bg-orange-500"
       />
       <StatCard
         label="Active Users"

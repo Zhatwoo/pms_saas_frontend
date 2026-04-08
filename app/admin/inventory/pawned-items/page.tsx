@@ -29,12 +29,6 @@ interface PawnedItem {
   conditionReport?: string;
 }
 
-const branchOptions = [
-  { value: "taguig", label: "Taguig" },
-  { value: "makati", label: "Makati" },
-  { value: "pasay", label: "Pasay" },
-];
-
 const categoryOptions = [
   { value: "all", label: "All" },
   { value: "electronics", label: "Electronics" },
@@ -153,7 +147,6 @@ export default function PawnedItemsPage() {
   const canEdit = userRole === "super_admin" || userRole === "admin";
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [branch, setBranch] = useState("all");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,14 +160,13 @@ export default function PawnedItemsPage() {
   const [viewingItem, setViewingItem] = useState<PawnedItem | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  useEffect(() => { setCurrentPage(1); }, [branch, category, status, searchQuery]);
+  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery]);
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
-        if (branch !== "all") params.set("branch", branch);
         if (category !== "all") params.set("category", category);
         if (status !== "all") params.set("status", status);
         if (searchQuery) params.set("search", searchQuery);
@@ -192,7 +184,7 @@ export default function PawnedItemsPage() {
       }
     }
     fetchData();
-  }, [branch, category, status, searchQuery, currentPage]);
+  }, [category, status, searchQuery, currentPage]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
@@ -240,7 +232,6 @@ export default function PawnedItemsPage() {
       {/* Filters and Controls */}
       <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main transition-colors duration-300">
         <div className="flex flex-wrap items-end gap-3">
-          {isSuperAdmin && <FilterSelect label="Branch" options={branchOptions} value={branch} onChange={setBranch} />}
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">

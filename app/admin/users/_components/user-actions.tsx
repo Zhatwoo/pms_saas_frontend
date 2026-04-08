@@ -6,8 +6,6 @@ interface UserActionsProps {
   onSearchChange: (value: string) => void;
   roleFilter: RoleFilter;
   onRoleFilterChange: (value: RoleFilter) => void;
-  branchFilter: string;
-  onBranchFilterChange: (value: string) => void;
   onCreateUser: () => void;
 }
 
@@ -16,8 +14,6 @@ const roleTabs: { label: string; value: RoleFilter }[] = [
   { label: "Employee", value: "EMPLOYEE" },
   { label: "Admins", value: "ADMIN" },
 ];
-
-const branchOptions = ["Taguig", "Pasig"];
 
 const searchIcon = (
   <svg
@@ -73,8 +69,6 @@ export function UserActions({
   onSearchChange,
   roleFilter,
   onRoleFilterChange,
-  branchFilter,
-  onBranchFilterChange,
   onCreateUser,
 }: UserActionsProps) {
   return (
@@ -131,23 +125,6 @@ export function UserActions({
           })}
         </div>
 
-        <div className="flex items-center gap-3">
-          <label htmlFor="users-branch" className="text-sm font-medium text-text-tertiary">
-            Branch
-          </label>
-          <select
-            id="users-branch"
-            value={branchFilter}
-            onChange={(event) => onBranchFilterChange(event.target.value)}
-            className="h-10 min-w-36 rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-secondary outline-none transition-colors focus:border-emerald-700"
-          >
-            {branchOptions.map((branch) => (
-              <option key={branch} value={branch}>
-                {branch}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
     </div>
   );

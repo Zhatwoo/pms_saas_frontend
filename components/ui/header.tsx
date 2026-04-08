@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ClockIcon, BellIcon } from "@/lib/icons";
-import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { useTheme } from "@/contexts/theme-context";
 
 interface HeaderProps {
@@ -122,9 +121,6 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Branch Selector – only visible to Super Admins and if not hidden */}
-        {!hideBranchSelector && <BranchSelectorDropdown />}
-
         {/* Clock */}
         <div className="flex items-center gap-2 rounded-full border border-border-main px-4 py-1.5 text-sm text-text-tertiary">
           <ClockIcon />

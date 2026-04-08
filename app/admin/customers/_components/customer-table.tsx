@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
+import { AddCustomerModal } from "./add-customer-modal";
 import type { Column } from "@/components/shared/data-table";
 
 const columns: Column[] = [
@@ -59,7 +61,15 @@ const eyeIcon = (
 );
 
 export function CustomerTable() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleViewCustomer = (customerName: string, index: number) => {
+    // Navigate to customer detail page
+    const customerId = `customer-${index + 1}`;
+    router.push(`/admin/customers/${customerId}`);
+  };
 
   return (
     <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
@@ -68,7 +78,10 @@ export function CustomerTable() {
         <h3 className="text-base font-semibold text-emerald-text">
           Customer Management
         </h3>
-        <button className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
+        >
           + Add New Customer
         </button>
       </div>
@@ -77,10 +90,11 @@ export function CustomerTable() {
       <DataTable
         columns={columns}
         data={customers}
-        renderCell={(key, value, row) => {
+        renderCell={(key, value, row, rowIndex) => {
           if (key === "actions") {
             return (
               <button
+                onClick={() => handleViewCustomer(row.name, rowIndex)}
                 className="mx-auto flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-emerald-700"
                 title={`View ${row.name}`}
               >
@@ -99,6 +113,12 @@ export function CustomerTable() {
         totalItems={3}
         itemsPerPage={10}
         onPageChange={setCurrentPage}
+      />
+
+      {/* Add Customer Modal */}
+      <AddCustomerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
     </div>
   );
