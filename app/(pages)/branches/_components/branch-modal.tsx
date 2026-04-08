@@ -12,18 +12,13 @@ interface BranchFormData {
 interface BranchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: BranchFormData) => void;
+  onSubmit: (data: BranchFormData) => Promise<void> | void;
   initialData?: BranchFormData | null;
   mode: "create" | "edit";
-  existingCount: number;
+  nextBranchCode: string;
 }
 
 const statusOptions = ["Active", "Inactive", "Process", "Terminated"];
-
-function generateBranchId(count: number): string {
-  const num = count + 1;
-  return String(num).padStart(3, "0");
-}
 
 export function BranchModal({
   isOpen,
@@ -31,16 +26,18 @@ export function BranchModal({
   onSubmit,
   initialData,
   mode,
-  existingCount,
+  nextBranchCode,
 }: BranchModalProps) {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [status, setStatus] = useState("Active");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const generatedId = useMemo(
-    () => (mode === "create" ? generateBranchId(existingCount) : initialData?.branchId || ""),
-    [mode, existingCount, initialData, isOpen]
+    () =>
+      mode === "create" ? (nextBranchCode || "001") : initialData?.branchId || "",
+    [mode, nextBranchCode, initialData, isOpen]
   );
 
   useEffect(() => {
@@ -65,11 +62,21 @@ export function BranchModal({
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit({ branchId: generatedId, name: name.trim(), location: location.trim(), status });
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        branchId: generatedId,
+        name: name.trim(),
+        location: location.trim(),
+        status,
+      });
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (!isOpen) return null;
@@ -190,15 +197,21 @@ export function BranchModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="rounded-lg border border-border-main bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
             >
               Cancel
             </button>
             <button
               type="submit"
+              disabled={isSubmitting}
               className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
             >
-              {mode === "create" ? "Create Branch" : "Save Changes"}
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create Branch"
+                  : "Save Changes"}
             </button>
           </div>
         </form>

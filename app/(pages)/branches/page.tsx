@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
+import { api } from "@/lib/api";
+import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 import { BranchStats } from "./_components/branch-stats";
 import { BranchFilters } from "./_components/branch-filters";
 import { BranchTable } from "./_components/branch-table";
@@ -10,75 +12,52 @@ import { BranchModal } from "./_components/branch-modal";
 import { BranchDetailDrawer } from "./_components/branch-detail-drawer";
 import type { BranchRow } from "./_components/branch-table";
 
-const mockBranches: BranchRow[] = [
-  {
-    branchId: "001",
-    name: "Head Office – Makati",
-    location: "Makati City, Metro Manila",
-    status: "Active",
-    pawnedItems: 142,
-    forSaleItems: 58,
-    totalValue: "₱2,450,000",
-  },
-  {
-    branchId: "002",
-    name: "BGC Branch",
-    location: "Bonifacio Global City, Taguig",
-    status: "Active",
-    pawnedItems: 98,
-    forSaleItems: 34,
-    totalValue: "₱1,780,000",
-  },
-  {
-    branchId: "003",
-    name: "Cebu City Branch",
-    location: "Cebu City, Cebu",
-    status: "Active",
-    pawnedItems: 76,
-    forSaleItems: 22,
-    totalValue: "₱1,120,000",
-  },
-  {
-    branchId: "004",
-    name: "Davao Branch",
-    location: "Davao City, Davao del Sur",
-    status: "Process",
-    pawnedItems: 54,
-    forSaleItems: 18,
-    totalValue: "₱890,000",
-  },
-  {
-    branchId: "005",
-    name: "Quezon City Branch",
-    location: "Quezon City, Metro Manila",
-    status: "Active",
-    pawnedItems: 110,
-    forSaleItems: 42,
-    totalValue: "₱1,950,000",
-  },
-  {
-    branchId: "006",
-    name: "Iloilo Branch",
-    location: "Iloilo City, Western Visayas",
-    status: "Active",
-    pawnedItems: 62,
-    forSaleItems: 28,
-    totalValue: "₱980,000",
-  },
-  {
-    branchId: "007",
-    name: "Calamba Branch",
-    location: "Calamba City, Laguna",
-    status: "Terminated",
+interface BranchApiItem {
+  id: string;
+  branch_code: string;
+  name: string;
+  location: string;
+  status: string;
+}
+
+type BranchFormData = {
+  id?: string;
+  branchId: string;
+  name: string;
+  location: string;
+  status: string;
+};
+
+function toBranchRow(branch: BranchApiItem): BranchRow {
+  return {
+    id: branch.id,
+    branchId: branch.branch_code,
+    name: branch.name,
+    location: branch.location,
+    status: branch.status,
     pawnedItems: 0,
     forSaleItems: 0,
     totalValue: "₱0",
-  },
-];
+  };
+}
+
+function getNextBranchCode(branches: BranchRow[]) {
+  const maxCode = branches.reduce((max, branch) => {
+    const parsed = Number.parseInt(branch.branchId, 10);
+    return Number.isNaN(parsed) ? max : Math.max(max, parsed);
+  }, 0);
+
+  return String(maxCode + 1).padStart(3, "0");
+}
 
 export default function BranchesPage() {
   const { user } = useAuth();
-  const { selectedBranch, isAllBranches, canSwitchBranch } = useBranch();
+  const { selectedBranch, isAllBranches, canSwitchBranch, refreshBranches } =
+    useBranch();
+  const [branches, setBranches] = useState<BranchRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,12 +66,7 @@ export default function BranchesPage() {
   // Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [editingBranch, setEditingBranch] = useState<{
-    branchId: string;
-    name: string;
-    location: string;
-    status: string;
-  } | null>(null);
+  const [editingBranch, setEditingBranch] = useState<BranchFormData | null>(null);
 
   // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -100,27 +74,69 @@ export default function BranchesPage() {
     null,
   );
 
+  const loadBranches = useCallback(async () => {
+    try {
+      const data = await api.get<BranchApiItem[]>("/branches");
+      setBranches((data || []).map(toBranchRow));
+      setErrorMessage(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load branches";
+      setErrorMessage(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadBranches();
+  }, [loadBranches]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const token = getTokenFromCookie();
+    if (token) {
+      void supabase.realtime.setAuth(token);
+    }
+
+    const channel = supabase
+      .channel("branches-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "branches" },
+        () => {
+          void loadBranches();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadBranches]);
+
   // Filter branches by global branch selector
   const branchScopedData = useMemo(() => {
     if (isAllBranches || canSwitchBranch === false) {
       // Super admin viewing "All" → show everything
       // Non-superadmins: context returns only their branch, but on this
       // management page they see all if role allows
-      if (canSwitchBranch && isAllBranches) return mockBranches;
+      if (canSwitchBranch && isAllBranches) return branches;
       if (!canSwitchBranch) {
         // Non-superadmins see only their own branch
-        const own = mockBranches.filter(
+        const own = branches.filter(
           (b) => b.branchId === user?.branchId,
         );
-        return own.length > 0 ? own : mockBranches;
+        return own.length > 0 ? own : branches;
       }
-      return mockBranches;
+      return branches;
     }
     // Super admin selected a specific branch
-    return mockBranches.filter(
+    return branches.filter(
       (b) => b.branchId === selectedBranch.id,
     );
-  }, [selectedBranch, isAllBranches, canSwitchBranch, user?.branchId]);
+  }, [branches, selectedBranch, isAllBranches, canSwitchBranch, user?.branchId]);
 
   // Stats — computed from scoped data
   const activeBranches = branchScopedData.filter(
@@ -148,6 +164,7 @@ export default function BranchesPage() {
 
   function handleEditBranch(branch: BranchRow) {
     setEditingBranch({
+      id: branch.id,
       branchId: branch.branchId,
       name: branch.name,
       location: branch.location,
@@ -163,18 +180,86 @@ export default function BranchesPage() {
     setModalOpen(true);
   }
 
-  function handleModalSubmit(data: {
-    branchId: string;
-    name: string;
-    location: string;
-    status: string;
-  }) {
-    // TODO: Integrate with API
-    console.log(`${modalMode} branch:`, data);
+  async function handleModalSubmit(data: BranchFormData) {
+    try {
+      if (modalMode === "create") {
+        await api.post<BranchApiItem>("/branches", {
+          branch_code: data.branchId,
+          name: data.name,
+          location: data.location,
+          status: data.status,
+        });
+
+        // Force immediate refresh after add.
+        await loadBranches();
+        await refreshBranches();
+        setSuccessMessage("Your new branch has been created successfully!");
+      } else if (data.id) {
+        await api.fetch<BranchApiItem>(`/branches/${data.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            name: data.name,
+            location: data.location,
+            status: data.status,
+          }),
+        });
+
+        await loadBranches();
+        await refreshBranches();
+        setSuccessMessage("Branch details updated successfully!");
+      }
+      setErrorMessage(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : `Failed to ${modalMode} branch`;
+      setErrorMessage(message);
+    }
+  }
+
+  const nextBranchCode = useMemo(() => getNextBranchCode(branches), [branches]);
+
+  useEffect(() => {
+    if (!successMessage) return;
+
+    const timer = setTimeout(() => {
+      setSuccessMessage(null);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-border-main bg-surface px-4 py-8 text-center text-sm text-text-secondary">
+        Loading branches...
+      </div>
+    );
   }
 
   return (
     <div className="space-y-5">
+      {successMessage && (
+        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-300/70 bg-emerald-100/70 px-5 py-3 shadow-xl backdrop-blur-sm">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span className="text-sm font-semibold text-emerald-900">{successMessage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -203,6 +288,12 @@ export default function BranchesPage() {
           Create Branch
         </button>
       </div>
+
+      {errorMessage && (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-xs text-red-700">
+          {errorMessage}
+        </div>
+      )}
 
       {/* Branch Context Indicator */}
       <div className="flex items-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface px-4 py-2.5 transition-colors duration-300">
@@ -263,7 +354,7 @@ export default function BranchesPage() {
         onSubmit={handleModalSubmit}
         initialData={editingBranch}
         mode={modalMode}
-        existingCount={mockBranches.length}
+        nextBranchCode={nextBranchCode}
       />
 
       {/* Detail Drawer */}

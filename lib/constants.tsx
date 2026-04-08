@@ -8,6 +8,7 @@ import {
   ExpirationIcon,
   ReportsIcon,
   UserManagementIcon,
+  BranchesIcon,
   SettingsIcon,
   AuditLogIcon,
 } from "@/lib/icons";
@@ -50,6 +51,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
     section: "ADMIN",
     items: [
       { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
+      { label: "Branch Management", href: "/branches", icon: <BranchesIcon /> },
       { label: "User Management", href: "/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
@@ -91,6 +93,7 @@ const ADMIN_NAV: NavGroup[] = [
     section: "ADMIN",
     items: [
       { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
+      { label: "Branch Management", href: "/branches", icon: <BranchesIcon /> },
       { label: "User Management", href: "/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
