@@ -1,0 +1,31 @@
+Overall Layout
+Page Title — "Inventory > Pawned Items" as a breadcrumb-style title indicating the user is inside the Inventory section, specifically viewing Pawned Items.
+Sub-navigation — Under "Inventory" in the sidebar, two child links are visible: Pawned Items (currently active/highlighted in yellow-green) and Items For Sale.
+Top Bar — Shows current time/date, notification bell (3 badges), and admin avatar "AD."
+
+Filter Bar
+Branch Dropdown — Currently set to "Taguig"; allows filtering the inventory list by a specific branch. Super Admin sees all branches; Branch Manager is locked to their own.
+Category Dropdown — Set to "All"; filters items by category (e.g., Electronics, Jewellery, Gadgets).
+Status Dropdown — Set to "All"; filters by item status (Active, Redeemed, Expired).
+Fourth Filter Slot — Search input for item name lookup.
+
+Pawned Items Table (REVISED)
+Item ID — Auto-sequential: 001, 002, 003... Never repeats or skips.
+Item Name — Name and brand of the pawned item.
+Category — Category the item belongs to.
+Branch — Which branch holds the item.
+Pawn Date — The date the item was pawned.
+Status — Active (green), Redeemed (blue), Expired (red). ❌ NO "Pawned" status.
+❌ Stock Level — REMOVED (not applicable for individually tracked pawned items).
+Renewals — Expandable row showing Renew 1, Renew 2... with date & amount.
+Remarks — Staff notes about item condition, defects, etc.
+Actions — View, Edit (Admin/Super Admin), Delete (Admin/Super Admin with confirm).
+
+Items For Sale Table
+Item ID, Item Name, Category, Branch, Available Date, Price, Stock Level (green/yellow/red badges), Actions.
+Low Stock Alert Banner — Shows count of items with stock <= 3.
+
+Super Admin vs. Branch Manager View
+Super Admin — Branch dropdown accessible, can manage all branches.
+Branch Manager — Same layout, branch locked to their own.
+Employee — View only + add remarks.

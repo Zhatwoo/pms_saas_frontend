@@ -1,0 +1,51 @@
+Overall Layout
+Page Title — "Transactions" in large bold dark green text at the top left.
+Top Bar — Shows current time/date, notification bell (5 badges), and admin avatar "AD" on the top right.
+Sidebar — Same dark green navigation as the dashboard; "Transactions" is currently the active/highlighted page.
+
+Transaction Type Filter Tabs
+Renew — Yellow/gold outlined tab; filters the table to show only renewal transactions.
+Redeem — Green outlined tab; filters for redeemed pawn contracts.
+New Pawn — Dark green outlined tab; filters for newly created pawn transactions.
+Sales / Transfer — Purple filled/active tab; filters for sold items or buyer transfers.
+Buy Back — Blue outlined tab; filters for buy-back transactions from customers.
+Export CSV — Top right button; exports the current transaction table data as a CSV file for external use.
+Print Report — Top right green button; sends the current table view to print for physical records.
+
+Summary Metric Cards
+Pawned Today — 28 — Total number of pawn transactions created today; tagged as "Active contracts" in green.
+Buy Back — 12 — Number of buy-back transactions completed today; tagged as "Purchased today" in blue.
+Renewed — 8 — Number of contracts renewed today; tagged as "Contracts Renewed" in yellow/orange.
+Sold Item — 28 — Number of inventory items sold today; tagged as "Units sold" in red/orange.
+Branch Balance — 12 — Current cash on hand for the branch; tagged as "Current cash" in dark/neutral color.
+
+⚠️ Revised: Branch Balance Card (from meeting)
+Starting Balance — A new field to be added showing the cash balance at the start of the day (set automatically from the previous day's ending balance).
+Ending Balance — A new field showing the running total after all cash-ins and cash-outs for the day.
+Logic — Ending balance today automatically becomes the starting balance tomorrow.
+Daily Reset — System resets at 12:00 AM; the ending balance carries over as the next day's starting balance before resetting transaction counts.
+
+Daily Transactions Table
+Transaction # — Unique system-generated ID per transaction (e.g., SJS007610, SJS007611). The first row "SJS007610" is highlighted in dark green as the starting/opening entry.
+Purpose — Color-coded badge showing the transaction type: Buy Back (blue), Renew (green), Pawn (purple), Sold Item (orange/red), Start (gray).
+Date — Date the transaction was recorded (e.g., 4/1/2026).
+Time — Exact time the transaction was logged (e.g., 8:21 AM, 9:39 AM).
+Cash In — Amount of cash received in that transaction. Currently shows fixed values; revision requires this to be manually editable with a text input so the user can type custom details and source.
+Cash Out — Amount of cash paid out in that transaction; deducted from the branch balance automatically.
+Return — Return amount if applicable to the transaction.
+Unit — Name/description of the item involved (e.g., iPhone, Oppo Reno, Xiaomi R...).
+Unit Code — Internal inventory code assigned to the item (e.g., 10-JCLB-11529).
+Pawn — Pawn amount associated with the transaction (e.g., 1000, 1700); highlighted in bold purple.
+Storage — Storage fee charged if applicable (e.g., 400, 120); shown in bold purple.
+
+⚠️ Revised: Cash In / Cash Out Logic (from meeting)
+Editable Cash In — Cash In should no longer be a fixed/automatic field. The user (branch admin/manager) can manually type the amount and details (e.g., "Cash from management," "Sales revenue," etc.).
+Cash In adds to Branch Balance — Every Cash In entry increases the current branch balance automatically.
+Cash Out deducts from Branch Balance — Every Cash Out entry reduces the branch balance in real time.
+Starting Balance Row — A dedicated row or card to show the opening cash at the start of the day.
+Ending Balance Row — A running total that updates as transactions are added throughout the day.
+Carry-Over Logic — At 12:00 AM reset, the ending balance of the current day is saved and automatically set as the starting balance for the next day.
+
+Super Admin vs. Branch Manager View
+Super Admin — Can view this same Transactions page for all branches; branch selector dropdown would be available to switch between branches or view all combined.
+Branch Manager — Sees the exact same design and layout but transactions are scoped only to their assigned branch; no branch switcher available.

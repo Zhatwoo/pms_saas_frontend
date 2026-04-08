@@ -6,7 +6,6 @@ import {
   CustomersIcon,
   InventoryIcon,
   ExpirationIcon,
-  BranchesIcon,
   ReportsIcon,
   UserManagementIcon,
   SettingsIcon,
@@ -50,7 +49,6 @@ const SUPERADMIN_NAV: NavGroup[] = [
   {
     section: "ADMIN",
     items: [
-      { label: "Branches", href: "/branches", icon: <BranchesIcon /> },
       { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
       { label: "User Management", href: "/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
