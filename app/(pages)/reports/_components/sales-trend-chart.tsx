@@ -51,7 +51,7 @@ export function SalesTrendChart() {
   const [activeTab, setActiveTab] = useState("Daily");
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center justify-between bg-emerald-900 px-4 py-3">
         <h3 className="text-sm font-bold text-pawn-gold">
@@ -124,20 +124,20 @@ export function SalesTrendChart() {
         <div className="mt-3 flex items-center justify-center gap-5">
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[#d4a843]" />
-            <span className="text-[11px] text-zinc-600">Weekday Sales</span>
+            <span className="text-[11px] text-text-secondary">Weekday Sales</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[#1a472a]" />
-            <span className="text-[11px] text-zinc-600">High Volume</span>
+            <span className="text-[11px] text-text-secondary">High Volume</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[#a1a1aa]" />
-            <span className="text-[11px] text-zinc-600">Weekend</span>
+            <span className="text-[11px] text-text-secondary">Weekend</span>
           </div>
         </div>
 
         {/* Summary */}
-        <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
+        <div className="mt-3 flex items-center gap-2 text-xs text-text-tertiary">
           <span>
             14-day average:{" "}
             <span className="font-semibold text-zinc-700">
@@ -154,9 +154,9 @@ export function SalesTrendChart() {
         </div>
 
         {/* Today highlight */}
-        <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-1.5">
+        <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-surface px-3 py-1.5">
           <span className="h-2 w-2 rounded-full bg-pawn-gold" />
-          <span className="text-xs font-medium text-emerald-800">
+          <span className="text-xs font-medium text-emerald-text">
             {formatPesoFull(1284500)} Today
           </span>
         </div>

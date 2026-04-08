@@ -139,7 +139,7 @@ export default function ItemsForSalePage() {
   return (
     <div className="space-y-3 pb-4">
       {/* ── Filter Bar ─────────────────────────────────────── */}
-      <div className="flex flex-wrap items-end justify-between gap-3 bg-white p-3 rounded-lg border border-zinc-200">
+      <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main transition-colors duration-300">
         <div className="flex flex-wrap items-end gap-3">
           {isSuperAdmin && (
             <FilterSelect label="Branch" options={branchOptions} value={branch} onChange={setBranch} />
@@ -147,23 +147,23 @@ export default function ItemsForSalePage() {
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Search</label>
+            <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none focus:border-emerald-500 w-44"
+              className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none focus:border-emerald-500 w-44"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md border border-zinc-200 overflow-hidden">
+          <div className="flex rounded-md border border-border-main overflow-hidden">
             <button
               onClick={() => setSaleViewMode("current")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"
+                saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
               }`}
             >
               Current Month
@@ -171,7 +171,7 @@ export default function ItemsForSalePage() {
             <button
               onClick={() => setSaleViewMode("history")}
               className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"
+                saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
               }`}
             >
               History
@@ -207,14 +207,14 @@ export default function ItemsForSalePage() {
               </p>
             </div>
           </div>
-          <button className="text-[10px] font-bold text-orange-700 hover:text-orange-900 border border-orange-300 rounded px-3 py-1.5 transition-colors bg-white">
+          <button className="text-[10px] font-bold text-orange-700 hover:text-orange-900 border border-orange-300 rounded px-3 py-1.5 transition-colors bg-surface">
             Review Items
           </button>
         </div>
       )}
 
       {/* ── Items For Sale Table ────────────────────────────── */}
-      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -248,14 +248,14 @@ export default function ItemsForSalePage() {
                 saleItems.map((item, idx) => (
                   <tr
                     key={item.id || item.itemId}
-                    className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}
+                    className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}
                   >
                     <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700">{item.itemName}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.branch}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.availableDate}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-zinc-800">
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.availableDate}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-text-primary">
                       &#8369;{item.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2">
@@ -293,7 +293,7 @@ export default function ItemsForSalePage() {
       </div>
 
       {/* ── Pagination ─────────────────────────────────────── */}
-      <div className="rounded-lg border border-zinc-200 bg-white">
+      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <Pagination
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}

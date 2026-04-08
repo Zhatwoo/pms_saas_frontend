@@ -107,14 +107,14 @@ export default function PawnTransactionsPage() {
     <div className="space-y-3 pb-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-emerald-900 leading-tight">Transactions</h1>
-          <p className="text-xs font-medium text-zinc-500 mt-0.5">Manage and monitor daily pawn operations.</p>
+          <h1 className="text-xl font-bold text-emerald-text leading-tight">Transactions</h1>
+          <p className="text-xs font-medium text-text-tertiary mt-0.5">Manage and monitor daily pawn operations.</p>
         </div>
 
         {/* Branch Selector — Only visible for Super Admin */}
         {isSuperAdmin && (
           <div className="flex items-center gap-3">
-            <div className="bg-white border text-xs text-zinc-800 rounded-md overflow-hidden flex items-center h-8 px-2 cursor-pointer shadow-sm">
+            <div className="bg-surface border border-border-main text-xs text-text-primary rounded-md overflow-hidden flex items-center h-8 px-2 cursor-pointer shadow-sm">
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}

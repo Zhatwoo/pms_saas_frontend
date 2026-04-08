@@ -17,35 +17,35 @@ interface ItemsAttentionProps {
 
 export function ItemsAttention({ items = [] }: ItemsAttentionProps) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-5">
+    <div className="rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
       <div className="mb-4">
-        <h3 className="text-sm font-semibold text-zinc-900">
+        <h3 className="text-sm font-semibold text-text-primary">
           Items Requiring Attention
         </h3>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-text-tertiary">
           Contracts near expiration or overdue
         </p>
       </div>
 
       <div className="space-y-3">
         {items.length === 0 ? (
-          <div className="text-sm text-zinc-500 py-4 text-center">No items require attention</div>
+          <div className="text-sm text-text-tertiary py-4 text-center">No items require attention</div>
         ) : (
           items.map((item) => (
             <div
               key={item.id}
-              className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
+              className="rounded-md border border-border-subtle bg-surface-secondary p-3"
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-zinc-800">
+                  <p className="text-sm font-medium text-text-primary">
                     {item.name}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-400">
+                  <p className="mt-0.5 text-xs text-text-muted">
                     {item.contract}
                   </p>
                 </div>
-                <span className="text-sm font-semibold text-zinc-900">
+                <span className="text-sm font-semibold text-text-primary">
                   {item.amount}
                 </span>
               </div>

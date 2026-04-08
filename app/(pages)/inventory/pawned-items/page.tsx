@@ -59,7 +59,7 @@ const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
 
 // ─── Renewal Details ──────────────────────────────────────────
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-zinc-400 text-[10px]">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-text-muted text-[10px]">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
@@ -67,8 +67,8 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
           <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-zinc-500">{r.date}</span>
-          <span className="text-[10px] font-bold text-zinc-700">₱{r.amount.toLocaleString()}</span>
+          <span className="text-[10px] text-text-tertiary">{r.date}</span>
+          <span className="text-[10px] font-bold text-text-secondary">₱{r.amount.toLocaleString()}</span>
         </div>
       ))}
     </div>
@@ -87,7 +87,7 @@ function ViewModal({ item, onClose, onSaveRemarks, userRole }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl border border-zinc-200 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="bg-emerald-900 px-6 py-4 flex items-center justify-between">
           <div>
             <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Item #{item.itemId}</p>
@@ -97,40 +97,40 @@ function ViewModal({ item, onClose, onSaveRemarks, userRole }: {
         </div>
         <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
-            <div><p className="text-[10px] uppercase text-zinc-400 font-bold">Category</p><p className="text-sm text-zinc-800">{item.category}</p></div>
-            <div><p className="text-[10px] uppercase text-zinc-400 font-bold">Branch</p><p className="text-sm text-zinc-800">{item.branch}</p></div>
-            <div><p className="text-[10px] uppercase text-zinc-400 font-bold">Pawn Date</p><p className="text-sm text-zinc-800">{item.pawnDate}</p></div>
-            <div><p className="text-[10px] uppercase text-zinc-400 font-bold">Renewal Count</p><p className="text-sm text-zinc-800 font-bold">{item.renewalCount}x</p></div>
+            <div><p className="text-[10px] uppercase text-text-muted font-bold">Category</p><p className="text-sm text-text-primary">{item.category}</p></div>
+            <div><p className="text-[10px] uppercase text-text-muted font-bold">Branch</p><p className="text-sm text-text-primary">{item.branch}</p></div>
+            <div><p className="text-[10px] uppercase text-text-muted font-bold">Pawn Date</p><p className="text-sm text-text-primary">{item.pawnDate}</p></div>
+            <div><p className="text-[10px] uppercase text-text-muted font-bold">Renewal Count</p><p className="text-sm text-text-primary font-bold">{item.renewalCount}x</p></div>
           </div>
           {item.status === "Expired" && (
             <div className="rounded-lg border border-red-200 bg-red-50/50 p-3 space-y-2">
               <p className="text-[10px] font-bold uppercase text-red-600 tracking-wider">Expired Item — QR Security Info</p>
-              {item.originalPhoto && <div><p className="text-[10px] text-zinc-500">Original Photo:</p><p className="text-xs text-zinc-700">{item.originalPhoto}</p></div>}
-              {item.conditionReport && <div><p className="text-[10px] text-zinc-500">Condition Report:</p><p className="text-xs text-zinc-700">{item.conditionReport}</p></div>}
-              {item.qrCode && <div><p className="text-[10px] text-zinc-500">QR Code:</p><p className="text-xs font-mono text-zinc-700">{item.qrCode}</p></div>}
+              {item.originalPhoto && <div><p className="text-[10px] text-text-tertiary">Original Photo:</p><p className="text-xs text-text-secondary">{item.originalPhoto}</p></div>}
+              {item.conditionReport && <div><p className="text-[10px] text-text-tertiary">Condition Report:</p><p className="text-xs text-text-secondary">{item.conditionReport}</p></div>}
+              {item.qrCode && <div><p className="text-[10px] text-text-tertiary">QR Code:</p><p className="text-xs font-mono text-text-secondary">{item.qrCode}</p></div>}
             </div>
           )}
           <div>
-            <p className="text-[10px] uppercase text-zinc-400 font-bold mb-2">Renewal History</p>
+            <p className="text-[10px] uppercase text-text-muted font-bold mb-2">Renewal History</p>
             <RenewalDetails renewals={item.renewals} />
           </div>
           <div>
-            <p className="text-[10px] uppercase text-zinc-400 font-bold mb-1">Remarks / Notes</p>
+            <p className="text-[10px] uppercase text-text-muted font-bold mb-1">Remarks / Notes</p>
             {canEdit ? (
               <textarea
                 value={editRemarks}
                 onChange={(e) => setEditRemarks(e.target.value)}
                 rows={3}
                 placeholder="Add remarks about item condition, defects, investigations..."
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-emerald-500 resize-none"
+                className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none focus:border-emerald-500 resize-none"
               />
             ) : (
-              <p className="text-xs text-zinc-600 bg-zinc-50 rounded-md p-2 border">{item.remarks || "No remarks"}</p>
+              <p className="text-xs text-text-secondary bg-surface-secondary rounded-md p-2 border border-border-subtle">{item.remarks || "No remarks"}</p>
             )}
           </div>
         </div>
-        <div className="border-t border-zinc-200 px-6 py-3 flex justify-end gap-2 bg-zinc-50">
-          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-zinc-600 rounded-md border border-zinc-300 hover:bg-zinc-100">Close</button>
+        <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">
+          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
           {canEdit && (
             <button
               onClick={() => { onSaveRemarks(item.id, editRemarks); onClose(); }}
@@ -239,19 +239,19 @@ export default function PawnedItemsPage() {
   return (
     <div className="space-y-3 pb-4">
       {/* Filters and Controls */}
-      <div className="flex flex-wrap items-end justify-between gap-3 bg-white p-3 rounded-lg border border-zinc-200">
+      <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main transition-colors duration-300">
         <div className="flex flex-wrap items-end gap-3">
           {isSuperAdmin && <FilterSelect label="Branch" options={branchOptions} value={branch} onChange={setBranch} />}
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Search</label>
+            <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none focus:border-emerald-500 w-44"
+              className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none focus:border-emerald-500 w-44"
             />
           </div>
         </div>
@@ -263,11 +263,11 @@ export default function PawnedItemsPage() {
             </svg>
             QR Scan
           </button>
-          <div className="flex rounded-md border border-zinc-200 overflow-hidden">
-            <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+          <div className="flex rounded-md border border-border-main overflow-hidden">
+            <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
               List
             </button>
-            <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+            <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
               Calendar
             </button>
           </div>
@@ -275,7 +275,7 @@ export default function PawnedItemsPage() {
       </div>
 
       {viewMode === "list" && (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -293,19 +293,19 @@ export default function PawnedItemsPage() {
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <>
-                      <tr key={item.itemId} className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}>
+                      <tr key={item.itemId} className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700">{item.itemName}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.branch}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.pawnDate}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.pawnDate}</td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2">
                           <button onClick={() => setExpandedRow(expandedRow === item.itemId ? null : item.itemId)} className="text-[10px] font-bold text-emerald-700 hover:underline">
                             {item.renewalCount}x ▾
                           </button>
                         </td>
-                        <td className="px-3 py-2 text-xs text-zinc-500 max-w-[120px] truncate" title={item.remarks}>{item.remarks || "—"}</td>
+                        <td className="px-3 py-2 text-xs text-text-tertiary max-w-[120px] truncate" title={item.remarks}>{item.remarks || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
                           <div className="inline-flex items-center gap-1">
                             <button onClick={() => setViewingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
@@ -346,7 +346,7 @@ export default function PawnedItemsPage() {
       )}
 
       {viewMode === "calendar" && (
-        <div className="flex items-center justify-center rounded-lg border border-zinc-200 bg-white py-16">
+        <div className="flex items-center justify-center rounded-lg border border-border-main bg-surface py-16 transition-colors duration-300">
           <div className="text-center">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-zinc-300">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
@@ -357,7 +357,7 @@ export default function PawnedItemsPage() {
         </div>
       )}
 
-      <div className="rounded-lg border border-zinc-200 bg-white">
+      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <Pagination currentPage={currentPage} totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
       </div>
 

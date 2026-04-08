@@ -24,7 +24,7 @@ function formatPeso(amount: number): string {
 
 export function BranchSalesTable() {
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
       <div className="bg-emerald-900 px-4 py-3">
         <h3 className="text-sm font-bold text-pawn-gold">
@@ -35,17 +35,17 @@ export function BranchSalesTable() {
       {/* Table */}
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-zinc-200 bg-zinc-50">
-            <th className="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+          <tr className="border-b border-border-main bg-surface-secondary">
+            <th className="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               Date
             </th>
-            <th className="px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+            <th className="px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               TXN
             </th>
-            <th className="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+            <th className="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               Total Sales
             </th>
-            <th className="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+            <th className="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               Share
             </th>
           </tr>
@@ -54,26 +54,26 @@ export function BranchSalesTable() {
           {branches.map((branch, idx) => (
             <tr
               key={branch.name}
-              className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"}`}
+              className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"}`}
             >
-              <td className="px-4 py-2 text-xs text-zinc-700">
+              <td className="px-4 py-2 text-xs text-text-secondary">
                 {branch.name}
               </td>
-              <td className="px-4 py-2 text-center text-xs text-zinc-700">
+              <td className="px-4 py-2 text-center text-xs text-text-secondary">
                 {branch.txn}
               </td>
-              <td className="px-4 py-2 text-right text-xs font-semibold text-zinc-800">
+              <td className="px-4 py-2 text-right text-xs font-semibold text-text-primary">
                 {formatPeso(branch.sales)}
               </td>
               <td className="px-4 py-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-100">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-secondary">
                     <div
                       className={`h-full rounded-full ${barColors[idx]}`}
                       style={{ width: `${branch.share}%` }}
                     />
                   </div>
-                  <span className="w-10 text-right text-[10px] font-medium text-zinc-500">
+                  <span className="w-10 text-right text-[10px] font-medium text-text-tertiary">
                     {branch.share}%
                   </span>
                 </div>
@@ -82,11 +82,11 @@ export function BranchSalesTable() {
           ))}
         </tbody>
         <tfoot>
-          <tr className="border-t-2 border-zinc-300 bg-zinc-50">
-            <td className="px-4 py-2.5 text-xs font-bold text-zinc-800">
+          <tr className="border-t-2 border-border-main bg-surface-secondary">
+            <td className="px-4 py-2.5 text-xs font-bold text-text-primary">
               Monthly Total
             </td>
-            <td className="px-4 py-2.5 text-center text-xs font-bold text-zinc-800">
+            <td className="px-4 py-2.5 text-center text-xs font-bold text-text-primary">
               OVERALL TOTAL
             </td>
             <td className="px-4 py-2.5 text-right text-xs font-bold text-emerald-700">

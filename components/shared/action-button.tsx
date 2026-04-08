@@ -2,12 +2,12 @@ import type { ReactNode } from "react";
 
 const variants = {
   primary: "bg-pawn-sidebar text-pawn-gold border-emerald-700",
-  outline: "bg-white text-pawn-sidebar border-zinc-400",
+  outline: "bg-surface text-pawn-sidebar border-border-main",
   danger: "bg-red-50 text-red-600 border-red-300",
   renew: "bg-yellow-100 text-orange-600 border-orange-600",
   redeem: "bg-green-50 text-lime-700 border-lime-700",
   buyback: "bg-sky-100 text-blue-800 border-blue-800",
-  pawn: "bg-zinc-100 text-emerald-800 border-emerald-700",
+  pawn: "bg-surface-secondary text-emerald-800 border-emerald-700",
   sales: "bg-purple-800/40 text-purple-800 border-purple-800",
 } as const;
 

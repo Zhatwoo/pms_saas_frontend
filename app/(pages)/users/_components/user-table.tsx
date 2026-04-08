@@ -19,7 +19,7 @@ function RoleBadge({ role }: { role: UserRole }) {
   const className =
     role === "ADMIN"
       ? "bg-emerald-950 text-emerald-50"
-      : "bg-zinc-200 text-zinc-700";
+      : "bg-badge-muted-bg text-badge-muted-text";
 
   return (
     <span
@@ -96,7 +96,7 @@ function ActionsMenu({ username }: { username: string }) {
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
         aria-label={`Open actions for ${username}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -111,20 +111,20 @@ function ActionsMenu({ username }: { username: string }) {
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-[70] w-36 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg"
+            className="fixed z-[70] w-36 rounded-lg border border-border-main bg-surface py-1 shadow-lg"
             style={{ top: menuPosition.top, left: menuPosition.left }}
           >
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="block w-full px-3 py-2 text-left text-xs text-zinc-700 hover:bg-zinc-50"
+              className="block w-full px-3 py-2 text-left text-xs text-text-secondary hover:bg-surface-hover"
             >
               Edit user
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="block w-full px-3 py-2 text-left text-xs text-zinc-700 hover:bg-zinc-50"
+              className="block w-full px-3 py-2 text-left text-xs text-text-secondary hover:bg-surface-hover"
             >
               Deactivate
             </button>
@@ -144,15 +144,15 @@ function ActionsMenu({ username }: { username: string }) {
 
 export function UserTable({ users, totalUsers }: UserTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-      <div className="flex items-center justify-between bg-white px-4 py-3">
+    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+      <div className="flex items-center justify-between bg-surface px-4 py-3">
         <div>
-          <h3 className="text-sm font-bold text-zinc-800">User Accounts</h3>
-          <p className="mt-1 text-xs text-zinc-500">
+          <h3 className="text-sm font-bold text-text-primary">User Accounts</h3>
+          <p className="mt-1 text-xs text-text-tertiary">
             Showing {users.length} of {totalUsers} users
           </p>
         </div>
-        <p className="text-xs text-zinc-500">System access and branch assignments</p>
+        <p className="text-xs text-text-tertiary">System access and branch assignments</p>
       </div>
 
       <div className="overflow-x-auto">
@@ -189,26 +189,26 @@ export function UserTable({ users, totalUsers }: UserTableProps) {
             {users.map((user, index) => (
               <tr
                 key={user.id}
-                className={`border-t border-zinc-100 ${
-                  index % 2 === 0 ? "bg-white" : "bg-zinc-50"
+                className={`border-t border-border-subtle ${
+                  index % 2 === 0 ? "bg-surface" : "bg-surface-secondary"
                 }`}
               >
-                <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-zinc-700">
+                <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-secondary">
                   {user.username}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700">
+                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                   {user.fullName}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-600">
+                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                   {user.email}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
                   <RoleBadge role={user.role} />
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-600">
+                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                   {user.branch}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-600">
+                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                   {user.created}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
@@ -224,7 +224,7 @@ export function UserTable({ users, totalUsers }: UserTableProps) {
       </div>
 
       {users.length === 0 && (
-        <div className="border-t border-zinc-100 px-4 py-10 text-center text-sm text-zinc-500">
+        <div className="border-t border-border-subtle px-4 py-10 text-center text-sm text-text-tertiary">
           No users match the current search and filters.
         </div>
       )}

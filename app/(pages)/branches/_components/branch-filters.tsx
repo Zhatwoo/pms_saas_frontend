@@ -32,10 +32,10 @@ export function BranchFilters({
         onChange={onStatusChange}
       />
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-medium text-zinc-500">Search</label>
+        <label className="text-xs font-medium text-text-tertiary">Search</label>
         <div className="relative">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
             width="14"
             height="14"
             viewBox="0 0 24 24"
@@ -53,7 +53,7 @@ export function BranchFilters({
             placeholder="Search branches..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-64 rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 focus:border-pawn-sidebar"
+            className="w-64 rounded-lg border border-input-border bg-input-bg py-2 pl-9 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors duration-200 focus:border-pawn-sidebar"
           />
         </div>
       </div>

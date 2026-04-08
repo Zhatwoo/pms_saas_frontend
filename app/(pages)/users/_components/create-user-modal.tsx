@@ -88,7 +88,7 @@ export function CreateUserModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl"
+        className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="bg-emerald-900 px-6 py-5">
@@ -134,7 +134,7 @@ export function CreateUserModal({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
                 Username
               </label>
               <input
@@ -142,12 +142,12 @@ export function CreateUserModal({
                 value={form.username}
                 onChange={(event) => updateField("username", event.target.value)}
                 placeholder="john_doe"
-                className="h-11 w-full rounded-md border border-zinc-300 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
                 Full Name
               </label>
               <input
@@ -155,12 +155,12 @@ export function CreateUserModal({
                 value={form.fullName}
                 onChange={(event) => updateField("fullName", event.target.value)}
                 placeholder="John Doe"
-                className="h-11 w-full rounded-md border border-zinc-300 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
                 Email Address
               </label>
               <input
@@ -168,7 +168,7 @@ export function CreateUserModal({
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
                 placeholder="johndoe@gmail.com"
-                className="h-11 w-full rounded-md border border-zinc-300 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               />
             </div>
 
@@ -181,7 +181,7 @@ export function CreateUserModal({
                 value={form.password}
                 onChange={(event) => updateField("password", event.target.value)}
                 placeholder="At least 6 characters"
-                className="h-11 w-full rounded-md border border-zinc-300 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               />
             </div>
 
@@ -192,7 +192,7 @@ export function CreateUserModal({
               <select
                 value={form.role}
                 onChange={(event) => updateField("role", event.target.value as UserRole)}
-                className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               >
                 {roleOptions.map((role) => (
                   <option key={role} value={role}>
@@ -209,7 +209,7 @@ export function CreateUserModal({
               <select
                 value={form.branch}
                 onChange={(event) => updateField("branch", event.target.value)}
-                className="h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               >
                 {branches.map((branch) => (
                   <option key={branch} value={branch}>
@@ -220,15 +220,15 @@ export function CreateUserModal({
             </div>
           </div>
 
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-900">
+          <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
             New users are added to the table immediately for now. Backend persistence can be connected next once the users API is ready.
           </div>
 
-          <div className="flex flex-col-reverse gap-2 border-t border-zinc-200 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
+              className="rounded-md border border-border-main px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
             >
               Cancel
             </button>

@@ -127,7 +127,7 @@ function ActionsDropdown({ itemId }: { itemId: string }) {
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover"
         title={`Actions for ${itemId}`}
       >
         <svg
@@ -142,16 +142,16 @@ function ActionsDropdown({ itemId }: { itemId: string }) {
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 z-10 mt-1 w-28 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
+        <div className="absolute right-0 z-10 mt-1 w-28 rounded-lg border border-border-main bg-surface py-1 shadow-lg">
           <button
             onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-zinc-700 hover:bg-zinc-50"
+            className="w-full px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
           >
             View
           </button>
           <button
             onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-zinc-700 hover:bg-zinc-50"
+            className="w-full px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
           >
             Edit
           </button>
@@ -203,7 +203,7 @@ export function InventoryTable() {
       />
 
       {/* Pagination */}
-      <div className="rounded-lg border border-zinc-200 bg-white">
+      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <Pagination
           currentPage={currentPage}
           totalPages={7}

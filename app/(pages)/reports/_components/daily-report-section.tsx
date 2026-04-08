@@ -21,10 +21,10 @@ const downloadIcon = (
 
 export function DailyReportSection() {
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
-      <div className="border-b border-zinc-200 px-5 py-4">
-        <h3 className="text-sm font-semibold text-zinc-900">
+      <div className="border-b border-border-main px-5 py-4">
+        <h3 className="text-sm font-semibold text-text-primary">
           Daily Sales Report (DSR) &mdash; April 1, 2026
         </h3>
         <p className="mt-1 text-[11px] text-zinc-400">
@@ -34,16 +34,16 @@ export function DailyReportSection() {
       </div>
 
       {/* 4-column grid */}
-      <div className="grid grid-cols-2 gap-px bg-zinc-100 lg:grid-cols-4">
-        <div className="bg-white p-4">
+      <div className="grid grid-cols-2 gap-px bg-border-subtle lg:grid-cols-4">
+        <div className="bg-surface p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
             Opening Balance
           </p>
-          <p className="mt-1.5 text-xl font-bold text-zinc-900">
+          <p className="mt-1.5 text-xl font-bold text-text-primary">
             {formatPeso(8420000)}
           </p>
         </div>
-        <div className="bg-white p-4">
+        <div className="bg-surface p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
             Total Sales
           </p>
@@ -51,7 +51,7 @@ export function DailyReportSection() {
             {formatPeso(1284500)}
           </p>
         </div>
-        <div className="bg-white p-4">
+        <div className="bg-surface p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
             Total Expenses
           </p>
@@ -59,19 +59,19 @@ export function DailyReportSection() {
             {formatPeso(342180)}
           </p>
         </div>
-        <div className="bg-white p-4">
+        <div className="bg-surface p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
             Net Total
           </p>
-          <p className="mt-1.5 text-xl font-bold text-zinc-900">
+          <p className="mt-1.5 text-xl font-bold text-text-primary">
             {formatPeso(942320)}
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-zinc-200 px-5 py-3">
-        <p className="text-[11px] text-zinc-400">
+      <div className="flex items-center justify-between border-t border-border-main px-5 py-3">
+        <p className="text-[11px] text-text-muted">
           This report is auto-generated. Download PDF for official records.
         </p>
         <button className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90">

@@ -83,14 +83,14 @@ export function BranchModal({
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-md animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-zinc-200 bg-white shadow-2xl">
+      <div className="relative z-10 w-full max-w-md animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
           <div>
-            <h2 className="text-base font-bold text-zinc-900">
+            <h2 className="text-base font-bold text-text-primary">
               {mode === "create" ? "Create New Branch" : "Edit Branch"}
             </h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-text-tertiary">
               {mode === "create"
                 ? "Add a new pawnshop branch location"
                 : "Update branch information"}
@@ -98,7 +98,7 @@ export function BranchModal({
           </div>
           <button
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-hover hover:text-text-secondary"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -111,7 +111,7 @@ export function BranchModal({
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
           {/* Branch ID — auto-generated, read-only */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700">
+            <label className="text-xs font-semibold text-text-secondary">
               Branch ID
             </label>
             <input
@@ -119,14 +119,14 @@ export function BranchModal({
               value={generatedId}
               readOnly
               disabled
-              className="cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-500 outline-none"
+              className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm font-semibold text-text-muted outline-none"
             />
-            <span className="text-[10px] text-zinc-400">Auto-generated and cannot be edited</span>
+            <span className="text-[10px] text-text-muted">Auto-generated and cannot be edited</span>
           </div>
 
           {/* Branch Name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700">
+            <label className="text-xs font-semibold text-text-secondary">
               Branch Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -134,8 +134,8 @@ export function BranchModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. BGC Branch"
-              className={`rounded-lg border bg-white px-3 py-2 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 focus:border-pawn-sidebar ${
-                errors.name ? "border-red-400" : "border-zinc-300"
+              className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-pawn-sidebar transition-colors duration-200 ${
+                errors.name ? "border-red-400" : "border-input-border"
               }`}
             />
             {errors.name && (
@@ -145,7 +145,7 @@ export function BranchModal({
 
           {/* Location */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700">
+            <label className="text-xs font-semibold text-text-secondary">
               Location <span className="text-red-500">*</span>
             </label>
             <input
@@ -153,8 +153,8 @@ export function BranchModal({
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Bonifacio Global City, Taguig"
-              className={`rounded-lg border bg-white px-3 py-2 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 focus:border-pawn-sidebar ${
-                errors.location ? "border-red-400" : "border-zinc-300"
+              className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-pawn-sidebar transition-colors duration-200 ${
+                errors.location ? "border-red-400" : "border-input-border"
               }`}
             />
             {errors.location && (
@@ -164,14 +164,14 @@ export function BranchModal({
 
           {/* Status */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-zinc-700">
+            <label className="text-xs font-semibold text-text-secondary">
               Status <span className="text-red-500">*</span>
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className={`rounded-lg border bg-white px-3 py-2 text-sm text-zinc-800 outline-none focus:border-pawn-sidebar ${
-                errors.status ? "border-red-400" : "border-zinc-300"
+              className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-pawn-sidebar transition-colors duration-200 ${
+                errors.status ? "border-red-400" : "border-input-border"
               }`}
             >
               {statusOptions.map((s) => (
@@ -190,7 +190,7 @@ export function BranchModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
+              className="rounded-lg border border-border-main bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
             >
               Cancel
             </button>

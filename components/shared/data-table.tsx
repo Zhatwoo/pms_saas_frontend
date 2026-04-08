@@ -20,7 +20,7 @@ export function DataTable({
   headerClassName = "bg-emerald-900 text-amber-400",
 }: DataTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       <table className="w-full text-sm">
         <thead>
           <tr className={headerClassName}>
@@ -44,12 +44,12 @@ export function DataTable({
           {data.map((row, idx) => (
             <tr
               key={idx}
-              className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"}`}
+              className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"}`}
             >
               {columns.map((col) => (
                 <td
                   key={col.key}
-                  className={`px-3 py-2 text-xs text-zinc-700 ${
+                  className={`px-3 py-2 text-xs text-text-secondary ${
                     col.align === "center"
                       ? "text-center"
                       : col.align === "right"

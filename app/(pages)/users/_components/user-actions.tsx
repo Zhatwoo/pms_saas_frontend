@@ -78,10 +78,10 @@ export function UserActions({
   onCreateUser,
 }: UserActionsProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-col gap-4 rounded-lg border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div className="relative w-full xl:max-w-md">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
             {searchIcon}
           </span>
           <input
@@ -89,7 +89,7 @@ export function UserActions({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search users by username, name, or email"
-            className="h-10 w-full rounded-md border border-zinc-300 bg-white pl-10 pr-4 text-sm text-zinc-800 outline-none transition-colors placeholder:text-zinc-400 focus:border-emerald-700"
+            className="h-10 w-full rounded-md border border-input-border bg-input-bg pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-700"
           />
         </div>
 
@@ -122,7 +122,7 @@ export function UserActions({
                 className={`rounded border px-4 py-2 text-xs font-bold transition-opacity hover:opacity-80 ${
                   isActive
                     ? "border-emerald-700 bg-emerald-100 text-emerald-800"
-                    : "border-zinc-300 bg-white text-zinc-600"
+                    : "border-border-main bg-surface text-text-secondary"
                 }`}
               >
                 {tab.label}
@@ -132,14 +132,14 @@ export function UserActions({
         </div>
 
         <div className="flex items-center gap-3">
-          <label htmlFor="users-branch" className="text-sm font-medium text-zinc-500">
+          <label htmlFor="users-branch" className="text-sm font-medium text-text-tertiary">
             Branch
           </label>
           <select
             id="users-branch"
             value={branchFilter}
             onChange={(event) => onBranchFilterChange(event.target.value)}
-            className="h-10 min-w-36 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-700 outline-none transition-colors focus:border-emerald-700"
+            className="h-10 min-w-36 rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-secondary outline-none transition-colors focus:border-emerald-700"
           >
             {branchOptions.map((branch) => (
               <option key={branch} value={branch}>

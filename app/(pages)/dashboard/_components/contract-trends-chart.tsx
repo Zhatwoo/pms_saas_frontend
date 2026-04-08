@@ -22,24 +22,24 @@ interface ContractTrendsChartProps {
 
 export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-5">
+    <div className="rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-900">
+          <h3 className="text-sm font-semibold text-text-primary">
             Contract Trends
           </h3>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-text-tertiary">
             Monthly active contracts overview
           </p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-700" />
-            <span className="text-xs text-zinc-600">Contracts</span>
+            <span className="text-xs text-text-secondary">Contracts</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
-            <span className="text-xs text-zinc-600">Redeemed</span>
+            <span className="text-xs text-text-secondary">Redeemed</span>
           </div>
         </div>
       </div>

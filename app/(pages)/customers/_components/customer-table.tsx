@@ -62,10 +62,10 @@ export function CustomerTable() {
   const [currentPage, setCurrentPage] = useState(1);
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <h3 className="text-base font-semibold text-emerald-800">
+        <h3 className="text-base font-semibold text-emerald-text">
           Customer Management
         </h3>
         <button className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
@@ -81,7 +81,7 @@ export function CustomerTable() {
           if (key === "actions") {
             return (
               <button
-                className="mx-auto flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-emerald-700"
+                className="mx-auto flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-emerald-700"
                 title={`View ${row.name}`}
               >
                 {eyeIcon}

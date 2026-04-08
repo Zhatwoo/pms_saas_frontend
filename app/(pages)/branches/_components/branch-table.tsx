@@ -89,7 +89,7 @@ function ActionsDropdown({
       <button
         ref={btnRef}
         onClick={toggleMenu}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover"
         title={`Actions for ${branchId}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -101,7 +101,7 @@ function ActionsDropdown({
       {open && (
         <div
           ref={menuRef}
-          className="fixed z-50 w-32 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg"
+          className="fixed z-50 w-32 rounded-lg border border-border-main bg-surface py-1 shadow-lg"
           style={{ top: pos.top, left: pos.left }}
         >
           <button
@@ -109,7 +109,7 @@ function ActionsDropdown({
               setOpen(false);
               onView();
             }}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-zinc-700 hover:bg-zinc-50"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -122,7 +122,7 @@ function ActionsDropdown({
               setOpen(false);
               onEdit();
             }}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-zinc-700 hover:bg-zinc-50"
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -160,27 +160,27 @@ function InventorySummaryBadge({
 }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className="text-xs font-semibold text-zinc-800">
+      <span className="text-xs font-semibold text-text-primary">
         {pawnedItems + forSaleItems} items
       </span>
-      <span className="text-[10px] text-zinc-400">{totalValue}</span>
+      <span className="text-[10px] text-text-muted">{totalValue}</span>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-white py-16">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border-main bg-surface py-16">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary text-text-muted">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       </div>
-      <p className="mt-4 text-sm font-semibold text-zinc-700">
+      <p className="mt-4 text-sm font-semibold text-text-primary">
         No branches found
       </p>
-      <p className="mt-1 text-xs text-zinc-400">
+      <p className="mt-1 text-xs text-text-muted">
         Try adjusting your search or filters, or create a new branch.
       </p>
     </div>
@@ -238,7 +238,7 @@ export function BranchTable({
             return (
               <button
                 onClick={() => onBranchClick(row as unknown as BranchRow)}
-                className="text-left text-xs font-semibold text-emerald-800 transition-colors hover:text-emerald-600 hover:underline"
+                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:text-emerald-600 hover:underline"
               >
                 {value}
               </button>
@@ -276,7 +276,7 @@ export function BranchTable({
       />
 
       {/* Pagination */}
-      <div className="rounded-lg border border-zinc-200 bg-white">
+      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

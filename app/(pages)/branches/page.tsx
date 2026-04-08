@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { BranchStats } from "./_components/branch-stats";
 import { BranchFilters } from "./_components/branch-filters";
 import { BranchTable } from "./_components/branch-table";
@@ -77,6 +78,7 @@ const mockBranches: BranchRow[] = [
 
 export default function BranchesPage() {
   const { user } = useAuth();
+  const { selectedBranch, isAllBranches, canSwitchBranch } = useBranch();
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,28 +96,53 @@ export default function BranchesPage() {
 
   // Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState<BranchRow | null>(null);
+  const [selectedBranchRow, setSelectedBranchRow] = useState<BranchRow | null>(
+    null,
+  );
 
-  // Stats
-  const activeBranches = mockBranches.filter((b) => b.status === "Active").length;
-  const maintenanceBranches = mockBranches.filter((b) => b.status === "Process").length;
+  // Filter branches by global branch selector
+  const branchScopedData = useMemo(() => {
+    if (isAllBranches || canSwitchBranch === false) {
+      // Super admin viewing "All" → show everything
+      // Non-superadmins: context returns only their branch, but on this
+      // management page they see all if role allows
+      if (canSwitchBranch && isAllBranches) return mockBranches;
+      if (!canSwitchBranch) {
+        // Non-superadmins see only their own branch
+        const own = mockBranches.filter(
+          (b) => b.branchId === user?.branchId,
+        );
+        return own.length > 0 ? own : mockBranches;
+      }
+      return mockBranches;
+    }
+    // Super admin selected a specific branch
+    return mockBranches.filter(
+      (b) => b.branchId === selectedBranch.id,
+    );
+  }, [selectedBranch, isAllBranches, canSwitchBranch, user?.branchId]);
 
-  // Compute total inventory value
-  const totalValue = mockBranches.reduce((acc, b) => {
+  // Stats — computed from scoped data
+  const activeBranches = branchScopedData.filter(
+    (b) => b.status === "Active",
+  ).length;
+  const maintenanceBranches = branchScopedData.filter(
+    (b) => b.status === "Process",
+  ).length;
+
+  const totalValue = branchScopedData.reduce((acc, b) => {
     const num = Number(b.totalValue.replace(/[₱,]/g, "")) || 0;
     return acc + num;
   }, 0);
   const formattedTotal = `₱${totalValue.toLocaleString()}`;
 
-  // Determine viewing context
-  const viewingContext =
-    user?.role === "superadmin" || user?.role === "admin"
-      ? "All Branches"
-      : mockBranches.find((b) => b.branchId === user?.branchId)?.name ||
-        "Your Branch";
+  // Viewing context label
+  const viewingLabel = isAllBranches
+    ? "All Branches"
+    : selectedBranch.name;
 
   function handleBranchClick(branch: BranchRow) {
-    setSelectedBranch(branch);
+    setSelectedBranchRow(branch);
     setDrawerOpen(true);
   }
 
@@ -151,9 +178,8 @@ export default function BranchesPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-zinc-400">
-          </p>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="text-xs text-zinc-400"></p>
+          <p className="mt-1 text-sm text-text-tertiary">
             Create, edit, and manage all pawnshop branches.
           </p>
         </div>
@@ -179,7 +205,7 @@ export default function BranchesPage() {
       </div>
 
       {/* Branch Context Indicator */}
-      <div className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/50 px-4 py-2.5">
+      <div className="flex items-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface px-4 py-2.5 transition-colors duration-300">
         <svg
           width="14"
           height="14"
@@ -194,15 +220,20 @@ export default function BranchesPage() {
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
-        <span className="text-xs text-emerald-700">
+        <span className="text-xs text-emerald-text">
           Viewing:{" "}
-          <span className="font-bold">{viewingContext}</span>
+          <span className="font-bold">{viewingLabel}</span>
+          {!isAllBranches && canSwitchBranch && (
+            <span className="ml-2 text-emerald-500">
+              — Filtered from header selector
+            </span>
+          )}
         </span>
       </div>
 
       {/* Stats */}
       <BranchStats
-        totalBranches={mockBranches.length}
+        totalBranches={branchScopedData.length}
         activeBranches={activeBranches}
         totalInventoryValue={formattedTotal}
         maintenanceBranches={maintenanceBranches}
@@ -218,7 +249,7 @@ export default function BranchesPage() {
 
       {/* Table */}
       <BranchTable
-        branches={mockBranches}
+        branches={branchScopedData}
         searchQuery={searchQuery}
         statusFilter={statusFilter}
         onBranchClick={handleBranchClick}
@@ -237,10 +268,11 @@ export default function BranchesPage() {
 
       {/* Detail Drawer */}
       <BranchDetailDrawer
-        branch={selectedBranch}
+        branch={selectedBranchRow}
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />
     </div>
   );
 }
+
