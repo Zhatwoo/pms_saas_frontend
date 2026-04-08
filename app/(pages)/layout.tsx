@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { getNavForRole } from "@/lib/constants";
 
@@ -10,6 +12,15 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const { user, logout, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Only redirect if definitively not logged in
+    const hasToken = document.cookie.includes("pms_token");
+    if (!isLoading && !user && !hasToken) {
+      router.replace("/login");
+    }
+  }, [isLoading, user, router]);
 
   if (isLoading) {
     return (

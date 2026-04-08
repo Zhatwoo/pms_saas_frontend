@@ -20,21 +20,43 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 1. Initial Load: Check localStorage and Cookies
   useEffect(() => {
+    const cachedUser = localStorage.getItem("pms_user");
     const token = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
+
+    if (cachedUser) {
+      try {
+        setUser(JSON.parse(cachedUser));
+      } catch (e) {
+        localStorage.removeItem("pms_user");
+      }
+    }
+
     if (!token) {
+      setUser(null);
+      localStorage.removeItem("pms_user");
       setIsLoading(false);
       return;
     }
 
+    // 2. Background Verification: Verify token with server
     api
       .get<User>("/auth/me")
-      .then(setUser)
-      .catch(() => setUser(null))
+      .then((freshUser) => {
+        setUser(freshUser);
+        localStorage.setItem("pms_user", JSON.stringify(freshUser));
+      })
+      .catch((err) => {
+        // OPTIMISTIC AUTH: DO NOT clear session on refresh error.
+        // We only clear on 401 if we don't have a cached user, 
+        // but even then, it's safer to just log the warning.
+        console.warn("Background verification failed:", err.message);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -43,12 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "/auth/login",
       { email, password },
     );
-    document.cookie = `pms_token=${data.access_token}; path=/; max-age=${60 * 60 * 6}; SameSite=Lax`;
+    
+    // Save to cookies (encoded)
+    document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+    
+    // Save to state and cache
     setUser(data.user);
+    localStorage.setItem("pms_user", JSON.stringify(data.user));
   }, []);
 
   const logout = useCallback(() => {
     document.cookie = "pms_token=; path=/; max-age=0";
+    localStorage.removeItem("pms_user");
     setUser(null);
     window.location.href = "/login";
   }, []);

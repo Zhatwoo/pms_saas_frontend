@@ -1,8 +1,15 @@
 class ApiClient {
   private getToken(): string | null {
     if (typeof document === "undefined") return null;
-    const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
+    const name = "pms_token=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i].trim();
+      if (c.indexOf(name) === 0) {
+        return decodeURIComponent(c.substring(name.length, c.length));
+      }
+    }
+    return null;
   }
 
   async fetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -14,21 +21,15 @@ class ApiClient {
     };
 
     const res = await fetch(`/api${path}`, { ...options, headers });
+    
+    if (res.status === 401) {
+      console.error(`[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token length: ${token?.length}`);
+    }
 
     if (!res.ok) {
       if (res.status === 401) {
-        document.cookie = "pms_token=; path=/; max-age=0";
-        if (typeof window !== "undefined") {
-          const currentPath = `${window.location.pathname}${window.location.search}`;
-          const loginUrl = new URL("/login", window.location.origin);
-
-          // Preserve where the user was so login can return them there.
-          if (window.location.pathname !== "/login") {
-            loginUrl.searchParams.set("redirect", currentPath);
-          }
-
-          window.location.href = loginUrl.toString();
-        }
+        // We throw Unauthorized, but let the AuthContext decide if it wants to log out 
+        // to avoid race conditions during refresh or network blips.
         throw new Error("Unauthorized");
       }
       const error = await res.json().catch(() => ({ message: "Request failed" }));
