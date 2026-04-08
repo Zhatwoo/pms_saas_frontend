@@ -43,6 +43,7 @@ export default function EmployeeLayout({
       userInitials={initials} 
       onLogout={logout}
       branchName="Taguig Branch"
+      hideBranchSelector={true}
     >
       {children}
     </AppLayout>

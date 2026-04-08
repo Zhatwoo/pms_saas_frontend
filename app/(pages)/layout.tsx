@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { BranchProvider } from "@/contexts/branch-context";
 import { AppLayout } from "@/components/ui/app-layout";
 import { getNavForRole } from "@/lib/constants";
 
@@ -35,10 +34,8 @@ export default function ProtectedLayout({
     : user.email.charAt(0).toUpperCase();
 
   return (
-    <BranchProvider>
-      <AppLayout navGroups={navGroups} userInitials={initials} onLogout={logout}>
-        {children}
-      </AppLayout>
-    </BranchProvider>
+    <AppLayout navGroups={navGroups} userInitials={initials} onLogout={logout}>
+      {children}
+    </AppLayout>
   );
 }

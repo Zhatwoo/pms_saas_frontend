@@ -93,6 +93,37 @@ const auditLogs = [
 
 export default function EmployeeAuditLogsPage() {
   const [activeTab, setActiveTab] = useState("All Logs");
+  const [actionFilter, setActionFilter] = useState("All Actions");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredLogs = auditLogs.filter((log) => {
+    // Tab filter
+    const matchesTab = 
+      activeTab === "All Logs" || 
+      (activeTab === "Transaction Logs" && log.logType === "Transaction") ||
+      (activeTab === "Fund Transfer" && log.logType === "Fund Transfer") ||
+      (activeTab === "Item Transfer" && log.logType === "Item Transfer");
+
+    // Action filter
+    const matchesAction = 
+      actionFilter === "All Actions" || 
+      log.action === actionFilter;
+
+    // Status filter
+    const matchesStatus = 
+      statusFilter === "All Status" || 
+      log.status === statusFilter;
+
+    // Search query
+    const matchesSearch = 
+      searchQuery === "" || 
+      log.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      log.user.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesTab && matchesAction && matchesStatus && matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
@@ -105,10 +136,42 @@ export default function EmployeeAuditLogsPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="ALL ACTIVITY" value={28} subtitle="All log types" icon={activityIcon} borderColor="bg-emerald-600" />
-        <StatCard label="TRANSACTIONS" value={12} subtitle="Pawn-redeem-renew" icon={transactionIcon} borderColor="bg-blue-600" />
-        <StatCard label="FUND TRANSFERS" value={8} subtitle="Cash moves" icon={transferIcon} borderColor="bg-amber-500" />
-        <StatCard label="ITEM TRANSFERS" value={8} subtitle="Branch to Branch" icon={itemIcon} borderColor="bg-rose-500" />
+        <StatCard 
+          label="ALL ACTIVITY" 
+          value={auditLogs.length} 
+          subtitle="All log types" 
+          icon={activityIcon} 
+          borderColor={activeTab === "All Logs" ? "bg-emerald-600 scale-105" : "bg-emerald-200"} 
+          className={activeTab === "All Logs" ? "ring-2 ring-emerald-500/20" : ""}
+          onClick={() => setActiveTab("All Logs")}
+        />
+        <StatCard 
+          label="TRANSACTIONS" 
+          value={auditLogs.filter(l => l.logType === "Transaction").length} 
+          subtitle="Pawn-redeem-renew" 
+          icon={transactionIcon} 
+          borderColor={activeTab === "Transaction Logs" ? "bg-blue-600 scale-105" : "bg-blue-200"} 
+          className={activeTab === "Transaction Logs" ? "ring-2 ring-blue-500/20" : ""}
+          onClick={() => setActiveTab("Transaction Logs")}
+        />
+        <StatCard 
+          label="FUND TRANSFERS" 
+          value={auditLogs.filter(l => l.logType === "Fund Transfer").length} 
+          subtitle="Cash moves" 
+          icon={transferIcon} 
+          borderColor={activeTab === "Fund Transfer" ? "bg-amber-500 scale-105" : "bg-amber-200"} 
+          className={activeTab === "Fund Transfer" ? "ring-2 ring-amber-500/20" : ""}
+          onClick={() => setActiveTab("Fund Transfer")}
+        />
+        <StatCard 
+          label="ITEM TRANSFERS" 
+          value={auditLogs.filter(l => l.logType === "Item Transfer").length} 
+          subtitle="Branch to Branch" 
+          icon={itemIcon} 
+          borderColor={activeTab === "Item Transfer" ? "bg-rose-500 scale-105" : "bg-rose-200"} 
+          className={activeTab === "Item Transfer" ? "ring-2 ring-rose-500/20" : ""}
+          onClick={() => setActiveTab("Item Transfer")}
+        />
       </div>
 
       {/* Main Content Area */}
@@ -126,26 +189,56 @@ export default function EmployeeAuditLogsPage() {
               }`}
             >
               {tab}
-              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === tab ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>28</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${activeTab === tab ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
+                {tab === "All Logs" ? auditLogs.length : auditLogs.filter(l => 
+                  (tab === "Transaction Logs" && l.logType === "Transaction") ||
+                  (tab === "Fund Transfer" && l.logType === "Fund Transfer") ||
+                  (tab === "Item Transfer" && l.logType === "Item Transfer")
+                ).length}
+              </span>
             </button>
           ))}
         </div>
 
         {/* Filters */}
         <div className="p-4 bg-zinc-50/50 border-b border-zinc-100 flex flex-wrap items-center gap-3">
-          <input className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 w-full sm:w-64" placeholder="Search logs..." />
-          <select className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 text-zinc-600"><option>All Actions</option></select>
-          <select className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 text-zinc-600"><option>All Status</option></select>
+          <input 
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 w-full sm:w-64" 
+            placeholder="Search logs..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <select 
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 text-zinc-600 font-bold"
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+          >
+            <option>All Actions</option>
+            <option value="CREATE">CREATE</option>
+            <option value="TRANSFER">TRANSFER</option>
+            <option value="FAILED">FAILED</option>
+            <option value="REDEEM">REDEEM</option>
+          </select>
+          <select 
+            className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 text-zinc-600 font-bold"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option>All Status</option>
+            <option value="Success">Success</option>
+            <option value="Failed">Failed</option>
+            <option value="Pending">Pending</option>
+          </select>
           <div className="flex items-center gap-2">
             <input type="date" className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-[10px] outline-none" defaultValue="2026-03-01" />
             <span className="text-zinc-400">→</span>
             <input type="date" className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-[10px] outline-none" defaultValue="2026-03-30" />
           </div>
-          <span className="ml-auto text-[10px] font-bold text-zinc-400 uppercase">28 records</span>
+          <span className="ml-auto text-[10px] font-bold text-zinc-400 uppercase">{filteredLogs.length} records</span>
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-emerald-900/5 text-zinc-400">
@@ -155,56 +248,69 @@ export default function EmployeeAuditLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {auditLogs.map((log, i) => (
-                <tr key={i} className="hover:bg-zinc-50/50 transition-colors">
-                  <td className="px-4 py-3 align-top">
-                    <p className="text-xs font-bold text-zinc-800">{log.dateTime.split(" ")[0]}</p>
-                    <p className="text-[10px] text-zinc-400">{log.dateTime.split(" ")[1]}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${log.user.color}`}>
-                        {log.user.initials}
+              {filteredLogs.length > 0 ? (
+                filteredLogs.map((log, i) => (
+                  <tr key={i} className="hover:bg-zinc-50/50 transition-colors">
+                    <td className="px-4 py-3 align-top">
+                      <p className="text-xs font-bold text-zinc-800">{log.dateTime.split(" ")[0]}</p>
+                      <p className="text-[10px] text-zinc-400">{log.dateTime.split(" ")[1]}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold ${log.user.color}`}>
+                          {log.user.initials}
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-bold text-zinc-800">{log.user.name}</p>
+                          <p className="text-[10px] text-zinc-400">{log.user.role}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[11px] font-bold text-zinc-800">{log.user.name}</p>
-                        <p className="text-[10px] text-zinc-400">{log.user.role}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase ${
-                      log.logType === 'Transaction' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                      log.logType === 'Item Transfer' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
-                      'bg-purple-50 text-purple-700 border border-purple-100'
-                    }`}>
-                      {log.logType}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase ${
-                      log.action === 'FAILED' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 'bg-blue-50 text-blue-700 border border-blue-100'
-                    }`}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <p className="text-[11px] font-bold text-zinc-800">{log.details}</p>
-                    <p className="text-[10px] text-zinc-400 font-medium">{log.reference}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                     <StatusBadge label={log.status} variant={log.status === 'Success' ? 'green' : log.status === 'Failed' ? 'red' : 'orange'} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase ${
+                        log.logType === 'Transaction' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                        log.logType === 'Item Transfer' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
+                        'bg-purple-50 text-purple-700 border border-purple-100'
+                      }`}>
+                        {log.logType}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-md px-2 py-1 text-[10px] font-bold uppercase ${
+                        log.action === 'FAILED' ? 'bg-rose-50 text-rose-700 border border-rose-100' : 
+                        log.action === 'CREATE' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                        log.action === 'TRANSFER' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                        'bg-violet-50 text-violet-700 border border-violet-100'
+                      }`}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-[11px] font-bold text-zinc-800">{log.details}</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{log.reference}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                       <StatusBadge label={log.status} variant={log.status === 'Success' ? 'green' : log.status === 'Failed' ? 'red' : 'orange'} />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-4 py-20 text-center text-zinc-400 text-xs font-bold uppercase tracking-widest">
+                    No matching logs found
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Footer */}
         <div className="px-4 py-3 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between">
-           <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Showing 1-8 of 28 records</p>
-           <Pagination currentPage={1} totalPages={3} totalItems={28} itemsPerPage={8} onPageChange={() => {}} />
+           <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+             Showing {filteredLogs.length > 0 ? 1 : 0}-{filteredLogs.length} of {filteredLogs.length} records
+           </p>
+           <Pagination currentPage={1} totalPages={1} totalItems={filteredLogs.length} itemsPerPage={8} onPageChange={() => {}} />
         </div>
       </div>
     </div>

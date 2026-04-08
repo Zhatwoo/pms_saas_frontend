@@ -10,6 +10,7 @@ interface HeaderProps {
   userInitials?: string;
   notificationCount?: number;
   branchName?: string;
+  hideBranchSelector?: boolean;
 }
 
 function formatDateTime(): string {
@@ -98,6 +99,7 @@ export function Header({
   userInitials = "U",
   notificationCount = 0,
   branchName,
+  hideBranchSelector = false,
 }: HeaderProps) {
   const pathname = usePathname();
   const [time, setTime] = useState("");
@@ -120,8 +122,8 @@ export function Header({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Branch Selector – only visible to Super Admins */}
-        <BranchSelectorDropdown />
+        {/* Branch Selector – only visible to Super Admins and if not hidden */}
+        {!hideBranchSelector && <BranchSelectorDropdown />}
 
         {/* Clock */}
         <div className="flex items-center gap-2 rounded-full border border-border-main px-4 py-1.5 text-sm text-text-tertiary">

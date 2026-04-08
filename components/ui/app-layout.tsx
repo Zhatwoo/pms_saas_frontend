@@ -10,6 +10,7 @@ interface AppLayoutProps {
   userInitials?: string;
   notificationCount?: number;
   branchName?: string;
+  hideBranchSelector?: boolean;
   onLogout?: () => void;
   children: React.ReactNode;
 }
@@ -19,6 +20,7 @@ export function AppLayout({
   userInitials,
   notificationCount,
   branchName,
+  hideBranchSelector = false,
   onLogout,
   children,
 }: AppLayoutProps) {
@@ -37,6 +39,7 @@ export function AppLayout({
           userInitials={userInitials}
           notificationCount={notificationCount}
           branchName={branchName}
+          hideBranchSelector={hideBranchSelector}
         />
         <main className="flex-1 overflow-y-auto bg-pawn-content p-6 transition-colors duration-300">
           {children}

@@ -9,6 +9,7 @@ interface StatCardProps {
   icon?: ReactNode;
   borderColor?: string;
   className?: string;
+  onClick?: () => void;
 }
 
 export function StatCard({
@@ -20,10 +21,14 @@ export function StatCard({
   icon,
   borderColor = "border-emerald-700",
   className = "",
+  onClick,
 }: StatCardProps) {
   return (
     <div
-      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300 ${className}`}
+      onClick={onClick}
+      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-4 transition-all duration-300 ${
+        onClick ? "cursor-pointer hover:shadow-md hover:border-zinc-300 active:scale-[0.98]" : ""
+      } ${className}`}
     >
       <div className={`mb-3 h-1 w-full rounded-full ${borderColor}`} />
       <div className="flex items-start justify-between">
