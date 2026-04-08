@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/* ── Light theme (default) ──────────────────────────────── */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --pawn-sidebar: #1a472a;
+  --pawn-sidebar-light: #215635;
+  --pawn-gold: #d4a843;
+  --pawn-gold-light: #e0bc6a;
+  --pawn-content: #f0f7f0;
+  --pawn-section: #8aab8a;
+
+  /* Semantic surface tokens */
+  --surface: #ffffff;
+  --surface-secondary: #f9fafb;
+  --surface-hover: #f4f4f5;
+  --surface-raised: #ffffff;
+  --border: #e4e4e7;
+  --border-subtle: #f4f4f5;
+  --text-primary: #18181b;
+  --text-secondary: #3f3f46;
+  --text-tertiary: #71717a;
+  --text-muted: #a1a1aa;
+  --text-inverse: #ffffff;
+  --input-bg: #ffffff;
+  --input-border: #d4d4d8;
+  --header-bg: #ffffff;
+  --badge-muted-bg: #f4f4f5;
+  --badge-muted-text: #3f3f46;
+  --emerald-surface: #ecfdf5;
+  --emerald-border: #a7f3d0;
+  --emerald-text: #047857;
+}
+
+/* ── Dark theme ─────────────────────────────────────────── */
+.dark {
+  --background: #0c0f14;
+  --foreground: #e4e4e7;
+  --pawn-sidebar: #0f1f16;
+  --pawn-sidebar-light: #172b1f;
+  --pawn-gold: #e0bc6a;
+  --pawn-gold-light: #d4a843;
+  --pawn-content: #111518;
+  --pawn-section: #5a7a5a;
+
+  --surface: #181c23;
+  --surface-secondary: #1e2330;
+  --surface-hover: #252a38;
+  --surface-raised: #1e2330;
+  --border: #2a2f3d;
+  --border-subtle: #222738;
+  --text-primary: #e4e4e7;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --text-muted: #52525b;
+  --text-inverse: #18181b;
+  --input-bg: #1a1f2b;
+  --input-border: #2e3447;
+  --header-bg: #14181f;
+  --badge-muted-bg: #252a38;
+  --badge-muted-text: #a1a1aa;
+  --emerald-surface: #0b2118;
+  --emerald-border: #14532d;
+  --emerald-text: #34d399;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-pawn-sidebar: var(--pawn-sidebar);
+  --color-pawn-sidebar-light: var(--pawn-sidebar-light);
+  --color-pawn-gold: var(--pawn-gold);
+  --color-pawn-gold-light: var(--pawn-gold-light);
+  --color-pawn-content: var(--pawn-content);
+  --color-pawn-section: var(--pawn-section);
+
+  /* Semantic tokens */
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-raised: var(--surface-raised);
+  --color-border-main: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
+  --color-header-bg: var(--header-bg);
+  --color-badge-muted-bg: var(--badge-muted-bg);
+  --color-badge-muted-text: var(--badge-muted-text);
+  --color-emerald-surface: var(--emerald-surface);
+  --color-emerald-border: var(--emerald-border);
+  --color-emerald-text: var(--emerald-text);
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), 'Inter', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Animation keyframes */
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Dark mode overrides for select option elements ──── */
+.dark select option {
+  background-color: var(--surface);
+  color: var(--text-primary);
+}
