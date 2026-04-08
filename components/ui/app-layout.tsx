@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { NavGroup } from "@/types";
 import { Sidebar } from "@/components/ui/sidebar";
 import { Header } from "@/components/ui/header";
+import { useBranch } from "@/contexts/branch-context";
 
 interface AppLayoutProps {
   navGroups: NavGroup[];
@@ -25,6 +26,7 @@ export function AppLayout({
   children,
 }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { selectedBranch, isAllBranches } = useBranch();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -42,6 +44,12 @@ export function AppLayout({
           hideBranchSelector={hideBranchSelector}
         />
         <main className="flex-1 overflow-y-auto bg-pawn-content p-6 transition-colors duration-300">
+          <div className="mb-4 rounded-lg border border-emerald-border bg-emerald-surface px-4 py-2 text-xs text-emerald-text">
+            Showing data from:{" "}
+            <span className="font-semibold">
+              {isAllBranches ? "All Branches" : selectedBranch.name}
+            </span>
+          </div>
           {children}
         </main>
       </div>

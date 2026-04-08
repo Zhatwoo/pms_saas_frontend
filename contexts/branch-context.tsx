@@ -6,9 +6,12 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
 } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth-context";
+import { api } from "@/lib/api";
+import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 
 /* ── Branch option shape ─────────────────────────────────── */
 export interface BranchOption {
@@ -37,37 +40,93 @@ interface BranchContextValue {
   canSwitchBranch: boolean;
   /** Convenience: true if viewing "All Branches". */
   isAllBranches: boolean;
+  /** Force refresh branch options from API. */
+  refreshBranches: () => Promise<void>;
 }
 
 const BranchContext = createContext<BranchContextValue | null>(null);
 
-/* ── Mock branch list (will be replaced with API fetch) ─── */
-const MOCK_BRANCHES: BranchOption[] = [
-  { id: "001", name: "Head Office – Makati", location: "Makati City, Metro Manila" },
-  { id: "002", name: "BGC Branch", location: "Bonifacio Global City, Taguig" },
-  { id: "003", name: "Cebu City Branch", location: "Cebu City, Cebu" },
-  { id: "004", name: "Davao Branch", location: "Davao City, Davao del Sur" },
-  { id: "005", name: "Quezon City Branch", location: "Quezon City, Metro Manila" },
-  { id: "006", name: "Iloilo Branch", location: "Iloilo City, Western Visayas" },
-  { id: "007", name: "Calamba Branch", location: "Calamba City, Laguna" },
-];
+interface BranchApiItem {
+  branch_code: string;
+  name: string;
+  location: string;
+}
 
 /* ── Provider ────────────────────────────────────────────── */
 export function BranchProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "superadmin";
+  const [baseBranches, setBaseBranches] = useState<BranchOption[]>([]);
+
+  const loadBranches = useCallback(async () => {
+    try {
+      const data = await api.get<BranchApiItem[]>("/branches");
+      const normalized = (data || []).map((branch) => ({
+        id: branch.branch_code,
+        name: branch.name,
+        location: branch.location,
+      }));
+      setBaseBranches(normalized);
+    } catch {
+      // Keep previous selector options on transient failures.
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadBranches();
+  }, [loadBranches]);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const token = getTokenFromCookie();
+    if (token) {
+      void supabase.realtime.setAuth(token);
+    }
+
+    const channel = supabase
+      .channel("branch-selector-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "branches" },
+        () => {
+          void loadBranches();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadBranches]);
 
   // Build branch list: superadmin gets "All" + every branch; others just their own
   const branches = useMemo<BranchOption[]>(() => {
     if (isSuperAdmin) {
-      return [ALL_BRANCHES_OPTION, ...MOCK_BRANCHES];
+      return [ALL_BRANCHES_OPTION, ...baseBranches];
     }
     // Non-superadmins see only their assigned branch
-    const own = MOCK_BRANCHES.find((b) => b.id === user?.branchId);
-    return own ? [own] : MOCK_BRANCHES.slice(0, 1);
-  }, [isSuperAdmin, user?.branchId]);
+    const own = baseBranches.find((b) => b.id === user?.branchId);
+    if (own) return [own];
 
-  const [selected, setSelected] = useState<BranchOption>(branches[0]);
+    if (user?.branchId) {
+      return [{ id: user.branchId, name: `Branch ${user.branchId}` }];
+    }
+
+    return baseBranches.slice(0, 1);
+  }, [baseBranches, isSuperAdmin, user?.branchId]);
+
+  const [selected, setSelected] = useState<BranchOption>(ALL_BRANCHES_OPTION);
+
+  useEffect(() => {
+    if (branches.length === 0) return;
+
+    const stillExists = branches.some((branch) => branch.id === selected.id);
+    if (stillExists) return;
+
+    setSelected(branches[0]);
+  }, [branches, selected.id]);
 
   const setSelectedBranch = useCallback(
     (branch: BranchOption) => {
@@ -84,8 +143,9 @@ export function BranchProvider({ children }: { children: ReactNode }) {
       setSelectedBranch,
       canSwitchBranch: isSuperAdmin,
       isAllBranches: selected.id === ALL_BRANCHES_ID,
+      refreshBranches: loadBranches,
     }),
-    [selected, branches, setSelectedBranch, isSuperAdmin],
+    [selected, branches, setSelectedBranch, isSuperAdmin, loadBranches],
   );
 
   return <BranchContext value={value}>{children}</BranchContext>;

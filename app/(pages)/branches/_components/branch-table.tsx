@@ -23,6 +23,7 @@ const columns: Column[] = [
 ];
 
 export interface BranchRow {
+  id?: string;
   branchId: string;
   name: string;
   location: string;
@@ -187,7 +188,7 @@ function EmptyState() {
   );
 }
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 export function BranchTable({
   branches,

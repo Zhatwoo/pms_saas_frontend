@@ -52,22 +52,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("pms_user", JSON.stringify(freshUser));
       })
       .catch((err) => {
-        // OPTIMISTIC AUTH: DO NOT clear session on refresh error.
-        // We only clear on 401 if we don't have a cached user, 
-        // but even then, it's safer to just log the warning.
+        // Expired/invalid token should be cleared to prevent repeated 401 loops.
+        if (err?.message === "Unauthorized") {
+          document.cookie = "pms_token=; path=/; max-age=0";
+          localStorage.removeItem("pms_user");
+          setUser(null);
+          return;
+        }
+
+        // Keep optimistic session for transient network/server failures.
         console.warn("Background verification failed:", err.message);
       })
       .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const data = await api.post<{ access_token: string; user: User }>(
+    const data = await api.post<{ access_token: string; expires_in?: number; user: User }>(
       "/auth/login",
       { email, password },
     );
+
+    const maxAge = Math.max(1, data.expires_in ?? 3600);
     
     // Save to cookies (encoded)
-    document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+    document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
     
     // Save to state and cache
     setUser(data.user);
