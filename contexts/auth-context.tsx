@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "/auth/login",
       { email, password },
     );
-    document.cookie = `pms_token=${data.access_token}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+    document.cookie = `pms_token=${data.access_token}; path=/; max-age=${60 * 60 * 6}; SameSite=Lax`;
     setUser(data.user);
   }, []);
 
