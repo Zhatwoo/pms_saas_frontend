@@ -10,6 +10,7 @@ import { BranchFilters } from "./_components/branch-filters";
 import { BranchTable } from "./_components/branch-table";
 import { BranchModal } from "./_components/branch-modal";
 import { BranchDetailDrawer } from "./_components/branch-detail-drawer";
+import { TerminateConfirmModal } from "./_components/terminate-confirm-modal";
 import type { BranchRow } from "./_components/branch-table";
 
 interface BranchApiItem {
@@ -73,6 +74,10 @@ export default function BranchesPage() {
   const [selectedBranchRow, setSelectedBranchRow] = useState<BranchRow | null>(
     null,
   );
+
+  // Terminate
+  const [terminateModalOpen, setTerminateModalOpen] = useState(false);
+  const [terminatingBranch, setTerminatingBranch] = useState<BranchRow | null>(null);
 
   const loadBranches = useCallback(async () => {
     try {
@@ -152,10 +157,6 @@ export default function BranchesPage() {
   }, 0);
   const formattedTotal = `₱${totalValue.toLocaleString()}`;
 
-  // Viewing context label
-  const viewingLabel = isAllBranches
-    ? "All Branches"
-    : selectedBranch.name;
 
   function handleBranchClick(branch: BranchRow) {
     setSelectedBranchRow(branch);
@@ -218,6 +219,31 @@ export default function BranchesPage() {
     }
   }
 
+  function handleTerminateBranch(branch: BranchRow) {
+    setTerminatingBranch(branch);
+    setTerminateModalOpen(true);
+  }
+
+  async function handleConfirmTerminate() {
+    if (!terminatingBranch?.id) return;
+    try {
+      await api.fetch<BranchApiItem>(`/branches/${terminatingBranch.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "Terminated" }),
+      });
+      await loadBranches();
+      await refreshBranches();
+      setTerminateModalOpen(false);
+      setTerminatingBranch(null);
+      setSuccessMessage("Branch has been terminated successfully.");
+      setErrorMessage(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to terminate branch";
+      setErrorMessage(message);
+    }
+  }
+
   const nextBranchCode = useMemo(() => getNextBranchCode(branches), [branches]);
 
   useEffect(() => {
@@ -270,25 +296,6 @@ export default function BranchesPage() {
             Create, edit, and manage all pawnshop branches.
           </p>
         </div>
-        <button
-          onClick={handleCreateBranch}
-          className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Create Branch
-        </button>
       </div>
 
       {errorMessage && (
@@ -296,33 +303,6 @@ export default function BranchesPage() {
           {errorMessage}
         </div>
       )}
-
-      {/* Branch Context Indicator */}
-      <div className="flex items-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface px-4 py-2.5 transition-colors duration-300">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-emerald-600"
-        >
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        <span className="text-xs text-emerald-text">
-          Viewing:{" "}
-          <span className="font-bold">{viewingLabel}</span>
-          {!isAllBranches && canSwitchBranch && (
-            <span className="ml-2 text-emerald-500">
-              — Filtered from header selector
-            </span>
-          )}
-        </span>
-      </div>
 
       {/* Stats */}
       <BranchStats
@@ -332,13 +312,38 @@ export default function BranchesPage() {
         maintenanceBranches={maintenanceBranches}
       />
 
-      {/* Filters */}
-      <BranchFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-      />
+      {/* Filters + Create — filters only when viewing all branches, button always */}
+      {isAllBranches ? (
+        <BranchFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          onCreateBranch={handleCreateBranch}
+        />
+      ) : (
+        <div>
+          <button
+            onClick={handleCreateBranch}
+            className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-pawn-gold transition-opacity hover:opacity-90"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create Branch
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <BranchTable
@@ -347,6 +352,7 @@ export default function BranchesPage() {
         statusFilter={statusFilter}
         onBranchClick={handleBranchClick}
         onEditBranch={handleEditBranch}
+        onTerminateBranch={handleTerminateBranch}
       />
 
       {/* Create/Edit Modal */}
@@ -364,6 +370,17 @@ export default function BranchesPage() {
         branch={selectedBranchRow}
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+      />
+
+      {/* Terminate Confirmation Modal */}
+      <TerminateConfirmModal
+        isOpen={terminateModalOpen}
+        branchName={terminatingBranch?.name ?? ""}
+        onClose={() => {
+          setTerminateModalOpen(false);
+          setTerminatingBranch(null);
+        }}
+        onConfirm={handleConfirmTerminate}
       />
     </div>
   );
