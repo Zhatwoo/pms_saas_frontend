@@ -1,23 +1,24 @@
+import type { BranchFilter, BranchOption, RoleFilter } from "../page";
 import { ActionButton } from "@/components/shared/action-button";
-import type { RoleFilter } from "../page";
 
 interface UserActionsProps {
   search: string;
   onSearchChange: (value: string) => void;
   roleFilter: RoleFilter;
   onRoleFilterChange: (value: RoleFilter) => void;
-  branchFilter: string;
-  onBranchFilterChange: (value: string) => void;
+  branchOptions: BranchOption[];
+  branchFilter: BranchFilter;
+  onBranchFilterChange: (value: BranchFilter) => void;
+  canCreateUser: boolean;
   onCreateUser: () => void;
 }
 
 const roleTabs: { label: string; value: RoleFilter }[] = [
   { label: "All", value: "ALL" },
+  { label: "Super Admin", value: "SUPER_ADMIN" },
   { label: "Employee", value: "EMPLOYEE" },
   { label: "Admins", value: "ADMIN" },
 ];
-
-const branchOptions = ["All", "Taguig", "Pasig"];
 
 const searchIcon = (
   <svg
@@ -73,8 +74,10 @@ export function UserActions({
   onSearchChange,
   roleFilter,
   onRoleFilterChange,
+  branchOptions,
   branchFilter,
   onBranchFilterChange,
+  canCreateUser,
   onCreateUser,
 }: UserActionsProps) {
   return (
@@ -88,7 +91,7 @@ export function UserActions({
             type="text"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search users by username, name, or email"
+            placeholder="Search users by name, email, or branch"
             className="h-10 w-full rounded-md border border-input-border bg-input-bg pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-700"
           />
         </div>
@@ -100,12 +103,14 @@ export function UserActions({
               Export Users
             </span>
           </ActionButton>
-          <ActionButton variant="pawn" onClick={onCreateUser}>
-            <span className="flex items-center gap-1.5">
-              {plusIcon}
-              Create User
-            </span>
-          </ActionButton>
+          {canCreateUser && (
+            <ActionButton variant="pawn" onClick={onCreateUser}>
+              <span className="flex items-center gap-1.5">
+                {plusIcon}
+                Create User
+              </span>
+            </ActionButton>
+          )}
         </div>
       </div>
 
@@ -141,9 +146,10 @@ export function UserActions({
             onChange={(event) => onBranchFilterChange(event.target.value)}
             className="h-10 min-w-36 rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-secondary outline-none transition-colors focus:border-emerald-700"
           >
+            <option value="ALL">All</option>
             {branchOptions.map((branch) => (
-              <option key={branch} value={branch}>
-                {branch}
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
               </option>
             ))}
           </select>

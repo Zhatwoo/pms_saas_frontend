@@ -1,15 +1,8 @@
 class ApiClient {
   private getToken(): string | null {
     if (typeof document === "undefined") return null;
-    const name = "pms_token=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i].trim();
-      if (c.indexOf(name) === 0) {
-        return decodeURIComponent(c.substring(name.length, c.length));
-      }
-    }
-    return null;
+    const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
+    return match ? match[1] : null;
   }
 
   async fetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -20,22 +13,58 @@ class ApiClient {
       ...options?.headers,
     };
 
+    if (!token && path !== "/auth/login") {
+      console.warn(
+        `[API] Missing auth token for ${path}. Check if login was successful and token is stored in cookies.`,
+      );
+    }
+
     const res = await fetch(`/api${path}`, { ...options, headers });
     
-    if (res.status === 401 && process.env.NODE_ENV !== "production") {
-      console.warn(
-        `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token length: ${token?.length}`,
+    if (res.status === 401) {
+      console.error(
+        `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token: ${token?.substring(0, 20)}...`,
       );
     }
 
     if (!res.ok) {
       if (res.status === 401) {
-        // We throw Unauthorized, but let the AuthContext decide if it wants to log out 
-        // to avoid race conditions during refresh or network blips.
         throw new Error("Unauthorized");
       }
-      const error = await res.json().catch(() => ({ message: "Request failed" }));
-      throw new Error(error.message || `HTTP ${res.status}`);
+      
+      let errorData: any;
+      try {
+        errorData = await res.json();
+      } catch {
+        errorData = { message: "Request failed" };
+      }
+      
+      // Log full error details for debugging
+      console.error(`[API Error ${res.status}] ${path}:`, errorData);
+      
+      // Extract detailed error message
+      let errorMessage = '';
+      
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+      
+      // Handle validation errors in 'data' field
+      if (errorData.data && Array.isArray(errorData.data)) {
+        const details = errorData.data
+          .map((d: any) => `${d.field}: ${Array.isArray(d.errors) ? d.errors.join(', ') : d.errors}`)
+          .join('; ');
+        errorMessage = errorMessage ? `${errorMessage} - ${details}` : details;
+      }
+      
+      if (!errorMessage) {
+        errorMessage = 
+          errorData.error ||
+          errorData.errors?.join(', ') ||
+          `HTTP ${res.status}`;
+      }
+        
+      throw new Error(String(errorMessage));
     }
 
     const json = await res.json();
@@ -48,6 +77,10 @@ class ApiClient {
 
   get<T>(path: string) {
     return this.fetch<T>(path, { method: "GET" });
+  }
+
+  delete<T>(path: string) {
+    return this.fetch<T>(path, { method: "DELETE" });
   }
 }
 
