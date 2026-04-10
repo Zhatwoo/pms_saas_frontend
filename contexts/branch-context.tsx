@@ -59,6 +59,7 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   const [baseBranches, setBaseBranches] = useState<BranchOption[]>([]);
 
   const loadBranches = useCallback(async () => {
+    if (!user) return; // Don't fetch before authentication
     try {
       const data = await api.get<BranchApiItem[]>("/branches");
       const normalized = (data || []).map((branch) => ({
@@ -70,7 +71,8 @@ export function BranchProvider({ children }: { children: ReactNode }) {
     } catch {
       // Keep previous selector options on transient failures.
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     void loadBranches();
