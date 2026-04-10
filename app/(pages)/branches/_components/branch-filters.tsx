@@ -15,6 +15,7 @@ interface BranchFiltersProps {
   onSearchChange: (value: string) => void;
   statusFilter: string;
   onStatusChange: (value: string) => void;
+  onCreateBranch?: () => void;
 }
 
 export function BranchFilters({
@@ -22,6 +23,7 @@ export function BranchFilters({
   onSearchChange,
   statusFilter,
   onStatusChange,
+  onCreateBranch,
 }: BranchFiltersProps) {
   return (
     <div className="flex flex-wrap items-end gap-4">
@@ -57,6 +59,28 @@ export function BranchFilters({
           />
         </div>
       </div>
+      {onCreateBranch && (
+        <button
+          onClick={onCreateBranch}
+          className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-pawn-gold transition-opacity hover:opacity-90"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Create Branch
+        </button>
+      )}
     </div>
   );
 }
+

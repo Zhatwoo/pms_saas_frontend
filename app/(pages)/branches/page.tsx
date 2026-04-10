@@ -10,6 +10,8 @@ import { BranchFilters } from "./_components/branch-filters";
 import { BranchTable } from "./_components/branch-table";
 import { BranchModal } from "./_components/branch-modal";
 import { BranchDetailDrawer } from "./_components/branch-detail-drawer";
+import { TerminateConfirmModal } from "./_components/terminate-confirm-modal";
+import { BranchProfile } from "./_components/branch-profile";
 import type { BranchRow } from "./_components/branch-table";
 
 interface BranchApiItem {
@@ -74,7 +76,12 @@ export default function BranchesPage() {
     null,
   );
 
+  // Terminate
+  const [terminateModalOpen, setTerminateModalOpen] = useState(false);
+  const [terminatingBranch, setTerminatingBranch] = useState<BranchRow | null>(null);
+
   const loadBranches = useCallback(async () => {
+    if (!user) return;            // wait until auth is ready
     try {
       const data = await api.get<BranchApiItem[]>("/branches");
       setBranches((data || []).map(toBranchRow));
@@ -85,7 +92,7 @@ export default function BranchesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     void loadBranches();
@@ -152,10 +159,6 @@ export default function BranchesPage() {
   }, 0);
   const formattedTotal = `₱${totalValue.toLocaleString()}`;
 
-  // Viewing context label
-  const viewingLabel = isAllBranches
-    ? "All Branches"
-    : selectedBranch.name;
 
   function handleBranchClick(branch: BranchRow) {
     setSelectedBranchRow(branch);
@@ -218,7 +221,40 @@ export default function BranchesPage() {
     }
   }
 
+  function handleTerminateBranch(branch: BranchRow) {
+    setTerminatingBranch(branch);
+    setTerminateModalOpen(true);
+  }
+
+  async function handleConfirmTerminate() {
+    if (!terminatingBranch?.id) return;
+    try {
+      await api.fetch<BranchApiItem>(`/branches/${terminatingBranch.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "Terminated" }),
+      });
+      await loadBranches();
+      await refreshBranches();
+      setTerminateModalOpen(false);
+      setTerminatingBranch(null);
+      setSuccessMessage("Branch has been terminated successfully.");
+      setErrorMessage(null);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to terminate branch";
+      setErrorMessage(message);
+    }
+  }
+
   const nextBranchCode = useMemo(() => getNextBranchCode(branches), [branches]);
+
+  // Close drawer when switching away from All Branches mode
+  useEffect(() => {
+    if (!isAllBranches) {
+      setDrawerOpen(false);
+      setSelectedBranchRow(null);
+    }
+  }, [isAllBranches]);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -237,6 +273,11 @@ export default function BranchesPage() {
       </div>
     );
   }
+
+  // Resolve profile branch data for single-branch mode
+  const profileBranch = !isAllBranches && branchScopedData.length > 0
+    ? branchScopedData[0]
+    : null;
 
   return (
     <div className="space-y-5">
@@ -262,94 +303,72 @@ export default function BranchesPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-zinc-400"></p>
-          <p className="mt-1 text-sm text-text-tertiary">
-            Create, edit, and manage all pawnshop branches.
-          </p>
-        </div>
-        <button
-          onClick={handleCreateBranch}
-          className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Create Branch
-        </button>
-      </div>
+      {/* ── SINGLE BRANCH MODE: Full Profile Page ──────────── */}
+      {!isAllBranches && profileBranch ? (
+        <BranchProfile
+          branch={{
+            branchId: profileBranch.branchId,
+            name: profileBranch.name,
+            location: profileBranch.location,
+            status: profileBranch.status,
+          }}
+        />
+      ) : (
+        /* ── ALL BRANCHES MODE: Table + Drawer ──────────────── */
+        <>
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs text-zinc-400"></p>
+              <p className="mt-1 text-sm text-text-tertiary">
+                Create, edit, and manage all pawnshop branches.
+              </p>
+            </div>
+          </div>
 
-      {errorMessage && (
-        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-xs text-red-700">
-          {errorMessage}
-        </div>
+          {errorMessage && (
+            <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-xs text-red-700">
+              {errorMessage}
+            </div>
+          )}
+
+          {/* Stats */}
+          <BranchStats
+            totalBranches={branchScopedData.length}
+            activeBranches={activeBranches}
+            totalInventoryValue={formattedTotal}
+            maintenanceBranches={maintenanceBranches}
+          />
+
+          {/* Filters + Create */}
+          <BranchFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+            onCreateBranch={handleCreateBranch}
+          />
+
+          {/* Table */}
+          <BranchTable
+            branches={branchScopedData}
+            searchQuery={searchQuery}
+            statusFilter={statusFilter}
+            onBranchClick={handleBranchClick}
+            onEditBranch={handleEditBranch}
+            onTerminateBranch={handleTerminateBranch}
+          />
+
+          {/* Detail Drawer — only shown in All Branches mode */}
+          <BranchDetailDrawer
+            branch={selectedBranchRow}
+            isOpen={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+          />
+        </>
       )}
 
-      {/* Branch Context Indicator */}
-      <div className="flex items-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface px-4 py-2.5 transition-colors duration-300">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-emerald-600"
-        >
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        <span className="text-xs text-emerald-text">
-          Viewing:{" "}
-          <span className="font-bold">{viewingLabel}</span>
-          {!isAllBranches && canSwitchBranch && (
-            <span className="ml-2 text-emerald-500">
-              — Filtered from header selector
-            </span>
-          )}
-        </span>
-      </div>
-
-      {/* Stats */}
-      <BranchStats
-        totalBranches={branchScopedData.length}
-        activeBranches={activeBranches}
-        totalInventoryValue={formattedTotal}
-        maintenanceBranches={maintenanceBranches}
-      />
-
-      {/* Filters */}
-      <BranchFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-      />
-
-      {/* Table */}
-      <BranchTable
-        branches={branchScopedData}
-        searchQuery={searchQuery}
-        statusFilter={statusFilter}
-        onBranchClick={handleBranchClick}
-        onEditBranch={handleEditBranch}
-      />
-
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Modal — always available */}
       <BranchModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -359,11 +378,15 @@ export default function BranchesPage() {
         nextBranchCode={nextBranchCode}
       />
 
-      {/* Detail Drawer */}
-      <BranchDetailDrawer
-        branch={selectedBranchRow}
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+      {/* Terminate Confirmation Modal */}
+      <TerminateConfirmModal
+        isOpen={terminateModalOpen}
+        branchName={terminatingBranch?.name ?? ""}
+        onClose={() => {
+          setTerminateModalOpen(false);
+          setTerminatingBranch(null);
+        }}
+        onConfirm={handleConfirmTerminate}
       />
     </div>
   );
