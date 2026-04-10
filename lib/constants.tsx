@@ -100,7 +100,15 @@ const ADMIN_NAV: NavGroup[] = [
   {
     section: "ADMIN",
     items: [
-      { label: "Branch Finance", href: "/admin/branch-finance", icon: <BranchesIcon /> },
+      {
+        label: "Branch Management",
+        href: "/admin/branches",
+        icon: <BranchesIcon />,
+        subItems: [
+          { label: "Overview", href: "/admin/branch-overview" },
+          { label: "Finance", href: "/admin/branch-finance" },
+        ],
+      },
       { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
       { label: "User Management", href: "/admin/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/admin/settings", icon: <SettingsIcon /> },

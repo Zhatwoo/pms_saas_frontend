@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { ConfirmFundModal } from "./_components/confirm-fund-modal";
 
 /* ══════════════════════════════════════════════════════════
    TYPES
@@ -176,14 +177,21 @@ export default function AdminBranchFinancePage() {
   const [toast, setToast] = useState<string | null>(null);
   const [filterType, setFilterType] = useState("all");
 
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
+
+  const selectedPendingAmount = useMemo(() => {
+    return pending.find((p) => p.id === selectedPendingId)?.amount || 0;
+  }, [pending, selectedPendingId]);
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
   }
 
-  /* ── Approve ─────────────────────────────────────── */
-  const handleApprove = useCallback(
-    (approvalId: string) => {
+  /* ── Confirm ─────────────────────────────────────── */
+  const handleConfirm = useCallback(
+    (approvalId: string, proofFile: File | null) => {
       const req = pending.find((p) => p.id === approvalId);
       if (!req) return;
 
@@ -193,9 +201,10 @@ export default function AdminBranchFinancePage() {
           t.id === req.txnId
             ? {
                 ...t,
-                status: "Approved" as const,
+                status: "Approved" as const, // Conceptually Approved/Completed
                 approvedBy: user?.fullName || "Branch Admin",
                 approvalDate: new Date().toISOString().slice(0, 10),
+                notes: proofFile ? `${t.notes} [Proof Uploaded]` : t.notes,
               }
             : t,
         ),
@@ -223,32 +232,9 @@ export default function AdminBranchFinancePage() {
       });
 
       setPending((prev) => prev.filter((p) => p.id !== approvalId));
-      showToast("Transaction approved successfully");
-    },
-    [pending, user?.fullName],
-  );
-
-  /* ── Reject ──────────────────────────────────────── */
-  const handleReject = useCallback(
-    (approvalId: string) => {
-      const req = pending.find((p) => p.id === approvalId);
-      if (!req) return;
-
-      setTransactions((txns) =>
-        txns.map((t) =>
-          t.id === req.txnId
-            ? {
-                ...t,
-                status: "Rejected" as const,
-                approvedBy: user?.fullName || "Branch Admin",
-                approvalDate: new Date().toISOString().slice(0, 10),
-              }
-            : t,
-        ),
-      );
-
-      setPending((prev) => prev.filter((p) => p.id !== approvalId));
-      showToast("Transaction rejected");
+      showToast("Verification successful. Balance updated.");
+      setConfirmModalOpen(false);
+      setSelectedPendingId(null);
     },
     [pending, user?.fullName],
   );
@@ -375,8 +361,20 @@ export default function AdminBranchFinancePage() {
         </div>
       </div>
 
+      {/* Info header */}
+      <div className="flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-4 py-3">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="16" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12.01" y2="8" />
+        </svg>
+        <p className="text-[11px] text-text-muted">
+          Fund additions and transfers are initiated by the Super Admin. You must confirm receipt and upload a proof image before the amount takes effect on your branch balance.
+        </p>
+      </div>
+
       {/* ═══════════════════════════════════════════════════
-         SECTION 2: PENDING APPROVALS
+         SECTION 2: PENDING CONFIRMATIONS
          ═══════════════════════════════════════════════════ */}
       {pending.length > 0 && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">
@@ -392,9 +390,9 @@ export default function AdminBranchFinancePage() {
               </span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-text-primary">Pending Approvals</h3>
+              <h3 className="text-sm font-bold text-text-primary">Pending Confirmation</h3>
               <p className="text-[10px] text-text-muted">
-                Review fund transactions initiated by Super Admin for your branch
+                Review fund transactions initiated by Super Admin for your branch. Please confirm receipt.
               </p>
             </div>
           </div>
@@ -436,23 +434,16 @@ export default function AdminBranchFinancePage() {
 
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleApprove(req.id)}
+                        onClick={() => {
+                          setSelectedPendingId(req.id);
+                          setConfirmModalOpen(true);
+                        }}
                         className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.97]"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleReject(req.id)}
-                        className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100 active:scale-[0.97]"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                        Reject
+                        Confirm Receipt
                       </button>
                     </div>
                   </div>
@@ -473,7 +464,7 @@ export default function AdminBranchFinancePage() {
           </div>
           <div>
             <p className="text-sm font-semibold text-text-primary">All caught up!</p>
-            <p className="text-[11px] text-text-muted">No pending approvals for your branch.</p>
+            <p className="text-[11px] text-text-muted">No pending confirmations for your branch.</p>
           </div>
         </div>
       )}
@@ -518,8 +509,12 @@ export default function AdminBranchFinancePage() {
                     <th
                       key={h}
                       className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
-                        h === "Amount" || h === "Balance After" ? "text-right" : "text-left"
-                      } ${h === "Status" ? "text-center" : ""}`}
+                        h === "Amount" || h === "Balance After" 
+                          ? "text-right" 
+                          : h === "Status" 
+                            ? "text-center" 
+                            : "text-left"
+                      }`}
                     >
                       {h}
                     </th>
@@ -584,17 +579,18 @@ export default function AdminBranchFinancePage() {
         </div>
       </div>
 
-      {/* Info footer */}
-      <div className="flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-4 py-3">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="16" x2="12" y2="12" />
-          <line x1="12" y1="8" x2="12.01" y2="8" />
-        </svg>
-        <p className="text-[11px] text-text-muted">
-          Fund additions and transfers are initiated by the Super Admin and require your approval before taking effect. You cannot directly add or transfer funds.
-        </p>
-      </div>
+      {/* Confirm fund modal */}
+      {selectedPendingId && (
+        <ConfirmFundModal
+          isOpen={confirmModalOpen}
+          onClose={() => {
+            setConfirmModalOpen(false);
+            setSelectedPendingId(null);
+          }}
+          onConfirm={(file) => handleConfirm(selectedPendingId, file)}
+          amount={selectedPendingAmount}
+        />
+      )}
     </div>
   );
 }
