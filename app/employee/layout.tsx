@@ -4,6 +4,7 @@ import { useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
 
@@ -12,8 +13,11 @@ export default function EmployeeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
+  const { selectedBranch, isLoading: isBranchLoading } = useBranch() as any;
   const router = useRouter();
+
+  const isLoading = isAuthLoading || isBranchLoading;
 
   useEffect(() => {
     // Only redirect if definitively not logged in
@@ -65,7 +69,7 @@ export default function EmployeeLayout({
       userName={user.fullName || user.email}
       userRole={user.role}
       onLogout={logout}
-      branchName="Taguig Branch"
+      branchName={selectedBranch.name}
       hideBranchSelector={true}
     >
       {children}

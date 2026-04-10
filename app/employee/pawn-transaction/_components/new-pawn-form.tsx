@@ -59,7 +59,31 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
+        <div className="space-y-6">
+          <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-emerald-900">Physical Item Scan</h3>
+                  <p className="text-xs text-emerald-700">Scan the item's barcode/QR code or take a picture to verify inventory.</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 active:scale-95 transition-all"
+                onClick={() => alert("Scanning from Camera...")}
+              >
+                Open Scanner
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-zinc-900">Personal Information</h3>
             <p className="text-sm text-zinc-500">Add customer name, address, contact and ID details.</p>
@@ -164,40 +188,25 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
             </label>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="space-y-2 text-sm text-zinc-700">
-              <span>Upload Image</span>
-              <input
-                type="file"
-                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <button
-                type="button"
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-              >
-                Browse
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
-              >
-                Save
-              </button>
-            </div>
-            <div className="flex items-end">
-              <button
-                type="button"
-                className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-              >
-                Update
-              </button>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <span className="text-sm font-bold text-zinc-700 uppercase tracking-wider text-[10px]">Verification Photos</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="aspect-square rounded-xl border-2 border-dashed border-zinc-300 bg-white flex flex-col items-center justify-center text-center p-4 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-400 mb-2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase">Front View</p>
+                </div>
+                <div className="aspect-square rounded-xl border-2 border-dashed border-zinc-300 bg-white flex flex-col items-center justify-center text-center p-4 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-400 mb-2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <p className="text-[10px] font-bold text-zinc-500 uppercase">Serial No / ID</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-6">
+      <div className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-6">
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-zinc-900">Unit Information</h3>
             <p className="text-sm text-zinc-500">Enter the item details for the pawn ticket.</p>
