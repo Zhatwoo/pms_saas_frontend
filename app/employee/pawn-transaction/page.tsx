@@ -5,6 +5,9 @@ import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
 import { RenewModal } from "./_components/renew-modal";
+import { NewPawnForm } from "./_components/new-pawn-form";
+import { BuyBackForm } from "./_components/buy-back-form";
+import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { useBranch } from "@/contexts/branch-context";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
@@ -154,8 +157,6 @@ export default function EmployeePawnTransactionsPage() {
           setBalanceModal((p) => ({ ...p, open: false }));
         }}
       />
-      <TransactionStats data={currentStats} />
-      <TransactionTable data={filteredTransactions} />
 
       <RenewModal 
         isOpen={isRenewModalOpen} 

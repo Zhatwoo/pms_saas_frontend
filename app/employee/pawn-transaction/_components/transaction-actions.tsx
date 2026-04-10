@@ -57,7 +57,15 @@ const filterVariantMap: Record<string, string> = {
   "Buy Back": "buyback",
 };
 
-export function TransactionActions({ activeFilter = "All", onFilterChange, onRenewClick, onExportCSV, onPrintReport }: TransactionActionsProps) {
+export function TransactionActions({ 
+  activeFilter = "All", 
+  onFilterChange, 
+  onRenewClick, 
+  onExportCSV, 
+  onPrintReport,
+  onStartDay,
+  onEndDay
+}: TransactionActionsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
