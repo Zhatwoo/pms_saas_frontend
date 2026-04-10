@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function EmployeePawnTicketPage() {
   return (
     <div className="space-y-4 p-4">
@@ -31,9 +33,12 @@ export default function EmployeePawnTicketPage() {
           This module is currently being optimized to ensure seamless ticket issuance and tracking for your branch operations.
         </p>
         <div className="mt-6">
-          <button className="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+          <Link
+            href="/employee/pawn-ticket/new"
+            className="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+          >
             Generate New Ticket
-          </button>
+          </Link>
         </div>
       </div>
     </div>
