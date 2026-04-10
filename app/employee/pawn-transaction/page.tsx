@@ -9,6 +9,7 @@ import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-conf
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
 type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
+type ActiveForm = "newPawn" | "buyBack" | null;
 
 interface TransactionRow {
   transactionNo: string;
@@ -37,7 +38,7 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 export default function EmployeePawnTransactionsPage() {
   const [selectedBranch] = useState("Makati Main Branch");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-  const [showNewPawnForm, setShowNewPawnForm] = useState(false);
+  const [activeForm, setActiveForm] = useState<ActiveForm>(null);
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
     startingBalance: 0, endingBalance: 0,
@@ -100,11 +101,16 @@ export default function EmployeePawnTransactionsPage() {
 
   const openNewPawnForm = useCallback(() => {
     setActiveFilter("All");
-    setShowNewPawnForm(true);
+    setActiveForm("newPawn");
   }, []);
 
-  const closeNewPawnForm = useCallback(() => {
-    setShowNewPawnForm(false);
+  const openBuyBackForm = useCallback(() => {
+    setActiveFilter("All");
+    setActiveForm("buyBack");
+  }, []);
+
+  const closeActiveForm = useCallback(() => {
+    setActiveForm(null);
   }, []);
 
   return (
@@ -125,8 +131,10 @@ export default function EmployeePawnTransactionsPage() {
         onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
       />
 
-      {showNewPawnForm ? (
-        <NewPawnForm onCancel={closeNewPawnForm} />
+      {activeForm === "newPawn" ? (
+        <NewPawnForm onCancel={closeActiveForm} />
+      ) : activeForm === "buyBack" ? (
+        <BuyBackForm onCancel={closeActiveForm} />
       ) : (
         <>
           <TransactionStats data={currentStats} />

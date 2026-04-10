@@ -78,6 +78,10 @@ export function TransactionActions({
                 onNewPawn?.();
                 return;
               }
+              if (f === "Buy Back") {
+                onBuyBack?.();
+                return;
+              }
               onFilterChange?.(activeFilter === f ? "All" : f);
             }}
           >
