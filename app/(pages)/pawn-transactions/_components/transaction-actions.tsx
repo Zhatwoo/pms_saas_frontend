@@ -42,8 +42,6 @@ interface TransactionActionsProps {
   onExportCSV?: () => void;
   onPrintReport?: () => void;
   onManualInput?: () => void;
-  onStartDay?: () => void;
-  onEndDay?: () => void;
 }
 
 const filters: FilterType[] = ["Renew", "Redeem", "New Pawn", "Sales / Transfer", "Buy Back"];
@@ -61,9 +59,7 @@ export function TransactionActions({
   onFilterChange, 
   onExportCSV, 
   onPrintReport, 
-  onManualInput,
-  onStartDay,
-  onEndDay
+  onManualInput
 }: TransactionActionsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -87,14 +83,6 @@ export function TransactionActions({
             Cash Transfer
           </span>
         </ActionButton>
-        <div className="h-8 w-px bg-border-subtle mx-1" />
-        <button onClick={onStartDay} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-sm">
-          Start Day
-        </button>
-        <button onClick={onEndDay} className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700 transition shadow-sm">
-          End Day
-        </button>
-        <div className="h-8 w-px bg-border-subtle mx-1" />
         <ActionButton variant="outline" onClick={onExportCSV}>
           <span className="flex items-center gap-1.5">
             {downloadIcon}
