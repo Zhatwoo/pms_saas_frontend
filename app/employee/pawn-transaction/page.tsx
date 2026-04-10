@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
+import { NewPawnForm } from "./_components/new-pawn-form";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
 type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
@@ -35,6 +36,7 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 export default function EmployeePawnTransactionsPage() {
   const [selectedBranch] = useState("Makati Main Branch");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
+  const [showNewPawnForm, setShowNewPawnForm] = useState(false);
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
     startingBalance: 0, endingBalance: 0,
@@ -91,6 +93,15 @@ export default function EmployeePawnTransactionsPage() {
     window.print();
   }, []);
 
+  const openNewPawnForm = useCallback(() => {
+    setActiveFilter("All");
+    setShowNewPawnForm(true);
+  }, []);
+
+  const closeNewPawnForm = useCallback(() => {
+    setShowNewPawnForm(false);
+  }, []);
+
   return (
     <div className="space-y-3 pb-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -104,9 +115,17 @@ export default function EmployeePawnTransactionsPage() {
         onFilterChange={(f) => setActiveFilter(f)}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
+        onNewPawn={openNewPawnForm}
       />
-      <TransactionStats data={currentStats} />
-      <TransactionTable data={filteredTransactions} />
+
+      {showNewPawnForm ? (
+        <NewPawnForm onCancel={closeNewPawnForm} />
+      ) : (
+        <>
+          <TransactionStats data={currentStats} />
+          <TransactionTable data={filteredTransactions} />
+        </>
+      )}
     </div>
   );
 }
