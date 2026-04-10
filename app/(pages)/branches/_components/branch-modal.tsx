@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 
 interface BranchFormData {
+  id?: string;
   branchId: string;
   name: string;
   location: string;
@@ -68,6 +69,7 @@ export function BranchModal({
     setIsSubmitting(true);
     try {
       const success = await onSubmit({
+        id: initialData?.id,
         branchId: generatedId,
         name: name.trim(),
         location: location.trim(),
