@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfirmFundModal } from "./_components/confirm-fund-modal";
+import { RequestFundsModal } from "./_components/request-funds-modal";
+import type { RequestFundsData } from "./_components/request-funds-modal";
 
 /* ══════════════════════════════════════════════════════════
    TYPES
@@ -180,6 +182,8 @@ export default function AdminBranchFinancePage() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
 
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+
   const selectedPendingAmount = useMemo(() => {
     return pending.find((p) => p.id === selectedPendingId)?.amount || 0;
   }, [pending, selectedPendingId]);
@@ -238,6 +242,12 @@ export default function AdminBranchFinancePage() {
     },
     [pending, user?.fullName],
   );
+
+  /* ── Request Funds ───────────────────────────────── */
+  function handleRequestFunds(data: RequestFundsData) {
+    // In a real app, this sends a POST request to the server, and the Super Admin sees it.
+    showToast(`Successfully requested ₱${data.amount.toLocaleString("en-PH")} from Super Admin`);
+  }
 
   /* ── Filtered transactions ───────────────────────── */
   const filteredTxns = useMemo(() => {
@@ -311,25 +321,37 @@ export default function AdminBranchFinancePage() {
         </div>
 
         {/* Current balance hero */}
-        <div className="px-6 py-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
-            Current Balance
-          </p>
-          <div className="flex items-end gap-3">
-            <span className="text-4xl font-extrabold tracking-tight text-white">
-              {fmt(balance.currentBalance)}
-            </span>
-            <span
-              className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                isPositive
-                  ? "bg-emerald-400/20 text-emerald-300"
-                  : "bg-red-400/20 text-red-300"
-              }`}
-            >
-              {isPositive ? "+" : ""}
-              {deltaPercent}% from start
-            </span>
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
+              Current Balance
+            </p>
+            <div className="flex items-end gap-3">
+              <span className="text-4xl font-extrabold tracking-tight text-white">
+                {fmt(balance.currentBalance)}
+              </span>
+              <span
+                className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  isPositive
+                    ? "bg-emerald-400/20 text-emerald-300"
+                    : "bg-red-400/20 text-red-300"
+                }`}
+              >
+                {isPositive ? "+" : ""}
+                {deltaPercent}% from start
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => setRequestModalOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Request Funds
+          </button>
         </div>
 
         {/* Stat tiles */}
@@ -591,6 +613,12 @@ export default function AdminBranchFinancePage() {
           amount={selectedPendingAmount}
         />
       )}
+      {/* Request funds modal */}
+      <RequestFundsModal
+        isOpen={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+        onSubmit={handleRequestFunds}
+      />
     </div>
   );
 }

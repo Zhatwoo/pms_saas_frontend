@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import type { BranchBalance } from "./balance-overview";
 
 export interface Manager {
   id: string;
@@ -8,19 +9,27 @@ export interface Manager {
   role: string;
 }
 
-export interface AddFundsResult {
+export interface UnifiedFundResult {
+  sourceType: "MANAGEMENT" | "BRANCH_TRANSFER";
+  fromBranchId?: string;
+  toBranchId: string;
   amount: number;
   notes: string;
   approvers: string[];
-  requireAll: boolean;
+  requireAllOrReceiving: boolean; // Meaning depends on sourceType
 }
 
 interface AddFundsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: AddFundsResult) => void;
-  branchName: string;
-  managers: Manager[];
+  onSubmit: (data: UnifiedFundResult) => void;
+  branchName: string; // Used as default target branch name
+  managers: Manager[]; // Target branch managers (used if MANAGEMENT)
+  branches: BranchBalance[]; // List of all branches for transfer
+  currentBranchId: string; // The currently selected branch context
+  getManagersForBranch: (branchId: string) => Manager[];
+  defaultAmount?: string;
+  defaultNotes?: string;
 }
 
 const MULTI_APPROVAL_THRESHOLD = 50_000;
@@ -30,60 +39,69 @@ export function AddFundsModal({
   onClose,
   onSubmit,
   branchName,
-  managers,
+  managers: targetManagers,
+  branches,
+  currentBranchId,
+  getManagersForBranch,
+  defaultAmount = "",
+  defaultNotes = "",
 }: AddFundsModalProps) {
+  const [sourceType, setSourceType] = useState<"MANAGEMENT" | "BRANCH_TRANSFER">("MANAGEMENT");
+
+  // Transfer specific state
+  const [fromBranchId, setFromBranchId] = useState(currentBranchId || "");
+  const [toBranchId, setToBranchId] = useState(currentBranchId || "");
+
+  // Shared state
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [selectedApprovers, setSelectedApprovers] = useState<string[]>([]);
-  const [requireAll, setRequireAll] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const isTransfer = sourceType === "BRANCH_TRANSFER";
   const numericAmount = parseFloat(amount.replace(/,/g, "")) || 0;
-  const needsMultiApproval = numericAmount >= MULTI_APPROVAL_THRESHOLD;
-  const singleAdmin = managers.length === 1;
 
-  // Auto-select single admin
-  useEffect(() => {
-    if (singleAdmin && managers[0]) {
-      setSelectedApprovers([managers[0].id]);
-    }
-  }, [singleAdmin, managers]);
-
-  // Auto-toggle multi-approval for large amounts
-  useEffect(() => {
-    if (needsMultiApproval && managers.length >= 2) {
-      setRequireAll(true);
-    }
-  }, [needsMultiApproval, managers.length]);
+  // Active managers depend on mode
+  const activeManagers = isTransfer
+    ? getManagersForBranch(fromBranchId)
+    : targetManagers;
 
   // Reset on open
   useEffect(() => {
     if (isOpen) {
-      setAmount("");
-      setNotes("");
-      setSelectedApprovers(singleAdmin && managers[0] ? [managers[0].id] : []);
-      setRequireAll(false);
+      setSourceType("MANAGEMENT");
+      setAmount(defaultAmount);
+      setNotes(defaultNotes);
+      setFromBranchId(currentBranchId || (branches[0]?.branchId ?? ""));
+      setToBranchId(currentBranchId !== "001" ? currentBranchId : ""); // 001 usually means All Branches
       setErrors({});
     }
-  }, [isOpen, singleAdmin, managers]);
+  }, [isOpen, defaultAmount, defaultNotes, currentBranchId, branches]);
 
-  const minimumApprovers = useMemo(() => {
-    if (needsMultiApproval && managers.length >= 2) return 2;
-    return 1;
-  }, [needsMultiApproval, managers.length]);
-
-  function toggleApprover(id: string) {
-    if (singleAdmin) return;
-    setSelectedApprovers((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id],
-    );
-  }
+  // Handle source toggle change reset
+  useEffect(() => {
+    if (!isOpen) return;
+    setErrors({});
+  }, [sourceType, isOpen]);
 
   function validate(): boolean {
     const errs: Record<string, string> = {};
     if (!amount.trim() || numericAmount <= 0) errs.amount = "Enter a valid amount";
-    if (selectedApprovers.length < minimumApprovers)
-      errs.approvers = `At least ${minimumApprovers} approver(s) required${needsMultiApproval ? " (amount ≥ ₱50k)" : ""}`;
+
+    if (isTransfer) {
+      if (!fromBranchId) errs.from = "Select source branch";
+      if (!toBranchId) errs.to = "Select target branch";
+      if (fromBranchId && toBranchId && fromBranchId === toBranchId)
+        errs.to = "Cannot transfer to the same branch";
+
+      const fromBr = branches.find((b) => b.branchId === fromBranchId);
+      if (fromBr && numericAmount > fromBr.currentBalance) {
+        errs.amount = `Insufficient balance (available: ₱${fromBr.currentBalance.toLocaleString("en-PH")})`;
+      }
+    } else {
+      // Management mode: just need a target
+      if (!toBranchId || toBranchId === "001") errs.to = "Select a valid target branch";
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -92,10 +110,13 @@ export function AddFundsModal({
     e.preventDefault();
     if (!validate()) return;
     onSubmit({
+      sourceType,
+      fromBranchId: isTransfer ? fromBranchId : undefined,
+      toBranchId: toBranchId,
       amount: numericAmount,
       notes: notes.trim(),
-      approvers: selectedApprovers,
-      requireAll,
+      approvers: activeManagers.map((m) => m.id),
+      requireAllOrReceiving: false,
     });
     onClose();
   }
@@ -106,19 +127,28 @@ export function AddFundsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-lg animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl">
+      <div className="relative z-10 w-full max-w-lg animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4 sticky top-0 bg-surface z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isTransfer ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"}`}>
+              {isTransfer ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="17 1 21 5 17 9" />
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                  <polyline points="7 23 3 19 7 15" />
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              )}
             </div>
             <div>
-              <h2 className="text-base font-bold text-text-primary">Add Funds</h2>
-              <p className="text-xs text-text-tertiary">Funds will require approval before processing</p>
+              <h2 className="text-base font-bold text-text-primary">Manage Branch Funds</h2>
+              <p className="text-xs text-text-tertiary">Direct capital injection or branch transfers</p>
             </div>
           </div>
           <button
@@ -133,16 +163,87 @@ export function AddFundsModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
-          {/* Branch */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">Branch</label>
-            <input
-              type="text"
-              value={branchName}
-              readOnly
-              disabled
-              className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm font-semibold text-text-muted outline-none"
-            />
+          {/* Source Toggle */}
+          <div className="flex rounded-lg border border-border-subtle bg-surface-secondary p-1">
+            <button
+              type="button"
+              onClick={() => setSourceType("MANAGEMENT")}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                !isTransfer ? "bg-surface shadow-sm text-emerald-700 border border-emerald-500/20" : "text-text-muted hover:text-text-primary"
+              }`}
+            >
+              Management
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceType("BRANCH_TRANSFER")}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                isTransfer ? "bg-surface shadow-sm text-blue-700 border border-blue-500/20" : "text-text-muted hover:text-text-primary"
+              }`}
+            >
+              Branch Fund Transfer
+            </button>
+          </div>
+
+          <div className="h-px w-full bg-border-subtle" />
+
+          {/* Branch Routing */}
+          <div className={`grid gap-4 ${isTransfer ? "grid-cols-2" : "grid-cols-1"}`}>
+            {isTransfer && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary">
+                  Source Branch <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={fromBranchId}
+                  onChange={(e) => setFromBranchId(e.target.value)}
+                  className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar ${
+                    errors.from ? "border-red-400" : "border-input-border"
+                  }`}
+                >
+                  <option value="">Select source...</option>
+                  {branches.map((b) => (
+                    <option key={b.branchId} value={b.branchId}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.from && <span className="text-[10px] text-red-500">{errors.from}</span>}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-text-secondary">
+                Target Branch <span className="text-red-500">*</span>
+              </label>
+              {(currentBranchId && currentBranchId !== "001") && !isTransfer ? (
+                <input
+                  type="text"
+                  value={branchName}
+                  readOnly
+                  disabled
+                  className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm font-semibold text-text-muted outline-none h-[38px]"
+                />
+              ) : (
+                <select
+                  value={toBranchId}
+                  onChange={(e) => setToBranchId(e.target.value)}
+                  className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar h-[38px] ${
+                    errors.to ? "border-red-400" : "border-input-border"
+                  }`}
+                >
+                  <option value="">Select target...</option>
+                  {branches
+                    .filter((b) => !isTransfer || b.branchId !== fromBranchId)
+                    .map((b) => (
+                      <option key={b.branchId} value={b.branchId}>
+                        {b.name}
+                      </option>
+                    ))}
+                </select>
+              )}
+              {errors.to && <span className="text-[10px] text-red-500">{errors.to}</span>}
+            </div>
           </div>
 
           {/* Amount */}
@@ -155,118 +256,30 @@ export function AddFundsModal({
               <input
                 type="text"
                 value={amount}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9.,]/g, "");
-                  setAmount(val);
-                }}
+                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
                 placeholder="0.00"
                 className={`w-full rounded-lg border bg-input-bg py-2 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-pawn-sidebar ${
                   errors.amount ? "border-red-400" : "border-input-border"
                 }`}
               />
             </div>
-            {numericAmount >= MULTI_APPROVAL_THRESHOLD && (
-              <span className="flex items-center gap-1 text-[10px] font-medium text-amber-600">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                Large amount — requires multi-approval (2 approvers minimum)
-              </span>
-            )}
             {errors.amount && <span className="text-[10px] text-red-500">{errors.amount}</span>}
           </div>
 
           {/* Notes */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-secondary">Notes (optional)</label>
+            <label className="text-xs font-semibold text-text-secondary">Notes</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="e.g. Weekly cash replenishment"
+              placeholder={isTransfer ? "Reason for transfer..." : "e.g. Weekly cash replenishment"}
               className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-pawn-sidebar resize-none"
             />
           </div>
 
-          {/* Approval Section */}
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-              <h4 className="text-xs font-bold text-amber-700">Approval Required</h4>
-            </div>
-
-            {/* Manager checkboxes */}
-            <div className="space-y-2">
-              {managers.map((m) => (
-                <label
-                  key={m.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
-                    selectedApprovers.includes(m.id)
-                      ? "border-emerald-400/50 bg-emerald-50/80"
-                      : "border-border-subtle bg-surface hover:bg-surface-secondary"
-                  } ${singleAdmin ? "cursor-not-allowed opacity-75" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedApprovers.includes(m.id)}
-                    onChange={() => toggleApprover(m.id)}
-                    disabled={singleAdmin}
-                    className="h-3.5 w-3.5 rounded accent-emerald-600"
-                  />
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-pawn-sidebar text-[10px] font-bold text-pawn-gold">
-                    {m.name.split(" ").map((n) => n[0]).join("")}
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-text-primary">{m.name}</p>
-                    <p className="text-[10px] text-text-muted capitalize">{m.role}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            {errors.approvers && (
-              <p className="mt-2 text-[10px] text-red-500">{errors.approvers}</p>
-            )}
-
-            {/* Require all toggle */}
-            {managers.length >= 2 && (
-              <label className="mt-3 flex cursor-pointer items-center gap-2.5">
-                <div
-                  className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${
-                    requireAll ? "bg-emerald-600" : "bg-zinc-300"
-                  }`}
-                  onClick={() => {
-                    if (!needsMultiApproval) setRequireAll(!requireAll);
-                  }}
-                >
-                  <div
-                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                      requireAll ? "translate-x-4" : "translate-x-0.5"
-                    }`}
-                  />
-                </div>
-                <span className="text-[11px] font-medium text-text-secondary">
-                  Require all approvers
-                  {needsMultiApproval && (
-                    <span className="ml-1 text-amber-600">(auto-enabled for ≥₱50k)</span>
-                  )}
-                </span>
-              </label>
-            )}
-
-            {singleAdmin && (
-              <p className="mt-2 text-[10px] italic text-text-muted">
-                Only one manager available — auto-selected as approver.
-              </p>
-            )}
-          </div>
-
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-1">
+          <div className="flex items-center justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
@@ -276,9 +289,11 @@ export function AddFundsModal({
             </button>
             <button
               type="submit"
-              className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-5 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
+              className={`rounded-lg border px-5 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 ${
+                isTransfer ? "border-blue-700 bg-blue-600" : "border-emerald-700 bg-emerald-600"
+              }`}
             >
-              Submit for Approval
+              Submit {isTransfer ? "Transfer" : "Funds"}
             </button>
           </div>
         </form>
