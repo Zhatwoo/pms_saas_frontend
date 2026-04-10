@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { getNavForRole } from "@/lib/constants";
+import { getDefaultRouteForRole } from "@/lib/auth";
 
 export default function EmployeeLayout({
   children,
@@ -19,10 +20,15 @@ export default function EmployeeLayout({
     const hasToken = document.cookie.includes("pms_token");
     if (!isLoading && !user && !hasToken) {
       router.replace("/login");
+      return;
+    }
+
+    if (!isLoading && user && user.role !== "employee") {
+      router.replace(getDefaultRouteForRole(user.role));
     }
   }, [isLoading, user, router]);
 
-  const navGroups = useMemo(() => getNavForRole("branch"), []);
+  const navGroups = useMemo(() => getNavForRole("employee"), []);
 
   const initials = useMemo(() => {
     if (!user) return "U";
@@ -48,10 +54,16 @@ export default function EmployeeLayout({
     return null;
   }
 
+  if (user.role !== "employee") {
+    return null;
+  }
+
   return (
     <AppLayout 
       navGroups={navGroups} 
       userInitials={initials} 
+      userName={user.fullName || user.email}
+      userRole={user.role}
       onLogout={logout}
       branchName="Taguig Branch"
       hideBranchSelector={true}

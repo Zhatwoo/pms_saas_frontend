@@ -4,14 +4,17 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import type { NavGroup, NavItem } from "@/types";
+import type { NavGroup, NavItem, Role } from "@/types";
 import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
+import { getRoleLabel } from "@/lib/auth";
 import { LogoutIcon } from "@/lib/icons";
 
 interface SidebarProps {
   navGroups: NavGroup[];
   collapsed: boolean;
   onToggle: () => void;
+  userName?: string;
+  userRole?: Role;
   onLogout?: () => void;
 }
 
@@ -110,8 +113,23 @@ function NavItemComponent({
   );
 }
 
-export function Sidebar({ navGroups, collapsed, onToggle, onLogout }: SidebarProps) {
+export function Sidebar({
+  navGroups,
+  collapsed,
+  onToggle,
+  userName,
+  userRole,
+  onLogout,
+}: SidebarProps) {
   const pathname = usePathname();
+  const userInitials = userName
+    ? userName
+        .split(" ")
+        .map((word) => word[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "U";
 
   return (
     <aside
@@ -173,6 +191,28 @@ export function Sidebar({ navGroups, collapsed, onToggle, onLogout }: SidebarPro
           </div>
         ))}
       </nav>
+
+      <div className="border-t border-white/10 p-2">
+        <div
+          className={`flex items-center gap-3 rounded-lg bg-white/5 px-3 py-3 ${
+            collapsed ? "justify-center" : ""
+          }`}
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pawn-gold text-sm font-bold text-zinc-900">
+            {userInitials}
+          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">
+                {userName || "Current User"}
+              </p>
+              <p className="text-xs uppercase tracking-wide text-white/60">
+                {userRole ? getRoleLabel(userRole) : "Signed In"}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Logout */}
       <div className="border-t border-white/10 p-2">
