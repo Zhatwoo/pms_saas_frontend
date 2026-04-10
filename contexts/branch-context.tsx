@@ -55,7 +55,7 @@ interface BranchApiItem {
 /* ── Provider ────────────────────────────────────────────── */
 export function BranchProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "superadmin";
+  const isSuperAdmin = user?.role === "super_admin";
   const [baseBranches, setBaseBranches] = useState<BranchOption[]>([]);
 
   const loadBranches = useCallback(async () => {

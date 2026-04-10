@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { getNavForRole } from "@/lib/constants";
+import { getDefaultRouteForRole } from "@/lib/auth";
 
 export default function ProtectedLayout({
   children,
@@ -19,6 +20,11 @@ export default function ProtectedLayout({
     const hasToken = document.cookie.includes("pms_token");
     if (!isLoading && !user && !hasToken) {
       router.replace("/login");
+      return;
+    }
+
+    if (!isLoading && user && user.role !== "super_admin") {
+      router.replace(getDefaultRouteForRole(user.role));
     }
   }, [isLoading, user, router]);
 
@@ -34,6 +40,10 @@ export default function ProtectedLayout({
     return null;
   }
 
+  if (user.role !== "super_admin") {
+    return null;
+  }
+
   const navGroups = getNavForRole(user.role);
   const initials = user.fullName
     ? user.fullName
@@ -45,7 +55,13 @@ export default function ProtectedLayout({
     : user.email.charAt(0).toUpperCase();
 
   return (
-    <AppLayout navGroups={navGroups} userInitials={initials} onLogout={logout}>
+    <AppLayout
+      navGroups={navGroups}
+      userInitials={initials}
+      userName={user.fullName || user.email}
+      userRole={user.role}
+      onLogout={logout}
+    >
       {children}
     </AppLayout>
   );

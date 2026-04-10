@@ -70,15 +70,15 @@ const ADMIN_NAV: NavGroup[] = [
   {
     section: "MAIN",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: <DashboardIcon /> },
+      { label: "Dashboard", href: "/admin/dashboard", icon: <DashboardIcon /> },
     ],
   },
   {
     section: "TRANSACTION",
     items: [
-      { label: "Pawn Transactions", href: "/pawn-transactions", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/pawn-ticket", icon: <PawnTicketIcon /> },
-      { label: "Customers", href: "/customers", icon: <CustomersIcon /> },
+      { label: "Pawn Transactions", href: "/admin/pawn-transactions", icon: <PawnTransactionIcon /> },
+      { label: "Pawn Ticket", href: "/admin/pawn-ticket", icon: <PawnTicketIcon /> },
+      { label: "Customers", href: "/admin/customers", icon: <CustomersIcon /> },
     ],
   },
   {
@@ -86,36 +86,42 @@ const ADMIN_NAV: NavGroup[] = [
     items: [
       {
         label: "Inventory",
-        href: "/inventory",
+        href: "/admin/inventory",
         icon: <InventoryIcon />,
         subItems: [
-          { label: "Pawned Items", href: "/inventory/pawned-items" },
-          { label: "Items For Sale", href: "/inventory/items-for-sale" },
+          { label: "Pawned Items", href: "/admin/inventory/pawned-items" },
+          { label: "Items For Sale", href: "/admin/inventory/items-for-sale" },
         ],
       },
-      { label: "Expiration Monitoring", href: "/expiration-monitoring", icon: <ExpirationIcon /> },
+      { label: "Expiration Monitoring", href: "/admin/expiration-monitoring", icon: <ExpirationIcon /> },
     ],
   },
   {
     section: "ADMIN",
     items: [
-      { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
+      { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
       {
         label: "Branch Management",
-        href: "/branches",
+        href: "/admin/branches",
         icon: <BranchesIcon />,
         subItems: [
           { label: "Branch Finance", href: "/branch-finance" },
         ],
       },
-      { label: "User Management", href: "/users", icon: <UserManagementIcon /> },
-      { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
-      { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
+      { label: "User Management", href: "/admin/users", icon: <UserManagementIcon /> },
+      { label: "Settings", href: "/admin/settings", icon: <SettingsIcon /> },
+      { label: "Audit Logs", href: "/admin/audit-logs", icon: <AuditLogIcon /> },
     ],
   },
 ];
 
 const BRANCH_NAV: NavGroup[] = [
+  {
+    section: "MAIN",
+    items: [
+      { label: "Dashboard", href: "/employee/dashboard", icon: <DashboardIcon /> },
+    ],
+  },
   {
     section: "TRANSACTION",
     items: [
@@ -149,11 +155,11 @@ const BRANCH_NAV: NavGroup[] = [
 
 export function getNavForRole(role: Role): NavGroup[] {
   switch (role) {
-    case "superadmin":
+    case "super_admin":
       return SUPERADMIN_NAV;
     case "admin":
       return ADMIN_NAV;
-    case "branch":
+    case "employee":
       return BRANCH_NAV;
     default:
       return [];

@@ -10,11 +10,12 @@ import {
 import type { ReactNode } from "react";
 import type { User } from "@/types";
 import { api } from "@/lib/api";
+import { normalizeUser } from "@/lib/auth";
 
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
 }
 
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (cachedUser) {
       try {
-        setUser(JSON.parse(cachedUser));
+        setUser(normalizeUser(JSON.parse(cachedUser)));
       } catch (e) {
         localStorage.removeItem("pms_user");
       }
@@ -48,8 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api
       .get<User>("/auth/me")
       .then((freshUser) => {
-        setUser(freshUser);
-        localStorage.setItem("pms_user", JSON.stringify(freshUser));
+        const normalizedUser = normalizeUser(freshUser);
+
+        if (!normalizedUser) {
+          throw new Error("Unauthorized");
+        }
+
+        setUser(normalizedUser);
+        localStorage.setItem("pms_user", JSON.stringify(normalizedUser));
       })
       .catch((err) => {
         // Expired/invalid token should be cleared to prevent repeated 401 loops.
@@ -72,14 +79,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       { email, password },
     );
 
+    const normalizedUser = normalizeUser(data.user);
+
+    if (!normalizedUser) {
+      throw new Error("Unauthorized");
+    }
+
     const maxAge = Math.max(1, data.expires_in ?? 3600);
     
     // Save to cookies (encoded)
     document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
     
     // Save to state and cache
-    setUser(data.user);
-    localStorage.setItem("pms_user", JSON.stringify(data.user));
+    setUser(normalizedUser);
+    localStorage.setItem("pms_user", JSON.stringify(normalizedUser));
+
+    return normalizedUser;
   }, []);
 
   const logout = useCallback(() => {

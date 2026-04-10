@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { NavGroup } from "@/types";
+import type { NavGroup, Role } from "@/types";
 import { Sidebar } from "@/components/ui/sidebar";
 import { Header } from "@/components/ui/header";
 import { useBranch } from "@/contexts/branch-context";
@@ -9,6 +9,8 @@ import { useBranch } from "@/contexts/branch-context";
 interface AppLayoutProps {
   navGroups: NavGroup[];
   userInitials?: string;
+  userName?: string;
+  userRole?: Role;
   notificationCount?: number;
   branchName?: string;
   hideBranchSelector?: boolean;
@@ -19,6 +21,8 @@ interface AppLayoutProps {
 export function AppLayout({
   navGroups,
   userInitials,
+  userName,
+  userRole,
   notificationCount,
   branchName,
   hideBranchSelector = false,
@@ -34,6 +38,8 @@ export function AppLayout({
         navGroups={navGroups}
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
+        userName={userName}
+        userRole={userRole}
         onLogout={onLogout}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
