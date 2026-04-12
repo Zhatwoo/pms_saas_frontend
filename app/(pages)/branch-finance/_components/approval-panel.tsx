@@ -17,6 +17,8 @@ export interface ApprovalRequest {
 interface ApprovalPanelProps {
   requests: ApprovalRequest[];
   onCancelClick: (id: string) => void;
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
 const typeLabel: Record<string, string> = {
@@ -38,18 +40,25 @@ function fmt(n: number) {
 export function ApprovalPanel({
   requests,
   onCancelClick,
+  expanded = false,
+  onToggle,
 }: ApprovalPanelProps) {
-  const [expanded, setExpanded] = useState(true);
   const pendingCount = requests.length;
 
   if (pendingCount === 0) return null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm transition-all duration-300">
+    <div 
+      className={`flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-300 ${
+        expanded 
+          ? "border-amber-500/50 bg-amber-500/5 ring-4 ring-amber-500/10" 
+          : "border-border-subtle bg-white hover:border-amber-300 hover:bg-amber-50/50"
+      }`}
+    >
       {/* Header */}
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left hover:bg-amber-500/10 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-inset transition-colors"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors focus:outline-none"
       >
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -78,14 +87,19 @@ export function ApprovalPanel({
       </button>
 
       {/* Body */}
-      {expanded && (
-        <div className="border-t border-amber-500/20 px-5 pb-5 pt-3 animate-in slide-in-from-top-2 duration-200 flex-1">
-          <div className="space-y-3">
-            {requests.map((req) => (
-              <div
-                key={req.id}
-                className="flex flex-col gap-4 rounded-xl border border-amber-200 bg-white p-4 shadow-sm transition-all hover:shadow-md sm:h-[136px] sm:flex-row sm:items-center sm:justify-between relative overflow-hidden"
-              >
+      <div 
+        className={`grid transition-all duration-300 ease-in-out ${
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-amber-500/20 px-5 pb-5 pt-3">
+            <div className="space-y-3">
+              {requests.map((req) => (
+                <div
+                  key={req.id}
+                  className="flex flex-col gap-4 rounded-xl border border-amber-200 bg-white p-4 shadow-sm transition-all hover:shadow-md sm:h-[136px] sm:flex-row sm:items-center sm:justify-between relative overflow-hidden flex-shrink-0"
+                >
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-50 ring-2 ring-amber-100">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
@@ -134,7 +148,8 @@ export function ApprovalPanel({
             ))}
           </div>
         </div>
-      )}
+      </div>
+    </div>
     </div>
   );
 }

@@ -14,24 +14,33 @@ interface IncomingRequestsPanelProps {
   requests: BranchFundRequest[];
   onFulfill: (request: BranchFundRequest) => void;
   onReject: (id: string) => void;
+  expanded?: boolean;
+  onToggle?: () => void;
 }
 
 export function IncomingRequestsPanel({
   requests,
   onFulfill,
   onReject,
+  expanded = true,
+  onToggle,
 }: IncomingRequestsPanelProps) {
-  const [expanded, setExpanded] = useState(true);
   const count = requests.length;
 
   if (count === 0) return null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-blue-500/30 bg-blue-500/5 shadow-sm transition-all duration-300">
+    <div 
+      className={`flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-300 ${
+        expanded 
+          ? "border-blue-500/50 bg-blue-500/5 ring-4 ring-blue-500/10" 
+          : "border-border-subtle bg-white hover:border-blue-300 hover:bg-blue-50/50"
+      }`}
+    >
       {/* Header (Clickable) */}
       <button
-        onClick={() => setExpanded((prev) => !prev)}
-        className="flex w-full items-center justify-between px-5 py-4 transition-colors hover:bg-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-5 py-4 transition-colors focus:outline-none"
       >
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -64,14 +73,19 @@ export function IncomingRequestsPanel({
       </button>
 
       {/* Body */}
-      {expanded && (
-        <div className="border-t border-blue-500/20 px-5 pb-5 pt-3 animate-in slide-in-from-top-2 duration-200">
-          <div className="space-y-3">
-            {requests.map((req) => (
-              <div
-                key={req.id}
-                className="flex flex-col gap-4 rounded-xl border border-blue-200 bg-white p-4 shadow-sm transition-all hover:shadow-md sm:h-[136px] sm:flex-row sm:items-center sm:justify-between relative overflow-hidden"
-              >
+      <div 
+        className={`grid transition-all duration-300 ease-in-out ${
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-blue-500/20 px-5 pb-5 pt-3">
+            <div className="space-y-3">
+              {requests.map((req) => (
+                <div
+                  key={req.id}
+                  className="flex flex-col gap-4 rounded-xl border border-blue-200 bg-white p-4 shadow-sm transition-all hover:shadow-md sm:h-[136px] sm:flex-row sm:items-center sm:justify-between relative overflow-hidden flex-shrink-0"
+                >
                 {/* Info side */}
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-50 ring-2 ring-blue-100">
@@ -131,7 +145,8 @@ export function IncomingRequestsPanel({
             ))}
           </div>
         </div>
-      )}
+      </div>
+    </div>
     </div>
   );
 }

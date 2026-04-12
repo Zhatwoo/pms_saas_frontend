@@ -278,6 +278,7 @@ export default function BranchFinancePage() {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>(INITIAL_TRANSACTIONS);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>(INITIAL_APPROVALS);
   const [incomingRequests, setIncomingRequests] = useState<BranchFundRequest[]>(INITIAL_INCOMING_REQUESTS);
+  const [activePanel, setActivePanel] = useState<"incoming" | "approval" | null>("incoming");
 
   // Modals
   const [addFundsOpen, setAddFundsOpen] = useState(false);
@@ -570,12 +571,14 @@ export default function BranchFinancePage() {
         onAddFunds={() => setAddFundsOpen(true)}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
         {/* Incoming Requests Panel */}
         <IncomingRequestsPanel
           requests={scopedIncomingRequests}
           onFulfill={handleFulfillRequest}
           onReject={handleRejectRequestClick}
+          expanded={activePanel === "incoming"}
+          onToggle={() => setActivePanel(activePanel === "incoming" ? null : "incoming")}
         />
 
         {/* Approval Panel */}
@@ -585,6 +588,8 @@ export default function BranchFinancePage() {
             setSelectedCancelId(id);
             setCancelModalOpen(true);
           }}
+          expanded={activePanel === "approval"}
+          onToggle={() => setActivePanel(activePanel === "approval" ? null : "approval")}
         />
       </div>
 
