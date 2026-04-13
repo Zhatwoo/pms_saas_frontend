@@ -14,10 +14,10 @@ export default function EmployeeLayout({
   children: React.ReactNode;
 }) {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
-  const { selectedBranch, isLoading: isBranchLoading } = useBranch() as any;
+  const { selectedBranch } = useBranch();
   const router = useRouter();
 
-  const isLoading = isAuthLoading || isBranchLoading;
+  const isLoading = isAuthLoading;
 
   useEffect(() => {
     // Only redirect if definitively not logged in

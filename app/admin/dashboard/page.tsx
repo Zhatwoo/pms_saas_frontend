@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { PeriodTabs } from "@/components/shared/period-tabs";
+import type { ContractTrendData } from "./_components/contract-trends-chart";
+import type { RevenueTrendData } from "./_components/revenue-trend-chart";
+import type { NotificationItem } from "./_components/notifications-panel";
+import type { AttentionItem } from "./_components/items-attention";
 import { AutoResetBanner } from "./_components/auto-reset-banner";
 import { DashboardStats } from "./_components/dashboard-stats";
 import { ContractTrendsChart } from "./_components/contract-trends-chart";
@@ -31,10 +35,10 @@ export default function DashboardPage() {
     monthlyRevenue: "$ 0"
   };
 
-  const contractTrendsData: any[] = [];
-  const revenueTrendData: any[] = [];
-  const notificationsData: any[] = [];
-  const itemsAttentionData: any[] = [];
+  const contractTrendsData: ContractTrendData[] = [];
+  const revenueTrendData: RevenueTrendData[] = [];
+  const notificationsData: NotificationItem[] = [];
+  const itemsAttentionData: AttentionItem[] = [];
 
   return (
     <div className="space-y-5">

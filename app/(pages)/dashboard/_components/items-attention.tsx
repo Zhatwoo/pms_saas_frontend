@@ -1,6 +1,6 @@
 import { StatusBadge } from "@/components/shared/status-badge";
 
-interface AttentionItem {
+export interface AttentionItem {
   id: string | number;
   name: string;
   contract: string;

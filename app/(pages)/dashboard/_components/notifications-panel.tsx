@@ -1,4 +1,4 @@
-interface NotificationItem {
+export interface NotificationItem {
   id: string | number;
   message: string;
   time: string;

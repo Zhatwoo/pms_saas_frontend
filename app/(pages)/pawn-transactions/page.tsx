@@ -4,7 +4,10 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
-import { ManualTransactionModal } from "./_components/manual-transaction-modal";
+import {
+  ManualTransactionModal,
+  type ManualTransactionPayload,
+} from "./_components/manual-transaction-modal";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
 type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
@@ -98,7 +101,7 @@ export default function PawnTransactionsPage() {
     window.print();
   }, []);
 
-  const handleManualSubmit = (data: any) => {
+  const handleManualSubmit = (data: ManualTransactionPayload) => {
     const newTransaction: TransactionRow = {
       transactionNo: data.transactionNo,
       branch: selectedBranch,

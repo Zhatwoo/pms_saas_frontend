@@ -7,7 +7,6 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import type { ReactNode } from "react";
 import type { User } from "@/types";
 import { api } from "@/lib/api";
 import { normalizeUser } from "@/lib/auth";
@@ -33,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (cachedUser) {
       try {
         setUser(normalizeUser(JSON.parse(cachedUser)));
-      } catch (e) {
+      } catch {
         localStorage.removeItem("pms_user");
       }
     }

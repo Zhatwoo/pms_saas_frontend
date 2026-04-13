@@ -69,8 +69,20 @@ class ApiClient {
       // Handle validation errors in 'data' field
       if (errorData.data && Array.isArray(errorData.data)) {
         const details = errorData.data
-          .map((d: any) => `${d.field}: ${Array.isArray(d.errors) ? d.errors.join(', ') : d.errors}`)
-          .join('; ');
+          .map((d: unknown) => {
+            if (!d || typeof d !== "object") return "";
+            const rec = d as Record<string, unknown>;
+            const field = rec.field;
+            const errs = rec.errors;
+            const errStr = Array.isArray(errs)
+              ? errs.map(String).join(", ")
+              : errs != null
+                ? String(errs)
+                : "";
+            return `${typeof field === "string" ? field : "?"}: ${errStr}`;
+          })
+          .filter(Boolean)
+          .join("; ");
         errorMessage = errorMessage ? `${errorMessage} - ${details}` : details;
       }
       
