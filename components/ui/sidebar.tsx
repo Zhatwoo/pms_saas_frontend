@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -22,27 +22,32 @@ function NavItemComponent({
   item,
   collapsed,
   pathname,
+  isExpanded,
+  onToggle,
 }: {
   item: NavItem;
   collapsed: boolean;
   pathname: string;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
   const hasSubItems = item.subItems && item.subItems.length > 0;
 
   // For parent item, check if itself or any subitem is active
-  const isSelfActive = pathname === item.href || pathname.startsWith((item.href ?? "") + "/");
-  const isAnySubActive = hasSubItems && item.subItems?.some(
-    (sub) => pathname === sub.href || pathname.startsWith((sub.href ?? "") + "/")
-  );
-  const isParentActive = isSelfActive || isAnySubActive;
-
-  const [expanded, setExpanded] = useState(isAnySubActive);
+  const isSelfActive =
+    pathname === item.href || pathname.startsWith((item.href ?? "") + "/");
+  const isAnySubActive =
+    hasSubItems &&
+    item.subItems?.some(
+      (sub) =>
+        pathname === sub.href || pathname.startsWith((sub.href ?? "") + "/"),
+    );
 
   if (hasSubItems) {
     return (
       <div className="space-y-1">
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={onToggle}
           title={collapsed ? item.label : undefined}
           className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
             collapsed ? "justify-center" : ""
@@ -62,34 +67,47 @@ function NavItemComponent({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+              className={`transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
             >
               <polyline points="6 9 12 15 18 9" />
             </svg>
           )}
         </button>
 
-        {expanded && !collapsed && (
-          <div className="ml-9 space-y-1">
-            {item.subItems?.map((sub, subIdx) => {
-              const isSubActive =
-                pathname === sub.href || pathname.startsWith((sub.href ?? "") + "/");
-              return (
-                <Link
-                  key={`${item.href ?? item.label}-sub-${subIdx}-${sub.href ?? sub.label}`}
-                  href={sub.href ?? "#"}
-                  className={`block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
-                    isSubActive
-                      ? "bg-pawn-gold text-zinc-900"
-                      : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
-                  }`}
-                >
-                  {sub.label}
-                </Link>
-              );
-            })}
+        <div
+          className={`grid transition-all duration-300 ease-in-out ${
+            isExpanded && !collapsed
+              ? "grid-rows-[1fr] opacity-100 mt-1"
+              : "grid-rows-[0fr] opacity-0 mt-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="ml-9 space-y-1 pb-1">
+              {item.subItems?.map((sub, subIdx) => {
+                const isSubActive =
+                  pathname === sub.href ||
+                  pathname.startsWith((sub.href ?? "") + "/");
+                return (
+                  <Link
+                    key={`${item.href ?? item.label}-sub-${subIdx}-${
+                      sub.href ?? sub.label
+                    }`}
+                    href={sub.href ?? "#"}
+                    className={`block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                      isSubActive
+                        ? "bg-pawn-gold text-zinc-900 shadow-sm"
+                        : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
+                    }`}
+                  >
+                    {sub.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -122,6 +140,31 @@ export function Sidebar({
   onLogout,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  // Initialize expanded state based on active path
+  useEffect(() => {
+    if (collapsed) {
+      setExpandedKey(null);
+      return;
+    }
+
+    for (const group of navGroups) {
+      for (const item of group.items) {
+        if (
+          item.subItems?.some(
+            (sub) =>
+              pathname === sub.href ||
+              pathname.startsWith((sub.href ?? "") + "/"),
+          )
+        ) {
+          setExpandedKey(item.label);
+          return;
+        }
+      }
+    }
+  }, [pathname, navGroups, collapsed]);
+
   const userInitials = userName
     ? userName
         .split(" ")
@@ -181,10 +224,18 @@ export function Sidebar({
             <div className="space-y-0.5">
               {group.items.map((item, itemIdx) => (
                 <NavItemComponent
-                  key={`${group.section}-${groupIdx}-item-${itemIdx}-${item.href ?? item.label}`}
+                  key={`${group.section}-${groupIdx}-item-${itemIdx}-${
+                    item.href ?? item.label
+                  }`}
                   item={item}
                   collapsed={collapsed}
                   pathname={pathname}
+                  isExpanded={expandedKey === item.label}
+                  onToggle={() =>
+                    setExpandedKey(
+                      expandedKey === item.label ? null : item.label,
+                    )
+                  }
                 />
               ))}
             </div>
