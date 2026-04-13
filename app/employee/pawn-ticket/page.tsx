@@ -1,8 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
+import { NewPawnTicketModal } from "./_components/new-pawn-ticket-modal";
 
 export default function EmployeePawnTicketPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="space-y-4 p-4">
       <div>
@@ -33,14 +36,17 @@ export default function EmployeePawnTicketPage() {
           This module is currently being optimized to ensure seamless ticket issuance and tracking for your branch operations.
         </p>
         <div className="mt-6">
-          <Link
-            href="/employee/pawn-ticket/new"
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             Generate New Ticket
-          </Link>
+          </button>
         </div>
       </div>
+
+      <NewPawnTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
