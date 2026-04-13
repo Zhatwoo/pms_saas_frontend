@@ -5,14 +5,14 @@ import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
 import { RenewModal } from "./_components/renew-modal";
-import { NewPawnForm } from "./_components/new-pawn-form";
-import { BuyBackForm } from "./_components/buy-back-form";
+import { NewPawnModal } from "./_components/new-pawn-modal";
+import { BuyBackModal } from "./_components/buy-back-modal";
+import { SalesTransferModal } from "./_components/sales-transfer-modal";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { useBranch } from "@/contexts/branch-context";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
 type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
-type ActiveForm = "newPawn" | "buyBack" | null;
 
 interface TransactionRow {
   transactionNo: string;
@@ -41,8 +41,10 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 export default function EmployeePawnTransactionsPage() {
   const { selectedBranch } = useBranch();
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
+  const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
+  const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-  const [activeForm, setActiveForm] = useState<ActiveForm>(null);
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
     startingBalance: 0, endingBalance: 0,
@@ -104,17 +106,15 @@ export default function EmployeePawnTransactionsPage() {
   }, []);
 
   const openNewPawnForm = useCallback(() => {
-    setActiveFilter("All");
-    setActiveForm("newPawn");
+    setIsNewPawnModalOpen(true);
   }, []);
 
   const openBuyBackForm = useCallback(() => {
-    setActiveFilter("All");
-    setActiveForm("buyBack");
+    setIsBuyBackModalOpen(true);
   }, []);
 
   const closeActiveForm = useCallback(() => {
-    setActiveForm(null);
+    // Left for potential future use or can be removed
   }, []);
 
   return (
@@ -133,20 +133,13 @@ export default function EmployeePawnTransactionsPage() {
         onPrintReport={handlePrintReport}
         onNewPawn={openNewPawnForm}
         onBuyBack={openBuyBackForm}
+        onSalesTransfer={() => setIsSalesTransferModalOpen(true)}
         onStartDay={() => setBalanceModal({ open: true, type: "starting" })}
         onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
       />
 
-      {activeForm === "newPawn" ? (
-        <NewPawnForm onCancel={closeActiveForm} />
-      ) : activeForm === "buyBack" ? (
-        <BuyBackForm onCancel={closeActiveForm} />
-      ) : (
-        <>
-          <TransactionStats data={currentStats} />
-          <TransactionTable data={filteredTransactions} />
-        </>
-      )}
+      <TransactionStats data={currentStats} />
+      <TransactionTable data={filteredTransactions} />
 
       <DailyBalanceConfirmation
         isOpen={balanceModal.open}
@@ -162,6 +155,24 @@ export default function EmployeePawnTransactionsPage() {
       <RenewModal 
         isOpen={isRenewModalOpen} 
         onClose={() => setIsRenewModalOpen(false)} 
+        branchName={selectedBranch.name}
+      />
+
+      <NewPawnModal
+        isOpen={isNewPawnModalOpen}
+        onClose={() => setIsNewPawnModalOpen(false)}
+        branchName={selectedBranch.name}
+      />
+
+      <BuyBackModal
+        isOpen={isBuyBackModalOpen}
+        onClose={() => setIsBuyBackModalOpen(false)}
+        branchName={selectedBranch.name}
+      />
+
+      <SalesTransferModal
+        isOpen={isSalesTransferModalOpen}
+        onClose={() => setIsSalesTransferModalOpen(false)}
         branchName={selectedBranch.name}
       />
     </div>

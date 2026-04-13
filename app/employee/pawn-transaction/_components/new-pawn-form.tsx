@@ -58,31 +58,32 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
         </button>
       </div>
 
-      <div className="mt-6 space-y-6">
-        <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-emerald-900">Physical Item Scan</h3>
-                <p className="text-xs text-emerald-700">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <div className="space-y-6">
+          <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-emerald-900">Physical Item Scan</h3>
+                  <p className="text-xs text-emerald-700">
                     Scan the item&apos;s barcode/QR code or take a picture to verify inventory.
                   </p>
+                </div>
               </div>
+              <button 
+                type="button" 
+                className="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 active:scale-95 transition-all"
+                onClick={() => alert("Scanning from Camera...")}
+              >
+                Open Scanner
+              </button>
             </div>
-            <button
-              type="button"
-              className="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 active:scale-95 transition-all"
-              onClick={() => alert("Scanning from Camera...")}
-            >
-              Open Scanner
-            </button>
           </div>
-        </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">

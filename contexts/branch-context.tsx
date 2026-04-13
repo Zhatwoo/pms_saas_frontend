@@ -63,21 +63,32 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   const [baseBranches, setBaseBranches] = useState<BranchOption[]>([]);
 
   const loadBranches = useCallback(async () => {
-    if (!user) return; // Don't fetch before authentication
+    if (!user) return;
     try {
-      const data = await api.get<BranchApiItem[]>("/branches");
-      const normalized = (data || []).map((branch) => ({
-        id: branch.id,
-        name: branch.name,
-        location: branch.location,
-        code: branch.branch_code,
-      }));
+      const path = isSuperAdmin ? "/branches" : (user.branchId ? `/branches/${user.branchId}` : null);
+      if (!path) return;
+
+      const data = await api.get<BranchApiItem | BranchApiItem[]>(path);
+      
+      const normalized: BranchOption[] = Array.isArray(data) 
+        ? data.map((branch) => ({
+            id: branch.id,
+            name: branch.name,
+            location: branch.location,
+            code: branch.branch_code,
+          }))
+        : [{
+            id: data.id,
+            name: data.name,
+            location: data.location,
+            code: data.branch_code,
+          }];
+
       setBaseBranches(normalized);
     } catch {
       // Keep previous selector options on transient failures.
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, user?.branchId, isSuperAdmin]);
 
   useEffect(() => {
     void loadBranches();

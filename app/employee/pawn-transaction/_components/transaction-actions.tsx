@@ -49,6 +49,7 @@ interface TransactionActionsProps {
   onPrintReport?: () => void;
   onNewPawn?: () => void;
   onBuyBack?: () => void;
+  onSalesTransfer?: () => void;
   onStartDay?: () => void;
   onEndDay?: () => void;
 }
@@ -69,6 +70,7 @@ export function TransactionActions({
   onPrintReport,
   onNewPawn,
   onBuyBack,
+  onSalesTransfer,
   onStartDay,
   onEndDay
 }: TransactionActionsProps) {
@@ -87,6 +89,8 @@ export function TransactionActions({
                 onNewPawn();
               } else if (f === "Buy Back" && onBuyBack) {
                 onBuyBack();
+              } else if (f === "Sales / Transfer" && onSalesTransfer) {
+                onSalesTransfer();
               } else {
                 onFilterChange?.(activeFilter === f ? "All" : f);
               }
