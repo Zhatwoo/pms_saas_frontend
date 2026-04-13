@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { AuthLandingPage } from "../_components/auth-landing-page";
 import { LoginModal } from "../_components/login-modal";
+import { SignupModal } from "../_components/signup-modal";
 
 export default function LoginPage() {
   return (
@@ -14,11 +15,38 @@ export default function LoginPage() {
 
 function LoginExperience() {
   const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   return (
     <>
-      <AuthLandingPage onLoginClick={() => setShowLogin(true)} />
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      <AuthLandingPage
+        onLoginClick={() => {
+          setShowSignup(false);
+          setShowLogin(true);
+        }}
+        onSignUpClick={() => {
+          setShowLogin(false);
+          setShowSignup(true);
+        }}
+      />
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onRequestSignUp={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+        />
+      )}
+      {showSignup && (
+        <SignupModal
+          onClose={() => setShowSignup(false)}
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
     </>
   );
 }

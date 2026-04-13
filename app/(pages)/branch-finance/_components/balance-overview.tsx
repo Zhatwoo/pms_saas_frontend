@@ -7,11 +7,13 @@ interface BalanceCardProps {
   totalAdded: number;
   totalTransferred: number;
   lastUpdated: string;
+  onAddFunds?: () => void;
 }
 
 interface BranchBalanceRow {
   branchId: string;
   name: string;
+  startingBalance: number;
   currentBalance: number;
   status: string;
 }
@@ -86,6 +88,7 @@ function SingleBranchCard({
   totalAdded,
   totalTransferred,
   lastUpdated,
+  onAddFunds,
 }: BalanceCardProps) {
   const delta = currentBalance - startingBalance;
   const deltaPercent = startingBalance > 0 ? ((delta / startingBalance) * 100).toFixed(1) : "0.0";
@@ -115,26 +118,44 @@ function SingleBranchCard({
       </div>
 
       {/* Current Balance (hero) */}
-      <div className="px-6 py-4">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
-          Current Balance
-        </p>
-        <div className="flex items-end gap-3">
-          <span className="text-4xl font-extrabold tracking-tight text-white">
-            {fmt(currentBalance)}
-          </span>
-          <span
-            className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-              isPositive
-                ? "bg-emerald-400/20 text-emerald-300"
-                : "bg-red-400/20 text-red-300"
-            }`}
-          >
-            {isPositive ? <TrendUpIcon /> : <ArrowDownIcon />}
-            {isPositive ? "+" : ""}
-            {deltaPercent}%
-          </span>
+      <div className="px-6 py-4 flex items-center justify-between">
+        <div>
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
+            Current Balance
+          </p>
+          <div className="flex items-end gap-3">
+            <span className="text-4xl font-extrabold tracking-tight text-white">
+              {fmt(currentBalance)}
+            </span>
+            <span
+              className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                isPositive
+                  ? "bg-emerald-400/20 text-emerald-300"
+                  : "bg-red-400/20 text-red-300"
+              }`}
+            >
+              {isPositive ? <TrendUpIcon /> : <ArrowDownIcon />}
+              {isPositive ? "+" : ""}
+              {deltaPercent}%
+            </span>
+          </div>
         </div>
+
+        {/* Action Buttons beside balance */}
+        {onAddFunds && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onAddFunds}
+              className="flex items-center gap-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Funds
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stat tiles */}
@@ -144,18 +165,15 @@ function SingleBranchCard({
           <p className="mt-0.5 text-sm font-bold text-white">{fmt(startingBalance)}</p>
         </div>
         <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
+          <p className="text-[10px] font-medium uppercase text-emerald-400/70">End Balance</p>
+          <p className="mt-0.5 text-sm font-bold text-white">{fmt(currentBalance)}</p>
+        </div>
+        <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
           <div className="flex items-center gap-1 text-emerald-400/70">
             <ArrowUpIcon />
             <p className="text-[10px] font-medium uppercase">Added</p>
           </div>
           <p className="mt-0.5 text-sm font-bold text-emerald-300">{fmt(totalAdded)}</p>
-        </div>
-        <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
-          <div className="flex items-center gap-1 text-red-400/70">
-            <ArrowDownIcon />
-            <p className="text-[10px] font-medium uppercase">Transferred</p>
-          </div>
-          <p className="mt-0.5 text-sm font-bold text-red-300">{fmt(totalTransferred)}</p>
         </div>
       </div>
     </div>
@@ -165,32 +183,13 @@ function SingleBranchCard({
 /* ── All Branches Aggregate Card ──────────────────────── */
 function AggregateBranchCard({
   totalBranches,
-  aggregateStarting,
-  aggregateCurrent,
-  aggregateAdded,
-  aggregateTransferred,
-  lastUpdated,
   branchRows,
 }: {
   totalBranches: number;
-  aggregateStarting: number;
-  aggregateCurrent: number;
-  aggregateAdded: number;
-  aggregateTransferred: number;
-  lastUpdated: string;
   branchRows: BranchBalanceRow[];
 }) {
   return (
     <div className="space-y-4">
-      <SingleBranchCard
-        branchName={`All Branches (${totalBranches})`}
-        startingBalance={aggregateStarting}
-        currentBalance={aggregateCurrent}
-        totalAdded={aggregateAdded}
-        totalTransferred={aggregateTransferred}
-        lastUpdated={lastUpdated}
-      />
-
       {/* Per-branch list */}
       <div className="rounded-xl border border-border-main bg-surface shadow-sm">
         <div className="flex items-center justify-between border-b border-border-subtle px-5 py-3">
@@ -219,17 +218,26 @@ function AggregateBranchCard({
                   <p className="text-[10px] text-text-muted">ID: {b.branchId}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-bold text-text-primary">{fmt(b.currentBalance)}</p>
-                <span
-                  className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                    b.status === "Active"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-zinc-200 text-zinc-600"
-                  }`}
-                >
-                  {b.status}
-                </span>
+              <div className="flex items-center gap-8 text-right">
+                <div className="hidden sm:block">
+                  <p className="text-[10px] font-bold tracking-wider uppercase text-text-tertiary">Start Balance</p>
+                  <p className={`text-sm font-semibold ${b.startingBalance < 50000 ? "text-amber-600" : "text-text-secondary"}`}>{fmt(b.startingBalance)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold tracking-wider uppercase text-emerald-600">End / Current</p>
+                  <p className="text-sm font-extrabold text-emerald-700">{fmt(b.currentBalance)}</p>
+                </div>
+                <div className="w-16">
+                  <span
+                    className={`inline-flex w-full items-center justify-center rounded px-2 py-1 text-[10px] font-bold ${
+                      b.status === "Active"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-zinc-200 text-zinc-600"
+                    }`}
+                  >
+                    {b.status}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
@@ -254,35 +262,26 @@ export interface BranchBalance {
 interface BalanceOverviewProps {
   isAllBranches: boolean;
   selectedBranchId: string;
+  selectedBranchName: string;
   balances: BranchBalance[];
+  onAddFunds: () => void;
 }
 
 export function BalanceOverview({
   isAllBranches,
   selectedBranchId,
+  selectedBranchName,
   balances,
+  onAddFunds,
 }: BalanceOverviewProps) {
   if (isAllBranches) {
-    const aggregateStarting = balances.reduce((s, b) => s + b.startingBalance, 0);
-    const aggregateCurrent = balances.reduce((s, b) => s + b.currentBalance, 0);
-    const aggregateAdded = balances.reduce((s, b) => s + b.totalAdded, 0);
-    const aggregateTransferred = balances.reduce((s, b) => s + b.totalTransferred, 0);
-    const latest = balances.reduce(
-      (l, b) => (b.lastUpdated > l ? b.lastUpdated : l),
-      "",
-    );
-
     return (
       <AggregateBranchCard
         totalBranches={balances.length}
-        aggregateStarting={aggregateStarting}
-        aggregateCurrent={aggregateCurrent}
-        aggregateAdded={aggregateAdded}
-        aggregateTransferred={aggregateTransferred}
-        lastUpdated={latest}
         branchRows={balances.map((b) => ({
           branchId: b.branchId,
           name: b.name,
+          startingBalance: b.startingBalance,
           currentBalance: b.currentBalance,
           status: b.status,
         }))}
@@ -293,9 +292,15 @@ export function BalanceOverview({
   const branch = balances.find((b) => b.branchId === selectedBranchId);
   if (!branch) {
     return (
-      <div className="rounded-lg border border-border-main bg-surface p-8 text-center text-sm text-text-muted">
-        No financial data available for this branch.
-      </div>
+      <SingleBranchCard
+        branchName={selectedBranchName}
+        startingBalance={0}
+        currentBalance={0}
+        totalAdded={0}
+        totalTransferred={0}
+        lastUpdated={new Date().toISOString()}
+        onAddFunds={onAddFunds}
+      />
     );
   }
 
@@ -307,6 +312,7 @@ export function BalanceOverview({
       totalAdded={branch.totalAdded}
       totalTransferred={branch.totalTransferred}
       lastUpdated={branch.lastUpdated}
+      onAddFunds={onAddFunds}
     />
   );
 }

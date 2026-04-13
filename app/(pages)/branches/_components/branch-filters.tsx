@@ -62,7 +62,7 @@ export function BranchFilters({
       {onCreateBranch && (
         <button
           onClick={onCreateBranch}
-          className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-pawn-gold transition-opacity hover:opacity-90"
+          className="ml-auto flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-pawn-gold transition-opacity hover:opacity-90"
         >
           <svg
             width="14"

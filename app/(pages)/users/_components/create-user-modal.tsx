@@ -1,32 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CreateUserInput, UserRole } from "../page";
+import type {
+  BranchOption,
+  CreateUserInput,
+  CreateableUserRole,
+} from "../page";
 
 interface CreateUserModalProps {
-  branches: string[];
+  branches: BranchOption[];
   onClose: () => void;
-  onCreateUser: (input: CreateUserInput) => void;
+  onCreateUser: (input: CreateUserInput) => Promise<void>;
 }
 
 interface FormState {
-  username: string;
   fullName: string;
   email: string;
   password: string;
-  role: UserRole;
-  branch: string;
+  role: CreateableUserRole;
+  branchId: string;
 }
 
-const roleOptions: UserRole[] = ["ADMIN", "EMPLOYEE"];
+const roleOptions: CreateableUserRole[] = ["ADMIN", "EMPLOYEE"];
 
-const initialFormState = (branches: string[]): FormState => ({
-  username: "",
+const initialFormState = (branches: BranchOption[]): FormState => ({
   fullName: "",
   email: "",
   password: "",
   role: "EMPLOYEE",
-  branch: branches[0] ?? "",
+  branchId: branches[0]?.id ?? "",
 });
 
 export function CreateUserModal({
@@ -36,6 +38,7 @@ export function CreateUserModal({
 }: CreateUserModalProps) {
   const [form, setForm] = useState<FormState>(() => initialFormState(branches));
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
@@ -52,15 +55,13 @@ export function CreateUserModal({
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-
-    const trimmedUsername = form.username.trim();
     const trimmedFullName = form.fullName.trim();
     const trimmedEmail = form.email.trim();
 
-    if (!trimmedUsername || !trimmedFullName || !trimmedEmail || !form.password) {
+    if (!trimmedFullName || !trimmedEmail || !form.password || !form.branchId) {
       setError("Complete all required fields before creating the user.");
       return;
     }
@@ -70,16 +71,26 @@ export function CreateUserModal({
       return;
     }
 
-    onCreateUser({
-      username: trimmedUsername,
-      fullName: trimmedFullName,
-      email: trimmedEmail,
-      password: form.password,
-      role: form.role,
-      branch: form.branch,
-    });
+    setIsSubmitting(true);
 
-    setForm(initialFormState(branches));
+    try {
+      await onCreateUser({
+        fullName: trimmedFullName,
+        email: trimmedEmail,
+        password: form.password,
+        role: form.role,
+        branchId: form.branchId,
+      });
+      setForm(initialFormState(branches));
+    } catch (createError) {
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Failed to create user.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -135,19 +146,6 @@ export function CreateUserModal({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                Username
-              </label>
-              <input
-                type="text"
-                value={form.username}
-                onChange={(event) => updateField("username", event.target.value)}
-                placeholder="john_doe"
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-              />
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
                 Full Name
               </label>
               <input
@@ -174,7 +172,7 @@ export function CreateUserModal({
 
             <div>
               <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
-                Temporary Password
+                Password
               </label>
               <input
                 type="password"
@@ -191,7 +189,7 @@ export function CreateUserModal({
               </label>
               <select
                 value={form.role}
-                onChange={(event) => updateField("role", event.target.value as UserRole)}
+                onChange={(event) => updateField("role", event.target.value as CreateableUserRole)}
                 className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
               >
                 {roleOptions.map((role) => (
@@ -207,21 +205,26 @@ export function CreateUserModal({
                 Branch
               </label>
               <select
-                value={form.branch}
-                onChange={(event) => updateField("branch", event.target.value)}
+                value={form.branchId}
+                onChange={(event) => updateField("branchId", event.target.value)}
                 className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                disabled={branches.length === 0}
               >
-                {branches.map((branch) => (
-                  <option key={branch} value={branch}>
-                    {branch}
+                {branches.length === 0 ? (
+                  <option value="">No branches available</option>
+                ) : (
+                  branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
                   </option>
-                ))}
+                  ))
+                )}
               </select>
             </div>
           </div>
 
           <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
-            New users are added to the table immediately for now. Backend persistence can be connected next once the users API is ready.
+            Users can only be assigned to branches that already exist in the branches table.
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
@@ -234,9 +237,10 @@ export function CreateUserModal({
             </button>
             <button
               type="submit"
+              disabled={isSubmitting || branches.length === 0}
               className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
             >
-              Create User
+              {isSubmitting ? "Creating..." : "Create User"}
             </button>
           </div>
         </form>

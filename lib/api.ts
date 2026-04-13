@@ -1,15 +1,8 @@
 class ApiClient {
   private getToken(): string | null {
     if (typeof document === "undefined") return null;
-    const name = "pms_token=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i].trim();
-      if (c.indexOf(name) === 0) {
-        return decodeURIComponent(c.substring(name.length, c.length));
-      }
-    }
-    return null;
+    const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
+    return match ? match[1] : null;
   }
 
   async fetch<T>(path: string, options?: RequestInit): Promise<T> {
@@ -20,22 +13,99 @@ class ApiClient {
       ...options?.headers,
     };
 
-    const res = await fetch(`/api${path}`, { ...options, headers });
-    
-    if (res.status === 401 && process.env.NODE_ENV !== "production") {
+    const isPublicPath =
+      path === "/auth/login" ||
+      path === "/auth/register" ||
+      path === "/auth/signup/branches" ||
+      path === "/branches/public";
+
+    if (!token && !isPublicPath) {
       console.warn(
-        `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token length: ${token?.length}`,
+        `[API] Missing auth token for ${path}. Check if login was successful and token is stored in cookies.`,
       );
     }
 
+    const res = await fetch(`/api${path}`, { ...options, headers });
+
     if (!res.ok) {
-      if (res.status === 401) {
-        // We throw Unauthorized, but let the AuthContext decide if it wants to log out 
-        // to avoid race conditions during refresh or network blips.
-        throw new Error("Unauthorized");
+      const text = await res.text();
+      let errorData: Record<string, unknown> = {};
+      if (text) {
+        try {
+          errorData = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          errorData = {
+            message:
+              text.length > 500 ? `${text.slice(0, 500)}…` : text,
+          };
+        }
+      } else {
+        errorData = { message: `HTTP ${res.status} (empty body)` };
       }
-      const error = await res.json().catch(() => ({ message: "Request failed" }));
-      throw new Error(error.message || `HTTP ${res.status}`);
+
+      if (res.status === 401) {
+        if (!isPublicPath) {
+          console.error(
+            `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token: ${token?.substring(0, 20)}...`,
+          );
+        }
+        const msg =
+          typeof errorData.message === "string"
+            ? errorData.message
+            : "Unauthorized";
+        throw new Error(msg);
+      }
+
+      // Log full error details for debugging
+      console.error(`[API Error ${res.status}] ${path}:`, errorData);
+      
+      // Extract detailed error message
+      let errorMessage = "";
+      const rawMsg = errorData.message;
+      if (typeof rawMsg === "string") {
+        errorMessage = rawMsg;
+      } else if (Array.isArray(rawMsg)) {
+        errorMessage = rawMsg.map(String).join("; ");
+      }
+      
+      // Handle validation errors in 'data' field
+      if (errorData.data && Array.isArray(errorData.data)) {
+        const details = errorData.data
+          .map((d: unknown) => {
+            if (!d || typeof d !== "object") return "";
+            const rec = d as Record<string, unknown>;
+            const field = rec.field;
+            const errs = rec.errors;
+            const errStr = Array.isArray(errs)
+              ? errs.map(String).join(", ")
+              : errs != null
+                ? String(errs)
+                : "";
+            return `${typeof field === "string" ? field : "?"}: ${errStr}`;
+          })
+          .filter(Boolean)
+          .join("; ");
+        errorMessage = errorMessage ? `${errorMessage} - ${details}` : details;
+      }
+      
+      if (!errorMessage) {
+        const errField = errorData.error;
+        const errsField = errorData.errors;
+        const errorsJoined = Array.isArray(errsField)
+          ? errsField.map(String).join(", ")
+          : typeof errsField === "string"
+            ? errsField
+            : "";
+        errorMessage =
+          (typeof errField === "string" ? errField : "") ||
+          errorsJoined ||
+          (Object.keys(errorData).length > 0
+            ? JSON.stringify(errorData)
+            : "") ||
+          `HTTP ${res.status}`;
+      }
+        
+      throw new Error(String(errorMessage));
     }
 
     const json = await res.json();
@@ -48,6 +118,18 @@ class ApiClient {
 
   get<T>(path: string) {
     return this.fetch<T>(path, { method: "GET" });
+  }
+
+  delete<T>(path: string) {
+    return this.fetch<T>(path, { method: "DELETE" });
+  }
+
+  patch<T>(path: string, body: unknown) {
+    return this.fetch<T>(path, { method: "PATCH", body: JSON.stringify(body) });
+  }
+
+  put<T>(path: string, body: unknown) {
+    return this.fetch<T>(path, { method: "PUT", body: JSON.stringify(body) });
   }
 }
 

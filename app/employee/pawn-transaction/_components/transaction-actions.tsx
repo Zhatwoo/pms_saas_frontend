@@ -1,4 +1,7 @@
+import type { ComponentProps } from "react";
 import { ActionButton } from "@/components/shared/action-button";
+
+type ActionVariant = NonNullable<ComponentProps<typeof ActionButton>["variant"]>;
 
 const downloadIcon = (
   <svg
@@ -34,7 +37,9 @@ const printerIcon = (
   </svg>
 );
 
-type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
+const filters = ["Renew", "Redeem", "New Pawn", "Sales / Transfer", "Buy Back"] as const;
+type FilterButton = (typeof filters)[number];
+type FilterType = "All" | FilterButton;
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
@@ -49,10 +54,9 @@ interface TransactionActionsProps {
   onEndDay?: () => void;
 }
 
-const filters: FilterType[] = ["Renew", "New Pawn", "Sales / Transfer", "Buy Back"];
-
-const filterVariantMap: Record<string, string> = {
-  "Renew": "renew",
+const filterVariantMap: Record<FilterButton, ActionVariant> = {
+  Renew: "renew",
+  Redeem: "redeem",
   "New Pawn": "pawn",
   "Sales / Transfer": "sales",
   "Buy Back": "buyback",
@@ -76,7 +80,7 @@ export function TransactionActions({
         {filters.map((f) => (
           <ActionButton
             key={f}
-            variant={filterVariantMap[f] as any}
+            variant={filterVariantMap[f]}
             className={activeFilter === f ? "ring-2 ring-offset-1 ring-emerald-600 opacity-100" : "opacity-70 hover:opacity-100"}
             onClick={() => {
               if (f === "Renew" && onRenewClick) {

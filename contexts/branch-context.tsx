@@ -15,9 +15,12 @@ import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-bro
 
 /* ── Branch option shape ─────────────────────────────────── */
 export interface BranchOption {
-  id: string;        // branch id, e.g. "001"
-  name: string;      // display label
-  location?: string; // optional subtitle
+  /** UUID — matches `user.branchId` and API `?branch=` filters */
+  id: string;
+  name: string;
+  location?: string;
+  /** Human-readable branch code from API (optional) */
+  code?: string;
 }
 
 const ALL_BRANCHES_ID = "__all__";
@@ -47,6 +50,7 @@ interface BranchContextValue {
 const BranchContext = createContext<BranchContextValue | null>(null);
 
 interface BranchApiItem {
+  id: string;
   branch_code: string;
   name: string;
   location: string;
@@ -59,20 +63,35 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   const [baseBranches, setBaseBranches] = useState<BranchOption[]>([]);
 
   const loadBranches = useCallback(async () => {
-    if (!user) return; // Don't fetch before authentication
+    if (!user) return;
     try {
-      const data = await api.get<BranchApiItem[]>("/branches");
-      const normalized = (data || []).map((branch) => ({
-        id: branch.branch_code,
-        name: branch.name,
-        location: branch.location,
-      }));
+      // If super admin, fetch all branches. 
+      // If regular employee/admin, fetch only their specific branch row if available.
+      const path = isSuperAdmin ? "/branches" : (user.branchId ? `/branches/${user.branchId}` : null);
+      
+      if (!path) return;
+
+      const data = await api.get<BranchApiItem | BranchApiItem[]>(path);
+      
+      const normalized: BranchOption[] = Array.isArray(data) 
+        ? data.map((branch) => ({
+            id: branch.id,
+            name: branch.name,
+            location: branch.location,
+            code: branch.branch_code,
+          }))
+        : [{
+            id: data.id,
+            name: data.name,
+            location: data.location,
+            code: data.branch_code,
+          }];
+
       setBaseBranches(normalized);
-    } catch {
-      // Keep previous selector options on transient failures.
+    } catch (err) {
+      console.warn("[BranchContext] Failed to load branches:", err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, user?.branchId, isSuperAdmin]);
 
   useEffect(() => {
     void loadBranches();
