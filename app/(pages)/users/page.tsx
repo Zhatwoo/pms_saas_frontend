@@ -98,7 +98,7 @@ function mapUserRecord(user: UserApiRecord): UserRecord {
   const accountRaw = user.accountStatus ?? user.account_status ?? "active";
 
   return {
-    id: user.id ?? user.authId ?? user.auth_id ?? user.email,
+    id: user.id ?? user.auth_id ?? user.authId ?? user.email,
     fullName: fullName?.trim() || user.email,
     email: user.email,
     role: mapApiRoleToUi(user.role),
