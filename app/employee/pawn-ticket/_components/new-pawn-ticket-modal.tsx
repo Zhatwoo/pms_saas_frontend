@@ -55,9 +55,9 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-[38rem] overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
+      <div className="relative z-10 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
         <div className="flex flex-col gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-emerald-700">
@@ -77,7 +77,8 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
           </button>
         </div>
 
-        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="grid gap-6 lg:grid-cols-2">
           <section className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -144,7 +145,7 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
             </div>
           </section>
 
-          <section className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
+          <section className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
             <div>
               <h3 className="text-lg font-semibold text-zinc-900">Customer Details</h3>
               <p className="text-sm text-zinc-500">Enter customer contact and address information.</p>
@@ -198,7 +199,7 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
             </div>
           </section>
 
-          <section className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
+          <section className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
             <div>
               <h3 className="text-lg font-semibold text-zinc-900">Financial Details</h3>
               <p className="text-sm text-zinc-500">Provide amounts and fees used to generate the pawn ticket.</p>
@@ -266,7 +267,7 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
             </div>
           </section>
 
-          <section className="mt-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
+          <section className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
             <div>
               <h3 className="text-lg font-semibold text-zinc-900">Unit Description</h3>
               <p className="text-sm text-zinc-500">Describe the pawned item and its condition.</p>
@@ -334,6 +335,7 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
               </label>
             </div>
           </section>
+          </div>
         </div>
 
         <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-5 sm:flex-row sm:justify-end">

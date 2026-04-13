@@ -12,7 +12,7 @@ import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-conf
 import { useBranch } from "@/contexts/branch-context";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
-type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
+type FilterType = "All" | "Renew" | "New Pawn" | "Sales / Transfer" | "Buy Back";
 
 interface TransactionRow {
   transactionNo: string;
@@ -32,7 +32,6 @@ interface TransactionRow {
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
-  "Redeem": "Buy Back",
   "New Pawn": "Pawn",
   "Sales / Transfer": "Sold Item",
   "Buy Back": "Buy Back",
