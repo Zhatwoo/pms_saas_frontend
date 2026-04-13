@@ -247,7 +247,7 @@ export default function UsersPage() {
     setError("");
 
     try {
-      const updated = await api.patch<UserApiRecord>(`/users/${target.id}`, {
+      const updated = await api.post<UserApiRecord>(`/users/${target.id}/update`, {
         accountStatus,
       });
       setUsers((current) =>
