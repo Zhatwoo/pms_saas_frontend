@@ -326,32 +326,43 @@ export default function BranchFinancePage() {
     : selectedBranch.name;
 
   const getManagersForBranch = useCallback(
-    (branchId: string): Manager[] => MOCK_MANAGERS[branchId] || [],
+    (branchId: string, branchName?: string): Manager[] => {
+      if (MOCK_MANAGERS[branchId]) return MOCK_MANAGERS[branchId];
+      if (!branchName) return [];
+      
+      const mappedId = Object.keys(MOCK_MANAGERS).find(
+         (id) => MOCK_BALANCES.find((b) => b.branchId === id)?.name === branchName
+      );
+      if (mappedId && MOCK_MANAGERS[mappedId]) {
+         return MOCK_MANAGERS[mappedId];
+      }
+      return [];
+    },
     [],
   );
 
   const currentManagers = useMemo(
-    () => getManagersForBranch(currentBranchId),
-    [currentBranchId, getManagersForBranch],
+    () => getManagersForBranch(currentBranchId, currentBranchName),
+    [currentBranchId, currentBranchName, getManagersForBranch],
   );
 
   // Scoped balances based on branch selection
   const scopedBalances = useMemo(() => {
     if (isAllBranches) return balances;
-    return balances.filter((b) => b.branchId === selectedBranch.id);
-  }, [balances, isAllBranches, selectedBranch.id]);
+    return balances.filter((b) => b.branchId === selectedBranch.id || b.name === selectedBranch.name);
+  }, [balances, isAllBranches, selectedBranch.id, selectedBranch.name]);
 
   // Scoped transactions
   const scopedTransactions = useMemo(() => {
     if (isAllBranches) return transactions;
-    return transactions.filter((t) => t.branchId === selectedBranch.id);
-  }, [transactions, isAllBranches, selectedBranch.id]);
+    return transactions.filter((t) => t.branchId === selectedBranch.id || t.branch === selectedBranch.name);
+  }, [transactions, isAllBranches, selectedBranch.id, selectedBranch.name]);
 
   // Scoped incoming requests
   const scopedIncomingRequests = useMemo(() => {
     if (isAllBranches) return incomingRequests;
-    return incomingRequests.filter((r) => r.branchId === selectedBranch.id);
-  }, [incomingRequests, isAllBranches, selectedBranch.id]);
+    return incomingRequests.filter((r) => r.branchId === selectedBranch.id || r.branchName === selectedBranch.name);
+  }, [incomingRequests, isAllBranches, selectedBranch.id, selectedBranch.name]);
 
   // Scoped approvals
   const scopedApprovals = useMemo(() => {
@@ -639,7 +650,7 @@ export default function BranchFinancePage() {
         }}
         onSubmit={handleAddFunds}
         branchName={addFundsOverride ? addFundsOverride.branchName : currentBranchName}
-        managers={addFundsOverride ? getManagersForBranch(addFundsOverride.branchId) : currentManagers}
+        managers={addFundsOverride ? getManagersForBranch(addFundsOverride.branchId, addFundsOverride.branchName) : currentManagers}
         branches={balances}
         currentBranchId={currentBranchId}
         getManagersForBranch={getManagersForBranch}

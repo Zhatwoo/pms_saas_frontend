@@ -131,14 +131,14 @@ export default function BranchOverviewPage() {
       if (canSwitchBranch && isAllBranches) return branches;
       if (!canSwitchBranch) {
         const own = branches.filter(
-          (b) => b.branchId === user?.branchId,
+          (b) => b.id === user?.branchId,
         );
         return own.length > 0 ? own : branches;
       }
       return branches;
     }
     return branches.filter(
-      (b) => b.branchId === selectedBranch.id,
+      (b) => b.id === selectedBranch.id,
     );
   }, [branches, selectedBranch, isAllBranches, canSwitchBranch, user?.branchId]);
 

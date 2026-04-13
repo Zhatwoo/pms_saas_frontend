@@ -289,7 +289,7 @@ export function BalanceOverview({
     );
   }
 
-  const branch = balances.find((b) => b.branchId === selectedBranchId);
+  const branch = balances.find((b) => b.branchId === selectedBranchId || b.name === selectedBranchName) || (balances.length === 1 ? balances[0] : undefined);
   if (!branch) {
     return (
       <SingleBranchCard

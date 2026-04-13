@@ -44,9 +44,11 @@ class ApiClient {
       }
 
       if (res.status === 401) {
-        console.error(
-          `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token: ${token?.substring(0, 20)}...`,
-        );
+        if (!isPublicPath) {
+          console.error(
+            `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token: ${token?.substring(0, 20)}...`,
+          );
+        }
         const msg =
           typeof errorData.message === "string"
             ? errorData.message
@@ -124,6 +126,10 @@ class ApiClient {
 
   patch<T>(path: string, body: unknown) {
     return this.fetch<T>(path, { method: "PATCH", body: JSON.stringify(body) });
+  }
+
+  put<T>(path: string, body: unknown) {
+    return this.fetch<T>(path, { method: "PUT", body: JSON.stringify(body) });
   }
 }
 
