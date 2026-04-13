@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { CreateUserModal } from "./_components/create-user-modal";
 import { UserActions } from "./_components/user-actions";
 import { UserStats } from "./_components/user-stats";
 import { UserTable } from "./_components/user-table";
+import { UserDetailDrawer } from "./_components/user-detail-drawer";
+import { DeleteUserModal } from "./_components/delete-user-modal";
+import { UpdateUserModal } from "./_components/update-user-modal";
+import { AccountStatusModal } from "./_components/account-status-modal";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "ADMIN" | "EMPLOYEE";
 export type RoleFilter = "ALL" | UserRole | "PENDING";
-export type BranchFilter = "ALL" | string;
 
 export type AccountStatusUi = "Pending" | "Active" | "Rejected";
 
@@ -115,14 +119,20 @@ function mapUserRecord(user: UserApiRecord): UserRecord {
 
 export default function UsersPage() {
   const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
   const canManageUsers = user?.role === "super_admin";
 
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [branches, setBranches] = useState<BranchOption[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
-  const [branchFilter, setBranchFilter] = useState<BranchFilter>("ALL");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusModalMode, setStatusModalMode] = useState<"approve" | "reject" | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
@@ -203,16 +213,13 @@ export default function UsersPage() {
     setIsCreateModalOpen(false);
   }
 
+  function handleUserClick(target: UserRecord) {
+    setSelectedUser(target);
+    setIsDrawerOpen(true);
+  }
+
   async function handleDeleteUser(userToDelete: UserRecord) {
     if (!canManageUsers) {
-      return;
-    }
-
-    const shouldDelete = window.confirm(
-      `Delete ${userToDelete.fullName || userToDelete.email}?`,
-    );
-
-    if (!shouldDelete) {
       return;
     }
 
@@ -224,6 +231,10 @@ export default function UsersPage() {
       setUsers((currentUsers) =>
         currentUsers.filter((currentUser) => currentUser.id !== userToDelete.id),
       );
+      setIsDeleteModalOpen(false);
+      if (selectedUser?.id === userToDelete.id) {
+        setIsDrawerOpen(false);
+      }
     } catch (deleteError) {
       setError(
         deleteError instanceof Error
@@ -235,32 +246,64 @@ export default function UsersPage() {
     }
   }
 
-  async function handleUpdateAccountStatus(
-    target: UserRecord,
-    accountStatus: "active" | "rejected",
-  ) {
-    if (!canManageUsers) {
+  async function handleUpdateAccountStatus() {
+    if (!canManageUsers || !selectedUser || !statusModalMode) {
       return;
     }
 
-    setUpdatingUserId(target.id);
+    if (statusModalMode === "reject") {
+      await handleDeleteUser(selectedUser);
+      setIsStatusModalOpen(false);
+      return;
+    }
+
+    setUpdatingUserId(selectedUser.id);
     setError("");
 
     try {
-      const updated = await api.post<UserApiRecord>(`/users/${target.id}/update`, {
-        accountStatus,
+      const updated = await api.patch<UserApiRecord>(`/users/${selectedUser.id}`, {
+        accountStatus: "active",
       });
       setUsers((current) =>
         current.map((u) =>
-          u.id === target.id ? mapUserRecord(updated) : u,
+          u.id === selectedUser.id ? mapUserRecord(updated) : u,
         ),
       );
+      setIsStatusModalOpen(false);
     } catch (updateError) {
       setError(
         updateError instanceof Error
           ? updateError.message
           : "Failed to update user.",
       );
+    } finally {
+      setUpdatingUserId(null);
+    }
+  }
+
+  async function handleUpdateUser(id: string, input: Partial<UserRecord>) {
+    if (!canManageUsers) return;
+    
+    setUpdatingUserId(id);
+    setError("");
+
+    try {
+      const payload: any = {};
+      if (input.fullName) payload.fullName = input.fullName;
+      if (input.role) payload.role = input.role.toLowerCase();
+      if (input.branchId) payload.branchId = input.branchId;
+
+      const updated = await api.patch<UserApiRecord>(`/users/${id}`, payload);
+      setUsers((current) =>
+        current.map((u) => (u.id === id ? mapUserRecord(updated) : u)),
+      );
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Failed to update user profile.",
+      );
+      throw updateError;
     } finally {
       setUpdatingUserId(null);
     }
@@ -280,11 +323,11 @@ export default function UsersPage() {
           ? userRecord.status === "Pending"
           : roleFilter === "ALL" || userRecord.role === roleFilter;
       const matchesBranch =
-        branchFilter === "ALL" || userRecord.branchId === branchFilter;
+        isAllBranches || userRecord.branchId === selectedBranch.id;
 
       return matchesSearch && matchesRole && matchesBranch;
     });
-  }, [branchFilter, roleFilter, search, users]);
+  }, [selectedBranch.id, isAllBranches, roleFilter, search, users]);
 
   const totalBranches = new Set(
     users
@@ -302,23 +345,20 @@ export default function UsersPage() {
         </div>
       )}
 
-      <UserActions
-        search={search}
-        onSearchChange={setSearch}
-        roleFilter={roleFilter}
-        onRoleFilterChange={setRoleFilter}
-        branchOptions={branches}
-        branchFilter={branchFilter}
-        onBranchFilterChange={setBranchFilter}
-        canCreateUser={canManageUsers}
-        onCreateUser={() => setIsCreateModalOpen(true)}
-        showSuperAdminRoleTab={canManageUsers}
-      />
       <UserStats
         totalUsers={users.length}
         totalBranches={totalBranches}
         activeUsers={activeUsers}
         pendingUsers={pendingUsers}
+      />
+      <UserActions
+        search={search}
+        onSearchChange={setSearch}
+        roleFilter={roleFilter}
+        onRoleFilterChange={setRoleFilter}
+        canCreateUser={canManageUsers}
+        onCreateUser={() => setIsCreateModalOpen(true)}
+        showSuperAdminRoleTab={canManageUsers}
       />
       {isLoading ? (
         <div className="rounded-lg border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary">
@@ -332,9 +372,25 @@ export default function UsersPage() {
           canApproveUser={canManageUsers}
           deletingUserId={isDeletingUserId}
           updatingUserId={updatingUserId}
-          onDeleteUser={handleDeleteUser}
-          onApproveUser={(u) => handleUpdateAccountStatus(u, "active")}
-          onRejectUser={(u) => handleUpdateAccountStatus(u, "rejected")}
+          onUserClick={handleUserClick}
+          onEditUser={(u) => {
+            setSelectedUser(u);
+            setIsUpdateModalOpen(true);
+          }}
+          onDeleteUser={(u) => {
+            setSelectedUser(u);
+            setIsDeleteModalOpen(true);
+          }}
+          onApproveUser={(u) => {
+            setSelectedUser(u);
+            setStatusModalMode("approve");
+            setIsStatusModalOpen(true);
+          }}
+          onRejectUser={(u) => {
+            setSelectedUser(u);
+            setStatusModalMode("reject");
+            setIsStatusModalOpen(true);
+          }}
         />
       )}
 
@@ -345,6 +401,40 @@ export default function UsersPage() {
           onCreateUser={handleCreateUser}
         />
       )}
+
+      {isUpdateModalOpen && selectedUser && (
+        <UpdateUserModal
+          user={selectedUser}
+          branches={branches}
+          onClose={() => setIsUpdateModalOpen(false)}
+          onUpdateUser={handleUpdateUser}
+        />
+      )}
+
+      <UserDetailDrawer
+        user={selectedUser}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+
+      <DeleteUserModal
+        isOpen={isDeleteModalOpen}
+        userToDelete={selectedUser}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={async () => {
+          if (selectedUser) {
+            await handleDeleteUser(selectedUser);
+          }
+        }}
+      />
+
+      <AccountStatusModal
+        isOpen={isStatusModalOpen}
+        mode={statusModalMode}
+        user={selectedUser}
+        onClose={() => setIsStatusModalOpen(false)}
+        onConfirm={handleUpdateAccountStatus}
+      />
     </div>
   );
 }

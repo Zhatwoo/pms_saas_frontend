@@ -1,8 +1,6 @@
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { Pagination } from "@/components/shared/pagination";
 import type { AccountStatusUi, UserRecord, UserRole } from "../page";
 
 interface UserTableProps {
@@ -12,15 +10,14 @@ interface UserTableProps {
   canApproveUser: boolean;
   deletingUserId: string | null;
   updatingUserId: string | null;
+  onUserClick: (user: UserRecord) => void;
+  onEditUser: (user: UserRecord) => void;
   onDeleteUser: (user: UserRecord) => void;
   onApproveUser: (user: UserRecord) => void;
   onRejectUser: (user: UserRecord) => void;
 }
 
-interface MenuPosition {
-  top: number;
-  left: number;
-}
+const ITEMS_PER_PAGE = 20;
 
 function statusBadgeVariant(
   status: AccountStatusUi,
@@ -52,115 +49,62 @@ function RoleBadge({ role }: { role?: UserRole }) {
   );
 }
 
-function ActionsMenu({
-  user,
-  canDeleteUser,
+function InlineActions({
+  onView,
+  onEdit,
+  onDelete,
+  canDelete,
   isDeleting,
-  onDeleteUser,
 }: {
-  user: UserRecord;
-  canDeleteUser: boolean;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  canDelete: boolean;
   isDeleting: boolean;
-  onDeleteUser: (user: UserRecord) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    function updatePosition() {
-      const rect = buttonRef.current?.getBoundingClientRect();
-      if (!rect) {
-        return;
-      }
-
-      const menuWidth = 144;
-      const viewportPadding = 8;
-      const left = Math.min(
-        window.innerWidth - menuWidth - viewportPadding,
-        Math.max(viewportPadding, rect.right - menuWidth),
-      );
-
-      setMenuPosition({
-        top: rect.bottom + 8,
-        left,
-      });
-    }
-
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-
-      if (buttonRef.current?.contains(target) || menuRef.current?.contains(target)) {
-        return;
-      }
-
-      setOpen(false);
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    }
-
-    updatePosition();
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [open]);
-
   return (
-    <>
+    <div className="flex items-center justify-center gap-1">
+      {/* View */}
       <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        disabled={!canDeleteUser}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
-        aria-label={`Open actions for ${user.fullName}`}
+        onClick={onView}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-emerald-50"
+        title="View Details"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="12" cy="19" r="2" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
-
-      {open &&
-        menuPosition &&
-        createPortal(
-          <div
-            ref={menuRef}
-            className="fixed z-[70] w-36 rounded-lg border border-border-main bg-surface py-1 shadow-lg"
-            style={{ top: menuPosition.top, left: menuPosition.left }}
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onDeleteUser(user);
-              }}
-              className="block w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50"
-            >
-              {isDeleting ? "Deleting..." : "Delete user"}
-            </button>
-          </div>,
-          document.body,
+      {/* Edit */}
+      <button
+        onClick={onEdit}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-amber-600 transition-colors hover:bg-amber-50"
+        title="Edit User"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      </button>
+      {/* Delete */}
+      <button
+        onClick={onDelete}
+        disabled={!canDelete || isDeleting}
+        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+          canDelete ? "text-red-500 hover:bg-red-50" : "text-zinc-300 cursor-not-allowed"
+        }`}
+        title="Delete User"
+      >
+        {isDeleting ? (
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+        ) : (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
         )}
-    </>
+      </button>
+    </div>
   );
 }
 
@@ -171,119 +115,142 @@ export function UserTable({
   canApproveUser,
   deletingUserId,
   updatingUserId,
+  onUserClick,
+  onEditUser,
   onDeleteUser,
   onApproveUser,
   onRejectUser,
 }: UserTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to page 1 whenever filters/users change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [users]);
+
+  // Pagination calculations
+  const totalPages = Math.max(1, Math.ceil(users.length / ITEMS_PER_PAGE));
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   return (
-    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
-      <div className="flex items-center justify-between bg-surface px-4 py-3">
-        <div>
-          <h3 className="text-sm font-bold text-text-primary">User Accounts</h3>
-          <p className="mt-1 text-xs text-text-tertiary">
-            Showing {users.length} of {totalUsers} users
-          </p>
-        </div>
-        <p className="text-xs text-text-tertiary">System access and branch assignments</p>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[840px] text-sm">
-          <thead>
-            <tr className="bg-emerald-900 text-amber-400">
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
-                Full Name
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
-                Email
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
-                Role
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
-                Branch
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
-                Created
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
-                Status
-              </th>
-              <th className="whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wide">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user, index) => (
-              <tr
-                key={`${user.id}-${user.email}`}
-                className={`border-t border-border-subtle ${
-                  index % 2 === 0 ? "bg-surface" : "bg-surface-secondary"
-                }`}
-              >
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                  {user.fullName}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                  {user.email}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  <RoleBadge role={user.role} />
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                  {user.branch}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                  {user.created}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  <StatusBadge
-                    label={user.status}
-                    variant={statusBadgeVariant(user.status)}
-                  />
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-center">
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    {canApproveUser && user.status === "Pending" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => onApproveUser(user)}
-                          disabled={updatingUserId === user.id}
-                          className="rounded border border-emerald-700 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-900 transition-opacity hover:opacity-90 disabled:opacity-50"
-                        >
-                          {updatingUserId === user.id ? "…" : "Approve"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onRejectUser(user)}
-                          disabled={updatingUserId === user.id}
-                          className="rounded border border-red-300 bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-700 transition-opacity hover:opacity-90 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    <ActionsMenu
-                      user={user}
-                      canDeleteUser={
-                        canDeleteUser && user.role !== "SUPER_ADMIN"
-                      }
-                      isDeleting={deletingUserId === user.id}
-                      onDeleteUser={onDeleteUser}
-                    />
-                  </div>
-                </td>
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[840px] text-sm">
+            <thead>
+              <tr className="bg-emerald-900 text-amber-400">
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Full Name
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Email
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Role
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Branch
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Created
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Status
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wide">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginatedUsers.map((user, index) => (
+                <tr
+                  key={`${user.id}-${user.email}`}
+                  onClick={() => onUserClick(user)}
+                  className={`group cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-50/40 ${
+                    index % 2 === 0 ? "bg-surface" : "bg-surface-secondary"
+                  }`}
+                >
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <span className="text-xs font-semibold text-emerald-600 transition-colors group-hover:text-emerald-700 group-hover:underline">
+                      {user.fullName}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
+                    {user.email}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <RoleBadge role={user.role} />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
+                    {user.branch}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
+                    {user.created}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <StatusBadge
+                      label={user.status}
+                      variant={statusBadgeVariant(user.status)}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {canApproveUser && user.status === "Pending" ? (
+                        <div className="flex gap-1.5 px-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onApproveUser(user);
+                            }}
+                            disabled={updatingUserId === user.id}
+                            className="rounded border border-emerald-700 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-900 transition-opacity hover:opacity-90 disabled:opacity-50"
+                          >
+                            {updatingUserId === user.id ? "…" : "Approve"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRejectUser(user);
+                            }}
+                            disabled={updatingUserId === user.id}
+                            className="rounded border border-red-300 bg-red-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-red-700 transition-opacity hover:opacity-90 disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <InlineActions
+                          onView={() => onUserClick(user)}
+                          onEdit={() => onEditUser(user)}
+                          onDelete={() => onDeleteUser(user)}
+                          canDelete={canDeleteUser && user.role !== "SUPER_ADMIN"}
+                          isDeleting={deletingUserId === user.id}
+                        />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {users.length === 0 && (
-        <div className="border-t border-border-subtle px-4 py-10 text-center text-sm text-text-tertiary">
-          No users match the current search and filters.
+      {users.length > 0 && (
+        <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={users.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
     </div>
