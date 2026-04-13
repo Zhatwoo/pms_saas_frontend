@@ -67,7 +67,7 @@ function InlineActions({
       {/* View */}
       <button
         onClick={onView}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-emerald-50"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-text transition-colors hover:bg-emerald-surface/50"
         title="View Details"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -170,12 +170,10 @@ export function UserTable({
                 <tr
                   key={`${user.id}-${user.email}`}
                   onClick={() => onUserClick(user)}
-                  className={`group cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-50/40 ${
-                    index % 2 === 0 ? "bg-surface" : "bg-surface-secondary"
-                  }`}
+                  className="group cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
                 >
                   <td className="whitespace-nowrap px-3 py-2">
-                    <span className="text-xs font-semibold text-emerald-600 transition-colors group-hover:text-emerald-700 group-hover:underline">
+                    <span className="text-xs font-semibold text-emerald-text transition-colors group-hover:opacity-80 group-hover:underline">
                       {user.fullName}
                     </span>
                   </td>
@@ -208,7 +206,7 @@ export function UserTable({
                               onApproveUser(user);
                             }}
                             disabled={updatingUserId === user.id}
-                            className="rounded border border-emerald-700 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-900 transition-opacity hover:opacity-90 disabled:opacity-50"
+                            className="rounded border border-emerald-border bg-emerald-surface px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-text transition-opacity hover:opacity-90 disabled:opacity-50"
                           >
                             {updatingUserId === user.id ? "…" : "Approve"}
                           </button>

@@ -54,7 +54,7 @@ export function BranchSalesTable() {
           {branches.map((branch, idx) => (
             <tr
               key={branch.name}
-              className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"}`}
+              className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
             >
               <td className="px-4 py-2 text-xs text-text-secondary">
                 {branch.name}
