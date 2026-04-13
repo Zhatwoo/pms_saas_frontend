@@ -25,7 +25,7 @@ export function CancelFundModal({ isOpen, onClose, onConfirm, amount }: CancelFu
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between border-b border-border-main px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="15" y1="9" x2="9" y2="15"/>
@@ -49,11 +49,11 @@ export function CancelFundModal({ isOpen, onClose, onConfirm, amount }: CancelFu
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5">
-          <div className="mb-6 rounded-xl border border-red-500/20 bg-red-50/50 p-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wider text-red-600">
+          <div className="mb-6 rounded-xl border border-red-500/20 bg-red-50/50 dark:bg-red-500/5 p-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
               Amount to Cancel
             </p>
-            <p className="mt-1 text-3xl font-extrabold text-red-800">
+            <p className="mt-1 text-3xl font-extrabold text-red-800 dark:text-red-300">
               ₱{amount.toLocaleString("en-PH")}
             </p>
           </div>

@@ -183,32 +183,13 @@ function SingleBranchCard({
 /* ── All Branches Aggregate Card ──────────────────────── */
 function AggregateBranchCard({
   totalBranches,
-  aggregateStarting,
-  aggregateCurrent,
-  aggregateAdded,
-  aggregateTransferred,
-  lastUpdated,
   branchRows,
 }: {
   totalBranches: number;
-  aggregateStarting: number;
-  aggregateCurrent: number;
-  aggregateAdded: number;
-  aggregateTransferred: number;
-  lastUpdated: string;
   branchRows: BranchBalanceRow[];
 }) {
   return (
     <div className="space-y-4">
-      <SingleBranchCard
-        branchName={`All Branches (${totalBranches})`}
-        startingBalance={aggregateStarting}
-        currentBalance={aggregateCurrent}
-        totalAdded={aggregateAdded}
-        totalTransferred={aggregateTransferred}
-        lastUpdated={lastUpdated}
-      />
-
       {/* Per-branch list */}
       <div className="rounded-xl border border-border-main bg-surface shadow-sm">
         <div className="flex items-center justify-between border-b border-border-subtle px-5 py-3">
@@ -294,23 +275,9 @@ export function BalanceOverview({
   onAddFunds,
 }: BalanceOverviewProps) {
   if (isAllBranches) {
-    const aggregateStarting = balances.reduce((s, b) => s + b.startingBalance, 0);
-    const aggregateCurrent = balances.reduce((s, b) => s + b.currentBalance, 0);
-    const aggregateAdded = balances.reduce((s, b) => s + b.totalAdded, 0);
-    const aggregateTransferred = balances.reduce((s, b) => s + b.totalTransferred, 0);
-    const latest = balances.reduce(
-      (l, b) => (b.lastUpdated > l ? b.lastUpdated : l),
-      "",
-    );
-
     return (
       <AggregateBranchCard
         totalBranches={balances.length}
-        aggregateStarting={aggregateStarting}
-        aggregateCurrent={aggregateCurrent}
-        aggregateAdded={aggregateAdded}
-        aggregateTransferred={aggregateTransferred}
-        lastUpdated={latest}
         branchRows={balances.map((b) => ({
           branchId: b.branchId,
           name: b.name,

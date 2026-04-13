@@ -48,7 +48,7 @@ export function ConfirmFundModal({ isOpen, onClose, onConfirm, amount }: Confirm
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between border-b border-border-main px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
@@ -71,11 +71,11 @@ export function ConfirmFundModal({ isOpen, onClose, onConfirm, amount }: Confirm
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-5">
-          <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+          <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4 text-center dark:bg-emerald-500/5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
               Amount to Confirm
             </p>
-            <p className="mt-1 text-3xl font-extrabold text-emerald-800">
+            <p className="mt-1 text-3xl font-extrabold text-emerald-800 dark:text-emerald-300">
               ₱{amount.toLocaleString("en-PH")}
             </p>
           </div>
