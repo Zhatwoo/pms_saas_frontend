@@ -85,7 +85,7 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
             </div>
           </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        
           <div className="space-y-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-zinc-900">Personal Information</h3>
@@ -207,7 +207,9 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
               </div>
             </div>
           </div>
+        </div>
 
+        <div className="space-y-6">
           <div className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-6">
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-zinc-900">Unit Information</h3>
