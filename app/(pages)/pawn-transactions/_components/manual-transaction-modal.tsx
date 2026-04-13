@@ -1,12 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ActionButton } from "@/components/shared/action-button";
+
+export interface ManualTransactionPayload {
+  transactionNo: string;
+  type: "Cash In" | "Cash Transfer";
+  amount: number;
+  details: string;
+  date: string;
+  time: string;
+  branch?: string;
+  fromBranch?: string;
+  toBranch?: string;
+}
 
 interface ManualTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: ManualTransactionPayload) => void;
   branches?: string[];
   currentBranch?: string;
 }

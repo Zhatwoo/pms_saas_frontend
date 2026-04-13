@@ -441,7 +441,9 @@ export default function AdminBranchFinancePage() {
                           {fmtDate(req.date)}
                         </p>
                         {req.notes && (
-                          <p className="mt-1 text-[11px] text-text-muted italic">"{req.notes}"</p>
+                          <p className="mt-1 text-[11px] text-text-muted italic">
+                            &ldquo;{req.notes}&rdquo;
+                          </p>
                         )}
                         {req.amount >= 50_000 && (
                           <p className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-amber-600">

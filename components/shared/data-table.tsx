@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Rows are heterogeneous per screen; columns are dynamic string keys. */
 import type { ReactNode } from "react";
 
 export interface Column {

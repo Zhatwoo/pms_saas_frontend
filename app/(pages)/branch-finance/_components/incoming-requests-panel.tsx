@@ -113,7 +113,7 @@ export function IncomingRequestsPanel({
                     </div>
                     {req.notes && (
                       <p className="mt-2 text-[11px] text-text-muted italic border-l-2 border-blue-200 dark:border-blue-500/30 pl-2 line-clamp-2">
-                        "{req.notes}"
+                        &ldquo;{req.notes}&rdquo;
                       </p>
                     )}
                   </div>
