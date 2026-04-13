@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { NavGroup, NavItem, Role } from "@/types";
 import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
 import { getRoleLabel } from "@/lib/auth";
@@ -116,6 +116,7 @@ function NavItemComponent({
   return (
     <Link
       href={item.href ?? "#"}
+      onClick={onToggle}
       title={collapsed ? item.label : undefined}
       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
         collapsed ? "justify-center" : ""
@@ -140,6 +141,7 @@ export function Sidebar({
   onLogout,
 }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   // Initialize expanded state based on active path
@@ -149,19 +151,26 @@ export function Sidebar({
       return;
     }
 
+    let found = false;
     for (const group of navGroups) {
       for (const item of group.items) {
-        if (
-          item.subItems?.some(
-            (sub) =>
-              pathname === sub.href ||
-              pathname.startsWith((sub.href ?? "") + "/"),
-          )
-        ) {
+        const hasActiveSub = item.subItems?.some(
+          (sub) =>
+            pathname === sub.href ||
+            pathname.startsWith((sub.href ?? "") + "/"),
+        );
+
+        if (hasActiveSub) {
           setExpandedKey(item.label);
-          return;
+          found = true;
+          break;
         }
       }
+      if (found) break;
+    }
+
+    if (!found) {
+      setExpandedKey(null);
     }
   }, [pathname, navGroups, collapsed]);
 
@@ -231,11 +240,16 @@ export function Sidebar({
                   collapsed={collapsed}
                   pathname={pathname}
                   isExpanded={expandedKey === item.label}
-                  onToggle={() =>
-                    setExpandedKey(
-                      expandedKey === item.label ? null : item.label,
-                    )
-                  }
+                  onToggle={() => {
+                    if (item.subItems && item.subItems.length > 0) {
+                      setExpandedKey(item.label);
+                      if (item.subItems[0].href) {
+                        router.push(item.subItems[0].href);
+                      }
+                    } else {
+                      setExpandedKey(null);
+                    }
+                  }}
                 />
               ))}
             </div>
