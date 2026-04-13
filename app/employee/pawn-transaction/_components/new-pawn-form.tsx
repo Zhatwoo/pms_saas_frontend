@@ -85,6 +85,8 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
             </div>
           </div>
 
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="space-y-3">
