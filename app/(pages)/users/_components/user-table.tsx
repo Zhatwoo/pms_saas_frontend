@@ -3,19 +3,35 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { StatusBadge } from "@/components/shared/status-badge";
-import type { UserRecord, UserRole } from "../page";
+import type { AccountStatusUi, UserRecord, UserRole } from "../page";
 
 interface UserTableProps {
   users: UserRecord[];
   totalUsers: number;
   canDeleteUser: boolean;
+  canApproveUser: boolean;
   deletingUserId: string | null;
+  updatingUserId: string | null;
   onDeleteUser: (user: UserRecord) => void;
+  onApproveUser: (user: UserRecord) => void;
+  onRejectUser: (user: UserRecord) => void;
 }
 
 interface MenuPosition {
   top: number;
   left: number;
+}
+
+function statusBadgeVariant(
+  status: AccountStatusUi,
+): "green" | "yellow" | "red" {
+  if (status === "Pending") {
+    return "yellow";
+  }
+  if (status === "Rejected") {
+    return "red";
+  }
+  return "green";
 }
 
 function RoleBadge({ role }: { role?: UserRole }) {
@@ -152,8 +168,12 @@ export function UserTable({
   users,
   totalUsers,
   canDeleteUser,
+  canApproveUser,
   deletingUserId,
+  updatingUserId,
   onDeleteUser,
+  onApproveUser,
+  onRejectUser,
 }: UserTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
@@ -218,15 +238,42 @@ export function UserTable({
                   {user.created}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
-                  <StatusBadge label={user.status} variant="green" />
+                  <StatusBadge
+                    label={user.status}
+                    variant={statusBadgeVariant(user.status)}
+                  />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-center">
-                  <ActionsMenu
-                    user={user}
-                    canDeleteUser={canDeleteUser && user.role !== "SUPER_ADMIN"}
-                    isDeleting={deletingUserId === user.id}
-                    onDeleteUser={onDeleteUser}
-                  />
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {canApproveUser && user.status === "Pending" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onApproveUser(user)}
+                          disabled={updatingUserId === user.id}
+                          className="rounded border border-emerald-700 bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-900 transition-opacity hover:opacity-90 disabled:opacity-50"
+                        >
+                          {updatingUserId === user.id ? "…" : "Approve"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onRejectUser(user)}
+                          disabled={updatingUserId === user.id}
+                          className="rounded border border-red-300 bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-700 transition-opacity hover:opacity-90 disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    <ActionsMenu
+                      user={user}
+                      canDeleteUser={
+                        canDeleteUser && user.role !== "SUPER_ADMIN"
+                      }
+                      isDeleting={deletingUserId === user.id}
+                      onDeleteUser={onDeleteUser}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

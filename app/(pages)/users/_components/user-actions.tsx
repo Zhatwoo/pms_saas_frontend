@@ -11,14 +11,21 @@ interface UserActionsProps {
   onBranchFilterChange: (value: BranchFilter) => void;
   canCreateUser: boolean;
   onCreateUser: () => void;
+  /** Super Admin tab + filter; only for super_admin viewers */
+  showSuperAdminRoleTab?: boolean;
 }
 
-const roleTabs: { label: string; value: RoleFilter }[] = [
+const baseRoleTabs: { label: string; value: RoleFilter }[] = [
   { label: "All", value: "ALL" },
-  { label: "Super Admin", value: "SUPER_ADMIN" },
+  { label: "Pending", value: "PENDING" },
   { label: "Employee", value: "EMPLOYEE" },
   { label: "Admins", value: "ADMIN" },
 ];
+
+const superAdminTab: { label: string; value: RoleFilter } = {
+  label: "Super Admin",
+  value: "SUPER_ADMIN",
+};
 
 const searchIcon = (
   <svg
@@ -79,7 +86,12 @@ export function UserActions({
   onBranchFilterChange,
   canCreateUser,
   onCreateUser,
+  showSuperAdminRoleTab = false,
 }: UserActionsProps) {
+  const roleTabs = showSuperAdminRoleTab
+    ? [baseRoleTabs[0], baseRoleTabs[1], superAdminTab, ...baseRoleTabs.slice(2)]
+    : baseRoleTabs;
+
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">

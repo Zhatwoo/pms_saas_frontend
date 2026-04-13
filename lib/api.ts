@@ -13,40 +13,57 @@ class ApiClient {
       ...options?.headers,
     };
 
-    if (!token && path !== "/auth/login") {
+    const isPublicPath =
+      path === "/auth/login" ||
+      path === "/auth/register" ||
+      path === "/auth/signup/branches" ||
+      path === "/branches/public";
+
+    if (!token && !isPublicPath) {
       console.warn(
         `[API] Missing auth token for ${path}. Check if login was successful and token is stored in cookies.`,
       );
     }
 
     const res = await fetch(`/api${path}`, { ...options, headers });
-    
-    if (res.status === 401) {
-      console.error(
-        `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token: ${token?.substring(0, 20)}...`,
-      );
-    }
 
     if (!res.ok) {
+      const text = await res.text();
+      let errorData: Record<string, unknown> = {};
+      if (text) {
+        try {
+          errorData = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          errorData = {
+            message:
+              text.length > 500 ? `${text.slice(0, 500)}…` : text,
+          };
+        }
+      } else {
+        errorData = { message: `HTTP ${res.status} (empty body)` };
+      }
+
       if (res.status === 401) {
-        throw new Error("Unauthorized");
+        console.error(
+          `[API] 401 Unauthorized for ${path}. Token present: ${!!token}, Token: ${token?.substring(0, 20)}...`,
+        );
+        const msg =
+          typeof errorData.message === "string"
+            ? errorData.message
+            : "Unauthorized";
+        throw new Error(msg);
       }
-      
-      let errorData: any;
-      try {
-        errorData = await res.json();
-      } catch {
-        errorData = { message: "Request failed" };
-      }
-      
+
       // Log full error details for debugging
       console.error(`[API Error ${res.status}] ${path}:`, errorData);
       
       // Extract detailed error message
-      let errorMessage = '';
-      
-      if (errorData.message) {
-        errorMessage = errorData.message;
+      let errorMessage = "";
+      const rawMsg = errorData.message;
+      if (typeof rawMsg === "string") {
+        errorMessage = rawMsg;
+      } else if (Array.isArray(rawMsg)) {
+        errorMessage = rawMsg.map(String).join("; ");
       }
       
       // Handle validation errors in 'data' field
@@ -58,9 +75,19 @@ class ApiClient {
       }
       
       if (!errorMessage) {
-        errorMessage = 
-          errorData.error ||
-          errorData.errors?.join(', ') ||
+        const errField = errorData.error;
+        const errsField = errorData.errors;
+        const errorsJoined = Array.isArray(errsField)
+          ? errsField.map(String).join(", ")
+          : typeof errsField === "string"
+            ? errsField
+            : "";
+        errorMessage =
+          (typeof errField === "string" ? errField : "") ||
+          errorsJoined ||
+          (Object.keys(errorData).length > 0
+            ? JSON.stringify(errorData)
+            : "") ||
           `HTTP ${res.status}`;
       }
         
@@ -81,6 +108,10 @@ class ApiClient {
 
   delete<T>(path: string) {
     return this.fetch<T>(path, { method: "DELETE" });
+  }
+
+  patch<T>(path: string, body: unknown) {
+    return this.fetch<T>(path, { method: "PATCH", body: JSON.stringify(body) });
   }
 }
 

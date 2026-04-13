@@ -4,6 +4,7 @@ interface UserStatsProps {
   totalUsers: number;
   totalBranches: number;
   activeUsers: number;
+  pendingUsers: number;
 }
 
 const totalUsersIcon = (
@@ -53,13 +54,31 @@ const activeUsersIcon = (
   </svg>
 );
 
+const pendingUsersIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="text-amber-600"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" />
+  </svg>
+);
+
 export function UserStats({
   totalUsers,
   totalBranches,
   activeUsers,
+  pendingUsers,
 }: UserStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Total Users"
         value={totalUsers}
@@ -68,18 +87,25 @@ export function UserStats({
         borderColor="bg-blue-600"
       />
       <StatCard
+        label="Pending approval"
+        value={pendingUsers}
+        subtitle="Awaiting Super Admin"
+        icon={pendingUsersIcon}
+        borderColor="bg-amber-500"
+      />
+      <StatCard
+        label="Active Users"
+        value={activeUsers}
+        subtitle="Approved and can sign in"
+        icon={activeUsersIcon}
+        borderColor="bg-green-500"
+      />
+      <StatCard
         label="Branches"
         value={totalBranches}
         subtitle="Branches with assigned users"
         icon={branchIcon}
         borderColor="bg-orange-500"
-      />
-      <StatCard
-        label="Active Users"
-        value={activeUsers}
-        subtitle="Currently active accounts"
-        icon={activeUsersIcon}
-        borderColor="bg-green-500"
       />
     </div>
   );
