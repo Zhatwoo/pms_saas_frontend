@@ -43,6 +43,10 @@ class ApiClient {
         errorData = { message: `HTTP ${res.status} (empty body)` };
       }
 
+      if (Object.keys(errorData).length === 0) {
+        errorData.message = res.statusText || `HTTP ${res.status}`;
+      }
+
       if (res.status === 401) {
         if (!isPublicPath) {
           console.error(
@@ -57,7 +61,11 @@ class ApiClient {
       }
 
       // Log full error details for debugging
-      console.error(`[API Error ${res.status}] ${path}:`, errorData);
+      console.error(
+        `[API Error ${res.status}] ${path}:`,
+        errorData,
+        text ? { rawText: text } : {},
+      );
       
       // Extract detailed error message
       let errorMessage = "";

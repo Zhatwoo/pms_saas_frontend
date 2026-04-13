@@ -65,10 +65,8 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   const loadBranches = useCallback(async () => {
     if (!user) return;
     try {
-      const path = isSuperAdmin ? "/branches" : (user.branchId ? `/branches/${user.branchId}` : null);
-      if (!path) return;
-
-      const data = await api.get<BranchApiItem | BranchApiItem[]>(path);
+      // Use actor-scoped list endpoint for every role to avoid brittle /branches/:id lookups.
+      const data = await api.get<BranchApiItem | BranchApiItem[]>("/branches");
       
       const normalized: BranchOption[] = Array.isArray(data) 
         ? data.map((branch) => ({
@@ -85,7 +83,8 @@ export function BranchProvider({ children }: { children: ReactNode }) {
           }];
 
       setBaseBranches(normalized);
-    } catch {
+    } catch (error) {
+      console.warn("[BranchProvider] Failed to load branches:", error);
       // Keep previous selector options on transient failures.
     }
   }, [user?.id, user?.branchId, isSuperAdmin]);

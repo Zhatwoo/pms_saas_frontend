@@ -43,7 +43,7 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
   };
 
   return (
-    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <div className="mx-auto w-full max-w-6xl rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Pawn Transaction</p>
@@ -58,10 +58,10 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
         </button>
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-6">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6 lg:col-span-2">
           <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -77,15 +77,16 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
               </div>
               <button 
                 type="button" 
-                className="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 active:scale-95 transition-all"
+                className="w-full rounded-xl bg-emerald-700 px-6 py-3 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 sm:w-auto"
                 onClick={() => alert("Scanning from Camera...")}
               >
                 Open Scanner
               </button>
             </div>
           </div>
+        </div>
 
-        
+        <div className="space-y-6">
           <div className="space-y-6 rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-zinc-900">Personal Information</h3>
