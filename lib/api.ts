@@ -94,13 +94,22 @@ class ApiClient {
           : typeof errsField === "string"
             ? errsField
             : "";
-        errorMessage =
+        const detail =
           (typeof errField === "string" ? errField : "") ||
           errorsJoined ||
           (Object.keys(errorData).length > 0
             ? JSON.stringify(errorData)
+            : "");
+        errorMessage =
+          detail ||
+          (typeof errorData.statusCode === "number"
+            ? `Request failed (${errorData.statusCode})`
             : "") ||
-          `HTTP ${res.status}`;
+          `HTTP ${res.status}${
+            Object.keys(errorData).length === 0
+              ? " (empty error body — check API / network proxy logs)"
+              : ""
+          }`;
       }
         
       throw new Error(String(errorMessage));
