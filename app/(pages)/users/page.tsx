@@ -345,6 +345,12 @@ export default function UsersPage() {
         </div>
       )}
 
+      <UserStats
+        totalUsers={users.length}
+        totalBranches={totalBranches}
+        activeUsers={activeUsers}
+        pendingUsers={pendingUsers}
+      />
       <UserActions
         search={search}
         onSearchChange={setSearch}
@@ -353,12 +359,6 @@ export default function UsersPage() {
         canCreateUser={canManageUsers}
         onCreateUser={() => setIsCreateModalOpen(true)}
         showSuperAdminRoleTab={canManageUsers}
-      />
-      <UserStats
-        totalUsers={users.length}
-        totalBranches={totalBranches}
-        activeUsers={activeUsers}
-        pendingUsers={pendingUsers}
       />
       {isLoading ? (
         <div className="rounded-lg border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary">

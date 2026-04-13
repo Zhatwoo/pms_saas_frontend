@@ -88,58 +88,61 @@ export function UserActions({
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="relative w-full xl:max-w-md">
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
-            {searchIcon}
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search users by name, email, or branch"
-            className="h-10 w-full rounded-md border border-input-border bg-input-bg pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-700"
-          />
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
+          {/* Search Field */}
+          <div className="relative w-full md:max-w-xs">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
+              {searchIcon}
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search users..."
+              className="h-10 w-full rounded-md border border-input-border bg-input-bg pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-700"
+            />
+          </div>
+
+          {/* Role Filters */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {roleTabs.map((tab) => {
+              const isActive = roleFilter === tab.value;
+
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => onRoleFilterChange(tab.value)}
+                  className={`rounded border px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:opacity-80 active:scale-95 ${
+                    isActive
+                      ? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
+                      : "border-border-main bg-surface text-text-secondary hover:bg-surface-secondary"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <ActionButton variant="outline">
-            <span className="flex items-center gap-1.5">
+        {/* Global Actions */}
+        <div className="flex items-center gap-2 border-t border-border-main pt-4 xl:border-none xl:pt-0">
+          <ActionButton variant="outline" className="flex-1 xl:flex-none">
+            <span className="flex items-center justify-center gap-1.5">
               {exportIcon}
               Export Users
             </span>
           </ActionButton>
           {canCreateUser && (
-            <ActionButton variant="pawn" onClick={onCreateUser}>
-              <span className="flex items-center gap-1.5">
+            <ActionButton variant="primary" onClick={onCreateUser} className="flex-1 xl:flex-none">
+              <span className="flex items-center justify-center gap-1.5">
                 {plusIcon}
                 Create User
               </span>
             </ActionButton>
           )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          {roleTabs.map((tab) => {
-            const isActive = roleFilter === tab.value;
-
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => onRoleFilterChange(tab.value)}
-                className={`rounded border px-4 py-2 text-xs font-bold transition-opacity hover:opacity-80 ${
-                  isActive
-                    ? "border-emerald-700 bg-emerald-100 text-emerald-800"
-                    : "border-border-main bg-surface text-text-secondary"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
         </div>
       </div>
     </div>
