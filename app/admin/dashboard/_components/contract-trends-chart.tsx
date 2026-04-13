@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface ContractTrendData {
+export interface ContractTrendData {
   month: string;
   contracts: number;
   redeemed: number;

@@ -3,6 +3,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfirmFundModal } from "./_components/confirm-fund-modal";
+import { RequestFundsModal } from "./_components/request-funds-modal";
+import type { RequestFundsData } from "./_components/request-funds-modal";
 
 /* ══════════════════════════════════════════════════════════
    TYPES
@@ -155,15 +157,15 @@ function fmtDateTime(d: string) {
 }
 
 const typeConfig = {
-  ADD_FUNDS: { label: "Add Funds", badge: "bg-emerald-100 text-emerald-700", dot: "bg-emerald-500", sign: "+" },
-  TRANSFER_IN: { label: "Transfer In", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500", sign: "+" },
-  TRANSFER_OUT: { label: "Transfer Out", badge: "bg-red-100 text-red-600", dot: "bg-red-500", sign: "-" },
+  ADD_FUNDS: { label: "Add Funds", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400", dot: "bg-emerald-500", sign: "+" },
+  TRANSFER_IN: { label: "Transfer In", badge: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400", dot: "bg-blue-500", sign: "+" },
+  TRANSFER_OUT: { label: "Transfer Out", badge: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400", dot: "bg-red-500", sign: "-" },
 };
 
 const statusConfig = {
-  Pending: "bg-yellow-100 text-yellow-700",
-  Approved: "bg-green-100 text-green-700",
-  Rejected: "bg-red-100 text-red-600",
+  Pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400",
+  Approved: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400",
+  Rejected: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
 };
 
 /* ══════════════════════════════════════════════════════════
@@ -179,6 +181,8 @@ export default function AdminBranchFinancePage() {
 
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedPendingId, setSelectedPendingId] = useState<string | null>(null);
+
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
 
   const selectedPendingAmount = useMemo(() => {
     return pending.find((p) => p.id === selectedPendingId)?.amount || 0;
@@ -238,6 +242,12 @@ export default function AdminBranchFinancePage() {
     },
     [pending, user?.fullName],
   );
+
+  /* ── Request Funds ───────────────────────────────── */
+  function handleRequestFunds(data: RequestFundsData) {
+    // In a real app, this sends a POST request to the server, and the Super Admin sees it.
+    showToast(`Successfully requested ₱${data.amount.toLocaleString("en-PH")} from Super Admin`);
+  }
 
   /* ── Filtered transactions ───────────────────────── */
   const filteredTxns = useMemo(() => {
@@ -311,25 +321,37 @@ export default function AdminBranchFinancePage() {
         </div>
 
         {/* Current balance hero */}
-        <div className="px-6 py-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
-            Current Balance
-          </p>
-          <div className="flex items-end gap-3">
-            <span className="text-4xl font-extrabold tracking-tight text-white">
-              {fmt(balance.currentBalance)}
-            </span>
-            <span
-              className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                isPositive
-                  ? "bg-emerald-400/20 text-emerald-300"
-                  : "bg-red-400/20 text-red-300"
-              }`}
-            >
-              {isPositive ? "+" : ""}
-              {deltaPercent}% from start
-            </span>
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
+              Current Balance
+            </p>
+            <div className="flex items-end gap-3">
+              <span className="text-4xl font-extrabold tracking-tight text-white">
+                {fmt(balance.currentBalance)}
+              </span>
+              <span
+                className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  isPositive
+                    ? "bg-emerald-400/20 text-emerald-300"
+                    : "bg-red-400/20 text-red-300"
+                }`}
+              >
+                {isPositive ? "+" : ""}
+                {deltaPercent}% from start
+              </span>
+            </div>
           </div>
+          <button
+            onClick={() => setRequestModalOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            Request Funds
+          </button>
         </div>
 
         {/* Stat tiles */}
@@ -380,7 +402,7 @@ export default function AdminBranchFinancePage() {
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 shadow-sm">
           <div className="flex items-center gap-3 px-5 py-4">
             <div className="relative">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
                 </svg>
@@ -419,7 +441,9 @@ export default function AdminBranchFinancePage() {
                           {fmtDate(req.date)}
                         </p>
                         {req.notes && (
-                          <p className="mt-1 text-[11px] text-text-muted italic">"{req.notes}"</p>
+                          <p className="mt-1 text-[11px] text-text-muted italic">
+                            &ldquo;{req.notes}&rdquo;
+                          </p>
                         )}
                         {req.amount >= 50_000 && (
                           <p className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-amber-600">
@@ -438,7 +462,7 @@ export default function AdminBranchFinancePage() {
                           setSelectedPendingId(req.id);
                           setConfirmModalOpen(true);
                         }}
-                        className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 active:scale-[0.97]"
+                        className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 active:scale-[0.97]"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12" />
@@ -457,7 +481,7 @@ export default function AdminBranchFinancePage() {
       {/* Empty state when no pending */}
       {pending.length === 0 && (
         <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -591,6 +615,12 @@ export default function AdminBranchFinancePage() {
           amount={selectedPendingAmount}
         />
       )}
+      {/* Request funds modal */}
+      <RequestFundsModal
+        isOpen={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+        onSubmit={handleRequestFunds}
+      />
     </div>
   );
 }

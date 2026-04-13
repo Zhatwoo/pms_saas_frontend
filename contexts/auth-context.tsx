@@ -7,7 +7,6 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import type { ReactNode } from "react";
 import type { User } from "@/types";
 import { api } from "@/lib/api";
 import { normalizeUser } from "@/lib/auth";
@@ -33,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (cachedUser) {
       try {
         setUser(normalizeUser(JSON.parse(cachedUser)));
-      } catch (e) {
+      } catch {
         localStorage.removeItem("pms_user");
       }
     }
@@ -87,8 +86,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const maxAge = Math.max(1, data.expires_in ?? 3600);
     
-    // Save to cookies (encoded)
-    document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    // Save to cookies (without encoding - browser handles it)
+    document.cookie = `pms_token=${data.access_token}; path=/; max-age=${maxAge}`;
     
     // Save to state and cache
     setUser(normalizedUser);

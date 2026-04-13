@@ -5,11 +5,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { BalanceOverview } from "./_components/balance-overview";
 import type { BranchBalance } from "./_components/balance-overview";
-import { ActionButtons } from "./_components/action-buttons";
 import { AddFundsModal } from "./_components/add-funds-modal";
-import type { AddFundsResult, Manager } from "./_components/add-funds-modal";
-import { TransferFundsModal } from "./_components/transfer-funds-modal";
-import type { TransferFundsResult } from "./_components/transfer-funds-modal";
+import type { UnifiedFundResult, Manager } from "./_components/add-funds-modal";
+import { CancelFundModal } from "./_components/cancel-fund-modal";
+import { IncomingRequestsPanel } from "./_components/incoming-requests-panel";
+import type { BranchFundRequest } from "./_components/incoming-requests-panel";
+import { RejectRequestModal } from "./_components/reject-request-modal";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
 import type { FinanceTransaction } from "./_components/transaction-table";
@@ -244,6 +245,27 @@ const INITIAL_APPROVALS: ApprovalRequest[] = [
   },
 ];
 
+const INITIAL_INCOMING_REQUESTS: BranchFundRequest[] = [
+  {
+    id: "REQ-101",
+    branchId: "002",
+    branchName: "BGC Branch",
+    amount: 15_000,
+    category: "Petty Cash",
+    notes: "Replenishing vault petty cash for the week.",
+    date: "2026-04-10T10:15:00Z",
+  },
+  {
+    id: "REQ-102",
+    branchId: "003",
+    branchName: "Makati Branch",
+    amount: 45_000,
+    category: "Operations",
+    notes: "Requires additional funds for weekend payroll and expected high customer volume.",
+    date: "2026-04-09T14:30:00Z",
+  },
+];
+
 /* ══════════════════════════════════════════════════════════
    PAGE COMPONENT
    ══════════════════════════════════════════════════════════ */
@@ -255,10 +277,33 @@ export default function BranchFinancePage() {
   const [balances, setBalances] = useState<BranchBalance[]>(MOCK_BALANCES);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>(INITIAL_TRANSACTIONS);
   const [approvals, setApprovals] = useState<ApprovalRequest[]>(INITIAL_APPROVALS);
+  const [incomingRequests, setIncomingRequests] = useState<BranchFundRequest[]>(INITIAL_INCOMING_REQUESTS);
+  const [activePanel, setActivePanel] = useState<"incoming" | "approval" | null>("incoming");
 
   // Modals
   const [addFundsOpen, setAddFundsOpen] = useState(false);
-  const [transferOpen, setTransferOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  
+  // Add Funds specific overrides for fulfilling requests
+  const [addFundsOverride, setAddFundsOverride] = useState<{
+    branchId: string;
+    branchName: string;
+    amount: string;
+    notes: string;
+    requestId: string;
+  } | null>(null);
+
+  const [selectedCancelId, setSelectedCancelId] = useState<string | null>(null);
+  const [selectedRejectId, setSelectedRejectId] = useState<string | null>(null);
+
+  const selectedCancelAmount = useMemo(() => {
+    return approvals.find((a) => a.id === selectedCancelId)?.amount || 0;
+  }, [approvals, selectedCancelId]);
+
+  const selectedRejectReq = useMemo(() => {
+    return incomingRequests.find((r) => r.id === selectedRejectId);
+  }, [incomingRequests, selectedRejectId]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -302,6 +347,18 @@ export default function BranchFinancePage() {
     return transactions.filter((t) => t.branchId === selectedBranch.id);
   }, [transactions, isAllBranches, selectedBranch.id]);
 
+  // Scoped incoming requests
+  const scopedIncomingRequests = useMemo(() => {
+    if (isAllBranches) return incomingRequests;
+    return incomingRequests.filter((r) => r.branchId === selectedBranch.id);
+  }, [incomingRequests, isAllBranches, selectedBranch.id]);
+
+  // Scoped approvals
+  const scopedApprovals = useMemo(() => {
+    if (isAllBranches) return approvals;
+    return approvals.filter((a) => a.branch === selectedBranch.name);
+  }, [approvals, isAllBranches, selectedBranch.name]);
+
   // Generate unique txn ID
   function nextTxnId() {
     return `TXN-${String(transactions.length + 1).padStart(3, "0")}`;
@@ -311,208 +368,168 @@ export default function BranchFinancePage() {
     return `APR-${String(approvals.length + 1).padStart(3, "0")}`;
   }
 
-  /* ── Add Funds ──────────────────────────────────────── */
-  function handleAddFunds(data: AddFundsResult) {
-    const branch = balances.find((b) => b.branchId === currentBranchId);
-    if (!branch) return;
-
-    const newTxn: FinanceTransaction = {
-      id: nextTxnId(),
-      date: new Date().toISOString().slice(0, 10),
-      branch: branch.name,
-      branchId: branch.branchId,
-      type: "ADD_FUNDS",
-      amount: data.amount,
-      balanceAfter: branch.currentBalance + data.amount,
-      status: "Pending",
-      approvedBy: null,
-      approvalDate: null,
-      notes: data.notes || "Fund addition",
-    };
-
-    const newApproval: ApprovalRequest = {
-      id: nextAprId(),
-      type: "ADD_FUNDS",
-      amount: data.amount,
-      requestedBy: user?.fullName || "Super Admin",
-      branch: branch.name,
-      date: new Date().toISOString().slice(0, 10),
-      requiredApprovers: data.requireAll ? data.approvers.length : 1,
-      currentApprovals: 0,
-      notes: data.notes || "",
-    };
-
-    setTransactions((prev) => [newTxn, ...prev]);
-    setApprovals((prev) => [newApproval, ...prev]);
-    showToast("Fund request submitted for approval");
-  }
-
-  /* ── Transfer Funds ─────────────────────────────────── */
-  function handleTransfer(data: TransferFundsResult) {
-    const fromBranch = balances.find((b) => b.branchId === data.fromBranchId);
-    const toBranch = balances.find((b) => b.branchId === data.toBranchId);
-    if (!fromBranch || !toBranch) return;
-
-    const txnOut: FinanceTransaction = {
-      id: nextTxnId(),
-      date: new Date().toISOString().slice(0, 10),
-      branch: fromBranch.name,
-      branchId: fromBranch.branchId,
-      type: "TRANSFER_OUT",
-      amount: data.amount,
-      balanceAfter: fromBranch.currentBalance - data.amount,
-      status: "Pending",
-      approvedBy: null,
-      approvalDate: null,
-      notes: `Transfer to ${toBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
-    };
-
-    const txnIn: FinanceTransaction = {
-      id: `${nextTxnId()}-IN`,
-      date: new Date().toISOString().slice(0, 10),
-      branch: toBranch.name,
-      branchId: toBranch.branchId,
-      type: "TRANSFER_IN",
-      amount: data.amount,
-      balanceAfter: toBranch.currentBalance + data.amount,
-      status: "Pending",
-      approvedBy: null,
-      approvalDate: null,
-      notes: `Received from ${fromBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
-    };
-
-    const newApproval: ApprovalRequest = {
-      id: nextAprId(),
-      type: "TRANSFER_OUT",
-      amount: data.amount,
-      requestedBy: user?.fullName || "Super Admin",
-      branch: fromBranch.name,
-      date: new Date().toISOString().slice(0, 10),
-      requiredApprovers: data.approvers.length > 1 ? data.approvers.length : 1,
-      currentApprovals: 0,
-      notes: `To ${toBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
-    };
-
-    setTransactions((prev) => [txnIn, txnOut, ...prev]);
-    setApprovals((prev) => [newApproval, ...prev]);
-    showToast("Transfer request submitted for approval");
-  }
-
-  /* ── Approve / Reject ───────────────────────────────── */
-  function handleApprove(approvalId: string) {
-    setApprovals((prev) => {
-      const req = prev.find((a) => a.id === approvalId);
-      if (!req) return prev;
-
-      const newApprovals = req.currentApprovals + 1;
-      const isFullyApproved = newApprovals >= req.requiredApprovers;
-
-      if (isFullyApproved) {
-        // Update transactions to Approved
-        setTransactions((txns) =>
-          txns.map((t) => {
-            const matchesBranch = t.branch === req.branch;
-            const matchesType =
-              t.type === req.type ||
-              (req.type === "TRANSFER_OUT" && (t.type === "TRANSFER_OUT" || t.type === "TRANSFER_IN"));
-            const matchesAmount = t.amount === req.amount;
-            const isPending = t.status === "Pending";
-
-            if (matchesBranch && matchesType && matchesAmount && isPending) {
-              return {
-                ...t,
-                status: "Approved" as const,
-                approvedBy: user?.fullName || "Manager",
-                approvalDate: new Date().toISOString().slice(0, 10),
-              };
-            }
-            // If transfer, also approve the paired TRANSFER_IN
-            if (req.type === "TRANSFER_OUT" && t.type === "TRANSFER_IN" && t.amount === req.amount && t.status === "Pending") {
-              return {
-                ...t,
-                status: "Approved" as const,
-                approvedBy: user?.fullName || "Manager",
-                approvalDate: new Date().toISOString().slice(0, 10),
-              };
-            }
-            return t;
-          }),
-        );
-
-        // Update balances
-        setBalances((bals) =>
-          bals.map((b) => {
-            if (req.type === "ADD_FUNDS" && b.name === req.branch) {
-              return {
-                ...b,
-                currentBalance: b.currentBalance + req.amount,
-                totalAdded: b.totalAdded + req.amount,
-                lastUpdated: new Date().toISOString(),
-              };
-            }
-            if (req.type === "TRANSFER_OUT") {
-              if (b.name === req.branch) {
-                return {
-                  ...b,
-                  currentBalance: b.currentBalance - req.amount,
-                  totalTransferred: b.totalTransferred + req.amount,
-                  lastUpdated: new Date().toISOString(),
-                };
-              }
-              // Find destination from notes
-              const destMatch = req.notes.match(/^To (.+?)(?:\s*—|$)/);
-              if (destMatch && b.name === destMatch[1]) {
-                return {
-                  ...b,
-                  currentBalance: b.currentBalance + req.amount,
-                  totalAdded: b.totalAdded + req.amount,
-                  lastUpdated: new Date().toISOString(),
-                };
-              }
-            }
-            return b;
-          }),
-        );
-
-        // Remove from approvals
-        return prev.filter((a) => a.id !== approvalId);
-      }
-
-      // Partially approved — update count
-      return prev.map((a) =>
-        a.id === approvalId ? { ...a, currentApprovals: newApprovals } : a,
-      );
+  /* ── Handles Incoming Requests ──────────────────────── */
+  function handleFulfillRequest(req: BranchFundRequest) {
+    setAddFundsOverride({
+      branchId: req.branchId,
+      branchName: req.branchName,
+      amount: req.amount.toString(),
+      notes: req.notes,
+      requestId: req.id,
     });
-
-    showToast("Request approved successfully");
+    // This override forces the unified modal to target this specific branch.
+    setAddFundsOpen(true);
   }
 
-  function handleReject(approvalId: string) {
-    const req = approvals.find((a) => a.id === approvalId);
+  function handleRejectRequestClick(id: string) {
+    setSelectedRejectId(id);
+    setRejectModalOpen(true);
+  }
+
+  function handleRejectConfirm(reason: string) {
+    if (!selectedRejectId) return;
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== selectedRejectId));
+    setRejectModalOpen(false);
+    setSelectedRejectId(null);
+    showToast("Request rejected and dismissed");
+  }
+
+  /* ── Unified Fund Submission ───────────────────────── */
+  function handleAddFunds(data: UnifiedFundResult) {
+    if (data.sourceType === "MANAGEMENT") {
+      const targetBranchId = addFundsOverride ? addFundsOverride.branchId : currentBranchId;
+      const branch = balances.find((b) => b.branchId === targetBranchId);
+      if (!branch) return;
+
+      const newTxn: FinanceTransaction = {
+        id: nextTxnId(),
+        date: new Date().toISOString().slice(0, 10),
+        branch: branch.name,
+        branchId: branch.branchId,
+        type: "ADD_FUNDS",
+        amount: data.amount,
+        balanceAfter: branch.currentBalance + data.amount,
+        status: "Pending",
+        approvedBy: null,
+        approvalDate: null,
+        notes: data.notes || "Fund addition from HQ",
+      };
+
+      const newApproval: ApprovalRequest = {
+        id: nextAprId(),
+        type: "ADD_FUNDS",
+        amount: data.amount,
+        requestedBy: user?.fullName || "Super Admin",
+        branch: branch.name,
+        date: new Date().toISOString().slice(0, 10),
+        requiredApprovers: data.requireAllOrReceiving ? data.approvers.length : 1,
+        currentApprovals: 0,
+        notes: data.notes || "",
+      };
+
+      setTransactions((prev) => [newTxn, ...prev]);
+      setApprovals((prev) => [newApproval, ...prev]);
+      showToast("Fund request submitted for approval");
+      
+      if (addFundsOverride) {
+        setIncomingRequests((prev) => prev.filter((r) => r.id !== addFundsOverride.requestId));
+        setAddFundsOverride(null);
+      }
+    } else {
+      // BRANCH_TRANSFER logic
+      const fromBranch = balances.find((b) => b.branchId === data.fromBranchId);
+      const toBranch = balances.find((b) => b.branchId === data.toBranchId);
+      if (!fromBranch || !toBranch) return;
+
+      const txnOut: FinanceTransaction = {
+        id: nextTxnId(),
+        date: new Date().toISOString().slice(0, 10),
+        branch: fromBranch.name,
+        branchId: fromBranch.branchId,
+        type: "TRANSFER_OUT",
+        amount: data.amount,
+        balanceAfter: fromBranch.currentBalance - data.amount,
+        status: "Pending",
+        approvedBy: null,
+        approvalDate: null,
+        notes: `Transfer to ${toBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
+      };
+
+      const txnIn: FinanceTransaction = {
+        id: `${nextTxnId()}-IN`,
+        date: new Date().toISOString().slice(0, 10),
+        branch: toBranch.name,
+        branchId: toBranch.branchId,
+        type: "TRANSFER_IN",
+        amount: data.amount,
+        balanceAfter: toBranch.currentBalance + data.amount,
+        status: "Pending",
+        approvedBy: null,
+        approvalDate: null,
+        notes: `Received from ${fromBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
+      };
+
+      const newApproval: ApprovalRequest = {
+        id: nextAprId(),
+        type: "TRANSFER_OUT",
+        amount: data.amount,
+        requestedBy: user?.fullName || "Super Admin",
+        branch: fromBranch.name,
+        date: new Date().toISOString().slice(0, 10),
+        requiredApprovers: data.approvers.length > 1 ? data.approvers.length : 1, // simplified assumption based on Transfer modal logic
+        currentApprovals: 0,
+        notes: `To ${toBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
+      };
+
+      setTransactions((prev) => [txnIn, txnOut, ...prev]);
+      setApprovals((prev) => [newApproval, ...prev]);
+      showToast("Branch transfer submitted for approval");
+    }
+  }
+
+  /* ── Cancel Transfer ────────────────────────────────── */
+  function handleCancelConfirm(reason: string) {
+    if (!selectedCancelId) return;
+    
+    const req = approvals.find((a) => a.id === selectedCancelId);
     if (!req) return;
 
-    // Update transaction status
+    // Update transaction status to Cancelled
     setTransactions((txns) =>
       txns.map((t) => {
-        const matches =
-          t.branch === req.branch &&
-          t.amount === req.amount &&
-          t.status === "Pending";
+        const matchesBranch = t.branch === req.branch;
+        const matchesType =
+          t.type === req.type ||
+          (req.type === "TRANSFER_OUT" && (t.type === "TRANSFER_OUT" || t.type === "TRANSFER_IN"));
+        const matchesAmount = t.amount === req.amount;
+        const isPending = t.status === "Pending";
 
-        if (matches) {
+        if (matchesBranch && matchesType && matchesAmount && isPending) {
           return {
             ...t,
-            status: "Rejected" as const,
-            approvedBy: user?.fullName || "Manager",
-            approvalDate: new Date().toISOString().slice(0, 10),
+            status: "Rejected" as const, // Meaning Cancelled
+            notes: `${t.notes} [Cancelled: ${reason}]`,
+          };
+        }
+        
+        // If transfer, also update the paired TRANSFER_IN
+        if (req.type === "TRANSFER_OUT" && t.type === "TRANSFER_IN" && t.amount === req.amount && t.status === "Pending") {
+          return {
+            ...t,
+            status: "Rejected" as const, // Meaning Cancelled
+            notes: `${t.notes} [Cancelled: ${reason}]`,
           };
         }
         return t;
       }),
     );
 
-    setApprovals((prev) => prev.filter((a) => a.id !== approvalId));
-    showToast("Request rejected");
+    // Remove from pending confirmations
+    setApprovals((prev) => prev.filter((a) => a.id !== selectedCancelId));
+    
+    setCancelModalOpen(false);
+    setSelectedCancelId(null);
+    showToast("Transaction successfully cancelled");
   }
 
   function clearFilters() {
@@ -549,22 +566,32 @@ export default function BranchFinancePage() {
       <BalanceOverview
         isAllBranches={isAllBranches}
         selectedBranchId={currentBranchId}
+        selectedBranchName={isAllBranches ? "All Branches" : selectedBranch.name}
         balances={scopedBalances}
-      />
-
-      {/* Approval Panel */}
-      <ApprovalPanel
-        requests={approvals}
-        onApprove={handleApprove}
-        onReject={handleReject}
-      />
-
-      {/* Section 2: Action Buttons */}
-      <ActionButtons
-        isAllBranches={isAllBranches}
         onAddFunds={() => setAddFundsOpen(true)}
-        onTransferFunds={() => setTransferOpen(true)}
       />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
+        {/* Incoming Requests Panel */}
+        <IncomingRequestsPanel
+          requests={scopedIncomingRequests}
+          onFulfill={handleFulfillRequest}
+          onReject={handleRejectRequestClick}
+          expanded={activePanel === "incoming"}
+          onToggle={() => setActivePanel(activePanel === "incoming" ? null : "incoming")}
+        />
+
+        {/* Approval Panel */}
+        <ApprovalPanel
+          requests={scopedApprovals}
+          onCancelClick={(id) => {
+            setSelectedCancelId(id);
+            setCancelModalOpen(true);
+          }}
+          expanded={activePanel === "approval"}
+          onToggle={() => setActivePanel(activePanel === "approval" ? null : "approval")}
+        />
+      </div>
 
       {/* Section 3: Transaction History */}
       <div className="space-y-4">
@@ -606,19 +633,39 @@ export default function BranchFinancePage() {
       {/* Modals */}
       <AddFundsModal
         isOpen={addFundsOpen}
-        onClose={() => setAddFundsOpen(false)}
+        onClose={() => {
+          setAddFundsOpen(false);
+          setAddFundsOverride(null);
+        }}
         onSubmit={handleAddFunds}
-        branchName={currentBranchName}
-        managers={currentManagers}
-      />
-
-      <TransferFundsModal
-        isOpen={transferOpen}
-        onClose={() => setTransferOpen(false)}
-        onSubmit={handleTransfer}
+        branchName={addFundsOverride ? addFundsOverride.branchName : currentBranchName}
+        managers={addFundsOverride ? getManagersForBranch(addFundsOverride.branchId) : currentManagers}
         branches={balances}
         currentBranchId={currentBranchId}
         getManagersForBranch={getManagersForBranch}
+        defaultAmount={addFundsOverride ? addFundsOverride.amount : ""}
+        defaultNotes={addFundsOverride ? addFundsOverride.notes : ""}
+      />
+
+      <CancelFundModal
+        isOpen={cancelModalOpen}
+        onClose={() => {
+          setCancelModalOpen(false);
+          setSelectedCancelId(null);
+        }}
+        onConfirm={handleCancelConfirm}
+        amount={selectedCancelAmount}
+      />
+
+      <RejectRequestModal
+        isOpen={rejectModalOpen}
+        onClose={() => {
+          setRejectModalOpen(false);
+          setSelectedRejectId(null);
+        }}
+        onConfirm={handleRejectConfirm}
+        amount={selectedRejectReq?.amount || 0}
+        branchName={selectedRejectReq?.branchName || ""}
       />
     </div>
   );

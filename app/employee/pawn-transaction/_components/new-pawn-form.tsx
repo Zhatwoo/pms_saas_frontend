@@ -69,7 +69,9 @@ export function NewPawnForm({ onCancel }: NewPawnFormProps) {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-emerald-900">Physical Item Scan</h3>
-                <p className="text-xs text-emerald-700">Scan the item's barcode/QR code or take a picture to verify inventory.</p>
+                <p className="text-xs text-emerald-700">
+                    Scan the item&apos;s barcode/QR code or take a picture to verify inventory.
+                  </p>
               </div>
             </div>
             <button
