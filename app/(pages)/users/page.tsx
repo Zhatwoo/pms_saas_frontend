@@ -10,8 +10,10 @@ import { UserTable } from "./_components/user-table";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "ADMIN" | "EMPLOYEE";
-export type RoleFilter = "ALL" | UserRole;
+export type RoleFilter = "ALL" | UserRole | "PENDING";
 export type BranchFilter = "ALL" | string;
+
+export type AccountStatusUi = "Pending" | "Active" | "Rejected";
 
 export interface UserRecord {
   id: string;
@@ -21,7 +23,7 @@ export interface UserRecord {
   branchId: string | null;
   branch: string;
   created: string;
-  status: "Active";
+  status: AccountStatusUi;
 }
 
 export interface BranchOption {
@@ -56,6 +58,8 @@ interface UserApiRecord {
   created_at?: string;
   authId?: string;
   auth_id?: string;
+  accountStatus?: string | null;
+  account_status?: string | null;
 }
 
 function mapApiRoleToUi(role: UserApiRecord["role"]): UserRole {
@@ -73,11 +77,25 @@ function mapApiRoleToUi(role: UserApiRecord["role"]): UserRole {
   }
 }
 
+function mapAccountStatus(
+  raw: string | null | undefined,
+): AccountStatusUi {
+  const v = (raw ?? "active").toLowerCase();
+  if (v === "pending") {
+    return "Pending";
+  }
+  if (v === "rejected") {
+    return "Rejected";
+  }
+  return "Active";
+}
+
 function mapUserRecord(user: UserApiRecord): UserRecord {
   const fullName = user.fullName ?? user.full_name ?? user.email;
   const branchId = user.branchId ?? user.branch_id ?? null;
   const branchName = user.branchName ?? user.branch_name ?? null;
   const createdAt = user.createdAt ?? user.created_at ?? new Date().toISOString();
+  const accountRaw = user.accountStatus ?? user.account_status ?? "active";
 
   return {
     id: user.id ?? user.authId ?? user.auth_id ?? user.email,
@@ -91,7 +109,7 @@ function mapUserRecord(user: UserApiRecord): UserRecord {
       day: "2-digit",
       year: "numeric",
     }),
-    status: "Active",
+    status: mapAccountStatus(accountRaw),
   };
 }
 
@@ -107,6 +125,7 @@ export default function UsersPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const loadUsersPage = useCallback(async () => {
@@ -145,6 +164,12 @@ export default function UsersPage() {
   useEffect(() => {
     void loadUsersPage();
   }, [loadUsersPage]);
+
+  useEffect(() => {
+    if (!canManageUsers && roleFilter === "SUPER_ADMIN") {
+      setRoleFilter("ALL");
+    }
+  }, [canManageUsers, roleFilter]);
 
   async function handleCreateUser(input: CreateUserInput) {
     const payload = {
@@ -210,6 +235,37 @@ export default function UsersPage() {
     }
   }
 
+  async function handleUpdateAccountStatus(
+    target: UserRecord,
+    accountStatus: "active" | "rejected",
+  ) {
+    if (!canManageUsers) {
+      return;
+    }
+
+    setUpdatingUserId(target.id);
+    setError("");
+
+    try {
+      const updated = await api.patch<UserApiRecord>(`/users/${target.id}`, {
+        accountStatus,
+      });
+      setUsers((current) =>
+        current.map((u) =>
+          u.id === target.id ? mapUserRecord(updated) : u,
+        ),
+      );
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Failed to update user.",
+      );
+    } finally {
+      setUpdatingUserId(null);
+    }
+  }
+
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -220,7 +276,9 @@ export default function UsersPage() {
         userRecord.email.toLowerCase().includes(query) ||
         userRecord.branch.toLowerCase().includes(query);
       const matchesRole =
-        roleFilter === "ALL" || userRecord.role === roleFilter;
+        roleFilter === "PENDING"
+          ? userRecord.status === "Pending"
+          : roleFilter === "ALL" || userRecord.role === roleFilter;
       const matchesBranch =
         branchFilter === "ALL" || userRecord.branchId === branchFilter;
 
@@ -234,6 +292,7 @@ export default function UsersPage() {
       .filter((branchId): branchId is string => Boolean(branchId)),
   ).size;
   const activeUsers = users.filter((user) => user.status === "Active").length;
+  const pendingUsers = users.filter((user) => user.status === "Pending").length;
 
   return (
     <div className="space-y-6">
@@ -253,11 +312,13 @@ export default function UsersPage() {
         onBranchFilterChange={setBranchFilter}
         canCreateUser={canManageUsers}
         onCreateUser={() => setIsCreateModalOpen(true)}
+        showSuperAdminRoleTab={canManageUsers}
       />
       <UserStats
         totalUsers={users.length}
         totalBranches={totalBranches}
         activeUsers={activeUsers}
+        pendingUsers={pendingUsers}
       />
       {isLoading ? (
         <div className="rounded-lg border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary">
@@ -268,8 +329,12 @@ export default function UsersPage() {
           users={filteredUsers}
           totalUsers={users.length}
           canDeleteUser={canManageUsers}
+          canApproveUser={canManageUsers}
           deletingUserId={isDeletingUserId}
+          updatingUserId={updatingUserId}
           onDeleteUser={handleDeleteUser}
+          onApproveUser={(u) => handleUpdateAccountStatus(u, "active")}
+          onRejectUser={(u) => handleUpdateAccountStatus(u, "rejected")}
         />
       )}
 

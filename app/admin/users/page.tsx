@@ -1,5 +1,6 @@
 export { default } from "@/app/(pages)/users/page";
 export type {
+  AccountStatusUi,
   BranchFilter,
   BranchOption,
   CreateUserInput,

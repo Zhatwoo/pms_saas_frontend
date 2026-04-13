@@ -4,6 +4,7 @@ import Image from "next/image";
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
+  onSignUpClick?: () => void;
 }
 
 const navItems = ["HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS"];
@@ -77,7 +78,10 @@ const reviews = [
   },
 ];
 
-export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
+export function AuthLandingPage({
+  onLoginClick,
+  onSignUpClick,
+}: AuthLandingPageProps) {
   return (
     <div className="min-h-screen bg-emerald-50">
       <nav className="fixed left-0 right-0 top-0 z-40 flex h-20 items-center justify-between bg-emerald-900 px-12">
@@ -125,7 +129,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             </p>
             <div className="mt-8 flex gap-4">
               <button
-                onClick={onLoginClick}
+                type="button"
+                onClick={onSignUpClick ?? onLoginClick}
                 className="rounded-lg bg-emerald-900 px-8 py-4 font-bold text-white transition hover:bg-emerald-800"
               >
                 GET STARTED
