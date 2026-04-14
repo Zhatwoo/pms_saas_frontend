@@ -298,8 +298,8 @@ export function Header({
   );
 
   return (
-    <header className="flex items-center justify-between border-b border-border-main bg-header-bg px-6 py-3 transition-colors duration-300">
-      <div className="flex items-center gap-4">
+    <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border-main bg-header-bg px-6 py-3 transition-colors duration-300">
+      <div className="flex min-w-0 items-center gap-4 justify-self-start">
         <h1 className="text-2xl font-bold text-text-primary leading-none">{title}</h1>
         {branchName && (
           <div className="flex items-center gap-4">
@@ -311,15 +311,17 @@ export function Header({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Branch Selector – superadmin only */}
-        {!hideBranchSelector && <BranchSelectorDropdown />}
-
+      <div className="flex items-center justify-self-center gap-3">
         {/* Clock */}
         <div className="flex items-center gap-2 rounded-full border border-border-main px-4 py-1.5 text-sm text-text-tertiary">
           <ClockIcon />
-          <span className="min-w-[180px]">{time}</span>
+          <span className="min-w-[180px] text-center">{time}</span>
         </div>
+      </div>
+
+      <div className="flex items-center justify-self-end gap-3">
+        {/* Branch Selector – superadmin only */}
+        {!hideBranchSelector && <BranchSelectorDropdown />}
 
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>
