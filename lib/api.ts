@@ -31,11 +31,12 @@ class ApiClient {
   private getToken(): string | null {
     if (typeof document === "undefined") return null;
     const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
-    return match ? match[1] : null;
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
   async fetch<T>(path: string, options?: RequestInit): Promise<T> {
     const token = this.getToken();
+    const method = options?.method ?? "GET";
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -56,7 +57,12 @@ class ApiClient {
 
     let res: Response;
     try {
-      res = await fetch(`/api${path}`, { ...options, headers });
+      res = await fetch(`/api${path}`, {
+        ...options,
+        method,
+        headers,
+        ...(method === "GET" && options?.cache == null ? { cache: "no-store" } : {}),
+      });
     } catch (networkErr) {
       const msg =
         networkErr instanceof Error ? networkErr.message : String(networkErr);
@@ -69,7 +75,7 @@ class ApiClient {
     }
 
     if (!res.ok) {
-      const errorMessage = await this.extractErrorMessage(res, path, token);
+      const errorMessage = await this.extractErrorMessage(res, path);
 
       if (res.status === 401 && !isPublicPath) {
         console.warn(
@@ -87,7 +93,6 @@ class ApiClient {
   private async extractErrorMessage(
     res: Response,
     path: string,
-    _token: string | null,
   ): Promise<string> {
     const fallback = this.fallbackMessage(res.status, path);
 

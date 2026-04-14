@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import type { User } from "@/types";
 import { api } from "@/lib/api";
@@ -25,11 +26,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const isRefreshingRef = useRef(false);
 
   const refreshProfile = useCallback(async () => {
-    if (isRefreshing) return;
-    setIsRefreshing(true);
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
     try {
       const freshUser = await api.get<User>("/auth/me");
       const normalizedUser = normalizeUser(freshUser);
@@ -40,9 +41,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn("[AuthContext] Failed to refresh profile:", err);
     } finally {
-      setIsRefreshing(false);
+      isRefreshingRef.current = false;
     }
-  }, [isRefreshing]);
+  }, []);
 
   // 1. Initial Load: Check localStorage and Cookies
   useEffect(() => {
@@ -116,8 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const maxAge = Math.max(1, data.expires_in ?? 3600);
     
-    // Save to cookies (without encoding - browser handles it)
-    document.cookie = `pms_token=${data.access_token}; path=/; max-age=${maxAge}`;
+    document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${maxAge}; samesite=lax`;
     
     // Save to state and cache
     setUser(normalizedUser);
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    document.cookie = "pms_token=; path=/; max-age=0";
+    document.cookie = "pms_token=; path=/; max-age=0; samesite=lax";
     localStorage.removeItem("pms_user");
     setUser(null);
     window.location.href = "/login";

@@ -94,6 +94,7 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmitting) return;
     setError("");
     setSuccess("");
 
