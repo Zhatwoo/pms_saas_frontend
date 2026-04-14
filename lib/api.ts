@@ -1,12 +1,42 @@
 class ApiClient {
+  private logApiIssue(status: number, path: string, details: unknown) {
+    const prefix = `[API Error ${status}] ${path}:`;
+    if (status >= 500) {
+      console.error(prefix, details);
+      return;
+    }
+    console.warn(prefix, details);
+  }
+
+  private fallbackMessage(status: number, path: string): string {
+    if (status === 401) {
+      return "Session expired. Please sign in again.";
+    }
+
+    if (status === 403 && path.startsWith("/inventory/item/")) {
+      return "This item belongs to another branch and cannot be scanned here.";
+    }
+
+    if (status === 404 && path.startsWith("/inventory/item/")) {
+      return "Item not found in your branch inventory.";
+    }
+
+    if (status >= 500) {
+      return "Server is temporarily unavailable. Please try again.";
+    }
+
+    return "Request failed. Please try again.";
+  }
+
   private getToken(): string | null {
     if (typeof document === "undefined") return null;
     const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
-    return match ? match[1] : null;
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
   async fetch<T>(path: string, options?: RequestInit): Promise<T> {
     const token = this.getToken();
+    const method = options?.method ?? "GET";
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -27,11 +57,16 @@ class ApiClient {
 
     let res: Response;
     try {
-      res = await fetch(`/api${path}`, { ...options, headers });
+      res = await fetch(`/api${path}`, {
+        ...options,
+        method,
+        headers,
+        ...(method === "GET" && options?.cache == null ? { cache: "no-store" } : {}),
+      });
     } catch (networkErr) {
       const msg =
         networkErr instanceof Error ? networkErr.message : String(networkErr);
-      console.error(`[API] Network error for ${path}:`, msg);
+      console.warn(`[API] Network error for ${path}:`, msg);
       throw new Error(
         msg.includes("ECONNREFUSED") || msg.includes("fetch failed")
           ? "Cannot reach the server. Please check if the backend is running."
@@ -40,10 +75,10 @@ class ApiClient {
     }
 
     if (!res.ok) {
-      const errorMessage = await this.extractErrorMessage(res, path, token);
+      const errorMessage = await this.extractErrorMessage(res, path);
 
       if (res.status === 401 && !isPublicPath) {
-        console.error(
+        console.warn(
           `[API] 401 Unauthorized for ${path}. Token present: ${!!token}`,
         );
       }
@@ -58,26 +93,27 @@ class ApiClient {
   private async extractErrorMessage(
     res: Response,
     path: string,
-    token: string | null,
   ): Promise<string> {
-    const fallback = `${res.statusText || "Error"} (HTTP ${res.status})`;
+    const fallback = this.fallbackMessage(res.status, path);
 
     let text = "";
     try {
       text = await res.text();
     } catch {
-      console.error(`[API Error ${res.status}] ${path}: Could not read response body`);
+      this.logApiIssue(res.status, path, "Could not read response body");
       return fallback;
     }
 
     if (!text || !text.trim()) {
-      console.error(`[API Error ${res.status}] ${path}: Empty response body`);
+      this.logApiIssue(res.status, path, "Empty response body");
       return fallback;
     }
 
     if (text.trimStart().startsWith("<")) {
-      console.error(
-        `[API Error ${res.status}] ${path}: Received HTML instead of JSON (proxy or server error)`,
+      this.logApiIssue(
+        res.status,
+        path,
+        "Received HTML instead of JSON (proxy or server error)",
       );
       return res.status === 502 || res.status === 503
         ? "Server is temporarily unavailable. Please try again."
@@ -88,19 +124,16 @@ class ApiClient {
     try {
       errorData = JSON.parse(text) as Record<string, unknown>;
     } catch {
-      console.error(
-        `[API Error ${res.status}] ${path}: Non-JSON response:`,
-        text.slice(0, 300),
-      );
+      this.logApiIssue(res.status, path, `Non-JSON response: ${text.slice(0, 300)}`);
       return text.length <= 200 ? text : fallback;
     }
 
     if (!errorData || typeof errorData !== "object" || Object.keys(errorData).length === 0) {
-      console.error(`[API Error ${res.status}] ${path}: Empty JSON object`);
+      this.logApiIssue(res.status, path, "Empty JSON object");
       return fallback;
     }
 
-    console.error(`[API Error ${res.status}] ${path}:`, errorData);
+    this.logApiIssue(res.status, path, errorData);
 
     let msg = "";
 

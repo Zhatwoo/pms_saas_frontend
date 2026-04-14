@@ -1,10 +1,105 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
+
+type NotificationTab = "All" | "Transactions" | "Alerts" | "Requests";
+type NotificationGroup = "Today" | "Earlier";
+
+interface HeaderNotification {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: Exclude<NotificationTab, "All">;
+  group: NotificationGroup;
+  unread: boolean;
+}
+
+const DEFAULT_NOTIFICATIONS: HeaderNotification[] = [
+  {
+    id: "tx-1",
+    title: "Juan Dela Cruz - Item expires in 2 days",
+    subtitle: "Transaction Alert: near expiry item",
+    category: "Transactions",
+    group: "Today",
+    unread: true,
+  },
+  {
+    id: "tx-2",
+    title: "Maria Santos - Item already expired",
+    subtitle: "Transaction Alert: expired pawn item",
+    category: "Transactions",
+    group: "Today",
+    unread: true,
+  },
+  {
+    id: "tx-3",
+    title: "Successful buyback completed - OR#2241",
+    subtitle: "Transaction Alert: buyback success",
+    category: "Transactions",
+    group: "Today",
+    unread: true,
+  },
+  {
+    id: "tx-4",
+    title: "New pawn transaction created - PT#9821",
+    subtitle: "Transaction Alert: new pawn",
+    category: "Transactions",
+    group: "Today",
+    unread: true,
+  },
+  {
+    id: "al-1",
+    title: "3 customers have pending interest due today",
+    subtitle: "Payment Reminder",
+    category: "Alerts",
+    group: "Today",
+    unread: true,
+  },
+  {
+    id: "al-2",
+    title: "Low inventory warning: Jewelry trays below threshold",
+    subtitle: "Inventory Update",
+    category: "Alerts",
+    group: "Today",
+    unread: true,
+  },
+  {
+    id: "rq-1",
+    title: "Request #1023 - Waiting for approval",
+    subtitle: "Request / Approval",
+    category: "Requests",
+    group: "Earlier",
+    unread: true,
+  },
+  {
+    id: "rq-2",
+    title: "Request #1021 - Approved",
+    subtitle: "Request / Approval",
+    category: "Requests",
+    group: "Earlier",
+    unread: false,
+  },
+  {
+    id: "al-3",
+    title: "Status update: 2 items are In Transit / OTW",
+    subtitle: "Status Tracking",
+    category: "Alerts",
+    group: "Earlier",
+    unread: false,
+  },
+  {
+    id: "al-4",
+    title: "System warning: Backup sync delayed",
+    subtitle: "Daily Summary / System Alert",
+    category: "Alerts",
+    group: "Earlier",
+    unread: false,
+  },
+];
 
 interface HeaderProps {
   userInitials?: string;
@@ -102,7 +197,14 @@ export function Header({
   hideBranchSelector = false,
 }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [time, setTime] = useState("");
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<NotificationTab>("All");
+  const [notifications, setNotifications] = useState<HeaderNotification[]>(
+    DEFAULT_NOTIFICATIONS,
+  );
+  const notificationRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setTime(formatDateTime());
@@ -110,7 +212,90 @@ export function Header({
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const onMouseDown = (event: MouseEvent) => {
+      if (
+        isNotificationOpen &&
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [isNotificationOpen]);
+
   const title = getPageTitle(pathname || "");
+  const unreadCount = notifications.filter((item) => item.unread).length;
+  const badgeCount = Math.max(notificationCount, unreadCount);
+
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === "All") {
+      return notifications;
+    }
+    return notifications.filter((item) => item.category === activeTab);
+  }, [activeTab, notifications]);
+
+  const todayNotifications = filteredNotifications.filter(
+    (item) => item.group === "Today",
+  );
+  const earlierNotifications = filteredNotifications.filter(
+    (item) => item.group === "Earlier",
+  );
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((item) => ({ ...item, unread: false })));
+  };
+
+  const markOneAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
+    );
+  };
+
+  const handleViewAllNotifications = () => {
+    const currentPath = pathname || "";
+    let targetPath = "/audit-logs";
+
+    if (currentPath.startsWith("/admin")) {
+      targetPath = "/admin/audit-logs";
+    } else if (currentPath.startsWith("/employee")) {
+      targetPath = "/employee/audit-logs";
+    }
+
+    setIsNotificationOpen(false);
+    router.push(targetPath);
+  };
+
+  const renderNotificationRow = (item: HeaderNotification) => (
+    <button
+      key={item.id}
+      type="button"
+      onClick={() => markOneAsRead(item.id)}
+      className="w-full rounded-lg border border-border-main bg-surface-subtle px-3 py-2 text-left transition-colors hover:bg-surface-hover"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
+          <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
+        </div>
+        {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
+      </div>
+    </button>
+  );
 
   return (
     <header className="flex items-center justify-between border-b border-border-main bg-header-bg px-6 py-3 transition-colors duration-300">
@@ -137,14 +322,100 @@ export function Header({
         </div>
 
         {/* Notifications */}
-        <button className="relative rounded-full p-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary">
-          <BellIcon />
-          {notificationCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-              {notificationCount > 9 ? "9+" : notificationCount}
-            </span>
+        <div className="relative" ref={notificationRef}>
+          <button
+            type="button"
+            onClick={() => setIsNotificationOpen((prev) => !prev)}
+            className="relative rounded-full p-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            aria-label="Open notifications"
+          >
+            <BellIcon />
+            {badgeCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                {badgeCount > 9 ? "9+" : badgeCount}
+              </span>
+            )}
+          </button>
+
+          {isNotificationOpen && (
+            <div className="absolute right-0 top-12 z-50 w-[380px] rounded-xl border border-border-main bg-header-bg p-3 shadow-xl">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-text-primary">Notifications</h3>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                  Bell {badgeCount}
+                </span>
+              </div>
+
+              <div className="mb-3 grid grid-cols-4 gap-1 rounded-lg border border-border-main bg-surface-subtle p-1">
+                {(["All", "Transactions", "Alerts", "Requests"] as NotificationTab[]).map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${
+                        activeTab === tab
+                          ? "bg-pawn-sidebar text-white"
+                          : "text-text-secondary hover:bg-surface-hover"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
+                <div>
+                  <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-text-tertiary">
+                    Today
+                  </p>
+                  <div className="space-y-2">
+                    {todayNotifications.length > 0 ? (
+                      todayNotifications.map(renderNotificationRow)
+                    ) : (
+                      <p className="rounded-md border border-dashed border-border-main px-3 py-2 text-xs text-text-tertiary">
+                        No items.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-text-tertiary">
+                    Earlier
+                  </p>
+                  <div className="space-y-2">
+                    {earlierNotifications.length > 0 ? (
+                      earlierNotifications.map(renderNotificationRow)
+                    ) : (
+                      <p className="rounded-md border border-dashed border-border-main px-3 py-2 text-xs text-text-tertiary">
+                        No items.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-border-main pt-3">
+                <button
+                  type="button"
+                  onClick={markAllAsRead}
+                  className="rounded-md border border-border-main px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+                >
+                  Mark as read
+                </button>
+                <button
+                  type="button"
+                  onClick={handleViewAllNotifications}
+                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
+                >
+                  View all
+                </button>
+              </div>
+            </div>
           )}
-        </button>
+        </div>
 
         {/* Theme Toggle – beside notifications */}
         <ThemeToggleButton />
