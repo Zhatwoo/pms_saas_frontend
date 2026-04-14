@@ -91,12 +91,10 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
               return (
                 <tr
                   key={row.transactionNo}
-                  className={`border-t border-border-subtle ${
+                  className={`border-t border-border-subtle transition-colors bg-surface-secondary hover:bg-emerald-surface/60 ${
                     isStartRow
-                      ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
-                      : idx % 2 === 0
-                        ? "bg-surface"
-                        : "bg-surface-secondary"
+                      ? "border-l-4 border-l-emerald-700 !bg-emerald-surface"
+                      : ""
                   }`}
                 >
                   {/* Transaction # */}

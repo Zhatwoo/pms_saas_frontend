@@ -309,7 +309,7 @@ export default function PawnedItemsPage() {
                     <>
                       <tr 
                         key={item.itemId} 
-                        className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-emerald-50/50 transition-colors cursor-pointer`}
+                        className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
                         onClick={() => setViewingItem(item)}
                       >
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>

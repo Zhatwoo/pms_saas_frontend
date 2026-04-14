@@ -57,7 +57,10 @@ function InlineActions({
     <div className="flex items-center justify-center gap-1">
       {/* View */}
       <button
-        onClick={onView}
+        onClick={(e) => {
+          e.stopPropagation();
+          onView();
+        }}
         className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-emerald-50"
         title="View"
       >
@@ -68,7 +71,10 @@ function InlineActions({
       </button>
       {/* Edit */}
       <button
-        onClick={onEdit}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit();
+        }}
         className="flex h-7 w-7 items-center justify-center rounded-md text-amber-600 transition-colors hover:bg-amber-50"
         title="Edit"
       >
@@ -79,7 +85,10 @@ function InlineActions({
       </button>
       {/* Terminate */}
       <button
-        onClick={onTerminate}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTerminate();
+        }}
         className="flex h-7 w-7 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50"
         title="Terminate"
       >
@@ -177,12 +186,16 @@ export function BranchTable({
       <DataTable
         columns={columns}
         data={paginated}
+        onRowClick={(row) => onBranchClick(row as unknown as BranchRow)}
         renderCell={(key, value, row) => {
           if (key === "name") {
             return (
               <button
-                onClick={() => onBranchClick(row as unknown as BranchRow)}
-                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:text-emerald-600 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBranchClick(row as unknown as BranchRow);
+                }}
+                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:opacity-80 hover:underline"
               >
                 {value}
               </button>
