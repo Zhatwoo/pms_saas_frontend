@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -186,8 +187,7 @@ export default function PawnedItemsPage() {
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned?${params}`);
-        const data = await res.json();
+        const data = await api.get<{ items: PawnedItem[]; total: number }>(`/inventory/pawned?${params}`);
         setPawnedItems(data.items || []);
         setTotalItems(data.total || 0);
       } catch (err) {
@@ -201,11 +201,7 @@ export default function PawnedItemsPage() {
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}/remarks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remark: remarks }),
-      });
+      await api.post(`/inventory/pawned/${itemId}/remarks`, { remark: remarks });
       setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, remarks } : i)));
     } catch (err) {
       console.error("Failed to save remarks:", err);
@@ -215,9 +211,7 @@ export default function PawnedItemsPage() {
   const handleMarkExpired = useCallback(async (itemId: string) => {
     if (!confirm("Mark this item as Expired? It will be auto-transferred to Items For Sale.")) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}/expire`, {
-        method: "POST",
-      });
+      await api.post(`/inventory/pawned/${itemId}/expire`, {});
       setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: "Expired" as PawnedStatus } : i)));
     } catch (err) {
       console.error("Failed to expire item:", err);
@@ -227,9 +221,7 @@ export default function PawnedItemsPage() {
   const handleDelete = useCallback(async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this pawned item? This cannot be undone.")) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}`, {
-        method: "DELETE",
-      });
+      await api.delete(`/inventory/pawned/${itemId}`);
       setPawnedItems((prev) => prev.filter((i) => i.id !== itemId));
     } catch (err) {
       console.error("Failed to delete item:", err);

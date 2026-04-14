@@ -9,6 +9,7 @@ import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
 import { getRoleLabel } from "@/lib/auth";
 import { LogoutIcon } from "@/lib/icons";
 import { LogoutModal } from "./logout-modal";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 
 interface SidebarProps {
   navGroups: NavGroup[];
@@ -17,24 +18,23 @@ interface SidebarProps {
   userName?: string;
   userRole?: Role;
   onLogout?: () => void;
+  disabled?: boolean;
 }
 
 function NavItemComponent({
   item,
   collapsed,
   pathname,
-  isExpanded,
-  onToggle,
+  disabled,
 }: {
   item: NavItem;
   collapsed: boolean;
   pathname: string;
-  isExpanded: boolean;
-  onToggle: () => void;
+  disabled?: boolean;
 }) {
   const hasSubItems = item.subItems && item.subItems.length > 0;
 
-  // For parent item, check if itself or any subitem is active
+  // Active state logic
   const isSelfActive =
     pathname === item.href || pathname.startsWith((item.href ?? "") + "/");
   const isAnySubActive =
@@ -43,16 +43,30 @@ function NavItemComponent({
       (sub) =>
         pathname === sub.href || pathname.startsWith((sub.href ?? "") + "/"),
     );
+  
+  const [expanded, setExpanded] = useState(isAnySubActive);
+
+  // Re-sync expanded state when pathname changes
+  useEffect(() => {
+    if (isAnySubActive) setExpanded(true);
+  }, [isAnySubActive]);
+
+  const effectivelyDisabled = disabled && item.href !== "/employee/dashboard";
 
   if (hasSubItems) {
     return (
       <div className="space-y-1">
         <button
-          onClick={onToggle}
+          onClick={() => !collapsed && setExpanded(!expanded)}
           title={collapsed ? item.label : undefined}
+          disabled={disabled}
           className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
             collapsed ? "justify-center" : ""
-          } text-white/80 hover:bg-pawn-sidebar-light hover:text-white`}
+          } ${
+            effectivelyDisabled 
+              ? "opacity-30 cursor-not-allowed" 
+              : "text-white/80 hover:bg-pawn-sidebar-light hover:text-white"
+          }`}
         >
           <div className="flex items-center gap-3">
             <span className="flex-shrink-0 text-pawn-gold">{item.icon}</span>
@@ -69,7 +83,7 @@ function NavItemComponent({
               strokeLinecap="round"
               strokeLinejoin="round"
               className={`transition-transform duration-200 ${
-                isExpanded ? "rotate-180" : ""
+                expanded ? "rotate-180" : ""
               }`}
             >
               <polyline points="6 9 12 15 18 9" />
@@ -79,7 +93,7 @@ function NavItemComponent({
 
         <div
           className={`grid transition-all duration-300 ease-in-out ${
-            isExpanded && !collapsed
+            expanded && !collapsed
               ? "grid-rows-[1fr] opacity-100 mt-1"
               : "grid-rows-[0fr] opacity-0 mt-0"
           }`}
@@ -95,11 +109,13 @@ function NavItemComponent({
                     key={`${item.href ?? item.label}-sub-${subIdx}-${
                       sub.href ?? sub.label
                     }`}
-                    href={sub.href ?? "#"}
+                    href={effectivelyDisabled ? "#" : (sub.href ?? "#")}
                     className={`block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
                       isSubActive
                         ? "bg-pawn-gold text-zinc-900 shadow-sm"
-                        : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
+                        : effectivelyDisabled
+                          ? "text-white/20 cursor-not-allowed"
+                          : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
                     }`}
                   >
                     {sub.label}
@@ -114,21 +130,29 @@ function NavItemComponent({
   }
 
   // Regular non-nested link
-  return (
-    <Link
-      href={item.href ?? "#"}
-      onClick={onToggle}
+  const content = (
+    <div
       title={collapsed ? item.label : undefined}
       className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
         collapsed ? "justify-center" : ""
       } ${
         isSelfActive
           ? "bg-pawn-gold font-medium text-zinc-900"
-          : "text-white/80 hover:bg-pawn-sidebar-light hover:text-white"
+          : effectivelyDisabled 
+            ? "text-white/30 cursor-not-allowed" 
+            : "text-white/80 hover:bg-pawn-sidebar-light hover:text-white"
       }`}
     >
       <span className="flex-shrink-0">{item.icon}</span>
       {!collapsed && item.label}
+    </div>
+  );
+
+  if (effectivelyDisabled) return content;
+
+  return (
+    <Link href={item.href ?? "#"}>
+      {content}
     </Link>
   );
 }
@@ -140,41 +164,11 @@ export function Sidebar({
   userName,
   userRole,
   onLogout,
+  disabled,
 }: SidebarProps) {
+  const { resetChecklist } = useOpeningChecklist();
   const pathname = usePathname();
-  const router = useRouter();
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  // Initialize expanded state based on active path
-  useEffect(() => {
-    if (collapsed) {
-      setExpandedKey(null);
-      return;
-    }
-
-    let found = false;
-    for (const group of navGroups) {
-      for (const item of group.items) {
-        const hasActiveSub = item.subItems?.some(
-          (sub) =>
-            pathname === sub.href ||
-            pathname.startsWith((sub.href ?? "") + "/"),
-        );
-
-        if (hasActiveSub) {
-          setExpandedKey(item.label);
-          found = true;
-          break;
-        }
-      }
-      if (found) break;
-    }
-
-    if (!found) {
-      setExpandedKey(null);
-    }
-  }, [pathname, navGroups, collapsed]);
 
   const userInitials = userName
     ? userName
@@ -241,17 +235,7 @@ export function Sidebar({
                   item={item}
                   collapsed={collapsed}
                   pathname={pathname}
-                  isExpanded={expandedKey === item.label}
-                  onToggle={() => {
-                    if (item.subItems && item.subItems.length > 0) {
-                      setExpandedKey(item.label);
-                      if (item.subItems[0].href) {
-                        router.push(item.subItems[0].href);
-                      }
-                    } else {
-                      setExpandedKey(null);
-                    }
-                  }}
+                  disabled={disabled}
                 />
               ))}
             </div>
@@ -280,6 +264,27 @@ export function Sidebar({
           )}
         </div>
       </div>
+
+      {/* Debug: Reset Checklist */}
+      {userRole === "employee" && (
+        <div className="p-2 border-t border-white/5">
+          <button
+            onClick={() => {
+              resetChecklist();
+              window.location.reload();
+            }}
+            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-rose-400 transition-colors hover:bg-rose-500/10 ${
+              collapsed ? "justify-center" : ""
+            }`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M23 4v6h-6M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+            {!collapsed && "Reset Checklist (Debug)"}
+          </button>
+        </div>
+      )}
 
       {/* Logout */}
       <div className="border-t border-white/10 p-2">

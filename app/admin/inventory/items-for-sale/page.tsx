@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -99,10 +100,7 @@ export default function ItemsForSalePage() {
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/for-sale?${params}`
-        );
-        const data = await res.json();
+        const data = await api.get<{ items: SaleItem[]; total: number }>(`/inventory/for-sale?${params}`);
         setSaleItems(data.items || []);
         setTotalItems(data.total || 0);
       } catch (err) {
@@ -117,10 +115,7 @@ export default function ItemsForSalePage() {
   const handleDelete = async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this sale item? This cannot be undone.")) return;
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/for-sale/${itemId}`,
-        { method: "DELETE" }
-      );
+      await api.delete(`/inventory/for-sale/${itemId}`);
       setSaleItems((prev) => prev.filter((i) => i.id !== itemId));
     } catch (err) {
       console.error("Failed to delete item:", err);

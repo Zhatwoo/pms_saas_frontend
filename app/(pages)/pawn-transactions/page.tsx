@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { api } from "@/lib/api";
 import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
@@ -56,8 +57,8 @@ export default function PawnTransactionsPage() {
     async function fetchTransactions() {
       setIsLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/transactions?branch=${encodeURIComponent(selectedBranch)}`);
-        const data = await res.json();
+        const query = selectedBranch === "All Branches" ? "" : `?branch=${encodeURIComponent(selectedBranch)}`;
+        const data = await api.get<{ stats: any; transactions: TransactionRow[] }>(`/transactions${query}`);
         if (data) {
           setCurrentStats(data.stats || {
             pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,

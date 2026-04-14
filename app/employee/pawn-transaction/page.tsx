@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { TransactionActions } from "./_components/transaction-actions";
+import { api } from "@/lib/api";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
 import { RenewModal } from "./_components/renew-modal";
@@ -10,6 +11,7 @@ import { BuyBackModal } from "./_components/buy-back-modal";
 import { SalesTransferModal } from "./_components/sales-transfer-modal";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { useBranch } from "@/contexts/branch-context";
+import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
 type FilterType = "All" | "Renew" | "New Pawn" | "Sales / Transfer" | "Buy Back";
@@ -38,7 +40,7 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 };
 
 export default function EmployeePawnTransactionsPage() {
-  const { selectedBranch } = useBranch();
+  const { selectedBranch, canSwitchBranch } = useBranch();
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
@@ -54,13 +56,19 @@ export default function EmployeePawnTransactionsPage() {
     open: false,
     type: "starting",
   });
+  const [passwordModal, setPasswordModal] = useState<{ open: boolean; onConfirm: () => void }>({
+    open: false,
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     async function fetchTransactions() {
+      // Don't fetch if context is still "All Branches" but user doesn't have permissions for it
+      if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
+
       setIsLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/transactions?branch=${encodeURIComponent(selectedBranch.name)}`);
-        const data = await res.json();
+        const data = await api.get<any>(`/transactions?branch=${encodeURIComponent(selectedBranch.name)}`);
         if (data) {
           setCurrentStats(data.stats || {
             pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
@@ -112,6 +120,13 @@ export default function EmployeePawnTransactionsPage() {
     setIsBuyBackModalOpen(true);
   }, []);
 
+  const handleActionWithPassword = (action: () => void) => {
+    setPasswordModal({
+      open: true,
+      onConfirm: action,
+    });
+  };
+
   const closeActiveForm = useCallback(() => {
     // Left for potential future use or can be removed
   }, []);
@@ -127,12 +142,12 @@ export default function EmployeePawnTransactionsPage() {
       <TransactionActions
         activeFilter={activeFilter}
         onFilterChange={(f) => setActiveFilter(f)}
-        onRenewClick={() => setIsRenewModalOpen(true)}
+        onRenewClick={() => handleActionWithPassword(() => setIsRenewModalOpen(true))}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
-        onNewPawn={openNewPawnForm}
-        onBuyBack={openBuyBackForm}
-        onSalesTransfer={() => setIsSalesTransferModalOpen(true)}
+        onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
+        onBuyBack={() => handleActionWithPassword(openBuyBackForm)}
+        onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onStartDay={() => setBalanceModal({ open: true, type: "starting" })}
         onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
       />
@@ -148,6 +163,21 @@ export default function EmployeePawnTransactionsPage() {
         onConfirm={(amt) => {
           console.log(`Employee confirmed ${balanceModal.type} cash:`, amt);
           setBalanceModal((p) => ({ ...p, open: false }));
+        }}
+      />
+
+      <ConfirmPasswordModal
+        isOpen={passwordModal.open}
+        onClose={() => setPasswordModal((p) => ({ ...p, open: false }))}
+        onConfirm={async (password) => {
+          // Verify password with API
+          try {
+            await api.post("/auth/verify-password", { password });
+            passwordModal.onConfirm();
+            return true;
+          } catch (err) {
+            return false;
+          }
         }}
       />
 
