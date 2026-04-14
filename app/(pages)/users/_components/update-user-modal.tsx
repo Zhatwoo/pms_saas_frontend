@@ -112,7 +112,7 @@ export function UpdateUserModal({
             <div>
               <h2 className="text-xl font-bold text-white">Update User Profile</h2>
               <p className="mt-1 text-sm text-emerald-50/80">
-                Modify account details and branch assignment for <span className="text-amber-300 font-bold">{user.email}</span>.
+                Modify account details for <span className="text-amber-300 font-bold">{user.email}</span>.
               </p>
             </div>
             <button
@@ -196,49 +196,6 @@ export function UpdateUserModal({
             </div>
           </div>
 
-          <div className="border-t border-border-main/50 my-2" />
-
-          {/* Branch Assignment Section */}
-          <div className="space-y-4">
-            <label className="block text-xs font-bold uppercase tracking-widest text-text-tertiary">
-              Branch Assignment
-            </label>
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500/80">
-                  From
-                </label>
-                <div className="flex h-11 w-full items-center rounded-md border border-zinc-200 bg-zinc-50/50 px-3 text-sm font-medium text-text-secondary opacity-80">
-                  {user.branch}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
-                  To
-                </label>
-                <select
-                  value={form.branchId || ""}
-                  onChange={(event) => updateField("branchId", event.target.value)}
-                  className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
-                  disabled={branches.length === 0}
-                >
-                  <option value="" disabled hidden>
-                    Select Branch
-                  </option>
-                  {branches
-                    .filter((b) => b.id !== user.branchId)
-                    .map((branch) => (
-                      <option key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
           <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
@@ -249,7 +206,7 @@ export function UpdateUserModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || branches.length === 0}
+              disabled={isSubmitting}
               className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
             >
               {isSubmitting ? "Updating..." : "Update Account"}

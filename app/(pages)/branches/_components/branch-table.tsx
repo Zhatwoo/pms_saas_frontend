@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
-import type { Column } from "@/components/shared/data-table";
 
 const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
   Active: "green",
@@ -12,15 +10,6 @@ const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
   Terminated: "red",
   Process: "orange",
 };
-
-const columns: Column[] = [
-  { key: "branchId", label: "Branch ID" },
-  { key: "name", label: "Branch Name" },
-  { key: "location", label: "Location" },
-  { key: "status", label: "Status" },
-  { key: "inventorySummary", label: "Inventory", align: "center" },
-  { key: "actions", label: "Actions", align: "center" },
-];
 
 export interface BranchRow {
   id?: string;
@@ -184,50 +173,76 @@ export function BranchTable({
 
   return (
     <div className="space-y-4">
-      <DataTable
-        columns={columns}
-        data={paginated}
-        renderCell={(key, value, row) => {
-          if (key === "name") {
-            return (
-              <button
-                onClick={() => onBranchClick(row as unknown as BranchRow)}
-                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:text-emerald-600 hover:underline"
-              >
-                {value}
-              </button>
-            );
-          }
-          if (key === "status") {
-            return (
-              <StatusBadge
-                label={value}
-                variant={statusVariantMap[value] || "black"}
-              />
-            );
-          }
-          if (key === "inventorySummary") {
-            return (
-              <InventorySummaryBadge
-                pawnedItems={row.pawnedItems}
-                forSaleItems={row.forSaleItems}
-                totalValue={row.totalValue}
-              />
-            );
-          }
-          if (key === "actions") {
-            return (
-              <ActionsButtons
-                branchId={row.branchId}
-                onView={() => onBranchClick(row as unknown as BranchRow)}
-                onEdit={() => onEditBranch(row as unknown as BranchRow)}
-                onTerminate={() => onTerminateBranch(row as unknown as BranchRow)}
-              />
-            );
-          }
-          return value;
-        }}
-      />
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-sm">
+            <thead>
+              <tr className="bg-emerald-900 text-amber-400">
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Branch ID
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Branch Name
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Location
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
+                  Status
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wide">
+                  Inventory
+                </th>
+                <th className="whitespace-nowrap px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wide">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.map((branch, index) => (
+                <tr
+                  key={`${branch.id}-${branch.branchId}`}
+                  onClick={() => onBranchClick(branch)}
+                  className="group cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
+                >
+                  <td className="whitespace-nowrap px-3 py-2 text-xs font-semibold text-text-primary">
+                    {branch.branchId}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <span className="text-xs font-semibold text-emerald-text transition-colors group-hover:opacity-80 group-hover:underline">
+                      {branch.name}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
+                    {branch.location}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <StatusBadge
+                      label={branch.status}
+                      variant={statusVariantMap[branch.status] || "black"}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-center">
+                    <InventorySummaryBadge
+                      pawnedItems={branch.pawnedItems}
+                      forSaleItems={branch.forSaleItems}
+                      totalValue={branch.totalValue}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                    <ActionsButtons
+                      branchId={branch.branchId}
+                      onView={() => onBranchClick(branch)}
+                      onEdit={() => onEditBranch(branch)}
+                      onTerminate={() => onTerminateBranch(branch)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Pagination */}
       <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
