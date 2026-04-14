@@ -118,7 +118,7 @@ function mapUserRecord(user: UserApiRecord): UserRecord {
   };
 }
 
-export default function UsersPage() {
+export default function UserManagementPage() {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
   const canManageUsers = user?.role === "super_admin";
@@ -191,17 +191,6 @@ export default function UsersPage() {
       branchId: input.branchId,
     };
 
-    console.log("[DEBUG] Current user role:", user?.role);
-    console.log("[DEBUG] Payload details:", {
-      fullName: payload.fullName,
-      email: payload.email,
-      password: `${payload.password.length} chars`,
-      role: payload.role,
-      branchId: payload.branchId,
-      branchIdLength: payload.branchId.length,
-      branchIdLooksLikeUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.branchId),
-    });
-    
     if (user?.role !== "super_admin") {
       throw new Error(
         `Permission denied: Only super_admin can create users. Your role is "${user?.role}"`,
@@ -284,7 +273,7 @@ export default function UsersPage() {
 
   async function handleUpdateUser(id: string, input: Partial<UserRecord>) {
     if (!canManageUsers) return;
-    
+
     setUpdatingUserId(id);
     setError("");
 
@@ -335,8 +324,8 @@ export default function UsersPage() {
       .map((userRecord) => userRecord.branchId)
       .filter((branchId): branchId is string => Boolean(branchId)),
   ).size;
-  const activeUsers = users.filter((user) => user.status === "Active").length;
-  const pendingUsers = users.filter((user) => user.status === "Pending").length;
+  const activeUsers = users.filter((u) => u.status === "Active").length;
+  const pendingUsers = users.filter((u) => u.status === "Pending").length;
 
   return (
     <div className="space-y-6">
@@ -416,6 +405,7 @@ export default function UsersPage() {
         user={selectedUser}
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+        canManageUsers={canManageUsers}
       />
 
       <DeleteUserModal
@@ -439,3 +429,4 @@ export default function UsersPage() {
     </div>
   );
 }
+

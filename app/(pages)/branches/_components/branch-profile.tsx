@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { TransferEmployeeModal } from "./transfer-employee-modal";
 
 /* ── Status badge mapping ─────────────────────────────────── */
 const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
@@ -12,14 +13,15 @@ const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
   Process: "orange",
 };
 
-/* ── Mock data ────────────────────────────────────────────── */
-const MOCK_STAFF = {
-  manager: "Juan Dela Cruz",
-  employees: [
-    { name: "Maria Santos", role: "Appraiser" },
-    { name: "Pedro Reyes", role: "Cashier" },
-  ],
-};
+interface BranchUserApiRecord {
+  id?: string;
+  fullName?: string | null;
+  full_name?: string | null;
+  email: string;
+  role: "super_admin" | "superadmin" | "admin" | "employee" | "branch";
+  branchId?: string | null;
+  branch_id?: string | null;
+}
 
 const MOCK_INVENTORY = {
   totalItems: 75,
@@ -63,8 +65,6 @@ const MOCK_LOGS = [
   { text: "Item redeemed", time: "1 hour ago", icon: "check" },
   { text: "Employee transferred", time: "yesterday", icon: "transfer" },
 ];
-
-const MOCK_BRANCH_LIST = ["Main Branch", "BGC Branch", "Makati Branch", "Quezon City Branch"];
 
 /* ── SVG icons ────────────────────────────────────────────── */
 function IconBuilding() {
@@ -203,8 +203,8 @@ function ProfileSection({
   accentColor = "text-emerald-text",
 }: {
   title: string;
-  icon: React.ReactNode;
-  children: React.ReactNode;
+  icon: ReactNode;
+  children: ReactNode;
   accentColor?: string;
 }) {
   return (
@@ -243,6 +243,7 @@ function MiniStat({
 /* ── Main component ───────────────────────────────────────── */
 interface BranchProfileProps {
   branch: {
+    id: string;
     branchId: string;
     name: string;
     location: string;
@@ -252,12 +253,67 @@ interface BranchProfileProps {
 }
 
 export function BranchProfile({ branch }: BranchProfileProps) {
-  const [transferModalOpen, setTransferModalOpen] = useState(false);
-  const [transferEmployee, setTransferEmployee] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const usersPath = pathname.startsWith("/admin") ? "/admin/users" : "/users";
+  const [branchUsers, setBranchUsers] = useState<BranchUserApiRecord[]>([]);
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+  const [staffError, setStaffError] = useState("");
 
-  function openTransfer(empName: string) {
-    setTransferEmployee(empName);
-    setTransferModalOpen(true);
+  useEffect(() => {
+    async function loadStaff() {
+      setIsLoadingStaff(true);
+      setStaffError("");
+      try {
+        const users = await api.get<BranchUserApiRecord[]>("/users");
+        const filtered = users.filter((u) => {
+          const branchId = u.branchId ?? u.branch_id ?? null;
+          return String(branchId) === String(branch.id);
+        });
+        setBranchUsers(filtered);
+      } catch (error) {
+        setStaffError(
+          error instanceof Error ? error.message : "Failed to load assigned users.",
+        );
+      } finally {
+        setIsLoadingStaff(false);
+      }
+    }
+
+    void loadStaff();
+  }, [branch.id]);
+
+  const manager = useMemo(
+    () =>
+      branchUsers.find((u) => {
+        const role = u.role?.toLowerCase();
+        return role === "admin";
+      }) ?? null,
+    [branchUsers],
+  );
+
+  const employees = useMemo(
+    () =>
+      branchUsers.filter((u) => {
+        const role = u.role?.toLowerCase();
+        return role === "employee" || role === "branch";
+      }),
+    [branchUsers],
+  );
+
+  function fullName(user: BranchUserApiRecord): string {
+    return user.fullName ?? user.full_name ?? user.email;
+  }
+
+  function toUiRole(role: BranchUserApiRecord["role"]): string {
+    const normalized = role.toLowerCase();
+    if (normalized === "admin") return "Manager";
+    if (normalized === "employee" || normalized === "branch") return "Employee";
+    return "Staff";
+  }
+
+  function goToUsers() {
+    router.push(usersPath);
   }
 
   return (
@@ -322,7 +378,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               <span className="text-emerald-400"><IconUsers /></span>
               <div>
                 <p className="text-[10px] font-medium uppercase text-emerald-400/70">Staff</p>
-                <p className="text-xs font-semibold text-white">{MOCK_STAFF.employees.length + 1} members</p>
+                <p className="text-xs font-semibold text-white">{branchUsers.length} members</p>
               </div>
             </div>
           </div>
@@ -340,21 +396,21 @@ export function BranchProfile({ branch }: BranchProfileProps) {
             <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-sidebar text-xs font-bold text-pawn-gold">
-                  {MOCK_STAFF.manager.split(" ").map((n) => n[0]).join("")}
+                  {manager ? fullName(manager).split(" ").map((n) => n[0]).join("").slice(0, 2) : "--"}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-text-primary">{MOCK_STAFF.manager}</p>
+                  <p className="text-sm font-semibold text-text-primary">{manager ? fullName(manager) : "No manager assigned"}</p>
                   <p className="text-[10px] text-text-muted">Manager</p>
                 </div>
               </div>
-              <select
-                className="rounded-lg border border-input-border bg-input-bg px-3 py-1.5 text-xs text-text-primary outline-none transition-colors focus:border-pawn-sidebar"
-                defaultValue={MOCK_STAFF.manager}
-              >
-                <option>{MOCK_STAFF.manager}</option>
-                <option>Ana Garcia</option>
-                <option>Carlos Rivera</option>
-              </select>
+              {manager ? (
+                <button
+                  onClick={() => goToUsers()}
+                  className="rounded-lg border border-border-main bg-surface px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
+                >
+                  Transfer
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -362,23 +418,33 @@ export function BranchProfile({ branch }: BranchProfileProps) {
           <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted">
             Employees
           </p>
+          {staffError && (
+            <div className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+              {staffError}
+            </div>
+          )}
+          {isLoadingStaff && (
+            <div className="mb-2 rounded-lg border border-border-main bg-surface px-3 py-2 text-xs text-text-tertiary">
+              Loading assigned users...
+            </div>
+          )}
           <div className="space-y-2">
-            {MOCK_STAFF.employees.map((emp) => (
+            {employees.map((emp) => (
               <div
-                key={emp.name}
+                key={emp.id ?? emp.email}
                 className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5 transition-colors hover:border-emerald-border"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-hover text-xs font-bold text-text-secondary">
-                    {emp.name.split(" ").map((n) => n[0]).join("")}
+                    {fullName(emp).split(" ").map((n) => n[0]).join("").slice(0, 2)}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-text-primary">{emp.name}</p>
-                    <p className="text-[10px] text-text-muted">{emp.role}</p>
+                    <p className="text-sm font-semibold text-text-primary">{fullName(emp)}</p>
+                    <p className="text-[10px] text-text-muted">{toUiRole(emp.role)}</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => openTransfer(emp.name)}
+                  onClick={() => goToUsers()}
                   className="flex items-center gap-1.5 rounded-lg border border-border-main bg-surface px-3 py-1.5 text-[11px] font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
                 >
                   <IconShuffle />
@@ -386,10 +452,18 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 </button>
               </div>
             ))}
+            {!isLoadingStaff && employees.length === 0 && (
+              <div className="rounded-lg border border-border-main bg-surface px-3 py-2 text-xs text-text-tertiary">
+                No employees currently assigned to this branch.
+              </div>
+            )}
           </div>
 
           {/* Add Employee button */}
-          <button className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border-main bg-surface py-2.5 text-xs font-semibold text-text-muted transition-colors hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
+          <button
+            onClick={() => goToUsers()}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border-main bg-surface py-2.5 text-xs font-semibold text-text-muted transition-colors hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text"
+          >
             <IconUserPlus />
             Add Employee
           </button>
@@ -637,7 +711,10 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               </svg>
               Edit Branch Info
             </button>
-            <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
+            <button
+              onClick={() => goToUsers()}
+              className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text"
+            >
               <IconShuffle />
               Transfer Staff
             </button>
@@ -656,18 +733,6 @@ export function BranchProfile({ branch }: BranchProfileProps) {
         </ProfileSection>
       </div>
 
-      {/* Transfer Employee Modal */}
-      <TransferEmployeeModal
-        isOpen={transferModalOpen}
-        employeeName={transferEmployee}
-        fromBranch={branch.name}
-        branches={MOCK_BRANCH_LIST}
-        onClose={() => setTransferModalOpen(false)}
-        onConfirm={() => {
-          // UI only — no backend logic
-          setTransferModalOpen(false);
-        }}
-      />
     </>
   );
 }

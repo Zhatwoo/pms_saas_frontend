@@ -17,7 +17,6 @@ const columns: Column[] = [
   { key: "branchId", label: "Branch ID" },
   { key: "name", label: "Branch Name" },
   { key: "location", label: "Location" },
-  { key: "createdAt", label: "Date Created" },
   { key: "status", label: "Status" },
   { key: "inventorySummary", label: "Inventory", align: "center" },
   { key: "actions", label: "Actions", align: "center" },
@@ -28,7 +27,7 @@ export interface BranchRow {
   branchId: string;
   name: string;
   location: string;
-  createdAt: string;
+  createdAt?: string;
   status: string;
   pawnedItems: number;
   forSaleItems: number;
@@ -44,57 +43,59 @@ interface BranchTableProps {
   onTerminateBranch: (branch: BranchRow) => void;
 }
 
-function InlineActions({
+function ActionsButtons({
+  branchId,
   onView,
   onEdit,
   onTerminate,
 }: {
+  branchId: string;
   onView: () => void;
   onEdit: () => void;
   onTerminate: () => void;
 }) {
   return (
-    <div className="flex items-center justify-center gap-1">
-      {/* View */}
+    <div className="flex items-center justify-center gap-2">
       <button
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={() => {
+          console.log("[ActionsButtons] View clicked");
           onView();
         }}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-emerald-50"
-        title="View"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-emerald-600"
+        title={`View details for ${branchId}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
-      {/* Edit */}
       <button
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={() => {
+          console.log("[ActionsButtons] Edit clicked");
           onEdit();
         }}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-amber-600 transition-colors hover:bg-amber-50"
-        title="Edit"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-blue-600"
+        title={`Edit ${branchId}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
         </svg>
       </button>
-      {/* Terminate */}
       <button
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={() => {
+          console.log("[ActionsButtons] Terminate clicked");
           onTerminate();
         }}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50"
-        title="Terminate"
+        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-red-50 hover:text-red-600"
+        title={`Terminate ${branchId}`}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+          <polyline points="3 6 5 4 21 4 23 6 23 20a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6" />
+          <line x1="10" y1="11" x2="10" y2="17" />
+          <line x1="14" y1="11" x2="14" y2="17" />
+          <line x1="5" y1="4" x2="5" y2="2" />
+          <line x1="19" y1="4" x2="19" y2="2" />
         </svg>
       </button>
     </div>
@@ -186,33 +187,15 @@ export function BranchTable({
       <DataTable
         columns={columns}
         data={paginated}
-        onRowClick={(row) => onBranchClick(row as unknown as BranchRow)}
         renderCell={(key, value, row) => {
           if (key === "name") {
             return (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBranchClick(row as unknown as BranchRow);
-                }}
-                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:opacity-80 hover:underline"
+                onClick={() => onBranchClick(row as unknown as BranchRow)}
+                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:text-emerald-600 hover:underline"
               >
                 {value}
               </button>
-            );
-          }
-          if (key === "createdAt") {
-            const raw = row.createdAt as string;
-            if (!raw) return <span className="text-text-muted">—</span>;
-            const date = new Date(raw);
-            return (
-              <span className="text-xs text-text-secondary">
-                {date.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
             );
           }
           if (key === "status") {
@@ -234,7 +217,8 @@ export function BranchTable({
           }
           if (key === "actions") {
             return (
-              <InlineActions
+              <ActionsButtons
+                branchId={row.branchId}
                 onView={() => onBranchClick(row as unknown as BranchRow)}
                 onEdit={() => onEditBranch(row as unknown as BranchRow)}
                 onTerminate={() => onTerminateBranch(row as unknown as BranchRow)}

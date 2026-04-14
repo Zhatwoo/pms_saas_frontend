@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
@@ -298,9 +298,8 @@ export default function PawnedItemsPage() {
                   <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
-                    <>
+                    <Fragment key={item.id}>
                       <tr 
-                        key={item.itemId} 
                         className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
                         onClick={() => setViewingItem(item)}
                       >
@@ -324,7 +323,7 @@ export default function PawnedItemsPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   ))
                 )}
               </tbody>

@@ -304,6 +304,7 @@ export default function BranchOverviewPage() {
       {!isAllBranches && profileBranch ? (
         <BranchProfile
           branch={{
+            id: profileBranch.id ?? "",
             branchId: profileBranch.branchId,
             name: profileBranch.name,
             location: profileBranch.location,

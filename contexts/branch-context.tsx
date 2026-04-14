@@ -87,13 +87,15 @@ export function BranchProvider({ children }: { children: ReactNode }) {
       console.warn("[BranchProvider] Failed to load branches:", error);
       // Keep previous selector options on transient failures.
     }
-  }, [user?.id, user?.branchId, isSuperAdmin]);
+  }, [user]);
 
   useEffect(() => {
     void loadBranches();
   }, [loadBranches]);
 
   useEffect(() => {
+    if (!user) return;
+
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
@@ -116,10 +118,10 @@ export function BranchProvider({ children }: { children: ReactNode }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [loadBranches]);
+  }, [loadBranches, user]);
 
   // Build branch list: superadmin gets "All" + every branch; others just their own
-  const branches = useMemo<BranchOption[]>(() => {
+  const branches: BranchOption[] = (() => {
     if (isSuperAdmin) {
       return [ALL_BRANCHES_OPTION, ...baseBranches];
     }
@@ -137,7 +139,7 @@ export function BranchProvider({ children }: { children: ReactNode }) {
     }
 
     return baseBranches.slice(0, 1);
-  }, [baseBranches, isSuperAdmin, user?.branchId, user?.branchName]);
+  })();
 
   const [selected, setSelected] = useState<BranchOption>(ALL_BRANCHES_OPTION);
 

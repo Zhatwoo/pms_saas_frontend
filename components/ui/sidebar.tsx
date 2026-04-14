@@ -26,38 +26,38 @@ function NavItemComponent({
   collapsed,
   pathname,
   disabled,
+  isExpanded,
+  onToggle,
 }: {
   item: NavItem;
   collapsed: boolean;
   pathname: string;
   disabled?: boolean;
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
   const hasSubItems = item.subItems && item.subItems.length > 0;
 
   // Active state logic
   const isSelfActive =
     pathname === item.href || pathname.startsWith((item.href ?? "") + "/");
-  const isAnySubActive =
-    hasSubItems &&
-    item.subItems?.some(
-      (sub) =>
-        pathname === sub.href || pathname.startsWith((sub.href ?? "") + "/"),
-    );
-  
-  const [expanded, setExpanded] = useState(isAnySubActive);
-
-  // Re-sync expanded state when pathname changes
-  useEffect(() => {
-    if (isAnySubActive) setExpanded(true);
-  }, [isAnySubActive]);
-
   const effectivelyDisabled = disabled && item.href !== "/employee/dashboard";
+
+  const router = useRouter();
 
   if (hasSubItems) {
     return (
       <div className="space-y-1">
         <button
-          onClick={() => !collapsed && setExpanded(!expanded)}
+          onClick={() => {
+            if (!collapsed) {
+              // If we're about to expand (isExpanded is currently false), navigate to first sub-item
+              if (!isExpanded && item.subItems && item.subItems.length > 0) {
+                router.push(item.subItems[0].href);
+              }
+              onToggle();
+            }
+          }}
           title={collapsed ? item.label : undefined}
           disabled={disabled}
           className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
@@ -83,7 +83,7 @@ function NavItemComponent({
               strokeLinecap="round"
               strokeLinejoin="round"
               className={`transition-transform duration-200 ${
-                expanded ? "rotate-180" : ""
+                isExpanded ? "rotate-180" : ""
               }`}
             >
               <polyline points="6 9 12 15 18 9" />
@@ -93,7 +93,7 @@ function NavItemComponent({
 
         <div
           className={`grid transition-all duration-300 ease-in-out ${
-            expanded && !collapsed
+            isExpanded && !collapsed
               ? "grid-rows-[1fr] opacity-100 mt-1"
               : "grid-rows-[0fr] opacity-0 mt-0"
           }`}
@@ -169,6 +169,30 @@ export function Sidebar({
   const { resetChecklist } = useOpeningChecklist();
   const pathname = usePathname();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  const handleToggle = (key: string) => {
+    setExpandedKey((prev) => (prev === key ? null : key));
+  };
+
+  // Auto-expand based on pathname
+  useEffect(() => {
+    for (const group of navGroups) {
+      for (const item of group.items) {
+        const isAnySubActive =
+          item.subItems &&
+          item.subItems.some(
+            (sub) =>
+              pathname === sub.href ||
+              pathname.startsWith((sub.href ?? "") + "/"),
+          );
+        if (isAnySubActive) {
+          setExpandedKey(item.label);
+          return;
+        }
+      }
+    }
+  }, [pathname, navGroups]);
 
   const userInitials = userName
     ? userName
@@ -236,6 +260,8 @@ export function Sidebar({
                   collapsed={collapsed}
                   pathname={pathname}
                   disabled={disabled}
+                  isExpanded={expandedKey === item.label}
+                  onToggle={() => handleToggle(item.label)}
                 />
               ))}
             </div>
