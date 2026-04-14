@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Align `dark:*` utilities with ThemeProvider (html.light / html.dark), not OS preference */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── Light theme (default) ──────────────────────────────── */
 :root {
   --background: #ffffff;
@@ -124,6 +127,7 @@ body {
     opacity: 0;
     transform: translateY(-8px) scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -135,6 +139,7 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
