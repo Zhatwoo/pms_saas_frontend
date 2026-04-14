@@ -16,6 +16,7 @@ import { AccountStatusModal } from "./_components/account-status-modal";
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "ADMIN" | "EMPLOYEE";
 export type RoleFilter = "ALL" | UserRole | "PENDING";
+export type BranchFilter = "ALL" | string;
 
 export type AccountStatusUi = "Pending" | "Active" | "Rejected";
 
