@@ -15,6 +15,7 @@ interface AppLayoutProps {
   branchName?: string;
   hideBranchSelector?: boolean;
   onLogout?: () => void;
+  isRestricted?: boolean;
   children: React.ReactNode;
 }
 
@@ -27,6 +28,7 @@ export function AppLayout({
   branchName,
   hideBranchSelector = false,
   onLogout,
+  isRestricted = false,
   children,
 }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
@@ -41,6 +43,7 @@ export function AppLayout({
         userName={userName}
         userRole={userRole}
         onLogout={onLogout}
+        disabled={isRestricted}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header

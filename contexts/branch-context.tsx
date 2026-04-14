@@ -69,20 +69,20 @@ export function BranchProvider({ children }: { children: ReactNode }) {
       if (!path) return;
 
       const data = await api.get<BranchApiItem | BranchApiItem[]>(path);
-      
-      const normalized: BranchOption[] = Array.isArray(data) 
+
+      const normalized: BranchOption[] = Array.isArray(data)
         ? data.map((branch) => ({
-            id: branch.id,
-            name: branch.name,
-            location: branch.location,
-            code: branch.branch_code,
-          }))
+          id: branch.id,
+          name: branch.name,
+          location: branch.location,
+          code: branch.branch_code,
+        }))
         : [{
-            id: data.id,
-            name: data.name,
-            location: data.location,
-            code: data.branch_code,
-          }];
+          id: data.id,
+          name: data.name,
+          location: data.location,
+          code: data.branch_code,
+        }];
 
       setBaseBranches(normalized);
     } catch {

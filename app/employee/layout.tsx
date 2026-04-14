@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { OpeningChecklistWrapper } from "@/components/shared/opening-checklist-wrapper";
 
 export default function EmployeeLayout({
   children,
@@ -15,6 +17,7 @@ export default function EmployeeLayout({
 }) {
   const { user, logout, isLoading: isAuthLoading } = useAuth();
   const { selectedBranch } = useBranch();
+  const { isComplete: isWorkflowComplete } = useOpeningChecklist();
   const router = useRouter();
 
   const isLoading = isAuthLoading;
@@ -71,7 +74,9 @@ export default function EmployeeLayout({
       onLogout={logout}
       branchName={selectedBranch.name}
       hideBranchSelector={true}
+      isRestricted={!isWorkflowComplete}
     >
+      <OpeningChecklistWrapper />
       {children}
     </AppLayout>
   );

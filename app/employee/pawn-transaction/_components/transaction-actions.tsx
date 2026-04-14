@@ -37,7 +37,7 @@ const printerIcon = (
   </svg>
 );
 
-const filters = ["Renew", "Redeem", "New Pawn", "Sales / Transfer", "Buy Back"] as const;
+const filters = ["Renew", "New Pawn", "Sales / Transfer", "Buy Back"] as const;
 type FilterButton = (typeof filters)[number];
 type FilterType = "All" | FilterButton;
 
@@ -56,7 +56,6 @@ interface TransactionActionsProps {
 
 const filterVariantMap: Record<FilterButton, ActionVariant> = {
   Renew: "renew",
-  Redeem: "redeem",
   "New Pawn": "pawn",
   "Sales / Transfer": "sales",
   "Buy Back": "buyback",
