@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -66,6 +67,45 @@ const statusVariant: Record<string, "green" | "orange"> = {
   Sold: "orange",
 };
 
+function SaleItemModal({ item, onClose }: { item: SaleItem; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-emerald-900 px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">For Sale Item #{item.itemId}</p>
+            <h2 className="text-white text-lg font-bold">{item.itemName}</h2>
+          </div>
+          <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status]} />
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div><p className="text-[10px] font-bold text-text-muted uppercase">Category</p><p>{item.category}</p></div>
+            <div><p className="text-[10px] font-bold text-text-muted uppercase">Price</p><p className="font-bold text-emerald-700">₱{item.price.toLocaleString()}</p></div>
+            <div><p className="text-[10px] font-bold text-text-muted uppercase">Date Expired</p><p>{item.availableDate}</p></div>
+            <div><p className="text-[10px] font-bold text-text-muted uppercase">Origin Pawn ID</p><p>{item.originalPawnId || "Manual Entry"}</p></div>
+          </div>
+          <div className="border-t border-border-subtle pt-4">
+            <p className="text-[10px] font-bold text-text-muted uppercase mb-1">Item Description / Pictures</p>
+            <div className="rounded-lg bg-surface-secondary p-4 border border-border-subtle">
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. This item was transferred from an expired pawn contract. Condition is verified.
+              </p>
+              {/* Image Placeholder */}
+              <div className="mt-3 aspect-video rounded-md bg-zinc-200 flex items-center justify-center text-[10px] text-zinc-500 font-bold uppercase">
+                Item Photo (High Res)
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-border-main px-6 py-3 flex justify-end bg-surface-secondary">
+          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ===============================================================
 // ITEMS FOR SALE PAGE (Under Inventory)
 // ===============================================================
@@ -84,6 +124,7 @@ export default function ItemsForSalePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState<SaleItem | null>(null);
   const itemsPerPage = 10;
 
   // Low stock banner: items Available with stockLevel <= 3
@@ -108,10 +149,7 @@ export default function ItemsForSalePage() {
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/for-sale?${params}`
-        );
-        const data = await res.json();
+        const data = await api.get<{ items: SaleItem[]; total: number }>(`/inventory/for-sale?${params}`);
         setSaleItems(data.items || []);
         setTotalItems(data.total || 0);
       } catch (err) {
@@ -126,10 +164,7 @@ export default function ItemsForSalePage() {
   const handleDelete = async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this sale item? This cannot be undone.")) return;
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/for-sale/${itemId}`,
-        { method: "DELETE" }
-      );
+      await api.delete(`/inventory/for-sale/${itemId}`);
       setSaleItems((prev) => prev.filter((i) => i.id !== itemId));
     } catch (err) {
       console.error("Failed to delete item:", err);
@@ -166,7 +201,7 @@ export default function ItemsForSalePage() {
                 saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
               }`}
             >
-              Current Month
+              Calendar
             </button>
             <button
               onClick={() => setSaleViewMode("history")}
@@ -219,7 +254,7 @@ export default function ItemsForSalePage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-emerald-900 text-amber-400">
-                {["ID", "Item Name", "Category", "Branch", "Available Date", "Price", "Stock Level", "Status", "Actions"].map((h) => (
+                {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
                   <th
                     key={h}
                     className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
@@ -248,40 +283,25 @@ export default function ItemsForSalePage() {
                 saleItems.map((item, idx) => (
                   <tr
                     key={item.id || item.itemId}
-                    className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}
+                    className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
+                    onClick={() => setSelectedItem(item)}
                   >
                     <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary font-medium">{item.itemName}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.availableDate}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-text-primary">
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-emerald-700">
                       &#8369;{item.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2">
-                      <StockBadge stock={item.stockLevel ?? 1} />
+                      <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2">
-                      <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                    <td className="px-3 py-2 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <button className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
-                          View
+                          View details
                         </button>
-                        {canEdit && (
-                          <>
-                            <button className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -291,6 +311,30 @@ export default function ItemsForSalePage() {
           </table>
         </div>
       </div>
+
+      {/* Modals */}
+      {selectedItem && <SaleItemModal item={selectedItem} onClose={() => setSelectedItem(null)} />}
+
+      {saleViewMode === "current" && (
+        <div className="rounded-lg border border-border-main bg-surface p-4 mt-3">
+          <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-text-muted uppercase mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div className="grid grid-cols-7 gap-1 auto-rows-[80px]">
+            {Array.from({ length: 35 }).map((_, i) => {
+              const day = i - 3;
+              const isCurrentMonth = day > 0 && day <= 30;
+              return (
+                <div key={i} className={`border rounded p-1 ${isCurrentMonth ? "border-border-subtle" : "border-transparent text-transparent"}`}>
+                  <div className="text-[10px] font-bold text-text-tertiary">{day}</div>
+                  {day === 12 && <div className="mt-1 flex items-center gap-1 rounded bg-orange-100 px-1 py-0.5 text-[8px] font-bold text-orange-700 truncate">Expired: 3</div>}
+                  {day === 15 && <div className="mt-1 flex items-center gap-1 rounded bg-emerald-100 px-1 py-0.5 text-[8px] font-bold text-emerald-700 truncate">Sold: ₱5k</div>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Pagination ─────────────────────────────────────── */}
       <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">

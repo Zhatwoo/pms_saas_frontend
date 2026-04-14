@@ -15,9 +15,12 @@ import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-bro
 
 /* ── Branch option shape ─────────────────────────────────── */
 export interface BranchOption {
-  id: string;        // branch id, e.g. "001"
-  name: string;      // display label
-  location?: string; // optional subtitle
+  /** UUID — matches `user.branchId` and API `?branch=` filters */
+  id: string;
+  name: string;
+  location?: string;
+  /** Human-readable branch code from API (optional) */
+  code?: string;
 }
 
 const ALL_BRANCHES_ID = "__all__";
@@ -47,6 +50,7 @@ interface BranchContextValue {
 const BranchContext = createContext<BranchContextValue | null>(null);
 
 interface BranchApiItem {
+  id: string;
   branch_code: string;
   name: string;
   location: string;
@@ -55,22 +59,35 @@ interface BranchApiItem {
 /* ── Provider ────────────────────────────────────────────── */
 export function BranchProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "superadmin";
+  const isSuperAdmin = user?.role === "super_admin";
   const [baseBranches, setBaseBranches] = useState<BranchOption[]>([]);
 
   const loadBranches = useCallback(async () => {
+    if (!user) return;
     try {
-      const data = await api.get<BranchApiItem[]>("/branches");
-      const normalized = (data || []).map((branch) => ({
-        id: branch.branch_code,
-        name: branch.name,
-        location: branch.location,
-      }));
+      // Use actor-scoped list endpoint for every role to avoid brittle /branches/:id lookups.
+      const data = await api.get<BranchApiItem | BranchApiItem[]>("/branches");
+      
+      const normalized: BranchOption[] = Array.isArray(data) 
+        ? data.map((branch) => ({
+          id: branch.id,
+          name: branch.name,
+          location: branch.location,
+          code: branch.branch_code,
+        }))
+        : [{
+          id: data.id,
+          name: data.name,
+          location: data.location,
+          code: data.branch_code,
+        }];
+
       setBaseBranches(normalized);
-    } catch {
+    } catch (error) {
+      console.warn("[BranchProvider] Failed to load branches:", error);
       // Keep previous selector options on transient failures.
     }
-  }, []);
+  }, [user?.id, user?.branchId, isSuperAdmin]);
 
   useEffect(() => {
     void loadBranches();
@@ -111,22 +128,37 @@ export function BranchProvider({ children }: { children: ReactNode }) {
     if (own) return [own];
 
     if (user?.branchId) {
-      return [{ id: user.branchId, name: `Branch ${user.branchId}` }];
+      return [
+        {
+          id: user.branchId,
+          name: user.branchName || `Branch ${user.branchId}`,
+        },
+      ];
     }
 
     return baseBranches.slice(0, 1);
-  }, [baseBranches, isSuperAdmin, user?.branchId]);
+  }, [baseBranches, isSuperAdmin, user?.branchId, user?.branchName]);
 
   const [selected, setSelected] = useState<BranchOption>(ALL_BRANCHES_OPTION);
 
+  /* ── Sync selected branch with available branches ──────── */
   useEffect(() => {
     if (branches.length === 0) return;
 
-    const stillExists = branches.some((branch) => branch.id === selected.id);
-    if (stillExists) return;
+    const currentInList = branches.find((b) => b.id === selected.id);
 
-    setSelected(branches[0]);
-  }, [branches, selected.id]);
+    // If the selected branch no longer exists, reset to the first available
+    if (!currentInList) {
+      setSelected(branches[0]);
+      return;
+    }
+
+    // IMPORTANT: If the name or other data has changed (e.g. from fallback ID to actual name), 
+    // update the selection state so the UI reflects the latest fetched data.
+    if (currentInList.name !== selected.name) {
+      setSelected(currentInList);
+    }
+  }, [branches, selected.id, selected.name]);
 
   const setSelectedBranch = useCallback(
     (branch: BranchOption) => {

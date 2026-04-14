@@ -1,4 +1,7 @@
+import type { ComponentProps } from "react";
 import { ActionButton } from "@/components/shared/action-button";
+
+type ActionVariant = NonNullable<ComponentProps<typeof ActionButton>["variant"]>;
 
 const downloadIcon = (
   <svg
@@ -34,35 +37,63 @@ const printerIcon = (
   </svg>
 );
 
-type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
+const filters = ["Renew", "New Pawn", "Sales / Transfer", "Buy Back"] as const;
+type FilterButton = (typeof filters)[number];
+type FilterType = "All" | FilterButton;
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
   onFilterChange?: (filter: FilterType) => void;
+  onRenewClick?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
+  onNewPawn?: () => void;
+  onBuyBack?: () => void;
+  onSalesTransfer?: () => void;
+  onStartDay?: () => void;
+  onEndDay?: () => void;
 }
 
-const filters: FilterType[] = ["Renew", "Redeem", "New Pawn", "Sales / Transfer", "Buy Back"];
-
-const filterVariantMap: Record<string, string> = {
-  "Renew": "renew",
-  "Redeem": "redeem",
+const filterVariantMap: Record<FilterButton, ActionVariant> = {
+  Renew: "renew",
   "New Pawn": "pawn",
   "Sales / Transfer": "sales",
   "Buy Back": "buyback",
 };
 
-export function TransactionActions({ activeFilter = "All", onFilterChange, onExportCSV, onPrintReport }: TransactionActionsProps) {
+export function TransactionActions({ 
+  activeFilter = "All", 
+  onFilterChange, 
+  onRenewClick, 
+  onExportCSV, 
+  onPrintReport,
+  onNewPawn,
+  onBuyBack,
+  onSalesTransfer,
+  onStartDay,
+  onEndDay
+}: TransactionActionsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
         {filters.map((f) => (
           <ActionButton
             key={f}
-            variant={filterVariantMap[f] as any}
+            variant={filterVariantMap[f]}
             className={activeFilter === f ? "ring-2 ring-offset-1 ring-emerald-600 opacity-100" : "opacity-70 hover:opacity-100"}
-            onClick={() => onFilterChange?.(activeFilter === f ? "All" : f)}
+            onClick={() => {
+              if (f === "Renew" && onRenewClick) {
+                onRenewClick();
+              } else if (f === "New Pawn" && onNewPawn) {
+                onNewPawn();
+              } else if (f === "Buy Back" && onBuyBack) {
+                onBuyBack();
+              } else if (f === "Sales / Transfer" && onSalesTransfer) {
+                onSalesTransfer();
+              } else {
+                onFilterChange?.(activeFilter === f ? "All" : f);
+              }
+            }}
           >
             {f}
           </ActionButton>
@@ -70,6 +101,13 @@ export function TransactionActions({ activeFilter = "All", onFilterChange, onExp
       </div>
 
       <div className="flex items-center gap-2">
+        <button onClick={onStartDay} className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition shadow-sm">
+          Start Day
+        </button>
+        <button onClick={onEndDay} className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700 transition shadow-sm">
+          End Day
+        </button>
+        <div className="h-8 w-px bg-border-subtle mx-1" />
         <ActionButton variant="outline" onClick={onExportCSV}>
           <span className="flex items-center gap-1.5">
             {downloadIcon}

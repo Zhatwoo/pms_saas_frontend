@@ -1,13 +1,15 @@
 import type { ReactNode } from "react";
 
-export type Role = "superadmin" | "admin" | "branch";
+export type Role = "super_admin" | "admin" | "employee";
 
 export interface User {
   id: string;
+  authId?: string;
   fullName: string;
   email: string;
   role: Role;
   branchId?: string;
+  branchName?: string;
   avatarUrl?: string;
 }
 

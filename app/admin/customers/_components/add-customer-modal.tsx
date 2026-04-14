@@ -128,7 +128,7 @@ export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   >
-                    <option value="driver-license">Driver's License</option>
+                    <option value="driver-license">Driver&apos;s License</option>
                     <option value="national-id">National ID</option>
                     <option value="passport">Passport</option>
                     <option value="sss">SSS</option>

@@ -91,12 +91,10 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
               return (
                 <tr
                   key={row.transactionNo}
-                  className={`border-t border-border-subtle ${
+                  className={`border-t border-border-subtle transition-colors bg-surface-secondary hover:bg-emerald-surface/60 ${
                     isStartRow
-                      ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
-                      : idx % 2 === 0
-                        ? "bg-surface"
-                        : "bg-surface-secondary"
+                      ? "border-l-4 border-l-emerald-700 !bg-emerald-surface"
+                      : ""
                   }`}
                 >
                   {/* Transaction # */}
@@ -128,13 +126,25 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                       type="text" 
                       defaultValue={row.cashIn}
                       placeholder="0"
+                      onChange={(e) => {
+                        console.log(`Updating Cash In for ${row.transactionNo}:`, e.target.value);
+                        // In a real app, this would trigger an API call or update state
+                      }}
                       className="w-16 ml-auto block text-right border-b border-border-main outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
                     />
                   </td>
 
                   {/* Cash Out */}
                   <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-text-secondary">
-                    {row.cashOut}
+                    <input 
+                      type="text" 
+                      defaultValue={row.cashOut}
+                      placeholder="0"
+                      onChange={(e) => {
+                        console.log(`Updating Cash Out for ${row.transactionNo}:`, e.target.value);
+                      }}
+                      className="w-16 ml-auto block text-right border-b border-border-main outline-none focus:border-red-500 bg-transparent text-xs py-0.5"
+                    />
                   </td>
 
                   {/* Return */}

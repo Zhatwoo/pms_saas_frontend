@@ -200,19 +200,32 @@ export function BranchDetailDrawer({
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-tertiary">
                   Quick Actions
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
-                    View Inventory
+                <div className="space-y-2">
+                  <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-3 py-2.5 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    View Full Profile
                   </button>
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
-                    View Transactions
-                  </button>
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
-                    Edit Branch
-                  </button>
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-red-400 hover:bg-red-50 hover:text-red-600">
-                    Deactivate
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="flex items-center justify-center gap-2 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="16.5" y1="9.4" x2="7.5" y2="4.21" />
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                        <line x1="12" y1="22.08" x2="12" y2="12" />
+                      </svg>
+                      View Inventory
+                    </button>
+                    <button className="flex items-center justify-center gap-2 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                      View Transactions
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

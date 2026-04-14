@@ -4,12 +4,14 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { getAuthorizedRedirect } from "@/lib/auth";
 
 interface LoginModalProps {
   onClose: () => void;
+  onRequestSignUp?: () => void;
 }
 
-export function LoginModal({ onClose }: LoginModalProps) {
+export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -26,8 +28,11 @@ export function LoginModal({ onClose }: LoginModalProps) {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
-      const redirect = searchParams.get("redirect") || "/dashboard";
+      const user = await login(email, password);
+      const redirect = getAuthorizedRedirect(
+        user.role,
+        searchParams.get("redirect"),
+      );
       router.push(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -215,7 +220,14 @@ export function LoginModal({ onClose }: LoginModalProps) {
           <div className="my-4 h-px bg-zinc-200" />
           <p className="text-center text-xs text-zinc-500">
             Don&apos;t have an account?{" "}
-            <button className="font-bold text-emerald-800 hover:underline">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onRequestSignUp?.();
+              }}
+              className="font-bold text-emerald-800 hover:underline"
+            >
               Sign Up
             </button>
           </p>

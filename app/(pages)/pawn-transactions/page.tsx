@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { api } from "@/lib/api";
 import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
+import {
+  ManualTransactionModal,
+  type ManualTransactionPayload,
+} from "./_components/manual-transaction-modal";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
 type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
@@ -25,19 +30,17 @@ interface TransactionRow {
 
 const branches = ["All Branches", "Makati Main Branch", "Taguig Branch", "Cebu Branch"];
 
-// Map filter tab names to transaction purpose values
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
-  "Redeem": "Buy Back",   // Redeem maps to Buy Back purpose
+  "Redeem": "Buy Back",
   "New Pawn": "Pawn",
   "Sales / Transfer": "Sold Item",
   "Buy Back": "Buy Back",
 };
 
 export default function PawnTransactionsPage() {
-  // TODO: Get user role from auth context (e.g., useAuth())
-  const userRole = "super_admin"; // "super_admin" | "admin" | "employee"
+  const userRole = "super_admin"; 
   const isSuperAdmin = userRole === "super_admin";
 
   const [selectedBranch, setSelectedBranch] = useState("All Branches");
@@ -48,14 +51,14 @@ export default function PawnTransactionsPage() {
   });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
-  // Fetch data from NestJS backend
   useEffect(() => {
     async function fetchTransactions() {
       setIsLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/transactions?branch=${encodeURIComponent(selectedBranch)}`);
-        const data = await res.json();
+        const query = selectedBranch === "All Branches" ? "" : `?branch=${encodeURIComponent(selectedBranch)}`;
+        const data = await api.get<{ stats: any; transactions: TransactionRow[] }>(`/transactions${query}`);
         if (data) {
           setCurrentStats(data.stats || {
             pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
@@ -72,7 +75,6 @@ export default function PawnTransactionsPage() {
     fetchTransactions();
   }, [selectedBranch]);
 
-  // Filter transactions by active tab
   const filteredTransactions = useMemo(() => {
     if (activeFilter === "All") return allTransactions;
     const targetPurpose = filterToPurpose[activeFilter];
@@ -80,10 +82,8 @@ export default function PawnTransactionsPage() {
     return allTransactions.filter((t) => t.purpose === targetPurpose);
   }, [allTransactions, activeFilter]);
 
-  // Export CSV
   const handleExportCSV = useCallback(() => {
     if (filteredTransactions.length === 0) return;
-
     const headers = ["Transaction #", "Purpose", "Date", "Time", "Cash In", "Cash Out", "Return", "Unit", "Unit Code", "Pawn", "Storage"];
     const rows = filteredTransactions.map((r) =>
       [r.transactionNo, r.purpose, r.date, r.time, r.cashIn, r.cashOut, r.returnVal, r.unit, r.unitCode, r.pawn, r.storage].join(",")
@@ -98,20 +98,36 @@ export default function PawnTransactionsPage() {
     URL.revokeObjectURL(url);
   }, [filteredTransactions, selectedBranch]);
 
-  // Print Report
   const handlePrintReport = useCallback(() => {
     window.print();
   }, []);
+
+  const handleManualSubmit = (data: ManualTransactionPayload) => {
+    const newTransaction: TransactionRow = {
+      transactionNo: data.transactionNo,
+      branch: selectedBranch,
+      purpose: "Start",
+      date: data.date,
+      time: data.time,
+      cashIn: data.type === "Cash In" ? data.amount.toString() : "0",
+      cashOut: data.type === "Cash Transfer" ? data.amount.toString() : "0",
+      returnVal: "0",
+      unit: "Manual Entry",
+      unitCode: data.type,
+      pawn: "0",
+      storage: "0",
+    };
+    setAllTransactions(prev => [newTransaction, ...prev]);
+  };
 
   return (
     <div className="space-y-3 pb-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-emerald-text leading-tight">Transactions</h1>
+          <h1 className="text-xl font-bold text-emerald-900 leading-tight">Transactions</h1>
           <p className="text-xs font-medium text-text-tertiary mt-0.5">Manage and monitor daily pawn operations.</p>
         </div>
 
-        {/* Branch Selector — Only visible for Super Admin */}
         {isSuperAdmin && (
           <div className="flex items-center gap-3">
             <div className="bg-surface border border-border-main text-xs text-text-primary rounded-md overflow-hidden flex items-center h-8 px-2 cursor-pointer shadow-sm">
@@ -137,9 +153,18 @@ export default function PawnTransactionsPage() {
         onFilterChange={(f) => setActiveFilter(f)}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
+        onManualInput={() => setIsManualModalOpen(true)}
       />
       <TransactionStats data={currentStats} />
       <TransactionTable data={filteredTransactions} />
+
+      <ManualTransactionModal 
+        isOpen={isManualModalOpen} 
+        onClose={() => setIsManualModalOpen(false)} 
+        onSubmit={handleManualSubmit}
+        branches={branches}
+        currentBranch={selectedBranch}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
@@ -17,6 +17,7 @@ const columns: Column[] = [
   { key: "branchId", label: "Branch ID" },
   { key: "name", label: "Branch Name" },
   { key: "location", label: "Location" },
+  { key: "createdAt", label: "Date Created" },
   { key: "status", label: "Status" },
   { key: "inventorySummary", label: "Inventory", align: "center" },
   { key: "actions", label: "Actions", align: "center" },
@@ -27,6 +28,7 @@ export interface BranchRow {
   branchId: string;
   name: string;
   location: string;
+  createdAt: string;
   status: string;
   pawnedItems: number;
   forSaleItems: number;
@@ -39,113 +41,62 @@ interface BranchTableProps {
   statusFilter: string;
   onBranchClick: (branch: BranchRow) => void;
   onEditBranch: (branch: BranchRow) => void;
+  onTerminateBranch: (branch: BranchRow) => void;
 }
 
-function ActionsDropdown({
-  branchId,
+function InlineActions({
   onView,
   onEdit,
-  onDeactivate,
+  onTerminate,
 }: {
-  branchId: string;
   onView: () => void;
   onEdit: () => void;
-  onDeactivate: () => void;
+  onTerminate: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        btnRef.current &&
-        !btnRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  function toggleMenu() {
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + 4,
-        left: rect.right - 132, // 132 = menu width (w-32 = 8rem)
-      });
-    }
-    setOpen(!open);
-  }
-
   return (
-    <div className="relative inline-block">
+    <div className="flex items-center justify-center gap-1">
+      {/* View */}
       <button
-        ref={btnRef}
-        onClick={toggleMenu}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover"
-        title={`Actions for ${branchId}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onView();
+        }}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-600 transition-colors hover:bg-emerald-50"
+        title="View"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="12" cy="19" r="2" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
         </svg>
       </button>
-      {open && (
-        <div
-          ref={menuRef}
-          className="fixed z-50 w-32 rounded-lg border border-border-main bg-surface py-1 shadow-lg"
-          style={{ top: pos.top, left: pos.left }}
-        >
-          <button
-            onClick={() => {
-              setOpen(false);
-              onView();
-            }}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            View
-          </button>
-          <button
-            onClick={() => {
-              setOpen(false);
-              onEdit();
-            }}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Edit
-          </button>
-          <button
-            onClick={() => {
-              setOpen(false);
-              onDeactivate();
-            }}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-            </svg>
-            Deactivate
-          </button>
-        </div>
-      )}
+      {/* Edit */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit();
+        }}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-amber-600 transition-colors hover:bg-amber-50"
+        title="Edit"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      </button>
+      {/* Terminate */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onTerminate();
+        }}
+        className="flex h-7 w-7 items-center justify-center rounded-md text-red-500 transition-colors hover:bg-red-50"
+        title="Terminate"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -196,6 +147,7 @@ export function BranchTable({
   statusFilter,
   onBranchClick,
   onEditBranch,
+  onTerminateBranch,
 }: BranchTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -234,15 +186,33 @@ export function BranchTable({
       <DataTable
         columns={columns}
         data={paginated}
+        onRowClick={(row) => onBranchClick(row as unknown as BranchRow)}
         renderCell={(key, value, row) => {
           if (key === "name") {
             return (
               <button
-                onClick={() => onBranchClick(row as unknown as BranchRow)}
-                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:text-emerald-600 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBranchClick(row as unknown as BranchRow);
+                }}
+                className="text-left text-xs font-semibold text-emerald-text transition-colors hover:opacity-80 hover:underline"
               >
                 {value}
               </button>
+            );
+          }
+          if (key === "createdAt") {
+            const raw = row.createdAt as string;
+            if (!raw) return <span className="text-text-muted">—</span>;
+            const date = new Date(raw);
+            return (
+              <span className="text-xs text-text-secondary">
+                {date.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
             );
           }
           if (key === "status") {
@@ -264,11 +234,10 @@ export function BranchTable({
           }
           if (key === "actions") {
             return (
-              <ActionsDropdown
-                branchId={row.branchId}
+              <InlineActions
                 onView={() => onBranchClick(row as unknown as BranchRow)}
                 onEdit={() => onEditBranch(row as unknown as BranchRow)}
-                onDeactivate={() => {}}
+                onTerminate={() => onTerminateBranch(row as unknown as BranchRow)}
               />
             );
           }

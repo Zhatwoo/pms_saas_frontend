@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface RevenueTrendData {
+export interface RevenueTrendData {
   month: string;
   revenue: number;
 }

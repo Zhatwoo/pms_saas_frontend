@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Rows are heterogeneous per screen; columns are dynamic string keys. */
 import type { ReactNode } from "react";
 
 export interface Column {
@@ -19,6 +20,7 @@ interface DataTableProps {
   tableClassName?: string;
   emptyMessage?: ReactNode;
   rowClassName?: (row: Record<string, any>, rowIndex: number) => string;
+  onRowClick?: (row: Record<string, any>, rowIndex: number) => void;
 }
 
 export function DataTable({
@@ -29,6 +31,7 @@ export function DataTable({
   tableClassName,
   emptyMessage = "No records found.",
   rowClassName,
+  onRowClick,
 }: DataTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
@@ -66,8 +69,9 @@ export function DataTable({
               data.map((row, idx) => (
                 <tr
                   key={idx}
-                  className={`border-t border-border-subtle ${
-                    idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"
+                  onClick={() => onRowClick?.(row, idx)}
+                  className={`border-t border-border-subtle transition-colors bg-surface-secondary hover:bg-emerald-surface/60 ${
+                    onRowClick ? "cursor-pointer" : ""
                   } ${rowClassName?.(row, idx) ?? ""}`.trim()}
                 >
                   {columns.map((col) => (

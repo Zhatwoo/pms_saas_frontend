@@ -114,10 +114,15 @@ export function Header({
 
   return (
     <header className="flex items-center justify-between border-b border-border-main bg-header-bg px-6 py-3 transition-colors duration-300">
-      <div className="flex flex-col">
+      <div className="flex items-center gap-4">
         <h1 className="text-2xl font-bold text-text-primary leading-none">{title}</h1>
         {branchName && (
-          <p className="mt-1 text-sm font-medium text-zinc-500">{branchName}</p>
+          <div className="flex items-center gap-4">
+            <span className="h-6 w-px bg-border-main" />
+            <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              {branchName}
+            </span>
+          </div>
         )}
       </div>
 

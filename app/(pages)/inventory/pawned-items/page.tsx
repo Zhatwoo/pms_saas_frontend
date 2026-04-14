@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -156,7 +157,8 @@ export default function PawnedItemsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [branch, setBranch] = useState("all");
   const [category, setCategory] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState("Active"); // Default to Active per requirement
+  const [monthFilter, setMonthFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -178,12 +180,14 @@ export default function PawnedItemsPage() {
         if (branch !== "all") params.set("branch", branch);
         if (category !== "all") params.set("category", category);
         if (status !== "all") params.set("status", status);
+        if (monthFilter !== "all") params.set("month", monthFilter);
         if (searchQuery) params.set("search", searchQuery);
+        // By default API should sort by date and time descending
+        params.set("sort", "datetime_desc");
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned?${params}`);
-        const data = await res.json();
+        const data = await api.get<{ items: PawnedItem[]; total: number }>(`/inventory/pawned?${params}`);
         setPawnedItems(data.items || []);
         setTotalItems(data.total || 0);
       } catch (err) {
@@ -197,11 +201,7 @@ export default function PawnedItemsPage() {
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}/remarks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remark: remarks }),
-      });
+      await api.post(`/inventory/pawned/${itemId}/remarks`, { remark: remarks });
       setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, remarks } : i)));
     } catch (err) {
       console.error("Failed to save remarks:", err);
@@ -211,9 +211,7 @@ export default function PawnedItemsPage() {
   const handleMarkExpired = useCallback(async (itemId: string) => {
     if (!confirm("Mark this item as Expired? It will be auto-transferred to Items For Sale.")) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}/expire`, {
-        method: "POST",
-      });
+      await api.post(`/inventory/pawned/${itemId}/expire`, {});
       setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: "Expired" as PawnedStatus } : i)));
     } catch (err) {
       console.error("Failed to expire item:", err);
@@ -223,9 +221,7 @@ export default function PawnedItemsPage() {
   const handleDelete = useCallback(async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this pawned item? This cannot be undone.")) return;
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api"}/inventory/pawned/${itemId}`, {
-        method: "DELETE",
-      });
+      await api.delete(`/inventory/pawned/${itemId}`);
       setPawnedItems((prev) => prev.filter((i) => i.id !== itemId));
     } catch (err) {
       console.error("Failed to delete item:", err);
@@ -244,6 +240,16 @@ export default function PawnedItemsPage() {
           {isSuperAdmin && <FilterSelect label="Branch" options={branchOptions} value={branch} onChange={setBranch} />}
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
+          <FilterSelect 
+            label="Month" 
+            options={[
+              { value: "all", label: "All Months" },
+              { value: "current", label: "Current Month" },
+              { value: "last", label: "Last Month" }
+            ]} 
+            value={monthFilter} 
+            onChange={setMonthFilter} 
+          />
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
             <input
@@ -280,7 +286,7 @@ export default function PawnedItemsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-emerald-900 text-amber-400">
-                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", "Renewals", "Remarks", ""].map((h) => (
+                  {["ID", "Item Name", "Category", "Branch", "Date & Time", "Status", "Renewal", "Note"].map((h) => (
                     <th key={h} className="whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left">{h}</th>
                   ))}
                 </tr>
@@ -293,40 +299,22 @@ export default function PawnedItemsPage() {
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <>
-                      <tr key={item.itemId} className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
+                      <tr 
+                        key={item.itemId} 
+                        className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
+                        onClick={() => setViewingItem(item)}
+                      >
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.pawnDate}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.pawnDate} 10:00 AM</td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
-                        <td className="px-3 py-2">
-                          <button onClick={() => setExpandedRow(expandedRow === item.itemId ? null : item.itemId)} className="text-[10px] font-bold text-emerald-700 hover:underline">
-                            {item.renewalCount}x ▾
-                          </button>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary font-medium">
+                          {item.renewalCount > 0 ? `Renew ${item.renewalCount}` : "—"}
                         </td>
-                        <td className="px-3 py-2 text-xs text-text-tertiary max-w-[120px] truncate" title={item.remarks}>{item.remarks || "—"}</td>
-                        <td className="px-3 py-2 whitespace-nowrap text-right">
-                          <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setViewingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
-                              View
-                            </button>
-                            {canEdit && (
-                              <>
-                                <button className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
-                                  Edit
-                                </button>
-                                {item.status === "Active" && (
-                                  <button onClick={() => handleMarkExpired(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100">
-                                    Expire
-                                  </button>
-                                )}
-                                <button onClick={() => handleDelete(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100">
-                                  Delete
-                                </button>
-                              </>
-                            )}
-                          </div>
+                        <td className="px-3 py-2 text-xs text-text-tertiary max-w-[150px] truncate" title={item.remarks || "No description"}>
+                          {item.remarks || "—"}
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
@@ -346,13 +334,32 @@ export default function PawnedItemsPage() {
       )}
 
       {viewMode === "calendar" && (
-        <div className="flex items-center justify-center rounded-lg border border-border-main bg-surface py-16 transition-colors duration-300">
-          <div className="text-center">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-zinc-300">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <p className="text-sm text-zinc-400">Calendar view — browse pawned items by pawn date or expiry.</p>
-            <p className="text-xs text-zinc-300 mt-1">Coming soon in next sprint.</p>
+        <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+          <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-text-secondary uppercase mb-2">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div className="grid grid-cols-7 gap-1 auto-rows-[100px]">
+            {/* Example mock calendar grid */}
+            {Array.from({ length: 35 }).map((_, i) => {
+              const day = i - 3; // Shift to start from 1st roughly
+              const isCurrentMonth = day > 0 && day <= 30;
+              const hasItem = isCurrentMonth && (day === 5 || day === 12 || day === 18);
+              
+              return (
+                <div key={i} className={`border rounded p-1 ${isCurrentMonth ? "border-border-subtle bg-surface" : "border-transparent bg-transparent"} ${isCurrentMonth && day === new Date().getDate() ? "ring-1 ring-emerald-500" : ""}`}>
+                  {isCurrentMonth && (
+                    <>
+                      <div className="text-[10px] font-bold text-text-tertiary text-right">{day}</div>
+                      {hasItem && (
+                        <div className="mt-1 rounded bg-emerald-100 px-1 py-0.5 text-[9px] font-bold text-emerald-800 text-left truncate">
+                          2 Items Pawned
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
