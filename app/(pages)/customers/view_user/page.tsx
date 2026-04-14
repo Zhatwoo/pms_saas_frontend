@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
 
@@ -191,13 +191,66 @@ const noteIcon = (
   </svg>
 );
 
+const editIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
+
 /* ──────────────────────────── Inner Content ──────────────────────────── */
 
 function CustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const customerId = searchParams.get("id") ?? "";
-  const customer = mockCustomers[customerId];
+  const [customer, setCustomer] = useState<CustomerDetail | null>(mockCustomers[customerId] ?? null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    idNumber: "",
+    address: "",
+  });
+
+  useEffect(() => {
+    setCustomer(mockCustomers[customerId] ?? null);
+  }, [customerId]);
+
+  useEffect(() => {
+    if (customer) {
+      setEditForm({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        idNumber: customer.idNumber,
+        address: customer.address,
+      });
+    }
+  }, [customer]);
+
+  function handleEditChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    const { name, value } = event.target;
+    setEditForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function handleSaveCustomer(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!customer) return;
+
+    setCustomer({
+      ...customer,
+      name: editForm.name.trim() || customer.name,
+      email: editForm.email.trim() || customer.email,
+      phone: editForm.phone.trim() || customer.phone,
+      idNumber: editForm.idNumber.trim() || customer.idNumber,
+      address: editForm.address.trim() || customer.address,
+    });
+    setIsEditOpen(false);
+  }
 
   if (!customer) {
     return (
@@ -250,8 +303,18 @@ function CustomerDetailContent() {
                   <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
                 </div>
               </div>
-              <div className="rounded-full border border-border-main bg-surface-secondary px-4 py-1.5 text-[11px] font-medium text-text-secondary">
-                Created on {customer.createdAt} at {customer.branch}
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
+                >
+                  {editIcon}
+                  Edit Profile
+                </button>
+                <div className="rounded-full border border-border-main bg-surface-secondary px-4 py-1.5 text-[11px] font-medium text-text-secondary">
+                  Created on {customer.createdAt} at {customer.branch}
+                </div>
               </div>
             </div>
           </div>
@@ -417,6 +480,141 @@ function CustomerDetailContent() {
           </div>
         </div>
       </div>
+
+      {isEditOpen && customer && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+          onClick={() => setIsEditOpen(false)}
+        >
+          <div
+            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="bg-emerald-900 px-6 py-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+                Customer Management
+              </p>
+              <div className="mt-2 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Edit Customer Profile</h2>
+                  <p className="mt-1 text-sm text-emerald-50/80">
+                    Update the customer details for <span className="font-bold text-amber-300">{customer.name}</span>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
+                  aria-label="Close edit customer modal"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveCustomer} className="space-y-5 px-6 py-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Full Name
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    value={editForm.name}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Phone Number
+                  </label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Email Address
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    ID Number
+                  </label>
+                  <input
+                    name="idNumber"
+                    type="text"
+                    value={editForm.idNumber}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Address
+                  </label>
+                  <textarea
+                    name="address"
+                    value={editForm.address}
+                    onChange={handleEditChange}
+                    rows={3}
+                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
+                Update the profile details and save the changes.
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  className="rounded-md border border-border-main px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
