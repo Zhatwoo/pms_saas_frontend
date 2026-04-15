@@ -4,17 +4,31 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
+import { ViewCustomerModal } from "./_components/view-customer-modal";
+import { EditCustomerModal } from "./_components/edit-customer-modal";
+import type { CustomerDetail } from "./_components/types";
 
 /* ──────────────────────────── Mock Data ──────────────────────────── */
 
 const mockCustomers: Record<string, CustomerDetail> = {
   "1": {
     id: "1",
+    firstName: "Juan",
+    middleName: "Santos",
+    lastName: "Dela Cruz",
     name: "Juan Dela Cruz",
+    street: "123 Rizal St., Brgy. Ususan",
+    barangay: "Brgy. Ususan",
+    city: "Taguig City",
+    province: "Metro Manila",
     address: "Brgy. Ususan, Taguig City",
     email: "juandelacruz@gmail.com",
     phone: "0912-345-6789",
-    idNumber: "12345678",
+    idType: "Driver's License",
+    idNumber: "N5012345678",
+    profilePhoto: null,
+    idFrontPhoto: null,
+    idBackPhoto: null,
     createdAt: "February 14, 2022",
     branch: "Taguig Branch",
     totalItemsPawned: 8,
@@ -45,11 +59,22 @@ const mockCustomers: Record<string, CustomerDetail> = {
   },
   "2": {
     id: "2",
+    firstName: "John",
+    middleName: "",
+    lastName: "Doe",
     name: "John Doe",
+    street: "456 Ayala Ave.",
+    barangay: "Brgy. San Antonio",
+    city: "Makati",
+    province: "Metro Manila",
     address: "Brgy. San Antonio, Makati",
     email: "jhondoe@gmail.com",
     phone: "0912-345-6789",
+    idType: "National ID",
     idNumber: "72120002152",
+    profilePhoto: null,
+    idFrontPhoto: null,
+    idBackPhoto: null,
     createdAt: "February 15, 2022",
     branch: "Makati Branch",
     totalItemsPawned: 3,
@@ -62,9 +87,7 @@ const mockCustomers: Record<string, CustomerDetail> = {
       { date: "Mar 15", item: "Samsung S24", amount: 18000, status: "Active", branch: "Makati" },
       { date: "Feb 20", item: "Gold Chain", amount: 14000, status: "Redeemed", branch: "Makati" },
     ],
-    rewards: [
-      { label: "₱500 Cashback", points: 100 },
-    ],
+    rewards: [{ label: "₱500 Cashback", points: 100 }],
     deadlines: [
       { date: "May 15, 2026", label: "18 days remaining", variant: "warning" as const },
     ],
@@ -74,11 +97,22 @@ const mockCustomers: Record<string, CustomerDetail> = {
   },
   "3": {
     id: "3",
+    firstName: "Park",
+    middleName: "Jimin",
+    lastName: "Neutron",
     name: "Park Jimin Neutron",
+    street: "789 Commonwealth Ave.",
+    barangay: "Brgy. Commonwealth",
+    city: "Quezon City",
+    province: "Metro Manila",
     address: "Brgy. Commonwealth, Quezon City",
     email: "jiminneutron@gmail.com",
     phone: "0912-345-6789",
+    idType: "Passport",
     idNumber: "44443334444",
+    profilePhoto: null,
+    idFrontPhoto: null,
+    idBackPhoto: null,
     createdAt: "February 16, 2022",
     branch: "Quezon Branch",
     totalItemsPawned: 5,
@@ -99,90 +133,20 @@ const mockCustomers: Record<string, CustomerDetail> = {
   },
 };
 
-/* ──────────────────────────── Types ──────────────────────────── */
-
-interface CustomerDetail {
-  id: string;
-  name: string;
-  address: string;
-  email: string;
-  phone: string;
-  idNumber: string;
-  profileImage?: string;
-  createdAt: string;
-  branch: string;
-  totalItemsPawned: number;
-  activePawned: number;
-  totalLoanValue: number;
-  overduePayments: number;
-  loyaltyPoints: number;
-  loyaltyMax: number;
-  transactions: Transaction[];
-  rewards: Reward[];
-  deadlines: Deadline[];
-  activityLog: ActivityEntry[];
-}
-
-interface Transaction {
-  date: string;
-  item: string;
-  amount: number;
-  status: string;
-  branch: string;
-}
-
-interface Reward {
-  label: string;
-  points: number;
-}
-
-interface Deadline {
-  date: string;
-  label: string;
-  variant: "warning" | "danger";
-}
-
-interface ActivityEntry {
-  title: string;
-  date: string;
-  description: string;
-  color: string;
-}
-
 /* ──────────────────────────── Helpers ──────────────────────────── */
 
 function getStatusBadge(status: string) {
   switch (status) {
-    case "Active":
-      return <StatusBadge label="Active" variant="green" />;
-    case "Redeemed":
-      return <StatusBadge label="Redeemed" variant="blue" />;
-    case "Overdue":
-      return <StatusBadge label="Overdue" variant="orange" />;
-    case "Forfeited":
-      return <StatusBadge label="Forfeited" variant="black" />;
-    default:
-      return <StatusBadge label={status} variant="black" />;
+    case "Active":   return <StatusBadge label="Active"   variant="green"  />;
+    case "Redeemed": return <StatusBadge label="Redeemed" variant="blue"   />;
+    case "Overdue":  return <StatusBadge label="Overdue"  variant="orange" />;
+    case "Forfeited":return <StatusBadge label="Forfeited"variant="black"  />;
+    default:         return <StatusBadge label={status}   variant="black"  />;
   }
 }
 
 function formatCurrency(value: number) {
   return `₱${value.toLocaleString()}`;
-}
-
-const PHONE_LOCAL_REGEX = /^9\d{9}$/;
-
-function toPhoneLocalPart(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-
-  if (digits.startsWith("63")) {
-    return digits.slice(2, 12);
-  }
-  if (digits.startsWith("0")) {
-    return digits.slice(1, 11);
-  }
-
-  return digits.slice(0, 10);
 }
 
 /* ──────────────────────────── Icons ──────────────────────────── */
@@ -200,13 +164,6 @@ const userIcon = (
   </svg>
 );
 
-const noteIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 5v14" />
-    <path d="M5 12h14" />
-  </svg>
-);
-
 const editIcon = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 20h9" />
@@ -214,96 +171,28 @@ const editIcon = (
   </svg>
 );
 
-/* ──────────────────────────── Inner Content ──────────────────────────── */
+const noteIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14" />
+    <path d="M5 12h14" />
+  </svg>
+);
+
+/* ──────────────────────────── Page Content ──────────────────────────── */
 
 function CustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const customerId = searchParams.get("id") ?? "";
-  const [customer, setCustomer] = useState<CustomerDetail | null>(mockCustomers[customerId] ?? null);
+  const [customer, setCustomer] = useState<CustomerDetail | null>(
+    mockCustomers[customerId] ?? null,
+  );
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
-  const [editForm, setEditForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    idNumber: "",
-    address: "",
-    profileImage: "",
-  });
 
   useEffect(() => {
     setCustomer(mockCustomers[customerId] ?? null);
   }, [customerId]);
-
-  useEffect(() => {
-    if (customer) {
-      setEditForm({
-        name: customer.name,
-        email: customer.email,
-        phone: toPhoneLocalPart(customer.phone),
-        idNumber: customer.idNumber,
-        address: customer.address,
-        profileImage: customer.profileImage ?? "",
-      });
-    }
-  }, [customer]);
-
-  function handleEditChange(
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) {
-    const { name, value } = event.target;
-
-    if (name === "phone") {
-      const phoneDigits = toPhoneLocalPart(value);
-      setEditForm((current) => ({ ...current, phone: phoneDigits }));
-      setPhoneError("");
-      return;
-    }
-
-    setEditForm((current) => ({ ...current, [name]: value }));
-  }
-
-  function handleProfileImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const selectedFile = event.target.files?.[0];
-    if (!selectedFile || !selectedFile.type.startsWith("image/")) {
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setEditForm((current) => ({ ...current, profileImage: reader.result as string }));
-      }
-    };
-    reader.readAsDataURL(selectedFile);
-  }
-
-  function handleSaveCustomer(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!customer) return;
-
-    const localPhone = editForm.phone.trim();
-    if (!PHONE_LOCAL_REGEX.test(localPhone)) {
-      setPhoneError("Phone must be 10 digits and start with 9.");
-      return;
-    }
-
-    const normalizedPhone = `+63${localPhone}`;
-
-    setPhoneError("");
-
-    setCustomer({
-      ...customer,
-      name: editForm.name.trim() || customer.name,
-      email: editForm.email.trim() || customer.email,
-      phone: normalizedPhone || customer.phone,
-      idNumber: editForm.idNumber.trim() || customer.idNumber,
-      address: editForm.address.trim() || customer.address,
-      profileImage: editForm.profileImage || customer.profileImage,
-    });
-    setIsEditOpen(false);
-  }
 
   if (!customer) {
     return (
@@ -324,7 +213,7 @@ function CustomerDetailContent() {
 
   return (
     <div className="space-y-5">
-      {/* ── Page Header ── */}
+      {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push("/customers")}
@@ -338,20 +227,26 @@ function CustomerDetailContent() {
         </div>
       </div>
 
-      {/* ── Main Grid ── */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
-        {/* Left Column */}
+        {/* ── Left Column ── */}
         <div className="space-y-5">
+
           {/* Basic Info Card */}
-          <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pawn-gold shadow-sm">
-                  {customer.profileImage ? (
+          <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              {/* Clickable info area → opens View modal */}
+              <button
+                type="button"
+                onClick={() => setIsViewOpen(true)}
+                className="flex items-center gap-4 text-left transition-opacity hover:opacity-80"
+              >
+                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm">
+                  {customer.profilePhoto ? (
                     <img
-                      src={customer.profileImage}
+                      src={customer.profilePhoto}
                       alt={`${customer.name} profile`}
-                      className="h-full w-full rounded-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     userIcon
@@ -362,16 +257,21 @@ function CustomerDetailContent() {
                   <p className="mt-0.5 text-xs text-text-tertiary">Email: {customer.email}</p>
                   <p className="text-xs text-text-tertiary">Phone: {customer.phone}</p>
                   <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
+                  <p className="mt-1 text-[10px] text-emerald-600 underline decoration-dotted">
+                    Click to view full details
+                  </p>
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center justify-end gap-3">
+              </button>
+
+              {/* Pen icon + created-at badge */}
+              <div className="flex flex-shrink-0 items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-700 bg-emerald-50 text-emerald-800 transition-colors hover:bg-emerald-100"
+                  title="Edit Profile"
                 >
                   {editIcon}
-                  Edit Profile
                 </button>
                 <div className="rounded-full border border-border-main bg-surface-secondary px-4 py-1.5 text-[11px] font-medium text-text-secondary">
                   Created on {customer.createdAt} at {customer.branch}
@@ -382,24 +282,21 @@ function CustomerDetailContent() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Total items pawned</p>
-              <p className="mt-1 text-2xl font-bold text-text-primary">{customer.totalItemsPawned}</p>
-            </div>
-            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Active Pawned</p>
-              <p className="mt-1 text-2xl font-bold text-emerald-700">{customer.activePawned}</p>
-            </div>
-            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Total loan value</p>
-              <p className="mt-1 text-2xl font-bold text-text-primary">{formatCurrency(customer.totalLoanValue)}</p>
-            </div>
-            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Overdue payments</p>
-              <p className={`mt-1 text-2xl font-bold ${customer.overduePayments > 0 ? "text-red-500" : "text-text-primary"}`}>
-                {customer.overduePayments}
-              </p>
-            </div>
+            {[
+              { label: "Total Items Pawned", value: customer.totalItemsPawned, className: "text-text-primary" },
+              { label: "Active Pawned",      value: customer.activePawned,      className: "text-emerald-700" },
+              { label: "Total Loan Value",   value: formatCurrency(customer.totalLoanValue), className: "text-text-primary" },
+              {
+                label: "Overdue Payments",
+                value: customer.overduePayments,
+                className: customer.overduePayments > 0 ? "text-red-500" : "text-text-primary",
+              },
+            ].map(({ label, value, className }) => (
+              <div key={label} className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">{label}</p>
+                <p className={`mt-1 text-2xl font-bold ${className}`}>{value}</p>
+              </div>
+            ))}
           </div>
 
           {/* Transaction History */}
@@ -411,12 +308,14 @@ function CustomerDetailContent() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-emerald-900 text-amber-400">
-                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Date</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Item</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Amount</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide">Status</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Branch</th>
-                    <th className="whitespace-nowrap px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide">Action</th>
+                    {["Date", "Item", "Amount", "Status", "Branch", "Action"].map((h, i) => (
+                      <th
+                        key={h}
+                        className={`whitespace-nowrap px-4 py-2 text-[10px] font-bold uppercase tracking-wide ${i === 3 || i === 5 ? "text-center" : "text-left"}`}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -478,8 +377,9 @@ function CustomerDetailContent() {
           </div>
         </div>
 
-        {/* Right Sidebar */}
+        {/* ── Right Sidebar ── */}
         <div className="space-y-5">
+
           {/* Loyalty System */}
           <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
             <h3 className="text-sm font-bold text-text-primary">Loyalty System</h3>
@@ -526,9 +426,7 @@ function CustomerDetailContent() {
                       <span className="text-xs text-text-secondary">{d.date}</span>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                          d.variant === "danger"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-amber-100 text-amber-700"
+                          d.variant === "danger" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"
                         }`}
                       >
                         {d.label}
@@ -542,200 +440,19 @@ function CustomerDetailContent() {
         </div>
       </div>
 
-      {isEditOpen && customer && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
-          onClick={() => setIsEditOpen(false)}
-        >
-          <div
-            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="bg-emerald-900 px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
-                Customer Management
-              </p>
-              <div className="mt-2 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-white">Edit Customer Profile</h2>
-                  <p className="mt-1 text-sm text-emerald-50/80">
-                    Update the customer details for <span className="font-bold text-amber-300">{customer.name}</span>.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
-                  aria-label="Close edit customer modal"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveCustomer} className="space-y-5 px-6 py-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Profile Picture
-                  </label>
-                  <div className="flex flex-col items-center gap-3 rounded-lg border border-border-main bg-surface-secondary p-4">
-                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border-main bg-surface">
-                      {editForm.profileImage ? (
-                        <img
-                          src={editForm.profileImage}
-                          alt="Customer profile preview"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-full w-full items-center justify-center text-xl font-bold leading-none text-text-tertiary">
-                          {customer.name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                      <input
-                        id="edit-customer-profile-image"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProfileImageChange}
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="edit-customer-profile-image"
-                        className="inline-flex cursor-pointer items-center rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800"
-                      >
-                        Upload Photo
-                      </label>
-                      {editForm.profileImage && (
-                        <button
-                          type="button"
-                          onClick={() => setEditForm((current) => ({ ...current, profileImage: "" }))}
-                          className="rounded-md border border-border-main px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
-                        >
-                          Remove
-                        </button>
-                      )}
-                      <p className="text-center text-[11px] text-text-tertiary">
-                        Upload JPG or PNG profile image.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Full Name
-                  </label>
-                  <input
-                    name="name"
-                    type="text"
-                    value={editForm.name}
-                    onChange={handleEditChange}
-                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Phone Number
-                  </label>
-                  <div className="flex h-11 w-full overflow-hidden rounded-md border border-input-border bg-input-bg focus-within:border-emerald-700">
-                    <span className="inline-flex items-center border-r border-input-border px-3 text-sm font-semibold text-text-secondary">
-                      +63
-                    </span>
-                    <input
-                      name="phone"
-                      type="tel"
-                      value={editForm.phone}
-                      onChange={handleEditChange}
-                      inputMode="numeric"
-                      maxLength={10}
-                      placeholder="9XXXXXXXXX"
-                      pattern="^9\\d{9}$"
-                      title="Use 10-digit mobile number starting with 9"
-                      className="h-full w-full bg-transparent px-3 text-sm text-text-primary outline-none"
-                    />
-                  </div>
-                  {phoneError && (
-                    <p className="mt-1 text-xs font-medium text-red-500">{phoneError}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Email Address
-                  </label>
-                  <input
-                    name="email"
-                    type="email"
-                    value={editForm.email}
-                    onChange={handleEditChange}
-                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    ID Number
-                  </label>
-                  <input
-                    name="idNumber"
-                    type="text"
-                    value={editForm.idNumber}
-                    onChange={handleEditChange}
-                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Address
-                  </label>
-                  <textarea
-                    name="address"
-                    value={editForm.address}
-                    onChange={handleEditChange}
-                    rows={3}
-                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
-                Update the profile details and save the changes.
-              </div>
-
-              <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="rounded-md border border-border-main px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* Modals */}
+      {isViewOpen && (
+        <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
+      )}
+      {isEditOpen && (
+        <EditCustomerModal
+          customer={customer}
+          onClose={() => setIsEditOpen(false)}
+          onSave={(updated) => {
+            setCustomer(updated);
+            setIsEditOpen(false);
+          }}
+        />
       )}
     </div>
   );
@@ -748,7 +465,7 @@ export default function CustomerDetailPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
-          Loading customer details...
+          Loading customer details…
         </div>
       }
     >

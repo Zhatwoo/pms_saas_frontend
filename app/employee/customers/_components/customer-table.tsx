@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
-import { AddCustomerModal } from "./add-customer-modal";
 import type { Column } from "@/components/shared/data-table";
 
 const columns: Column[] = [
@@ -12,7 +11,7 @@ const columns: Column[] = [
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "idType", label: "ID Type" },
-  { key: "idNumber", label: "ID" },
+  { key: "idNumber", label: "ID Number" },
   { key: "registered", label: "Registered" },
   { key: "actions", label: "Actions", align: "center" },
 ];
@@ -40,19 +39,6 @@ interface CustomerTableProps {
 export function CustomerTable({ branchName }: CustomerTableProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleSaveCustomer = async (input: {
-    fullName: string;
-    phoneNumber: string;
-    email: string;
-    idType: string;
-    idNumber: string;
-    address: string;
-  }) => {
-    console.log("Customer saved:", input, branchName);
-    setIsModalOpen(false);
-  };
 
   const customers = [
     {
@@ -85,22 +71,15 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
   ];
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <div>
-          <h3 className="text-base font-semibold text-emerald-800">
-            Internal Customer Records
-          </h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-        >
-          + Add New Customer
-        </button>
+        <h3 className="text-base font-semibold text-emerald-text">
+          Customer Management
+        </h3>
       </div>
 
+      {/* Table */}
       <DataTable
         columns={columns}
         data={customers}
@@ -120,21 +99,13 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
         }}
       />
 
-      <div className="border-t border-zinc-100 italic px-5 py-3 text-[10px] text-zinc-400">
-        Showing customers registered under this branch.
-      </div>
+      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
-        totalPages={1}
-        totalItems={customers.length}
+        totalPages={3}
+        totalItems={3}
         itemsPerPage={10}
         onPageChange={setCurrentPage}
-      />
-
-      <AddCustomerModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveCustomer}
       />
     </div>
   );
