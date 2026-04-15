@@ -111,9 +111,9 @@ export default function EmployeeItemsForSalePage() {
         </div>
 
         <div className="flex rounded-md border border-zinc-200 overflow-hidden">
-            <button onClick={() => setSaleViewMode("current")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>Current</button>
-            <button onClick={() => setSaleViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>Calendar</button>
-            <button onClick={() => setSaleViewMode("history")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>History</button>
+          <button onClick={() => setSaleViewMode("current")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>Current</button>
+          <button onClick={() => setSaleViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>Calendar</button>
+          <button onClick={() => setSaleViewMode("history")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>History</button>
         </div>
       </div>
 
@@ -123,35 +123,35 @@ export default function EmployeeItemsForSalePage() {
         <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-emerald-900 text-white">
-                {["ID", "Item Name", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
-                  <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">Loading branch items...</td></tr>
-              ) : saleItems.length === 0 ? (
-                <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">No items for sale found</td></tr>
-              ) : (
-                saleItems.map((item, idx) => (
-                  <tr key={item.id || item.itemId} className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                    <td className="whitespace-nowrap px-3 py-2">
-                      <button 
-                        onClick={() => setViewingItem(item)}
-                        className="text-xs font-bold text-zinc-900 hover:text-emerald-700 transition-colors hover:underline"
-                      >
-                        {item.itemName}
-                      </button>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500 font-bold italic">{item.availableDate}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-black text-zinc-800">&#8369;{item.price.toLocaleString()}</td>
-                    <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+              <thead>
+                <tr className="bg-emerald-900 text-white">
+                  {["ID", "Item Name", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
+                    <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">Loading branch items...</td></tr>
+                ) : saleItems.length === 0 ? (
+                  <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">No items for sale found</td></tr>
+                ) : (
+                  saleItems.map((item, idx) => (
+                    <tr key={item.id || item.itemId} className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
+                      <td className="whitespace-nowrap px-3 py-2">
+                        <button
+                          onClick={() => setViewingItem(item)}
+                          className="text-xs font-bold text-zinc-900 hover:text-emerald-700 transition-colors hover:underline"
+                        >
+                          {item.itemName}
+                        </button>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500 font-bold italic">{item.availableDate}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-black text-zinc-800">&#8369;{item.price.toLocaleString()}</td>
+                      <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
+                      <td className="px-3 py-2 whitespace-nowrap">
                         {item.status === "Available" ? (
                           <button className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95">
                             Sell Item
@@ -159,14 +159,14 @@ export default function EmployeeItemsForSalePage() {
                         ) : (
                           <span className="text-[10px] font-bold text-zinc-400 italic">Sold to Customer</span>
                         )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
       )}
 
       <div className="rounded-lg border border-zinc-200 bg-white">
@@ -185,7 +185,7 @@ export default function EmployeeItemsForSalePage() {
               </div>
               <h2 className="text-2xl font-black text-white">{viewingItem.itemName}</h2>
             </div>
-            
+
             <div className="p-8 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-1">
@@ -209,7 +209,7 @@ export default function EmployeeItemsForSalePage() {
             </div>
 
             <div className="border-t border-zinc-100 bg-zinc-50/50 px-8 py-4 flex justify-end">
-              <button 
+              <button
                 onClick={() => setViewingItem(null)}
                 className="rounded-xl bg-zinc-900 px-8 py-2.5 text-xs font-black text-white shadow-lg transition-all hover:bg-black active:scale-95"
               >
