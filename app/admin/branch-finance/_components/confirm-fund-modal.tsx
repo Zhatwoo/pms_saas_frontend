@@ -1,54 +1,45 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface ConfirmFundModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (file: File | null) => void;
+  onConfirm: (notes: string) => void;
   amount: number;
+  requestNo?: string;
+  branchName?: string;
 }
 
-export function ConfirmFundModal({ isOpen, onClose, onConfirm, amount }: ConfirmFundModalProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function ConfirmFundModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  amount,
+  requestNo,
+  branchName,
+}: ConfirmFundModalProps) {
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setNotes("");
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      setPreview(URL.createObjectURL(selectedFile));
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      setFile(droppedFile);
-      setPreview(URL.createObjectURL(droppedFile));
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(file);
-    // Reset state after confirm
-    setFile(null);
-    setPreview(null);
-    setPassword("");
+    onConfirm(notes.trim());
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-border-main px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
@@ -56,7 +47,9 @@ export function ConfirmFundModal({ isOpen, onClose, onConfirm, amount }: Confirm
             </div>
             <div>
               <h2 className="text-lg font-bold text-text-primary">Confirm Fund Receipt</h2>
-              <p className="text-xs text-text-secondary">Please upload proof of transaction</p>
+              <p className="text-xs text-text-secondary">
+                Finalize the transfer after your branch has received the funds.
+              </p>
             </div>
           </div>
           <button
@@ -70,87 +63,34 @@ export function ConfirmFundModal({ isOpen, onClose, onConfirm, amount }: Confirm
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5">
-          <div className="mb-6 rounded-xl border border-emerald-500/20 bg-emerald-50/50 p-4 text-center dark:bg-emerald-500/5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Amount to Confirm
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/60 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+              Awaiting Your Confirmation
             </p>
-            <p className="mt-1 text-3xl font-extrabold text-emerald-800 dark:text-emerald-300">
-              ₱{amount.toLocaleString("en-PH")}
+            <p className="mt-2 text-3xl font-extrabold text-emerald-900">
+              PHP {amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className="mt-2 text-xs text-emerald-800/80">
+              {requestNo ? `${requestNo} ` : ""}{branchName ? `for ${branchName}` : ""}
             </p>
           </div>
 
-          <div className="mb-6">
-            <label className="mb-2 block text-sm font-semibold text-text-primary">
-              Upload Proof <span className="text-red-500">*</span>
-            </label>
-            <div
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`relative flex h-40 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
-                preview
-                  ? "border-emerald-500 bg-emerald-50/20"
-                  : "border-border-main bg-surface-secondary hover:border-emerald-400 hover:bg-surface"
-              }`}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileChange}
-                required
-              />
-              
-              {preview ? (
-                <div className="absolute inset-2 overflow-hidden rounded-lg">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={preview} alt="Proof preview" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity hover:opacity-100">
-                    <p className="text-sm font-semibold text-white">Click to change image</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center text-center px-4">
-                  <div className="mb-3 rounded-full bg-surface p-3 shadow-sm">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-text-primary">
-                    Click or drag image here
-                  </p>
-                  <p className="mt-1 text-xs text-text-tertiary">
-                    PNG, JPG, or JPEG (max 5MB)
-                  </p>
-                </div>
-              )}
-            </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
+            Confirm this only after the transfer has been received by your branch. Once confirmed, the request will be marked as transferred and recorded in the branch ledger.
           </div>
 
-          <div className="mb-6">
+          <div>
             <label className="mb-2 block text-sm font-semibold text-text-primary">
-              Admin Password <span className="text-red-500">*</span>
+              Confirmation Notes
             </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-              </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Enter password to confirm"
-                className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-10 pr-4 text-sm text-text-secondary outline-none transition-colors focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold"
-              />
-            </div>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Optional notes about the received funds"
+              className="w-full resize-none rounded-lg border border-input-border bg-input-bg p-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
@@ -163,8 +103,7 @@ export function ConfirmFundModal({ isOpen, onClose, onConfirm, amount }: Confirm
             </button>
             <button
               type="submit"
-              disabled={!file || !password}
-              className="flex items-center gap-2 rounded-lg bg-pawn-gold px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-pawn-gold-hover focus:outline-none focus:ring-2 focus:ring-pawn-gold focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />

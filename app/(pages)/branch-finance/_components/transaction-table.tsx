@@ -12,7 +12,7 @@ export interface FinanceTransaction {
   branchId: string;
   type: "ADD_FUNDS" | "TRANSFER_IN" | "TRANSFER_OUT";
   amount: number;
-  balanceAfter: number;
+  balanceAfter: number | null;
   status: "Pending" | "Approved" | "Rejected";
   approvedBy: string | null;
   approvalDate: string | null;
@@ -133,7 +133,11 @@ export function TransactionTable({
             );
           }
           if (key === "balanceAfter") {
-            return <span className="text-sm font-semibold text-text-primary">{fmt(value)}</span>;
+            return (
+              <span className="text-sm font-semibold text-text-primary">
+                {typeof value === "number" ? fmt(value) : "-"}
+              </span>
+            );
           }
           if (key === "status") {
             const cls = statusConfig[value as keyof typeof statusConfig] || "";

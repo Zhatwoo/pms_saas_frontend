@@ -16,9 +16,13 @@ export interface ApprovalRequest {
 
 interface ApprovalPanelProps {
   requests: ApprovalRequest[];
-  onCancelClick: (id: string) => void;
+  onActionClick: (id: string) => void;
   expanded?: boolean;
   onToggle?: () => void;
+  title?: string;
+  subtitle?: string;
+  actionLabel?: string;
+  actionVariant?: "danger" | "primary";
 }
 
 const typeLabel: Record<string, string> = {
@@ -39,11 +43,19 @@ function fmt(n: number) {
 
 export function ApprovalPanel({
   requests,
-  onCancelClick,
+  onActionClick,
   expanded = false,
   onToggle,
+  title = "Pending Confirmations",
+  subtitle,
+  actionLabel = "Cancel Fund",
+  actionVariant = "danger",
 }: ApprovalPanelProps) {
   const pendingCount = requests.length;
+  const actionClass =
+    actionVariant === "primary"
+      ? "border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20"
+      : "border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20";
 
   if (pendingCount === 0) return null;
 
@@ -73,9 +85,10 @@ export function ApprovalPanel({
             </span>
           </div>
           <div>
-            <h3 className="text-base font-bold text-text-primary">Pending Confirmations</h3>
+            <h3 className="text-base font-bold text-text-primary">{title}</h3>
             <p className="text-xs text-text-muted">
-              {pendingCount} transaction{pendingCount !== 1 ? "s" : ""} waiting for branch admin confirmation
+              {subtitle ??
+                `${pendingCount} transaction${pendingCount !== 1 ? "s" : ""} waiting for branch admin confirmation`}
             </p>
           </div>
         </div>
@@ -134,14 +147,14 @@ export function ApprovalPanel({
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => onCancelClick(req.id)}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-500/20 shadow-sm"
+                    onClick={() => onActionClick(req.id)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-5 py-2.5 text-sm font-bold transition-colors shadow-sm ${actionClass}`}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18" />
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    Cancel Fund
+                    {actionLabel}
                   </button>
                 </div>
               </div>

@@ -30,6 +30,8 @@ interface AddFundsModalProps {
   getManagersForBranch: (branchId: string) => Manager[];
   defaultAmount?: string;
   defaultNotes?: string;
+  allowBranchTransfer?: boolean;
+  submitLabel?: string;
 }
 
 const MULTI_APPROVAL_THRESHOLD = 50_000;
@@ -45,6 +47,8 @@ export function AddFundsModal({
   getManagersForBranch,
   defaultAmount = "",
   defaultNotes = "",
+  allowBranchTransfer = true,
+  submitLabel,
 }: AddFundsModalProps) {
   const [sourceType, setSourceType] = useState<"MANAGEMENT" | "BRANCH_TRANSFER">("MANAGEMENT");
 
@@ -164,26 +168,32 @@ export function AddFundsModal({
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
           {/* Source Toggle */}
-          <div className="flex rounded-lg border border-border-subtle bg-surface-secondary p-1">
-            <button
-              type="button"
-              onClick={() => setSourceType("MANAGEMENT")}
-              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-                !isTransfer ? "bg-surface shadow-sm text-emerald-700 dark:text-emerald-400 border border-emerald-500/20" : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              Management
-            </button>
-            <button
-              type="button"
-              onClick={() => setSourceType("BRANCH_TRANSFER")}
-              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-                isTransfer ? "bg-surface shadow-sm text-blue-700 dark:text-blue-400 border border-blue-500/20" : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              Branch Fund Transfer
-            </button>
-          </div>
+          {allowBranchTransfer ? (
+            <div className="flex rounded-lg border border-border-subtle bg-surface-secondary p-1">
+              <button
+                type="button"
+                onClick={() => setSourceType("MANAGEMENT")}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                  !isTransfer ? "bg-surface shadow-sm text-emerald-700 dark:text-emerald-400 border border-emerald-500/20" : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                Management
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceType("BRANCH_TRANSFER")}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
+                  isTransfer ? "bg-surface shadow-sm text-blue-700 dark:text-blue-400 border border-blue-500/20" : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                Branch Fund Transfer
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border-subtle bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary">
+              Transfer funds to the selected branch request.
+            </div>
+          )}
 
           <div className="h-px w-full bg-border-subtle" />
 
@@ -293,7 +303,7 @@ export function AddFundsModal({
                 isTransfer ? "border-blue-700 bg-blue-600" : "border-emerald-700 bg-emerald-600"
               }`}
             >
-              Submit {isTransfer ? "Transfer" : "Funds"}
+              {submitLabel ?? `Submit ${isTransfer ? "Transfer" : "Funds"}`}
             </button>
           </div>
         </form>

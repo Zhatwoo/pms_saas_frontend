@@ -1,682 +1,562 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
+import { api } from "@/lib/api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AddFundsModal } from "./_components/add-funds-modal";
+import type { UnifiedFundResult } from "./_components/add-funds-modal";
+import { ApprovalPanel } from "./_components/approval-panel";
+import type { ApprovalRequest } from "./_components/approval-panel";
 import { BalanceOverview } from "./_components/balance-overview";
 import type { BranchBalance } from "./_components/balance-overview";
-import { AddFundsModal } from "./_components/add-funds-modal";
-import type { UnifiedFundResult, Manager } from "./_components/add-funds-modal";
-import { CancelFundModal } from "./_components/cancel-fund-modal";
 import { IncomingRequestsPanel } from "./_components/incoming-requests-panel";
 import type { BranchFundRequest } from "./_components/incoming-requests-panel";
 import { RejectRequestModal } from "./_components/reject-request-modal";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
 import type { FinanceTransaction } from "./_components/transaction-table";
-import { ApprovalPanel } from "./_components/approval-panel";
-import type { ApprovalRequest } from "./_components/approval-panel";
 
-/* ══════════════════════════════════════════════════════════
-   MOCK DATA
-   ══════════════════════════════════════════════════════════ */
-const MOCK_BALANCES: BranchBalance[] = [
-  {
-    branchId: "001",
-    name: "Main Branch",
-    startingBalance: 500_000,
-    currentBalance: 485_000,
-    totalAdded: 150_000,
-    totalTransferred: 165_000,
-    lastUpdated: "2026-04-10T08:00:00Z",
-    status: "Active",
-  },
-  {
-    branchId: "002",
-    name: "BGC Branch",
-    startingBalance: 300_000,
-    currentBalance: 342_000,
-    totalAdded: 80_000,
-    totalTransferred: 38_000,
-    lastUpdated: "2026-04-10T09:30:00Z",
-    status: "Active",
-  },
-  {
-    branchId: "003",
-    name: "Makati Branch",
-    startingBalance: 250_000,
-    currentBalance: 273_500,
-    totalAdded: 45_000,
-    totalTransferred: 21_500,
-    lastUpdated: "2026-04-09T16:45:00Z",
-    status: "Active",
-  },
-  {
-    branchId: "004",
-    name: "Quezon City Branch",
-    startingBalance: 200_000,
-    currentBalance: 188_000,
-    totalAdded: 30_000,
-    totalTransferred: 42_000,
-    lastUpdated: "2026-04-09T14:20:00Z",
-    status: "Active",
-  },
-];
+interface DashboardSummary {
+  view: "super_admin";
+  summary: {
+    branches: {
+      total: number;
+      active: number;
+      inactive: number;
+    };
+    users: {
+      total: number;
+      pendingApproval: number;
+    };
+    fundRequests: {
+      total: number;
+      pending: number;
+      approved: number;
+      rejected: number;
+      transferred: number;
+      cancelled: number;
+      totalRequested: number;
+      totalApproved: number;
+      totalTransferred: number;
+    };
+  };
+  branchBalances: Array<{
+    branchId: string;
+    branchCode: string | null;
+    name: string;
+    location: string | null;
+    status: string;
+    startingBalance: number;
+    currentBalance: number;
+    totalAdded: number;
+    totalTransferred: number;
+    lastUpdated: string | null;
+  }>;
+}
 
-const MOCK_MANAGERS: Record<string, Manager[]> = {
-  "001": [{ id: "mgr-001", name: "Juan Dela Cruz", role: "admin" }],
-  "002": [
-    { id: "mgr-002", name: "Maria Santos", role: "admin" },
-    { id: "mgr-003", name: "Pedro Reyes", role: "admin" },
-  ],
-  "003": [{ id: "mgr-004", name: "Ana Garcia", role: "admin" }],
-  "004": [
-    { id: "mgr-005", name: "Carlos Rivera", role: "admin" },
-    { id: "mgr-006", name: "Rosa Aquino", role: "admin" },
-  ],
-};
+interface FundRequestRecord {
+  id: string;
+  requestNo: string;
+  branchId: string;
+  amountRequested: number;
+  purpose: string;
+  notes: string | null;
+  status: "pending" | "approved" | "pending_confirmation" | "rejected" | "transferred" | "cancelled";
+  approvedAmount: number | null;
+  reviewedAt: string | null;
+  reviewNotes: string | null;
+  amountTransferred: number | null;
+  transferredAt: string | null;
+  transferReference: string | null;
+  transferNotes: string | null;
+  confirmationNotes: string | null;
+  confirmedAt: string | null;
+  relatedTransactionId: string | null;
+  createdAt: string;
+  branch: {
+    id: string;
+    name: string;
+    branchCode: string | null;
+    location: string | null;
+  } | null;
+  requestedBy: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+  } | null;
+  reviewedBy: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+  } | null;
+  transferredBy: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+  } | null;
+}
 
-const INITIAL_TRANSACTIONS: FinanceTransaction[] = [
-  {
-    id: "TXN-001",
-    date: "2026-04-10",
-    branch: "Main Branch",
-    branchId: "001",
-    type: "ADD_FUNDS",
-    amount: 50_000,
-    balanceAfter: 535_000,
-    status: "Approved",
-    approvedBy: "Juan Dela Cruz",
-    approvalDate: "2026-04-10",
-    notes: "Weekly fund allocation",
-  },
-  {
-    id: "TXN-002",
-    date: "2026-04-09",
-    branch: "Main Branch",
-    branchId: "001",
-    type: "TRANSFER_OUT",
-    amount: 20_000,
-    balanceAfter: 485_000,
-    status: "Approved",
-    approvedBy: "Juan Dela Cruz",
-    approvalDate: "2026-04-09",
-    notes: "Transfer to BGC Branch",
-  },
-  {
-    id: "TXN-003",
-    date: "2026-04-09",
-    branch: "BGC Branch",
-    branchId: "002",
-    type: "TRANSFER_IN",
-    amount: 20_000,
-    balanceAfter: 342_000,
-    status: "Approved",
-    approvedBy: "Maria Santos",
-    approvalDate: "2026-04-09",
-    notes: "Received from Main Branch",
-  },
-  {
-    id: "TXN-004",
-    date: "2026-04-10",
-    branch: "BGC Branch",
-    branchId: "002",
-    type: "ADD_FUNDS",
-    amount: 75_000,
-    balanceAfter: 417_000,
-    status: "Pending",
-    approvedBy: null,
-    approvalDate: null,
-    notes: "Emergency fund request",
-  },
-  {
-    id: "TXN-005",
-    date: "2026-04-08",
-    branch: "Makati Branch",
-    branchId: "003",
-    type: "ADD_FUNDS",
-    amount: 25_000,
-    balanceAfter: 273_500,
-    status: "Approved",
-    approvedBy: "Ana Garcia",
-    approvalDate: "2026-04-08",
-    notes: "Monthly replenishment",
-  },
-  {
-    id: "TXN-006",
-    date: "2026-04-08",
-    branch: "Quezon City Branch",
-    branchId: "004",
-    type: "TRANSFER_OUT",
-    amount: 15_000,
-    balanceAfter: 188_000,
-    status: "Approved",
-    approvedBy: "Carlos Rivera",
-    approvalDate: "2026-04-08",
-    notes: "Emergency transfer to Makati",
-  },
-  {
-    id: "TXN-007",
-    date: "2026-04-08",
-    branch: "Makati Branch",
-    branchId: "003",
-    type: "TRANSFER_IN",
-    amount: 15_000,
-    balanceAfter: 288_500,
-    status: "Approved",
-    approvedBy: "Ana Garcia",
-    approvalDate: "2026-04-08",
-    notes: "Received from QC Branch",
-  },
-  {
-    id: "TXN-008",
-    date: "2026-04-10",
-    branch: "Main Branch",
-    branchId: "001",
-    type: "TRANSFER_OUT",
-    amount: 30_000,
-    balanceAfter: 455_000,
-    status: "Pending",
-    approvedBy: null,
-    approvalDate: null,
-    notes: "Transfer to Quezon City Branch",
-  },
-  {
-    id: "TXN-009",
-    date: "2026-04-07",
-    branch: "BGC Branch",
-    branchId: "002",
-    type: "ADD_FUNDS",
-    amount: 40_000,
-    balanceAfter: 322_000,
-    status: "Rejected",
-    approvedBy: "Maria Santos",
-    approvalDate: "2026-04-07",
-    notes: "Budget not approved by HQ",
-  },
-  {
-    id: "TXN-010",
-    date: "2026-04-07",
-    branch: "Quezon City Branch",
-    branchId: "004",
-    type: "ADD_FUNDS",
-    amount: 60_000,
-    balanceAfter: 248_000,
-    status: "Pending",
-    approvedBy: null,
-    approvalDate: null,
-    notes: "Large cash replenishment",
-  },
-];
+interface ApiTransaction {
+  id: string;
+  transaction_date: string;
+  branch_id: string;
+  branch: string;
+  purpose: string;
+  cash_in: number | string | null;
+  cash_out: number | string | null;
+  details: string | null;
+  unit?: string | null;
+}
 
-const INITIAL_APPROVALS: ApprovalRequest[] = [
-  {
-    id: "APR-001",
-    type: "ADD_FUNDS",
-    amount: 75_000,
-    requestedBy: "Super Admin",
-    branch: "BGC Branch",
-    date: "2026-04-10",
-    requiredApprovers: 2,
-    currentApprovals: 0,
-    notes: "Emergency fund request",
-  },
-  {
-    id: "APR-002",
-    type: "TRANSFER_OUT",
-    amount: 30_000,
-    requestedBy: "Super Admin",
-    branch: "Main Branch",
-    date: "2026-04-10",
-    requiredApprovers: 1,
-    currentApprovals: 0,
-    notes: "Transfer to Quezon City Branch",
-  },
-  {
-    id: "APR-003",
-    type: "ADD_FUNDS",
-    amount: 60_000,
-    requestedBy: "Super Admin",
-    branch: "Quezon City Branch",
-    date: "2026-04-07",
-    requiredApprovers: 2,
-    currentApprovals: 1,
-    notes: "Large cash replenishment",
-  },
-];
+function fmtCurrency(value: number) {
+  return `PHP ${value.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
-const INITIAL_INCOMING_REQUESTS: BranchFundRequest[] = [
-  {
-    id: "REQ-101",
-    branchId: "002",
-    branchName: "BGC Branch",
-    amount: 15_000,
-    category: "Petty Cash",
-    notes: "Replenishing vault petty cash for the week.",
-    date: "2026-04-10T10:15:00Z",
-  },
-  {
-    id: "REQ-102",
-    branchId: "003",
-    branchName: "Makati Branch",
-    amount: 45_000,
-    category: "Operations",
-    notes: "Requires additional funds for weekend payroll and expected high customer volume.",
-    date: "2026-04-09T14:30:00Z",
-  },
-];
-
-/* ══════════════════════════════════════════════════════════
-   PAGE COMPONENT
-   ══════════════════════════════════════════════════════════ */
 export default function BranchFinancePage() {
-  const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
 
-  // State
-  const [balances, setBalances] = useState<BranchBalance[]>(MOCK_BALANCES);
-  const [transactions, setTransactions] = useState<FinanceTransaction[]>(INITIAL_TRANSACTIONS);
-  const [approvals, setApprovals] = useState<ApprovalRequest[]>(INITIAL_APPROVALS);
-  const [incomingRequests, setIncomingRequests] = useState<BranchFundRequest[]>(INITIAL_INCOMING_REQUESTS);
-  const [activePanel, setActivePanel] = useState<"incoming" | "approval" | null>("incoming");
-
-  // Modals
-  const [addFundsOpen, setAddFundsOpen] = useState(false);
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
-  const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  
-  // Add Funds specific overrides for fulfilling requests
-  const [addFundsOverride, setAddFundsOverride] = useState<{
-    branchId: string;
-    branchName: string;
-    amount: string;
-    notes: string;
-    requestId: string;
-  } | null>(null);
-
-  const [selectedCancelId, setSelectedCancelId] = useState<string | null>(null);
-  const [selectedRejectId, setSelectedRejectId] = useState<string | null>(null);
-
-  const selectedCancelAmount = useMemo(() => {
-    return approvals.find((a) => a.id === selectedCancelId)?.amount || 0;
-  }, [approvals, selectedCancelId]);
-
-  const selectedRejectReq = useMemo(() => {
-    return incomingRequests.find((r) => r.id === selectedRejectId);
-  }, [incomingRequests, selectedRejectId]);
-
-  // Filters
+  const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
+  const [fundRequests, setFundRequests] = useState<FundRequestRecord[]>([]);
+  const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [activePanel, setActivePanel] = useState<"incoming" | "approval" | null>("incoming");
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [selectedRejectRequest, setSelectedRejectRequest] = useState<FundRequestRecord | null>(null);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [selectedTransferRequest, setSelectedTransferRequest] = useState<FundRequestRecord | null>(null);
 
-  // Toast
-  const [toast, setToast] = useState<string | null>(null);
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2500);
+  }, []);
 
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  }
+  const loadFinanceData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-  // Current branch info
-  const currentBranchId = isAllBranches ? "001" : selectedBranch.id;
-  const currentBranchName = isAllBranches
-    ? "All Branches"
-    : selectedBranch.name;
+    const branchQuery = isAllBranches ? "" : `?branch=${selectedBranch.id}`;
 
-  const getManagersForBranch = useCallback(
-    (branchId: string, branchName?: string): Manager[] => {
-      if (MOCK_MANAGERS[branchId]) return MOCK_MANAGERS[branchId];
-      if (!branchName) return [];
-      
-      const mappedId = Object.keys(MOCK_MANAGERS).find(
-         (id) => MOCK_BALANCES.find((b) => b.branchId === id)?.name === branchName
+    try {
+      const [dashboardData, requestData, transactionData] = await Promise.all([
+        api.get<DashboardSummary>("/dashboard"),
+        api.get<FundRequestRecord[]>(`/fund-requests${branchQuery}`),
+        api.get<ApiTransaction[]>(`/transactions${branchQuery}`),
+      ]);
+
+      const transferRequestByTransactionId = new Map(
+        requestData
+          .filter((request) => request.relatedTransactionId)
+          .map((request) => [request.relatedTransactionId as string, request]),
       );
-      if (mappedId && MOCK_MANAGERS[mappedId]) {
-         return MOCK_MANAGERS[mappedId];
-      }
-      return [];
-    },
-    [],
-  );
 
-  const currentManagers = useMemo(
-    () => getManagersForBranch(currentBranchId, currentBranchName),
-    [currentBranchId, currentBranchName, getManagersForBranch],
-  );
+      const liveTransactions: FinanceTransaction[] = transactionData
+        .filter(
+          (transaction) =>
+            transaction.purpose === "Fund Transfer" ||
+            transaction.unit === "fund_transfer",
+        )
+        .map((transaction) => {
+          const relatedRequest = transferRequestByTransactionId.get(transaction.id);
+          const cashIn = Number(transaction.cash_in ?? 0);
+          const cashOut = Number(transaction.cash_out ?? 0);
 
-  // Scoped balances based on branch selection
-  const scopedBalances = useMemo(() => {
-    if (isAllBranches) return balances;
-    return balances.filter((b) => b.branchId === selectedBranch.id || b.name === selectedBranch.name);
-  }, [balances, isAllBranches, selectedBranch.id, selectedBranch.name]);
+          return {
+            id: transaction.id,
+            date: transaction.transaction_date,
+            branch: transaction.branch,
+            branchId: transaction.branch_id,
+            type: cashOut > 0 ? "TRANSFER_OUT" : "ADD_FUNDS",
+            amount: cashOut > 0 ? cashOut : cashIn,
+            balanceAfter: null,
+            status: "Approved" as const,
+            approvedBy: relatedRequest?.transferredBy?.fullName ?? "Super Admin",
+            approvalDate: relatedRequest?.transferredAt ?? null,
+            notes:
+              relatedRequest?.transferNotes ??
+              relatedRequest?.reviewNotes ??
+              transaction.details ??
+              "Fund transfer processed",
+          };
+        });
 
-  // Scoped transactions
-  const scopedTransactions = useMemo(() => {
-    if (isAllBranches) return transactions;
-    return transactions.filter((t) => t.branchId === selectedBranch.id || t.branch === selectedBranch.name);
-  }, [transactions, isAllBranches, selectedBranch.id, selectedBranch.name]);
-
-  // Scoped incoming requests
-  const scopedIncomingRequests = useMemo(() => {
-    if (isAllBranches) return incomingRequests;
-    return incomingRequests.filter((r) => r.branchId === selectedBranch.id || r.branchName === selectedBranch.name);
-  }, [incomingRequests, isAllBranches, selectedBranch.id, selectedBranch.name]);
-
-  // Scoped approvals
-  const scopedApprovals = useMemo(() => {
-    if (isAllBranches) return approvals;
-    return approvals.filter((a) => a.branch === selectedBranch.name);
-  }, [approvals, isAllBranches, selectedBranch.name]);
-
-  // Generate unique txn ID
-  function nextTxnId() {
-    return `TXN-${String(transactions.length + 1).padStart(3, "0")}`;
-  }
-
-  function nextAprId() {
-    return `APR-${String(approvals.length + 1).padStart(3, "0")}`;
-  }
-
-  /* ── Handles Incoming Requests ──────────────────────── */
-  function handleFulfillRequest(req: BranchFundRequest) {
-    setAddFundsOverride({
-      branchId: req.branchId,
-      branchName: req.branchName,
-      amount: req.amount.toString(),
-      notes: req.notes,
-      requestId: req.id,
-    });
-    // This override forces the unified modal to target this specific branch.
-    setAddFundsOpen(true);
-  }
-
-  function handleRejectRequestClick(id: string) {
-    setSelectedRejectId(id);
-    setRejectModalOpen(true);
-  }
-
-  function handleRejectConfirm(reason: string) {
-    if (!selectedRejectId) return;
-    setIncomingRequests((prev) => prev.filter((r) => r.id !== selectedRejectId));
-    setRejectModalOpen(false);
-    setSelectedRejectId(null);
-    showToast("Request rejected and dismissed");
-  }
-
-  /* ── Unified Fund Submission ───────────────────────── */
-  function handleAddFunds(data: UnifiedFundResult) {
-    if (data.sourceType === "MANAGEMENT") {
-      const targetBranchId = addFundsOverride ? addFundsOverride.branchId : currentBranchId;
-      const branch = balances.find((b) => b.branchId === targetBranchId);
-      if (!branch) return;
-
-      const newTxn: FinanceTransaction = {
-        id: nextTxnId(),
-        date: new Date().toISOString().slice(0, 10),
-        branch: branch.name,
-        branchId: branch.branchId,
-        type: "ADD_FUNDS",
-        amount: data.amount,
-        balanceAfter: branch.currentBalance + data.amount,
-        status: "Pending",
-        approvedBy: null,
-        approvalDate: null,
-        notes: data.notes || "Fund addition from HQ",
-      };
-
-      const newApproval: ApprovalRequest = {
-        id: nextAprId(),
-        type: "ADD_FUNDS",
-        amount: data.amount,
-        requestedBy: user?.fullName || "Super Admin",
-        branch: branch.name,
-        date: new Date().toISOString().slice(0, 10),
-        requiredApprovers: data.requireAllOrReceiving ? data.approvers.length : 1,
-        currentApprovals: 0,
-        notes: data.notes || "",
-      };
-
-      setTransactions((prev) => [newTxn, ...prev]);
-      setApprovals((prev) => [newApproval, ...prev]);
-      showToast("Fund request submitted for approval");
-      
-      if (addFundsOverride) {
-        setIncomingRequests((prev) => prev.filter((r) => r.id !== addFundsOverride.requestId));
-        setAddFundsOverride(null);
-      }
-    } else {
-      // BRANCH_TRANSFER logic
-      const fromBranch = balances.find((b) => b.branchId === data.fromBranchId);
-      const toBranch = balances.find((b) => b.branchId === data.toBranchId);
-      if (!fromBranch || !toBranch) return;
-
-      const txnOut: FinanceTransaction = {
-        id: nextTxnId(),
-        date: new Date().toISOString().slice(0, 10),
-        branch: fromBranch.name,
-        branchId: fromBranch.branchId,
-        type: "TRANSFER_OUT",
-        amount: data.amount,
-        balanceAfter: fromBranch.currentBalance - data.amount,
-        status: "Pending",
-        approvedBy: null,
-        approvalDate: null,
-        notes: `Transfer to ${toBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
-      };
-
-      const txnIn: FinanceTransaction = {
-        id: `${nextTxnId()}-IN`,
-        date: new Date().toISOString().slice(0, 10),
-        branch: toBranch.name,
-        branchId: toBranch.branchId,
-        type: "TRANSFER_IN",
-        amount: data.amount,
-        balanceAfter: toBranch.currentBalance + data.amount,
-        status: "Pending",
-        approvedBy: null,
-        approvalDate: null,
-        notes: `Received from ${fromBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
-      };
-
-      const newApproval: ApprovalRequest = {
-        id: nextAprId(),
-        type: "TRANSFER_OUT",
-        amount: data.amount,
-        requestedBy: user?.fullName || "Super Admin",
-        branch: fromBranch.name,
-        date: new Date().toISOString().slice(0, 10),
-        requiredApprovers: data.approvers.length > 1 ? data.approvers.length : 1, // simplified assumption based on Transfer modal logic
-        currentApprovals: 0,
-        notes: `To ${toBranch.name}${data.notes ? ` — ${data.notes}` : ""}`,
-      };
-
-      setTransactions((prev) => [txnIn, txnOut, ...prev]);
-      setApprovals((prev) => [newApproval, ...prev]);
-      showToast("Branch transfer submitted for approval");
+      setDashboard(dashboardData);
+      setFundRequests(requestData);
+      setTransactions(liveTransactions);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load branch finance data.");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  }, [isAllBranches, selectedBranch.id]);
 
-  /* ── Cancel Transfer ────────────────────────────────── */
-  function handleCancelConfirm(reason: string) {
-    if (!selectedCancelId) return;
-    
-    const req = approvals.find((a) => a.id === selectedCancelId);
-    if (!req) return;
+  useEffect(() => {
+    void loadFinanceData();
+  }, [loadFinanceData]);
 
-    // Update transaction status to Cancelled
-    setTransactions((txns) =>
-      txns.map((t) => {
-        const matchesBranch = t.branch === req.branch;
-        const matchesType =
-          t.type === req.type ||
-          (req.type === "TRANSFER_OUT" && (t.type === "TRANSFER_OUT" || t.type === "TRANSFER_IN"));
-        const matchesAmount = t.amount === req.amount;
-        const isPending = t.status === "Pending";
+  useEffect(() => {
+    setBranchFilter(isAllBranches ? "all" : selectedBranch.id);
+  }, [isAllBranches, selectedBranch.id]);
 
-        if (matchesBranch && matchesType && matchesAmount && isPending) {
-          return {
-            ...t,
-            status: "Rejected" as const, // Meaning Cancelled
-            notes: `${t.notes} [Cancelled: ${reason}]`,
-          };
-        }
-        
-        // If transfer, also update the paired TRANSFER_IN
-        if (req.type === "TRANSFER_OUT" && t.type === "TRANSFER_IN" && t.amount === req.amount && t.status === "Pending") {
-          return {
-            ...t,
-            status: "Rejected" as const, // Meaning Cancelled
-            notes: `${t.notes} [Cancelled: ${reason}]`,
-          };
-        }
-        return t;
-      }),
-    );
+  const branchBalances = useMemo<BranchBalance[]>(
+    () =>
+      (dashboard?.branchBalances ?? []).map((branch) => ({
+        branchId: branch.branchId,
+        name: branch.name,
+        startingBalance: branch.startingBalance,
+        currentBalance: branch.currentBalance,
+        totalAdded: branch.totalAdded,
+        totalTransferred: branch.totalTransferred,
+        lastUpdated: branch.lastUpdated ?? new Date().toISOString(),
+        status: branch.status,
+      })),
+    [dashboard],
+  );
 
-    // Remove from pending confirmations
-    setApprovals((prev) => prev.filter((a) => a.id !== selectedCancelId));
-    
-    setCancelModalOpen(false);
-    setSelectedCancelId(null);
-    showToast("Transaction successfully cancelled");
-  }
+  const scopedBalances = useMemo(() => {
+    if (isAllBranches) return branchBalances;
+    return branchBalances.filter((branch) => branch.branchId === selectedBranch.id);
+  }, [branchBalances, isAllBranches, selectedBranch.id]);
 
-  function clearFilters() {
+  const pendingRequests = useMemo<FundRequestRecord[]>(
+    () => fundRequests.filter((request) => request.status === "pending"),
+    [fundRequests],
+  );
+
+  const approvedRequests = useMemo<FundRequestRecord[]>(
+    () => fundRequests.filter((request) => request.status === "approved"),
+    [fundRequests],
+  );
+
+  const pendingConfirmationRequests = useMemo<FundRequestRecord[]>(
+    () => fundRequests.filter((request) => request.status === "pending_confirmation"),
+    [fundRequests],
+  );
+
+  const incomingRequests = useMemo<BranchFundRequest[]>(
+    () =>
+      pendingRequests.map((request) => ({
+        id: request.id,
+        branchId: request.branch?.id ?? request.branchId,
+        branchName: request.branch?.name ?? "Unknown Branch",
+        amount: request.amountRequested,
+        category: request.purpose,
+        notes: request.notes ?? "",
+        date: request.createdAt,
+      })),
+    [pendingRequests],
+  );
+
+  const approvalRequests = useMemo<ApprovalRequest[]>(
+    () =>
+      approvedRequests.map((request) => ({
+        id: request.id,
+        type: "ADD_FUNDS",
+        amount: request.approvedAmount ?? request.amountRequested,
+        requestedBy: request.requestedBy?.fullName ?? "Branch Admin",
+        branch: request.branch?.name ?? "Unknown Branch",
+        date: request.reviewedAt ?? request.createdAt,
+        requiredApprovers: 1,
+        currentApprovals: 1,
+        notes: request.reviewNotes ?? request.notes ?? "Approved and ready for transfer",
+      })),
+    [approvedRequests],
+  );
+
+  const availableBranches = useMemo(
+    () => branchBalances.map((branch) => ({ branchId: branch.branchId, name: branch.name })),
+    [branchBalances],
+  );
+
+  const handleRejectRequestClick = useCallback((id: string) => {
+    const target = pendingRequests.find((request) => request.id === id) ?? null;
+    setSelectedRejectRequest(target);
+    setRejectModalOpen(true);
+  }, [pendingRequests]);
+
+  const handleApproveRequest = useCallback(
+    async (request: BranchFundRequest) => {
+      try {
+        await api.patch<FundRequestRecord>(`/fund-requests/${request.id}/review`, {
+          decision: "approved",
+          approvedAmount: request.amount,
+          reviewNotes: `Approved for ${request.branchName}`,
+        });
+        showToast("Fund request approved. It is now ready for transfer.");
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to approve request.");
+      }
+    },
+    [loadFinanceData, showToast],
+  );
+
+  const handleRejectConfirm = useCallback(
+    async (reason: string) => {
+      if (!selectedRejectRequest) return;
+      try {
+        await api.patch<FundRequestRecord>(
+          `/fund-requests/${selectedRejectRequest.id}/review`,
+          {
+            decision: "rejected",
+            reviewNotes: reason,
+          },
+        );
+        setRejectModalOpen(false);
+        setSelectedRejectRequest(null);
+        showToast("Fund request rejected.");
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to reject request.");
+      }
+    },
+    [loadFinanceData, selectedRejectRequest, showToast],
+  );
+
+  const handleTransferRequestClick = useCallback((id: string) => {
+    const target = approvedRequests.find((request) => request.id === id) ?? null;
+    setSelectedTransferRequest(target);
+    setTransferModalOpen(true);
+  }, [approvedRequests]);
+
+  const handleTransferSubmit = useCallback(
+    async (data: UnifiedFundResult) => {
+      if (!selectedTransferRequest) return;
+      if (data.sourceType !== "MANAGEMENT") {
+        setError("Branch-to-branch transfers are not connected to the backend yet.");
+        return;
+      }
+
+      try {
+        await api.patch<FundRequestRecord>(
+          `/fund-requests/${selectedTransferRequest.id}/transfer`,
+          {
+            amount: data.amount,
+            transferNotes: data.notes,
+          },
+        );
+        setTransferModalOpen(false);
+        setSelectedTransferRequest(null);
+        showToast("Funds sent to the branch and are now awaiting branch confirmation.");
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to transfer funds.");
+      }
+    },
+    [loadFinanceData, selectedTransferRequest, showToast],
+  );
+
+  const handleHeaderTransfer = useCallback(() => {
+    if (approvedRequests.length === 1) {
+      setSelectedTransferRequest(approvedRequests[0]);
+      setTransferModalOpen(true);
+      return;
+    }
+
+    showToast("Use the Approved Requests panel below to transfer a specific request.");
+  }, [approvedRequests, showToast]);
+
+  const clearFilters = useCallback(() => {
     setSearchQuery("");
-    setBranchFilter("all");
+    setBranchFilter(isAllBranches ? "all" : selectedBranch.id);
     setDateFrom("");
     setDateTo("");
-  }
+  }, [isAllBranches, selectedBranch.id]);
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {toast && (
+      {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-300/70 bg-emerald-100/70 px-5 py-3 shadow-xl backdrop-blur-sm">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </span>
-            <span className="text-sm font-semibold text-emerald-900">{toast}</span>
+          <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+            {toast}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* Page header */}
       <div>
         <p className="mt-1 text-sm text-text-tertiary">
-          Manage branch finances, fund allocations, and inter-branch transfers.
+          Review branch fund requests, transfer approved funds, and track transfer history from live backend data.
         </p>
       </div>
 
-      {/* Section 1: Balance Overview */}
-      <BalanceOverview
-        isAllBranches={isAllBranches}
-        selectedBranchId={currentBranchId}
-        selectedBranchName={isAllBranches ? "All Branches" : selectedBranch.name}
-        balances={scopedBalances}
-        onAddFunds={() => setAddFundsOpen(true)}
-      />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
-        {/* Incoming Requests Panel */}
-        <IncomingRequestsPanel
-          requests={scopedIncomingRequests}
-          onFulfill={handleFulfillRequest}
-          onReject={handleRejectRequestClick}
-          expanded={activePanel === "incoming"}
-          onToggle={() => setActivePanel(activePanel === "incoming" ? null : "incoming")}
-        />
-
-        {/* Approval Panel */}
-        <ApprovalPanel
-          requests={scopedApprovals}
-          onCancelClick={(id) => {
-            setSelectedCancelId(id);
-            setCancelModalOpen(true);
-          }}
-          expanded={activePanel === "approval"}
-          onToggle={() => setActivePanel(activePanel === "approval" ? null : "approval")}
-        />
-      </div>
-
-      {/* Section 3: Transaction History */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-surface text-emerald-text">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
-          </div>
-          <h2 className="text-sm font-bold text-text-primary">Transaction History</h2>
+      {error ? (
+        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      ) : null}
 
-        <TransactionFilters
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          branchFilter={branchFilter}
-          onBranchFilterChange={setBranchFilter}
-          dateFrom={dateFrom}
-          onDateFromChange={setDateFrom}
-          dateTo={dateTo}
-          onDateToChange={setDateTo}
-          branches={balances}
-          onClearFilters={clearFilters}
-        />
+      {isLoading ? (
+        <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
+          Loading branch finance data...
+        </div>
+      ) : (
+        <>
+          <BalanceOverview
+            isAllBranches={isAllBranches}
+            selectedBranchId={selectedBranch.id}
+            selectedBranchName={selectedBranch.name}
+            balances={scopedBalances}
+            onAddFunds={handleHeaderTransfer}
+          />
 
-        <TransactionTable
-          transactions={scopedTransactions}
-          searchQuery={searchQuery}
-          branchFilter={branchFilter}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-        />
-      </div>
+          <div className="rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-[11px] text-text-muted">
+            Branch admins submit requests first. After approval, release the funds from the panel below. The request stays in pending confirmation until the requesting branch admin confirms receipt.
+          </div>
 
-      {/* Modals */}
-      <AddFundsModal
-        isOpen={addFundsOpen}
-        onClose={() => {
-          setAddFundsOpen(false);
-          setAddFundsOverride(null);
-        }}
-        onSubmit={handleAddFunds}
-        branchName={addFundsOverride ? addFundsOverride.branchName : currentBranchName}
-        managers={addFundsOverride ? getManagersForBranch(addFundsOverride.branchId, addFundsOverride.branchName) : currentManagers}
-        branches={balances}
-        currentBranchId={currentBranchId}
-        getManagersForBranch={getManagersForBranch}
-        defaultAmount={addFundsOverride ? addFundsOverride.amount : ""}
-        defaultNotes={addFundsOverride ? addFundsOverride.notes : ""}
-      />
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+            <IncomingRequestsPanel
+              requests={incomingRequests}
+              onFulfill={handleApproveRequest}
+              onReject={handleRejectRequestClick}
+              expanded={activePanel === "incoming"}
+              onToggle={() =>
+                setActivePanel(activePanel === "incoming" ? null : "incoming")
+              }
+            />
 
-      <CancelFundModal
-        isOpen={cancelModalOpen}
-        onClose={() => {
-          setCancelModalOpen(false);
-          setSelectedCancelId(null);
-        }}
-        onConfirm={handleCancelConfirm}
-        amount={selectedCancelAmount}
-      />
+            <ApprovalPanel
+              requests={approvalRequests}
+              onActionClick={handleTransferRequestClick}
+              expanded={activePanel === "approval"}
+              onToggle={() =>
+                setActivePanel(activePanel === "approval" ? null : "approval")
+              }
+              title="Approved Requests Ready for Transfer"
+              subtitle={
+                approvalRequests.length === 0
+                  ? "No approved requests are waiting for transfer."
+                  : `${approvalRequests.length} approved request${approvalRequests.length === 1 ? "" : "s"} ready for fund release`
+              }
+              actionLabel="Transfer Funds"
+              actionVariant="primary"
+            />
+          </div>
+
+          <div className="rounded-xl border border-violet-300/40 bg-violet-50/60 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-text-primary">Awaiting Branch Confirmation</h3>
+                <p className="text-xs text-text-muted">
+                  {pendingConfirmationRequests.length === 0
+                    ? "No released transfers are waiting for branch confirmation."
+                    : `${pendingConfirmationRequests.length} request${pendingConfirmationRequests.length === 1 ? "" : "s"} sent by Super Admin and awaiting confirmation from the requesting branch.`}
+                </p>
+              </div>
+            </div>
+
+            {pendingConfirmationRequests.length > 0 ? (
+              <div className="mt-4 space-y-3">
+                {pendingConfirmationRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="rounded-lg border border-violet-200 bg-white px-4 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">
+                          {request.requestNo} - {fmtCurrency(request.amountTransferred ?? request.approvedAmount ?? request.amountRequested)}
+                        </p>
+                        <p className="mt-1 text-xs text-text-secondary">
+                          {request.branch?.name ?? "Unknown Branch"}
+                        </p>
+                        <p className="mt-1 text-xs text-text-muted">
+                          Requested by {request.requestedBy?.fullName ?? "Branch Admin"}
+                        </p>
+                        <p className="mt-1 text-xs text-text-muted">
+                          Sent for confirmation: {new Date(request.transferredAt ?? request.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {request.transferNotes ? (
+                          <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
+                        ) : null}
+                      </div>
+                      <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
+                        Pending Confirmation
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-surface text-emerald-text">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+              </div>
+              <h2 className="text-sm font-bold text-text-primary">Transfer History</h2>
+            </div>
+
+            <TransactionFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              branchFilter={branchFilter}
+              onBranchFilterChange={setBranchFilter}
+              dateFrom={dateFrom}
+              onDateFromChange={setDateFrom}
+              dateTo={dateTo}
+              onDateToChange={setDateTo}
+              branches={availableBranches}
+              onClearFilters={clearFilters}
+            />
+
+            <TransactionTable
+              transactions={transactions}
+              searchQuery={searchQuery}
+              branchFilter={branchFilter}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+            />
+          </div>
+        </>
+      )}
 
       <RejectRequestModal
         isOpen={rejectModalOpen}
         onClose={() => {
           setRejectModalOpen(false);
-          setSelectedRejectId(null);
+          setSelectedRejectRequest(null);
         }}
         onConfirm={handleRejectConfirm}
-        amount={selectedRejectReq?.amount || 0}
-        branchName={selectedRejectReq?.branchName || ""}
+        amount={selectedRejectRequest?.amountRequested ?? 0}
+        branchName={selectedRejectRequest?.branch?.name ?? ""}
+      />
+
+      <AddFundsModal
+        isOpen={transferModalOpen}
+        onClose={() => {
+          setTransferModalOpen(false);
+          setSelectedTransferRequest(null);
+        }}
+        onSubmit={handleTransferSubmit}
+        branchName={selectedTransferRequest?.branch?.name ?? selectedBranch.name}
+        managers={[]}
+        branches={branchBalances}
+        currentBranchId={selectedTransferRequest?.branch?.id ?? selectedBranch.id}
+        getManagersForBranch={() => []}
+        defaultAmount={String(selectedTransferRequest?.approvedAmount ?? selectedTransferRequest?.amountRequested ?? "")}
+        defaultNotes={selectedTransferRequest?.reviewNotes ?? selectedTransferRequest?.notes ?? ""}
+        allowBranchTransfer={false}
+        submitLabel="Confirm and Send"
       />
     </div>
   );
