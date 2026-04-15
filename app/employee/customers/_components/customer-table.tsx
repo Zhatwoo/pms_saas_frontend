@@ -108,7 +108,7 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
           if (key === "actions") {
             return (
               <button
-                onClick={() => router.push(`/employee/customers/${row.id}`)}
+                onClick={() => router.push(`/employee/customers/view_user?id=${row.id}`)}
                 className="mx-auto flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-emerald-700"
                 title={`View ${row.name}`}
               >
