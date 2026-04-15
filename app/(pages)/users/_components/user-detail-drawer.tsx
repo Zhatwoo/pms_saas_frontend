@@ -124,7 +124,7 @@ export function UserDetailDrawer({
               <div className="rounded-lg border border-border-subtle bg-surface-secondary p-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 flex items-center gap-3 border-b border-border-subtle pb-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-pawn-gold text-zinc-900 font-bold text-sm`}>
                       {user.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div>

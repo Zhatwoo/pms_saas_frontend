@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Pagination } from "@/components/shared/pagination";
-import { FilterSelect } from "@/components/shared/filter-select";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
-import { StatusBadge } from "@/components/shared/status-badge";
 
 interface ActivityLog {
   id: string;
@@ -31,13 +29,7 @@ function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
 }
 
-const AVATAR_COLORS = ["bg-blue-600", "bg-emerald-600", "bg-purple-600", "bg-amber-600", "bg-rose-600", "bg-indigo-600"];
-function getAvatarColor(name: string) {
-  if (!name) return AVATAR_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
+
 
 // Helper to guess log type based on action/details text
 function guessLogType(action: string, details: string) {
@@ -173,17 +165,17 @@ export default function AuditLogsPage() {
           { label: "FUND TRANSFERS", count: totalFundTransfers, sub: "Cash moves", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
           { label: "ITEM TRANSFERS", count: totalItemTransfers, sub: "Branch to Branch", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }
         ].map((card, i) => (
-          <div key={i} className="flex flex-col justify-between rounded-xl bg-white dark:bg-[#1a1f24] p-5 border border-zinc-200 dark:border-[#2d333b] shadow-sm relative overflow-hidden group">
+          <div key={i} className="flex flex-col justify-between rounded-xl bg-surface p-5 border border-border-main shadow-sm relative overflow-hidden group transition-colors duration-300">
             <div className="flex justify-between items-start z-10">
-              <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 tracking-widest uppercase">{card.label}</span>
-              <svg className="w-5 h-5 text-zinc-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
+              <span className="text-xs font-bold text-text-muted tracking-widest uppercase">{card.label}</span>
+              <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
             </div>
             <div className="mt-4 z-10">
-              <span className="text-4xl font-black text-zinc-900 dark:text-white">{isLoading ? "-" : card.count}</span>
+              <span className="text-4xl font-black text-text-primary">{isLoading ? "-" : card.count}</span>
             </div>
             <div className="mt-2 flex items-center gap-2 z-10">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">{card.sub}</span>
+              <span className="text-xs text-text-muted font-medium">{card.sub}</span>
             </div>
             {/* Hover dash effect */}
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-500/10 transition-all duration-500"></div>
@@ -257,13 +249,13 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-border-subtle bg-surface-secondary/50">
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-text-tertiary">Date & Time</th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-text-tertiary">User</th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-text-tertiary">Log Type</th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-text-tertiary">Action</th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-text-tertiary w-[30%]">Details / Reference</th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-text-tertiary text-right">Status</th>
+              <tr className="bg-emerald-900 text-amber-400">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Date & Time</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">User</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Log Type</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Action</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%]">Details / Reference</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -287,7 +279,7 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className={`h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm ${getAvatarColor(log.userFullName)}`}>
+                          <div className="h-9 w-9 rounded-full flex items-center justify-center bg-pawn-gold text-zinc-900 text-xs font-bold shadow-sm">
                             {getInitials(log.userFullName)}
                           </div>
                           <div className="flex flex-col">

@@ -259,6 +259,8 @@ export function BranchProfile({ branch }: BranchProfileProps) {
   const pathname = usePathname();
   const usersPath = pathname.startsWith("/admin") ? "/admin/users" : "/users";
   const [activeTab, setActiveTab] = useState<TabType>("staff");
+  const tabOrder: TabType[] = ["staff", "inventory", "transactions", "logs"];
+  const activeIndex = tabOrder.indexOf(activeTab);
   const [branchUsers, setBranchUsers] = useState<BranchUserApiRecord[]>([]);
   const [isLoadingStaff, setIsLoadingStaff] = useState(false);
   const [staffError, setStaffError] = useState("");
@@ -395,13 +397,13 @@ export function BranchProfile({ branch }: BranchProfileProps) {
         {/* ═══════════════════════════════════════════════════════
             TAB NAVIGATION
            ═══════════════════════════════════════════════════════ */}
-        <div className="flex border-b border-border-main bg-surface">
+        <div className="relative flex border-b border-border-main bg-surface">
           {[
             { id: "staff" as TabType, label: "Employees" },
             { id: "inventory" as TabType, label: "Inventory" },
             { id: "transactions" as TabType, label: "Transactions" },
             { id: "logs" as TabType, label: "Logs & Actions" },
-          ].map((tab) => (
+          ].map((tab, idx) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -412,19 +414,31 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               }`}
             >
               {tab.label}
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-text" />
-              )}
             </button>
           ))}
+          {/* Sliding tab indicator */}
+          <div
+            className="absolute bottom-0 h-1 bg-emerald-text transition-all duration-300 ease-in-out"
+            style={{
+              width: `${100 / 4}%`,
+              left: `${(tabOrder.indexOf(activeTab) * 100) / 4}%`,
+            }}
+          />
         </div>
 
         {/* ═══════════════════════════════════════════════════════
             TAB CONTENT
            ═══════════════════════════════════════════════════════ */}
-        <div>
-          {/* EMPLOYEES TAB */}
-          {activeTab === "staff" && (
+        <div className="overflow-hidden">
+          <div
+            className="flex transition-transform duration-300 ease-in-out"
+            style={{
+              width: `${tabOrder.length * 100}%`,
+              transform: `translateX(-${activeIndex * (100 / tabOrder.length)}%)`,
+            }}
+          >
+            {/* ── EMPLOYEES TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <ProfileSection title="Employees" icon={<IconUsers />}>
               {/* Admin */}
               <div className="mb-5">
@@ -433,7 +447,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 </p>
                 <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-sidebar text-xs font-bold text-pawn-gold">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-gold text-xs font-bold text-zinc-900">
                       {manager ? fullName(manager).split(" ").map((n) => n[0]).join("").slice(0, 2) : "--"}
                     </div>
                     <div>
@@ -473,7 +487,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5 transition-colors hover:border-emerald-border"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-hover text-xs font-bold text-text-secondary">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-gold text-xs font-bold text-zinc-900">
                         {fullName(emp).split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div>
@@ -499,10 +513,10 @@ export function BranchProfile({ branch }: BranchProfileProps) {
 
 
             </ProfileSection>
-          )}
+            </div>
 
-          {/* INVENTORY TAB */}
-          {activeTab === "inventory" && (
+            {/* ── INVENTORY TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <ProfileSection title="Inventory Snapshot" icon={<IconPackage />}>
               {/* Summary stats */}
               <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -591,10 +605,10 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 <IconArrowRight />
               </button>
             </ProfileSection>
-          )}
+            </div>
 
-          {/* TRANSACTIONS TAB */}
-          {activeTab === "transactions" && (
+            {/* ── TRANSACTIONS TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <ProfileSection title="Transaction Snapshot" icon={<IconDollar />}>
               {/* Summary */}
               <div className="mb-5 grid grid-cols-3 gap-3">
@@ -675,10 +689,10 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 <IconArrowRight />
               </button>
             </ProfileSection>
-          )}
+            </div>
 
-          {/* LOGS & ACTIONS TAB */}
-          {activeTab === "logs" && (
+            {/* ── LOGS & ACTIONS TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <div className="space-y-4">
               {/* Activity Logs */}
               <ProfileSection title="Activity Logs" icon={<IconActivity />}>
@@ -763,7 +777,8 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 </div>
               </ProfileSection>
             </div>
-          )}
+            </div>
+          </div>
         </div>
       </div>
 

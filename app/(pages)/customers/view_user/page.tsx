@@ -178,7 +178,7 @@ const backIcon = (
 );
 
 const userIcon = (
-  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-text-tertiary">
+  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-900">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
     <circle cx="12" cy="7" r="4" />
   </svg>
@@ -293,7 +293,7 @@ function CustomerDetailContent() {
           <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-secondary">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pawn-gold shadow-sm">
                   {userIcon}
                 </div>
                 <div>
