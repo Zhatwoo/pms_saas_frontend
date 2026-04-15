@@ -11,6 +11,7 @@ import { BuyBackModal } from "./_components/buy-back-modal";
 import { SalesTransferModal } from "./_components/sales-transfer-modal";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
@@ -41,6 +42,8 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 
 export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, canSwitchBranch } = useBranch();
+  const { user } = useAuth();
+  const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
@@ -58,7 +61,7 @@ export default function EmployeePawnTransactionsPage() {
   });
   const [passwordModal, setPasswordModal] = useState<{ open: boolean; onConfirm: () => void }>({
     open: false,
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   useEffect(() => {
@@ -84,6 +87,24 @@ export default function EmployeePawnTransactionsPage() {
     }
     fetchTransactions();
   }, [selectedBranch]);
+
+  // Fetch branch admin name
+  useEffect(() => {
+    async function fetchBranchAdmin() {
+      if (!selectedBranch.id || selectedBranch.id === "__all__") return;
+      try {
+        const data = await api.get<{ users?: { fullName: string; role: string }[]; fullName?: string; role?: string }[]>(
+          `/users?branchId=${selectedBranch.id}&role=admin`
+        );
+        const admins = Array.isArray(data) ? data : [];
+        const admin = admins.find((u) => u.role === "admin");
+        if (admin?.fullName) setBranchAdminName(admin.fullName);
+      } catch {
+        // silently fail — admin name stays blank
+      }
+    }
+    void fetchBranchAdmin();
+  }, [selectedBranch.id]);
 
   const filteredTransactions = useMemo(() => {
     if (activeFilter === "All") return allTransactions;
@@ -181,9 +202,9 @@ export default function EmployeePawnTransactionsPage() {
         }}
       />
 
-      <RenewModal 
-        isOpen={isRenewModalOpen} 
-        onClose={() => setIsRenewModalOpen(false)} 
+      <RenewModal
+        isOpen={isRenewModalOpen}
+        onClose={() => setIsRenewModalOpen(false)}
         branchName={selectedBranch.name}
       />
 
@@ -191,6 +212,8 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={isNewPawnModalOpen}
         onClose={() => setIsNewPawnModalOpen(false)}
         branchName={selectedBranch.name}
+        branchAdminName={branchAdminName}
+        loggedInUserName={user?.fullName}
       />
 
       <BuyBackModal

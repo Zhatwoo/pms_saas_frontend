@@ -77,7 +77,7 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
   );
 }
 
-function ViewModal({ item, onClose, onSaveRemarks}: {
+function ViewModal({ item, onClose, onSaveRemarks }: {
   item: PawnedItem;
   onClose: () => void;
   onSaveRemarks: (id: string, remarks: string) => void;
@@ -97,7 +97,7 @@ function ViewModal({ item, onClose, onSaveRemarks}: {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
-        
+
         <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-zinc-100">
           <div className="flex-1 p-8 space-y-6 max-h-[70vh] overflow-y-auto">
             <div className="grid grid-cols-2 gap-6">
@@ -300,17 +300,16 @@ export default function EmployeePawnedItemsPage() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${
-                            item.renewalCount > 0 ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          }`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${item.renewalCount > 0 ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}>
                             {getRenewalLabel(item.renewalCount)}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-[10px] font-bold text-zinc-600 max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
-                            <button onClick={() => setViewingItem(item)} className="rounded px-3 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors">
-                                View Details
-                            </button>
+                          <button onClick={() => setViewingItem(item)} className="rounded px-3 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                            View Details
+                          </button>
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
