@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 interface ConfirmFundModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (notes: string) => void;
+  onConfirm: (receivedAmount: number, notes: string) => void;
   amount: number;
   requestNo?: string;
   branchName?: string;
@@ -20,18 +20,24 @@ export function ConfirmFundModal({
   branchName,
 }: ConfirmFundModalProps) {
   const [notes, setNotes] = useState("");
+  const [receivedAmount, setReceivedAmount] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       setNotes("");
+      setReceivedAmount(amount > 0 ? String(amount) : "");
     }
-  }, [isOpen]);
+  }, [amount, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(notes.trim());
+    const parsed = Number(receivedAmount.replace(/,/g, ""));
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return;
+    }
+    onConfirm(parsed, notes.trim());
   };
 
   return (
@@ -78,6 +84,20 @@ export function ConfirmFundModal({
 
           <div className="rounded-xl border border-border-main bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
             Confirm this only after the transfer has been received by your branch. Once confirmed, the request will be marked as transferred and recorded in the branch ledger.
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
+              Received Amount
+            </label>
+            <input
+              type="text"
+              value={receivedAmount}
+              onChange={(e) => setReceivedAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+              className="w-full rounded-lg border border-input-border bg-input-bg p-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              placeholder="Enter actual amount received"
+              required
+            />
           </div>
 
           <div>

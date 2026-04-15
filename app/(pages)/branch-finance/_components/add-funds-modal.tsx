@@ -91,6 +91,10 @@ export function AddFundsModal({
     const errs: Record<string, string> = {};
     if (!amount.trim() || numericAmount <= 0) errs.amount = "Enter a valid amount";
 
+    if (toBranchId === "001") {
+      errs.to = "Please select a specific target branch";
+    }
+
     if (isTransfer) {
       if (!fromBranchId) errs.from = "Select source branch";
       if (!toBranchId) errs.to = "Select target branch";
@@ -226,32 +230,23 @@ export function AddFundsModal({
               <label className="text-xs font-semibold text-text-secondary">
                 Target Branch <span className="text-red-500">*</span>
               </label>
-              {(currentBranchId && currentBranchId !== "001") && !isTransfer ? (
-                <input
-                  type="text"
-                  value={branchName}
-                  readOnly
-                  disabled
-                  className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm font-semibold text-text-muted outline-none h-[38px]"
-                />
-              ) : (
-                <select
-                  value={toBranchId}
-                  onChange={(e) => setToBranchId(e.target.value)}
-                  className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar h-[38px] ${
-                    errors.to ? "border-red-400" : "border-input-border"
-                  }`}
-                >
-                  <option value="">Select target...</option>
-                  {branches
-                    .filter((b) => !isTransfer || b.branchId !== fromBranchId)
-                    .map((b) => (
-                      <option key={b.branchId} value={b.branchId}>
-                        {b.name}
-                      </option>
-                    ))}
-                </select>
-              )}
+              <select
+                value={toBranchId}
+                onChange={(e) => setToBranchId(e.target.value)}
+                className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar h-[38px] ${
+                  errors.to ? "border-red-400" : "border-input-border"
+                }`}
+              >
+                <option value="">Select target...</option>
+                <option value="001">All Branches</option>
+                {branches
+                  .filter((b) => !isTransfer || b.branchId !== fromBranchId)
+                  .map((b) => (
+                    <option key={b.branchId} value={b.branchId}>
+                      {b.name}
+                    </option>
+                  ))}
+              </select>
               {errors.to && <span className="text-[10px] text-red-500">{errors.to}</span>}
             </div>
           </div>
