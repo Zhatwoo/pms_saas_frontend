@@ -19,7 +19,6 @@ const columns: Column[] = [
 
 const customers = [
   {
-    id: "1",
     name: "Juan Dela Cruz",
     phone: "09123456789",
     email: "juandelacruz@gmail.com",
@@ -28,7 +27,6 @@ const customers = [
     registered: "February 14, 2022",
   },
   {
-    id: "2",
     name: "John Doe",
     phone: "09123456789",
     email: "jhondoe@gmail.com",
@@ -37,7 +35,6 @@ const customers = [
     registered: "February 15, 2022",
   },
   {
-    id: "3",
     name: "Park Jimin Neutron",
     phone: "09123456789",
     email: "jiminneutron@gmail.com",
@@ -68,8 +65,10 @@ export function CustomerTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleViewCustomer = (customerId: string) => {
-    router.push(`/admin/customers/view_user?id=${customerId}`);
+  const handleViewCustomer = (customerName: string, index: number) => {
+    // Navigate to customer detail page
+    const customerId = `customer-${index + 1}`;
+    router.push(`/admin/customers/${customerId}`);
   };
 
   return (
@@ -91,11 +90,11 @@ export function CustomerTable() {
       <DataTable
         columns={columns}
         data={customers}
-        renderCell={(key, value, row) => {
+        renderCell={(key, value, row, rowIndex) => {
           if (key === "actions") {
             return (
               <button
-                onClick={() => handleViewCustomer(row.id)}
+                onClick={() => handleViewCustomer(row.name, rowIndex)}
                 className="mx-auto flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover hover:text-emerald-700"
                 title={`View ${row.name}`}
               >
