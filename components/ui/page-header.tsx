@@ -1,18 +1,18 @@
 interface PageHeaderProps {
-  title: string;
+  title?: string;
   description?: string;
 }
 
 export function PageHeader({ title, description }: PageHeaderProps) {
+  if (!title && !description) return null;
+
   return (
-    <div className="mb-8">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-        {title}
-      </h1>
+    <div className="mb-6">
+      {title && (
+        <h2 className="text-xl font-semibold text-zinc-900">{title}</h2>
+      )}
       {description && (
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          {description}
-        </p>
+        <p className="mt-1 text-base text-zinc-500">{description}</p>
       )}
     </div>
   );

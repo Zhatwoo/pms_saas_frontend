@@ -1,14 +1,54 @@
+"use client";
+
+import { Suspense, useState } from "react";
+import { AuthLandingPage } from "../_components/auth-landing-page";
+import { LoginModal } from "../_components/login-modal";
+import { SignupModal } from "../_components/signup-modal";
+
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-      <div className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="mb-6 text-center text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-          Pawnshop Management
-        </h1>
-        <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
-          Login page placeholder
-        </p>
-      </div>
-    </div>
+    <Suspense>
+      <LoginExperience />
+    </Suspense>
   );
 }
+
+function LoginExperience() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+
+  return (
+    <>
+      <AuthLandingPage
+        onLoginClick={() => {
+          setShowSignup(false);
+          setShowLogin(true);
+        }}
+        onSignUpClick={() => {
+          setShowLogin(false);
+          setShowSignup(true);
+        }}
+      />
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onRequestSignUp={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+        />
+      )}
+      {showSignup && (
+        <SignupModal
+          onClose={() => setShowSignup(false)}
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+export const dynamic = "force-dynamic";
