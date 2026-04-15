@@ -94,6 +94,17 @@ interface FundRequestRecord {
     fullName: string | null;
     email: string | null;
   } | null;
+  confirmedBy?: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+  } | null;
+  flowType?: "request_based" | "direct_push";
+  receiverUserId?: string | null;
+  receiverRole?: "admin" | "employee" | null;
+  confirmedReceivedAmount?: number | null;
+  confirmationNote?: string | null;
+  transferReferenceNo?: string | null;
 }
 
 interface ApiTransaction {
@@ -177,14 +188,23 @@ export default function BranchFinancePage() {
             type: cashOut > 0 ? "TRANSFER_OUT" : "ADD_FUNDS",
             amount: cashOut > 0 ? cashOut : cashIn,
             balanceAfter: null,
-            status: "Approved" as const,
+            status:
+              relatedRequest?.status === "pending_confirmation"
+                ? ("Pending" as const)
+                : relatedRequest?.status === "rejected"
+                  ? ("Rejected" as const)
+                  : ("Approved" as const),
             approvedBy: relatedRequest?.transferredBy?.fullName ?? "Super Admin",
             approvalDate: relatedRequest?.transferredAt ?? null,
             notes:
-              relatedRequest?.transferNotes ??
-              relatedRequest?.reviewNotes ??
-              transaction.details ??
-              "Fund transfer processed",
+              `${relatedRequest?.confirmedReceivedAmount
+                ? `Received: ${fmtCurrency(relatedRequest.confirmedReceivedAmount)} | `
+                : ""}${
+                relatedRequest?.transferNotes ??
+                relatedRequest?.reviewNotes ??
+                transaction.details ??
+                "Fund transfer processed"
+              }`,
           };
         });
 
@@ -329,23 +349,31 @@ export default function BranchFinancePage() {
 
   const handleTransferSubmit = useCallback(
     async (data: UnifiedFundResult) => {
-      if (!selectedTransferRequest) return;
-      if (data.sourceType !== "MANAGEMENT") {
-        setError("Branch-to-branch transfers are not connected to the backend yet.");
-        return;
-      }
-
       try {
-        await api.patch<FundRequestRecord>(
-          `/fund-requests/${selectedTransferRequest.id}/transfer`,
-          {
+        if (selectedTransferRequest) {
+          await api.patch<FundRequestRecord>(
+            `/fund-requests/${selectedTransferRequest.id}/transfer`,
+            {
+              amount: data.amount,
+              transferNotes: data.notes,
+            },
+          );
+          showToast("Funds sent to the branch and are now awaiting branch confirmation.");
+        } else {
+          await api.post<FundRequestRecord>("/fund-requests/direct-transfer", {
             amount: data.amount,
-            transferNotes: data.notes,
-          },
-        );
+            toBranchId: data.toBranchId,
+            fromBranchId: data.sourceType === "BRANCH_TRANSFER" ? data.fromBranchId : undefined,
+            notes: data.notes,
+            purpose:
+              data.sourceType === "BRANCH_TRANSFER"
+                ? "Direct branch-to-branch transfer"
+                : "Direct management cash transfer",
+          });
+          showToast("Direct cash transfer released and awaiting branch confirmation.");
+        }
         setTransferModalOpen(false);
         setSelectedTransferRequest(null);
-        showToast("Funds sent to the branch and are now awaiting branch confirmation.");
         await loadFinanceData();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to transfer funds.");
@@ -355,14 +383,9 @@ export default function BranchFinancePage() {
   );
 
   const handleHeaderTransfer = useCallback(() => {
-    if (approvedRequests.length === 1) {
-      setSelectedTransferRequest(approvedRequests[0]);
-      setTransferModalOpen(true);
-      return;
-    }
-
-    showToast("Use the Approved Requests panel below to transfer a specific request.");
-  }, [approvedRequests, showToast]);
+    setSelectedTransferRequest(null);
+    setTransferModalOpen(true);
+  }, []);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -482,6 +505,11 @@ export default function BranchFinancePage() {
                         {request.transferNotes ? (
                           <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
                         ) : null}
+                        {request.receiverRole ? (
+                          <p className="mt-1 text-xs text-text-muted">
+                            Receiver role: {request.receiverRole}
+                          </p>
+                        ) : null}
                       </div>
                       <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
                         Pending Confirmation
@@ -551,7 +579,9 @@ export default function BranchFinancePage() {
         branchName={selectedTransferRequest?.branch?.name ?? selectedBranch.name}
         managers={[]}
         branches={branchBalances}
-        currentBranchId={selectedTransferRequest?.branch?.id ?? selectedBranch.id}
+        currentBranchId={
+          selectedTransferRequest?.branch?.id ?? (isAllBranches ? "001" : selectedBranch.id)
+        }
         getManagersForBranch={() => []}
         defaultAmount={String(selectedTransferRequest?.approvedAmount ?? selectedTransferRequest?.amountRequested ?? "")}
         defaultNotes={selectedTransferRequest?.reviewNotes ?? selectedTransferRequest?.notes ?? ""}

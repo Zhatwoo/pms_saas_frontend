@@ -63,6 +63,9 @@ interface FundRequestRecord {
   transferNotes?: string | null;
   confirmationNotes?: string | null;
   confirmedAt?: string | null;
+  confirmedReceivedAmount?: number | null;
+  receiverUserId?: string | null;
+  receiverRole?: "admin" | "employee" | null;
 }
 
 function fmtCurrency(value: number) {
@@ -183,12 +186,13 @@ export default function AdminBranchFinancePage() {
   }, []);
 
   const handleConfirmReceipt = useCallback(
-    async (notes: string) => {
+    async (receivedAmount: number, notes: string) => {
       if (!selectedConfirmRequest) return;
 
       setIsSubmitting(true);
       try {
         await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
+          receivedAmount,
           confirmationNotes: notes,
         });
         setConfirmModalOpen(false);

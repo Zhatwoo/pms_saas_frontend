@@ -17,13 +17,6 @@ interface ActivityLog {
   branchName: string;
 }
 
-const branchOptions = [
-  { value: "all", label: "All Branches" },
-  { value: "taguig", label: "Taguig" },
-  { value: "makati", label: "Makati" },
-  { value: "pasay", label: "Pasay" },
-];
-
 function getInitials(name: string) {
   if (!name) return "U";
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
@@ -76,6 +69,19 @@ export default function AuditLogsPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+  const branchOptions = useMemo(() => {
+    const optionMap = new Map<string, string>();
+    optionMap.set("all", "All Branches");
+    logs.forEach((log) => {
+      if (log.branchId) {
+        optionMap.set(log.branchId, log.branchName);
+      }
+    });
+    return Array.from(optionMap.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }));
+  }, [logs]);
 
   useEffect(() => {
     async function fetchLogs() {
@@ -84,7 +90,7 @@ export default function AuditLogsPage() {
       try {
         const queryParams = new URLSearchParams();
         if (isSuperAdmin && branch !== "all") {
-          // Send branch filtering logic
+          queryParams.set("branchId", branch);
         }
         const data = await api.get<ActivityLog[]>(`/activity-logs?${queryParams}`);
         setLogs(data);
@@ -119,7 +125,7 @@ export default function AuditLogsPage() {
   const filteredLogs = useMemo(() => {
     let result = enrichedLogs;
     if (isSuperAdmin && branch !== "all") {
-      result = result.filter(l => l.branchName?.toLowerCase().includes(branch.toLowerCase()));
+      result = result.filter(l => l.branchId === branch);
     }
     if (filterType !== "All Logs") {
       if (filterType === "Transaction Logs") result = result.filter(l => l.logType === "TRANSACTION");
