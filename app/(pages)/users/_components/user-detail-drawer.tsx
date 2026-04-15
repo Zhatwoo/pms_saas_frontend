@@ -5,11 +5,39 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { TransferEmployeeForm } from "./transfer-employee-form";
 import type { UserRecord, AccountStatusUi } from "../page";
 
+const highlightStyle = `
+  @keyframes transferHighlight {
+    0%, 10% {
+      border-color: rgb(180, 83, 9);
+      box-shadow: none;
+    }
+    10%, 35% {
+      border-color: transparent;
+      box-shadow: none;
+    }
+    35%, 60% {
+      border-color: rgb(180, 83, 9);
+      box-shadow: none;
+    }
+    60%, 100% {
+      border-color: transparent;
+      box-shadow: none;
+    }
+  }
+
+  .transfer-highlight-active {
+    animation: transferHighlight 4s ease-in-out forwards;
+  }
+`;
+
 interface UserDetailDrawerProps {
   user: UserRecord | null;
   isOpen: boolean;
   onClose: () => void;
   canManageUsers?: boolean;
+  highlightTransfer?: boolean;
+  onEditUser?: (user: UserRecord) => void;
+  onDeleteUser?: (user: UserRecord) => void;
 }
 
 function statusBadgeVariant(status: AccountStatusUi): "green" | "yellow" | "red" {
@@ -23,6 +51,9 @@ export function UserDetailDrawer({
   isOpen,
   onClose,
   canManageUsers = false,
+  highlightTransfer = false,
+  onEditUser,
+  onDeleteUser,
 }: UserDetailDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +81,7 @@ export function UserDetailDrawer({
 
   return (
     <>
+      <style>{highlightStyle}</style>
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 ${
@@ -127,14 +159,6 @@ export function UserDetailDrawer({
                       {user.role.replace('_', ' ')}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
-                      Branch
-                    </p>
-                    <p className="mt-1 text-sm text-text-secondary italic">
-                      {user.branch}
-                    </p>
-                  </div>
                 </div>
               </div>
 
@@ -189,14 +213,30 @@ export function UserDetailDrawer({
                   Quick Actions
                 </h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="flex items-center justify-center gap-2 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-900">
+                  <button
+                    onClick={() => {
+                      if (user && onEditUser) {
+                        onEditUser(user);
+                        onClose();
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-900"
+                  >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
                     Edit Profile
                   </button>
-                  <button className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100">
+                  <button
+                    onClick={() => {
+                      if (user && onDeleteUser) {
+                        onDeleteUser(user);
+                        onClose();
+                      }
+                    }}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+                  >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 6h18" />
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -208,7 +248,9 @@ export function UserDetailDrawer({
 
               {/* Transfer Employee Section */}
               {canManageUsers && (
-                <div className="rounded-lg border border-border-subtle bg-surface-secondary p-4">
+                <div className={`rounded-lg border-2 bg-surface-secondary p-4 transition-all ${
+                  highlightTransfer ? "border-amber-600 transfer-highlight-active" : "border-border-subtle"
+                }`}>
                   <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-tertiary">
                     Transfer Employee
                   </h3>

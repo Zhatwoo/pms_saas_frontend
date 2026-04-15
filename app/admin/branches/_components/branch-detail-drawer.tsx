@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useBranch } from "@/contexts/branch-context";
 
 const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
   Active: "green",
@@ -11,6 +13,7 @@ const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
 };
 
 interface BranchDetail {
+  id?: string;
   branchId: string;
   name: string;
   location: string;
@@ -31,6 +34,8 @@ export function BranchDetailDrawer({
   isOpen,
   onClose,
 }: BranchDetailDrawerProps) {
+  const router = useRouter();
+  const { branches, setSelectedBranch, canSwitchBranch } = useBranch();
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -195,24 +200,97 @@ export function BranchDetailDrawer({
                 </div>
               </div>
 
+              {/* Daily Balance Section */}
+              <div>
+                <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                  Daily Balance
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Starting Balance */}
+                  <div className="rounded-lg border border-border-subtle bg-surface p-4 shadow-sm">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                      Starting Balance
+                    </p>
+                    <p className="mt-2 text-lg font-bold text-amber-600">
+                      ₱0.00
+                    </p>
+                    <p className="mt-1 text-[10px] text-text-muted">Today</p>
+                  </div>
+
+                  {/* Ending Balance */}
+                  <div className="rounded-lg border border-border-subtle bg-surface p-4 shadow-sm">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                      Ending Balance
+                    </p>
+                    <p className="mt-2 text-lg font-bold text-green-600">
+                      ₱0.00
+                    </p>
+                    <p className="mt-1 text-[10px] text-text-muted">Today</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Quick Actions */}
               <div>
                 <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-tertiary">
                   Quick Actions
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
-                    View Inventory
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        if (branch && branch.id) {
+                          const selectedBranchInList = branches.find((b) => b.id === branch.id);
+                          if (selectedBranchInList && canSwitchBranch) {
+                            setSelectedBranch(selectedBranchInList);
+                          }
+                        }
+                        onClose();
+                        router.push(`/admin/inventory`);
+                      }}
+                      className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text"
+                    >
+                      View Inventory
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (branch && branch.id) {
+                          const selectedBranchInList = branches.find((b) => b.id === branch.id);
+                          if (selectedBranchInList && canSwitchBranch) {
+                            setSelectedBranch(selectedBranchInList);
+                          }
+                        }
+                        onClose();
+                        router.push(`/admin/pawn-transactions`);
+                      }}
+                      className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text"
+                    >
+                      View Transactions
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (branch && branch.id) {
+                        const selectedBranchInList = branches.find((b) => b.id === branch.id);
+                        if (selectedBranchInList && canSwitchBranch) {
+                          setSelectedBranch(selectedBranchInList);
+                        }
+                      }
+                      onClose();
+                      router.push(`/admin/users`);
+                    }}
+                    className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text"
+                  >
+                    View Employees
                   </button>
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
-                    View Transactions
-                  </button>
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
-                    Edit Branch
-                  </button>
-                  <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-red-400 hover:bg-red-50 hover:text-red-600">
-                    Deactivate
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-pawn-sidebar hover:bg-emerald-surface hover:text-emerald-text">
+                      Edit Branch
+                    </button>
+                    <button className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-red-400 hover:bg-red-50 hover:text-red-600">
+                      Deactivate
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

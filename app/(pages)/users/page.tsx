@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
@@ -121,6 +122,7 @@ function mapUserRecord(user: UserApiRecord): UserRecord {
 export default function UserManagementPage() {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
+  const searchParams = useSearchParams();
   const canManageUsers = user?.role === "super_admin";
 
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -138,6 +140,7 @@ export default function UserManagementPage() {
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [highlightTransfer, setHighlightTransfer] = useState(false);
 
   const loadUsersPage = useCallback(async () => {
     setIsLoading(true);
@@ -181,6 +184,27 @@ export default function UserManagementPage() {
       setRoleFilter("ALL");
     }
   }, [canManageUsers, roleFilter]);
+
+  useEffect(() => {
+    const transferUserId = searchParams.get("transferUserId");
+    const shouldHighlight = searchParams.get("highlightTransfer") === "true";
+
+    if (transferUserId && users.length > 0) {
+      const targetUser = users.find((u) => u.id === transferUserId);
+      if (targetUser) {
+        setSelectedUser(targetUser);
+        setIsDrawerOpen(true);
+        
+        if (shouldHighlight) {
+          setHighlightTransfer(true);
+          const timer = setTimeout(() => {
+            setHighlightTransfer(false);
+          }, 4000);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [users, searchParams]);
 
   async function handleCreateUser(input: CreateUserInput) {
     const payload = {
@@ -406,6 +430,15 @@ export default function UserManagementPage() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         canManageUsers={canManageUsers}
+        highlightTransfer={highlightTransfer}
+        onEditUser={(u) => {
+          setSelectedUser(u);
+          setIsUpdateModalOpen(true);
+        }}
+        onDeleteUser={(u) => {
+          setSelectedUser(u);
+          setIsDeleteModalOpen(true);
+        }}
       />
 
       <DeleteUserModal
