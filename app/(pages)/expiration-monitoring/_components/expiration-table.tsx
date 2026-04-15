@@ -65,7 +65,7 @@ function DaysRemainingBadge({ days }: { days: number }) {
 
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${bgColor}`}
+      className={`inline-block rounded px-2.5 py-1 text-xs font-bold ${bgColor}`}
     >
       {days} days
     </span>
@@ -107,11 +107,11 @@ export function ExpirationTable() {
         if (key === "actions") {
           return (
             <div className="flex items-center justify-center gap-2">
-              <button className="rounded-md bg-emerald-700 px-3 py-1 text-[10px] font-bold text-white transition-opacity hover:opacity-90">
+              <button className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90">
                 Renew
               </button>
               <button
-                className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
                 title={`Notify ${row.customer}`}
               >
                 {bellIcon}

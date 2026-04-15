@@ -68,13 +68,13 @@ export function ApprovalPanel({
               </svg>
             </div>
             {/* Badge */}
-            <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-amber-600 text-[10px] font-bold text-white shadow-sm">
+            <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-surface bg-amber-600 text-xs font-bold text-white shadow-sm">
               {pendingCount}
             </span>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-text-primary">Pending Confirmations</h3>
-            <p className="text-[10px] text-text-muted">
+            <h3 className="text-base font-bold text-text-primary">Pending Confirmations</h3>
+            <p className="text-xs text-text-muted">
               {pendingCount} transaction{pendingCount !== 1 ? "s" : ""} waiting for branch admin confirmation
             </p>
           </div>
@@ -109,22 +109,22 @@ export function ApprovalPanel({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-text-primary">
+                      <h4 className="text-base font-bold text-text-primary">
                         {req.branch}
                       </h4>
-                      <span className="text-[10px] text-text-muted">
+                      <span className="text-xs text-text-muted">
                         • {new Date(req.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - Waiting for Confirmation
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs font-medium text-text-secondary">
-                      <span className="text-lg font-extrabold text-amber-700 dark:text-amber-400 tracking-tight">
+                    <div className="mt-0.5 flex items-center gap-2 text-sm font-medium text-text-secondary">
+                      <span className="text-xl font-extrabold text-amber-700 dark:text-amber-400 tracking-tight">
                         {fmt(req.amount)}
                       </span>
-                      <span className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${typeColor[req.type]}`}>
+                      <span className={`inline-block rounded-md px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${typeColor[req.type]}`}>
                         {typeLabel[req.type]}
                       </span>
                     </div>
-                    <p className="mt-2 text-[11px] text-text-muted italic border-l-2 border-amber-200 dark:border-amber-500/30 pl-2 line-clamp-2">
+                    <p className="mt-2 text-xs text-text-muted italic border-l-2 border-amber-200 dark:border-amber-500/30 pl-2 line-clamp-2">
                         Requested by {req.requestedBy}{req.notes ? ` · ${req.notes}` : ""}
                       </p>
 
@@ -135,7 +135,7 @@ export function ApprovalPanel({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => onCancelClick(req.id)}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-500/20 shadow-sm"
+                    className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-500/20 shadow-sm"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18" />

@@ -439,6 +439,7 @@ export default function UserManagementPage() {
           setSelectedUser(u);
           setIsDeleteModalOpen(true);
         }}
+        onTransferSuccess={() => loadUsersPage()}
       />
 
       <DeleteUserModal

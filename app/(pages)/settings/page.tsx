@@ -743,7 +743,7 @@ export default function SettingsPage() {
 
         <aside className="space-y-4">
           <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full border-4 border-emerald-50 bg-emerald-800 text-2xl font-bold text-white">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-pawn-gold text-2xl font-bold text-zinc-900">
               AD
             </div>
             <h3 className="text-sm font-bold text-zinc-900">Admin Panel</h3>

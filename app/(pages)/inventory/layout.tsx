@@ -11,13 +11,13 @@ export default function InventoryLayout({ children }: { children: React.ReactNod
     <div className="space-y-4">
       {/* Breadcrumb + Title */}
       <div>
-        <p className="text-xs text-zinc-400">
+        <p className="text-sm text-zinc-400">
           Inventory &gt;{" "}
-          <span className="text-zinc-700 font-medium">
+          <span className="text-zinc-700 dark:text-text-secondary font-medium">
             {isPawned ? "Pawned Items" : "Items For Sale"}
           </span>
         </p>
-        <h1 className="text-xl font-bold text-emerald-900 leading-tight mt-0.5">
+        <h1 className="text-2xl font-bold text-emerald-900 dark:text-text-primary leading-tight mt-0.5">
           {isPawned ? "Pawned Items" : "Items For Sale"}
         </h1>
       </div>

@@ -61,8 +61,8 @@ export function ConfirmPasswordModal({
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <h2 className="text-xl font-black text-text-primary">{title}</h2>
-          <p className="mt-2 text-xs text-text-tertiary">{description}</p>
+          <h2 className="text-2xl font-black text-text-primary">{title}</h2>
+          <p className="mt-2 text-sm text-text-tertiary">{description}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -73,11 +73,11 @@ export function ConfirmPasswordModal({
               autoFocus
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full rounded-xl border-2 bg-surface-secondary px-4 py-3 text-sm font-bold outline-none transition-all ${
+              className={`w-full rounded-xl border-2 bg-surface-secondary px-4 py-3 text-base font-bold outline-none transition-all ${
                 error ? "border-rose-500 focus:border-rose-600" : "border-border-main focus:border-emerald-600"
               }`}
             />
-            {error && <p className="mt-2 text-[10px] font-bold text-rose-500 uppercase tracking-tighter">{error}</p>}
+            {error && <p className="mt-2 text-xs font-bold text-rose-500 uppercase tracking-tighter">{error}</p>}
           </div>
 
           <div className="flex gap-3">
@@ -85,14 +85,14 @@ export function ConfirmPasswordModal({
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 rounded-xl border border-border-main py-3 text-xs font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
+              className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-xl bg-emerald-700 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 disabled:opacity-50"
+              className="flex-1 rounded-xl bg-emerald-700 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 disabled:opacity-50"
             >
               {loading ? "Verifying..." : "Confirm"}
             </button>

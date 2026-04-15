@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { TransferEmployeeForm } from "./transfer-employee-form";
 import type { UserRecord, AccountStatusUi } from "../page";
@@ -38,6 +38,7 @@ interface UserDetailDrawerProps {
   highlightTransfer?: boolean;
   onEditUser?: (user: UserRecord) => void;
   onDeleteUser?: (user: UserRecord) => void;
+  onTransferSuccess?: () => void;
 }
 
 function statusBadgeVariant(status: AccountStatusUi): "green" | "yellow" | "red" {
@@ -54,8 +55,15 @@ export function UserDetailDrawer({
   highlightTransfer = false,
   onEditUser,
   onDeleteUser,
+  onTransferSuccess,
 }: UserDetailDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -82,6 +90,23 @@ export function UserDetailDrawer({
   return (
     <>
       <style>{highlightStyle}</style>
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center animate-in fade-in zoom-in-95 duration-300">
+          {/* Backdrop Blur overlap */}
+          <div className="absolute inset-0 bg-black/10 backdrop-blur-md" />
+          <div className="relative flex items-center gap-3 rounded-xl border border-emerald-300/70 bg-emerald-100/70 px-5 py-3 shadow-xl backdrop-blur-sm">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+            <span className="text-sm font-semibold text-emerald-900">{toast}</span>
+          </div>
+        </div>
+      )}
+
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] transition-opacity duration-300 ${
@@ -124,7 +149,7 @@ export function UserDetailDrawer({
               <div className="rounded-lg border border-border-subtle bg-surface-secondary p-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 flex items-center gap-3 border-b border-border-subtle pb-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-pawn-gold text-zinc-900 font-bold text-sm`}>
                       {user.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -247,20 +272,51 @@ export function UserDetailDrawer({
               </div>
 
               {/* Transfer Employee Section */}
-              {canManageUsers && (
-                <div className={`rounded-lg border-2 bg-surface-secondary p-4 transition-all ${
-                  highlightTransfer ? "border-amber-600 transfer-highlight-active" : "border-border-subtle"
-                }`}>
-                  <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Transfer Employee
-                  </h3>
-                  <p className="mb-4 text-xs text-text-tertiary">
-                    Assign this employee to another branch. New transactions will be recorded under the new branch.
-                  </p>
-                  <TransferEmployeeForm
-                    selectedUser={user}
-                    canManageUsers={canManageUsers}
-                  />
+              {canManageUsers && user && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                      Transfer Employee
+                    </h3>
+                    <p className="mt-1 text-xs text-text-tertiary">
+                      Assign this employee to another branch. New transactions will be recorded under the new branch.
+                    </p>
+                  </div>
+
+                  <div className={`rounded-lg border-2 bg-surface-secondary p-4 transition-all ${
+                    highlightTransfer ? "border-amber-600 transfer-highlight-active" : "border-border-subtle"
+                  }`}>
+                    {/* Current Branch Display */}
+                    <div className="mb-4 flex items-center justify-between rounded-lg border border-border-subtle bg-surface px-4 py-3 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 21h18" />
+                            <path d="M3 7v1h18V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z" />
+                            <path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8" />
+                            <path d="M9 12h6" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Current Assignment</p>
+                          <p className="text-sm font-bold text-text-primary">{user.branch}</p>
+                        </div>
+                      </div>
+                      <div className="rounded-full bg-emerald-100 px-2 py-0.5">
+                        <span className="text-[10px] font-bold text-emerald-700 uppercase">Active</span>
+                      </div>
+                    </div>
+
+                    <TransferEmployeeForm
+                      selectedUser={user}
+                      canManageUsers={canManageUsers}
+                      onTransferSuccess={(msg) => {
+                        showToast(msg);
+                        onClose();
+                        onTransferSuccess?.();
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </div>

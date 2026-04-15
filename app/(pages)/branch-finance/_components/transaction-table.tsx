@@ -106,12 +106,12 @@ export function TransactionTable({
         data={paginated}
         renderCell={(key, value, row) => {
           if (key === "date") {
-            return <span className="text-xs text-text-secondary">{fmtDate(value)}</span>;
+            return <span className="text-sm text-text-secondary">{fmtDate(value)}</span>;
           }
           if (key === "type") {
             const cfg = typeConfig[value as keyof typeof typeConfig];
             return (
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${cfg.bgClass}`}>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.bgClass}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
                 {cfg.label}
               </span>
@@ -127,35 +127,35 @@ export function TransactionTable({
                   : "text-emerald-600";
             const prefix = txType === "TRANSFER_OUT" ? "-" : "+";
             return (
-              <span className={`text-xs font-bold ${color}`}>
+              <span className={`text-sm font-bold ${color}`}>
                 {prefix}{fmt(value)}
               </span>
             );
           }
           if (key === "balanceAfter") {
-            return <span className="text-xs font-semibold text-text-primary">{fmt(value)}</span>;
+            return <span className="text-sm font-semibold text-text-primary">{fmt(value)}</span>;
           }
           if (key === "status") {
             const cls = statusConfig[value as keyof typeof statusConfig] || "";
             return (
-              <span className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${cls}`}>
+              <span className={`inline-block rounded px-2.5 py-1 text-xs font-bold ${cls}`}>
                 {value}
               </span>
             );
           }
           if (key === "approvedBy") {
             return (
-              <span className="text-xs text-text-secondary">
+              <span className="text-sm text-text-secondary">
                 {value || <span className="text-text-muted">—</span>}
               </span>
             );
           }
           if (key === "approvalDate") {
-            return <span className="text-xs text-text-secondary">{fmtDate(value)}</span>;
+            return <span className="text-sm text-text-secondary">{fmtDate(value)}</span>;
           }
           if (key === "notes") {
             return (
-              <span className="max-w-[140px] truncate text-xs text-text-muted" title={value}>
+              <span className="max-w-[140px] truncate text-sm text-text-muted" title={value}>
                 {value || "—"}
               </span>
             );

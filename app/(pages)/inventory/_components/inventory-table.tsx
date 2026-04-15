@@ -102,7 +102,7 @@ function StockLevelBadge({ level }: { level: number }) {
 
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${bgColor}`}
+      className={`inline-block rounded px-2.5 py-1 text-xs font-bold ${bgColor}`}
     >
       {level} pcs
     </span>
@@ -127,12 +127,12 @@ function ActionsDropdown({ itemId }: { itemId: string }) {
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover"
+        className="flex h-8 w-8 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover"
         title={`Actions for ${itemId}`}
       >
         <svg
-          width="14"
-          height="14"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           fill="currentColor"
         >
@@ -145,19 +145,19 @@ function ActionsDropdown({ itemId }: { itemId: string }) {
         <div className="absolute right-0 z-10 mt-1 w-28 rounded-lg border border-border-main bg-surface py-1 shadow-lg">
           <button
             onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
+            className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover"
           >
             View
           </button>
           <button
             onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
+            className="w-full px-3 py-2 text-left text-sm text-text-secondary hover:bg-surface-hover"
           >
             Edit
           </button>
           <button
             onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50"
+            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
           >
             Delete
           </button>
@@ -178,7 +178,7 @@ export function InventoryTable() {
         icon={warningIcon}
         message="12 items are low in stock"
         rightContent={
-          <button className="text-xs font-semibold text-amber-800 hover:underline">
+          <button className="text-sm font-semibold text-amber-800 hover:underline">
             View All &gt;
           </button>
         }

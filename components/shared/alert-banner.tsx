@@ -21,7 +21,7 @@ export function AlertBanner({
 }: AlertBannerProps) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg px-4 py-2.5 text-sm ${variants[variant]}`}
+      className={`flex items-center justify-between rounded-lg px-5 py-3 text-base ${variants[variant]}`}
     >
       <div className="flex items-center gap-2">
         {icon}

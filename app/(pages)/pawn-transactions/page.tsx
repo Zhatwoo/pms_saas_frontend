@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
+import { useBranch } from "@/contexts/branch-context";
 import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
@@ -28,8 +29,6 @@ interface TransactionRow {
   storage: string;
 }
 
-const branches = ["All Branches", "Makati Main Branch", "Taguig Branch", "Cebu Branch"];
-
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
@@ -40,10 +39,8 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 };
 
 export default function PawnTransactionsPage() {
-  const userRole = "super_admin"; 
-  const isSuperAdmin = userRole === "super_admin";
+  const { selectedBranch, isAllBranches, branches } = useBranch();
 
-  const [selectedBranch, setSelectedBranch] = useState("All Branches");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
@@ -57,7 +54,7 @@ export default function PawnTransactionsPage() {
     async function fetchTransactions() {
       setIsLoading(true);
       try {
-        const query = selectedBranch === "All Branches" ? "" : `?branch=${encodeURIComponent(selectedBranch)}`;
+        const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
         const data = await api.get<{ stats: any; transactions: TransactionRow[] }>(`/transactions${query}`);
         if (data) {
           setCurrentStats(data.stats || {
@@ -73,7 +70,7 @@ export default function PawnTransactionsPage() {
       }
     }
     fetchTransactions();
-  }, [selectedBranch]);
+  }, [selectedBranch.id, isAllBranches]);
 
   const filteredTransactions = useMemo(() => {
     if (activeFilter === "All") return allTransactions;
@@ -93,10 +90,10 @@ export default function PawnTransactionsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `transactions_${selectedBranch.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `transactions_${selectedBranch.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [filteredTransactions, selectedBranch]);
+  }, [filteredTransactions, selectedBranch.name]);
 
   const handlePrintReport = useCallback(() => {
     window.print();
@@ -105,7 +102,7 @@ export default function PawnTransactionsPage() {
   const handleManualSubmit = (data: ManualTransactionPayload) => {
     const newTransaction: TransactionRow = {
       transactionNo: data.transactionNo,
-      branch: selectedBranch,
+      branch: selectedBranch.name,
       purpose: "Start",
       date: data.date,
       time: data.time,
@@ -120,32 +117,16 @@ export default function PawnTransactionsPage() {
     setAllTransactions(prev => [newTransaction, ...prev]);
   };
 
+  // Build branch name list for the manual modal
+  const branchNames = branches.map((b) => b.name);
+
   return (
     <div className="space-y-3 pb-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-emerald-900 leading-tight">Transactions</h1>
-          <p className="text-xs font-medium text-text-tertiary mt-0.5">Manage and monitor daily pawn operations.</p>
+          <h1 className="text-2xl font-bold text-emerald-900 dark:text-text-primary leading-tight">Transactions</h1>
+          <p className="text-sm font-medium text-text-tertiary mt-0.5">Manage and monitor daily pawn operations.</p>
         </div>
-
-        {isSuperAdmin && (
-          <div className="flex items-center gap-3">
-            <div className="bg-surface border border-border-main text-xs text-text-primary rounded-md overflow-hidden flex items-center h-8 px-2 cursor-pointer shadow-sm">
-              <select
-                value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value)}
-                className="bg-transparent border-none outline-none appearance-none pr-5 cursor-pointer font-medium"
-              >
-                {branches.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none -ml-4">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       <TransactionActions
@@ -162,8 +143,8 @@ export default function PawnTransactionsPage() {
         isOpen={isManualModalOpen} 
         onClose={() => setIsManualModalOpen(false)} 
         onSubmit={handleManualSubmit}
-        branches={branches}
-        currentBranch={selectedBranch}
+        branches={branchNames}
+        currentBranch={selectedBranch.name}
       />
     </div>
   );

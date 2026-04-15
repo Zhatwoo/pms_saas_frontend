@@ -31,7 +31,7 @@ export function TransactionFilters({
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
       {/* Search */}
       <div className="flex min-w-[180px] flex-1 flex-col gap-1">
-        <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+        <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           Search
         </label>
         <div className="relative">
@@ -54,20 +54,20 @@ export function TransactionFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search notes..."
-            className="w-full rounded-lg border border-input-border bg-input-bg py-2 pl-8 pr-3 text-xs text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-emerald-400"
+            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-emerald-400"
           />
         </div>
       </div>
 
       {/* Branch */}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+        <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           Branch
         </label>
         <select
           value={branchFilter}
           onChange={(e) => onBranchFilterChange(e.target.value)}
-          className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-emerald-400"
+          className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400"
         >
           <option value="all">All Branches</option>
           {branches.map((b) => (
@@ -80,27 +80,27 @@ export function TransactionFilters({
 
       {/* Date From */}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+        <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           From
         </label>
         <input
           type="date"
           value={dateFrom}
           onChange={(e) => onDateFromChange(e.target.value)}
-          className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-emerald-400"
+          className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400"
         />
       </div>
 
       {/* Date To */}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+        <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           To
         </label>
         <input
           type="date"
           value={dateTo}
           onChange={(e) => onDateToChange(e.target.value)}
-          className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none transition-colors focus:border-emerald-400"
+          className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400"
         />
       </div>
 
@@ -108,7 +108,7 @@ export function TransactionFilters({
       {hasFilters && (
         <button
           onClick={onClearFilters}
-          className="rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+          className="rounded-lg border border-border-main bg-surface-secondary px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
         >
           Clear
         </button>

@@ -40,10 +40,10 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
             </svg>
           </div>
 
-          <h3 className="mt-4 text-base font-bold text-text-primary">
+          <h3 className="mt-4 text-lg font-bold text-text-primary">
             Confirm Logout
           </h3>
-          <p className="mt-2 text-center text-xs leading-relaxed text-text-tertiary px-2">
+          <p className="mt-2 text-center text-sm leading-relaxed text-text-tertiary px-2">
             Are you sure you want to log out? You will need to sign in again to access the management dashboard.
           </p>
         </div>
@@ -53,14 +53,14 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-border-main bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+            className="flex-1 rounded-lg border border-border-main bg-surface px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-lg border border-red-600 bg-red-600 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+            className="flex-1 rounded-lg border border-red-600 bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
           >
             Yes, Log out
           </button>

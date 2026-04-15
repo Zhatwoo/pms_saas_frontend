@@ -72,7 +72,6 @@ export function TransferEmployeeForm({
   const [isLoading, setIsLoading] = useState(true);
   const [isTransferring, setIsTransferring] = useState(false);
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const [transferSourceBranchId, setTransferSourceBranchId] = useState("ALL");
   const [transferBranchId, setTransferBranchId] = useState("");
@@ -134,7 +133,6 @@ export function TransferEmployeeForm({
 
     setIsTransferring(true);
     setError("");
-    setSuccessMessage("");
 
     try {
       const updated = await api.patch<UserApiRecord>(
@@ -149,8 +147,7 @@ export function TransferEmployeeForm({
 
       setTransferSourceBranchId(updatedUser.branchId ?? "ALL");
       setTransferBranchId("");
-      const successMsg = `${updatedUser.fullName} is now assigned to ${updatedUser.branchName}.`;
-      setSuccessMessage(successMsg);
+      const successMsg = `Transferred successfully! ${updatedUser.fullName} is now assigned to ${updatedUser.branchName}.`;
       onTransferSuccess?.(successMsg);
     } catch (transferError) {
       const errorMsg =
@@ -185,12 +182,6 @@ export function TransferEmployeeForm({
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {successMessage}
         </div>
       )}
 

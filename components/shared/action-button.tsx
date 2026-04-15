@@ -30,7 +30,7 @@ export function ActionButton({
     <button
       onClick={onClick}
       className={`rounded border font-bold transition-opacity hover:opacity-80 ${variants[variant]} ${
-        size === "sm" ? "px-3 py-1 text-[10px]" : "px-4 py-2 text-xs"
+        size === "sm" ? "px-4 py-1.5 text-xs" : "px-5 py-2.5 text-sm"
       } ${className}`}
     >
       {children}

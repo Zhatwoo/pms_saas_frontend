@@ -105,20 +105,20 @@ export function UpdateUserModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="bg-emerald-900 px-6 py-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">
             User Management
           </p>
           <div className="mt-2 flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Update User Profile</h2>
-              <p className="mt-1 text-sm text-emerald-50/80">
+              <h2 className="text-2xl font-bold text-white">Update User Profile</h2>
+              <p className="mt-1 text-base text-emerald-50/80">
                 Modify account details for <span className="text-amber-300 font-bold">{user.email}</span>.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
               aria-label="Close update user modal"
             >
               <svg
@@ -140,7 +140,7 @@ export function UpdateUserModal({
 
         <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-base text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
               {error}
             </div>
           )}
@@ -148,13 +148,13 @@ export function UpdateUserModal({
           {/* Profile Details Section */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-widest text-text-tertiary">
+              <label className="mb-1.5 block text-sm font-bold uppercase tracking-widest text-text-tertiary">
                 Account Identity
               </label>
             </div>
             
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <label className="mb-1.5 block text-sm font-bold uppercase tracking-wide text-zinc-500 dark:text-text-tertiary">
                 Full Name
               </label>
               <input
@@ -162,30 +162,30 @@ export function UpdateUserModal({
                 value={form.fullName}
                 onChange={(event) => updateField("fullName", event.target.value)}
                 placeholder="John Doe"
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
+                className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <label className="mb-1.5 block text-sm font-bold uppercase tracking-wide text-zinc-500 dark:text-text-tertiary">
                 Email Address
               </label>
               <input
                 type="email"
                 value={user.email}
                 disabled
-                className="h-11 w-full cursor-not-allowed rounded-md border border-input-border bg-zinc-50/50 px-3 text-sm text-text-muted outline-none"
+                className="h-12 w-full cursor-not-allowed rounded-md border border-input-border bg-zinc-50/50 dark:bg-surface-secondary px-4 text-base text-text-muted outline-none"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-zinc-500">
+              <label className="mb-1.5 block text-sm font-bold uppercase tracking-wide text-zinc-500 dark:text-text-tertiary">
                 Role
               </label>
               <select
                 value={form.role}
                 onChange={(event) => updateField("role", event.target.value as CreateableUserRole)}
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
+                className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
               >
                 {roleOptions.map((role) => (
                   <option key={role} value={role}>
@@ -200,14 +200,14 @@ export function UpdateUserModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-border-main px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+              className="rounded-md border border-border-main px-5 py-3 text-base font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+              className="rounded-md bg-emerald-700 px-5 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-800"
             >
               {isSubmitting ? "Updating..." : "Update Account"}
             </button>

@@ -16,7 +16,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ label, variant }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${variants[variant]}`}
+      className={`inline-block rounded px-2.5 py-1 text-xs font-bold ${variants[variant]}`}
     >
       {label}
     </span>

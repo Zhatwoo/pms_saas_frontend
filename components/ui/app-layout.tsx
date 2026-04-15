@@ -52,7 +52,7 @@ export function AppLayout({
           branchName={branchName || (isAllBranches ? "All Branches" : selectedBranch.name)}
           hideBranchSelector={hideBranchSelector}
         />
-        <main className="flex-1 overflow-y-auto bg-pawn-content p-6 transition-colors duration-300">
+        <main className="flex-1 overflow-y-auto bg-pawn-content p-8 transition-colors duration-300">
           {children}
         </main>
       </div>

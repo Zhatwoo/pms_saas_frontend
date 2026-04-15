@@ -60,7 +60,7 @@ function NavItemComponent({
           }}
           title={collapsed ? item.label : undefined}
           disabled={disabled}
-          className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
+          className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-base transition-colors ${
             collapsed ? "justify-center" : ""
           } ${
             effectivelyDisabled 
@@ -74,8 +74,8 @@ function NavItemComponent({
           </div>
           {!collapsed && (
             <svg
-              width="14"
-              height="14"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -99,7 +99,7 @@ function NavItemComponent({
           }`}
         >
           <div className="overflow-hidden">
-            <div className="ml-9 space-y-1 pb-1">
+            <div className="ml-10 space-y-1 pb-1">
               {item.subItems?.map((sub, subIdx) => {
                 const isSubActive =
                   pathname === sub.href ||
@@ -110,7 +110,7 @@ function NavItemComponent({
                       sub.href ?? sub.label
                     }`}
                     href={effectivelyDisabled ? "#" : (sub.href ?? "#")}
-                    className={`block rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                    className={`block rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                       isSubActive
                         ? "bg-pawn-gold text-zinc-900 shadow-sm"
                         : effectivelyDisabled
@@ -133,7 +133,7 @@ function NavItemComponent({
   const content = (
     <div
       title={collapsed ? item.label : undefined}
-      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+      className={`flex items-center gap-3 rounded-lg px-4 py-3 text-base transition-colors ${
         collapsed ? "justify-center" : ""
       } ${
         isSelfActive
@@ -206,11 +206,11 @@ export function Sidebar({
   return (
     <aside
       className={`flex h-screen flex-col bg-pawn-sidebar text-white transition-all duration-300 ${
-        collapsed ? "w-[68px]" : "w-64"
+        collapsed ? "w-[72px]" : "w-72"
       }`}
     >
       {/* Logo + toggle */}
-      <div className="flex items-center gap-3 border-b border-white/10 px-3 py-4">
+      <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
         <button
           onClick={onToggle}
           className="flex-shrink-0 rounded-lg p-0.5 transition hover:bg-pawn-sidebar-light"
@@ -218,17 +218,17 @@ export function Sidebar({
           <Image
             src="/logo.jpg"
             alt="JCLB Logo"
-            width={40}
-            height={40}
+            width={48}
+            height={48}
             className="rounded-full"
           />
         </button>
         {!collapsed && (
           <div className="overflow-hidden">
-            <p className="text-base font-bold leading-tight tracking-wide text-white">
+            <p className="text-lg font-bold leading-tight tracking-wide text-white">
               {APP_SHORT_NAME}
             </p>
-            <p className="text-[11px] font-medium leading-tight tracking-wider text-white/60">
+            <p className="text-xs font-medium leading-tight tracking-wider text-white/60">
               {APP_TAGLINE}
             </p>
           </div>
@@ -236,14 +236,14 @@ export function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav className="scrollbar-hide flex-1 overflow-y-auto px-2 py-2">
+      <nav className="scrollbar-hide flex-1 overflow-y-auto px-3 py-3">
         {navGroups.map((group, groupIdx) => (
           <div
             key={`${group.section}-${groupIdx}`}
             className={groupIdx === 0 ? "mt-2" : "mt-5"}
           >
             {!collapsed && (
-              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-pawn-section">
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-widest text-pawn-section">
                 {group.section}
               </p>
             )}
@@ -275,15 +275,15 @@ export function Sidebar({
             collapsed ? "justify-center" : ""
           }`}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pawn-gold text-sm font-bold text-zinc-900">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-pawn-gold text-base font-bold text-zinc-900">
             {userInitials}
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">
+              <p className="truncate text-base font-semibold text-white">
                 {userName || "Current User"}
               </p>
-              <p className="text-xs uppercase tracking-wide text-white/60">
+              <p className="text-sm uppercase tracking-wide text-white/60">
                 {userRole ? getRoleLabel(userRole) : "Signed In"}
               </p>
             </div>
@@ -317,7 +317,7 @@ export function Sidebar({
         <button
           onClick={() => setShowLogoutConfirm(true)}
           title={collapsed ? "Logout" : undefined}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-white/60 transition-colors hover:bg-pawn-sidebar-light hover:text-white ${
+          className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-base text-white/60 transition-colors hover:bg-pawn-sidebar-light hover:text-white ${
             collapsed ? "justify-center" : ""
           }`}
         >

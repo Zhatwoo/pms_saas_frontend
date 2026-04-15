@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Pagination } from "@/components/shared/pagination";
-import { FilterSelect } from "@/components/shared/filter-select";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
-import { StatusBadge } from "@/components/shared/status-badge";
 
 interface ActivityLog {
   id: string;
@@ -31,13 +29,7 @@ function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
 }
 
-const AVATAR_COLORS = ["bg-blue-600", "bg-emerald-600", "bg-purple-600", "bg-amber-600", "bg-rose-600", "bg-indigo-600"];
-function getAvatarColor(name: string) {
-  if (!name) return AVATAR_COLORS[0];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
+
 
 // Helper to guess log type based on action/details text
 function guessLogType(action: string, details: string) {
@@ -158,7 +150,7 @@ export default function AuditLogsPage() {
         <div className="flex items-center gap-3">
 
           {user?.branchId && !isSuperAdmin && (
-            <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 tracking-wider">
+            <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 tracking-wider">
               BRANCH: {user.branchId.split('-')[0].toUpperCase()}
             </span>
           )}
@@ -173,17 +165,17 @@ export default function AuditLogsPage() {
           { label: "FUND TRANSFERS", count: totalFundTransfers, sub: "Cash moves", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
           { label: "ITEM TRANSFERS", count: totalItemTransfers, sub: "Branch to Branch", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }
         ].map((card, i) => (
-          <div key={i} className="flex flex-col justify-between rounded-xl bg-white dark:bg-[#1a1f24] p-5 border border-zinc-200 dark:border-[#2d333b] shadow-sm relative overflow-hidden group">
+          <div key={i} className="flex flex-col justify-between rounded-xl bg-surface p-5 border border-border-main shadow-sm relative overflow-hidden group transition-colors duration-300">
             <div className="flex justify-between items-start z-10">
-              <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-widest uppercase">{card.label}</span>
-              <svg className="w-5 h-5 text-zinc-400 dark:text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
+              <span className="text-xs font-bold text-text-muted tracking-widest uppercase">{card.label}</span>
+              <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
             </div>
             <div className="mt-4 z-10">
-              <span className="text-4xl font-black text-zinc-900 dark:text-white">{isLoading ? "-" : card.count}</span>
+              <span className="text-4xl font-black text-text-primary">{isLoading ? "-" : card.count}</span>
             </div>
             <div className="mt-2 flex items-center gap-2 z-10">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">{card.sub}</span>
+              <span className="text-xs text-text-muted font-medium">{card.sub}</span>
             </div>
             {/* Hover dash effect */}
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-500/10 transition-all duration-500"></div>
@@ -206,11 +198,11 @@ export default function AuditLogsPage() {
               <button
                 key={tab}
                 onClick={() => setFilterType(tab)}
-                className={`flex items-center gap-2 px-6 py-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${isActive ? "border-emerald-600 text-emerald-700 dark:text-emerald-400" : "border-transparent text-text-tertiary hover:text-text-secondary hover:bg-surface-secondary rounded-t-lg"
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${isActive ? "border-emerald-600 text-emerald-700 dark:text-emerald-400" : "border-transparent text-text-tertiary hover:text-text-secondary hover:bg-surface-secondary rounded-t-lg"
                   }`}
               >
                 {tab}
-                <span className={`px-2 py-0.5 rounded-full text-[9px] ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400" : "bg-surface-secondary text-text-tertiary"}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400" : "bg-surface-secondary text-text-tertiary"}`}>
                   {isLoading ? "-" : count}
                 </span>
               </button>
@@ -228,7 +220,7 @@ export default function AuditLogsPage() {
                 placeholder="Search logs..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2 text-xs text-text-primary outline-none focus:border-emerald-500 transition-colors"
+                className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-emerald-500 transition-colors"
               />
             </div>
 
@@ -236,19 +228,19 @@ export default function AuditLogsPage() {
               <select
                 value={branch}
                 onChange={(e) => setBranch(e.target.value)}
-                className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-xs font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500"
+                className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500"
               >
                 {branchOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             )}
 
-            <button className="rounded-lg border border-input-border bg-input-bg px-4 py-2 text-xs font-medium text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2">
+            <button className="rounded-lg border border-input-border bg-input-bg px-5 py-2.5 text-sm font-medium text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2">
               All Actions
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
           </div>
 
-          <div className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
+          <div className="text-xs font-bold text-text-tertiary uppercase tracking-widest">
             {totalItems} RECORDS
           </div>
         </div>
@@ -257,20 +249,20 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-border-subtle bg-surface-secondary/50">
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-tertiary">Date & Time</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-tertiary">User</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-tertiary">Log Type</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-tertiary">Action</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-tertiary w-[30%]">Details / Reference</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-text-tertiary text-right">Status</th>
+              <tr className="bg-emerald-900 text-amber-400">
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Date & Time</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">User</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Log Type</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Action</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%]">Details / Reference</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-right">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading ? (
-                <tr><td colSpan={6} className="py-12 text-center text-sm font-medium text-text-tertiary">Loading audit trail...</td></tr>
+                <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">Loading audit trail...</td></tr>
               ) : paginatedLogs.length === 0 ? (
-                <tr><td colSpan={6} className="py-12 text-center text-sm font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>
+                <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>
               ) : (
                 paginatedLogs.map((log) => {
                   const dateObj = new Date(log.createdAt);
@@ -281,23 +273,23 @@ export default function AuditLogsPage() {
                     <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="text-xs font-bold text-text-primary">{dString}</span>
-                          <span className="text-[10px] font-medium text-text-tertiary mt-0.5">{tString}</span>
+                          <span className="text-sm font-bold text-text-primary">{dString}</span>
+                          <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-sm ${getAvatarColor(log.userFullName)}`}>
+                          <div className="h-9 w-9 rounded-full flex items-center justify-center bg-pawn-gold text-zinc-900 text-xs font-bold shadow-sm">
                             {getInitials(log.userFullName)}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-xs font-bold text-text-primary">{log.userFullName}</span>
-                            <span className="text-[10px] font-medium text-text-tertiary capitalize mt-0.5">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                            <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
+                            <span className="text-xs font-medium text-text-tertiary capitalize mt-0.5">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-[9px] font-bold tracking-widest uppercase border ${log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase border ${log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
                           log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
                             log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
                               'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
@@ -306,7 +298,7 @@ export default function AuditLogsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-[10px] font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
+                        <span className={`text-xs font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
                           log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
                             'text-emerald-600 dark:text-emerald-400'
                           }`}>
@@ -315,8 +307,8 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col max-w-sm">
-                          <span className="text-xs font-bold text-text-primary truncate" title={log.action}>{log.action}</span>
-                          <span className="text-[10px] text-text-tertiary mt-1 line-clamp-2" title={log.details || ""}>
+                          <span className="text-sm font-bold text-text-primary truncate" title={log.action}>{log.action}</span>
+                          <span className="text-xs text-text-tertiary mt-1 line-clamp-2" title={log.details || ""}>
                             {log.details || "System automatic trigger without details"}
                           </span>
                         </div>
@@ -324,13 +316,13 @@ export default function AuditLogsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex justify-end">
                           {log.statusGuess === "Success" && (
-                            <span className="inline-flex px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-[10px] font-bold">Success</span>
+                            <span className="inline-flex px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-xs font-bold">Success</span>
                           )}
                           {log.statusGuess === "Failed" && (
-                            <span className="inline-flex px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-[10px] font-bold">Failed</span>
+                            <span className="inline-flex px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-xs font-bold">Failed</span>
                           )}
                           {log.statusGuess === "Pending" && (
-                            <span className="inline-flex px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 text-[10px] font-bold">Pending</span>
+                            <span className="inline-flex px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 text-xs font-bold">Pending</span>
                           )}
                         </div>
                       </td>
@@ -344,7 +336,7 @@ export default function AuditLogsPage() {
 
         {/* Footer Pagination */}
         <div className="p-4 border-t border-border-subtle bg-surface-secondary/50 flex items-center justify-between">
-          <span className="text-[10px] font-bold text-text-tertiary tracking-widest uppercase">
+          <span className="text-xs font-bold text-text-tertiary tracking-widest uppercase">
             SHOWING {totalItems === 0 ? "0" : (currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} OF {totalItems} RECORDS
           </span>
           <Pagination

@@ -61,10 +61,10 @@ export function AccountStatusModal({
             )}
           </div>
 
-          <h3 className="mt-4 text-base font-bold text-text-primary">
+          <h3 className="mt-4 text-lg font-bold text-text-primary">
             {title}
           </h3>
-          <p className="mt-2 text-center text-xs leading-relaxed text-text-tertiary px-2">
+          <p className="mt-2 text-center text-sm leading-relaxed text-text-tertiary px-2">
             {isReject ? (
               <>
                 Are you sure you want to reject <span className="font-bold text-text-primary">{user.fullName}</span>? 
@@ -85,7 +85,7 @@ export function AccountStatusModal({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="flex-1 rounded-lg border border-border-main bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+            className="flex-1 rounded-lg border border-border-main bg-surface px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
           >
             Cancel
           </button>
@@ -93,7 +93,7 @@ export function AccountStatusModal({
             type="button"
             onClick={handleConfirm}
             disabled={isProcessing}
-            className={`flex-1 rounded-lg border border-${isReject ? "red" : "emerald"}-600 bg-${isReject ? "red" : "emerald"}-600 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50`}
+            className={`flex-1 rounded-lg border border-${isReject ? "red" : "emerald"}-600 bg-${isReject ? "red" : "emerald"}-600 px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50`}
           >
             {isProcessing ? "Processing..." : isReject ? "Yes, Reject & Delete" : "Yes, Approve Account"}
           </button>

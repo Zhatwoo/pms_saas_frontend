@@ -13,7 +13,7 @@ export function PeriodTabs({ tabs, activeTab, onTabChange }: PeriodTabsProps) {
         <button
           key={tab}
           onClick={() => onTabChange(tab)}
-          className={`px-5 py-2 text-sm font-medium transition-colors ${
+          className={`px-6 py-2.5 text-base font-medium transition-colors ${
             tab === activeTab
               ? "bg-pawn-sidebar text-white"
               : "text-text-secondary hover:bg-surface-hover"

@@ -19,7 +19,7 @@ export function Pagination({
   for (let i = 1; i <= totalPages; i++) pages.push(i);
 
   return (
-    <div className="flex items-center justify-end gap-3 px-4 py-3 text-xs text-text-secondary">
+    <div className="flex items-center justify-end gap-3 px-5 py-4 text-sm text-text-secondary">
       <span>
         Showing {showing} out of {totalItems}
       </span>
@@ -27,7 +27,7 @@ export function Pagination({
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className="px-1.5 py-0.5 text-text-muted hover:text-text-primary disabled:opacity-30"
+          className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
         >
           &lt;
         </button>
@@ -35,7 +35,7 @@ export function Pagination({
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`flex h-6 w-6 items-center justify-center rounded text-xs ${
+            className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
               p === currentPage
                 ? "bg-emerald-700 font-bold text-white"
                 : "text-text-secondary hover:bg-surface-hover"
@@ -47,7 +47,7 @@ export function Pagination({
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className="px-1.5 py-0.5 text-text-muted hover:text-text-primary disabled:opacity-30"
+          className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
         >
           &gt;
         </button>

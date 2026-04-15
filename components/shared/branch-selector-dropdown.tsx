@@ -184,7 +184,7 @@ export function BranchSelectorDropdown() {
         {/* Icon */}
         <span
           className={`
-            flex h-7 w-7 items-center justify-center rounded-lg transition-colors duration-200
+            flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-200
             ${
               isAllBranches
                 ? "bg-gradient-to-br from-emerald-500 to-emerald-700 text-white"
@@ -198,17 +198,17 @@ export function BranchSelectorDropdown() {
         {/* Label */}
         <div className="flex flex-col items-start">
           <span className="flex items-center gap-1.5">
-            <span className="max-w-[160px] truncate text-[13px] font-semibold leading-tight">
+            <span className="max-w-[160px] truncate text-sm font-semibold leading-tight">
               {selectedBranch.name}
             </span>
             {isAllBranches && (
-              <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+              <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                 <ShieldIcon />
                 Admin
               </span>
             )}
           </span>
-          <span className="text-[10px] leading-tight text-text-muted">
+          <span className="text-xs leading-tight text-text-muted">
             {isAllBranches
               ? `${branches.length - 1} branches`
               : selectedBranch.location ?? "Branch view"}
@@ -224,7 +224,7 @@ export function BranchSelectorDropdown() {
         <div
           className="
             absolute right-0 top-[calc(100%+6px)] z-50
-            w-80 origin-top-right
+            w-96 origin-top-right
             animate-[dropdownIn_0.2s_ease-out]
             rounded-2xl border border-border-main
             bg-surface p-1.5 shadow-2xl
@@ -236,10 +236,10 @@ export function BranchSelectorDropdown() {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-3 pb-2 pt-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <span className="text-sm font-semibold uppercase tracking-wider text-text-muted">
               Select Branch
             </span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
               {branches.length} available
             </span>
           </div>
@@ -268,7 +268,7 @@ export function BranchSelectorDropdown() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search branches..."
-                  className="w-full rounded-lg border border-border-main bg-surface-secondary py-2 pl-8 pr-3 text-xs text-text-primary outline-none placeholder:text-text-muted focus:border-emerald-300 focus:bg-surface"
+                  className="w-full rounded-lg border border-border-main bg-surface-secondary py-2.5 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-emerald-300 focus:bg-surface"
                 />
               </div>
             </div>
@@ -337,14 +337,14 @@ export function BranchSelectorDropdown() {
                   {/* Label */}
                   <div className="flex min-w-0 flex-1 flex-col">
                     <span
-                      className={`truncate text-[13px] font-medium leading-tight ${
+                      className={`truncate text-sm font-medium leading-tight ${
                         isSelected ? "font-semibold" : ""
                       }`}
                     >
                       {branch.name}
                     </span>
                     {branch.location && (
-                      <span className="mt-0.5 truncate text-[10px] leading-tight text-text-muted">
+                      <span className="mt-0.5 truncate text-xs leading-tight text-text-muted">
                         {branch.location}
                       </span>
                     )}
@@ -363,7 +363,7 @@ export function BranchSelectorDropdown() {
 
           {/* Footer */}
           <div className="mt-1.5 border-t border-border-subtle px-3 py-2">
-            <p className="text-[10px] text-text-muted">
+            <p className="text-xs text-text-muted">
               <span className="font-medium text-text-tertiary">Super Admin</span> —
               Data across pages will reflect the selected branch.
             </p>

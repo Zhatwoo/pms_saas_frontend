@@ -36,13 +36,13 @@ export function DataTable({
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       <div className="overflow-x-auto">
-        <table className={`w-full text-sm ${tableClassName ?? ""}`.trim()}>
+        <table className={`w-full text-base ${tableClassName ?? ""}`.trim()}>
           <thead>
             <tr className={headerClassName}>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
+                  className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${
                     col.align === "center"
                       ? "text-center"
                       : col.align === "right"
@@ -60,7 +60,7 @@ export function DataTable({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-10 text-center text-sm text-text-tertiary"
+                  className="px-4 py-10 text-center text-base text-text-tertiary"
                 >
                   {emptyMessage}
                 </td>
@@ -77,7 +77,7 @@ export function DataTable({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`whitespace-nowrap px-3 py-2 text-xs text-text-secondary ${
+                      className={`whitespace-nowrap px-4 py-3 text-sm text-text-secondary ${
                         col.align === "center"
                           ? "text-center"
                           : col.align === "right"

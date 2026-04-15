@@ -60,16 +60,16 @@ const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
 
 // ─── Renewal Details ──────────────────────────────────────────
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-text-muted text-[10px]">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-text-muted text-xs">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200">
+          <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 border border-amber-200">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-text-tertiary">{r.date}</span>
-          <span className="text-[10px] font-bold text-text-secondary">₱{r.amount.toLocaleString()}</span>
+          <span className="text-xs text-text-tertiary">{r.date}</span>
+          <span className="text-xs font-bold text-text-secondary">₱{r.amount.toLocaleString()}</span>
         </div>
       ))}
     </div>
@@ -91,51 +91,51 @@ function ViewModal({ item, onClose, onSaveRemarks, userRole }: {
       <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="bg-emerald-900 px-6 py-4 flex items-center justify-between">
           <div>
-            <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Item #{item.itemId}</p>
-            <h2 className="text-white text-lg font-bold">{item.itemName}</h2>
+            <p className="text-amber-400 text-xs font-bold uppercase tracking-wider">Item #{item.itemId}</p>
+            <h2 className="text-white text-xl font-bold">{item.itemName}</h2>
           </div>
           <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
         </div>
         <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-3">
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Category</p><p className="text-sm text-text-primary">{item.category}</p></div>
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Branch</p><p className="text-sm text-text-primary">{item.branch}</p></div>
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Pawn Date</p><p className="text-sm text-text-primary">{item.pawnDate}</p></div>
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Renewal Count</p><p className="text-sm text-text-primary font-bold">{item.renewalCount}x</p></div>
+            <div><p className="text-xs uppercase text-text-muted font-bold">Category</p><p className="text-base text-text-primary">{item.category}</p></div>
+            <div><p className="text-xs uppercase text-text-muted font-bold">Branch</p><p className="text-base text-text-primary">{item.branch}</p></div>
+            <div><p className="text-xs uppercase text-text-muted font-bold">Pawn Date</p><p className="text-base text-text-primary">{item.pawnDate}</p></div>
+            <div><p className="text-xs uppercase text-text-muted font-bold">Renewal Count</p><p className="text-base text-text-primary font-bold">{item.renewalCount}x</p></div>
           </div>
           {item.status === "Expired" && (
             <div className="rounded-lg border border-red-200 bg-red-50/50 p-3 space-y-2">
-              <p className="text-[10px] font-bold uppercase text-red-600 tracking-wider">Expired Item — QR Security Info</p>
-              {item.originalPhoto && <div><p className="text-[10px] text-text-tertiary">Original Photo:</p><p className="text-xs text-text-secondary">{item.originalPhoto}</p></div>}
-              {item.conditionReport && <div><p className="text-[10px] text-text-tertiary">Condition Report:</p><p className="text-xs text-text-secondary">{item.conditionReport}</p></div>}
-              {item.qrCode && <div><p className="text-[10px] text-text-tertiary">QR Code:</p><p className="text-xs font-mono text-text-secondary">{item.qrCode}</p></div>}
+              <p className="text-xs font-bold uppercase text-red-600 tracking-wider">Expired Item — QR Security Info</p>
+              {item.originalPhoto && <div><p className="text-xs text-text-tertiary">Original Photo:</p><p className="text-sm text-text-secondary">{item.originalPhoto}</p></div>}
+              {item.conditionReport && <div><p className="text-xs text-text-tertiary">Condition Report:</p><p className="text-sm text-text-secondary">{item.conditionReport}</p></div>}
+              {item.qrCode && <div><p className="text-xs text-text-tertiary">QR Code:</p><p className="text-sm font-mono text-text-secondary">{item.qrCode}</p></div>}
             </div>
           )}
           <div>
-            <p className="text-[10px] uppercase text-text-muted font-bold mb-2">Renewal History</p>
+            <p className="text-xs uppercase text-text-muted font-bold mb-2">Renewal History</p>
             <RenewalDetails renewals={item.renewals} />
           </div>
           <div>
-            <p className="text-[10px] uppercase text-text-muted font-bold mb-1">Remarks / Notes</p>
+            <p className="text-xs uppercase text-text-muted font-bold mb-1">Remarks / Notes</p>
             {canEdit ? (
               <textarea
                 value={editRemarks}
                 onChange={(e) => setEditRemarks(e.target.value)}
                 rows={3}
                 placeholder="Add remarks about item condition, defects, investigations..."
-                className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none focus:border-emerald-500 resize-none"
+                className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500 resize-none"
               />
             ) : (
-              <p className="text-xs text-text-secondary bg-surface-secondary rounded-md p-2 border border-border-subtle">{item.remarks || "No remarks"}</p>
+              <p className="text-sm text-text-secondary bg-surface-secondary rounded-md p-2 border border-border-subtle">{item.remarks || "No remarks"}</p>
             )}
           </div>
         </div>
         <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">
-          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
+          <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
           {canEdit && (
             <button
               onClick={() => { onSaveRemarks(item.id, editRemarks); onClose(); }}
-              className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800"
+              className="px-5 py-2.5 text-sm font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800"
             >
               Save Remarks
             </button>
@@ -251,29 +251,29 @@ export default function PawnedItemsPage() {
             onChange={setMonthFilter} 
           />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
+            <label className="text-xs font-bold uppercase tracking-wide text-text-tertiary">Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none focus:border-emerald-500 w-44"
+              className="h-10 rounded-md border border-input-border bg-input-bg px-4 text-sm text-text-primary outline-none focus:border-emerald-500 w-48"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleQRScan} className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
+          <button onClick={handleQRScan} className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition-colors dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-500/50">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
             </svg>
             QR Scan
           </button>
           <div className="flex rounded-md border border-border-main overflow-hidden">
-            <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+            <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
               List
             </button>
-            <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+            <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
               Calendar
             </button>
           </div>
@@ -287,15 +287,15 @@ export default function PawnedItemsPage() {
               <thead>
                 <tr className="bg-emerald-900 text-amber-400">
                   {["ID", "Item Name", "Category", "Branch", "Date & Time", "Status", "Renewal", "Note"].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left">{h}</th>
+                    <th key={h} className="whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide text-left">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">Loading...</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-base text-zinc-400">Loading...</td></tr>
                 ) : pawnedItems.length === 0 ? (
-                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-base text-zinc-400">No pawned items found</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
@@ -303,16 +303,16 @@ export default function PawnedItemsPage() {
                         className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
                         onClick={() => setViewingItem(item)}
                       >
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.pawnDate} 10:00 AM</td>
-                        <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary font-medium">
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">{item.itemName}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.pawnDate} 10:00 AM</td>
+                        <td className="whitespace-nowrap px-4 py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">
                           {item.renewalCount > 0 ? `Renew ${item.renewalCount}` : "—"}
                         </td>
-                        <td className="px-3 py-2 text-xs text-text-tertiary max-w-[150px] truncate" title={item.remarks || "No description"}>
+                        <td className="px-4 py-3 text-sm text-text-tertiary max-w-[150px] truncate" title={item.remarks || "No description"}>
                           {item.remarks || "—"}
                         </td>
                       </tr>
@@ -334,7 +334,7 @@ export default function PawnedItemsPage() {
 
       {viewMode === "calendar" && (
         <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
-          <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-text-secondary uppercase mb-2">
+          <div className="grid grid-cols-7 gap-1 text-center text-sm font-bold text-text-secondary uppercase mb-2">
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
           </div>
           <div className="grid grid-cols-7 gap-1 auto-rows-[100px]">
@@ -348,9 +348,9 @@ export default function PawnedItemsPage() {
                 <div key={i} className={`border rounded p-1 ${isCurrentMonth ? "border-border-subtle bg-surface" : "border-transparent bg-transparent"} ${isCurrentMonth && day === new Date().getDate() ? "ring-1 ring-emerald-500" : ""}`}>
                   {isCurrentMonth && (
                     <>
-                      <div className="text-[10px] font-bold text-text-tertiary text-right">{day}</div>
+                      <div className="text-xs font-bold text-text-tertiary text-right">{day}</div>
                       {hasItem && (
-                        <div className="mt-1 rounded bg-emerald-100 px-1 py-0.5 text-[9px] font-bold text-emerald-800 text-left truncate">
+                        <div className="mt-1 rounded bg-emerald-100 px-1 py-0.5 text-[10px] font-bold text-emerald-800 text-left truncate">
                           2 Items Pawned
                         </div>
                       )}

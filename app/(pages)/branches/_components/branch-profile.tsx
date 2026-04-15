@@ -213,7 +213,7 @@ function ProfileSection({
         <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-surface ${accentColor}`}>
           {icon}
         </div>
-        <h3 className="text-sm font-bold text-text-primary">{title}</h3>
+        <h3 className="text-base font-bold text-text-primary">{title}</h3>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -232,10 +232,10 @@ function MiniStat({
 }) {
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-secondary p-3.5 transition-colors duration-300">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+      <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
         {label}
       </p>
-      <p className={`mt-1 text-lg font-bold ${accent}`}>{value}</p>
+      <p className={`mt-1 text-xl font-bold ${accent}`}>{value}</p>
     </div>
   );
 }
@@ -259,6 +259,8 @@ export function BranchProfile({ branch }: BranchProfileProps) {
   const pathname = usePathname();
   const usersPath = pathname.startsWith("/admin") ? "/admin/users" : "/users";
   const [activeTab, setActiveTab] = useState<TabType>("staff");
+  const tabOrder: TabType[] = ["staff", "inventory", "transactions", "logs"];
+  const activeIndex = tabOrder.indexOf(activeTab);
   const [branchUsers, setBranchUsers] = useState<BranchUserApiRecord[]>([]);
   const [isLoadingStaff, setIsLoadingStaff] = useState(false);
   const [staffError, setStaffError] = useState("");
@@ -337,13 +339,13 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 <IconBuilding />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">{branch.name}</h1>
+                <h1 className="text-3xl font-bold text-white">{branch.name}</h1>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <StatusBadge
                     label={branch.status}
                     variant={statusVariantMap[branch.status] || "black"}
                   />
-                  <span className="flex items-center gap-1.5 text-xs text-emerald-300">
+                  <span className="flex items-center gap-1.5 text-sm text-emerald-300">
                     <span className="font-mono font-bold">ID: {branch.branchId}</span>
                   </span>
                 </div>
@@ -356,15 +358,15 @@ export function BranchProfile({ branch }: BranchProfileProps) {
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
               <span className="text-emerald-400"><IconMapPin /></span>
               <div>
-                <p className="text-[10px] font-medium uppercase text-emerald-400/70">Location</p>
-                <p className="text-xs font-semibold text-white">{branch.location}</p>
+                <p className="text-xs font-medium uppercase text-emerald-400/70">Location</p>
+                <p className="text-sm font-semibold text-white">{branch.location}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
               <span className="text-emerald-400"><IconCalendar /></span>
               <div>
-                <p className="text-[10px] font-medium uppercase text-emerald-400/70">Created</p>
-                <p className="text-xs font-semibold text-white">
+                <p className="text-xs font-medium uppercase text-emerald-400/70">Created</p>
+                <p className="text-sm font-semibold text-white">
                   {branch.createdAt
                     ? new Date(branch.createdAt).toLocaleDateString("en-US", {
                         month: "short",
@@ -378,15 +380,15 @@ export function BranchProfile({ branch }: BranchProfileProps) {
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
               <span className="text-emerald-400"><IconClock /></span>
               <div>
-                <p className="text-[10px] font-medium uppercase text-emerald-400/70">Last Activity</p>
-                <p className="text-xs font-semibold text-white">10 mins ago</p>
+                <p className="text-xs font-medium uppercase text-emerald-400/70">Last Activity</p>
+                <p className="text-sm font-semibold text-white">10 mins ago</p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
               <span className="text-emerald-400"><IconUsers /></span>
               <div>
-                <p className="text-[10px] font-medium uppercase text-emerald-400/70">Staff</p>
-                <p className="text-xs font-semibold text-white">{branchUsers.length} members</p>
+                <p className="text-xs font-medium uppercase text-emerald-400/70">Staff</p>
+                <p className="text-sm font-semibold text-white">{branchUsers.length} members</p>
               </div>
             </div>
           </div>
@@ -395,56 +397,68 @@ export function BranchProfile({ branch }: BranchProfileProps) {
         {/* ═══════════════════════════════════════════════════════
             TAB NAVIGATION
            ═══════════════════════════════════════════════════════ */}
-        <div className="flex border-b border-border-main bg-surface">
+        <div className="relative flex border-b border-border-main bg-surface">
           {[
             { id: "staff" as TabType, label: "Employees" },
             { id: "inventory" as TabType, label: "Inventory" },
             { id: "transactions" as TabType, label: "Transactions" },
             { id: "logs" as TabType, label: "Logs & Actions" },
-          ].map((tab) => (
+          ].map((tab, idx) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative flex-1 py-3 text-xs font-bold uppercase tracking-wide transition-all text-center ${
+              className={`relative flex-1 py-3.5 text-sm font-bold uppercase tracking-wide transition-all text-center ${
                 activeTab === tab.id
                   ? "text-emerald-text"
                   : "text-text-tertiary hover:text-text-secondary"
               }`}
             >
               {tab.label}
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-text" />
-              )}
             </button>
           ))}
+          {/* Sliding tab indicator */}
+          <div
+            className="absolute bottom-0 h-1 bg-emerald-text transition-all duration-300 ease-in-out"
+            style={{
+              width: `${100 / 4}%`,
+              left: `${(tabOrder.indexOf(activeTab) * 100) / 4}%`,
+            }}
+          />
         </div>
 
         {/* ═══════════════════════════════════════════════════════
             TAB CONTENT
            ═══════════════════════════════════════════════════════ */}
-        <div>
-          {/* EMPLOYEES TAB */}
-          {activeTab === "staff" && (
+        <div className="overflow-hidden">
+          <div
+            className="flex transition-transform duration-300 ease-in-out"
+            style={{
+              width: `${tabOrder.length * 100}%`,
+              transform: `translateX(-${activeIndex * (100 / tabOrder.length)}%)`,
+            }}
+          >
+            {/* ── EMPLOYEES TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <ProfileSection title="Employees" icon={<IconUsers />}>
               {/* Admin */}
               <div className="mb-5">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">
                   Branch Admin
                 </p>
                 <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-sidebar text-xs font-bold text-pawn-gold">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-gold text-xs font-bold text-zinc-900">
                       {manager ? fullName(manager).split(" ").map((n) => n[0]).join("").slice(0, 2) : "--"}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-text-primary">{manager ? fullName(manager) : "No admin assigned"}</p>
-                      <p className="text-[10px] text-text-muted">Admin</p>
+                      <p className="text-base font-semibold text-text-primary">{manager ? fullName(manager) : "No admin assigned"}</p>
+                      <p className="text-xs text-text-muted">Admin</p>
                     </div>
                   </div>
                   {manager ? (
                     <button
                       onClick={() => goToUsers(manager.id)}
-                      className="rounded-lg border border-border-main bg-surface px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
+                      className="rounded-lg border border-border-main bg-surface px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
                     >
                       Transfer
                     </button>
@@ -453,16 +467,16 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               </div>
 
               {/* Employees */}
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">
                 Employees
               </p>
               {staffError && (
-                <div className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                <div className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                   {staffError}
                 </div>
               )}
               {isLoadingStaff && (
-                <div className="mb-2 rounded-lg border border-border-main bg-surface px-3 py-2 text-xs text-text-tertiary">
+                <div className="mb-2 rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-tertiary">
                   Loading assigned users...
                 </div>
               )}
@@ -473,17 +487,17 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5 transition-colors hover:border-emerald-border"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-hover text-xs font-bold text-text-secondary">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-gold text-xs font-bold text-zinc-900">
                         {fullName(emp).split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-text-primary">{fullName(emp)}</p>
-                        <p className="text-[10px] text-text-muted">{toUiRole(emp.role)}</p>
+                        <p className="text-base font-semibold text-text-primary">{fullName(emp)}</p>
+                        <p className="text-xs text-text-muted">{toUiRole(emp.role)}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => goToUsers(emp.id)}
-                      className="flex items-center gap-1.5 rounded-lg border border-border-main bg-surface px-3 py-1.5 text-[11px] font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
+                      className="flex items-center gap-1.5 rounded-lg border border-border-main bg-surface px-4 py-2 text-xs font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
                     >
                       <IconShuffle />
                       Transfer
@@ -491,7 +505,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                   </div>
                 ))}
                 {!isLoadingStaff && employees.length === 0 && (
-                  <div className="rounded-lg border border-border-main bg-surface px-3 py-2 text-xs text-text-tertiary">
+                  <div className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-tertiary">
                     No employees currently assigned to this branch.
                   </div>
                 )}
@@ -499,10 +513,10 @@ export function BranchProfile({ branch }: BranchProfileProps) {
 
 
             </ProfileSection>
-          )}
+            </div>
 
-          {/* INVENTORY TAB */}
-          {activeTab === "inventory" && (
+            {/* ── INVENTORY TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <ProfileSection title="Inventory Snapshot" icon={<IconPackage />}>
               {/* Summary stats */}
               <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -514,7 +528,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
 
               {/* Category Breakdown */}
               <div className="mb-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-text-muted">
                   Category Breakdown
                 </p>
                 <div className="space-y-2.5">
@@ -522,7 +536,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     <div key={cat.name} className="flex items-center gap-3">
                       <div className="flex w-24 items-center gap-2">
                         <div className={`h-2.5 w-2.5 rounded-full ${cat.color}`} />
-                        <span className="text-xs font-medium text-text-secondary">{cat.name}</span>
+                        <span className="text-sm font-medium text-text-secondary">{cat.name}</span>
                       </div>
                       <div className="flex-1">
                         <div className="h-2 overflow-hidden rounded-full bg-surface-hover">
@@ -532,7 +546,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                           />
                         </div>
                       </div>
-                      <span className="min-w-[2rem] text-right text-xs font-bold text-text-primary">
+                      <span className="min-w-[2rem] text-right text-sm font-bold text-text-primary">
                         {cat.count}
                       </span>
                     </div>
@@ -552,14 +566,14 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     }`}
                   >
                     <IconAlertTriangle />
-                    <span className="text-xs font-medium">{alert.text}</span>
+                    <span className="text-sm font-medium">{alert.text}</span>
                   </div>
                 ))}
               </div>
 
               {/* Recent Activity */}
               <div className="mb-4">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-text-muted">
                   Recent Activity
                 </p>
                 <div className="space-y-2">
@@ -574,27 +588,27 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                             act.action === "Added" ? "bg-emerald-500" : "bg-blue-500"
                           }`}
                         />
-                        <span className="text-xs text-text-secondary">
+                        <span className="text-sm text-text-secondary">
                           <span className="font-semibold text-text-primary">{act.action}:</span>{" "}
                           {act.item}
                         </span>
                       </div>
-                      <span className="text-[10px] text-text-muted">{act.time}</span>
+                      <span className="text-xs text-text-muted">{act.time}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* CTA */}
-              <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface py-2.5 text-xs font-bold text-emerald-text transition-colors hover:bg-emerald-border/20">
+              <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface py-3 text-sm font-bold text-emerald-text transition-colors hover:bg-emerald-border/20">
                 View Full Inventory
                 <IconArrowRight />
               </button>
             </ProfileSection>
-          )}
+            </div>
 
-          {/* TRANSACTIONS TAB */}
-          {activeTab === "transactions" && (
+            {/* ── TRANSACTIONS TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <ProfileSection title="Transaction Snapshot" icon={<IconDollar />}>
               {/* Summary */}
               <div className="mb-5 grid grid-cols-3 gap-3">
@@ -605,28 +619,28 @@ export function BranchProfile({ branch }: BranchProfileProps) {
 
               {/* Financial Overview */}
               <div className="mb-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-text-muted">
                   Financial Overview
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
-                    <p className="text-[10px] font-medium text-text-muted">Total Loan Released</p>
-                    <p className="mt-1 text-sm font-bold text-text-primary">{MOCK_TRANSACTIONS.totalLoanReleased}</p>
+                    <p className="text-xs font-medium text-text-muted">Total Loan Released</p>
+                    <p className="mt-1 text-base font-bold text-text-primary">{MOCK_TRANSACTIONS.totalLoanReleased}</p>
                   </div>
                   <div className="rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
-                    <p className="text-[10px] font-medium text-text-muted">Total Collected</p>
-                    <p className="mt-1 text-sm font-bold text-emerald-text">{MOCK_TRANSACTIONS.totalCollected}</p>
+                    <p className="text-xs font-medium text-text-muted">Total Collected</p>
+                    <p className="mt-1 text-base font-bold text-emerald-text">{MOCK_TRANSACTIONS.totalCollected}</p>
                   </div>
                   <div className="rounded-lg border border-emerald-border bg-emerald-surface p-3.5">
-                    <p className="text-[10px] font-medium text-emerald-text">Estimated Profit</p>
-                    <p className="mt-1 text-sm font-bold text-emerald-text">{MOCK_TRANSACTIONS.estimatedProfit}</p>
+                    <p className="text-xs font-medium text-emerald-text">Estimated Profit</p>
+                    <p className="mt-1 text-base font-bold text-emerald-text">{MOCK_TRANSACTIONS.estimatedProfit}</p>
                   </div>
                 </div>
               </div>
 
               {/* Recent Transactions */}
               <div className="mb-5">
-                <p className="mb-3 text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-text-muted">
                   Recent Transactions
                 </p>
                 <div className="space-y-2">
@@ -637,7 +651,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     >
                       <div className="flex items-center gap-2">
                         <div
-                          className={`flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold ${
+                          className={`flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold ${
                             txn.type === "Pawn"
                               ? "bg-amber-500/10 text-amber-500"
                               : "bg-emerald-500/10 text-emerald-500"
@@ -645,12 +659,12 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                         >
                           {txn.type === "Pawn" ? "P" : "R"}
                         </div>
-                        <span className="text-xs text-text-secondary">
+                        <span className="text-sm text-text-secondary">
                           <span className="font-semibold text-text-primary">{txn.type}:</span>{" "}
                           {txn.item}
                         </span>
                       </div>
-                      <span className="text-xs font-bold text-text-primary">{txn.amount}</span>
+                      <span className="text-sm font-bold text-text-primary">{txn.amount}</span>
                     </div>
                   ))}
                 </div>
@@ -664,21 +678,21 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     className="flex items-center gap-2.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3.5 py-2.5 text-red-500"
                   >
                     <IconAlertTriangle />
-                    <span className="text-xs font-medium">{w}</span>
+                    <span className="text-sm font-medium">{w}</span>
                   </div>
                 ))}
               </div>
 
               {/* CTA */}
-              <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface py-2.5 text-xs font-bold text-emerald-text transition-colors hover:bg-emerald-border/20">
+              <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface py-3 text-sm font-bold text-emerald-text transition-colors hover:bg-emerald-border/20">
                 View Full Transactions
                 <IconArrowRight />
               </button>
             </ProfileSection>
-          )}
+            </div>
 
-          {/* LOGS & ACTIONS TAB */}
-          {activeTab === "logs" && (
+            {/* ── LOGS & ACTIONS TAB ── */}
+            <div className="w-full min-w-0 shrink-0" style={{ flex: `0 0 ${100 / tabOrder.length}%` }}>
             <div className="space-y-4">
               {/* Activity Logs */}
               <ProfileSection title="Activity Logs" icon={<IconActivity />}>
@@ -711,14 +725,14 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                       </div>
                       {/* Content */}
                       <div className="flex flex-1 items-center justify-between pb-4">
-                        <p className="text-xs font-medium text-text-secondary">{log.text}</p>
-                        <span className="text-[10px] text-text-muted">{log.time}</span>
+                        <p className="text-sm font-medium text-text-secondary">{log.text}</p>
+                        <span className="text-xs text-text-muted">{log.time}</span>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border-main bg-surface-secondary py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover">
+                <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border-main bg-surface-secondary py-3 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover">
                   View Full Logs
                   <IconArrowRight />
                 </button>
@@ -727,15 +741,15 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               {/* Quick Actions */}
               <ProfileSection title="Quick Actions" icon={<IconSettings />}>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
+                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-5 py-3.5 text-sm font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
                     <IconPackage />
                     View Inventory
                   </button>
-                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
+                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-5 py-3.5 text-sm font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
                     <IconDollar />
                     View Transactions
                   </button>
-                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
+                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-5 py-3.5 text-sm font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -749,11 +763,11 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     <IconShuffle />
                     Transfer Staff
                   </button>
-                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-xs font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
+                  <button className="flex items-center gap-2.5 rounded-lg border border-border-main bg-surface-secondary px-5 py-3.5 text-sm font-semibold text-text-secondary transition-all hover:border-emerald-border hover:bg-emerald-surface hover:text-emerald-text">
                     <IconActivity />
                     View Logs
                   </button>
-                  <button className="flex items-center gap-2.5 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-xs font-semibold text-red-500 transition-all hover:border-red-500 hover:bg-red-500/10">
+                  <button className="flex items-center gap-2.5 rounded-lg border border-red-500/30 bg-red-500/5 px-5 py-3.5 text-sm font-semibold text-red-500 transition-all hover:border-red-500 hover:bg-red-500/10">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
@@ -763,7 +777,8 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 </div>
               </ProfileSection>
             </div>
-          )}
+            </div>
+          </div>
         </div>
       </div>
 

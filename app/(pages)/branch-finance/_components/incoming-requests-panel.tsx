@@ -58,8 +58,8 @@ export function IncomingRequestsPanel({
             </span>
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-bold text-text-primary">Incoming Branch Requests</h3>
-            <p className="text-[10px] text-text-muted">
+            <h3 className="text-base font-bold text-text-primary">Incoming Branch Requests</h3>
+            <p className="text-xs text-text-muted">
               {count} branch{count !== 1 ? "es" : ""} requesting funds
             </p>
           </div>
@@ -96,23 +96,23 @@ export function IncomingRequestsPanel({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-text-primary">
+                      <h4 className="text-base font-bold text-text-primary">
                         {req.branchName}
                       </h4>
-                      <span className="text-[10px] text-text-muted">
+                      <span className="text-xs text-text-muted">
                         • {new Date(req.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs font-medium text-text-secondary">
-                      <span className="text-lg font-extrabold text-blue-700 dark:text-blue-400 tracking-tight">
+                    <div className="mt-0.5 flex items-center gap-2 text-sm font-medium text-text-secondary">
+                      <span className="text-xl font-extrabold text-blue-700 dark:text-blue-400 tracking-tight">
                         ₱{req.amount.toLocaleString("en-PH")}
                       </span>
-                      <span className="inline-block rounded-md bg-blue-100 dark:bg-blue-500/20 px-2 py-0.5 text-[10px] text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wide">
+                      <span className="inline-block rounded-md bg-blue-100 dark:bg-blue-500/20 px-2.5 py-1 text-xs text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wide">
                         {req.category}
                       </span>
                     </div>
                     {req.notes && (
-                      <p className="mt-2 text-[11px] text-text-muted italic border-l-2 border-blue-200 dark:border-blue-500/30 pl-2 line-clamp-2">
+                      <p className="mt-2 text-xs text-text-muted italic border-l-2 border-blue-200 dark:border-blue-500/30 pl-2 line-clamp-2">
                         &ldquo;{req.notes}&rdquo;
                       </p>
                     )}
@@ -123,7 +123,7 @@ export function IncomingRequestsPanel({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => onFulfill(req)}
-                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700 shadow-sm"
+                    className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 shadow-sm"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
@@ -132,7 +132,7 @@ export function IncomingRequestsPanel({
                   </button>
                   <button
                     onClick={() => onReject(req.id)}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-2 text-xs font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-500/20"
+                    className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-500/20"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18" />

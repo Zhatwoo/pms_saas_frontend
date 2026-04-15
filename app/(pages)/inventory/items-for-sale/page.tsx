@@ -24,18 +24,18 @@ interface SaleItem {
 function StockBadge({ stock }: { stock: number }) {
   if (stock === 0)
     return (
-      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-200">
+      <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 border border-red-200">
         Out of Stock
       </span>
     );
   if (stock <= 3)
     return (
-      <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700 border border-orange-200">
+      <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-1 text-xs font-bold text-orange-700 border border-orange-200">
         Low Stock: {stock}
       </span>
     );
   return (
-    <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-700 border border-green-200">
+    <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700 border border-green-200">
       In Stock: {stock}
     </span>
   );
@@ -73,33 +73,33 @@ function SaleItemModal({ item, onClose }: { item: SaleItem; onClose: () => void 
       <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="bg-emerald-900 px-6 py-4 flex items-center justify-between">
           <div>
-            <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">For Sale Item #{item.itemId}</p>
-            <h2 className="text-white text-lg font-bold">{item.itemName}</h2>
+            <p className="text-amber-400 text-xs font-bold uppercase tracking-wider">For Sale Item #{item.itemId}</p>
+            <h2 className="text-white text-xl font-bold">{item.itemName}</h2>
           </div>
           <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status]} />
         </div>
         <div className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><p className="text-[10px] font-bold text-text-muted uppercase">Category</p><p>{item.category}</p></div>
-            <div><p className="text-[10px] font-bold text-text-muted uppercase">Price</p><p className="font-bold text-emerald-700">₱{item.price.toLocaleString()}</p></div>
-            <div><p className="text-[10px] font-bold text-text-muted uppercase">Date Expired</p><p>{item.availableDate}</p></div>
-            <div><p className="text-[10px] font-bold text-text-muted uppercase">Origin Pawn ID</p><p>{item.originalPawnId || "Manual Entry"}</p></div>
+          <div className="grid grid-cols-2 gap-4 text-base">
+            <div><p className="text-xs font-bold text-text-muted uppercase">Category</p><p>{item.category}</p></div>
+            <div><p className="text-xs font-bold text-text-muted uppercase">Price</p><p className="font-bold text-emerald-700">₱{item.price.toLocaleString()}</p></div>
+            <div><p className="text-xs font-bold text-text-muted uppercase">Date Expired</p><p>{item.availableDate}</p></div>
+            <div><p className="text-xs font-bold text-text-muted uppercase">Origin Pawn ID</p><p>{item.originalPawnId || "Manual Entry"}</p></div>
           </div>
           <div className="border-t border-border-subtle pt-4">
-            <p className="text-[10px] font-bold text-text-muted uppercase mb-1">Item Description / Pictures</p>
+            <p className="text-xs font-bold text-text-muted uppercase mb-1">Item Description / Pictures</p>
             <div className="rounded-lg bg-surface-secondary p-4 border border-border-subtle">
-              <p className="text-xs text-text-secondary leading-relaxed">
+              <p className="text-sm text-text-secondary leading-relaxed">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit. This item was transferred from an expired pawn contract. Condition is verified.
               </p>
               {/* Image Placeholder */}
-              <div className="mt-3 aspect-video rounded-md bg-zinc-200 flex items-center justify-center text-[10px] text-zinc-500 font-bold uppercase">
+              <div className="mt-3 aspect-video rounded-md bg-zinc-200 flex items-center justify-center text-xs text-zinc-500 font-bold uppercase">
                 Item Photo (High Res)
               </div>
             </div>
           </div>
         </div>
         <div className="border-t border-border-main px-6 py-3 flex justify-end bg-surface-secondary">
-          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
+          <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
         </div>
       </div>
     </div>
@@ -182,13 +182,13 @@ export default function ItemsForSalePage() {
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
+            <label className="text-xs font-bold uppercase tracking-wide text-text-tertiary">Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none focus:border-emerald-500 w-44"
+              className="h-10 rounded-md border border-input-border bg-input-bg px-4 text-sm text-text-primary outline-none focus:border-emerald-500 w-48"
             />
           </div>
         </div>
@@ -197,7 +197,7 @@ export default function ItemsForSalePage() {
           <div className="flex rounded-md border border-border-main overflow-hidden">
             <button
               onClick={() => setSaleViewMode("current")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
                 saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
               }`}
             >
@@ -205,7 +205,7 @@ export default function ItemsForSalePage() {
             </button>
             <button
               onClick={() => setSaleViewMode("history")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
                 saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
               }`}
             >
@@ -236,13 +236,13 @@ export default function ItemsForSalePage() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-bold text-orange-800">Low Stock Alert</p>
-              <p className="text-[10px] text-orange-600 font-medium">
+              <p className="text-base font-bold text-orange-800">Low Stock Alert</p>
+              <p className="text-xs text-orange-600 font-medium">
                 You have {lowStockCount} item(s) running low on stock (&le; 3).
               </p>
             </div>
           </div>
-          <button className="text-[10px] font-bold text-orange-700 hover:text-orange-900 border border-orange-300 rounded px-3 py-1.5 transition-colors bg-surface">
+          <button className="text-xs font-bold text-orange-700 hover:text-orange-900 border border-orange-300 rounded px-4 py-2 transition-colors bg-surface">
             Review Items
           </button>
         </div>
@@ -257,7 +257,7 @@ export default function ItemsForSalePage() {
                 {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
                   <th
                     key={h}
-                    className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
+                    className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${
                       h === "Price" ? "text-right" : "text-left"
                     }`}
                   >
@@ -269,13 +269,13 @@ export default function ItemsForSalePage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                  <td colSpan={9} className="py-8 text-center text-base text-zinc-400">
                     Loading...
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                  <td colSpan={9} className="py-8 text-center text-base text-zinc-400">
                     {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
                   </td>
                 </tr>
@@ -286,20 +286,20 @@ export default function ItemsForSalePage() {
                     className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
                     onClick={() => setSelectedItem(item)}
                   >
-                    <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary font-medium">{item.itemName}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.availableDate}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-emerald-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.availableDate}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-right font-medium text-emerald-700">
                       &#8369;{item.price.toLocaleString()}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-right">
+                    <td className="px-4 py-3 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                        <button className="rounded px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
                           View details
                         </button>
                       </div>
@@ -317,7 +317,7 @@ export default function ItemsForSalePage() {
 
       {saleViewMode === "current" && (
         <div className="rounded-lg border border-border-main bg-surface p-4 mt-3">
-          <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-text-muted uppercase mb-2">
+          <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-text-muted uppercase mb-2">
             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
           </div>
           <div className="grid grid-cols-7 gap-1 auto-rows-[80px]">
@@ -326,9 +326,9 @@ export default function ItemsForSalePage() {
               const isCurrentMonth = day > 0 && day <= 30;
               return (
                 <div key={i} className={`border rounded p-1 ${isCurrentMonth ? "border-border-subtle" : "border-transparent text-transparent"}`}>
-                  <div className="text-[10px] font-bold text-text-tertiary">{day}</div>
-                  {day === 12 && <div className="mt-1 flex items-center gap-1 rounded bg-orange-100 px-1 py-0.5 text-[8px] font-bold text-orange-700 truncate">Expired: 3</div>}
-                  {day === 15 && <div className="mt-1 flex items-center gap-1 rounded bg-emerald-100 px-1 py-0.5 text-[8px] font-bold text-emerald-700 truncate">Sold: ₱5k</div>}
+                  <div className="text-xs font-bold text-text-tertiary">{day}</div>
+                  {day === 12 && <div className="mt-1 flex items-center gap-1 rounded bg-orange-100 px-1 py-0.5 text-[9px] font-bold text-orange-700 truncate">Expired: 3</div>}
+                  {day === 15 && <div className="mt-1 flex items-center gap-1 rounded bg-emerald-100 px-1 py-0.5 text-[9px] font-bold text-emerald-700 truncate">Sold: ₱5k</div>}
                 </div>
               );
             })}
