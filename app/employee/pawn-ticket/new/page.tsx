@@ -1,6 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { PrintTicketModal } from "../_components/print-ticket-modal";
 
 export default function EmployeePawnTicketFirstPage() {
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+
+  const handleSaveTicket = () => {
+    setIsPrintModalOpen(true);
+  };
+
+  const handleConfirmPrint = () => {
+    setIsPrintModalOpen(false);
+    window.setTimeout(() => window.print(), 150);
+  };
+
   return (
     <div className="min-h-screen p-4">
       <div className="space-y-4">
@@ -244,6 +259,7 @@ export default function EmployeePawnTicketFirstPage() {
             </Link>
             <button
               type="button"
+              onClick={handleSaveTicket}
               className="inline-flex justify-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
             >
               Save Ticket
@@ -251,6 +267,12 @@ export default function EmployeePawnTicketFirstPage() {
           </div>
         </div>
       </div>
+
+      <PrintTicketModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        onConfirmPrint={handleConfirmPrint}
+      />
     </div>
   );
 }
