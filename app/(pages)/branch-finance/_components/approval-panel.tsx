@@ -38,7 +38,7 @@ const typeColor: Record<string, string> = {
 };
 
 function fmt(n: number) {
-  return `₱${n.toLocaleString("en-PH")}`;
+  return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function ApprovalPanel({

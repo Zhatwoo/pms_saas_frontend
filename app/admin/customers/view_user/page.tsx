@@ -166,7 +166,7 @@ function getStatusBadge(status: string) {
 }
 
 function formatCurrency(value: number) {
-  return `₱${value.toLocaleString()}`;
+  return `₱${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 /* ──────────────────────────── Icons ──────────────────────────── */

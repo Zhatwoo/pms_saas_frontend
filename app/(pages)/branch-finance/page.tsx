@@ -1,20 +1,24 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  buildFinanceQueues,
+  formatCurrency,
+  formatFinanceDate,
+  getRequestAmount,
+  type FundRequestRecord,
+} from "@/lib/fund-finance";
 import { AddFundsModal } from "./_components/add-funds-modal";
 import type { UnifiedFundResult } from "./_components/add-funds-modal";
-import { ApprovalPanel } from "./_components/approval-panel";
-import type { ApprovalRequest } from "./_components/approval-panel";
 import { BalanceOverview } from "./_components/balance-overview";
 import type { BranchBalance } from "./_components/balance-overview";
-import { IncomingRequestsPanel } from "./_components/incoming-requests-panel";
-import type { BranchFundRequest } from "./_components/incoming-requests-panel";
 import { RejectRequestModal } from "./_components/reject-request-modal";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
 import type { FinanceTransaction } from "./_components/transaction-table";
+import { FinanceQueueSection } from "@/components/shared/finance-queue-section";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -54,59 +58,6 @@ interface DashboardSummary {
   }>;
 }
 
-interface FundRequestRecord {
-  id: string;
-  requestNo: string;
-  branchId: string;
-  amountRequested: number;
-  purpose: string;
-  notes: string | null;
-  status: "pending" | "approved" | "pending_confirmation" | "rejected" | "transferred" | "cancelled";
-  approvedAmount: number | null;
-  reviewedAt: string | null;
-  reviewNotes: string | null;
-  amountTransferred: number | null;
-  transferredAt: string | null;
-  transferReference: string | null;
-  transferNotes: string | null;
-  confirmationNotes: string | null;
-  confirmedAt: string | null;
-  relatedTransactionId: string | null;
-  createdAt: string;
-  branch: {
-    id: string;
-    name: string;
-    branchCode: string | null;
-    location: string | null;
-  } | null;
-  requestedBy: {
-    id: string;
-    fullName: string | null;
-    email: string | null;
-  } | null;
-  reviewedBy: {
-    id: string;
-    fullName: string | null;
-    email: string | null;
-  } | null;
-  transferredBy: {
-    id: string;
-    fullName: string | null;
-    email: string | null;
-  } | null;
-  confirmedBy?: {
-    id: string;
-    fullName: string | null;
-    email: string | null;
-  } | null;
-  flowType?: "request_based" | "direct_push";
-  receiverUserId?: string | null;
-  receiverRole?: "admin" | "employee" | null;
-  confirmedReceivedAmount?: number | null;
-  confirmationNote?: string | null;
-  transferReferenceNo?: string | null;
-}
-
 interface ApiTransaction {
   id: string;
   transaction_date: string;
@@ -117,13 +68,6 @@ interface ApiTransaction {
   cash_out: number | string | null;
   details: string | null;
   unit?: string | null;
-}
-
-function fmtCurrency(value: number) {
-  return `PHP ${value.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 export default function BranchFinancePage() {
@@ -139,7 +83,6 @@ export default function BranchFinancePage() {
   const [branchFilter, setBranchFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [activePanel, setActivePanel] = useState<"incoming" | "approval" | null>("incoming");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedRejectRequest, setSelectedRejectRequest] = useState<FundRequestRecord | null>(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -173,7 +116,9 @@ export default function BranchFinancePage() {
         .filter(
           (transaction) =>
             transaction.purpose === "Fund Transfer" ||
-            transaction.unit === "fund_transfer",
+            transaction.purpose === "Cash Transfer" ||
+            transaction.unit === "fund_transfer" ||
+            transaction.unit === "fund_transfer_out",
         )
         .map((transaction) => {
           const relatedRequest = transferRequestByTransactionId.get(transaction.id);
@@ -189,16 +134,18 @@ export default function BranchFinancePage() {
             amount: cashOut > 0 ? cashOut : cashIn,
             balanceAfter: null,
             status:
-              relatedRequest?.status === "pending_confirmation"
-                ? ("Pending" as const)
-                : relatedRequest?.status === "rejected"
-                  ? ("Rejected" as const)
-                  : ("Approved" as const),
+              relatedRequest?.status === "pending_source_confirmation"
+                ? ("Pending Source Confirmation" as const)
+                : relatedRequest?.status === "pending_confirmation"
+                  ? ("Pending Confirmation" as const)
+                  : relatedRequest?.status === "rejected"
+                    ? ("Rejected" as const)
+                    : ("Approved" as const),
             approvedBy: relatedRequest?.transferredBy?.fullName ?? "Super Admin",
             approvalDate: relatedRequest?.transferredAt ?? null,
             notes:
               `${relatedRequest?.confirmedReceivedAmount
-                ? `Received: ${fmtCurrency(relatedRequest.confirmedReceivedAmount)} | `
+                ? `Received: ${formatCurrency(relatedRequest.confirmedReceivedAmount)} | `
                 : ""}${
                 relatedRequest?.transferNotes ??
                 relatedRequest?.reviewNotes ??
@@ -246,49 +193,14 @@ export default function BranchFinancePage() {
     return branchBalances.filter((branch) => branch.branchId === selectedBranch.id);
   }, [branchBalances, isAllBranches, selectedBranch.id]);
 
-  const pendingRequests = useMemo<FundRequestRecord[]>(
-    () => fundRequests.filter((request) => request.status === "pending"),
+  const queues = useMemo(
+    () => buildFinanceQueues(fundRequests),
     [fundRequests],
   );
 
-  const approvedRequests = useMemo<FundRequestRecord[]>(
+  const approvedRequests = useMemo(
     () => fundRequests.filter((request) => request.status === "approved"),
     [fundRequests],
-  );
-
-  const pendingConfirmationRequests = useMemo<FundRequestRecord[]>(
-    () => fundRequests.filter((request) => request.status === "pending_confirmation"),
-    [fundRequests],
-  );
-
-  const incomingRequests = useMemo<BranchFundRequest[]>(
-    () =>
-      pendingRequests.map((request) => ({
-        id: request.id,
-        branchId: request.branch?.id ?? request.branchId,
-        branchName: request.branch?.name ?? "Unknown Branch",
-        amount: request.amountRequested,
-        category: request.purpose,
-        notes: request.notes ?? "",
-        date: request.createdAt,
-      })),
-    [pendingRequests],
-  );
-
-  const approvalRequests = useMemo<ApprovalRequest[]>(
-    () =>
-      approvedRequests.map((request) => ({
-        id: request.id,
-        type: "ADD_FUNDS",
-        amount: request.approvedAmount ?? request.amountRequested,
-        requestedBy: request.requestedBy?.fullName ?? "Branch Admin",
-        branch: request.branch?.name ?? "Unknown Branch",
-        date: request.reviewedAt ?? request.createdAt,
-        requiredApprovers: 1,
-        currentApprovals: 1,
-        notes: request.reviewNotes ?? request.notes ?? "Approved and ready for transfer",
-      })),
-    [approvedRequests],
   );
 
   const availableBranches = useMemo(
@@ -297,21 +209,40 @@ export default function BranchFinancePage() {
   );
 
   const handleRejectRequestClick = useCallback((id: string) => {
-    const target = pendingRequests.find((request) => request.id === id) ?? null;
+    const target = queues.pendingReview.find((request) => request.id === id) ?? null;
     setSelectedRejectRequest(target);
     setRejectModalOpen(true);
-  }, [pendingRequests]);
+  }, [queues.pendingReview]);
 
   const handleApproveRequest = useCallback(
-    async (request: BranchFundRequest) => {
+    async (request: FundRequestRecord) => {
       try {
         await api.patch<FundRequestRecord>(`/fund-requests/${request.id}/review`, {
           decision: "approved",
-          approvedAmount: request.amount,
-          reviewNotes: `Approved for ${request.branchName}`,
+          approvedAmount: request.amountRequested,
+          reviewNotes: `Approved for ${request.branch?.name ?? request.branchId}`,
         });
         showToast("Fund request approved. It is now ready for transfer.");
         await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to approve request.");
+      }
+    },
+    [loadFinanceData, showToast],
+  );
+
+  const handleApproveAndTransferRequest = useCallback(
+    async (request: FundRequestRecord) => {
+      try {
+        await api.patch<FundRequestRecord>(`/fund-requests/${request.id}/review`, {
+          decision: "approved",
+          approvedAmount: request.amountRequested,
+          reviewNotes: `Approved for ${request.branch?.name ?? request.branchId}`,
+        });
+        showToast("Fund request approved. Continue with fund release.");
+        await loadFinanceData();
+        setSelectedTransferRequest(request);
+        setTransferModalOpen(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to approve request.");
       }
@@ -323,13 +254,10 @@ export default function BranchFinancePage() {
     async (reason: string) => {
       if (!selectedRejectRequest) return;
       try {
-        await api.patch<FundRequestRecord>(
-          `/fund-requests/${selectedRejectRequest.id}/review`,
-          {
-            decision: "rejected",
-            reviewNotes: reason,
-          },
-        );
+        await api.patch<FundRequestRecord>(`/fund-requests/${selectedRejectRequest.id}/review`, {
+          decision: "rejected",
+          reviewNotes: reason,
+        });
         setRejectModalOpen(false);
         setSelectedRejectRequest(null);
         showToast("Fund request rejected.");
@@ -341,24 +269,30 @@ export default function BranchFinancePage() {
     [loadFinanceData, selectedRejectRequest, showToast],
   );
 
-  const handleTransferRequestClick = useCallback((id: string) => {
-    const target = approvedRequests.find((request) => request.id === id) ?? null;
-    setSelectedTransferRequest(target);
-    setTransferModalOpen(true);
-  }, [approvedRequests]);
+  const handleTransferRequestClick = useCallback(
+    async (id: string) => {
+      const target = approvedRequests.find((request) => request.id === id) ?? null;
+      await loadFinanceData();
+      setSelectedTransferRequest(target);
+      setTransferModalOpen(true);
+    },
+    [approvedRequests, loadFinanceData],
+  );
 
   const handleTransferSubmit = useCallback(
     async (data: UnifiedFundResult) => {
       try {
         if (selectedTransferRequest) {
-          await api.patch<FundRequestRecord>(
-            `/fund-requests/${selectedTransferRequest.id}/transfer`,
-            {
-              amount: data.amount,
-              transferNotes: data.notes,
-            },
+          await api.patch<FundRequestRecord>(`/fund-requests/${selectedTransferRequest.id}/transfer`, {
+            amount: data.amount,
+            transferNotes: data.notes,
+            sourceBranchId: data.sourceType === "BRANCH_TRANSFER" ? data.fromBranchId : undefined,
+          });
+          showToast(
+            data.sourceType === "BRANCH_TRANSFER"
+              ? "Funds routed through the source branch and are now awaiting source confirmation."
+              : "Funds sent to the branch and are now awaiting branch confirmation.",
           );
-          showToast("Funds sent to the branch and are now awaiting branch confirmation.");
         } else {
           await api.post<FundRequestRecord>("/fund-requests/direct-transfer", {
             amount: data.amount,
@@ -370,7 +304,11 @@ export default function BranchFinancePage() {
                 ? "Direct branch-to-branch transfer"
                 : "Direct management cash transfer",
           });
-          showToast("Direct cash transfer released and awaiting branch confirmation.");
+          showToast(
+            data.sourceType === "BRANCH_TRANSFER"
+              ? "Direct branch transfer released and awaiting source confirmation."
+              : "Direct cash transfer released and awaiting branch confirmation.",
+          );
         }
         setTransferModalOpen(false);
         setSelectedTransferRequest(null);
@@ -383,9 +321,11 @@ export default function BranchFinancePage() {
   );
 
   const handleHeaderTransfer = useCallback(() => {
-    setSelectedTransferRequest(null);
-    setTransferModalOpen(true);
-  }, []);
+    void loadFinanceData().finally(() => {
+      setSelectedTransferRequest(null);
+      setTransferModalOpen(true);
+    });
+  }, [loadFinanceData]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -431,89 +371,209 @@ export default function BranchFinancePage() {
           />
 
           <div className="rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-[11px] text-text-muted">
-            Branch admins submit requests first. After approval, release the funds from the panel below. The request stays in pending confirmation until the requesting branch admin confirms receipt.
+            Branch admins submit requests first. Super Admin can fulfill directly from management or route the transfer through another branch. Source-branch deductions must be confirmed before destination receipt confirmations can complete the transfer.
           </div>
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
-            <IncomingRequestsPanel
-              requests={incomingRequests}
-              onFulfill={handleApproveRequest}
-              onReject={handleRejectRequestClick}
-              expanded={activePanel === "incoming"}
-              onToggle={() =>
-                setActivePanel(activePanel === "incoming" ? null : "incoming")
-              }
-            />
-
-            <ApprovalPanel
-              requests={approvalRequests}
-              onActionClick={handleTransferRequestClick}
-              expanded={activePanel === "approval"}
-              onToggle={() =>
-                setActivePanel(activePanel === "approval" ? null : "approval")
-              }
-              title="Approved Requests Ready for Transfer"
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <FinanceQueueSection
+              accent="blue"
+              title="Pending Super Admin Review"
               subtitle={
-                approvalRequests.length === 0
-                  ? "No approved requests are waiting for transfer."
-                  : `${approvalRequests.length} approved request${approvalRequests.length === 1 ? "" : "s"} ready for fund release`
+                queues.pendingReview.length === 0
+                  ? "No requests are waiting for review."
+                  : `${queues.pendingReview.length} request${queues.pendingReview.length === 1 ? "" : "s"} waiting for review.`
               }
-              actionLabel="Transfer Funds"
-              actionVariant="primary"
-            />
+              count={queues.pendingReview.length}
+              expanded
+            >
+              {queues.pendingReview.length > 0 ? (
+                queues.pendingReview.map((request) => (
+                  <div key={request.id} className="rounded-xl border border-blue-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">
+                          {request.requestNo} - {formatCurrency(request.amountRequested)}
+                        </p>
+                        <p className="mt-1 text-xs text-text-secondary">Branch: {request.branch?.name ?? "Unknown Branch"}</p>
+                        <p className="mt-1 text-xs text-text-secondary">Purpose: {request.purpose}</p>
+                        {request.notes ? <p className="mt-1 text-xs text-text-muted">{request.notes}</p> : null}
+                        <p className="mt-1 text-xs text-text-muted">Requested by {request.requestedBy?.fullName ?? "Branch Staff"}</p>
+                        <p className="mt-1 text-xs text-text-muted">Submitted: {formatFinanceDate(request.createdAt)}</p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <span className="rounded-full bg-blue-100 px-2.5 py-1 text-center text-[11px] font-bold text-blue-700">
+                          Pending
+                        </span>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveRequest(request)}
+                            className="rounded-lg border border-blue-200 bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-blue-700"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleApproveAndTransferRequest(request)}
+                            className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+                          >
+                            Approve & Transfer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectRequestClick(request.id)}
+                            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition-colors hover:bg-red-100"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-blue-200 bg-white p-4 text-sm text-text-tertiary">
+                  No requests are waiting for review.
+                </div>
+              )}
+            </FinanceQueueSection>
+
+            <FinanceQueueSection
+              accent="orange"
+              title="Pending Branch Confirmation"
+              subtitle={
+                queues.sourceConfirmation.length + queues.destinationConfirmation.length === 0
+                  ? "No transfers are waiting for confirmation."
+                  : `${queues.sourceConfirmation.length + queues.destinationConfirmation.length} transfer${queues.sourceConfirmation.length + queues.destinationConfirmation.length === 1 ? "" : "s"} awaiting confirmation.`
+              }
+              count={queues.sourceConfirmation.length + queues.destinationConfirmation.length}
+              expanded
+            >
+              {queues.sourceConfirmation.length === 0 && queues.destinationConfirmation.length === 0 ? (
+                <div className="rounded-xl border border-orange-200 bg-white p-4 text-sm text-text-tertiary">
+                  No transfers are waiting for confirmation.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {queues.sourceConfirmation.length > 0 ? (
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wide text-orange-700">Awaiting Source Branch Confirmation</h4>
+                        <p className="text-[11px] text-text-muted">The source branch must confirm the outgoing deduction before the destination branch can receive the transfer.</p>
+                      </div>
+                      {queues.sourceConfirmation.map((request) => (
+                        <div key={request.id} className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-bold text-text-primary">
+                                {request.requestNo} - {formatCurrency(getRequestAmount(request))}
+                              </p>
+                              <p className="mt-1 text-xs text-text-secondary">
+                                Source branch: {request.sourceBranch?.name ?? request.sourceBranchId ?? "Unknown Branch"}
+                              </p>
+                              <p className="mt-1 text-xs text-text-secondary">
+                                Destination branch: {request.branch?.name ?? "Unknown Branch"}
+                              </p>
+                              <p className="mt-1 text-xs text-text-muted">
+                                Transfer mode: {request.transferMode?.replaceAll("_", " ") ?? "Cash"}
+                              </p>
+                              <p className="mt-1 text-xs text-text-muted">
+                                Outgoing confirmation pending since {formatFinanceDate(request.transferredAt ?? request.createdAt)}
+                              </p>
+                              {request.transferNotes ? (
+                                <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
+                              ) : null}
+                            </div>
+                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700">
+                              Pending Source Confirmation
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  {queues.destinationConfirmation.length > 0 ? (
+                    <div className="space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold uppercase tracking-wide text-orange-700">Awaiting Destination Receipt Confirmation</h4>
+                        <p className="text-[11px] text-text-muted">The destination branch can confirm the received amount after proof of receipt is uploaded.</p>
+                      </div>
+                      {queues.destinationConfirmation.map((request) => (
+                        <div key={request.id} className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-bold text-text-primary">
+                                {request.requestNo} - {formatCurrency(getRequestAmount(request))}
+                              </p>
+                              <p className="mt-1 text-xs text-text-secondary">
+                                Destination branch: {request.branch?.name ?? "Unknown Branch"}
+                              </p>
+                              <p className="mt-1 text-xs text-text-secondary">
+                                Source branch: {request.sourceBranch?.name ?? request.sourceBranchId ?? "Management"}
+                              </p>
+                              <p className="mt-1 text-xs text-text-muted">
+                                Transfer mode: {request.transferMode?.replaceAll("_", " ") ?? "Cash"}
+                              </p>
+                              <p className="mt-1 text-xs text-text-muted">
+                                Sent for receipt confirmation: {formatFinanceDate(request.transferredAt ?? request.createdAt)}
+                              </p>
+                              {request.transferNotes ? (
+                                <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
+                              ) : null}
+                              {request.sourceConfirmationNotes ? (
+                                <p className="mt-1 text-xs text-text-muted">Source notes: {request.sourceConfirmationNotes}</p>
+                              ) : null}
+                            </div>
+                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700">
+                              Pending Confirmation
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </FinanceQueueSection>
           </div>
 
-          <div className="rounded-xl border border-violet-300/40 bg-violet-50/60 p-4">
+          <div className="space-y-3 rounded-xl border border-border-main bg-surface p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-bold text-text-primary">Awaiting Branch Confirmation</h3>
+                <h3 className="text-base font-bold text-text-primary">Approved Requests Ready for Transfer</h3>
                 <p className="text-xs text-text-muted">
-                  {pendingConfirmationRequests.length === 0
-                    ? "No released transfers are waiting for branch confirmation."
-                    : `${pendingConfirmationRequests.length} request${pendingConfirmationRequests.length === 1 ? "" : "s"} sent by Super Admin and awaiting confirmation from the requesting branch.`}
+                  {approvedRequests.length === 0
+                    ? "No approved requests are waiting for release."
+                    : `${approvedRequests.length} approved request${approvedRequests.length === 1 ? "" : "s"} waiting for release.`}
                 </p>
               </div>
             </div>
 
-            {pendingConfirmationRequests.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {pendingConfirmationRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="rounded-lg border border-violet-200 bg-white px-4 py-3"
-                  >
+            {approvedRequests.length > 0 ? (
+              <div className="space-y-3">
+                {approvedRequests.map((request) => (
+                  <div key={request.id} className="rounded-xl border border-border-subtle bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-bold text-text-primary">
-                          {request.requestNo} - {fmtCurrency(request.amountTransferred ?? request.approvedAmount ?? request.amountRequested)}
+                          {request.requestNo} - {formatCurrency(request.approvedAmount ?? request.amountRequested)}
                         </p>
-                        <p className="mt-1 text-xs text-text-secondary">
-                          {request.branch?.name ?? "Unknown Branch"}
-                        </p>
+                        <p className="mt-1 text-xs text-text-secondary">Branch: {request.branch?.name ?? "Unknown Branch"}</p>
                         <p className="mt-1 text-xs text-text-muted">
-                          Requested by {request.requestedBy?.fullName ?? "Branch Admin"}
+                          Approved {formatFinanceDate(request.reviewedAt ?? request.createdAt)}
                         </p>
-                        <p className="mt-1 text-xs text-text-muted">
-                          Sent for confirmation: {new Date(request.transferredAt ?? request.createdAt).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        {request.transferNotes ? (
-                          <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
-                        ) : null}
-                        {request.receiverRole ? (
-                          <p className="mt-1 text-xs text-text-muted">
-                            Receiver role: {request.receiverRole}
-                          </p>
+                        {request.reviewNotes ? (
+                          <p className="mt-1 text-xs text-text-muted">Review notes: {request.reviewNotes}</p>
                         ) : null}
                       </div>
-                      <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
-                        Pending Confirmation
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleTransferRequestClick(request.id)}
+                        className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+                      >
+                        Transfer Funds
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -579,14 +639,14 @@ export default function BranchFinancePage() {
         branchName={selectedTransferRequest?.branch?.name ?? selectedBranch.name}
         managers={[]}
         branches={branchBalances}
-        currentBranchId={
-          selectedTransferRequest?.branch?.id ?? (isAllBranches ? "001" : selectedBranch.id)
-        }
+        currentBranchId={selectedTransferRequest?.branch?.id ?? (isAllBranches ? "001" : selectedBranch.id)}
         getManagersForBranch={() => []}
         defaultAmount={String(selectedTransferRequest?.approvedAmount ?? selectedTransferRequest?.amountRequested ?? "")}
         defaultNotes={selectedTransferRequest?.reviewNotes ?? selectedTransferRequest?.notes ?? ""}
-        allowBranchTransfer={false}
+        allowBranchTransfer={true}
         submitLabel="Confirm and Send"
+        lockedTargetBranchId={selectedTransferRequest?.branch?.id ?? undefined}
+        lockedTargetBranchName={selectedTransferRequest?.branch?.name ?? undefined}
       />
     </div>
   );

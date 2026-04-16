@@ -1,5 +1,5 @@
 function formatPeso(amount: number): string {
-  return `\u20B1 ${amount.toLocaleString("en-PH")}`;
+  return `\u20B1 ${amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 const downloadIcon = (
@@ -29,7 +29,7 @@ export function DailyReportSection() {
         </h3>
         <p className="mt-1 text-[11px] text-zinc-400">
           Generated: 11:59 PM &middot; Period: 12:00 AM &ndash; 11:59 PM
-          &middot; Currency: PHP
+          &middot; Currency: \u20B1
         </p>
       </div>
 

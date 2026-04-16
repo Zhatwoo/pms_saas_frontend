@@ -2,27 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { uploadFundTransferProof } from "@/lib/fund-transfer-storage";
+import {
+  buildFinanceQueues,
+  formatCurrency,
+  formatFinanceDate,
+  getConfirmationLabel,
+  getRequestAmount,
+  type FundRequestRecord,
+} from "@/lib/fund-finance";
+import { FinanceQueueSection } from "@/components/shared/finance-queue-section";
 import { ConfirmFundModal } from "@/app/admin/branch-finance/_components/confirm-fund-modal";
-
-interface FundRequestRecord {
-  id: string;
-  requestNo: string;
-  amountRequested: number;
-  approvedAmount: number | null;
-  amountTransferred: number | null;
-  confirmedReceivedAmount?: number | null;
-  purpose: string;
-  status: "pending" | "approved" | "pending_confirmation" | "rejected" | "transferred" | "cancelled";
-  createdAt: string;
-  transferredAt?: string | null;
-  confirmedAt?: string | null;
-  transferNotes?: string | null;
-  confirmationNotes?: string | null;
-  receiverUserId?: string | null;
-  receiverRole?: "admin" | "employee" | null;
-}
+import { RequestFundsModal } from "@/app/admin/branch-finance/_components/request-funds-modal";
+import type { RequestFundsData } from "@/app/admin/branch-finance/_components/request-funds-modal";
 
 interface EmployeeDashboardResponse {
+  currentBalance: number;
   branchFinance: {
     name: string;
     currentBalance: number;
@@ -34,24 +29,6 @@ interface EmployeeDashboardResponse {
   branch: { name: string } | null;
 }
 
-function fmtCurrency(value: number) {
-  return `PHP ${value.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function fmtDate(value: string | null | undefined) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 export default function EmployeeBranchFinancePage() {
   const [dashboard, setDashboard] = useState<EmployeeDashboardResponse | null>(null);
   const [requests, setRequests] = useState<FundRequestRecord[]>([]);
@@ -59,6 +36,7 @@ export default function EmployeeBranchFinancePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedConfirmRequest, setSelectedConfirmRequest] = useState<FundRequestRecord | null>(null);
 
@@ -88,23 +66,70 @@ export default function EmployeeBranchFinancePage() {
     void loadFinanceData();
   }, [loadFinanceData]);
 
-  const pendingConfirmationRequests = useMemo(
-    () => requests.filter((request) => request.status === "pending_confirmation"),
-    [requests],
-  );
-
-  const handleConfirmReceipt = useCallback(
-    async (receivedAmount: number, notes: string) => {
-      if (!selectedConfirmRequest) return;
+  const handleRequestFunds = useCallback(
+    async (data: RequestFundsData) => {
       setIsSubmitting(true);
       try {
-        await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
-          receivedAmount,
-          confirmationNotes: notes,
+        await api.post<FundRequestRecord>("/fund-requests", {
+          amountRequested: data.amount,
+          purpose: data.category,
+          notes: data.notes,
         });
+        setRequestModalOpen(false);
+        showToast("Fund request submitted to Super Admin.");
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to submit fund request.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [loadFinanceData, showToast],
+  );
+
+  const queues = useMemo(() => buildFinanceQueues(requests), [requests]);
+  const confirmationRequests = useMemo(
+    () => [...queues.sourceConfirmation, ...queues.destinationConfirmation],
+    [queues.destinationConfirmation, queues.sourceConfirmation],
+  );
+
+  const handleConfirmRequestClick = useCallback((request: FundRequestRecord) => {
+    setSelectedConfirmRequest(request);
+    setConfirmModalOpen(true);
+  }, []);
+
+  const handleConfirmReceipt = useCallback(
+    async (data: { receivedAmount: number; notes: string; proofFile: File | null }) => {
+      if (!selectedConfirmRequest || !data.proofFile) return;
+
+      setIsSubmitting(true);
+      try {
+        const stage = selectedConfirmRequest.status === "pending_source_confirmation" ? "source" : "destination";
+        const proofUrl = await uploadFundTransferProof({
+          file: data.proofFile,
+          requestNo: selectedConfirmRequest.requestNo,
+          stage,
+          branchId: selectedConfirmRequest.branchId,
+        });
+
+        if (stage === "source") {
+          await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/source-confirm`, {
+            sentAmount: data.receivedAmount,
+            proofUrl,
+            confirmationNotes: data.notes,
+          });
+          showToast("Source branch deduction confirmed successfully.");
+        } else {
+          await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
+            receivedAmount: data.receivedAmount,
+            proofUrl,
+            confirmationNotes: data.notes,
+          });
+          showToast("Transfer receipt confirmed successfully.");
+        }
+
         setConfirmModalOpen(false);
         setSelectedConfirmRequest(null);
-        showToast("Transfer receipt confirmed successfully.");
         await loadFinanceData();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to confirm transfer receipt.");
@@ -115,12 +140,21 @@ export default function EmployeeBranchFinancePage() {
     [loadFinanceData, selectedConfirmRequest, showToast],
   );
 
-  const completedTransfers = useMemo(
-    () => requests.filter((request) => request.status === "transferred"),
-    [requests],
-  );
-
   const finance = dashboard?.branchFinance;
+  const resolvedCurrentBalance = useMemo(() => {
+    const current = finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
+    if (current !== 0) {
+      return current;
+    }
+
+    if (!finance) {
+      return current;
+    }
+
+    return Number(
+      (finance.startingBalance + finance.totalAdded - finance.totalTransferred).toFixed(2),
+    );
+  }, [dashboard?.currentBalance, finance]);
 
   return (
     <div className="space-y-6">
@@ -132,10 +166,18 @@ export default function EmployeeBranchFinancePage() {
         </div>
       ) : null}
 
-      <div>
-        <p className="mt-1 text-sm text-text-tertiary">
-          Confirm incoming cash transfers and monitor your branch cash on hand in real time.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="mt-1 text-sm text-text-tertiary">
+            Request additional funds from Super Admin and confirm incoming or outgoing transfers in real time.
+          </p>
+        </div>
+        <button
+          onClick={() => setRequestModalOpen(true)}
+          className="rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+        >
+          Request Funds
+        </button>
       </div>
 
       {error ? (
@@ -150,57 +192,123 @@ export default function EmployeeBranchFinancePage() {
         </div>
       ) : (
         <>
-          <div className="rounded-xl border border-border-main bg-surface p-5">
+          <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm">
             <h2 className="text-lg font-bold text-text-primary">
               {finance?.name ?? dashboard?.branch?.name ?? "Branch Finance"}
             </h2>
             <p className="mt-2 text-3xl font-black text-emerald-700">
-              {fmtCurrency(finance?.currentBalance ?? 0)}
+              {formatCurrency(resolvedCurrentBalance)}
             </p>
             <p className="mt-1 text-xs text-text-muted">
-              Last updated: {fmtDate(finance?.lastUpdated)}
+              Last updated: {formatFinanceDate(finance?.lastUpdated)}
             </p>
           </div>
 
-          <div className="rounded-xl border border-violet-300/40 bg-violet-50/60 p-4">
-            <h3 className="text-sm font-bold text-text-primary">Pending Transfer Confirmation</h3>
-            <p className="text-xs text-text-muted">
-              {pendingConfirmationRequests.length === 0
-                ? "No pending transfers for your confirmation."
-                : `${pendingConfirmationRequests.length} transfer${pendingConfirmationRequests.length === 1 ? "" : "s"} waiting for your confirmation.`}
-            </p>
-            {pendingConfirmationRequests.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {pendingConfirmationRequests.map((request) => (
-                  <div key={request.id} className="rounded-lg border border-violet-200 bg-white px-4 py-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <FinanceQueueSection
+              accent="blue"
+              title="Pending Super Admin Review"
+              subtitle={
+                queues.pendingReview.length === 0
+                  ? "You have no requests waiting for review."
+                  : `${queues.pendingReview.length} request${queues.pendingReview.length === 1 ? "" : "s"} currently under review.`
+              }
+              count={queues.pendingReview.length}
+              expanded
+            >
+              {queues.pendingReview.length > 0 ? (
+                queues.pendingReview.map((request) => (
+                  <div key={request.id} className="rounded-xl border border-blue-200 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-bold text-text-primary">
-                          {request.requestNo} - {fmtCurrency(request.amountTransferred ?? request.approvedAmount ?? request.amountRequested)}
+                          {request.requestNo} - {formatCurrency(request.amountRequested)}
                         </p>
-                        <p className="mt-1 text-xs text-text-secondary">{request.purpose}</p>
-                        <p className="mt-1 text-xs text-text-muted">
-                          Sent for confirmation: {fmtDate(request.transferredAt)}
-                        </p>
+                        <p className="mt-1 text-xs text-text-secondary">Purpose: {request.purpose}</p>
+                        {request.notes ? <p className="mt-1 text-xs text-text-muted">{request.notes}</p> : null}
+                        <p className="mt-1 text-xs text-text-muted">Requested: {formatFinanceDate(request.createdAt)}</p>
                       </div>
-                      <button
-                        onClick={() => {
-                          setSelectedConfirmRequest(request);
-                          setConfirmModalOpen(true);
-                        }}
-                        disabled={isSubmitting}
-                        className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        Confirm Receipt
-                      </button>
+                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+                        Pending
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : null}
+                ))
+              ) : (
+                <div className="rounded-xl border border-blue-200 bg-white p-4 text-sm text-text-tertiary">
+                  No requests are waiting for review.
+                </div>
+              )}
+            </FinanceQueueSection>
+
+            <FinanceQueueSection
+              accent="orange"
+              title="Pending Branch Confirmation"
+              subtitle={
+                confirmationRequests.length === 0
+                  ? "No transfers are waiting for branch confirmation."
+                  : `${confirmationRequests.length} transfer${confirmationRequests.length === 1 ? "" : "s"} awaiting confirmation.`
+              }
+              title="Pending Receiving Confirmation"
+              subtitle={
+                confirmationRequests.length === 0
+                  ? "No transfers are waiting for receiving confirmation."
+                  : `${confirmationRequests.length} transfer${confirmationRequests.length === 1 ? "" : "s"} awaiting receiving confirmation.`
+              }
+              count={confirmationRequests.length}
+              expanded
+            >
+              {confirmationRequests.length > 0 ? (
+                confirmationRequests.map((request) => {
+                  const isSourceConfirmation = request.status === "pending_source_confirmation";
+                  return (
+                    <div key={request.id} className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-bold text-text-primary">
+                            {request.requestNo} - {formatCurrency(getRequestAmount(request))}
+                          </p>
+                          <p className="mt-1 text-xs text-text-secondary">
+                            {isSourceConfirmation
+                              ? `Sending branch: ${request.sourceBranch?.name ?? request.sourceBranchId ?? "Unknown Branch"}`
+                              : `Receiving branch: ${request.branch?.name ?? "Unknown Branch"}`}
+                          </p>
+                          <p className="mt-1 text-xs text-text-muted">
+                            Transfer mode: {request.transferMode?.replaceAll("_", " ") ?? "Cash"}
+                          </p>
+                          <p className="mt-1 text-xs text-text-muted">
+                            {isSourceConfirmation
+                              ? `Outgoing deduction pending since ${formatFinanceDate(request.transferredAt ?? request.createdAt)}`
+                              : `Sent for receipt confirmation: ${formatFinanceDate(request.transferredAt ?? request.createdAt)}`}
+                          </p>
+                          {request.transferNotes ? (
+                            <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
+                          ) : null}
+                          {request.sourceConfirmationNotes ? (
+                            <p className="mt-1 text-xs text-text-muted">Source notes: {request.sourceConfirmationNotes}</p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmRequestClick(request)}
+                          disabled={isSubmitting}
+                          className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {getConfirmationLabel(request)}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="rounded-xl border border-orange-200 bg-white p-4 text-sm text-text-tertiary">
+                  No transfers are waiting for confirmation.
+                </div>
+              )}
+            </FinanceQueueSection>
           </div>
 
-          <div className="space-y-3 rounded-xl border border-border-main bg-surface p-5">
+          <div className="space-y-3 rounded-xl border border-border-main bg-surface p-5 shadow-sm">
             <h3 className="text-base font-bold text-text-primary">Transfer History</h3>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[680px] text-sm">
@@ -214,26 +322,19 @@ export default function EmployeeBranchFinancePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {completedTransfers.length === 0 ? (
+                  {queues.transferred.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-3 py-8 text-center text-text-tertiary">
                         No completed transfers yet.
                       </td>
                     </tr>
                   ) : (
-                    completedTransfers.map((request) => (
+                    queues.transferred.map((request) => (
                       <tr key={request.id} className="border-b border-border-subtle">
                         <td className="px-3 py-3 font-semibold text-text-primary">{request.requestNo}</td>
-                        <td className="px-3 py-3 text-text-secondary">
-                          {fmtCurrency(
-                            request.confirmedReceivedAmount ??
-                              request.amountTransferred ??
-                              request.approvedAmount ??
-                              request.amountRequested,
-                          )}
-                        </td>
-                        <td className="px-3 py-3 text-text-secondary">{fmtDate(request.transferredAt)}</td>
-                        <td className="px-3 py-3 text-text-secondary">{fmtDate(request.confirmedAt)}</td>
+                        <td className="px-3 py-3 text-text-secondary">{formatCurrency(getRequestAmount(request))}</td>
+                        <td className="px-3 py-3 text-text-secondary">{formatFinanceDate(request.transferredAt)}</td>
+                        <td className="px-3 py-3 text-text-secondary">{formatFinanceDate(request.confirmedAt)}</td>
                         <td className="px-3 py-3 text-xs text-text-muted">
                           {request.confirmationNotes ?? request.transferNotes ?? "-"}
                         </td>
@@ -246,6 +347,12 @@ export default function EmployeeBranchFinancePage() {
           </div>
         </>
       )}
+
+      <RequestFundsModal
+        isOpen={requestModalOpen}
+        onClose={() => setRequestModalOpen(false)}
+        onSubmit={handleRequestFunds}
+      />
 
       <ConfirmFundModal
         isOpen={confirmModalOpen}
@@ -264,6 +371,23 @@ export default function EmployeeBranchFinancePage() {
         }
         requestNo={selectedConfirmRequest?.requestNo}
         branchName={finance?.name ?? dashboard?.branch?.name ?? "Branch"}
+        sourceBranchName={selectedConfirmRequest?.sourceBranch?.name ?? null}
+        transferMode={selectedConfirmRequest?.transferMode ?? null}
+        stageLabel={
+          selectedConfirmRequest?.status === "pending_source_confirmation"
+            ? "Confirm Source Deduction"
+            : "Confirm Receipt"
+        }
+        amountLabel={
+          selectedConfirmRequest?.status === "pending_source_confirmation"
+            ? "Sent Amount"
+            : "Actual Amount Received"
+        }
+        helperText={
+          selectedConfirmRequest?.status === "pending_source_confirmation"
+            ? "Confirm the outgoing deduction after the source branch has released the funds. The amount entered here will be deducted from the source branch balance."
+            : "Upload a proof image of the transaction and enter the actual amount received. The system will post this amount to your branch balance."
+        }
       />
     </div>
   );

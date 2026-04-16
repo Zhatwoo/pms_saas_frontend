@@ -66,7 +66,7 @@ function ClockIcon() {
 }
 
 function fmt(n: number) {
-  return `₱${n.toLocaleString("en-PH")}`;
+  return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function fmtDate(d: string) {
