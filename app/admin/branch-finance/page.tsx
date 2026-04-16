@@ -6,7 +6,6 @@ import { ConfirmFundModal } from "./_components/confirm-fund-modal";
 import { RequestFundsModal } from "./_components/request-funds-modal";
 import type { RequestFundsData } from "./_components/request-funds-modal";
 import {
-  FinanceLedgerTable,
   FinanceSummaryCards,
   LedgerTypeFilter,
 } from "@/components/shared/finance-ledger-table";
@@ -145,6 +144,7 @@ export default function AdminBranchFinancePage() {
   const [ledgerSearch, setLedgerSearch] = useState("");
   const [ledgerDateFrom, setLedgerDateFrom] = useState("");
   const [ledgerDateTo, setLedgerDateTo] = useState("");
+  const [ledgerViewFilter, setLedgerViewFilter] = useState<"all" | "transactions" | "fund_requests">("all");
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -218,28 +218,137 @@ export default function AdminBranchFinancePage() {
 
   const handleConfirmReceipt = useCallback(
     async (receivedAmount: number, notes: string) => {
-      async (receivedAmount: number, notes: string) => {
-        if (!selectedConfirmRequest) return;
+      if (!selectedConfirmRequest) return;
 
-        setIsSubmitting(true);
-        try {
-          await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
-            receivedAmount,
-            receivedAmount,
-            confirmationNotes: notes,
-          });
-          setConfirmModalOpen(false);
-          setSelectedConfirmRequest(null);
-          showToast("Branch receipt confirmed and transfer recorded successfully.");
-          await loadFinanceData();
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Failed to confirm fund receipt.");
-        } finally {
-          setIsSubmitting(false);
-        }
-      },
-        [loadFinanceData, selectedConfirmRequest, showToast],
+      setIsSubmitting(true);
+      try {
+        await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
+          receivedAmount,
+          confirmationNotes: notes,
+        });
+        setConfirmModalOpen(false);
+        setSelectedConfirmRequest(null);
+        showToast("Branch receipt confirmed and transfer recorded successfully.");
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to confirm fund receipt.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [loadFinanceData, selectedConfirmRequest, showToast],
   );
+
+  // ── Unified rows: merge ledger entries + fund requests ──
+  interface UnifiedRow {
+    id: string;
+    sortDate: string;
+    displayDate: string;
+    displayTime: string | null;
+    source: "transaction" | "fund_request";
+    typeBadge: React.ReactNode;
+    typeKey: string;
+    statusKey: string;
+    itemName: string | null;
+    description: string;
+    cashIn: number;
+    cashOut: number;
+    reference: string | null;
+  }
+
+  const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: string }> = {
+    pawn: { label: "Pawn", bgClass: "bg-orange-100 text-orange-700", dotClass: "bg-orange-500" },
+    buy_back: { label: "Buy Back", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
+    renewal: { label: "Renewal", bgClass: "bg-teal-100 text-teal-700", dotClass: "bg-teal-500" },
+    sale: { label: "Sale", bgClass: "bg-purple-100 text-purple-700", dotClass: "bg-purple-500" },
+    fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-100 text-emerald-700", dotClass: "bg-emerald-500" },
+    fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-100 text-red-600", dotClass: "bg-red-500" },
+    start: { label: "Opening", bgClass: "bg-indigo-100 text-indigo-700", dotClass: "bg-indigo-500" },
+    other: { label: "Other", bgClass: "bg-zinc-100 text-zinc-600", dotClass: "bg-zinc-400" },
+  };
+
+  const unifiedRows = useMemo<UnifiedRow[]>(() => {
+    const rows: UnifiedRow[] = [];
+
+    // Add transaction rows
+    if (ledgerViewFilter !== "fund_requests") {
+      for (const entry of ledgerEntries) {
+        if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) continue;
+
+        const cfg = TYPE_CONFIG[entry.type] ?? TYPE_CONFIG.other;
+        rows.push({
+          id: `txn-${entry.id}`,
+          sortDate: entry.date + (entry.time ? `T${entry.time}` : "T00:00:00"),
+          displayDate: fmtDate(entry.date),
+          displayTime: entry.time,
+          source: "transaction",
+          typeBadge: (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.bgClass}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
+              {cfg.label}
+            </span>
+          ),
+          typeKey: entry.type,
+          statusKey: "",
+          itemName: entry.itemName ?? null,
+          description: entry.description,
+          cashIn: entry.cashIn,
+          cashOut: entry.cashOut,
+          reference: entry.reference,
+        });
+      }
+    }
+
+    // Add fund request rows
+    if (ledgerViewFilter !== "transactions") {
+      for (const req of filteredRequests) {
+        const amount = req.amountTransferred ?? req.approvedAmount ?? req.amountRequested;
+        const isIncoming = req.status === "transferred" || req.status === "pending_confirmation";
+
+        rows.push({
+          id: `fr-${req.id}`,
+          sortDate: req.createdAt,
+          displayDate: fmtDate(req.createdAt),
+          displayTime: null,
+          source: "fund_request",
+          typeBadge: (
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${toStatusClass(req.status)}`}>
+              {toStatusLabel(req.status)}
+            </span>
+          ),
+          typeKey: "fund_request",
+          statusKey: req.status,
+          itemName: null,
+          description: `${req.requestNo} — ${req.purpose}${req.notes ? ` | ${req.notes}` : ""}${req.transferNotes ? ` | ${req.transferNotes}` : ""}${req.reviewNotes ? ` | ${req.reviewNotes}` : ""}`,
+          cashIn: isIncoming ? amount : 0,
+          cashOut: 0,
+          reference: req.requestNo,
+        });
+      }
+    }
+
+    // Sort by date descending
+    rows.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
+    // Apply search filter
+    if (ledgerSearch) {
+      const q = ledgerSearch.toLowerCase();
+      return rows.filter(
+        (r) =>
+          r.description.toLowerCase().includes(q) ||
+          (r.itemName ?? "").toLowerCase().includes(q) ||
+          (r.reference ?? "").toLowerCase().includes(q),
+      );
+    }
+
+    // Apply date filters
+    return rows.filter((r) => {
+      const d = r.sortDate.split("T")[0];
+      if (ledgerDateFrom && d < ledgerDateFrom) return false;
+      if (ledgerDateTo && d > ledgerDateTo) return false;
+      return true;
+    });
+  }, [ledgerEntries, filteredRequests, ledgerViewFilter, ledgerTypeFilter, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
 
   const finance = dashboard?.branchFinance;
 
@@ -415,84 +524,7 @@ export default function AdminBranchFinancePage() {
             ) : null}
           </div>
 
-          <div className="space-y-4 rounded-xl border border-border-main bg-surface p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-bold text-text-primary">Fund Request History</h3>
-                <p className="text-xs text-text-muted">Track approval decisions and completed transfers from Super Admin.</p>
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as FundRequestRecord["status"] | "all")
-                }
-                className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none"
-              >
-                <option value="all">All statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="pending_confirmation">Pending Confirmation</option>
-                <option value="rejected">Rejected</option>
-                <option value="transferred">Transferred</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-sm">
-                <thead>
-                  <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
-                    <th className="px-3 py-3">Request</th>
-                    <th className="px-3 py-3">Amount</th>
-                    <th className="px-3 py-3">Status</th>
-                    <th className="px-3 py-3">Created</th>
-                    <th className="px-3 py-3">Reviewed</th>
-                    <th className="px-3 py-3">Transferred</th>
-                    <th className="px-3 py-3">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-3 py-10 text-center text-text-tertiary">
-                        No fund requests found for this filter.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredRequests.map((request) => (
-                      <tr key={request.id} className="border-b border-border-subtle">
-                        <td className="px-3 py-3 align-top">
-                          <p className="font-semibold text-text-primary">{request.requestNo}</p>
-                          <p className="mt-1 text-xs text-text-muted">{request.purpose}</p>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <p className="font-semibold text-text-primary">{fmtCurrency(request.amountRequested)}</p>
-                          {request.approvedAmount != null ? (
-                            <p className="mt-1 text-xs text-text-muted">
-                              Approved: {fmtCurrency(request.approvedAmount)}
-                            </p>
-                          ) : null}
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${toStatusClass(request.status)}`}>
-                            {toStatusLabel(request.status)}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top text-text-secondary">{fmtDate(request.createdAt)}</td>
-                        <td className="px-3 py-3 align-top text-text-secondary">{fmtDate(request.reviewedAt)}</td>
-                        <td className="px-3 py-3 align-top text-text-secondary">{fmtDate(request.transferredAt)}</td>
-                        <td className="px-3 py-3 align-top text-xs text-text-muted">
-                          {request.transferNotes ?? request.reviewNotes ?? request.notes ?? "-"}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* ── Branch Financial Activity Ledger ── */}
+          {/* ── Unified Branch Finance Ledger ── */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
@@ -501,7 +533,7 @@ export default function AdminBranchFinancePage() {
                   <line x1="1" y1="10" x2="23" y2="10" />
                 </svg>
               </div>
-              <h2 className="text-sm font-bold text-text-primary">All Branch Financial Activity</h2>
+              <h2 className="text-sm font-bold text-text-primary">Branch Finance Ledger</h2>
             </div>
 
             {branchSummary && (
@@ -513,14 +545,40 @@ export default function AdminBranchFinancePage() {
             )}
 
             <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={ledgerViewFilter}
+                onChange={(e) => setLedgerViewFilter(e.target.value as "all" | "transactions" | "fund_requests")}
+                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm font-semibold text-text-primary focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">All Activity</option>
+                <option value="transactions">Transactions Only</option>
+                <option value="fund_requests">Fund Requests Only</option>
+              </select>
               <input
                 type="text"
-                placeholder="Search transactions..."
+                placeholder="Search..."
                 value={ledgerSearch}
                 onChange={(e) => setLedgerSearch(e.target.value)}
                 className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
               />
-              <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              {ledgerViewFilter !== "fund_requests" && (
+                <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              )}
+              {ledgerViewFilter !== "transactions" && (
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as FundRequestRecord["status"] | "all")}
+                  className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="pending_confirmation">Pending Confirmation</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="transferred">Transferred</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              )}
               <input
                 type="date"
                 value={ledgerDateFrom}
@@ -533,13 +591,14 @@ export default function AdminBranchFinancePage() {
                 onChange={(e) => setLedgerDateTo(e.target.value)}
                 className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
               />
-              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) && (
+              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo || statusFilter !== "all") && (
                 <button
                   onClick={() => {
                     setLedgerSearch("");
                     setLedgerTypeFilter("all");
                     setLedgerDateFrom("");
                     setLedgerDateTo("");
+                    setStatusFilter("all");
                   }}
                   className="text-xs font-bold text-red-600 hover:underline"
                 >
@@ -548,15 +607,78 @@ export default function AdminBranchFinancePage() {
               )}
             </div>
 
-            <FinanceLedgerTable
-              entries={ledgerEntries}
-              isLoading={isLoading}
-              showBranchColumn={false}
-              searchQuery={ledgerSearch}
-              typeFilter={ledgerTypeFilter}
-              dateFrom={ledgerDateFrom}
-              dateTo={ledgerDateTo}
-            />
+            {/* Unified table */}
+            <div className="overflow-x-auto rounded-xl border border-border-main bg-surface">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead>
+                  <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
+                    <th className="px-3 py-3">Date</th>
+                    <th className="px-3 py-3">Source</th>
+                    <th className="px-3 py-3">Type / Status</th>
+                    <th className="px-3 py-3">Item Name</th>
+                    <th className="px-3 py-3">Description</th>
+                    <th className="px-3 py-3 text-right">Cash In</th>
+                    <th className="px-3 py-3 text-right">Cash Out</th>
+                    <th className="px-3 py-3">Reference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unifiedRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-10 text-center text-text-tertiary">
+                        No records found for the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    unifiedRows.map((row) => (
+                      <tr key={row.id} className="border-b border-border-subtle transition-colors hover:bg-surface-secondary/50">
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-sm text-text-secondary">{row.displayDate}</span>
+                          {row.displayTime ? (
+                            <span className="ml-1.5 text-xs text-text-muted">{row.displayTime}</span>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            row.source === "transaction"
+                              ? "bg-indigo-100 text-indigo-700"
+                              : "bg-cyan-100 text-cyan-700"
+                          }`}>
+                            {row.source === "transaction" ? "TXN" : "FUND REQ"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          {row.typeBadge}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="block max-w-[160px] truncate text-sm font-medium text-text-primary" title={row.itemName ?? ""}>
+                            {row.itemName || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="block max-w-[240px] truncate text-sm text-text-secondary" title={row.description}>
+                            {row.description || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top text-right">
+                          <span className={`text-sm font-bold ${row.cashIn > 0 ? "text-emerald-600" : "text-text-muted"}`}>
+                            {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top text-right">
+                          <span className={`text-sm font-bold ${row.cashOut > 0 ? "text-red-600" : "text-text-muted"}`}>
+                            {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-xs font-mono text-text-muted">{row.reference || "—"}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}

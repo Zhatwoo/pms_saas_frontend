@@ -21,6 +21,7 @@ export interface LedgerEntry {
   time: string | null;
   type: LedgerEntryType;
   description: string;
+  itemName: string | null;
   cashIn: number;
   cashOut: number;
   branchId: string;
@@ -98,6 +99,7 @@ export function FinanceLedgerTable({
     }
     cols.push(
       { key: "type", label: "Type" },
+      { key: "itemName", label: "Item Name" },
       { key: "description", label: "Description" },
       { key: "cashIn", label: "Cash In", align: "right" },
       { key: "cashOut", label: "Cash Out", align: "right" },
@@ -112,6 +114,7 @@ export function FinanceLedgerTable({
         const q = searchQuery.toLowerCase();
         const matchesSearch =
           (e.description ?? "").toLowerCase().includes(q) ||
+          (e.itemName ?? "").toLowerCase().includes(q) ||
           (e.branchName ?? "").toLowerCase().includes(q) ||
           (e.reference ?? "").toLowerCase().includes(q);
         if (!matchesSearch) return false;
@@ -166,6 +169,16 @@ export function FinanceLedgerTable({
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
                 {cfg.label}
+              </span>
+            );
+          }
+          if (key === "itemName") {
+            return (
+              <span
+                className="block max-w-[180px] truncate text-sm font-medium text-text-primary"
+                title={value || ""}
+              >
+                {value || "—"}
               </span>
             );
           }

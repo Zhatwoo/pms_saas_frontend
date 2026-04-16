@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { ConfirmFundModal } from "@/app/admin/branch-finance/_components/confirm-fund-modal";
-<<<<<<< HEAD
 import {
-  FinanceLedgerTable,
   FinanceSummaryCards,
   LedgerTypeFilter,
 } from "@/components/shared/finance-ledger-table";
@@ -13,8 +11,6 @@ import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
-=======
->>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
 
 interface FundRequestRecord {
   id: string;
@@ -46,7 +42,6 @@ interface EmployeeDashboardResponse {
   branch: { name: string } | null;
 }
 
-<<<<<<< HEAD
 interface BranchFinanceSummaryApi {
   branchId: string;
   branchName: string;
@@ -58,8 +53,6 @@ interface BranchFinanceSummaryApi {
   fundRequests: { pending: number; approved: number; transferred: number };
 }
 
-=======
->>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
 function fmtCurrency(value: number) {
   return `PHP ${value.toLocaleString("en-PH", {
     minimumFractionDigits: 2,
@@ -78,6 +71,46 @@ function fmtDate(value: string | null | undefined) {
   });
 }
 
+function toStatusClass(status: FundRequestRecord["status"]) {
+  switch (status) {
+    case "pending": return "bg-amber-100 text-amber-700";
+    case "approved": return "bg-blue-100 text-blue-700";
+    case "pending_confirmation": return "bg-violet-100 text-violet-700";
+    case "rejected": return "bg-red-100 text-red-700";
+    case "transferred": return "bg-emerald-100 text-emerald-700";
+    case "cancelled": return "bg-zinc-200 text-zinc-700";
+  }
+}
+
+function toStatusLabel(status: FundRequestRecord["status"]) {
+  return status === "pending_confirmation" ? "Pending Confirmation" : status;
+}
+
+const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: string }> = {
+  pawn: { label: "Pawn", bgClass: "bg-orange-100 text-orange-700", dotClass: "bg-orange-500" },
+  buy_back: { label: "Buy Back", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
+  renewal: { label: "Renewal", bgClass: "bg-teal-100 text-teal-700", dotClass: "bg-teal-500" },
+  sale: { label: "Sale", bgClass: "bg-purple-100 text-purple-700", dotClass: "bg-purple-500" },
+  fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-100 text-emerald-700", dotClass: "bg-emerald-500" },
+  fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-100 text-red-600", dotClass: "bg-red-500" },
+  start: { label: "Opening", bgClass: "bg-indigo-100 text-indigo-700", dotClass: "bg-indigo-500" },
+  other: { label: "Other", bgClass: "bg-zinc-100 text-zinc-600", dotClass: "bg-zinc-400" },
+};
+
+interface UnifiedRow {
+  id: string;
+  sortDate: string;
+  displayDate: string;
+  displayTime: string | null;
+  source: "transaction" | "fund_request";
+  typeBadge: React.ReactNode;
+  itemName: string | null;
+  description: string;
+  cashIn: number;
+  cashOut: number;
+  reference: string | null;
+}
+
 export default function EmployeeBranchFinancePage() {
   const [dashboard, setDashboard] = useState<EmployeeDashboardResponse | null>(null);
   const [requests, setRequests] = useState<FundRequestRecord[]>([]);
@@ -88,16 +121,14 @@ export default function EmployeeBranchFinancePage() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedConfirmRequest, setSelectedConfirmRequest] = useState<FundRequestRecord | null>(null);
 
-<<<<<<< HEAD
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [branchSummary, setBranchSummary] = useState<BranchFinanceSummaryApi | null>(null);
   const [ledgerTypeFilter, setLedgerTypeFilter] = useState("all");
   const [ledgerSearch, setLedgerSearch] = useState("");
   const [ledgerDateFrom, setLedgerDateFrom] = useState("");
   const [ledgerDateTo, setLedgerDateTo] = useState("");
+  const [ledgerViewFilter, setLedgerViewFilter] = useState<"all" | "transactions" | "fund_requests">("all");
 
-=======
->>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
   const showToast = useCallback((message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(null), 2500);
@@ -107,7 +138,6 @@ export default function EmployeeBranchFinancePage() {
     setIsLoading(true);
     setError(null);
     try {
-<<<<<<< HEAD
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
         api.get<EmployeeDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
@@ -118,14 +148,6 @@ export default function EmployeeBranchFinancePage() {
       setRequests(requestData);
       setBranchSummary(summaryData?.[0] ?? null);
       setLedgerEntries(ledgerData?.entries ?? []);
-=======
-      const [dashboardData, requestData] = await Promise.all([
-        api.get<EmployeeDashboardResponse>("/dashboard"),
-        api.get<FundRequestRecord[]>("/fund-requests"),
-      ]);
-      setDashboard(dashboardData);
-      setRequests(requestData);
->>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load branch finance data.");
     } finally {
@@ -164,10 +186,85 @@ export default function EmployeeBranchFinancePage() {
     [loadFinanceData, selectedConfirmRequest, showToast],
   );
 
-  const completedTransfers = useMemo(
-    () => requests.filter((request) => request.status === "transferred"),
-    [requests],
-  );
+  // ── Unified rows: merge ledger entries + fund requests ──
+  const unifiedRows = useMemo<UnifiedRow[]>(() => {
+    const rows: UnifiedRow[] = [];
+
+    // Add transaction rows
+    if (ledgerViewFilter !== "fund_requests") {
+      for (const entry of ledgerEntries) {
+        if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) continue;
+        const cfg = TYPE_CONFIG[entry.type] ?? TYPE_CONFIG.other;
+        rows.push({
+          id: `txn-${entry.id}`,
+          sortDate: entry.date + (entry.time ? `T${entry.time}` : "T00:00:00"),
+          displayDate: fmtDate(entry.date),
+          displayTime: entry.time,
+          source: "transaction",
+          typeBadge: (
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.bgClass}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
+              {cfg.label}
+            </span>
+          ),
+          itemName: entry.itemName ?? null,
+          description: entry.description,
+          cashIn: entry.cashIn,
+          cashOut: entry.cashOut,
+          reference: entry.reference,
+        });
+      }
+    }
+
+    // Add fund request rows
+    if (ledgerViewFilter !== "transactions") {
+      for (const req of requests) {
+        const amount = req.confirmedReceivedAmount ?? req.amountTransferred ?? req.approvedAmount ?? req.amountRequested;
+        const isIncoming = req.status === "transferred" || req.status === "pending_confirmation";
+
+        rows.push({
+          id: `fr-${req.id}`,
+          sortDate: req.createdAt,
+          displayDate: fmtDate(req.createdAt),
+          displayTime: null,
+          source: "fund_request",
+          typeBadge: (
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${toStatusClass(req.status)}`}>
+              {toStatusLabel(req.status)}
+            </span>
+          ),
+          itemName: null,
+          description: `${req.requestNo} — ${req.purpose}${req.transferNotes ? ` | ${req.transferNotes}` : ""}${req.confirmationNotes ? ` | ${req.confirmationNotes}` : ""}`,
+          cashIn: isIncoming ? amount : 0,
+          cashOut: 0,
+          reference: req.requestNo,
+        });
+      }
+    }
+
+    // Sort by date descending
+    rows.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
+
+    // Apply search filter
+    const searched = ledgerSearch
+      ? rows.filter((r) => {
+          const q = ledgerSearch.toLowerCase();
+          return (
+            r.description.toLowerCase().includes(q) ||
+            (r.itemName ?? "").toLowerCase().includes(q) ||
+            (r.reference ?? "").toLowerCase().includes(q)
+          );
+        })
+      : rows;
+
+    // Apply date filters
+    return searched.filter((r) => {
+      const d = r.sortDate.split("T")[0];
+      if (ledgerDateFrom && d < ledgerDateFrom) return false;
+      if (ledgerDateTo && d > ledgerDateTo) return false;
+      return true;
+    });
+  }, [ledgerEntries, requests, ledgerViewFilter, ledgerTypeFilter, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
 
   const finance = dashboard?.branchFinance;
 
@@ -249,53 +346,7 @@ export default function EmployeeBranchFinancePage() {
             ) : null}
           </div>
 
-          <div className="space-y-3 rounded-xl border border-border-main bg-surface p-5">
-            <h3 className="text-base font-bold text-text-primary">Transfer History</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-sm">
-                <thead>
-                  <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
-                    <th className="px-3 py-3">Request</th>
-                    <th className="px-3 py-3">Amount</th>
-                    <th className="px-3 py-3">Transferred At</th>
-                    <th className="px-3 py-3">Confirmed At</th>
-                    <th className="px-3 py-3">Notes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {completedTransfers.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-3 py-8 text-center text-text-tertiary">
-                        No completed transfers yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    completedTransfers.map((request) => (
-                      <tr key={request.id} className="border-b border-border-subtle">
-                        <td className="px-3 py-3 font-semibold text-text-primary">{request.requestNo}</td>
-                        <td className="px-3 py-3 text-text-secondary">
-                          {fmtCurrency(
-                            request.confirmedReceivedAmount ??
-                              request.amountTransferred ??
-                              request.approvedAmount ??
-                              request.amountRequested,
-                          )}
-                        </td>
-                        <td className="px-3 py-3 text-text-secondary">{fmtDate(request.transferredAt)}</td>
-                        <td className="px-3 py-3 text-text-secondary">{fmtDate(request.confirmedAt)}</td>
-                        <td className="px-3 py-3 text-xs text-text-muted">
-                          {request.confirmationNotes ?? request.transferNotes ?? "-"}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-<<<<<<< HEAD
-
-          {/* ── Branch Financial Activity (Read-Only) ── */}
+          {/* ── Unified Branch Finance Ledger ── */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
@@ -304,7 +355,7 @@ export default function EmployeeBranchFinancePage() {
                   <line x1="1" y1="10" x2="23" y2="10" />
                 </svg>
               </div>
-              <h2 className="text-sm font-bold text-text-primary">All Branch Financial Activity</h2>
+              <h2 className="text-sm font-bold text-text-primary">Branch Finance Ledger</h2>
               <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-600">
                 View Only
               </span>
@@ -319,14 +370,25 @@ export default function EmployeeBranchFinancePage() {
             )}
 
             <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={ledgerViewFilter}
+                onChange={(e) => setLedgerViewFilter(e.target.value as "all" | "transactions" | "fund_requests")}
+                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm font-semibold text-text-primary focus:border-emerald-500 focus:outline-none"
+              >
+                <option value="all">All Activity</option>
+                <option value="transactions">Transactions Only</option>
+                <option value="fund_requests">Fund Requests Only</option>
+              </select>
               <input
                 type="text"
-                placeholder="Search transactions..."
+                placeholder="Search..."
                 value={ledgerSearch}
                 onChange={(e) => setLedgerSearch(e.target.value)}
                 className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
               />
-              <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              {ledgerViewFilter !== "fund_requests" && (
+                <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              )}
               <input
                 type="date"
                 value={ledgerDateFrom}
@@ -354,18 +416,79 @@ export default function EmployeeBranchFinancePage() {
               )}
             </div>
 
-            <FinanceLedgerTable
-              entries={ledgerEntries}
-              isLoading={isLoading}
-              showBranchColumn={false}
-              searchQuery={ledgerSearch}
-              typeFilter={ledgerTypeFilter}
-              dateFrom={ledgerDateFrom}
-              dateTo={ledgerDateTo}
-            />
+            {/* Unified table */}
+            <div className="overflow-x-auto rounded-xl border border-border-main bg-surface">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead>
+                  <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
+                    <th className="px-3 py-3">Date</th>
+                    <th className="px-3 py-3">Source</th>
+                    <th className="px-3 py-3">Type / Status</th>
+                    <th className="px-3 py-3">Item Name</th>
+                    <th className="px-3 py-3">Description</th>
+                    <th className="px-3 py-3 text-right">Cash In</th>
+                    <th className="px-3 py-3 text-right">Cash Out</th>
+                    <th className="px-3 py-3">Reference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unifiedRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-10 text-center text-text-tertiary">
+                        No records found for the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    unifiedRows.map((row) => (
+                      <tr key={row.id} className="border-b border-border-subtle transition-colors hover:bg-surface-secondary/50">
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-sm text-text-secondary">{row.displayDate}</span>
+                          {row.displayTime ? (
+                            <span className="ml-1.5 text-xs text-text-muted">{row.displayTime}</span>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            row.source === "transaction"
+                              ? "bg-indigo-100 text-indigo-700"
+                              : "bg-cyan-100 text-cyan-700"
+                          }`}>
+                            {row.source === "transaction" ? "TXN" : "FUND REQ"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          {row.typeBadge}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="block max-w-[160px] truncate text-sm font-medium text-text-primary" title={row.itemName ?? ""}>
+                            {row.itemName || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="block max-w-[240px] truncate text-sm text-text-secondary" title={row.description}>
+                            {row.description || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top text-right">
+                          <span className={`text-sm font-bold ${row.cashIn > 0 ? "text-emerald-600" : "text-text-muted"}`}>
+                            {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top text-right">
+                          <span className={`text-sm font-bold ${row.cashOut > 0 ? "text-red-600" : "text-text-muted"}`}>
+                            {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-xs font-mono text-text-muted">{row.reference || "—"}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-=======
->>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
         </>
       )}
 
