@@ -11,7 +11,6 @@ export default function ExpirationMonitoringPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-medium text-zinc-400">Taguig Branch</p>
         <p className="mt-1 text-sm text-zinc-500">
           Track contracts nearing expiration and overdue items
         </p>
