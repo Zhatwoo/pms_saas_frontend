@@ -2,12 +2,35 @@
 
 import { useEffect, useState, type ChangeEvent } from "react";
 
+export interface PawnTicketFormData {
+  unitCode: string;
+  purchasedDate: string;
+  maturityDate: string;
+  expiryDate: string;
+  idsPresented: string;
+  fullName: string;
+  residence: string;
+  contactNumber: string;
+  email: string;
+  amountInWords: string;
+  principalAmount: string;
+  storageFee: string;
+  parkingFee: string;
+  netProceeds: string;
+  brandModel: string;
+  itemsIncluded: string;
+  condition: string;
+  serialNo: string;
+  memoryStorage: string;
+}
+
 interface NewPawnTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: (data: PawnTicketFormData) => void;
 }
 
-const initialFormState = {
+const initialFormState: PawnTicketFormData = {
   unitCode: "",
   purchasedDate: "",
   maturityDate: "",
@@ -29,7 +52,7 @@ const initialFormState = {
   memoryStorage: "",
 };
 
-export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps) {
+export function NewPawnTicketModal({ isOpen, onClose, onSave }: NewPawnTicketModalProps) {
   const [form, setForm] = useState(initialFormState);
 
   useEffect(() => {
@@ -49,6 +72,7 @@ export function NewPawnTicketModal({ isOpen, onClose }: NewPawnTicketModalProps)
 
   const handleSave = () => {
     // Replace this with real save logic when ready.
+    onSave?.(form);
     onClose();
   };
 
