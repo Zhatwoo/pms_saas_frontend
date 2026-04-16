@@ -65,7 +65,6 @@ type FilterType = "All" | FilterButton;
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
-  onFilterChange?: (filter: FilterType) => void;
   onRenewClick?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
@@ -92,7 +91,6 @@ const filterIconMap: Record<FilterButton, React.ReactElement> = {
 
 export function TransactionActions({
   activeFilter = "All",
-  onFilterChange,
   onRenewClick,
   onExportCSV,
   onPrintReport,
