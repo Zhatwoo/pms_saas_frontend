@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 type ExtensionRow = {
   date: string;
@@ -98,6 +99,21 @@ export default function SettingsPage() {
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
 
+  useEffect(() => {
+    async function fetchMoaTemplate() {
+      try {
+        const data = await api.get<{ terms_text: string; labels: typeof topLabels }>(`/settings/moa_template`);
+        if (data) {
+          setTermsText(data.terms_text);
+          setTopLabels(data.labels);
+        }
+      } catch (error) {
+        console.error("Failed to fetch MOA template:", error);
+      }
+    }
+    fetchMoaTemplate();
+  }, []);
+
   const canEditMoa = isMoaEditMode && !isMoaLocked;
 
   const lineInputClass =
@@ -125,8 +141,17 @@ export default function SettingsPage() {
     );
   };
 
-  const handleSaveMoa = () => {
-    setMoaSavedAt(new Date().toLocaleString());
+  const handleSaveMoa = async () => {
+    try {
+      await api.post(`/settings/moa_template`, {
+        terms_text: termsText,
+        labels: topLabels,
+      });
+      setMoaSavedAt(new Date().toLocaleString());
+    } catch (error) {
+      console.error("Failed to save MOA template:", error);
+      alert("Failed to save MOA template. Please try again.");
+    }
   };
 
   const handleSendToAllBranches = () => {

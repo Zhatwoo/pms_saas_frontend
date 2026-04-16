@@ -12,9 +12,7 @@ import {
   type FundRequestRecord,
 } from "@/lib/fund-finance";
 import { FinanceQueueSection } from "@/components/shared/finance-queue-section";
-import { ConfirmFundModal } from "./_components/confirm-fund-modal";
-import { RequestFundsModal } from "./_components/request-funds-modal";
-import type { RequestFundsData } from "./_components/request-funds-modal";
+import { ConfirmFundModal } from "@/app/admin/branch-finance/_components/confirm-fund-modal";
 import {
   FinanceSummaryCards,
   LedgerTypeFilter,
@@ -23,74 +21,20 @@ import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
+import { RequestFundsModal } from "@/app/admin/branch-finance/_components/request-funds-modal";
+import type { RequestFundsData } from "@/app/admin/branch-finance/_components/request-funds-modal";
 
-interface BranchFinanceSummary {
-  branchId: string;
-  branchCode: string | null;
-  name: string;
-  location: string | null;
-  status: string;
-  startingBalance: number;
+interface EmployeeDashboardResponse {
   currentBalance: number;
-  totalAdded: number;
-  totalTransferred: number;
-  lastUpdated: string | null;
-}
-
-interface AdminDashboardResponse {
-  view: "admin";
-  branch: {
-    id: string;
+  branchFinance: {
     name: string;
-    branch_code: string | null;
-    location: string | null;
-    status: string;
+    currentBalance: number;
+    startingBalance: number;
+    totalAdded: number;
+    totalTransferred: number;
+    lastUpdated: string | null;
   } | null;
-  branchFinance: BranchFinanceSummary | null;
-  currentBalance: number;
-  fundRequests: {
-    summary: {
-      total: number;
-      pending: number;
-      approved: number;
-      rejected: number;
-      transferred: number;
-      cancelled: number;
-      totalRequested: number;
-      totalApproved: number;
-      totalTransferred: number;
-    };
-    recent: FundRequestRecord[];
-  };
-}
-
-interface FundRequestRecord {
-  id: string;
-  requestNo: string;
-  amountRequested: number;
-  approvedAmount: number | null;
-  amountTransferred: number | null;
-  purpose: string;
-  notes?: string | null;
-  status:
-    | "pending"
-    | "approved"
-    | "pending_source_confirmation"
-    | "pending_confirmation"
-    | "rejected"
-    | "transferred"
-    | "cancelled";
-  createdAt: string;
-  reviewedAt?: string | null;
-  transferredAt?: string | null;
-  reviewNotes?: string | null;
-  transferReference?: string | null;
-  transferNotes?: string | null;
-  confirmationNotes?: string | null;
-  confirmedAt?: string | null;
-  confirmedReceivedAmount?: number | null;
-  receiverUserId?: string | null;
-  receiverRole?: "admin" | "employee" | null;
+  branch: { name: string } | null;
 }
 
 interface BranchFinanceSummaryApi {
@@ -104,51 +48,48 @@ interface BranchFinanceSummaryApi {
   fundRequests: { pending: number; approved: number; transferred: number };
 }
 
-function fmtCurrency(value: number) {
-  return `PHP ${value.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function fmtDate(value: string | null | undefined) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function toStatusClass(status: FundRequestRecord["status"]) {
   switch (status) {
-    case "pending":
-      return "bg-amber-100 text-amber-700";
-    case "approved":
-      return "bg-blue-100 text-blue-700";
-    case "pending_source_confirmation":
-      return "bg-orange-100 text-orange-700";
-    case "pending_confirmation":
-      return "bg-violet-100 text-violet-700";
-    case "rejected":
-      return "bg-red-100 text-red-700";
-    case "transferred":
-      return "bg-emerald-100 text-emerald-700";
-    case "cancelled":
-      return "bg-zinc-200 text-zinc-700";
+    case "pending": return "bg-amber-100 text-amber-700";
+    case "approved": return "bg-blue-100 text-blue-700";
+    case "pending_confirmation": return "bg-violet-100 text-violet-700";
+    case "rejected": return "bg-red-100 text-red-700";
+    case "transferred": return "bg-emerald-100 text-emerald-700";
+    case "cancelled": return "bg-zinc-200 text-zinc-700";
   }
 }
 
 function toStatusLabel(status: FundRequestRecord["status"]) {
-  if (status === "pending_source_confirmation") return "Pending Source Confirmation";
-  if (status === "pending_confirmation") return "Pending Confirmation";
-  return status;
+  return status === "pending_confirmation" ? "Pending Confirmation" : status;
 }
 
-export default function AdminBranchFinancePage() {
-  const [dashboard, setDashboard] = useState<AdminDashboardResponse | null>(null);
+const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: string }> = {
+  pawn: { label: "Pawn", bgClass: "bg-orange-100 text-orange-700", dotClass: "bg-orange-500" },
+  buy_back: { label: "Buy Back", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
+  renewal: { label: "Renewal", bgClass: "bg-teal-100 text-teal-700", dotClass: "bg-teal-500" },
+  sale: { label: "Sale", bgClass: "bg-purple-100 text-purple-700", dotClass: "bg-purple-500" },
+  fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-100 text-emerald-700", dotClass: "bg-emerald-500" },
+  fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-100 text-red-600", dotClass: "bg-red-500" },
+  start: { label: "Opening", bgClass: "bg-indigo-100 text-indigo-700", dotClass: "bg-indigo-500" },
+  other: { label: "Other", bgClass: "bg-zinc-100 text-zinc-600", dotClass: "bg-zinc-400" },
+};
+
+interface UnifiedRow {
+  id: string;
+  sortDate: string;
+  displayDate: string;
+  displayTime: string | null;
+  source: "transaction" | "fund_request";
+  typeBadge: React.ReactNode;
+  itemName: string | null;
+  description: string;
+  cashIn: number;
+  cashOut: number;
+  reference: string | null;
+}
+
+export default function EmployeeBranchFinancePage() {
+  const [dashboard, setDashboard] = useState<EmployeeDashboardResponse | null>(null);
   const [requests, setRequests] = useState<FundRequestRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -161,7 +102,6 @@ export default function AdminBranchFinancePage() {
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [branchSummary, setBranchSummary] = useState<BranchFinanceSummaryApi | null>(null);
   const [ledgerTypeFilter, setLedgerTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<FundRequestRecord["status"] | "all">("all");
   const [ledgerSearch, setLedgerSearch] = useState("");
   const [ledgerDateFrom, setLedgerDateFrom] = useState("");
   const [ledgerDateTo, setLedgerDateTo] = useState("");
@@ -177,7 +117,7 @@ export default function AdminBranchFinancePage() {
     setError(null);
     try {
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
-        api.get<AdminDashboardResponse>("/dashboard"),
+        api.get<EmployeeDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
         api.get<BranchFinanceSummaryApi[]>("/branch-finance/summary"),
         api.get<{ entries: LedgerEntry[]; total: number }>("/branch-finance/ledger?limit=100"),
@@ -218,11 +158,7 @@ export default function AdminBranchFinancePage() {
     [loadFinanceData, showToast],
   );
 
-  const queues = useMemo(
-    () => buildFinanceQueues(requests, dashboard?.branch?.id ?? undefined),
-    [dashboard?.branch?.id, requests],
-  );
-
+  const queues = useMemo(() => buildFinanceQueues(requests), [requests]);
   const confirmationRequests = useMemo(
     () => [...queues.sourceConfirmation, ...queues.destinationConfirmation],
     [queues.destinationConfirmation, queues.sourceConfirmation],
@@ -244,7 +180,7 @@ export default function AdminBranchFinancePage() {
           file: data.proofFile,
           requestNo: selectedConfirmRequest.requestNo,
           stage,
-          branchId: dashboard?.branch?.id ?? selectedConfirmRequest.branchId,
+          branchId: selectedConfirmRequest.branchId,
         });
 
         if (stage === "source") {
@@ -260,49 +196,22 @@ export default function AdminBranchFinancePage() {
             proofUrl,
             confirmationNotes: data.notes,
           });
-          showToast("Branch receipt confirmed and transfer recorded successfully.");
+          showToast("Transfer receipt confirmed successfully.");
         }
 
         setConfirmModalOpen(false);
         setSelectedConfirmRequest(null);
         await loadFinanceData();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to confirm fund receipt.");
+        setError(err instanceof Error ? err.message : "Failed to confirm transfer receipt.");
       } finally {
         setIsSubmitting(false);
       }
     },
-    [dashboard?.branch?.id, loadFinanceData, selectedConfirmRequest, showToast],
+    [loadFinanceData, selectedConfirmRequest, showToast],
   );
 
   // ── Unified rows: merge ledger entries + fund requests ──
-  interface UnifiedRow {
-    id: string;
-    sortDate: string;
-    displayDate: string;
-    displayTime: string | null;
-    source: "transaction" | "fund_request";
-    typeBadge: React.ReactNode;
-    typeKey: string;
-    statusKey: string;
-    itemName: string | null;
-    description: string;
-    cashIn: number;
-    cashOut: number;
-    reference: string | null;
-  }
-
-  const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: string }> = {
-    pawn: { label: "Pawn", bgClass: "bg-orange-100 text-orange-700", dotClass: "bg-orange-500" },
-    buy_back: { label: "Buy Back", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
-    renewal: { label: "Renewal", bgClass: "bg-teal-100 text-teal-700", dotClass: "bg-teal-500" },
-    sale: { label: "Sale", bgClass: "bg-purple-100 text-purple-700", dotClass: "bg-purple-500" },
-    fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-100 text-emerald-700", dotClass: "bg-emerald-500" },
-    fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-100 text-red-600", dotClass: "bg-red-500" },
-    start: { label: "Opening", bgClass: "bg-indigo-100 text-indigo-700", dotClass: "bg-indigo-500" },
-    other: { label: "Other", bgClass: "bg-zinc-100 text-zinc-600", dotClass: "bg-zinc-400" },
-  };
-
   const unifiedRows = useMemo<UnifiedRow[]>(() => {
     const rows: UnifiedRow[] = [];
 
@@ -310,7 +219,6 @@ export default function AdminBranchFinancePage() {
     if (ledgerViewFilter !== "fund_requests") {
       for (const entry of ledgerEntries) {
         if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) continue;
-
         const cfg = TYPE_CONFIG[entry.type] ?? TYPE_CONFIG.other;
         rows.push({
           id: `txn-${entry.id}`,
@@ -324,8 +232,6 @@ export default function AdminBranchFinancePage() {
               {cfg.label}
             </span>
           ),
-          typeKey: entry.type,
-          statusKey: "",
           itemName: entry.itemName ?? null,
           description: entry.description,
           cashIn: entry.cashIn,
@@ -338,8 +244,7 @@ export default function AdminBranchFinancePage() {
     // Add fund request rows
     if (ledgerViewFilter !== "transactions") {
       for (const req of requests) {
-        if (statusFilter !== "all" && req.status !== statusFilter) continue;
-        const amount = req.amountTransferred ?? req.approvedAmount ?? req.amountRequested;
+        const amount = req.confirmedReceivedAmount ?? req.amountTransferred ?? req.approvedAmount ?? req.amountRequested;
         const isIncoming = req.status === "transferred" || req.status === "pending_confirmation";
 
         rows.push({
@@ -353,10 +258,8 @@ export default function AdminBranchFinancePage() {
               {toStatusLabel(req.status)}
             </span>
           ),
-          typeKey: "fund_request",
-          statusKey: req.status,
           itemName: null,
-          description: `${req.requestNo} — ${req.purpose}${req.notes ? ` | ${req.notes}` : ""}${req.transferNotes ? ` | ${req.transferNotes}` : ""}${req.reviewNotes ? ` | ${req.reviewNotes}` : ""}`,
+          description: `${req.requestNo} — ${req.purpose}${req.transferNotes ? ` | ${req.transferNotes}` : ""}${req.confirmationNotes ? ` | ${req.confirmationNotes}` : ""}`,
           cashIn: isIncoming ? amount : 0,
           cashOut: 0,
           reference: req.requestNo,
@@ -368,24 +271,25 @@ export default function AdminBranchFinancePage() {
     rows.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
     // Apply search filter
-    if (ledgerSearch) {
-      const q = ledgerSearch.toLowerCase();
-      return rows.filter(
-        (r) =>
-          r.description.toLowerCase().includes(q) ||
-          (r.itemName ?? "").toLowerCase().includes(q) ||
-          (r.reference ?? "").toLowerCase().includes(q),
-      );
-    }
+    const searched = ledgerSearch
+      ? rows.filter((r) => {
+          const q = ledgerSearch.toLowerCase();
+          return (
+            r.description.toLowerCase().includes(q) ||
+            (r.itemName ?? "").toLowerCase().includes(q) ||
+            (r.reference ?? "").toLowerCase().includes(q)
+          );
+        })
+      : rows;
 
     // Apply date filters
-    return rows.filter((r) => {
+    return searched.filter((r) => {
       const d = r.sortDate.split("T")[0];
       if (ledgerDateFrom && d < ledgerDateFrom) return false;
       if (ledgerDateTo && d > ledgerDateTo) return false;
       return true;
     });
-  }, [ledgerEntries, requests, ledgerViewFilter, ledgerTypeFilter, statusFilter, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
+  }, [ledgerEntries, requests, ledgerViewFilter, ledgerTypeFilter, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
 
   const finance = dashboard?.branchFinance;
   const resolvedCurrentBalance = useMemo(() => {
@@ -416,7 +320,7 @@ export default function AdminBranchFinancePage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="mt-1 text-sm text-text-tertiary">
-            Request additional funds from Super Admin and monitor approval and transfer status in real time.
+            Request additional funds from Super Admin and confirm incoming or outgoing transfers in real time.
           </p>
         </div>
         <button
@@ -439,49 +343,16 @@ export default function AdminBranchFinancePage() {
         </div>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
-            <div className="flex items-center justify-between px-6 pt-5 pb-3">
-              <div>
-                <h2 className="text-xl font-bold text-white">{finance?.name ?? dashboard?.branch?.name ?? "Branch"}</h2>
-                <p className="text-xs uppercase tracking-wider text-emerald-300/80">
-                  {finance?.branchCode ? `Code ${finance.branchCode}` : "Branch Finance Overview"}
-                </p>
-              </div>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-emerald-200">
-                {finance?.status ?? dashboard?.branch?.status ?? "Unknown"}
-              </span>
-            </div>
-
-            <div className="px-6 py-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/70">
-                Current Balance
-              </p>
-              <p className="mt-2 text-4xl font-extrabold tracking-tight text-white">
-                {formatCurrency(resolvedCurrentBalance)}
-              </p>
-              <p className="mt-2 text-xs text-emerald-200/80">
-                Last updated: {formatFinanceDate(finance?.lastUpdated)}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 px-6 pb-6 md:grid-cols-4">
-              <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Starting</p>
-                <p className="mt-1 text-lg font-bold text-white">{formatCurrency(finance?.startingBalance ?? 0)}</p>
-              </div>
-              <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Transferred In</p>
-                <p className="mt-1 text-lg font-bold text-white">{formatCurrency(finance?.totalAdded ?? 0)}</p>
-              </div>
-              <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Pending Requests</p>
-                <p className="mt-1 text-lg font-bold text-white">{dashboard?.fundRequests.summary.pending ?? 0}</p>
-              </div>
-              <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Transferred Requests</p>
-                <p className="mt-1 text-lg font-bold text-white">{dashboard?.fundRequests.summary.transferred ?? 0}</p>
-              </div>
-            </div>
+          <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm">
+            <h2 className="text-lg font-bold text-text-primary">
+              {finance?.name ?? dashboard?.branch?.name ?? "Branch Finance"}
+            </h2>
+            <p className="mt-2 text-3xl font-black text-emerald-700">
+              {formatCurrency(resolvedCurrentBalance)}
+            </p>
+            <p className="mt-1 text-xs text-text-muted">
+              Last updated: {formatFinanceDate(finance?.lastUpdated)}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -523,6 +394,12 @@ export default function AdminBranchFinancePage() {
 
             <FinanceQueueSection
               accent="orange"
+              title="Pending Branch Confirmation"
+              subtitle={
+                confirmationRequests.length === 0
+                  ? "No transfers are waiting for branch confirmation."
+                  : `${confirmationRequests.length} transfer${confirmationRequests.length === 1 ? "" : "s"} awaiting confirmation.`
+              }
               title="Pending Receiving Confirmation"
               subtitle={
                 confirmationRequests.length === 0
@@ -592,6 +469,9 @@ export default function AdminBranchFinancePage() {
                 </svg>
               </div>
               <h2 className="text-sm font-bold text-text-primary">Branch Finance Ledger</h2>
+              <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-600">
+                View Only
+              </span>
             </div>
 
             {branchSummary && (
@@ -622,21 +502,6 @@ export default function AdminBranchFinancePage() {
               {ledgerViewFilter !== "fund_requests" && (
                 <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
               )}
-              {ledgerViewFilter !== "transactions" && (
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as FundRequestRecord["status"] | "all")}
-                  className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="pending_confirmation">Pending Confirmation</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="transferred">Transferred</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              )}
               <input
                 type="date"
                 value={ledgerDateFrom}
@@ -649,14 +514,13 @@ export default function AdminBranchFinancePage() {
                 onChange={(e) => setLedgerDateTo(e.target.value)}
                 className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
               />
-              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo || statusFilter !== "all") && (
+              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) && (
                 <button
                   onClick={() => {
                     setLedgerSearch("");
                     setLedgerTypeFilter("all");
                     setLedgerDateFrom("");
                     setLedgerDateTo("");
-                    setStatusFilter("all");
                   }}
                   className="text-xs font-bold text-red-600 hover:underline"
                 >

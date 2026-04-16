@@ -14,6 +14,7 @@ export interface UnifiedFundResult {
   fromBranchId?: string;
   toBranchId: string;
   amount: number;
+  transferMode: "cash" | "bank_transfer" | "ewallet" | "check" | "other";
   notes: string;
   approvers: string[];
   requireAllOrReceiving: boolean; // Meaning depends on sourceType
@@ -32,6 +33,8 @@ interface AddFundsModalProps {
   defaultNotes?: string;
   allowBranchTransfer?: boolean;
   submitLabel?: string;
+  lockedTargetBranchId?: string;
+  lockedTargetBranchName?: string;
 }
 
 const MULTI_APPROVAL_THRESHOLD = 50_000;
@@ -49,6 +52,8 @@ export function AddFundsModal({
   defaultNotes = "",
   allowBranchTransfer = true,
   submitLabel,
+  lockedTargetBranchId,
+  lockedTargetBranchName,
 }: AddFundsModalProps) {
   const [sourceType, setSourceType] = useState<"MANAGEMENT" | "BRANCH_TRANSFER">("MANAGEMENT");
 
@@ -58,6 +63,7 @@ export function AddFundsModal({
 
   // Shared state
   const [amount, setAmount] = useState("");
+  const [transferMode, setTransferMode] = useState<UnifiedFundResult["transferMode"]>("cash");
   const [notes, setNotes] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -74,12 +80,15 @@ export function AddFundsModal({
     if (isOpen) {
       setSourceType("MANAGEMENT");
       setAmount(defaultAmount);
+      setTransferMode("cash");
       setNotes(defaultNotes);
       setFromBranchId(currentBranchId || (branches[0]?.branchId ?? ""));
-      setToBranchId(currentBranchId !== "001" ? currentBranchId : ""); // 001 usually means All Branches
+      setToBranchId(
+        lockedTargetBranchId ?? (currentBranchId !== "001" ? currentBranchId : ""),
+      );
       setErrors({});
     }
-  }, [isOpen, defaultAmount, defaultNotes, currentBranchId, branches]);
+  }, [isOpen]);
 
   // Handle source toggle change reset
   useEffect(() => {
@@ -91,6 +100,14 @@ export function AddFundsModal({
     const errs: Record<string, string> = {};
     if (!amount.trim() || numericAmount <= 0) errs.amount = "Enter a valid amount";
 
+    if (toBranchId === "001") {
+      errs.to = "Please select a specific target branch";
+    }
+
+    if (lockedTargetBranchId && toBranchId !== lockedTargetBranchId) {
+      errs.to = "This transfer target is locked to the requesting branch";
+    }
+
     if (isTransfer) {
       if (!fromBranchId) errs.from = "Select source branch";
       if (!toBranchId) errs.to = "Select target branch";
@@ -99,7 +116,7 @@ export function AddFundsModal({
 
       const fromBr = branches.find((b) => b.branchId === fromBranchId);
       if (fromBr && numericAmount > fromBr.currentBalance) {
-        errs.amount = `Insufficient balance (available: ₱${fromBr.currentBalance.toLocaleString("en-PH")})`;
+        errs.amount = `Insufficient balance (available: ₱${fromBr.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
       }
     } else {
       // Management mode: just need a target
@@ -118,6 +135,7 @@ export function AddFundsModal({
       fromBranchId: isTransfer ? fromBranchId : undefined,
       toBranchId: toBranchId,
       amount: numericAmount,
+      transferMode,
       notes: notes.trim(),
       approvers: activeManagers.map((m) => m.id),
       requireAllOrReceiving: false,
@@ -197,9 +215,26 @@ export function AddFundsModal({
 
           <div className="h-px w-full bg-border-subtle" />
 
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-text-secondary">
+              Transfer Mode <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={transferMode}
+              onChange={(e) => setTransferMode(e.target.value as UnifiedFundResult["transferMode"])}
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar"
+            >
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="ewallet">E-Wallet</option>
+              <option value="check">Check</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
           {/* Branch Routing */}
-          <div className={`grid gap-4 ${isTransfer ? "grid-cols-2" : "grid-cols-1"}`}>
-            {isTransfer && (
+          <div className={isTransfer ? "grid gap-4 sm:grid-cols-2" : "flex flex-col gap-4"}>
+            {isTransfer ? (
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-text-secondary">
                   Source Branch <span className="text-red-500">*</span>
@@ -214,45 +249,47 @@ export function AddFundsModal({
                   <option value="">Select source...</option>
                   {branches.map((b) => (
                     <option key={b.branchId} value={b.branchId}>
-                      {b.name}
+                      {b.name} - ₱{b.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </option>
                   ))}
                 </select>
                 {errors.from && <span className="text-[10px] text-red-500">{errors.from}</span>}
+                {fromBranchId ? (
+                  <p className="text-[10px] text-text-muted">
+                    Live balance: ₱{branches.find((b) => b.branchId === fromBranchId)?.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
+                  </p>
+                ) : null}
               </div>
-            )}
+            ) : null}
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-text-secondary">
                 Target Branch <span className="text-red-500">*</span>
               </label>
-              {(currentBranchId && currentBranchId !== "001") && !isTransfer ? (
-                <input
-                  type="text"
-                  value={branchName}
-                  readOnly
-                  disabled
-                  className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm font-semibold text-text-muted outline-none h-[38px]"
-                />
-              ) : (
-                <select
-                  value={toBranchId}
-                  onChange={(e) => setToBranchId(e.target.value)}
-                  className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar h-[38px] ${
-                    errors.to ? "border-red-400" : "border-input-border"
-                  }`}
-                >
-                  <option value="">Select target...</option>
-                  {branches
-                    .filter((b) => !isTransfer || b.branchId !== fromBranchId)
-                    .map((b) => (
-                      <option key={b.branchId} value={b.branchId}>
-                        {b.name}
-                      </option>
-                    ))}
-                </select>
-              )}
+              <select
+                value={toBranchId}
+                onChange={(e) => setToBranchId(e.target.value)}
+                disabled={!!lockedTargetBranchId}
+                className={`h-[38px] rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar ${
+                  errors.to ? "border-red-400" : "border-input-border"
+                } ${lockedTargetBranchId ? "cursor-not-allowed bg-surface-secondary text-text-tertiary" : ""}`}
+              >
+                <option value="">{lockedTargetBranchName ? lockedTargetBranchName : "Select target..."}</option>
+                {!lockedTargetBranchId ? <option value="001">All Branches</option> : null}
+                {branches
+                  .filter((b) => !isTransfer || b.branchId !== fromBranchId)
+                  .map((b) => (
+                    <option key={b.branchId} value={b.branchId}>
+                      {b.name} - ₱{b.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </option>
+                  ))}
+              </select>
               {errors.to && <span className="text-[10px] text-red-500">{errors.to}</span>}
+              {lockedTargetBranchName ? (
+                <p className="text-[10px] text-text-muted">
+                  Locked destination: {lockedTargetBranchName}
+                </p>
+              ) : null}
             </div>
           </div>
 

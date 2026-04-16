@@ -12,7 +12,6 @@ import {
 } from "./_components/manual-transaction-modal";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
-type FilterType = "All" | "Renew" | "Redeem" | "New Pawn" | "Sales / Transfer" | "Buy Back";
 
 interface TransactionRow {
   transactionNo: string;
@@ -29,19 +28,9 @@ interface TransactionRow {
   storage: string;
 }
 
-const filterToPurpose: Record<FilterType, PurposeType | null> = {
-  "All": null,
-  "Renew": "Renew",
-  "Redeem": "Buy Back",
-  "New Pawn": "Pawn",
-  "Sales / Transfer": "Sold Item",
-  "Buy Back": "Buy Back",
-};
-
 export default function PawnTransactionsPage() {
   const { selectedBranch, isAllBranches, branches } = useBranch();
 
-  const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
     startingBalance: 0, endingBalance: 0,
@@ -72,12 +61,7 @@ export default function PawnTransactionsPage() {
     fetchTransactions();
   }, [selectedBranch.id, isAllBranches]);
 
-  const filteredTransactions = useMemo(() => {
-    if (activeFilter === "All") return allTransactions;
-    const targetPurpose = filterToPurpose[activeFilter];
-    if (!targetPurpose) return allTransactions;
-    return allTransactions.filter((t) => t.purpose === targetPurpose);
-  }, [allTransactions, activeFilter]);
+  const filteredTransactions = useMemo(() => allTransactions, [allTransactions]);
 
   const handleExportCSV = useCallback(() => {
     if (filteredTransactions.length === 0) return;
@@ -130,8 +114,6 @@ export default function PawnTransactionsPage() {
       </div>
 
       <TransactionActions
-        activeFilter={activeFilter}
-        onFilterChange={(f) => setActiveFilter(f)}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
         onManualInput={() => setIsManualModalOpen(true)}

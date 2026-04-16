@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { ConfirmPasswordModal } from "./_components/confirm-password-modal";
-import { NewPawnTicketModal } from "./_components/new-pawn-ticket-modal";
+import { PrintTicketModal } from "./_components/print-ticket-modal";
+import {
+  NewPawnTicketModal,
+  type PawnTicketFormData,
+} from "./_components/new-pawn-ticket-modal";
 
 export default function EmployeePawnTicketPage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [savedTicketData, setSavedTicketData] = useState<PawnTicketFormData | null>(null);
 
   const handleStartNewTransaction = () => {
     setIsPasswordModalOpen(true);
@@ -17,6 +23,15 @@ export default function EmployeePawnTicketPage() {
     console.log("Password entered:", password);
     setIsPasswordModalOpen(false);
     setIsModalOpen(true);
+  };
+
+  const handleTicketSave = (data: PawnTicketFormData) => {
+    setSavedTicketData(data);
+    setIsPrintModalOpen(true);
+  };
+
+  const handleConfirmPrint = () => {
+    setIsPrintModalOpen(false);
   };
 
   return (
@@ -64,7 +79,17 @@ export default function EmployeePawnTicketPage() {
         onClose={() => setIsPasswordModalOpen(false)}
         onConfirm={handlePasswordConfirm}
       />
-      <NewPawnTicketModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <NewPawnTicketModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleTicketSave}
+      />
+      <PrintTicketModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        ticketData={savedTicketData}
+        onConfirmPrint={handleConfirmPrint}
+      />
     </div>
   );
 }

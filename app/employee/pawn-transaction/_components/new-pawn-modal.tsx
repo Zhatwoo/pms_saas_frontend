@@ -1,16 +1,19 @@
 "use client";
 
 import { useState, useRef, useCallback, type ChangeEvent } from "react";
+import { api } from "@/lib/api";
+import { MoaModal } from "./moa-modal";
 
 interface NewPawnModalProps {
   isOpen: boolean;
   onClose: () => void;
+  branchId?: string;
   branchName: string;
   branchAdminName?: string;
   loggedInUserName?: string;
 }
 
-export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, loggedInUserName }: NewPawnModalProps) {
+export function NewPawnModal({ isOpen, onClose, branchId, branchName, branchAdminName, loggedInUserName }: NewPawnModalProps) {
   const [form, setForm] = useState({
     firstName: "",
     middleName: "",
@@ -20,9 +23,11 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
     city: "",
     province: "",
     contactNo: "",
+    email: "",
     idPresented: "",
     unitCode: "",
     unitName: "",
+    category: "",
     serialNumber: "",
     itemsIncluded: "",
     condition: "",
@@ -32,11 +37,16 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
     purchasedDate: "",
     storageFee: false,
     storageFeeAmount: "",
+    profilePhoto: null as string | null,
+    idPhoto: null as string | null,
   });
 
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [password, setPassword] = useState("");
+  const [isMoaOpen, setIsMoaOpen] = useState(false);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = event.target as HTMLInputElement | HTMLSelectElement;
@@ -55,10 +65,21 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
   };
 
   const handleGenerateQR = () => {
+    const fullName = [form.firstName, form.middleName, form.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
     const qrData = [
+      fullName && `Customer:${fullName}`,
+      form.contactNo && `Tel:${form.contactNo}`,
+      form.address && `Addr:${form.address}`,
       form.unitCode && `Code:${form.unitCode}`,
       form.unitName && `Item:${form.unitName}`,
+      form.category && `Cat:${form.category}`,
       form.serialNumber && `SN:${form.serialNumber}`,
+      form.amount && `Loan:P${form.amount}`,
+      `Branch:${branchName}`
     ]
       .filter(Boolean)
       .join(" | ");
@@ -73,6 +94,108 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
     const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=200x200&color=065f46&bgcolor=f0fdf4&margin=2`;
     setQrUrl(url);
     setIsGeneratingQR(false);
+  };
+
+  const handleGenerateTicket = async () => {
+    setErrorMessage(null);
+
+    if (!branchId || branchId === "__all__") {
+      setErrorMessage("Select a valid branch before generating a ticket.");
+      return;
+    }
+
+    const fullName = [form.firstName, form.middleName, form.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    if (!fullName) {
+      setErrorMessage("Customer name is required.");
+      return;
+    }
+
+    if (!form.address.trim()) {
+      setErrorMessage("Customer address is required.");
+      return;
+    }
+
+    if (!form.unitName.trim()) {
+      setErrorMessage("Unit name is required.");
+      return;
+    }
+
+    const amountValue = Number(form.amount || 0);
+    if (Number.isNaN(amountValue) || amountValue <= 0) {
+      setErrorMessage("A valid loan amount is required.");
+      return;
+    }
+
+    const storageAmount = form.storageFee ? Number(form.storageFeeAmount || 0) : 0;
+    if (form.storageFee && (Number.isNaN(storageAmount) || storageAmount < 0)) {
+      setErrorMessage("Enter a valid storage fee amount.");
+      return;
+    }
+
+    setIsSaving(true);
+    // Instead of saving immediately, open the MOA preview
+    setTimeout(() => {
+      setIsSaving(false);
+      setIsMoaOpen(true);
+    }, 500);
+  };
+
+  const handleConfirmMoa = async () => {
+    setIsSaving(true);
+    setErrorMessage(null);
+
+    const amountValue = Number(form.amount || 0);
+    const storageAmount = form.storageFee ? Number(form.storageFeeAmount || 0) : 0;
+    const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ").trim();
+
+    try {
+      await api.post('/pawn-tickets', {
+        branchId,
+        branchName,
+        customer: {
+          fullName,
+          address: form.address.trim(),
+          barangay: form.barangay.trim(),
+          city: form.city.trim(),
+          province: form.province.trim(),
+          contactNumber: form.contactNo.trim(),
+          email: form.email.trim(),
+          idPresented: form.idPresented,
+        },
+        item: {
+          unitCode: form.unitCode.trim(),
+          unitName: form.unitName.trim(),
+          category: form.category.trim(),
+          serialNumber: form.serialNumber.trim(),
+          itemsIncluded: form.itemsIncluded.trim(),
+          condition: form.condition,
+          memoryStorage: form.memory.trim(),
+          remarks: form.remarks.trim(),
+          amount: amountValue,
+          purchasedDate: form.purchasedDate,
+          qrCode: qrUrl || undefined,
+          profilePhoto: form.profilePhoto || undefined,
+          idPhoto: form.idPhoto || undefined,
+        },
+        transaction: {
+          pawnAmount: amountValue,
+          storageFee: storageAmount,
+          returnAmount: 0,
+          details: [form.itemsIncluded.trim(), form.idPresented].filter(Boolean).join(' | '),
+        },
+      });
+
+      setIsMoaOpen(false);
+      onClose();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -191,7 +314,8 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
                     <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
                   </div>
 
-                  {/* ID Presented — dropdown */}
+                  <Input label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="example@email.com" />
+
                   <div className="space-y-1.5 w-full">
                     <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">ID Presented</label>
                     <select
@@ -235,7 +359,10 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
                         <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">⚠ No ID — Capture Customer Photo</span>
                       </div>
                       <div className="w-48">
-                        <PhotoUpload label="Customer Photo" />
+                        <PhotoUpload 
+                          label="Customer Photo" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
+                        />
                       </div>
                     </div>
                   )}
@@ -243,9 +370,15 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
                   {form.idPresented !== "No ID / None" && (
                     <div className="space-y-3">
                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Verification Photos</span>
-                      <div className="grid grid-cols-2 gap-3">
-                        <PhotoUpload label="Front View" />
-                        <PhotoUpload label="Serial No / ID" />
+                       <div className="grid grid-cols-2 gap-3">
+                        <PhotoUpload 
+                          label="Front View" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
+                        />
+                        <PhotoUpload 
+                          label="Serial No / ID" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                        />
                       </div>
                     </div>
                   )}
@@ -266,6 +399,8 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
                     <Input label="Unit Code" name="unitCode" value={form.unitCode} onChange={handleChange} bg="bg-zinc-100" />
                     <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100" />
                   </div>
+
+                  <Input label="Category" name="category" value={form.category} onChange={handleChange} bg="bg-zinc-100" />
 
                   <div className="grid grid-cols-2 gap-3">
                     <Input label="Serial Number" name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-100" />
@@ -377,13 +512,36 @@ export function NewPawnModal({ isOpen, onClose, branchName, branchAdminName, log
                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
                 <p className="text-2xl font-black text-emerald-900 tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
              </div>
-            <button className="bg-emerald-700 hover:bg-emerald-800 text-white font-black px-8 py-4 rounded-xl shadow-xl shadow-emerald-700/20 transition-all active:scale-[0.98] text-lg uppercase tracking-tight flex items-center gap-3">
-              Generate Ticket
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-            </button>
+            <button
+            type="button"
+            onClick={handleGenerateTicket}
+            disabled={isSaving}
+            className="bg-emerald-700 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-white font-black px-8 py-4 rounded-xl shadow-xl shadow-emerald-700/20 transition-all active:scale-[0.98] text-lg uppercase tracking-tight flex items-center gap-3"
+          >
+            {isSaving ? 'Saving...' : 'Generate Ticket'}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+          </button>
           </div>
+          {errorMessage && (
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+              {errorMessage}
+            </div>
+          )}
         </div>
       </div>
+
+      <MoaModal 
+        isOpen={isMoaOpen}
+        onClose={() => setIsMoaOpen(false)}
+        onConfirm={handleConfirmMoa}
+        data={{
+          ...form,
+          storageFee: form.storageFeeAmount,
+          idPresented: form.idPresented || "",
+          branchName: branchName || "Pasig branch"
+        }}
+        isLoading={isSaving}
+      />
     </div>
   );
 }
@@ -427,7 +585,7 @@ function Input({
   );
 }
 
-function PhotoUpload({ label }: { label: string }) {
+function PhotoUpload({ label, onCapture }: { label: string; onCapture?: (dataUrl: string | null) => void }) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
@@ -473,11 +631,13 @@ function PhotoUpload({ label }: { label: string }) {
     canvas.getContext("2d")?.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
     setPhoto(dataUrl);
+    if (onCapture) onCapture(dataUrl);
     stopCamera();
-  }, [stopCamera]);
+  }, [stopCamera, onCapture]);
 
   const retake = () => {
     setPhoto(null);
+    if (onCapture) onCapture(null);
     openCamera();
   };
 

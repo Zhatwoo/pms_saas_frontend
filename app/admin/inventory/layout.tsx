@@ -6,11 +6,11 @@ import { useBranch } from "@/contexts/branch-context";
 export default function InventoryLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { selectedBranch, isAllBranches } = useBranch();
-  
+
   const isPawned = pathname.includes("pawned-items");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       {/* Breadcrumb + Title */}
       <div>
         <p className="text-xs text-zinc-400">

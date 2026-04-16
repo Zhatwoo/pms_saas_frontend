@@ -9,13 +9,14 @@ import { RenewModal } from "./_components/renew-modal";
 import { NewPawnModal } from "./_components/new-pawn-modal";
 import { BuyBackModal } from "./_components/buy-back-modal";
 import { SalesTransferModal } from "./_components/sales-transfer-modal";
+import { MoaModal } from "./_components/moa-modal";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
-type FilterType = "All" | "Renew" | "New Pawn" | "Sales / Transfer" | "Buy Back";
+type FilterType = "All" | "Renew" | "Sales / Transfer" | "Buy Back";
 
 interface TransactionRow {
   transactionNo: string;
@@ -30,12 +31,13 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  profilePhoto?: string;
+  idPhoto?: string;
 }
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
-  "New Pawn": "Pawn",
   "Sales / Transfer": "Sold Item",
   "Buy Back": "Buy Back",
 };
@@ -48,6 +50,8 @@ export default function EmployeePawnTransactionsPage() {
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
+  const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
+  const [reprintData, setReprintData] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
@@ -66,7 +70,6 @@ export default function EmployeePawnTransactionsPage() {
 
   useEffect(() => {
     async function fetchTransactions() {
-      // Don't fetch if context is still "All Branches" but user doesn't have permissions for it
       if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
 
       setIsLoading(true);
@@ -77,7 +80,22 @@ export default function EmployeePawnTransactionsPage() {
             pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
             startingBalance: 0, endingBalance: 0,
           });
-          setAllTransactions(data.transactions || []);
+          setAllTransactions((data.transactions || []).map((t: any) => ({
+            transactionNo: t.transaction_no,
+            branch: t.branch,
+            purpose: t.purpose,
+            date: t.transaction_date,
+            time: t.transaction_time,
+            cashIn: t.cash_in,
+            cashOut: t.cash_out,
+            returnVal: t.return_amount,
+            unit: t.unit,
+            unitCode: t.unit_code,
+            pawn: t.pawn_amount,
+            storage: t.storage_fee,
+            profilePhoto: t.profile_photo,
+            idPhoto: t.id_photo,
+          })));
         }
       } catch (error) {
         console.error("Failed to load transactions:", error);
@@ -88,10 +106,11 @@ export default function EmployeePawnTransactionsPage() {
     fetchTransactions();
   }, [selectedBranch]);
 
-  // Fetch branch admin name
   useEffect(() => {
     async function fetchBranchAdmin() {
       if (!selectedBranch.id || selectedBranch.id === "__all__") return;
+      if (!user || (user.role !== "admin" && user.role !== "super_admin")) return;
+
       try {
         const data = await api.get<{ users?: { fullName: string; role: string }[]; fullName?: string; role?: string }[]>(
           `/users?branchId=${selectedBranch.id}&role=admin`
@@ -104,7 +123,7 @@ export default function EmployeePawnTransactionsPage() {
       }
     }
     void fetchBranchAdmin();
-  }, [selectedBranch.id]);
+  }, [selectedBranch.id, user]);
 
   const filteredTransactions = useMemo(() => {
     if (activeFilter === "All") return allTransactions;
@@ -148,9 +167,31 @@ export default function EmployeePawnTransactionsPage() {
     });
   };
 
-  const closeActiveForm = useCallback(() => {
-    // Left for potential future use or can be removed
-  }, []);
+  const handleReprint = useCallback((transactionNo: string) => {
+    const tx = allTransactions.find(t => t.transactionNo === transactionNo);
+    if (!tx) return;
+    
+    setReprintData({
+      firstName: tx.unit.split(" ")[0] || "REPRINT",
+      middleName: "",
+      lastName: "RECORD",
+      address: `Transaction: ${tx.transactionNo}`,
+      contactNo: "---",
+      unitCode: tx.unitCode,
+      unitName: tx.unit,
+      category: "---",
+      serialNumber: "---",
+      itemsIncluded: "---",
+      condition: "---",
+      remarks: "---",
+      amount: tx.pawn,
+      storageFee: tx.storage,
+      purchasedDate: tx.date,
+      idPresented: "---",
+      branchName: tx.branch
+    });
+    setIsMoaReprintOpen(true);
+  }, [allTransactions]);
 
   return (
     <div className="space-y-3 pb-4">
@@ -174,7 +215,10 @@ export default function EmployeePawnTransactionsPage() {
       />
 
       <TransactionStats data={currentStats} />
-      <TransactionTable data={filteredTransactions} />
+      <TransactionTable 
+        data={filteredTransactions} 
+        onReprint={handleReprint}
+      />
 
       <DailyBalanceConfirmation
         isOpen={balanceModal.open}
@@ -191,7 +235,6 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={passwordModal.open}
         onClose={() => setPasswordModal((p) => ({ ...p, open: false }))}
         onConfirm={async (password) => {
-          // Verify password with API
           try {
             await api.post("/auth/verify-password", { password });
             passwordModal.onConfirm();
@@ -211,6 +254,7 @@ export default function EmployeePawnTransactionsPage() {
       <NewPawnModal
         isOpen={isNewPawnModalOpen}
         onClose={() => setIsNewPawnModalOpen(false)}
+        branchId={selectedBranch.id}
         branchName={selectedBranch.name}
         branchAdminName={branchAdminName}
         loggedInUserName={user?.fullName}
@@ -227,6 +271,16 @@ export default function EmployeePawnTransactionsPage() {
         onClose={() => setIsSalesTransferModalOpen(false)}
         branchName={selectedBranch.name}
       />
+
+      {reprintData && (
+        <MoaModal
+          isOpen={isMoaReprintOpen}
+          onClose={() => setIsMoaReprintOpen(false)}
+          onConfirm={() => setIsMoaReprintOpen(false)}
+          data={reprintData}
+          isLoading={false}
+        />
+      )}
     </div>
   );
 }

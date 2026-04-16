@@ -52,7 +52,7 @@ const expirationData = [
 ];
 
 function formatPeso(amount: number): string {
-  return `\u20B1${amount.toLocaleString("en-PH")}`;
+  return `\u20B1${amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function DaysRemainingBadge({ days }: { days: number }) {

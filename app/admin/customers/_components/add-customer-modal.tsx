@@ -1,28 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface AddCustomerModalProps {
-  isOpen: boolean;
   onClose: () => void;
+  onSave: (input: CustomerFormInput) => Promise<void>;
 }
 
-const uploadIcon = (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
-  </svg>
-);
+export interface CustomerFormInput {
+  fullName: string;
+  phoneNumber: string;
+  email: string;
+  idType: string;
+  idNumber: string;
+  address: string;
+}
+
+type IdType = "driver-license" | "national-id" | "passport" | "sss";
+
+const idTypeOptions: { value: IdType; label: string }[] = [
+  { value: "driver-license", label: "Driver's License" },
+  { value: "national-id", label: "National ID" },
+  { value: "passport", label: "Passport" },
+  { value: "sss", label: "SSS" },
+];
+
+const initialFormState: CustomerFormInput = {
+  fullName: "",
+  phoneNumber: "+63",
+  email: "",
+  idType: "driver-license",
+  idNumber: "",
+  address: "",
+};
 
 const PHONE_REGEX = /^\+639\d{9}$/;
 
@@ -44,50 +54,57 @@ function normalizePhoneNumber(value: string) {
   return `+63${local}`;
 }
 
-export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phoneNumber: "+63",
-    email: "",
-    idType: "driver-license",
-    idNumber: "",
-    address: "",
-  });
+export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
+  const [form, setForm] = useState<CustomerFormInput>({ ...initialFormState });
+  const [error, setError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
 
-    if (name === "phoneNumber") {
-      const normalizedPhone = normalizePhoneNumber(value);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
+
+  function updateField<K extends keyof CustomerFormInput>(
+    key: K,
+    value: CustomerFormInput[K],
+  ) {
+    if (key === "phoneNumber") {
+      const normalizedPhone = normalizePhoneNumber(String(value));
       if (!normalizedPhone || PHONE_REGEX.test(normalizedPhone)) {
         setPhoneError("");
       } else {
         setPhoneError("Use format +639XXXXXXXXX");
       }
-
-      setFormData((prev) => ({
-        ...prev,
-        phoneNumber: normalizedPhone,
-      }));
+      setForm((current) => ({ ...current, phoneNumber: normalizedPhone }));
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+    setForm((current) => ({ ...current, [key]: value }));
+  }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
 
-    const trimmedPhone = formData.phoneNumber.trim();
+    const trimmedName = form.fullName.trim();
+    const trimmedPhone = form.phoneNumber.trim();
+    const trimmedEmail = form.email.trim();
+    const trimmedIdNumber = form.idNumber.trim();
+
+    if (!trimmedName) {
+      setError("Full name is required.");
+      return;
+    }
 
     if (!trimmedPhone || trimmedPhone === "+63") {
-      setPhoneError("Phone number is required.");
+      setError("Phone number is required.");
       return;
     }
 
@@ -96,167 +113,209 @@ export function AddCustomerModal({ isOpen, onClose }: AddCustomerModalProps) {
       return;
     }
 
-    console.log("Customer data:", formData);
-    // TODO: Submit to API
-    onClose();
-    setFormData({
-      fullName: "",
-      phoneNumber: "+63",
-      email: "",
-      idType: "driver-license",
-      idNumber: "",
-      address: "",
-    });
-    setPhoneError("");
-  };
+    if (!trimmedIdNumber) {
+      setError("ID number is required.");
+      return;
+    }
 
-  if (!isOpen) return null;
+    setIsSubmitting(true);
+
+    try {
+      await onSave({
+        fullName: trimmedName,
+        phoneNumber: trimmedPhone,
+        email: trimmedEmail,
+        idType: form.idType,
+        idNumber: trimmedIdNumber,
+        address: form.address.trim(),
+      });
+      setForm({ ...initialFormState });
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save customer.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
-    <>
-      {/* Overlay */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
-        className="fixed inset-0 bg-black/40 z-40"
-        onClick={onClose}
-      />
+        className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-emerald-900 px-6 py-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+            Customer Management
+          </p>
+          <div className="mt-2 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-white">Add New Customer</h2>
+              <p className="mt-1 text-sm text-emerald-50/80">
+                Register a new customer profile with their identification
+                details.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
+              aria-label="Close add customer modal"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
-      {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-lg max-w-md w-full border-4 border-blue-400">
-          {/* Modal Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-900">Add Customer</h2>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Full Name */}
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={form.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
+                placeholder="Juan Dela Cruz"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+              />
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={form.phoneNumber}
+                onChange={(e) => updateField("phoneNumber", e.target.value)}
+                placeholder="+639123456789"
+                maxLength={13}
+                aria-invalid={phoneError ? "true" : "false"}
+                className={`h-11 w-full rounded-md border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700 ${
+                  phoneError ? "border-red-400" : "border-input-border"
+                }`}
+              />
+              {phoneError ? (
+                <p className="mt-1 text-xs font-medium text-red-500">{phoneError}</p>
+              ) : (
+                <p className="mt-1 text-xs text-text-tertiary">Format: +639XXXXXXXXX</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => updateField("email", e.target.value)}
+                placeholder="juandelacruz@gmail.com"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+              />
+            </div>
+
+            {/* ID Type */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                ID Type
+              </label>
+              <select
+                value={form.idType}
+                onChange={(e) => updateField("idType", e.target.value)}
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+              >
+                {idTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* ID Number */}
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                ID Number
+              </label>
+              <input
+                type="text"
+                value={form.idNumber}
+                onChange={(e) => updateField("idNumber", e.target.value)}
+                placeholder="N5012345678"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+              />
+            </div>
+
+            {/* Address */}
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                Address
+              </label>
+              <input
+                type="text"
+                value={form.address}
+                onChange={(e) => updateField("address", e.target.value)}
+                placeholder="123 Main Street, Brgy. San Antonio, Manila"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+              />
+            </div>
           </div>
 
-          {/* Modal Body */}
-          <form onSubmit={handleSubmit} className="px-6 py-5">
-            <div className="space-y-4">
-              {/* Full Name */}
-              <div>
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  required
-                />
-              </div>
+          <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
+            Make sure to verify the customer&apos;s valid ID before saving.
+          </div>
 
-              {/* Phone Number */}
-              <div>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  placeholder="Phone Number"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  maxLength={13}
-                  aria-invalid={phoneError ? "true" : "false"}
-                  className={`w-full px-3 py-2 border rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                    phoneError ? "border-red-400" : "border-gray-200"
-                  }`}
-                  required
-                />
-                {phoneError ? (
-                  <p className="mt-1 text-xs font-medium text-red-500">{phoneError}</p>
-                ) : (
-                  <p className="mt-1 text-xs text-gray-500">Format: +639XXXXXXXXX</p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              {/* ID Type and ID Number */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <select
-                    name="idType"
-                    value={formData.idType}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  >
-                    <option value="driver-license">Driver&apos;s License</option>
-                    <option value="national-id">National ID</option>
-                    <option value="passport">Passport</option>
-                    <option value="sss">SSS</option>
-                  </select>
-                </div>
-
-                <div>
-                  <input
-                    type="text"
-                    name="idNumber"
-                    placeholder="ID Number"
-                    value={formData.idNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <input
-                  type="text"
-                  name="address"
-                  placeholder="Address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="mt-6 flex gap-3 justify-end">
-              {/* Upload ID Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  // TODO: Handle file upload
-                  console.log("Upload ID");
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors"
-              >
-                {uploadIcon}
-                Upload Id
-              </button>
-
-              {/* Cancel Button */}
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-
-              {/* Save Customer Button */}
-              <button
-                type="submit"
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-bold hover:bg-emerald-700 transition-colors"
-              >
-                Save Customer
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Actions */}
+          <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border border-border-main px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
+            >
+              {isSubmitting ? "Saving..." : "Save Customer"}
+            </button>
+          </div>
+        </form>
       </div>
-    </>
+    </div>
   );
 }

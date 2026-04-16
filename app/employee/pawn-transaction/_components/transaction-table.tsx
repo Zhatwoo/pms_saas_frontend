@@ -14,6 +14,8 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  profilePhoto?: string;
+  idPhoto?: string;
 }
 
 const columns = [
@@ -28,6 +30,9 @@ const columns = [
   { key: "unitCode", label: "Unit Code" },
   { key: "pawn", label: "Pawn", align: "right" as const },
   { key: "storage", label: "Storage", align: "right" as const },
+  { key: "profilePhoto", label: "Profile" },
+  { key: "idPhoto", label: "ID Photo" },
+  { key: "actions", label: "Actions", align: "center" as const },
 ];
 
 function isHighlightedPawn(value: string): boolean {
@@ -50,9 +55,10 @@ const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple"
 
 interface TransactionTableProps {
   data?: TransactionRow[];
+  onReprint?: (transactionNo: string) => void;
 }
 
-export function TransactionTable({ data = [] }: TransactionTableProps) {
+export function TransactionTable({ data = [], onReprint }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
       <div className="flex items-center justify-between bg-white px-4 py-3">
@@ -120,14 +126,8 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                     {row.time}
                   </td>
 
-                  {/* Cash In */}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
-                    <input 
-                      type="text" 
-                      defaultValue={row.cashIn}
-                      placeholder="0"
-                      className="w-16 ml-auto block text-right border-b border-zinc-200 outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
-                    />
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700 font-medium">
+                    {row.cashIn}
                   </td>
 
                   {/* Cash Out */}
@@ -165,6 +165,43 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                       <span className="font-bold text-purple-700">{row.storage}</span>
                     ) : (
                       <span className="text-zinc-700">{row.storage}</span>
+                    )}
+                  </td>
+
+                  {/* Profile Photo */}
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {row.profilePhoto ? (
+                      <img 
+                        src={row.profilePhoto} 
+                        alt="Profile" 
+                        className="w-10 h-10 object-cover rounded-md border border-zinc-200" 
+                      />
+                    ) : "-"}
+                  </td>
+
+                  {/* ID Photo */}
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {row.idPhoto ? (
+                      <img 
+                        src={row.idPhoto} 
+                        alt="ID" 
+                        className="w-10 h-10 object-cover rounded-md border border-zinc-200" 
+                      />
+                    ) : "-"}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="whitespace-nowrap px-3 py-2 text-center">
+                    {row.purpose === "Pawn" && (
+                      <button 
+                        onClick={() => onReprint?.(row.transactionNo)}
+                        title="Reprint MOA Slip"
+                        className="p-1.5 text-zinc-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/>
+                        </svg>
+                      </button>
                     )}
                   </td>
                 </tr>

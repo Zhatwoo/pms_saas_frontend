@@ -1,18 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
-import { AddCustomerModal } from "./add-customer-modal";
+import { api } from "@/lib/api";
 import type { Column } from "@/components/shared/data-table";
+
+interface CustomerData {
+  id: string;
+  full_name: string;
+  contact_number: string;
+  email: string;
+  id_presented: string;
+  created_at: string;
+}
 
 const columns: Column[] = [
   { key: "name", label: "Name" },
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "idType", label: "ID Type" },
-  { key: "idNumber", label: "ID" },
+  { key: "idNumber", label: "ID Number" },
   { key: "registered", label: "Registered" },
   { key: "actions", label: "Actions", align: "center" },
 ];
@@ -85,22 +94,15 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
   ];
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <div>
-          <h3 className="text-base font-semibold text-emerald-800">
-            Internal Customer Records
-          </h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-        >
-          + Add New Customer
-        </button>
+        <h3 className="text-base font-semibold text-emerald-text">
+          Customer Management
+        </h3>
       </div>
 
+      {/* Table */}
       <DataTable
         columns={columns}
         data={customers}
@@ -120,21 +122,13 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
         }}
       />
 
-      <div className="border-t border-zinc-100 italic px-5 py-3 text-[10px] text-zinc-400">
-        Showing customers registered under this branch.
-      </div>
+      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
-        totalPages={1}
-        totalItems={customers.length}
+        totalPages={3}
+        totalItems={3}
         itemsPerPage={10}
         onPageChange={setCurrentPage}
-      />
-
-      <AddCustomerModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveCustomer}
       />
     </div>
   );

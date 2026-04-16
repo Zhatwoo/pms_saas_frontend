@@ -39,12 +39,12 @@ const trendTabs = ["Daily", "Weekly", "Monthly", "Yearly"];
 
 function formatPesoShort(value: number): string {
   if (value >= 1000000) return `\u20B1${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `\u20B1${(value / 1000).toFixed(0)}K`;
-  return `\u20B1${value}`;
+  if (value >= 1000) return `\u20B1${(value / 1000).toFixed(2)}K`;
+  return `\u20B1${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatPesoFull(value: number): string {
-  return `\u20B1${value.toLocaleString("en-PH")}`;
+  return `\u20B1${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function SalesTrendChart() {

@@ -66,7 +66,7 @@ function ClockIcon() {
 }
 
 function fmt(n: number) {
-  return `₱${n.toLocaleString("en-PH")}`;
+  return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function fmtDate(d: string) {
@@ -152,7 +152,7 @@ function SingleBranchCard({
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Add Funds
+              Manual Cash Transfer
             </button>
           </div>
         )}
@@ -184,9 +184,11 @@ function SingleBranchCard({
 function AggregateBranchCard({
   totalBranches,
   branchRows,
+  onAddFunds,
 }: {
   totalBranches: number;
   branchRows: BranchBalanceRow[];
+  onAddFunds?: () => void;
 }) {
   return (
     <div className="space-y-4">
@@ -196,9 +198,23 @@ function AggregateBranchCard({
           <h3 className="text-sm font-bold uppercase tracking-wide text-text-muted">
             Per-Branch Balances
           </h3>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-            {totalBranches} branches
-          </span>
+          <div className="flex items-center gap-2">
+            {onAddFunds ? (
+              <button
+                onClick={onAddFunds}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Manual Cash Transfer
+              </button>
+            ) : null}
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+              {totalBranches} branches
+            </span>
+          </div>
         </div>
         <div className="divide-y divide-border-subtle">
           {branchRows.map((b) => (
@@ -278,6 +294,7 @@ export function BalanceOverview({
     return (
       <AggregateBranchCard
         totalBranches={balances.length}
+        onAddFunds={onAddFunds}
         branchRows={balances.map((b) => ({
           branchId: b.branchId,
           name: b.name,

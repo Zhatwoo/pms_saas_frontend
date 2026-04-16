@@ -37,6 +37,7 @@ interface PawnedItem {
   qrCode?: string;
   originalPhoto?: string;
   conditionReport?: string;
+  amount: number;
 }
 
 const categoryOptions = [
@@ -277,8 +278,8 @@ export default function EmployeePawnedItemsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-emerald-900 text-white">
-                  {["Item ID", "Item Name", "Category", "Date/Time", "Status", "Renewals", "Remarks/Notes", ""].map((h) => (
-                    <th key={h} className="whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left">{h}</th>
+                  {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", ""].map((h) => (
+                    <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -294,6 +295,7 @@ export default function EmployeePawnedItemsPage() {
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700 font-medium">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-zinc-800 text-right">₱{(item.amount || 0).toLocaleString()}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-[10px] text-zinc-500">
                           <div className="font-bold">{item.pawnDate}</div>
                           <div className="opacity-50">10:30 AM</div> {/* Real time would come from API */}

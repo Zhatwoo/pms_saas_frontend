@@ -1,12 +1,3 @@
-import { CustomerTable } from "./_components/customer-table";
+import EmployeeCustomersPage from "@/app/employee/customers/page";
 
-export default function CustomersPage() {
-  return (
-    <div className="space-y-5">
-      <p className="text-sm text-zinc-500">
-        Manage customer records and profiles.
-      </p>
-      <CustomerTable />
-    </div>
-  );
-}
+export default EmployeeCustomersPage;
