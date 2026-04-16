@@ -64,35 +64,6 @@ interface AdminDashboardResponse {
   };
 }
 
-interface FundRequestRecord {
-  id: string;
-  requestNo: string;
-  amountRequested: number;
-  approvedAmount: number | null;
-  amountTransferred: number | null;
-  purpose: string;
-  notes?: string | null;
-  status:
-    | "pending"
-    | "approved"
-    | "pending_source_confirmation"
-    | "pending_confirmation"
-    | "rejected"
-    | "transferred"
-    | "cancelled";
-  createdAt: string;
-  reviewedAt?: string | null;
-  transferredAt?: string | null;
-  reviewNotes?: string | null;
-  transferReference?: string | null;
-  transferNotes?: string | null;
-  confirmationNotes?: string | null;
-  confirmedAt?: string | null;
-  confirmedReceivedAmount?: number | null;
-  receiverUserId?: string | null;
-  receiverRole?: "admin" | "employee" | null;
-}
-
 interface BranchFinanceSummaryApi {
   branchId: string;
   branchName: string;
@@ -102,13 +73,6 @@ interface BranchFinanceSummaryApi {
   todayCashOut: number;
   breakdown: FinanceSummaryBreakdown;
   fundRequests: { pending: number; approved: number; transferred: number };
-}
-
-function fmtCurrency(value: number) {
-  return `PHP ${value.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 function fmtDate(value: string | null | undefined) {
@@ -130,6 +94,8 @@ function toStatusClass(status: FundRequestRecord["status"]) {
       return "bg-blue-100 text-blue-700";
     case "pending_source_confirmation":
       return "bg-orange-100 text-orange-700";
+    case "pending_source_confirmation":
+      return "bg-orange-100 text-orange-700";
     case "pending_confirmation":
       return "bg-violet-100 text-violet-700";
     case "rejected":
@@ -142,6 +108,9 @@ function toStatusClass(status: FundRequestRecord["status"]) {
 }
 
 function toStatusLabel(status: FundRequestRecord["status"]) {
+  if (status === "pending_source_confirmation") return "Pending Source Confirmation";
+  if (status === "pending_confirmation") return "Pending Confirmation";
+  return status;
   if (status === "pending_source_confirmation") return "Pending Source Confirmation";
   if (status === "pending_confirmation") return "Pending Confirmation";
   return status;
@@ -275,7 +244,6 @@ export default function AdminBranchFinancePage() {
     [dashboard?.branch?.id, loadFinanceData, selectedConfirmRequest, showToast],
   );
 
-  // ── Unified rows: merge ledger entries + fund requests ──
   interface UnifiedRow {
     id: string;
     sortDate: string;
@@ -306,7 +274,6 @@ export default function AdminBranchFinancePage() {
   const unifiedRows = useMemo<UnifiedRow[]>(() => {
     const rows: UnifiedRow[] = [];
 
-    // Add transaction rows
     if (ledgerViewFilter !== "fund_requests") {
       for (const entry of ledgerEntries) {
         if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) continue;
@@ -335,7 +302,6 @@ export default function AdminBranchFinancePage() {
       }
     }
 
-    // Add fund request rows
     if (ledgerViewFilter !== "transactions") {
       for (const req of requests) {
         if (statusFilter !== "all" && req.status !== statusFilter) continue;
@@ -364,10 +330,8 @@ export default function AdminBranchFinancePage() {
       }
     }
 
-    // Sort by date descending
     rows.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
 
-    // Apply search filter
     if (ledgerSearch) {
       const q = ledgerSearch.toLowerCase();
       return rows.filter(
@@ -378,7 +342,6 @@ export default function AdminBranchFinancePage() {
       );
     }
 
-    // Apply date filters
     return rows.filter((r) => {
       const d = r.sortDate.split("T")[0];
       if (ledgerDateFrom && d < ledgerDateFrom) return false;
@@ -398,9 +361,7 @@ export default function AdminBranchFinancePage() {
       return current;
     }
 
-    return Number(
-      (finance.startingBalance + finance.totalAdded - finance.totalTransferred).toFixed(2),
-    );
+    return Number((finance.startingBalance + finance.totalAdded - finance.totalTransferred).toFixed(2));
   }, [dashboard?.currentBalance, finance]);
 
   return (
@@ -428,9 +389,7 @@ export default function AdminBranchFinancePage() {
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
       {isLoading ? (
@@ -453,15 +412,9 @@ export default function AdminBranchFinancePage() {
             </div>
 
             <div className="px-6 py-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/70">
-                Current Balance
-              </p>
-              <p className="mt-2 text-4xl font-extrabold tracking-tight text-white">
-                {formatCurrency(resolvedCurrentBalance)}
-              </p>
-              <p className="mt-2 text-xs text-emerald-200/80">
-                Last updated: {formatFinanceDate(finance?.lastUpdated)}
-              </p>
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/70">Current Balance</p>
+              <p className="mt-2 text-4xl font-extrabold tracking-tight text-white">{formatCurrency(resolvedCurrentBalance)}</p>
+              <p className="mt-2 text-xs text-emerald-200/80">Last updated: {formatFinanceDate(finance?.lastUpdated)}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 px-6 pb-6 md:grid-cols-4">
@@ -508,9 +461,7 @@ export default function AdminBranchFinancePage() {
                         {request.notes ? <p className="mt-1 text-xs text-text-muted">{request.notes}</p> : null}
                         <p className="mt-1 text-xs text-text-muted">Requested: {formatFinanceDate(request.createdAt)}</p>
                       </div>
-                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-bold text-blue-700">
-                        Pending
-                      </span>
+                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-bold text-blue-700">Pending</span>
                     </div>
                   </div>
                 ))
@@ -555,12 +506,8 @@ export default function AdminBranchFinancePage() {
                               ? `Outgoing deduction pending since ${formatFinanceDate(request.transferredAt ?? request.createdAt)}`
                               : `Sent for receipt confirmation: ${formatFinanceDate(request.transferredAt ?? request.createdAt)}`}
                           </p>
-                          {request.transferNotes ? (
-                            <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
-                          ) : null}
-                          {request.sourceConfirmationNotes ? (
-                            <p className="mt-1 text-xs text-text-muted">Source notes: {request.sourceConfirmationNotes}</p>
-                          ) : null}
+                          {request.transferNotes ? <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p> : null}
+                          {request.sourceConfirmationNotes ? <p className="mt-1 text-xs text-text-muted">Source notes: {request.sourceConfirmationNotes}</p> : null}
                         </div>
                         <button
                           type="button"
@@ -582,7 +529,6 @@ export default function AdminBranchFinancePage() {
             </FinanceQueueSection>
           </div>
 
-          {/* ── Unified Branch Finance Ledger ── */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
@@ -594,13 +540,13 @@ export default function AdminBranchFinancePage() {
               <h2 className="text-sm font-bold text-text-primary">Branch Finance Ledger</h2>
             </div>
 
-            {branchSummary && (
+            {branchSummary ? (
               <FinanceSummaryCards
                 breakdown={branchSummary.breakdown}
                 todayCashIn={branchSummary.todayCashIn}
                 todayCashOut={branchSummary.todayCashOut}
               />
-            )}
+            ) : null}
 
             <div className="flex flex-wrap items-center gap-3">
               <select
@@ -619,10 +565,10 @@ export default function AdminBranchFinancePage() {
                 onChange={(e) => setLedgerSearch(e.target.value)}
                 className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
               />
-              {ledgerViewFilter !== "fund_requests" && (
+              {ledgerViewFilter !== "fund_requests" ? (
                 <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
-              )}
-              {ledgerViewFilter !== "transactions" && (
+              ) : null}
+              {ledgerViewFilter !== "transactions" ? (
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as FundRequestRecord["status"] | "all")}
@@ -631,12 +577,13 @@ export default function AdminBranchFinancePage() {
                   <option value="all">All Statuses</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
+                  <option value="pending_source_confirmation">Pending Source Confirmation</option>
                   <option value="pending_confirmation">Pending Confirmation</option>
                   <option value="rejected">Rejected</option>
                   <option value="transferred">Transferred</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-              )}
+              ) : null}
               <input
                 type="date"
                 value={ledgerDateFrom}
@@ -649,7 +596,7 @@ export default function AdminBranchFinancePage() {
                 onChange={(e) => setLedgerDateTo(e.target.value)}
                 className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
               />
-              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo || statusFilter !== "all") && (
+              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo || statusFilter !== "all") ? (
                 <button
                   onClick={() => {
                     setLedgerSearch("");
@@ -662,10 +609,9 @@ export default function AdminBranchFinancePage() {
                 >
                   Clear Filters
                 </button>
-              )}
+              ) : null}
             </div>
 
-            {/* Unified table */}
             <div className="overflow-x-auto rounded-xl border border-border-main bg-surface">
               <table className="w-full min-w-[900px] text-sm">
                 <thead>
@@ -692,22 +638,18 @@ export default function AdminBranchFinancePage() {
                       <tr key={row.id} className="border-b border-border-subtle transition-colors hover:bg-surface-secondary/50">
                         <td className="px-3 py-3 align-top">
                           <span className="text-sm text-text-secondary">{row.displayDate}</span>
-                          {row.displayTime ? (
-                            <span className="ml-1.5 text-xs text-text-muted">{row.displayTime}</span>
-                          ) : null}
+                          {row.displayTime ? <span className="ml-1.5 text-xs text-text-muted">{row.displayTime}</span> : null}
                         </td>
                         <td className="px-3 py-3 align-top">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            row.source === "transaction"
-                              ? "bg-indigo-100 text-indigo-700"
-                              : "bg-cyan-100 text-cyan-700"
-                          }`}>
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                              row.source === "transaction" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"
+                            }`}
+                          >
                             {row.source === "transaction" ? "TXN" : "FUND REQ"}
                           </span>
                         </td>
-                        <td className="px-3 py-3 align-top">
-                          {row.typeBadge}
-                        </td>
+                        <td className="px-3 py-3 align-top">{row.typeBadge}</td>
                         <td className="px-3 py-3 align-top">
                           <span className="block max-w-[160px] truncate text-sm font-medium text-text-primary" title={row.itemName ?? ""}>
                             {row.itemName || "—"}
@@ -741,11 +683,7 @@ export default function AdminBranchFinancePage() {
         </>
       )}
 
-      <RequestFundsModal
-        isOpen={requestModalOpen}
-        onClose={() => setRequestModalOpen(false)}
-        onSubmit={handleRequestFunds}
-      />
+      <RequestFundsModal isOpen={requestModalOpen} onClose={() => setRequestModalOpen(false)} onSubmit={handleRequestFunds} />
 
       <ConfirmFundModal
         isOpen={confirmModalOpen}
@@ -756,26 +694,13 @@ export default function AdminBranchFinancePage() {
           }
         }}
         onConfirm={handleConfirmReceipt}
-        amount={
-          selectedConfirmRequest?.amountTransferred ??
-          selectedConfirmRequest?.approvedAmount ??
-          selectedConfirmRequest?.amountRequested ??
-          0
-        }
+        amount={selectedConfirmRequest?.amountTransferred ?? selectedConfirmRequest?.approvedAmount ?? selectedConfirmRequest?.amountRequested ?? 0}
         requestNo={selectedConfirmRequest?.requestNo}
         branchName={finance?.name ?? dashboard?.branch?.name ?? "Branch"}
         sourceBranchName={selectedConfirmRequest?.sourceBranch?.name ?? null}
         transferMode={selectedConfirmRequest?.transferMode ?? null}
-        stageLabel={
-          selectedConfirmRequest?.status === "pending_source_confirmation"
-            ? "Confirm Source Deduction"
-            : "Confirm Receipt"
-        }
-        amountLabel={
-          selectedConfirmRequest?.status === "pending_source_confirmation"
-            ? "Sent Amount"
-            : "Actual Amount Received"
-        }
+        stageLabel={selectedConfirmRequest?.status === "pending_source_confirmation" ? "Confirm Source Deduction" : "Confirm Receipt"}
+        amountLabel={selectedConfirmRequest?.status === "pending_source_confirmation" ? "Sent Amount" : "Actual Amount Received"}
         helperText={
           selectedConfirmRequest?.status === "pending_source_confirmation"
             ? "Confirm the outgoing deduction after the source branch has released the funds. The amount entered here will be deducted from the source branch balance."
