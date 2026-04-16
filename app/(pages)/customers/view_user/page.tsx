@@ -9,6 +9,20 @@ import { EditCustomerModal } from "./_components/edit-customer-modal";
 import type { CustomerDetail } from "./_components/types";
 import { api } from "@/lib/api";
 
+/* ──────────────────────────── Types ──────────────────────────── */
+interface BackendCustomer {
+  id: string;
+  full_name: string;
+  address: string;
+  barangay: string;
+  city: string;
+  province: string;
+  email: string;
+  contact_number: string;
+  id_presented: string;
+  created_at: string;
+}
+
 /* ──────────────────────────── Mock Data ──────────────────────────── */
 
 const mockCustomers: Record<string, CustomerDetail> = {
@@ -188,8 +202,16 @@ function CustomerDetailContent() {
   const [customer, setCustomer] = useState<CustomerDetail | null>(
     mockCustomers[customerId] ?? null,
   );
+  const [isLoading, setIsLoading] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    idNumber: "",
+    address: "",
+  });
 
   useEffect(() => {
     async function fetchCustomer() {
@@ -200,17 +222,28 @@ function CustomerDetailContent() {
         if (data) {
           setCustomer({
             id: data.id,
+            firstName: data.full_name.split(" ")[0] || "",
+            middleName: "",
+            lastName: data.full_name.split(" ").slice(1).join(" ") || "",
             name: data.full_name,
+            street: data.address,
+            barangay: data.barangay,
+            city: data.city,
+            province: data.province,
             address: [data.address, data.barangay, data.city, data.province].filter(Boolean).join(", "),
             email: data.email || "N/A",
             phone: data.contact_number || "N/A",
+            idType: data.id_presented || "N/A",
             idNumber: data.id_presented || "N/A",
+            profilePhoto: null,
+            idFrontPhoto: null,
+            idBackPhoto: null,
             createdAt: new Date(data.created_at).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
               year: "numeric"
             }),
-            branch: "Current Branch", // This could be fetched too
+            branch: "Current Branch", 
             totalItemsPawned: 0,
             activePawned: 0,
             totalLoanValue: 0,
@@ -268,9 +301,12 @@ function CustomerDetailContent() {
     setCustomer({
       ...customer,
       name: editForm.name.trim() || customer.name,
+      firstName: editForm.name.trim().split(" ")[0] || customer.firstName,
+      lastName: editForm.name.trim().split(" ").slice(1).join(" ") || customer.lastName,
       email: editForm.email.trim() || customer.email,
       phone: editForm.phone.trim() || customer.phone,
       idNumber: editForm.idNumber.trim() || customer.idNumber,
+      street: editForm.address.trim() || customer.street,
       address: editForm.address.trim() || customer.address,
     });
     setIsEditOpen(false);

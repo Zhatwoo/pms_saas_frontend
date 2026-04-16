@@ -688,12 +688,17 @@ export default function SettingsPage() {
                         topLabels.termsHeading
                       )}
                     </p>
-                    <textarea
-                      value={termsText}
-                      onChange={(e) => setTermsText(e.target.value)}
-                      disabled={!canEditMoa}
-                      className="min-h-[175px] w-full resize-y rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-4 outline-none disabled:cursor-not-allowed"
-                    />
+                    {canEditMoa ? (
+                      <textarea
+                        value={termsText}
+                        onChange={(e) => setTermsText(e.target.value)}
+                        className="min-h-[200px] w-full resize-none rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed outline-none focus:border-emerald-500"
+                      />
+                    ) : (
+                      <div className="whitespace-pre-wrap p-3 text-[10px] leading-relaxed text-zinc-800 bg-emerald-50/10 rounded-lg">
+                        {termsText}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-8 pt-4 md:grid-cols-2">

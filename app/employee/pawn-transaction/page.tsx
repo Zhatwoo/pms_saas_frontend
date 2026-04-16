@@ -31,6 +31,8 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  customerName?: string;
+  customerAddress?: string;
   profilePhoto?: string;
   idPhoto?: string;
 }
@@ -43,7 +45,7 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
 };
 
 export default function EmployeePawnTransactionsPage() {
-  const { selectedBranch, canSwitchBranch } = useBranch();
+  const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
   const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
@@ -93,6 +95,8 @@ export default function EmployeePawnTransactionsPage() {
             unitCode: t.unit_code,
             pawn: t.pawn_amount,
             storage: t.storage_fee,
+            customerName: t.pawned_item?.customer?.full_name,
+            customerAddress: t.pawned_item?.customer?.address,
             profilePhoto: t.profile_photo,
             idPhoto: t.id_photo,
           })));
@@ -171,11 +175,16 @@ export default function EmployeePawnTransactionsPage() {
     const tx = allTransactions.find(t => t.transactionNo === transactionNo);
     if (!tx) return;
     
+    const branchInfo = branches.find(b => b.name === tx.branch);
+    const names = (tx.customerName || "WALK-IN CUSTOMER").split(" ");
+    const firstName = names[0];
+    const lastName = names.length > 1 ? names.slice(1).join(" ") : "---";
+
     setReprintData({
-      firstName: tx.unit.split(" ")[0] || "REPRINT",
+      firstName: firstName,
       middleName: "",
-      lastName: "RECORD",
-      address: `Transaction: ${tx.transactionNo}`,
+      lastName: lastName,
+      address: tx.customerAddress || "---",
       contactNo: "---",
       unitCode: tx.unitCode,
       unitName: tx.unit,
@@ -188,7 +197,9 @@ export default function EmployeePawnTransactionsPage() {
       storageFee: tx.storage,
       purchasedDate: tx.date,
       idPresented: "---",
-      branchName: tx.branch
+      branchName: tx.branch,
+      branchAddress: branchInfo?.location || "",
+      branchPhone: branchInfo?.phone || ""
     });
     setIsMoaReprintOpen(true);
   }, [allTransactions]);
@@ -256,6 +267,8 @@ export default function EmployeePawnTransactionsPage() {
         onClose={() => setIsNewPawnModalOpen(false)}
         branchId={selectedBranch.id}
         branchName={selectedBranch.name}
+        branchAddress={selectedBranch.location}
+        branchPhone={selectedBranch.phone}
         branchAdminName={branchAdminName}
         loggedInUserName={user?.fullName}
       />

@@ -25,6 +25,8 @@ interface MoaModalProps {
     purchasedDate: string;
     idPresented: string;
     branchName: string;
+    branchAddress?: string;
+    branchPhone?: string;
   };
   isLoading: boolean;
 }
@@ -111,6 +113,21 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
           <div className="text-center mb-8">
              <h1 className="text-xl font-black underline uppercase tracking-[0.2em] text-emerald-900">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h1>
              <p className="text-[10px] font-bold text-zinc-400 mt-1 uppercase tracking-widest leading-none">{data.branchName || "Main Branch"}</p>
+             {(data.branchAddress || data.branchPhone) && (
+               <div className="mt-1 flex flex-col items-center gap-0.5">
+                 {data.branchAddress && (
+                   <p className="text-[8px] font-medium text-zinc-400 uppercase tracking-tight">{data.branchAddress}</p>
+                 )}
+                 {data.branchPhone && (
+                   <div className="flex items-center gap-1">
+                     <svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor" className="text-zinc-300">
+                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.28-2.28a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                     </svg>
+                     <p className="text-[8px] font-medium text-zinc-400 uppercase tracking-tight">{data.branchPhone}</p>
+                   </div>
+                 )}
+               </div>
+             )}
           </div>
 
           <div className="flex justify-between items-start border-b border-zinc-100 pb-4">
@@ -235,7 +252,7 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
 
           <div className="space-y-2 border-t border-zinc-200 pt-6">
             <h4 className="text-center font-black uppercase underline tracking-tighter">{labels?.termsHeading || "Terms and Conditions"}</h4>
-            <div className="rounded border border-zinc-200 p-4 bg-white/80 text-[9px] leading-relaxed text-zinc-600 whitespace-pre-line overflow-y-auto max-h-40">
+            <div className="rounded border border-zinc-200 p-4 bg-white/80 text-[9px] leading-relaxed text-zinc-600 whitespace-pre-line">
               {termsText}
             </div>
           </div>
