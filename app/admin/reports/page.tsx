@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { PeriodTabs } from "@/components/shared/period-tabs";
-import { ReportStats } from "./_components/report-stats";
-import { BranchSalesTable } from "./_components/branch-sales-table";
-import { SalesTrendChart } from "./_components/sales-trend-chart";
-import { DailyReportSection } from "./_components/daily-report-section";
+import { ReportStats } from "@/app/(pages)/reports/_components/report-stats";
+import { BranchSalesTable } from "@/app/(pages)/reports/_components/branch-sales-table";
+import { SalesTrendChart } from "@/app/(pages)/reports/_components/sales-trend-chart";
+import { DailyReportSection } from "@/app/(pages)/reports/_components/daily-report-section";
 
 const periods = ["Daily", "Weekly", "Monthly", "Yearly"];
 

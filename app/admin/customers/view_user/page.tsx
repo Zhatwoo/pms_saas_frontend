@@ -4,33 +4,17 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
-import { ViewCustomerModal } from "@/app/(pages)/customers/view_user/_components/view-customer-modal";
-import type {
-  ActivityEntry,
-  CustomerDetail,
-} from "@/app/(pages)/customers/view_user/_components/types";
 
 /* ──────────────────────────── Mock Data ──────────────────────────── */
 
 const mockCustomers: Record<string, CustomerDetail> = {
   "1": {
     id: "1",
-    firstName: "Juan",
-    middleName: "Santos",
-    lastName: "Dela Cruz",
     name: "Juan Dela Cruz",
-    street: "123 Rizal St., Brgy. Ususan",
-    barangay: "Brgy. Ususan",
-    city: "Taguig City",
-    province: "Metro Manila",
     address: "Brgy. Ususan, Taguig City",
     email: "juandelacruz@gmail.com",
     phone: "0912-345-6789",
-    idType: "Driver's License",
-    idNumber: "N5012345678",
-    profilePhoto: null,
-    idFrontPhoto: null,
-    idBackPhoto: null,
+    idNumber: "12345678",
     createdAt: "February 14, 2022",
     branch: "Taguig Branch",
     totalItemsPawned: 8,
@@ -40,43 +24,32 @@ const mockCustomers: Record<string, CustomerDetail> = {
     loyaltyPoints: 90,
     loyaltyMax: 100,
     transactions: [
-      { date: "April 3",  item: "iPhone 12",      amount: 24000, status: "Active",   branch: "Taguig" },
-      { date: "April 4",  item: "MacBook Pro",     amount: 45000, status: "Redeemed", branch: "Makati" },
-      { date: "Mar 20",   item: "Gold ring (18k)", amount: 8500,  status: "Overdue",  branch: "Taguig" },
-      { date: "Feb 10",   item: "PlayStation 5",   amount: 15000, status: "Forfeited",branch: "Quezon" },
+      { date: "April 3", item: "iPhone 12", amount: 24000, status: "Active", branch: "Taguig" },
+      { date: "April 4", item: "MacBook Pro", amount: 45000, status: "Redeemed", branch: "Makati" },
+      { date: "Mar 20", item: "Gold ring (18k)", amount: 8500, status: "Overdue", branch: "Taguig" },
+      { date: "Feb 10", item: "PlayStation 5", amount: 15000, status: "Forfeited", branch: "Quezon" },
     ],
     rewards: [
       { label: "₱500 Cashback", points: 100 },
-      { label: "10% Discount",  points: 200 },
+      { label: "10% Discount", points: 200 },
     ],
     deadlines: [
-      { date: "April 30, 2026",       label: "3 days remaining", variant: "warning" as const },
-      { date: "Was due March 20, 2026", label: "Overdue",        variant: "danger"  as const },
+      { date: "April 30, 2026", label: "3 days remaining", variant: "warning" as const },
+      { date: "Was due March 20, 2026", label: "Overdue", variant: "danger" as const },
     ],
     activityLog: [
-      { title: "Contract renewed",        date: "Apr 3 · Maria S.", description: "— iPhone 12 loan renewed for 30 days.",   color: "bg-green-500"  },
-      { title: "Payment reminder sent",   date: "Mar 25 · System",  description: "— Gold ring overdue notice via SMS.",      color: "bg-yellow-400" },
-      { title: "Customer visited",        date: "Mar 18 · Rico T.", description: "— Inquired about laptop appraisal.",       color: "bg-zinc-400"   },
+      { title: "Contract renewed", date: "Apr 3 · Maria S.", description: "— iPhone 12 loan renewed for 30 days.", color: "bg-green-500" },
+      { title: "Payment reminder sent", date: "Mar 25 · System", description: "— Gold ring overdue notice via SMS.", color: "bg-yellow-400" },
+      { title: "Customer visited", date: "Mar 18 · Rico T.", description: "— Inquired about laptop appraisal.", color: "bg-zinc-400" },
     ],
   },
   "2": {
     id: "2",
-    firstName: "John",
-    middleName: "",
-    lastName: "Doe",
     name: "John Doe",
-    street: "456 Ayala Ave.",
-    barangay: "Brgy. San Antonio",
-    city: "Makati",
-    province: "Metro Manila",
     address: "Brgy. San Antonio, Makati",
     email: "jhondoe@gmail.com",
     phone: "0912-345-6789",
-    idType: "National ID",
     idNumber: "72120002152",
-    profilePhoto: null,
-    idFrontPhoto: null,
-    idBackPhoto: null,
     createdAt: "February 15, 2022",
     branch: "Makati Branch",
     totalItemsPawned: 3,
@@ -86,10 +59,12 @@ const mockCustomers: Record<string, CustomerDetail> = {
     loyaltyPoints: 45,
     loyaltyMax: 100,
     transactions: [
-      { date: "Mar 15", item: "Samsung S24", amount: 18000, status: "Active",   branch: "Makati" },
-      { date: "Feb 20", item: "Gold Chain",  amount: 14000, status: "Redeemed", branch: "Makati" },
+      { date: "Mar 15", item: "Samsung S24", amount: 18000, status: "Active", branch: "Makati" },
+      { date: "Feb 20", item: "Gold Chain", amount: 14000, status: "Redeemed", branch: "Makati" },
     ],
-    rewards: [{ label: "₱500 Cashback", points: 100 }],
+    rewards: [
+      { label: "₱500 Cashback", points: 100 },
+    ],
     deadlines: [
       { date: "May 15, 2026", label: "18 days remaining", variant: "warning" as const },
     ],
@@ -99,22 +74,11 @@ const mockCustomers: Record<string, CustomerDetail> = {
   },
   "3": {
     id: "3",
-    firstName: "Park",
-    middleName: "Jimin",
-    lastName: "Neutron",
     name: "Park Jimin Neutron",
-    street: "789 Commonwealth Ave.",
-    barangay: "Brgy. Commonwealth",
-    city: "Quezon City",
-    province: "Metro Manila",
     address: "Brgy. Commonwealth, Quezon City",
     email: "jiminneutron@gmail.com",
     phone: "0912-345-6789",
-    idType: "Passport",
     idNumber: "44443334444",
-    profilePhoto: null,
-    idFrontPhoto: null,
-    idBackPhoto: null,
     createdAt: "February 16, 2022",
     branch: "Quezon Branch",
     totalItemsPawned: 5,
@@ -125,7 +89,7 @@ const mockCustomers: Record<string, CustomerDetail> = {
     loyaltyMax: 100,
     transactions: [
       { date: "Jan 20", item: "Laptop ASUS", amount: 22000, status: "Forfeited", branch: "Quezon" },
-      { date: "Jan 5",  item: "Watch Casio", amount: 5000,  status: "Redeemed",  branch: "Quezon" },
+      { date: "Jan 5", item: "Watch Casio", amount: 5000, status: "Redeemed", branch: "Quezon" },
     ],
     rewards: [],
     deadlines: [],
@@ -135,28 +99,74 @@ const mockCustomers: Record<string, CustomerDetail> = {
   },
 };
 
+/* ──────────────────────────── Types ──────────────────────────── */
+
+interface CustomerDetail {
+  id: string;
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  idNumber: string;
+  createdAt: string;
+  branch: string;
+  totalItemsPawned: number;
+  activePawned: number;
+  totalLoanValue: number;
+  overduePayments: number;
+  loyaltyPoints: number;
+  loyaltyMax: number;
+  transactions: Transaction[];
+  rewards: Reward[];
+  deadlines: Deadline[];
+  activityLog: ActivityEntry[];
+}
+
+interface Transaction {
+  date: string;
+  item: string;
+  amount: number;
+  status: string;
+  branch: string;
+}
+
+interface Reward {
+  label: string;
+  points: number;
+}
+
+interface Deadline {
+  date: string;
+  label: string;
+  variant: "warning" | "danger";
+}
+
+interface ActivityEntry {
+  title: string;
+  date: string;
+  description: string;
+  color: string;
+}
+
 /* ──────────────────────────── Helpers ──────────────────────────── */
 
 function getStatusBadge(status: string) {
   switch (status) {
-    case "Active":    return <StatusBadge label="Active"    variant="green"  />;
-    case "Redeemed":  return <StatusBadge label="Redeemed"  variant="blue"   />;
-    case "Overdue":   return <StatusBadge label="Overdue"   variant="orange" />;
-    case "Forfeited": return <StatusBadge label="Forfeited" variant="black"  />;
-    default:          return <StatusBadge label={status}    variant="black"  />;
+    case "Active":
+      return <StatusBadge label="Active" variant="green" />;
+    case "Redeemed":
+      return <StatusBadge label="Redeemed" variant="blue" />;
+    case "Overdue":
+      return <StatusBadge label="Overdue" variant="orange" />;
+    case "Forfeited":
+      return <StatusBadge label="Forfeited" variant="black" />;
+    default:
+      return <StatusBadge label={status} variant="black" />;
   }
 }
 
 function formatCurrency(value: number) {
   return `₱${value.toLocaleString()}`;
-}
-
-function formatNoteDate(date: Date) {
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 /* ──────────────────────────── Icons ──────────────────────────── */
@@ -181,59 +191,65 @@ const noteIcon = (
   </svg>
 );
 
-/* ──────────────────────────── Page Content ──────────────────────────── */
+const editIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+  </svg>
+);
 
-function EmployeeCustomerDetailContent() {
+/* ──────────────────────────── Inner Content ──────────────────────────── */
+
+function CustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const customerId = searchParams.get("id") ?? "";
-  const [customer, setCustomer] = useState<CustomerDetail | null>(
-    mockCustomers[customerId] ?? null,
-  );
-  const [activityLog, setActivityLog] = useState<ActivityEntry[]>(
-    mockCustomers[customerId]?.activityLog ?? [],
-  );
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [isNoteOpen, setIsNoteOpen] = useState(false);
-  const [noteTitle, setNoteTitle] = useState("");
-  const [noteBody, setNoteBody] = useState("");
+  const [customer, setCustomer] = useState<CustomerDetail | null>(mockCustomers[customerId] ?? null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    idNumber: "",
+    address: "",
+  });
 
   useEffect(() => {
-    const nextCustomer = mockCustomers[customerId] ?? null;
-    setCustomer(nextCustomer);
-    setActivityLog(nextCustomer?.activityLog ?? []);
-    setIsViewOpen(false);
-    setIsNoteOpen(false);
-    setNoteTitle("");
-    setNoteBody("");
+    setCustomer(mockCustomers[customerId] ?? null);
   }, [customerId]);
 
   useEffect(() => {
     if (customer) {
-      setActivityLog(customer.activityLog);
+      setEditForm({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        idNumber: customer.idNumber,
+        address: customer.address,
+      });
     }
   }, [customer]);
 
-  function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
+  function handleEditChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    const { name, value } = event.target;
+    setEditForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function handleSaveCustomer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!customer) return;
 
-    const trimmedBody = noteBody.trim();
-    if (!trimmedBody) return;
-
-    const trimmedTitle = noteTitle.trim();
-    const now = new Date();
-
-    const nextEntry: ActivityEntry = {
-      title: trimmedTitle || "Note added",
-      date: `${formatNoteDate(now)} · Employee`,
-      description: `— ${trimmedBody}`,
-      color: "bg-emerald-500",
-    };
-
-    setActivityLog((current) => [nextEntry, ...current]);
-    setNoteTitle("");
-    setNoteBody("");
-    setIsNoteOpen(false);
+    setCustomer({
+      ...customer,
+      name: editForm.name.trim() || customer.name,
+      email: editForm.email.trim() || customer.email,
+      phone: editForm.phone.trim() || customer.phone,
+      idNumber: editForm.idNumber.trim() || customer.idNumber,
+      address: editForm.address.trim() || customer.address,
+    });
+    setIsEditOpen(false);
   }
 
   if (!customer) {
@@ -241,7 +257,7 @@ function EmployeeCustomerDetailContent() {
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-lg font-semibold text-text-primary">Customer not found</p>
         <button
-          onClick={() => router.push("/employee/customers")}
+          onClick={() => router.push("/customers")}
           className="text-sm text-emerald-700 underline hover:text-emerald-800"
         >
           Back to Customers
@@ -255,10 +271,10 @@ function EmployeeCustomerDetailContent() {
 
   return (
     <div className="space-y-5">
-      {/* Page Header */}
+      {/* ── Page Header ── */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => router.push("/employee/customers")}
+          onClick={() => router.push("/customers")}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
         >
           {backIcon}
@@ -269,44 +285,33 @@ function EmployeeCustomerDetailContent() {
         </div>
       </div>
 
-      {/* Main Grid */}
+      {/* ── Main Grid ── */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_320px]">
-        {/* ── Left Column ── */}
+        {/* Left Column */}
         <div className="space-y-5">
-
-          {/* Basic Info Card — View only (no edit button) */}
-          <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
-            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-              {/* Clickable info area → opens View modal */}
-              <button
-                type="button"
-                onClick={() => setIsViewOpen(true)}
-                className="flex items-center gap-4 text-left transition-opacity hover:opacity-80"
-              >
-                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm">
-                  {customer.profilePhoto ? (
-                    <img
-                      src={customer.profilePhoto}
-                      alt={`${customer.name} profile`}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    userIcon
-                  )}
+          {/* Basic Info Card */}
+          <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pawn-gold shadow-sm">
+                  {userIcon}
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-text-primary">Basic Info</h2>
                   <p className="mt-0.5 text-xs text-text-tertiary">Email: {customer.email}</p>
                   <p className="text-xs text-text-tertiary">Phone: {customer.phone}</p>
                   <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
-                  <p className="mt-1 text-[10px] text-emerald-600 underline decoration-dotted">
-                    Click to view full details
-                  </p>
                 </div>
-              </button>
-
-              {/* Created-at badge only — no edit button for employee */}
-              <div className="flex-shrink-0">
+              </div>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-800 transition-colors hover:bg-emerald-100"
+                >
+                  {editIcon}
+                  Edit Profile
+                </button>
                 <div className="rounded-full border border-border-main bg-surface-secondary px-4 py-1.5 text-[11px] font-medium text-text-secondary">
                   Created on {customer.createdAt} at {customer.branch}
                 </div>
@@ -316,21 +321,24 @@ function EmployeeCustomerDetailContent() {
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {[
-              { label: "Total Items Pawned", value: customer.totalItemsPawned,             className: "text-text-primary" },
-              { label: "Active Pawned",       value: customer.activePawned,                className: "text-emerald-700"  },
-              { label: "Total Loan Value",    value: formatCurrency(customer.totalLoanValue), className: "text-text-primary" },
-              {
-                label: "Overdue Payments",
-                value: customer.overduePayments,
-                className: customer.overduePayments > 0 ? "text-red-500" : "text-text-primary",
-              },
-            ].map(({ label, value, className }) => (
-              <div key={label} className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">{label}</p>
-                <p className={`mt-1 text-2xl font-bold ${className}`}>{value}</p>
-              </div>
-            ))}
+            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Total items pawned</p>
+              <p className="mt-1 text-2xl font-bold text-text-primary">{customer.totalItemsPawned}</p>
+            </div>
+            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Active Pawned</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-700">{customer.activePawned}</p>
+            </div>
+            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Total loan value</p>
+              <p className="mt-1 text-2xl font-bold text-text-primary">{formatCurrency(customer.totalLoanValue)}</p>
+            </div>
+            <div className="rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Overdue payments</p>
+              <p className={`mt-1 text-2xl font-bold ${customer.overduePayments > 0 ? "text-red-500" : "text-text-primary"}`}>
+                {customer.overduePayments}
+              </p>
+            </div>
           </div>
 
           {/* Transaction History */}
@@ -342,14 +350,12 @@ function EmployeeCustomerDetailContent() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-emerald-900 text-amber-400">
-                    {["Date", "Item", "Amount", "Status", "Branch", "Action"].map((h, i) => (
-                      <th
-                        key={h}
-                        className={`whitespace-nowrap px-4 py-2 text-[10px] font-bold uppercase tracking-wide ${i === 3 || i === 5 ? "text-center" : "text-left"}`}
-                      >
-                        {h}
-                      </th>
-                    ))}
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Date</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Item</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Amount</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide">Status</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wide">Branch</th>
+                    <th className="whitespace-nowrap px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wide">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -384,11 +390,7 @@ function EmployeeCustomerDetailContent() {
           <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-bold text-text-primary">Notes &amp; Activity Log</h3>
-              <ActionButton
-                variant="primary"
-                size="sm"
-                onClick={() => setIsNoteOpen(true)}
-              >
+              <ActionButton variant="primary" size="sm">
                 <span className="flex items-center gap-1.5">
                   {noteIcon}
                   Add Note
@@ -396,14 +398,11 @@ function EmployeeCustomerDetailContent() {
               </ActionButton>
             </div>
             <div className="space-y-4">
-              {activityLog.length === 0 ? (
-                <p className="text-xs text-text-tertiary">No notes or activity yet.</p>
-              ) : (
-                activityLog.map((entry, i) => (
+              {customer.activityLog.map((entry, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="mt-1 flex flex-col items-center">
                     <span className={`h-3 w-3 rounded-full ${entry.color}`} />
-                    {i < activityLog.length - 1 && (
+                    {i < customer.activityLog.length - 1 && (
                       <span className="mt-1 h-8 w-px bg-border-main" />
                     )}
                   </div>
@@ -413,15 +412,13 @@ function EmployeeCustomerDetailContent() {
                     <p className="mt-0.5 text-xs text-text-secondary">{entry.description}</p>
                   </div>
                 </div>
-                ))
-              )}
+              ))}
             </div>
           </div>
         </div>
 
-        {/* ── Right Sidebar ── */}
+        {/* Right Sidebar */}
         <div className="space-y-5">
-
           {/* Loyalty System */}
           <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
             <h3 className="text-sm font-bold text-text-primary">Loyalty System</h3>
@@ -468,7 +465,9 @@ function EmployeeCustomerDetailContent() {
                       <span className="text-xs text-text-secondary">{d.date}</span>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                          d.variant === "danger" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"
+                          d.variant === "danger"
+                            ? "bg-red-100 text-red-600"
+                            : "bg-amber-100 text-amber-700"
                         }`}
                       >
                         {d.label}
@@ -482,36 +481,31 @@ function EmployeeCustomerDetailContent() {
         </div>
       </div>
 
-      {/* View Modal only — employees cannot edit */}
-      {isViewOpen && (
-        <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
-      )}
-
-      {isNoteOpen && (
+      {isEditOpen && customer && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm"
-          onClick={() => setIsNoteOpen(false)}
+          onClick={() => setIsEditOpen(false)}
         >
           <div
-            className="w-full max-w-lg overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
+            className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="bg-emerald-900 px-6 py-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
-                Customer Notes
+                Customer Management
               </p>
               <div className="mt-2 flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-white">Add Note</h2>
+                  <h2 className="text-xl font-bold text-white">Edit Customer Profile</h2>
                   <p className="mt-1 text-sm text-emerald-50/80">
-                    Save a quick note to the customer activity log.
+                    Update the customer details for <span className="font-bold text-amber-300">{customer.name}</span>.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsNoteOpen(false)}
+                  onClick={() => setIsEditOpen(false)}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
-                  aria-label="Close add note modal"
+                  aria-label="Close edit customer modal"
                 >
                   <svg
                     width="16"
@@ -530,41 +524,82 @@ function EmployeeCustomerDetailContent() {
               </div>
             </div>
 
-            <form onSubmit={handleAddNote} className="space-y-5 px-6 py-6">
-              <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                  Note Title
-                </label>
-                <input
-                  type="text"
-                  value={noteTitle}
-                  onChange={(event) => setNoteTitle(event.target.value)}
-                  placeholder="Optional title"
-                  className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-                />
-              </div>
+            <form onSubmit={handleSaveCustomer} className="space-y-5 px-6 py-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Full Name
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    value={editForm.name}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
 
-              <div>
-                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                  Note
-                </label>
-                <textarea
-                  value={noteBody}
-                  onChange={(event) => setNoteBody(event.target.value)}
-                  placeholder="Write something useful for the next person who opens this customer..."
-                  rows={5}
-                  className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
-                />
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Phone Number
+                  </label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    value={editForm.phone}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Email Address
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={editForm.email}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    ID Number
+                  </label>
+                  <input
+                    name="idNumber"
+                    type="text"
+                    value={editForm.idNumber}
+                    onChange={handleEditChange}
+                    className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-text-tertiary">
+                    Address
+                  </label>
+                  <textarea
+                    name="address"
+                    value={editForm.address}
+                    onChange={handleEditChange}
+                    rows={3}
+                    className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  />
+                </div>
               </div>
 
               <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
-                This note will appear at the top of the activity log.
+                Update the profile details and save the changes.
               </div>
 
               <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={() => setIsNoteOpen(false)}
+                  onClick={() => setIsEditOpen(false)}
                   className="rounded-md border border-border-main px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
                 >
                   Cancel
@@ -573,7 +608,7 @@ function EmployeeCustomerDetailContent() {
                   type="submit"
                   className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
                 >
-                  Save Note
+                  Save Changes
                 </button>
               </div>
             </form>
@@ -586,16 +621,16 @@ function EmployeeCustomerDetailContent() {
 
 /* ──────────────────────────── Page Export ──────────────────────────── */
 
-export default function EmployeeCustomerDetailPage() {
+export default function CustomerDetailPage() {
   return (
     <Suspense
       fallback={
         <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
-          Loading customer details…
+          Loading customer details...
         </div>
       }
     >
-      <EmployeeCustomerDetailContent />
+      <CustomerDetailContent />
     </Suspense>
   );
 }

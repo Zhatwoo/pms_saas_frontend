@@ -15,6 +15,15 @@ import { RejectRequestModal } from "./_components/reject-request-modal";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
 import type { FinanceTransaction } from "./_components/transaction-table";
+import {
+  FinanceLedgerTable,
+  FinanceSummaryCards,
+  LedgerTypeFilter,
+} from "@/components/shared/finance-ledger-table";
+import type {
+  LedgerEntry,
+  FinanceSummaryBreakdown,
+} from "@/components/shared/finance-ledger-table";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -94,6 +103,17 @@ interface FundRequestRecord {
     fullName: string | null;
     email: string | null;
   } | null;
+  confirmedBy?: {
+    id: string;
+    fullName: string | null;
+    email: string | null;
+  } | null;
+  flowType?: "request_based" | "direct_push";
+  receiverUserId?: string | null;
+  receiverRole?: "admin" | "employee" | null;
+  confirmedReceivedAmount?: number | null;
+  confirmationNote?: string | null;
+  transferReferenceNo?: string | null;
 }
 
 interface ApiTransaction {
@@ -106,6 +126,19 @@ interface ApiTransaction {
   cash_out: number | string | null;
   details: string | null;
   unit?: string | null;
+}
+
+interface BranchFinanceSummaryItem {
+  branchId: string;
+  branchName: string;
+  branchCode: string | null;
+  status: string | null;
+  currentBalance: number;
+  startingBalance: number;
+  todayCashIn: number;
+  todayCashOut: number;
+  breakdown: FinanceSummaryBreakdown;
+  fundRequests: { pending: number; approved: number; transferred: number };
 }
 
 function fmtCurrency(value: number) {
@@ -134,6 +167,13 @@ export default function BranchFinancePage() {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [selectedTransferRequest, setSelectedTransferRequest] = useState<FundRequestRecord | null>(null);
 
+  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
+  const [financeSummaries, setFinanceSummaries] = useState<BranchFinanceSummaryItem[]>([]);
+  const [ledgerTypeFilter, setLedgerTypeFilter] = useState("all");
+  const [ledgerSearch, setLedgerSearch] = useState("");
+  const [ledgerDateFrom, setLedgerDateFrom] = useState("");
+  const [ledgerDateTo, setLedgerDateTo] = useState("");
+
   const showToast = useCallback((message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(null), 2500);
@@ -146,10 +186,12 @@ export default function BranchFinancePage() {
     const branchQuery = isAllBranches ? "" : `?branch=${selectedBranch.id}`;
 
     try {
-      const [dashboardData, requestData, transactionData] = await Promise.all([
+      const [dashboardData, requestData, transactionData, summaryData, ledgerData] = await Promise.all([
         api.get<DashboardSummary>("/dashboard"),
         api.get<FundRequestRecord[]>(`/fund-requests${branchQuery}`),
         api.get<ApiTransaction[]>(`/transactions${branchQuery}`),
+        api.get<BranchFinanceSummaryItem[]>(`/branch-finance/summary${branchQuery}`),
+        api.get<{ entries: LedgerEntry[]; total: number }>(`/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=100`),
       ]);
 
       const transferRequestByTransactionId = new Map(
@@ -177,20 +219,31 @@ export default function BranchFinancePage() {
             type: cashOut > 0 ? "TRANSFER_OUT" : "ADD_FUNDS",
             amount: cashOut > 0 ? cashOut : cashIn,
             balanceAfter: null,
-            status: "Approved" as const,
+            status:
+              relatedRequest?.status === "pending_confirmation"
+                ? ("Pending" as const)
+                : relatedRequest?.status === "rejected"
+                  ? ("Rejected" as const)
+                  : ("Approved" as const),
             approvedBy: relatedRequest?.transferredBy?.fullName ?? "Super Admin",
             approvalDate: relatedRequest?.transferredAt ?? null,
             notes:
-              relatedRequest?.transferNotes ??
-              relatedRequest?.reviewNotes ??
-              transaction.details ??
-              "Fund transfer processed",
+              `${relatedRequest?.confirmedReceivedAmount
+                ? `Received: ${fmtCurrency(relatedRequest.confirmedReceivedAmount)} | `
+                : ""}${
+                relatedRequest?.transferNotes ??
+                relatedRequest?.reviewNotes ??
+                transaction.details ??
+                "Fund transfer processed"
+              }`,
           };
         });
 
       setDashboard(dashboardData);
       setFundRequests(requestData);
       setTransactions(liveTransactions);
+      setFinanceSummaries(summaryData ?? []);
+      setLedgerEntries(ledgerData?.entries ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load branch finance data.");
     } finally {
@@ -276,6 +329,40 @@ export default function BranchFinancePage() {
     [branchBalances],
   );
 
+  const aggregatedBreakdown = useMemo<FinanceSummaryBreakdown>(() => {
+    const scoped = isAllBranches
+      ? financeSummaries
+      : financeSummaries.filter((s) => s.branchId === selectedBranch.id);
+    const agg: FinanceSummaryBreakdown = {
+      pawnOut: 0, buyBackIn: 0, renewalIn: 0, saleIn: 0,
+      fundTransferIn: 0, fundTransferOut: 0, startBalance: 0, other: 0,
+    };
+    for (const s of scoped) {
+      agg.pawnOut += s.breakdown.pawnOut;
+      agg.buyBackIn += s.breakdown.buyBackIn;
+      agg.renewalIn += s.breakdown.renewalIn;
+      agg.saleIn += s.breakdown.saleIn;
+      agg.fundTransferIn += s.breakdown.fundTransferIn;
+      agg.fundTransferOut += s.breakdown.fundTransferOut;
+      agg.startBalance += s.breakdown.startBalance;
+      agg.other += s.breakdown.other;
+    }
+    return agg;
+  }, [financeSummaries, isAllBranches, selectedBranch.id]);
+
+  const aggregatedTodayCash = useMemo(() => {
+    const scoped = isAllBranches
+      ? financeSummaries
+      : financeSummaries.filter((s) => s.branchId === selectedBranch.id);
+    let cashIn = 0;
+    let cashOut = 0;
+    for (const s of scoped) {
+      cashIn += s.todayCashIn;
+      cashOut += s.todayCashOut;
+    }
+    return { cashIn, cashOut };
+  }, [financeSummaries, isAllBranches, selectedBranch.id]);
+
   const handleRejectRequestClick = useCallback((id: string) => {
     const target = pendingRequests.find((request) => request.id === id) ?? null;
     setSelectedRejectRequest(target);
@@ -329,23 +416,31 @@ export default function BranchFinancePage() {
 
   const handleTransferSubmit = useCallback(
     async (data: UnifiedFundResult) => {
-      if (!selectedTransferRequest) return;
-      if (data.sourceType !== "MANAGEMENT") {
-        setError("Branch-to-branch transfers are not connected to the backend yet.");
-        return;
-      }
-
       try {
-        await api.patch<FundRequestRecord>(
-          `/fund-requests/${selectedTransferRequest.id}/transfer`,
-          {
+        if (selectedTransferRequest) {
+          await api.patch<FundRequestRecord>(
+            `/fund-requests/${selectedTransferRequest.id}/transfer`,
+            {
+              amount: data.amount,
+              transferNotes: data.notes,
+            },
+          );
+          showToast("Funds sent to the branch and are now awaiting branch confirmation.");
+        } else {
+          await api.post<FundRequestRecord>("/fund-requests/direct-transfer", {
             amount: data.amount,
-            transferNotes: data.notes,
-          },
-        );
+            toBranchId: data.toBranchId,
+            fromBranchId: data.sourceType === "BRANCH_TRANSFER" ? data.fromBranchId : undefined,
+            notes: data.notes,
+            purpose:
+              data.sourceType === "BRANCH_TRANSFER"
+                ? "Direct branch-to-branch transfer"
+                : "Direct management cash transfer",
+          });
+          showToast("Direct cash transfer released and awaiting branch confirmation.");
+        }
         setTransferModalOpen(false);
         setSelectedTransferRequest(null);
-        showToast("Funds sent to the branch and are now awaiting branch confirmation.");
         await loadFinanceData();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to transfer funds.");
@@ -355,14 +450,9 @@ export default function BranchFinancePage() {
   );
 
   const handleHeaderTransfer = useCallback(() => {
-    if (approvedRequests.length === 1) {
-      setSelectedTransferRequest(approvedRequests[0]);
-      setTransferModalOpen(true);
-      return;
-    }
-
-    showToast("Use the Approved Requests panel below to transfer a specific request.");
-  }, [approvedRequests, showToast]);
+    setSelectedTransferRequest(null);
+    setTransferModalOpen(true);
+  }, []);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -482,6 +572,11 @@ export default function BranchFinancePage() {
                         {request.transferNotes ? (
                           <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
                         ) : null}
+                        {request.receiverRole ? (
+                          <p className="mt-1 text-xs text-text-muted">
+                            Receiver role: {request.receiverRole}
+                          </p>
+                        ) : null}
                       </div>
                       <span className="rounded-full bg-violet-100 px-2.5 py-1 text-[11px] font-bold text-violet-700">
                         Pending Confirmation
@@ -527,6 +622,74 @@ export default function BranchFinancePage() {
               dateTo={dateTo}
             />
           </div>
+
+          {/* ── All Financial Activity (Unified Ledger) ── */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                  <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+              </div>
+              <h2 className="text-sm font-bold text-text-primary">All Financial Activity</h2>
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                Per Branch Monitoring
+              </span>
+            </div>
+
+            <FinanceSummaryCards
+              breakdown={aggregatedBreakdown}
+              todayCashIn={aggregatedTodayCash.cashIn}
+              todayCashOut={aggregatedTodayCash.cashOut}
+            />
+
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={ledgerSearch}
+                onChange={(e) => setLedgerSearch(e.target.value)}
+                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              />
+              <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              <input
+                type="date"
+                value={ledgerDateFrom}
+                onChange={(e) => setLedgerDateFrom(e.target.value)}
+                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+              />
+              <input
+                type="date"
+                value={ledgerDateTo}
+                onChange={(e) => setLedgerDateTo(e.target.value)}
+                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+              />
+              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) && (
+                <button
+                  onClick={() => {
+                    setLedgerSearch("");
+                    setLedgerTypeFilter("all");
+                    setLedgerDateFrom("");
+                    setLedgerDateTo("");
+                  }}
+                  className="text-xs font-bold text-red-600 hover:underline"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+
+            <FinanceLedgerTable
+              entries={ledgerEntries}
+              isLoading={isLoading}
+              showBranchColumn={isAllBranches}
+              searchQuery={ledgerSearch}
+              typeFilter={ledgerTypeFilter}
+              dateFrom={ledgerDateFrom}
+              dateTo={ledgerDateTo}
+            />
+          </div>
         </>
       )}
 
@@ -551,7 +714,9 @@ export default function BranchFinancePage() {
         branchName={selectedTransferRequest?.branch?.name ?? selectedBranch.name}
         managers={[]}
         branches={branchBalances}
-        currentBranchId={selectedTransferRequest?.branch?.id ?? selectedBranch.id}
+        currentBranchId={
+          selectedTransferRequest?.branch?.id ?? (isAllBranches ? "001" : selectedBranch.id)
+        }
         getManagersForBranch={() => []}
         defaultAmount={String(selectedTransferRequest?.approvedAmount ?? selectedTransferRequest?.amountRequested ?? "")}
         defaultNotes={selectedTransferRequest?.reviewNotes ?? selectedTransferRequest?.notes ?? ""}
