@@ -85,6 +85,14 @@ function IconMapPin() {
   );
 }
 
+function IconPhone() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.07 2h3a2 2 0 0 1 2 1.72c.12.93.33 1.84.63 2.72a2 2 0 0 1-.45 2.11L8 9.88a16 16 0 0 0 6.12 6.12l1.33-1.25a2 2 0 0 1 2.11-.45c.88.3 1.79.51 2.72.63A2 2 0 0 1 22 16.92Z" />
+    </svg>
+  );
+}
+
 function IconCalendar() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -247,6 +255,7 @@ interface BranchProfileProps {
     branchId: string;
     name: string;
     location: string;
+    contactNumber: string;
     status: string;
     createdAt?: string;
   };
@@ -354,12 +363,19 @@ export function BranchProfile({ branch }: BranchProfileProps) {
           </div>
 
           {/* Meta row */}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
               <span className="text-emerald-400"><IconMapPin /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Location</p>
                 <p className="text-sm font-semibold text-white">{branch.location}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+              <span className="text-emerald-400"><IconPhone /></span>
+              <div>
+                <p className="text-xs font-medium uppercase text-emerald-400/70">Contact</p>
+                <p className="text-sm font-semibold text-white">{branch.contactNumber || "—"}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">

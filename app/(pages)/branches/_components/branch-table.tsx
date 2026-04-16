@@ -16,6 +16,7 @@ export interface BranchRow {
   branchId: string;
   name: string;
   location: string;
+  contactNumber: string;
   createdAt?: string;
   status: string;
   pawnedItems: number;
@@ -147,6 +148,7 @@ export function BranchTable({
       !searchQuery ||
       b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.contactNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.branchId.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
@@ -175,7 +177,7 @@ export function BranchTable({
     <div className="space-y-4">
       <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-base">
+          <table className="w-full min-w-[1020px] text-base">
             <thead>
               <tr className="bg-emerald-900 text-amber-400">
                 <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
@@ -186,6 +188,9 @@ export function BranchTable({
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
                   Location
+                </th>
+                <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
+                  Contact Number
                 </th>
                 <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
                   Status
@@ -215,6 +220,9 @@ export function BranchTable({
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
                     {branch.location}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                    {branch.contactNumber || "—"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <StatusBadge

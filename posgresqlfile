@@ -16,8 +16,10 @@ END $$;
 -- 2. BRANCHES TABLE (Supports Multi-Branch)
 CREATE TABLE IF NOT EXISTS branches (
     id SERIAL PRIMARY KEY,
+    branch_code VARCHAR(20) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     location VARCHAR(255),
+    contact_number VARCHAR(20) NOT NULL,
     -- Balance caching optionally handled here, but proper historical balance is in daily_balances
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

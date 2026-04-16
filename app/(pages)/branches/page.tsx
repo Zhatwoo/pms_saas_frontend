@@ -17,6 +17,7 @@ interface BranchApiItem {
   branch_code: string;
   name: string;
   location: string;
+  contact_number?: string | null;
   status: string;
 }
 
@@ -25,6 +26,7 @@ type BranchFormData = {
   branchId: string;
   name: string;
   location: string;
+  contactNumber: string;
   status: string;
 };
 
@@ -34,6 +36,7 @@ function toBranchRow(branch: BranchApiItem): BranchRow {
     branchId: branch.branch_code,
     name: branch.name,
     location: branch.location,
+    contactNumber: branch.contact_number ?? "",
     status: branch.status,
     pawnedItems: 0,
     forSaleItems: 0,
@@ -168,6 +171,7 @@ export default function BranchesPage() {
       branchId: branch.branchId,
       name: branch.name,
       location: branch.location,
+      contactNumber: branch.contactNumber || "+63",
       status: branch.status,
     });
     setModalMode("edit");
@@ -220,6 +224,7 @@ export default function BranchesPage() {
           branch_code: data.branchId,
           name: data.name,
           location: data.location,
+          contact_number: data.contactNumber,
           status: data.status,
         });
 
@@ -233,6 +238,7 @@ export default function BranchesPage() {
           body: JSON.stringify({
             name: data.name,
             location: data.location,
+            contact_number: data.contactNumber,
             status: data.status,
           }),
         });
