@@ -59,6 +59,7 @@ export default function AuditLogsPage() {
   const userId = user?.id;
   const userRole = user?.role;
   const isSuperAdmin = userRole === "super_admin";
+  const canViewAuditLogs = userRole === "super_admin" || userRole === "admin";
 
   const [branch, setBranch] = useState("all");
   const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -85,7 +86,11 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     async function fetchLogs() {
-      if (!userId) return;
+      if (!userId || !canViewAuditLogs) {
+        setLogs([]);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const queryParams = new URLSearchParams();
@@ -101,7 +106,18 @@ export default function AuditLogsPage() {
       }
     }
     fetchLogs();
-  }, [userId, branch, isSuperAdmin]);
+  }, [userId, branch, isSuperAdmin, canViewAuditLogs]);
+
+  if (!canViewAuditLogs) {
+    return (
+      <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-text-primary">Access Restricted</h2>
+        <p className="mt-2 text-sm text-text-muted">
+          Audit logs are available only to Admin and Super Admin accounts.
+        </p>
+      </div>
+    );
+  }
 
   // Derive synthetic data fields for UI matching
   const enrichedLogs = useMemo(() => {

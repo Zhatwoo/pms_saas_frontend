@@ -218,25 +218,27 @@ export default function AdminBranchFinancePage() {
 
   const handleConfirmReceipt = useCallback(
     async (receivedAmount: number, notes: string) => {
-      if (!selectedConfirmRequest) return;
+      async (receivedAmount: number, notes: string) => {
+        if (!selectedConfirmRequest) return;
 
-      setIsSubmitting(true);
-      try {
-        await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
-          receivedAmount,
-          confirmationNotes: notes,
-        });
-        setConfirmModalOpen(false);
-        setSelectedConfirmRequest(null);
-        showToast("Branch receipt confirmed and transfer recorded successfully.");
-        await loadFinanceData();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to confirm fund receipt.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [loadFinanceData, selectedConfirmRequest, showToast],
+        setIsSubmitting(true);
+        try {
+          await api.patch<FundRequestRecord>(`/fund-requests/${selectedConfirmRequest.id}/confirm`, {
+            receivedAmount,
+            receivedAmount,
+            confirmationNotes: notes,
+          });
+          setConfirmModalOpen(false);
+          setSelectedConfirmRequest(null);
+          showToast("Branch receipt confirmed and transfer recorded successfully.");
+          await loadFinanceData();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Failed to confirm fund receipt.");
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+        [loadFinanceData, selectedConfirmRequest, showToast],
   );
 
   const finance = dashboard?.branchFinance;

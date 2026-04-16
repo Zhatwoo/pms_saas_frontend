@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { ConfirmFundModal } from "@/app/admin/branch-finance/_components/confirm-fund-modal";
+<<<<<<< HEAD
 import {
   FinanceLedgerTable,
   FinanceSummaryCards,
@@ -12,6 +13,8 @@ import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
+=======
+>>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
 
 interface FundRequestRecord {
   id: string;
@@ -43,6 +46,7 @@ interface EmployeeDashboardResponse {
   branch: { name: string } | null;
 }
 
+<<<<<<< HEAD
 interface BranchFinanceSummaryApi {
   branchId: string;
   branchName: string;
@@ -54,6 +58,8 @@ interface BranchFinanceSummaryApi {
   fundRequests: { pending: number; approved: number; transferred: number };
 }
 
+=======
+>>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
 function fmtCurrency(value: number) {
   return `PHP ${value.toLocaleString("en-PH", {
     minimumFractionDigits: 2,
@@ -82,6 +88,7 @@ export default function EmployeeBranchFinancePage() {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [selectedConfirmRequest, setSelectedConfirmRequest] = useState<FundRequestRecord | null>(null);
 
+<<<<<<< HEAD
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [branchSummary, setBranchSummary] = useState<BranchFinanceSummaryApi | null>(null);
   const [ledgerTypeFilter, setLedgerTypeFilter] = useState("all");
@@ -89,6 +96,8 @@ export default function EmployeeBranchFinancePage() {
   const [ledgerDateFrom, setLedgerDateFrom] = useState("");
   const [ledgerDateTo, setLedgerDateTo] = useState("");
 
+=======
+>>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
   const showToast = useCallback((message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(null), 2500);
@@ -98,6 +107,7 @@ export default function EmployeeBranchFinancePage() {
     setIsLoading(true);
     setError(null);
     try {
+<<<<<<< HEAD
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
         api.get<EmployeeDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
@@ -108,6 +118,14 @@ export default function EmployeeBranchFinancePage() {
       setRequests(requestData);
       setBranchSummary(summaryData?.[0] ?? null);
       setLedgerEntries(ledgerData?.entries ?? []);
+=======
+      const [dashboardData, requestData] = await Promise.all([
+        api.get<EmployeeDashboardResponse>("/dashboard"),
+        api.get<FundRequestRecord[]>("/fund-requests"),
+      ]);
+      setDashboard(dashboardData);
+      setRequests(requestData);
+>>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load branch finance data.");
     } finally {
@@ -275,6 +293,7 @@ export default function EmployeeBranchFinancePage() {
               </table>
             </div>
           </div>
+<<<<<<< HEAD
 
           {/* ── Branch Financial Activity (Read-Only) ── */}
           <div className="space-y-4">
@@ -345,6 +364,8 @@ export default function EmployeeBranchFinancePage() {
               dateTo={ledgerDateTo}
             />
           </div>
+=======
+>>>>>>> 49e74a1e33b34459682012cc29a20f666bca2d95
         </>
       )}
 

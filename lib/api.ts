@@ -157,7 +157,7 @@ class ApiClient {
             },
             timestamp: Date.now(),
           }),
-        }).catch(() => {});
+        }).catch(() => { });
         // #endregion
         this.logApiIssue(
           res.status,
