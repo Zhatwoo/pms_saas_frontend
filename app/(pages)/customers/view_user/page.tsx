@@ -134,55 +134,6 @@ const mockCustomers: Record<string, CustomerDetail> = {
   },
 };
 
-/* ──────────────────────────── Types ──────────────────────────── */
-
-interface CustomerDetail {
-  id: string;
-  name: string;
-  address: string;
-  email: string;
-  phone: string;
-  idNumber: string;
-  createdAt: string;
-  branch: string;
-  totalItemsPawned: number;
-  activePawned: number;
-  totalLoanValue: number;
-  overduePayments: number;
-  loyaltyPoints: number;
-  loyaltyMax: number;
-  transactions: Transaction[];
-  rewards: Reward[];
-  deadlines: Deadline[];
-  activityLog: ActivityEntry[];
-}
-
-interface Transaction {
-  date: string;
-  item: string;
-  amount: number;
-  status: string;
-  branch: string;
-}
-
-interface Reward {
-  label: string;
-  points: number;
-}
-
-interface Deadline {
-  date: string;
-  label: string;
-  variant: "warning" | "danger";
-}
-
-interface ActivityEntry {
-  title: string;
-  date: string;
-  description: string;
-  color: string;
-}
-
 /* ──────────────────────────── Helpers ──────────────────────────── */
 
 function getStatusBadge(status: string) {
@@ -234,7 +185,10 @@ function CustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const customerId = searchParams.get("id") ?? "";
-  const [customer, setCustomer] = useState<CustomerDetail | null>(mockCustomers[customerId] ?? null);
+  const [customer, setCustomer] = useState<CustomerDetail | null>(
+    mockCustomers[customerId] ?? null,
+  );
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   useEffect(() => {
@@ -288,12 +242,38 @@ function CustomerDetailContent() {
     fetchCustomer();
   }, [customerId]);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20">
-        <p className="text-sm text-text-tertiary">Loading customer profile...</p>
-      </div>
-    );
+  useEffect(() => {
+    if (customer) {
+      setEditForm({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        idNumber: customer.idNumber,
+        address: customer.address,
+      });
+    }
+  }, [customer]);
+
+  function handleEditChange(
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
+    const { name, value } = event.target;
+    setEditForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function handleSaveCustomer(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!customer) return;
+
+    setCustomer({
+      ...customer,
+      name: editForm.name.trim() || customer.name,
+      email: editForm.email.trim() || customer.email,
+      phone: editForm.phone.trim() || customer.phone,
+      idNumber: editForm.idNumber.trim() || customer.idNumber,
+      address: editForm.address.trim() || customer.address,
+    });
+    setIsEditOpen(false);
   }
 
   if (!customer) {

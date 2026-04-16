@@ -49,19 +49,6 @@ interface CustomerTableProps {
 export function CustomerTable({ branchName }: CustomerTableProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleSaveCustomer = async (input: {
-    fullName: string;
-    phoneNumber: string;
-    email: string;
-    idType: string;
-    idNumber: string;
-    address: string;
-  }) => {
-    console.log("Customer saved:", input, branchName);
-    setIsModalOpen(false);
-  };
 
   const customers = [
     {
