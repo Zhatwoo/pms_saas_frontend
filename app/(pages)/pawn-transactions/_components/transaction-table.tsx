@@ -87,10 +87,11 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
             ) : (
               data.map((row, idx) => {
                 const isStartRow = row.purpose === "Start";
+                const rowKey = `${row.transactionNo || "transaction"}-${idx}`;
 
               return (
                 <tr
-                  key={row.transactionNo}
+                  key={rowKey}
                   className={`border-t border-border-subtle transition-colors bg-surface-secondary hover:bg-emerald-surface/60 ${
                     isStartRow
                       ? "border-l-4 border-l-emerald-700 !bg-emerald-surface"

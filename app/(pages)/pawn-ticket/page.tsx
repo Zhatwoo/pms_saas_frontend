@@ -1,9 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function PawnTicketPage() {
-  return (
-    <div>
-      <p className="text-sm text-zinc-500">
-        View and manage pawn tickets.
-      </p>
-    </div>
-  );
+  redirect("/dashboard");
 }

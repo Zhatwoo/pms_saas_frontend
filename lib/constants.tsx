@@ -2,7 +2,6 @@ import type { NavGroup, Role } from "@/types";
 import {
   DashboardIcon,
   PawnTransactionIcon,
-  PawnTicketIcon,
   CustomersIcon,
   InventoryIcon,
   ExpirationIcon,
@@ -28,7 +27,6 @@ const SUPERADMIN_NAV: NavGroup[] = [
     section: "TRANSACTION",
     items: [
       { label: "Pawn Transactions", href: "/pawn-transactions", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/pawn-ticket", icon: <PawnTicketIcon /> },
     ],
   },
   {
@@ -78,7 +76,6 @@ const ADMIN_NAV: NavGroup[] = [
     section: "TRANSACTION",
     items: [
       { label: "Pawn Transactions", href: "/admin/pawn-transactions", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/admin/pawn-ticket", icon: <PawnTicketIcon /> },
     ],
   },
   {
@@ -128,7 +125,6 @@ const BRANCH_NAV: NavGroup[] = [
     section: "TRANSACTION",
     items: [
       { label: "Pawn Transactions", href: "/employee/pawn-transaction", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/employee/pawn-ticket", icon: <PawnTicketIcon /> },
     ],
   },
   {
