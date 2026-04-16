@@ -106,10 +106,27 @@ export function TransactionActions({
     <div className="flex flex-wrap items-center justify-between gap-3">
       {/* Left — filter buttons */}
       <div className="flex flex-wrap items-center gap-2">
+        {/* All Filter */}
+        <button
+          onClick={() => onFilterChange?.("All")}
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition shadow-sm ${
+            activeFilter === "All"
+              ? "bg-zinc-800 text-white ring-2 ring-offset-1 ring-zinc-500"
+              : "bg-surface-secondary text-text-secondary hover:bg-surface-hover"
+          }`}
+        >
+          All
+        </button>
+
         {/* Renew — amber/orange solid */}
         <button
-          onClick={onRenewClick}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-orange-500 hover:bg-orange-600 ${activeFilter === "Renew" ? "ring-2 ring-offset-1 ring-orange-400" : "opacity-80 hover:opacity-100"}`}
+          onClick={() => {
+            onFilterChange?.("Renew");
+            onRenewClick?.();
+          }}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-orange-500 hover:bg-orange-600 ${
+            activeFilter === "Renew" ? "ring-2 ring-offset-1 ring-orange-400" : "opacity-80 hover:opacity-100"
+          }`}
         >
           {renewIcon}
           Renew
@@ -117,8 +134,13 @@ export function TransactionActions({
 
         {/* Sales / Transfer — purple solid */}
         <button
-          onClick={onSalesTransfer}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-purple-600 hover:bg-purple-700 ${activeFilter === "Sales / Transfer" ? "ring-2 ring-offset-1 ring-purple-400" : "opacity-80 hover:opacity-100"}`}
+          onClick={() => {
+            onFilterChange?.("Sales / Transfer");
+            onSalesTransfer?.();
+          }}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-purple-600 hover:bg-purple-700 ${
+            activeFilter === "Sales / Transfer" ? "ring-2 ring-offset-1 ring-purple-400" : "opacity-80 hover:opacity-100"
+          }`}
         >
           {salesIcon}
           Sales / Transfer
@@ -126,8 +148,13 @@ export function TransactionActions({
 
         {/* Buy Back — sky/blue solid */}
         <button
-          onClick={onBuyBack}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-sky-600 hover:bg-sky-700 ${activeFilter === "Buy Back" ? "ring-2 ring-offset-1 ring-sky-400" : "opacity-80 hover:opacity-100"}`}
+          onClick={() => {
+            onFilterChange?.("Buy Back");
+            onBuyBack?.();
+          }}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-sky-600 hover:bg-sky-700 ${
+            activeFilter === "Buy Back" ? "ring-2 ring-offset-1 ring-sky-400" : "opacity-80 hover:opacity-100"
+          }`}
         >
           {buyBackIcon}
           Buy Back
