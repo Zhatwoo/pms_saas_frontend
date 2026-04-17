@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
+import { useBranch } from "@/contexts/branch-context";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -181,7 +182,8 @@ function ViewModal({ item, onClose, onSaveRemarks }: {
 }
 
 export default function EmployeePawnedItemsPage() {
-  const branchIdent = "makati"; // This would come from user context in production
+  const { selectedBranch } = useBranch();
+  const branchIdent = selectedBranch.id;
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -209,6 +211,11 @@ export default function EmployeePawnedItemsPage() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!branchIdent || branchIdent === "__all__") {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
@@ -229,7 +236,7 @@ export default function EmployeePawnedItemsPage() {
       }
     }
     fetchData();
-  }, [category, status, searchQuery, currentPage]);
+  }, [branchIdent, category, status, searchQuery, currentPage]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {

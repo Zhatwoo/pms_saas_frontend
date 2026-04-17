@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
+import { useBranch } from "@/contexts/branch-context";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -51,7 +52,8 @@ const statusVariant: Record<string, "green" | "orange"> = {
 };
 
 export default function EmployeeItemsForSalePage() {
-  const branchIdent = "makati"; // This would come from user context in production
+  const { selectedBranch } = useBranch();
+  const branchIdent = selectedBranch.id;
 
   const [saleViewMode, setSaleViewMode] = useState<SaleViewMode>("current");
   const [category, setCategory] = useState("all");
@@ -69,6 +71,11 @@ export default function EmployeeItemsForSalePage() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!branchIdent || branchIdent === "__all__") {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
@@ -90,7 +97,7 @@ export default function EmployeeItemsForSalePage() {
       }
     }
     fetchData();
-  }, [category, status, searchQuery, saleViewMode, currentPage]);
+  }, [branchIdent, category, status, searchQuery, saleViewMode, currentPage]);
 
   return (
     <div className="space-y-3 pb-4">

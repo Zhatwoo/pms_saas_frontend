@@ -170,6 +170,52 @@ section[id] {
   animation: slowPulse 8s ease-in-out infinite;
 }
 
+@keyframes scanLine {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(150%);
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(260%);
+    opacity: 0;
+  }
+}
+
+@keyframes scanGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: scale(1.01);
+  }
+}
+
+.animate-scan-line {
+  animation: scanLine 2.6s linear infinite;
+}
+
+.animate-scan-glow {
+  animation: scanGlow 1.8s ease-in-out infinite;
+}
+
 .reveal-on-scroll {
   opacity: 0;
   transform: translateY(30px);

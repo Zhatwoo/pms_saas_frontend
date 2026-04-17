@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { api } from "@/lib/api";
-import { StatusBadge } from "./status-badge";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { BrowserQRCodeReader } from "@zxing/browser";
+import { api } from "@/lib/api";
+import { useBranch } from "@/contexts/branch-context";
+import { StatusBadge } from "./status-badge";
 
 interface InventoryAuditModalProps {
   isOpen: boolean;
@@ -16,80 +18,524 @@ interface ScannedItemDetails {
   branch: string;
   pawnDate: string;
   status: string;
+  amount?: number;
   originalPhoto?: string;
+  ownerIdPhoto?: string;
+  customerName?: string;
+  customerAddress?: string;
+  customerContact?: string;
+  customerIdPresented?: string;
+  scanPayload?: string;
+  serialNumber?: string;
+}
+
+interface ParsedScan {
+  rawValue: string;
+  itemId: string;
+  itemName?: string;
+  serialNumber?: string;
+}
+
+type CameraState = "loading" | "ready" | "unsupported" | "error";
+type ScanStage = "aligning" | "scanning" | "matched" | "duplicate" | "failed";
+
+interface InventoryTally {
+  totalInSystem: number;
+  totalScanned: number;
+  matched: number;
+  missingInVault: string[];
+  missingItems: Array<{
+    itemId: string;
+    itemName: string;
+    category: string;
+  }>;
+  extraInVault: string[];
+}
+
+type ZXingDecodeResult = {
+  getText: () => string;
+};
+
+type ZXingControls = {
+  stop: () => Promise<void>;
+};
+
+const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
+  Active: "green",
+  Redeemed: "blue",
+  Expired: "red",
+};
+
+function formatCurrency(value?: number | null) {
+  if (value == null || Number.isNaN(value)) {
+    return "N/A";
+  }
+
+  return `₱${Number(value).toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function decodeScanPayload(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function parseScanPayload(value: string): ParsedScan {
+  const rawValue = decodeScanPayload(value).trim();
+  const codeMatch = rawValue.match(/(?:^|\|)\s*Code:\s*([^|]+)/i);
+  const itemMatch = rawValue.match(/(?:^|\|)\s*Item:\s*([^|]+)/i);
+  const serialMatch = rawValue.match(/(?:^|\|)\s*SN:\s*([^|]+)/i);
+
+  const itemId = (codeMatch?.[1] ?? rawValue).trim();
+
+  return {
+    rawValue,
+    itemId,
+    itemName: itemMatch?.[1]?.trim(),
+    serialNumber: serialMatch?.[1]?.trim(),
+  };
+}
+
+function getCameraErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const message = typeof error.message === "string" ? error.message.trim() : "";
+    if (message) {
+      return message;
+    }
+  }
+
+  if (error && typeof error === "object") {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) {
+      return message.trim();
+    }
+  }
+
+  return "Unable to open the camera. Check permissions or use manual entry below.";
+}
+
+const INVENTORY_AUDIT_STORAGE_PREFIX = "pms-inventory-audit";
+
+interface InventoryAuditStorageState {
+  scannedItems: ScannedItemDetails[];
+  pendingItem: ScannedItemDetails | null;
+  detectedScan: ParsedScan | null;
+  currentScan: string;
 }
 
 export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalProps) {
+  const { selectedBranch } = useBranch();
   const [scannedItems, setScannedItems] = useState<ScannedItemDetails[]>([]);
   const [currentScan, setCurrentScan] = useState("");
+  const [detectedScan, setDetectedScan] = useState<ParsedScan | null>(null);
   const [pendingItem, setPendingItem] = useState<ScannedItemDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [cameraState, setCameraState] = useState<CameraState>("loading");
+  const [scanStage, setScanStage] = useState<ScanStage>("aligning");
+  const [cameraMessage, setCameraMessage] = useState("Preparing the camera...");
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+  const [selectedVerifiedItem, setSelectedVerifiedItem] = useState<ScannedItemDetails | null>(null);
+  const [rejectedScanItem, setRejectedScanItem] = useState<ScannedItemDetails | null>(null);
+  const [tally, setTally] = useState<InventoryTally | null>(null);
+  const [isCheckingTally, setIsCheckingTally] = useState(false);
+  const [tallyError, setTallyError] = useState("");
+  const [pendingPhotoBroken, setPendingPhotoBroken] = useState(false);
+  const [verifiedPhotoBroken, setVerifiedPhotoBroken] = useState(false);
+  const [hasLoadedPersistedState, setHasLoadedPersistedState] = useState(false);
 
-  // Auto-focus input for scanning
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const readerRef = useRef<BrowserQRCodeReader | null>(null);
+  const controlsRef = useRef<ZXingControls | null>(null);
+  const scanLockRef = useRef(false);
+  const scannedItemsRef = useRef<ScannedItemDetails[]>([]);
+  const pendingItemRef = useRef<ScannedItemDetails | null>(null);
+  const lastDecodedRawRef = useRef<string | null>(null);
+  const branchId = selectedBranch.id;
+  const persistenceKey = branchId && branchId !== "__all__" ? `${INVENTORY_AUDIT_STORAGE_PREFIX}:${branchId}` : null;
+
   useEffect(() => {
-    if (isOpen && !showCompletionConfirm && !pendingItem) {
-      inputRef.current?.focus();
-    }
-  }, [isOpen, showCompletionConfirm, pendingItem]);
+    scannedItemsRef.current = scannedItems;
+  }, [scannedItems]);
 
-  const handleScan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanId = currentScan.trim().toUpperCase();
-    if (!cleanId) return;
+  useEffect(() => {
+    pendingItemRef.current = pendingItem;
+  }, [pendingItem]);
 
-    if (scannedItems.some(i => i.itemId === cleanId)) {
-      setError("Item already scanned and verified.");
-      setCurrentScan("");
+  useEffect(() => {
+    setHasLoadedPersistedState(false);
+
+    if (!isOpen || !persistenceKey) {
       return;
     }
 
-    setIsLoading(true);
-    setError("");
     try {
-      const data = await api.get<ScannedItemDetails>(`/inventory/item/${cleanId}`);
-      if (data) {
-        setPendingItem(data);
+      const rawState = window.localStorage.getItem(persistenceKey);
+
+      if (!rawState) {
+        setScannedItems([]);
+        setPendingItem(null);
+        setDetectedScan(null);
         setCurrentScan("");
+        setHasLoadedPersistedState(true);
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || "Item not found in system.");
+
+      const savedState = JSON.parse(rawState) as Partial<InventoryAuditStorageState>;
+      setScannedItems(Array.isArray(savedState.scannedItems) ? savedState.scannedItems : []);
+      setPendingItem(savedState.pendingItem ?? null);
+      setDetectedScan(savedState.detectedScan ?? null);
+      setCurrentScan(savedState.currentScan ?? "");
+
+      if (savedState.pendingItem) {
+        setScanStage("matched");
+      }
+      setHasLoadedPersistedState(true);
+    } catch {
+      setScannedItems([]);
+      setPendingItem(null);
+      setDetectedScan(null);
       setCurrentScan("");
+      setHasLoadedPersistedState(true);
+    }
+  }, [isOpen, persistenceKey]);
+
+  useEffect(() => {
+    if (!isOpen || !persistenceKey || !hasLoadedPersistedState) {
+      return;
+    }
+
+    const state: InventoryAuditStorageState = {
+      scannedItems,
+      pendingItem,
+      detectedScan,
+      currentScan,
+    };
+
+    window.localStorage.setItem(persistenceKey, JSON.stringify(state));
+  }, [currentScan, detectedScan, hasLoadedPersistedState, isOpen, pendingItem, persistenceKey, scannedItems]);
+
+  useEffect(() => {
+    setPendingPhotoBroken(false);
+  }, [pendingItem?.ownerIdPhoto, pendingItem?.originalPhoto]);
+
+  useEffect(() => {
+    setVerifiedPhotoBroken(false);
+  }, [selectedVerifiedItem?.ownerIdPhoto, selectedVerifiedItem?.originalPhoto]);
+
+  const clearCameraLoop = useCallback(() => {
+    if (controlsRef.current) {
+      void controlsRef.current.stop();
+      controlsRef.current = null;
+    }
+
+    readerRef.current = null;
+    lastDecodedRawRef.current = null;
+
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.pause();
+      videoElement.srcObject = null;
+    }
+  }, []);
+
+  const resetPendingState = useCallback(() => {
+    setPendingItem(null);
+    setDetectedScan(null);
+    setCurrentScan("");
+    setError("");
+    lastDecodedRawRef.current = null;
+    setScanStage("aligning");
+  }, []);
+
+  const holdScanCooldown = useCallback((delay = 1200) => {
+    scanLockRef.current = true;
+    window.setTimeout(() => {
+      scanLockRef.current = false;
+    }, delay);
+  }, []);
+
+  const closeRejectedScan = useCallback(() => {
+    setRejectedScanItem(null);
+    resetPendingState();
+    holdScanCooldown();
+    setCameraMessage("Ready for the next QR code.");
+  }, [holdScanCooldown, resetPendingState]);
+
+  const loadItemFromScan = useCallback(async (rawValue: string) => {
+    const parsed = parseScanPayload(rawValue);
+    const cleanItemId = parsed.itemId.trim();
+
+    if (!cleanItemId) {
+      setError("The QR code did not include a valid item code.");
+      return;
+    }
+
+    if (scanLockRef.current || pendingItemRef.current) {
+      return;
+    }
+
+    const alreadyScanned = scannedItemsRef.current.some(
+      (item) => item.itemId.toUpperCase() === cleanItemId.toUpperCase(),
+    );
+
+    if (alreadyScanned) {
+      setDetectedScan(parsed);
+      setCurrentScan(cleanItemId);
+      setScanStage("duplicate");
+      setError("Item already scanned and verified.");
+      return;
+    }
+
+    scanLockRef.current = true;
+    setDetectedScan(parsed);
+    setCurrentScan(cleanItemId);
+    setIsLoading(true);
+    setScanStage("scanning");
+    setError("");
+
+    try {
+      const data = await api.get<ScannedItemDetails>(`/inventory/item/${encodeURIComponent(cleanItemId)}`);
+
+      if (String(data.status || "").toLowerCase() !== "active") {
+        setScanStage("failed");
+        setRejectedScanItem({
+          ...data,
+          scanPayload: parsed.rawValue,
+          serialNumber: parsed.serialNumber,
+        });
+        setPendingItem(null);
+        setError("Only active pawned items are accepted.");
+        return;
+      }
+
+      setPendingItem({
+        ...data,
+        scanPayload: parsed.rawValue,
+        serialNumber: parsed.serialNumber,
+      });
+      setScanStage("matched");
+    } catch (scanError) {
+      setScanStage("failed");
+      setError(scanError instanceof Error ? scanError.message : "Item not found in system.");
     } finally {
       setIsLoading(false);
+      window.setTimeout(() => {
+        scanLockRef.current = false;
+      }, 700);
     }
-  };
+  }, []);
 
-  const verifyItem = () => {
-    if (pendingItem) {
-      setScannedItems([pendingItem, ...scannedItems]);
-      setPendingItem(null);
+  useEffect(() => {
+    if (!isOpen || showCompletionConfirm) {
+      clearCameraLoop();
+      setCameraState("loading");
+      setCameraMessage("Preparing the camera...");
+      setScanStage("aligning");
+      setSelectedVerifiedItem(null);
+      setRejectedScanItem(null);
+      return;
     }
-  };
 
-  const removeItem = (id: string) => {
-    setScannedItems(scannedItems.filter(item => item.id !== id));
-  };
+    let cancelled = false;
+
+    const startCamera = async () => {
+      setCameraState("loading");
+      setCameraMessage("Requesting camera access...");
+
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setCameraState("unsupported");
+          setCameraMessage("This browser cannot open a camera feed. Use manual item entry below.");
+          return;
+        }
+
+        if (!videoRef.current) {
+          setCameraState("error");
+          setCameraMessage("Camera preview is not ready.");
+          return;
+        }
+
+        const reader = new BrowserQRCodeReader();
+        readerRef.current = reader;
+        setCameraState("ready");
+        setCameraMessage("Point the QR code inside the frame and hold it steady.");
+
+        const controls = await reader.decodeFromConstraints(
+          {
+            audio: false,
+            video: {
+              facingMode: { ideal: "environment" },
+            },
+          },
+          videoRef.current,
+          (result: ZXingDecodeResult | undefined, error: unknown) => {
+            if (cancelled) {
+              return;
+            }
+
+            if (result) {
+              const rawValue = result.getText().trim();
+
+              if (!rawValue || rawValue === lastDecodedRawRef.current) {
+                return;
+              }
+
+              lastDecodedRawRef.current = rawValue;
+              void loadItemFromScan(rawValue);
+              return;
+            }
+
+            if (error instanceof Error && error.name !== "NotFoundException") {
+              setCameraMessage(getCameraErrorMessage(error));
+            }
+          },
+        );
+
+        controlsRef.current = controls;
+      } catch (cameraError) {
+        setCameraState("error");
+        setCameraMessage(getCameraErrorMessage(cameraError));
+      }
+    };
+
+    void startCamera();
+
+    return () => {
+      cancelled = true;
+      clearCameraLoop();
+    };
+  }, [clearCameraLoop, isOpen, loadItemFromScan, showCompletionConfirm]);
+
+  const handleManualScan = useCallback(
+    async (event: React.FormEvent) => {
+      event.preventDefault();
+      const value = currentScan.trim();
+
+      if (!value) {
+        return;
+      }
+
+      await loadItemFromScan(value);
+    },
+    [currentScan, loadItemFromScan],
+  );
+
+  const verifyItem = useCallback(() => {
+    if (!pendingItem) {
+      return;
+    }
+
+    setScannedItems((previous) => [pendingItem, ...previous]);
+    resetPendingState();
+    holdScanCooldown();
+    setSelectedVerifiedItem(null);
+  }, [holdScanCooldown, pendingItem, resetPendingState]);
+
+  const handleConfirmCompletion = useCallback(() => {
+    if (persistenceKey) {
+      window.localStorage.removeItem(persistenceKey);
+    }
+
+    setHasLoadedPersistedState(false);
+    setScannedItems([]);
+    setPendingItem(null);
+    setDetectedScan(null);
+    setCurrentScan("");
+    onConfirm();
+  }, [onConfirm, persistenceKey]);
+
+  const discardPendingItem = useCallback(() => {
+    resetPendingState();
+    holdScanCooldown();
+    setCameraMessage("Ready for the next QR code.");
+  }, [holdScanCooldown, resetPendingState]);
+
+  const branchReady = branchId && branchId !== "__all__";
+
+  useEffect(() => {
+    if (!isOpen || showCompletionConfirm) {
+      return;
+    }
+
+    if (!branchReady) {
+      setTally(null);
+      setTallyError("Select a single branch before completing the checklist.");
+      return;
+    }
+
+    let cancelled = false;
+
+    const refreshTally = async () => {
+      setIsCheckingTally(true);
+      setTallyError("");
+
+      try {
+        const data = await api.post<InventoryTally>("/inventory/pawned/qr-tally", {
+          branch_id: branchId,
+          scanned_item_ids: scannedItems.map((item) => item.itemId),
+        });
+
+        if (!cancelled) {
+          setTally(data);
+        }
+      } catch (tallyException) {
+        if (!cancelled) {
+          setTally(null);
+          setTallyError(
+            tallyException instanceof Error
+              ? tallyException.message
+              : "Unable to refresh verification checklist.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsCheckingTally(false);
+        }
+      }
+    };
+
+    void refreshTally();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [branchId, branchReady, isOpen, scannedItems, showCompletionConfirm]);
+
+  const canComplete = Boolean(
+    tally &&
+      tally.totalInSystem > 0 &&
+      tally.missingInVault.length === 0 &&
+      tally.extraInVault.length === 0,
+  );
+
+  const completionLabel = tally
+    ? `${tally.matched}/${tally.totalInSystem} verified`
+    : "0 verified";
 
   if (!isOpen) return null;
 
   if (showCompletionConfirm) {
     return (
-      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-lg">
-        <div className="w-full max-w-sm scale-in-center rounded-3xl bg-surface p-8 shadow-2xl border border-emerald-500/20 text-center">
+      <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 px-4 backdrop-blur-xl">
+        <div className="w-full max-w-sm scale-in-center rounded-3xl border border-emerald-500/20 bg-surface p-8 text-center shadow-2xl">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <h2 className="text-2xl font-black text-text-primary mb-2">Audit Complete!</h2>
-          <p className="text-sm text-text-tertiary mb-8">
-            You have successfully scanned {scannedItems.length} items. All items are accounted for.
+          <h2 className="mb-2 text-2xl font-black text-text-primary">Audit Complete!</h2>
+          <p className="mb-8 text-sm text-text-tertiary">
+            You have successfully verified {scannedItems.length} items. All branch inventory items are accounted for.
           </p>
           <button
-            onClick={onConfirm}
+            onClick={handleConfirmCompletion}
             className="w-full rounded-2xl bg-emerald-700 py-4 text-sm font-bold text-white shadow-xl shadow-emerald-700/20 transition-all hover:bg-emerald-800 hover:scale-[1.02] active:scale-95"
           >
             Finish & Open Dashboard
@@ -99,135 +545,582 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
     );
   }
 
+  const cameraStatusLabel =
+    cameraState === "ready"
+      ? "Camera live"
+      : cameraState === "loading"
+        ? "Starting camera"
+        : cameraState === "unsupported"
+          ? "Manual mode"
+          : "Camera issue";
+
+  const scanStageLabel =
+    scanStage === "aligning"
+      ? "Aligning frame"
+      : scanStage === "scanning"
+        ? "Scanning item"
+        : scanStage === "matched"
+          ? "Item matched"
+          : scanStage === "duplicate"
+            ? "Already verified"
+            : "Scan failed";
+
+  const scanStageTone =
+    scanStage === "aligning"
+      ? "text-emerald-200 border-emerald-300/30 bg-emerald-400/10"
+      : scanStage === "scanning"
+        ? "text-amber-100 border-amber-300/30 bg-amber-400/10"
+        : scanStage === "matched"
+          ? "text-emerald-100 border-emerald-300/30 bg-emerald-400/10"
+          : "text-rose-100 border-rose-300/30 bg-rose-400/10";
+
+  const tallySummary = tally
+    ? `${tally.matched} of ${tally.totalInSystem} items verified`
+    : branchReady
+      ? "Checklist syncing"
+      : "Select one branch to sync the checklist";
+
+  const activeCompletionBlocked = !canComplete || !branchReady || isCheckingTally;
+
+  const activeItem = pendingItem ?? null;
+  const ownerPhoto = activeItem?.ownerIdPhoto || activeItem?.originalPhoto || "";
+  const cameraFields = [
+    { label: "Item ID", value: activeItem?.itemId || detectedScan?.itemId || "N/A" },
+    { label: "Item Name", value: activeItem?.itemName || detectedScan?.itemName || "N/A" },
+    { label: "Category", value: activeItem?.category || "N/A" },
+    { label: "Amount", value: formatCurrency(activeItem?.amount) },
+    { label: "Branch", value: activeItem?.branch || "N/A" },
+    { label: "Pawn Date", value: activeItem?.pawnDate || "N/A" },
+    { label: "Status", value: activeItem?.status || "N/A" },
+  ];
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md px-4">
-      <div className="w-full max-w-2xl scale-in-center rounded-3xl bg-surface p-8 shadow-2xl border border-border-main overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-black text-text-primary leading-tight">Inventory Mandatory Scan</h2>
-            <p className="text-xs text-text-tertiary">Daily physical inventory audit required to open operations.</p>
-          </div>
-          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 border border-emerald-100">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold text-emerald-700">{scannedItems.length} Verified</span>
-          </div>
-        </div>
-
-        {pendingItem ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-emerald-50/50 rounded-3xl mb-8 border border-emerald-100 scale-in-center">
-             <div className="relative h-40 w-40 mb-6 group">
-                <div className="absolute inset-0 rounded-2xl bg-emerald-200 animate-ping opacity-20" />
-                <div className="relative h-full w-full rounded-2xl bg-white p-2 shadow-xl border border-emerald-200">
-                   {pendingItem.originalPhoto ? (
-                      <Image src={pendingItem.originalPhoto} alt={pendingItem.itemName} width={160} height={160} className="rounded-xl object-cover h-full w-full" />
-                   ) : (
-                      <div className="h-full w-full flex flex-col items-center justify-center text-emerald-300">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                        <p className="text-[10px] font-bold uppercase mt-2">No Photo</p>
-                      </div>
-                   )}
-                </div>
-             </div>
-             <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest mb-1">{pendingItem.itemId}</p>
-             <h3 className="text-xl font-black text-text-primary mb-1">{pendingItem.itemName}</h3>
-             <div className="flex items-center gap-2 mb-6">
-                <span className="text-xs font-bold text-text-tertiary">{pendingItem.category}</span>
-                <span className="h-1 w-1 rounded-full bg-text-muted" />
-                <span className="text-xs font-bold text-text-tertiary">{pendingItem.branch}</span>
-             </div>
-             
-             <div className="flex gap-4 w-full max-w-sm">
-                <button 
-                  onClick={() => setPendingItem(null)}
-                  className="flex-1 py-3 rounded-2xl border border-border-main text-xs font-bold text-text-secondary hover:bg-white transition-all active:scale-95"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={verifyItem}
-                  className="flex-1 py-3 rounded-2xl bg-emerald-700 text-xs font-bold text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95"
-                >
-                  Complete & Verify
-                </button>
-             </div>
-          </div>
-        ) : (
-          <>
-            <form onSubmit={handleScan} className="mb-6 relative">
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-600">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
-                </div>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  placeholder="Scan Barcode or Type Item ID..."
-                  value={currentScan}
-                  onChange={(e) => setCurrentScan(e.target.value)}
-                  disabled={isLoading}
-                  className={`w-full rounded-2xl border-2 ${error ? "border-rose-500 bg-rose-50/50" : "border-border-main bg-surface-secondary"} py-5 pl-14 pr-32 text-lg font-bold text-text-primary outline-none focus:border-emerald-500 transition-all shadow-inner`}
-                />
-                <button
-                  type="submit"
-                  disabled={isLoading || !currentScan.trim()}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 px-6 py-2.5 text-xs font-bold text-white transition-all hover:bg-black disabled:opacity-50"
-                >
-                  {isLoading ? "Searching..." : "Scan Item"}
-                </button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-3 py-3 backdrop-blur-xl lg:px-6 lg:py-6">
+      <div className="h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl">
+        <div className="grid h-full min-h-0 lg:grid-cols-[1.25fr_.88fr]">
+          <section className="relative flex min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.18),_transparent_40%),linear-gradient(180deg,_#03150f_0%,_#07140f_100%)] p-4 text-white lg:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-200/70">Opening Workflow</p>
+                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Inventory QR Scan</h2>
+                <p className="mt-2 max-w-xl text-xs leading-5 text-white/70 lg:text-sm">
+                  The camera opens automatically so you can scan each pawned item QR code before starting the day.
+                </p>
               </div>
-              {error && <p className="absolute -bottom-6 left-2 text-[10px] font-bold text-rose-600 italic">{error}</p>}
-            </form>
 
-            <div className="flex-1 overflow-y-auto space-y-2 mb-8 pr-2 custom-scrollbar">
-              {scannedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
-                  <div className="mb-4 rounded-full bg-surface-tertiary p-6 border-2 border-dashed border-border-main">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3" /><path d="M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" /><circle cx="12" cy="12" r="3" />
+              <div className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-[10px] font-bold text-emerald-100 lg:px-4 lg:text-xs">
+                {scannedItems.length} Verified
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/60 lg:mt-5 lg:text-xs">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${cameraState === "ready" ? "bg-emerald-400 animate-pulse" : cameraState === "loading" ? "bg-amber-300 animate-pulse" : cameraState === "unsupported" ? "bg-sky-300" : "bg-rose-400"}`}
+              />
+              <span>{cameraStatusLabel}</span>
+            </div>
+
+            <div className="relative mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/30 shadow-[0_30px_90px_rgba(0,0,0,0.35)] lg:mt-5">
+              <div className="relative aspect-[16/10] w-full lg:aspect-[16/9]">
+                <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" autoPlay playsInline muted />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/5 to-black/70" />
+
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <div className={`animate-scan-glow relative h-[68%] w-[78%] rounded-[1.75rem] border bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.18)] ${scanStage === "failed" ? "border-rose-300/80" : scanStage === "duplicate" ? "border-amber-300/80" : "border-emerald-300/80"}`}>
+                    <span className={`absolute left-0 top-0 h-8 w-8 -translate-x-1 -translate-y-1 rounded-tl-[1.5rem] border-l-2 border-t-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
+                    <span className={`absolute right-0 top-0 h-8 w-8 translate-x-1 -translate-y-1 rounded-tr-[1.5rem] border-r-2 border-t-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
+                    <span className={`absolute bottom-0 left-0 h-8 w-8 -translate-x-1 translate-y-1 rounded-bl-[1.5rem] border-b-2 border-l-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
+                    <span className={`absolute bottom-0 right-0 h-8 w-8 translate-x-1 translate-y-1 rounded-br-[1.5rem] border-b-2 border-r-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
+
+                    {(cameraState === "ready" || cameraState === "loading") && (
+                      <span
+                        className={`animate-scan-line absolute left-[12%] right-[12%] top-0 h-0.5 rounded-full ${scanStage === "failed" ? "bg-rose-300" : scanStage === "duplicate" ? "bg-amber-300" : "bg-emerald-300"}`}
+                      />
+                    )}
+
+                    <div className="absolute inset-x-6 top-6 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.28em] text-white/60">
+                      <span>QR Scan Window</span>
+                      <span>{scanStageLabel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <div className="mx-auto max-w-lg px-1 text-center text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
+                    <p className="text-sm font-bold">{cameraMessage}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/60">
+                      Keep the QR code inside the frame until the item card appears.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm custom-scrollbar">
+              {(pendingItem || detectedScan) && (
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.35em] text-white/45">Pawned Item Details</p>
+                      <h3 className="mt-1 text-sm font-black text-white/90">Key fields from the verified QR payload</h3>
+                    </div>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white/60">
+                      {activeItem ? "Fetched" : "Decoded"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {cameraFields.map((field) => (
+                      <div key={field.label} className="rounded-2xl border border-white/10 bg-white/8 p-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/50">{field.label}</p>
+                        <p className="mt-2 break-words text-sm font-bold text-white">{field.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 rounded-2xl border border-white/10 bg-white/8 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/50">QR Payload</p>
+                    <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap break-words text-[12px] leading-5 font-semibold text-white">
+                      {activeItem?.scanPayload || detectedScan?.rawValue || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!pendingItem && !detectedScan && (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-white/70">
+                  <p className="text-sm font-bold">Waiting for QR input</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.24em] text-white/45">The decoded payload will appear here after scanning</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <aside className="flex h-full min-h-0 flex-col overflow-y-auto bg-white p-4 lg:p-6 custom-scrollbar">
+            <div className="rounded-3xl border border-zinc-100 bg-zinc-50 p-4 shadow-sm lg:p-5">
+              <div className="flex items-start justify-between gap-3">
+                  <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Manual fallback</p>
+                  <h3 className="mt-1 text-lg font-black text-zinc-900 lg:text-xl">Scan or type an item code</h3>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500 lg:text-sm">
+                    The QR payload is parsed automatically. If needed, paste the code value from the QR data string.
+                  </p>
+                </div>
+                <div className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">
+                  Auto scan first
+                </div>
+              </div>
+
+              <form onSubmit={handleManualScan} className="mt-4">
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
                   </div>
-                  <p className="text-sm font-bold">Waiting for input...</p>
-                  <p className="text-[10px] font-medium uppercase tracking-widest mt-1">Ready to receive barcode signal</p>
-                </div>
-              ) : (
-                scannedItems.map((item, index) => (
-                  <div 
-                    key={item.id} 
-                    className="flex items-center justify-between rounded-xl border border-border-subtle bg-surface-secondary p-4 hover:border-emerald-500/30 transition-all group"
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Code: 10-jclb-11543 | Item: oppo a94 | SN: ..."
+                    value={currentScan}
+                    onChange={(event) => setCurrentScan(event.target.value)}
+                    disabled={isLoading}
+                    className={`w-full rounded-2xl border-2 ${error ? "border-rose-500 bg-rose-50/50" : "border-emerald-200 bg-white"} py-4 pl-12 pr-32 text-sm font-bold text-zinc-900 outline-none transition-all focus:border-emerald-500`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading || !currentScan.trim()}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-black disabled:opacity-50"
                   >
-                    <div className="flex items-center gap-4">
-                      <span className="text-[10px] font-black text-emerald-600/50 w-6 text-center">{scannedItems.length - index}</span>
-                      <div>
-                        <p className="text-sm font-bold text-text-primary tracking-tight uppercase">{item.itemId}</p>
-                        <p className="text-[10px] text-text-tertiary font-medium">{item.itemName}</p>
+                    {isLoading ? "Scanning..." : "Scan Item"}
+                  </button>
+                </div>
+                {error && <p className="mt-2 text-[10px] font-bold italic text-rose-600">{error}</p>}
+              </form>
+            </div>
+
+            <div className="mt-4 rounded-3xl border border-zinc-100 bg-white p-4 shadow-sm lg:mt-5 lg:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Checklist progress</p>
+                  <h4 className="mt-1 text-base font-black text-zinc-900 lg:text-lg">{completionLabel}</h4>
+                </div>
+                <StatusBadge label={cameraStatusLabel} variant={statusVariant[pendingItem?.status || ""] || "blue"} />
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4">
+                <div className="flex items-center justify-between gap-3 text-xs font-bold text-zinc-600">
+                  <span>{tallySummary}</span>
+                  <span>{isCheckingTally ? "Syncing" : canComplete ? "Ready" : "Locked"}</span>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
+                  <div
+                    className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                    style={{
+                      width:
+                        tally && tally.totalInSystem > 0
+                          ? `${Math.min(100, Math.round((tally.matched / tally.totalInSystem) * 100))}%`
+                          : "0%",
+                    }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                  <div className="rounded-xl bg-zinc-50 p-3 text-center">
+                    <div className="text-sm font-black text-zinc-900">{scannedItems.length}</div>
+                    Verified
+                  </div>
+                  <div className="rounded-xl bg-zinc-50 p-3 text-center">
+                    <div className="text-sm font-black text-zinc-900">{tally?.totalInSystem ?? "-"}</div>
+                    In branch
+                  </div>
+                  <div className="rounded-xl bg-zinc-50 p-3 text-center">
+                    <div className="text-sm font-black text-zinc-900">{tally?.missingInVault?.length ?? "-"}</div>
+                    Missing
+                  </div>
+                </div>
+                <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                      {tally?.missingItems?.length ?? 0} not yet scanned
+                    </span>
+                  </div>
+                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                    {tally?.missingItems?.length ? (
+                      tally.missingItems.map((item) => (
+                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2">
+                          <p className="text-sm font-black text-zinc-900">{item.itemName}</p>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                            {item.category}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center">
+                        <p className="text-xs font-bold text-zinc-600">No missing items</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {tallyError && <p className="mt-3 text-xs font-semibold text-rose-600">{tallyError}</p>}
+              </div>
+
+              {pendingItem ? (
+                <div className="mt-4 space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-sm">
+                      {ownerPhoto && !pendingPhotoBroken ? (
+                        <Image
+                          src={ownerPhoto}
+                          alt={pendingItem.customerName || pendingItem.itemName}
+                          width={80}
+                          height={112}
+                          unoptimized
+                          className="h-full w-full rounded-xl object-cover object-center"
+                          onError={() => setPendingPhotoBroken(true)}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center text-zinc-300">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          <p className="mt-1 text-[10px] font-bold uppercase text-zinc-400">No ID Photo</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-600">Owner / Customer</p>
+                      <h3 className="mt-1 break-words text-lg font-black text-zinc-900">{pendingItem.customerName || "Unknown owner"}</h3>
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">ID Type:</p>
+                          <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600">
+                            {pendingItem.customerIdPresented || "ID not captured"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Address:</p>
+                          <p className="mt-0.5 text-xs leading-5 text-zinc-600">
+                            {pendingItem.customerAddress || "Customer address unavailable."}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Contact Number:</p>
+                          <p className="mt-0.5 text-xs font-semibold text-zinc-600">
+                            {pendingItem.customerContact || "No contact number"}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => removeItem(item.id)}
-                      className="opacity-0 group-hover:opacity-100 rounded-lg p-2 text-rose-500 hover:bg-rose-50 transition-all"
+                  </div>
+
+                  <div className="rounded-2xl bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Serial number</p>
+                    <p className="mt-2 break-words text-sm font-bold text-zinc-800">{pendingItem.serialNumber || detectedScan?.serialNumber || "N/A"}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={discardPendingItem}
+                      className="flex-1 rounded-2xl border border-zinc-200 bg-white py-3 text-xs font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95"
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
+                      Rescan
+                    </button>
+                    <button
+                      onClick={verifyItem}
+                      className="flex-1 rounded-2xl bg-emerald-700 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95"
+                    >
+                      Verify Item
                     </button>
                   </div>
-                ))
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-zinc-300 bg-white text-zinc-300">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                      <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-bold text-zinc-900">Waiting for a QR code</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.24em] text-zinc-400">Align the item QR inside the camera frame</p>
+                </div>
               )}
             </div>
 
-            <div className="flex gap-4">
+            <div className="mt-5 flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Verified items</p>
+                  <h4 className="mt-1 text-lg font-black text-zinc-900">{scannedItems.length} accounted for</h4>
+                </div>
+                <div className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
+                  {scannedItems.length} scanned
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-2 overflow-y-auto p-4 custom-scrollbar">
+                {scannedItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-10 text-center text-zinc-400">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3" />
+                      <path d="M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <p className="mt-3 text-sm font-bold text-zinc-700">No items verified yet</p>
+                    <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]">The list will populate after the first successful scan</p>
+                  </div>
+                ) : (
+                  scannedItems.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSelectedVerifiedItem(item)}
+                      className="flex w-full items-center justify-between rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50/40 active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100/60 text-xs font-black text-emerald-700">
+                          {scannedItems.length - index}
+                        </span>
+                        <div>
+                          <p className="text-sm font-black uppercase tracking-tight text-zinc-900">{item.itemId}</p>
+                          <p className="text-[10px] font-medium text-zinc-500">{item.itemName}</p>
+                        </div>
+                      </div>
+                      <span
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 transition-colors hover:text-emerald-700"
+                        aria-hidden="true"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5">
+              <div className="flex items-start gap-3 text-amber-600">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <p className="text-xs font-bold leading-relaxed text-zinc-700">
+                  Access to inventory tools stays locked until this scan is submitted and confirmed.
+                </p>
+              </div>
+
               <button
-                onClick={() => setShowCompletionConfirm(true)}
-                disabled={scannedItems.length === 0}
-                className="flex-1 rounded-2xl bg-zinc-900 py-4 text-sm font-bold text-white shadow-xl transition-all hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => {
+                  if (!activeCompletionBlocked) {
+                    setShowCompletionConfirm(true);
+                  }
+                }}
+                disabled={activeCompletionBlocked}
+                className="mt-4 w-full rounded-2xl bg-zinc-900 py-4 text-sm font-black text-white shadow-2xl transition-all hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Complete Inventory Count
               </button>
+              <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
+                {activeCompletionBlocked ? "Verify every branch item before finishing." : "All items verified. You can complete the checklist."}
+              </p>
             </div>
-          </>
+          </aside>
+        </div>
+
+        {selectedVerifiedItem && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 py-4 backdrop-blur-xl">
+            <div className="relative w-full max-w-2xl rounded-[1.75rem] border border-white/10 bg-surface p-5 shadow-2xl lg:p-6">
+              <button
+                type="button"
+                aria-label="Close item details"
+                onClick={() => setSelectedVerifiedItem(null)}
+                className="absolute right-4 top-4 rounded-full border border-zinc-200 bg-white p-2 text-zinc-600 transition-all hover:bg-zinc-50 hover:text-zinc-900"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+
+              <div className="pr-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.35em] text-zinc-400">Verified item details</p>
+                <h3 className="mt-2 text-2xl font-black text-zinc-900">{selectedVerifiedItem.itemId}</h3>
+                <p className="mt-1 text-sm font-semibold text-zinc-500">{selectedVerifiedItem.itemName}</p>
+              </div>
+
+              <div className="mt-5 grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
+                <div className="rounded-3xl border border-zinc-100 bg-zinc-50 p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+                      {((selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto) && !verifiedPhotoBroken) ? (
+                        <Image
+                          src={selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto || ""}
+                          alt={selectedVerifiedItem.customerName || selectedVerifiedItem.itemName}
+                          width={80}
+                          height={112}
+                          unoptimized
+                          className="h-full w-full rounded-xl object-cover object-center"
+                          onError={() => setVerifiedPhotoBroken(true)}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-zinc-300">
+                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Owner / Customer</p>
+                      <h4 className="mt-1 break-words text-lg font-black text-zinc-900">{selectedVerifiedItem.customerName || "Unknown owner"}</h4>
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">ID Type:</p>
+                          <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-600">
+                            {selectedVerifiedItem.customerIdPresented || "ID not captured"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Address:</p>
+                          <p className="mt-0.5 text-xs leading-5 text-zinc-600">
+                            {selectedVerifiedItem.customerAddress || "Customer address unavailable."}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Contact Number:</p>
+                          <p className="mt-0.5 text-xs font-semibold text-zinc-600">
+                            {selectedVerifiedItem.customerContact || "No contact number"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-zinc-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Amount</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900">{formatCurrency(selectedVerifiedItem.amount)}</p>
+                    </div>
+                    <div className="rounded-2xl bg-zinc-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Serial</p>
+                      <p className="mt-2 break-words text-sm font-black text-zinc-900">{selectedVerifiedItem.serialNumber || detectedScan?.serialNumber || "N/A"}</p>
+                    </div>
+                    <div className="rounded-2xl bg-zinc-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Branch</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.branch || "N/A"}</p>
+                    </div>
+                    <div className="rounded-2xl bg-zinc-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Pawn date</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.pawnDate || "N/A"}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Status</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.status || "N/A"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
+
+        {rejectedScanItem && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 px-4 py-4 backdrop-blur-xl">
+            <div className="w-full max-w-md rounded-[1.75rem] border border-rose-200 bg-white p-6 shadow-2xl">
+              <div className="flex items-center gap-3 text-rose-600">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-rose-100">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-rose-400">Scan rejected</p>
+                  <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items are accepted</h3>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
+                <p className="text-sm font-bold text-zinc-900">{rejectedScanItem.itemName || rejectedScanItem.itemId}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                  {rejectedScanItem.category || "Uncategorized"}
+                </p>
+              </div>
+
+              <p className="mt-4 text-sm leading-6 text-zinc-600">
+                This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item to continue.
+              </p>
+
+              <button
+                type="button"
+                onClick={closeRejectedScan}
+                className="mt-6 w-full rounded-2xl bg-zinc-900 py-3.5 text-sm font-black text-white transition-all hover:bg-black active:scale-95"
+              >
+                Close and Rescan
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
