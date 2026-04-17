@@ -443,43 +443,28 @@ export function NewPawnModal({
                         <option value="UMID">UMID</option>
                       </optgroup>
                       <optgroup label="Other">
-                        <option value="Company ID">Company ID</option>
-                        <option value="School ID">School ID</option>
                         <option value="No ID / None">No ID / None — Take Customer Photo</option>
                       </optgroup>
                     </select>
                   </div>
 
-                  {/* Camera capture when No ID selected */}
-                  {form.idPresented === "No ID / None" && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">⚠ No ID — Capture Customer Photo</span>
-                      </div>
-                      <div className="w-48">
-                        <PhotoUpload 
-                          label="Customer Photo" 
-                          onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
-                        />
-                      </div>
+                  {/* Camera capture section */}
+                  <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                       ID & Verification Scan
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <PhotoUpload 
+                        label="ID Photo / Serial" 
+                        onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                      />
+                      <PhotoUpload 
+                        label="Customer Facing View" 
+                        onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
+                      />
                     </div>
-                  )}
-
-                  {form.idPresented !== "No ID / None" && (
-                    <div className="space-y-3">
-                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Verification Photos</span>
-                       <div className="grid grid-cols-2 gap-3">
-                        <PhotoUpload 
-                          label="Front View" 
-                          onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
-                        />
-                        <PhotoUpload 
-                          label="Serial No / ID" 
-                          onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
 

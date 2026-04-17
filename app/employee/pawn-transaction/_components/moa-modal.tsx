@@ -31,16 +31,17 @@ interface MoaModalProps {
   isLoading: boolean;
 }
 
-const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every TEN (10) days.
-2. The Seller shall advise the Buyer of any change of address or mobile number.
-3. This is not a PAWN; this is an extended purchase sale known as the buyback agreement.
-4. JCLB BUY BACK SHOP OPC has the right to open the sealed item and put on display and dispose this item after the extension period expires.
-5. Unpurchased item and all penalties become binding to this MOA.
-6. The seller declares all information and submitted documents are true and authentic.
-7. There are no FINANCE or INTEREST charges connected with this MOA.
-8. In case of loss of this MOA, bring a valid ID and notarized affidavit before buyback period expires.
-9. Representative's signature is required when authorization from owner is used.
-10. Seller confirms ownership and freedom from liens and encumbrances.`;
+const DEFAULT_TERMS_TEXT = `TERMS AND CONDITIONS (GADGETS):
+1. INTEREST SCHEDULE:
+   - Day 1 to 5: 5% Storage Fee
+   - Day 10 (1st Maturity): 10% Storage Fee
+   - Day 20 (2nd Maturity): 20% Storage Fee
+   - Day 30 (3rd Maturity): 30% Storage Fee
+   - Day 31 to 34 (Grace Period): 40% Storage Fee
+2. EXPIRED / REMATADO: After Day 34, JCLB shop has the right to dispose the item.
+3. This is an extended purchase sale agreement (BUYBACK), not a pawn loan.
+4. Seller must advise the shop of any changes in address or contact information.
+5. In case of loss of this MOA, present valid ID and notarized affidavit promptly.`;
 
 export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaModalProps) {
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
@@ -85,8 +86,15 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
   const addDays = (d: Date, days: number) => {
     const res = new Date(d);
     res.setDate(res.getDate() + days);
-    return res.toLocaleDateString();
+    return res.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
+
+  const maturityDates = [
+    addDays(baseDate, 10),
+    addDays(baseDate, 20),
+    addDays(baseDate, 30),
+  ];
+  const gracePeriodEnd = addDays(baseDate, 34);
 
   const lineInputClass = "border-b border-zinc-400 bg-transparent px-1 text-[10px] text-zinc-900 outline-none w-full h-4";
 
@@ -221,7 +229,7 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
                 </div>
                 <div className="grid grid-cols-[80px_1fr] items-center gap-2">
                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.memory || "Memory:"}</span>
-                   <span className="text-zinc-700 border-b border-zinc-300">{data.remarks?.slice(0, 30) || "---"}</span>
+                   <span className="text-zinc-700 border-b border-zinc-300">{data.memory || "---"}</span>
                 </div>
               </div>
             </div>
@@ -235,15 +243,22 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
                 <span>{labels?.extendHeader || "Extend"}</span>
                 <span>{labels?.signHeader || "Sign"}</span>
              </div>
-             {[1, 2, 3].map((p) => (
-               <div key={p} className="grid grid-cols-5 gap-4">
+             {maturityDates.map((_, idx) => (
+               <div key={idx} className="grid grid-cols-5 gap-4">
+                  <div className="h-6 border-b border-zinc-300 bg-white/30"></div>
                   <div className="h-6 border-b border-zinc-300 bg-white/50"></div>
-                  <div className="h-6 border-b border-zinc-300 bg-white/50 text-center font-bold text-zinc-400 flex items-center justify-center opacity-30">₱{storageFee}</div>
-                  <div className="h-6 border-b border-zinc-300 bg-zinc-50 flex items-center justify-center font-bold text-zinc-500">{p}{p===1?'st':p===2?'nd':'rd'} Period</div>
+                  <div className="h-6 border-b border-zinc-300 bg-zinc-50 flex items-center justify-center font-bold text-zinc-500">{idx + 1}{idx === 0?'st':idx === 1?'nd':'rd'} Period</div>
                   <div className="h-6 border-b border-zinc-300 bg-white/50"></div>
                   <div className="h-6 border-b border-zinc-300 bg-white/50"></div>
                </div>
              ))}
+             <div className="grid grid-cols-5 gap-4">
+                <div className="h-6 border-b border-zinc-300 bg-white/30"></div>
+                <div className="h-6 border-b border-zinc-300 bg-white/50"></div>
+                <div className="h-6 border-b border-zinc-300 flex items-center justify-center font-black text-zinc-400 text-[7px]">GRACE PERIOD</div>
+                <div className="h-6 border-b border-zinc-300"></div>
+                <div className="h-6 border-b border-zinc-300"></div>
+             </div>
           </div>
 
           <div className="bg-emerald-50 border border-emerald-100 p-2 text-center text-[9px] font-black uppercase tracking-widest text-emerald-800 italic">

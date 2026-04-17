@@ -73,18 +73,11 @@ export function TransactionDetailsModal({ isOpen, transaction, onClose }: Transa
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <InfoBlock label="Date" value={transaction.date} />
           <InfoBlock label="Time" value={formatTimeWithAmPm(transaction.time)} />
-          <InfoBlock label="Buy Back" value={transaction.buyBack !== "0" ? `₱${Number(transaction.buyBack).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "₱0.00"} />
-          <InfoBlock label="Buy Out" value={transaction.buyOut !== "0" ? `₱${Number(transaction.buyOut).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "₱0.00"} />
-          <InfoBlock label="Sold" value={transaction.sold !== "0" ? `₱${Number(transaction.sold).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : "₱0.00"} />
-          <InfoBlock label="Cash In" value={transaction.cashIn} />
-          <InfoBlock label="Cash Out" value={transaction.cashOut} />
-          <InfoBlock label="Return" value={transaction.returnVal} />
           <InfoBlock label="Unit" value={transaction.unit} />
           <InfoBlock label="Unit Code" value={transaction.unitCode} />
           <InfoBlock label="Pawn" value={transaction.pawn} />
           <InfoBlock label="Storage" value={transaction.storage} />
           <InfoBlock label="Related Pawned Item ID" value={transaction.relatedPawnedItemId || "—"} />
-          <InfoBlock label="Related Sale Item ID" value={transaction.relatedSaleItemId || "—"} />
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-1">

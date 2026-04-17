@@ -7,6 +7,7 @@ interface TransactionRow {
   transactionNo: string;
   purpose: PurposeType;
   buyBack: string;
+  percentage: string;
   buyOut: string;
   sold: string;
   date: string;
@@ -29,6 +30,7 @@ const columns = [
   { key: "date", label: "Date" },
   { key: "time", label: "Time" },
   { key: "buyBack", label: "Buy Back", align: "right" as const },
+  { key: "percentage", label: "%", align: "center" as const },
   { key: "buyOut", label: "Buy Out", align: "right" as const },
   { key: "sold", label: "Sold", align: "right" as const },
   { key: "cashIn", label: "Cash In", align: "right" as const },
@@ -172,6 +174,11 @@ export function TransactionTable({
                         ? `₱${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                         : "₱0.00";
                     })()}
+                  </td>
+
+                  {/* Percentage */}
+                  <td className="whitespace-nowrap px-3 py-2 text-center text-xs font-bold text-zinc-600">
+                    {row.percentage !== "0" ? `${row.percentage}%` : "—"}
                   </td>
 
                   {/* Buy Out */}
