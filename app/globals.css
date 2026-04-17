@@ -4,6 +4,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── Light theme (default) ──────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --font-inter: "Aptos", "Segoe UI", "Helvetica Neue", sans-serif;
   --background: #ffffff;
@@ -113,6 +117,10 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+section[id] {
+  scroll-margin-top: 80px;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -145,6 +153,21 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes slowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+.animate-slow-pulse {
+  animation: slowPulse 8s ease-in-out infinite;
 }
 
 /* ── Dark mode overrides for select option elements ──── */

@@ -7,7 +7,7 @@ interface AuthLandingPageProps {
   onSignUpClick?: () => void;
 }
 
-const navItems = ["HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS"];
+const navItems = ["HOME", "HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS"];
 
 const steps = [
   {
@@ -82,26 +82,49 @@ export function AuthLandingPage({
   onLoginClick,
   onSignUpClick,
 }: AuthLandingPageProps) {
+  const handleScroll = (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 64; // Fixed header height (h-16)
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+
+      // Update URL hash without jumping
+      window.history.pushState(null, "", `#${id}`);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-emerald-50">
-      <nav className="fixed left-0 right-0 top-0 z-40 flex h-20 items-center justify-between bg-emerald-900 px-12">
+    <div className="min-h-screen bg-emerald-50 selection:bg-amber-300 selection:text-emerald-900">
+      <nav className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between bg-emerald-900 px-12 transition-all">
         <Image
-          src="/logo.jpg"
+          src="/logo.png"
           alt="JCLB"
           width={56}
           height={56}
           className="rounded-lg"
         />
         <div className="hidden items-center gap-8 md:flex">
-          {navItems.map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase().replace(/ /g, "-")}`}
-              className="text-sm font-medium text-white hover:text-amber-300"
-            >
-              {item}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const id = item.toLowerCase().replace(/ /g, "-");
+            return (
+              <a
+                key={item}
+                href={`#${id}`}
+                onClick={(e) => handleScroll(e, id)}
+                className="group relative text-sm font-bold tracking-wider text-white transition-colors hover:text-amber-300"
+              >
+                {item}
+                <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-amber-300 transition-all duration-300 group-hover:w-full" />
+              </a>
+            );
+          })}
         </div>
         <button
           onClick={onLoginClick}
@@ -111,87 +134,90 @@ export function AuthLandingPage({
         </button>
       </nav>
 
-      <section className="relative overflow-hidden bg-emerald-50 px-12 pb-20 pt-32">
-        <div className="mx-auto flex max-w-7xl items-center gap-12">
-          <div className="flex-1">
-            <div className="mb-6 inline-block rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-amber-400">
+      <section id="home" className="relative overflow-hidden bg-emerald-50 px-6 pb-20 pt-8 md:px-12 md:pb-32 md:pt-12 lg:pb-48 lg:pt-12">
+        <div className="mx-auto flex max-w-[1600px] flex-col items-center gap-12 lg:flex-row lg:items-center lg:justify-between lg:text-left">
+          <div className="z-10 flex-1 shrink-0 text-center lg:max-w-xl lg:text-left">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-amber-400">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] text-emerald-900">
+                ★
+              </div>
               TRUSTED BUY BACK SHOP FOR FILIPINO FAMILIES
             </div>
-            <h1 className="text-6xl font-bold leading-tight text-emerald-900 lg:text-7xl">
-              Sell Your Items.
-              <br />
-              Get Paid Today.
+            <h1 className="text-4xl font-black leading-tight text-emerald-900 md:text-6xl lg:text-8xl">
+              <span className="lg:block lg:whitespace-nowrap">Sell Your Items.</span>
+              <span className="text-slate-800 lg:block lg:whitespace-nowrap">Get Paid Today.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-700">
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-700 md:text-lg lg:mx-0 mx-auto">
               JCLB Buy Back Shop provides honest, secure, and compassionate
               financial solutions that uplift lives and build lasting
               relationships within our community.
             </p>
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
               <button
                 type="button"
                 onClick={onSignUpClick ?? onLoginClick}
-                className="rounded-lg bg-emerald-900 px-8 py-4 font-bold text-white transition hover:bg-emerald-800"
+                className="rounded-xl bg-emerald-900 px-8 py-4 font-bold text-white transition-all hover:bg-emerald-800 hover:shadow-lg active:scale-95"
               >
                 GET STARTED
               </button>
               <a
                 href="#how-it-works"
-                className="rounded-lg border border-emerald-900 px-8 py-4 font-bold text-emerald-900 transition hover:bg-emerald-900 hover:text-white"
+                onClick={(e) => handleScroll(e, "how-it-works")}
+                className="rounded-xl border-2 border-emerald-900 px-8 py-4 font-bold text-emerald-900 transition-all hover:bg-emerald-900 hover:text-white"
               >
                 HOW IT WORKS
               </a>
             </div>
 
-            <div className="mt-12 flex gap-12 border-t border-emerald-900/20 pt-8">
-              <div>
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-bold text-emerald-900">
+            <div className="mt-12 flex flex-wrap justify-center gap-8 border-t border-emerald-900/10 pt-8 lg:justify-start lg:gap-12">
+              <div className="text-center lg:text-left">
+                <div className="flex items-end justify-center gap-1 lg:justify-start">
+                  <span className="text-4xl font-bold text-emerald-900 md:text-5xl">
                     100
                   </span>
-                  <span className="mb-1 text-2xl font-bold text-emerald-900">
+                  <span className="mb-1 text-xl font-bold text-emerald-900 md:text-2xl">
                     %
                   </span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-emerald-900">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">
                   TRUSTED & LEGIT
                 </p>
               </div>
-              <div>
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-bold text-emerald-900">24</span>
-                  <span className="mb-1 text-2xl font-bold text-emerald-900">
+              <div className="text-center lg:text-left">
+                <div className="flex items-end justify-center gap-1 lg:justify-start">
+                  <span className="text-4xl font-bold text-emerald-900 md:text-5xl">24</span>
+                  <span className="mb-1 text-xl font-bold text-emerald-900 md:text-2xl">
                     hrs
                   </span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-emerald-900">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">
                   QUICK PAYOUT
                 </p>
               </div>
-              <div>
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-bold text-emerald-900">
+              <div className="text-center lg:text-left">
+                <div className="flex items-end justify-center gap-1 lg:justify-start">
+                  <span className="text-4xl font-bold text-emerald-900 md:text-5xl">
                     500
                   </span>
-                  <span className="mb-1 text-2xl text-emerald-900">+</span>
+                  <span className="mb-1 text-xl text-emerald-900 md:text-2xl">+</span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-emerald-900">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">
                   HAPPY SELLERS
                 </p>
               </div>
             </div>
           </div>
-          <div className="hidden flex-1 lg:block">
-            <div className="relative h-[500px] w-full rounded-3xl bg-emerald-900/10">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Image
-                  src="/logo.jpg"
-                  alt="JCLB"
-                  width={200}
-                  height={200}
-                  className="rounded-3xl opacity-60"
-                />
-              </div>
+          
+          <div className="relative flex-1 lg:flex-[1.2] flex justify-center lg:justify-end lg:translate-x-32">
+            <div className="animate-slow-pulse transition-transform duration-700 hover:scale-105 w-full flex justify-center lg:justify-end">
+              <Image
+                src="/logo.png"
+                alt="JCLB"
+                width={1000}
+                height={1000}
+                className="h-auto w-full max-w-[400px] drop-shadow-2xl md:max-w-[600px] lg:max-w-[800px] xl:max-w-[1000px]"
+                priority
+              />
             </div>
           </div>
         </div>
@@ -362,7 +388,7 @@ export function AuthLandingPage({
         </div>
       </section>
 
-      <footer className="bg-emerald-950 px-12 py-10 text-center text-sm text-white/50">
+      <footer className="bg-emerald-900 px-12 py-10 text-center text-sm text-white/50">
         <p>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</p>
       </footer>
     </div>
