@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
@@ -13,7 +13,18 @@ interface CustomerData {
   contact_number: string;
   email: string;
   id_presented: string;
+  id_number?: string | null;
   created_at: string;
+}
+
+interface CustomerRow {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  idType: string;
+  idNumber: string;
+  registered: string;
 }
 
 const columns: Column[] = [
@@ -46,39 +57,64 @@ interface CustomerTableProps {
   branchName?: string;
 }
 
-export function CustomerTable({ branchName }: CustomerTableProps) {
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function mapCustomerToRow(customer: CustomerData): CustomerRow {
+  return {
+    id: customer.id,
+    name: customer.full_name || "Unnamed Customer",
+    phone: customer.contact_number || "-",
+    email: customer.email || "-",
+    idType: customer.id_presented || "-",
+    idNumber: customer.id_number || "-",
+    registered: formatDate(customer.created_at),
+  };
+}
+
+export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const itemsPerPage = 10;
 
-  const customers = [
-    {
-      id: "1",
-      name: "Juan Dela Cruz",
-      phone: "09123456789",
-      email: "juandelacruz@gmail.com",
-      idType: "Driver's License",
-      idNumber: "N5012345678",
-      registered: "February 14, 2022",
-    },
-    {
-      id: "2",
-      name: "John Doe",
-      phone: "09123456789",
-      email: "jhondoe@gmail.com",
-      idType: "National ID",
-      idNumber: "72120002152",
-      registered: "February 15, 2022",
-    },
-    {
-      id: "3",
-      name: "Park Jimin Neutron",
-      phone: "09123456789",
-      email: "jiminneutron@gmail.com",
-      idType: "Passport",
-      idNumber: "44443334444",
-      registered: "February 16, 2022",
-    },
-  ];
+  useEffect(() => {
+    async function loadCustomers() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await api.get<CustomerData[]>("/customers");
+        setCustomers((data || []).map(mapCustomerToRow));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load customers.";
+        setError(message);
+        setCustomers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadCustomers();
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [customers.length]);
+
+  const totalPages = Math.max(1, Math.ceil(customers.length / itemsPerPage));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return customers.slice(start, start + itemsPerPage);
+  }, [customers, currentPage]);
 
   return (
     <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
@@ -89,10 +125,17 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
         </h3>
       </div>
 
+      {isLoading && (
+        <p className="px-5 pb-2 text-xs text-text-tertiary">Loading customers...</p>
+      )}
+      {error && (
+        <p className="px-5 pb-2 text-xs text-red-500">{error}</p>
+      )}
+
       {/* Table */}
       <DataTable
         columns={columns}
-        data={customers}
+        data={paginatedCustomers}
         renderCell={(key, value, row) => {
           if (key === "actions") {
             return (
@@ -112,9 +155,9 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
       {/* Pagination */}
       <Pagination
         currentPage={currentPage}
-        totalPages={3}
-        totalItems={3}
-        itemsPerPage={10}
+        totalPages={totalPages}
+        totalItems={customers.length}
+        itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
       />
     </div>

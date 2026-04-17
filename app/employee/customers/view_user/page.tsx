@@ -4,136 +4,301 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
+import { api } from "@/lib/api";
 import { ViewCustomerModal } from "@/app/(pages)/customers/view_user/_components/view-customer-modal";
 import type {
   ActivityEntry,
   CustomerDetail,
 } from "@/app/(pages)/customers/view_user/_components/types";
 
-/* ──────────────────────────── Mock Data ──────────────────────────── */
+interface ApiCustomer {
+  id: string;
+  full_name: string;
+  address: string | null;
+  contact_number: string | null;
+  email: string | null;
+  id_presented: string | null;
+  id_number?: string | null;
+  profile_photo_url?: string | null;
+  id_front_photo_url?: string | null;
+  id_back_photo_url?: string | null;
+  branch_id: string | null;
+  created_at: string;
+}
 
-const mockCustomers: Record<string, CustomerDetail> = {
-  "1": {
-    id: "1",
-    firstName: "Juan",
-    middleName: "Santos",
-    lastName: "Dela Cruz",
-    name: "Juan Dela Cruz",
-    street: "123 Rizal St., Brgy. Ususan",
-    barangay: "Brgy. Ususan",
-    city: "Taguig City",
-    province: "Metro Manila",
-    address: "Brgy. Ususan, Taguig City",
-    email: "juandelacruz@gmail.com",
-    phone: "0912-345-6789",
-    idType: "Driver's License",
-    idNumber: "N5012345678",
-    profilePhoto: null,
-    idFrontPhoto: null,
-    idBackPhoto: null,
-    createdAt: "February 14, 2022",
-    branch: "Taguig Branch",
-    totalItemsPawned: 8,
-    activePawned: 2,
-    totalLoanValue: 69000,
-    overduePayments: 1,
-    loyaltyPoints: 90,
-    loyaltyMax: 100,
-    transactions: [
-      { date: "April 3",  item: "iPhone 12",      amount: 24000, status: "Active",   branch: "Taguig" },
-      { date: "April 4",  item: "MacBook Pro",     amount: 45000, status: "Redeemed", branch: "Makati" },
-      { date: "Mar 20",   item: "Gold ring (18k)", amount: 8500,  status: "Overdue",  branch: "Taguig" },
-      { date: "Feb 10",   item: "PlayStation 5",   amount: 15000, status: "Forfeited",branch: "Quezon" },
-    ],
-    rewards: [
-      { label: "₱500 Cashback", points: 100 },
-      { label: "10% Discount",  points: 200 },
-    ],
-    deadlines: [
-      { date: "April 30, 2026",       label: "3 days remaining", variant: "warning" as const },
-      { date: "Was due March 20, 2026", label: "Overdue",        variant: "danger"  as const },
-    ],
-    activityLog: [
-      { title: "Contract renewed",        date: "Apr 3 · Maria S.", description: "— iPhone 12 loan renewed for 30 days.",   color: "bg-green-500"  },
-      { title: "Payment reminder sent",   date: "Mar 25 · System",  description: "— Gold ring overdue notice via SMS.",      color: "bg-yellow-400" },
-      { title: "Customer visited",        date: "Mar 18 · Rico T.", description: "— Inquired about laptop appraisal.",       color: "bg-zinc-400"   },
-    ],
-  },
-  "2": {
-    id: "2",
-    firstName: "John",
-    middleName: "",
-    lastName: "Doe",
-    name: "John Doe",
-    street: "456 Ayala Ave.",
-    barangay: "Brgy. San Antonio",
-    city: "Makati",
-    province: "Metro Manila",
-    address: "Brgy. San Antonio, Makati",
-    email: "jhondoe@gmail.com",
-    phone: "0912-345-6789",
-    idType: "National ID",
-    idNumber: "72120002152",
-    profilePhoto: null,
-    idFrontPhoto: null,
-    idBackPhoto: null,
-    createdAt: "February 15, 2022",
-    branch: "Makati Branch",
-    totalItemsPawned: 3,
-    activePawned: 1,
-    totalLoanValue: 32000,
-    overduePayments: 0,
-    loyaltyPoints: 45,
-    loyaltyMax: 100,
-    transactions: [
-      { date: "Mar 15", item: "Samsung S24", amount: 18000, status: "Active",   branch: "Makati" },
-      { date: "Feb 20", item: "Gold Chain",  amount: 14000, status: "Redeemed", branch: "Makati" },
-    ],
-    rewards: [{ label: "₱500 Cashback", points: 100 }],
-    deadlines: [
-      { date: "May 15, 2026", label: "18 days remaining", variant: "warning" as const },
-    ],
-    activityLog: [
-      { title: "Item pawned", date: "Mar 15 · Admin", description: "— Samsung S24 appraised at ₱18,000.", color: "bg-green-500" },
-    ],
-  },
-  "3": {
-    id: "3",
-    firstName: "Park",
-    middleName: "Jimin",
-    lastName: "Neutron",
-    name: "Park Jimin Neutron",
-    street: "789 Commonwealth Ave.",
-    barangay: "Brgy. Commonwealth",
-    city: "Quezon City",
-    province: "Metro Manila",
-    address: "Brgy. Commonwealth, Quezon City",
-    email: "jiminneutron@gmail.com",
-    phone: "0912-345-6789",
-    idType: "Passport",
-    idNumber: "44443334444",
-    profilePhoto: null,
-    idFrontPhoto: null,
-    idBackPhoto: null,
-    createdAt: "February 16, 2022",
-    branch: "Quezon Branch",
-    totalItemsPawned: 5,
-    activePawned: 0,
-    totalLoanValue: 41000,
-    overduePayments: 2,
-    loyaltyPoints: 20,
-    loyaltyMax: 100,
-    transactions: [
-      { date: "Jan 20", item: "Laptop ASUS", amount: 22000, status: "Forfeited", branch: "Quezon" },
-      { date: "Jan 5",  item: "Watch Casio", amount: 5000,  status: "Redeemed",  branch: "Quezon" },
-    ],
-    rewards: [],
-    deadlines: [],
-    activityLog: [
-      { title: "Item forfeited", date: "Feb 20 · System", description: "— Laptop ASUS loan expired.", color: "bg-red-500" },
-    ],
-  },
-};
+interface ApiTransaction {
+  transaction_no?: string | null;
+  transaction_date?: string | null;
+  transaction_time?: string | null;
+  purpose?: string | null;
+  cash_in?: number | string | null;
+  pawn_amount?: number | string | null;
+  branch?: string | null;
+  branch_id?: string | null;
+  pawned_item?: {
+    item_id?: string | null;
+    item_name?: string | null;
+    category?: string | null;
+    status?: string | null;
+    condition?: string | null;
+    serial_number?: string | null;
+    items_included?: string | null;
+    memory_storage?: string | null;
+    remarks?: string | null;
+    qr_code?: string | null;
+    pawn_date?: string | null;
+    amount?: number | string | null;
+    branch?: string | null;
+  } | null;
+}
+
+interface TransactionsResponse {
+  transactions: ApiTransaction[];
+}
+
+function splitName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return {
+      firstName: parts[0] || "",
+      middleName: "",
+      lastName: "",
+    };
+  }
+
+  return {
+    firstName: parts[0],
+    middleName: parts.length > 2 ? parts.slice(1, -1).join(" ") : "",
+    lastName: parts[parts.length - 1],
+  };
+}
+
+function splitAddress(address: string | null) {
+  const parts = (address || "").split(",").map((part) => part.trim()).filter(Boolean);
+  return {
+    street: parts[0] || "-",
+    barangay: parts[1] || "-",
+    city: parts[2] || "-",
+    province: parts[3] || "Metro Manila",
+  };
+}
+
+function formatFullDate(dateValue?: string | null) {
+  if (!dateValue) return "-";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatShortDate(dateValue?: string | null) {
+  if (!dateValue) return "-";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatTime(dateValue?: string | null) {
+  if (!dateValue) return "-";
+  const [hours, minutes] = dateValue.split(":");
+  const parsedHours = Number(hours);
+  const parsedMinutes = Number(minutes);
+  if (!Number.isFinite(parsedHours) || !Number.isFinite(parsedMinutes)) return dateValue;
+
+  const period = parsedHours >= 12 ? "PM" : "AM";
+  const hour12 = ((parsedHours + 11) % 12) + 1;
+  return `${hour12}:${minutes.padStart(2, "0")} ${period}`;
+}
+
+function isImageUrl(value: string) {
+  return /^https?:\/\//i.test(value) || /^data:image\//i.test(value);
+}
+
+function normalizeStatus(tx: ApiTransaction): string {
+  const status = tx.pawned_item?.status;
+  if (status) return status;
+
+  switch (tx.purpose) {
+    case "Pawn":
+    case "Renew":
+      return "Active";
+    case "Buy Back":
+      return "Redeemed";
+    case "Sold Item":
+      return "Forfeited";
+    default:
+      return "Active";
+  }
+}
+
+interface CustomerTransactionRecord {
+  transactionNo: string;
+  date: string;
+  time: string;
+  item: string;
+  category: string;
+  amount: number;
+  status: string;
+  branch: string;
+  unitCode: string;
+  itemId: string;
+  purpose: string;
+  serialNumber: string;
+  condition: string;
+  itemsIncluded: string;
+  memoryStorage: string;
+  remarks: string;
+  qrCode: string;
+}
+
+function mapTx(tx: ApiTransaction): CustomerTransactionRecord {
+  return {
+    transactionNo: tx.transaction_no || "-",
+    date: formatShortDate(tx.transaction_date),
+    time: formatTime(tx.transaction_time),
+    item: tx.pawned_item?.item_name || "Item",
+    category: tx.pawned_item?.category || "-",
+    amount: Number(tx.pawn_amount ?? tx.cash_in ?? tx.pawned_item?.amount ?? 0),
+    status: normalizeStatus(tx),
+    branch: tx.branch || tx.branch_id || tx.pawned_item?.branch || "-",
+    unitCode: tx.pawned_item?.item_id || "-",
+    itemId: tx.pawned_item?.item_id || "-",
+    purpose: tx.purpose || "-",
+    serialNumber: tx.pawned_item?.serial_number || "-",
+    condition: tx.pawned_item?.condition || "-",
+    itemsIncluded: tx.pawned_item?.items_included || "-",
+    memoryStorage: tx.pawned_item?.memory_storage || "-",
+    remarks: tx.pawned_item?.remarks || "-",
+    qrCode: tx.pawned_item?.qr_code || "-",
+  };
+}
+
+function TransactionViewModal({
+  transaction,
+  onClose,
+}: {
+  transaction: CustomerTransactionRecord | null;
+  onClose: () => void;
+}) {
+  if (!transaction) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl rounded-3xl border border-border-main bg-surface p-6 shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border-main pb-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">
+              Transaction Details
+            </p>
+            <h2 className="mt-1 text-2xl font-black text-text-primary">{transaction.item}</h2>
+            <p className="mt-1 text-xs font-medium text-text-tertiary">
+              Transaction No: {transaction.transactionNo} · {transaction.purpose}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-border-main px-3 py-2 text-sm font-bold text-text-secondary transition-colors hover:bg-surface-secondary"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Transaction Date</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.date}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Time</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.time}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Amount</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{formatCurrency(transaction.amount)}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Status</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.status}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Branch</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.branch}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Category</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.category}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Item ID</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.itemId}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Serial Number</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.serialNumber}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Condition</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.condition}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Items Included</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.itemsIncluded}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Memory / Storage</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.memoryStorage}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3 sm:col-span-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
+          </div>
+          <div className="rounded-xl border border-border-main bg-surface-secondary p-3 sm:col-span-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
+            <div className="mt-3 flex min-h-[220px] items-center justify-center">
+              {transaction.qrCode && transaction.qrCode !== "-" ? (
+                isImageUrl(transaction.qrCode) ? (
+                  <img
+                    src={transaction.qrCode}
+                    alt={`${transaction.item} QR code`}
+                    className="h-44 w-44 rounded-xl border border-border-main bg-white object-contain p-2 shadow-sm"
+                    onError={(event) => {
+                      event.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <p className="text-sm font-semibold text-text-primary">
+                    QR code unavailable for this record.
+                  </p>
+                )
+              ) : (
+                <p className="text-sm font-semibold text-text-primary">
+                  No QR code available.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-emerald-border bg-emerald-surface p-4 text-sm text-emerald-text">
+          This history row belongs to the currently opened customer account.
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ──────────────────────────── Helpers ──────────────────────────── */
 
@@ -187,23 +352,116 @@ function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const customerId = searchParams.get("id") ?? "";
-  const [customer, setCustomer] = useState<CustomerDetail | null>(
-    mockCustomers[customerId] ?? null,
-  );
-  const [activityLog, setActivityLog] = useState<ActivityEntry[]>(
-    mockCustomers[customerId]?.activityLog ?? [],
-  );
+  const [customer, setCustomer] = useState<CustomerDetail | null>(null);
+  const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  const [transactionRecords, setTransactionRecords] = useState<CustomerTransactionRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [viewingTransaction, setViewingTransaction] = useState<CustomerTransactionRecord | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
 
   useEffect(() => {
-    const nextCustomer = mockCustomers[customerId] ?? null;
-    setCustomer(nextCustomer);
-    setActivityLog(nextCustomer?.activityLog ?? []);
+    async function loadCustomerData() {
+      if (!customerId) {
+        setCustomer(null);
+        setActivityLog([]);
+        setTransactionRecords([]);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const [customerRecord, txResponse] = await Promise.all([
+          api.get<ApiCustomer | null>(`/customers/${encodeURIComponent(customerId)}`),
+          api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}`),
+        ]);
+
+        if (!customerRecord) {
+          setCustomer(null);
+          setActivityLog([]);
+          setTransactionRecords([]);
+          return;
+        }
+
+        const records = (txResponse?.transactions || []).map(mapTx);
+        const transactions = records.map((record) => ({
+          date: record.date,
+          item: record.item,
+          amount: record.amount,
+          status: record.status,
+          branch: record.branch,
+        }));
+        const activePawned = records.filter((tx) => tx.status === "Active").length;
+        const overduePayments = records.filter((tx) => tx.status === "Overdue").length;
+        const totalLoanValue = records.reduce((sum, tx) => sum + tx.amount, 0);
+
+        const parsedName = splitName(customerRecord.full_name || "");
+        const parsedAddress = splitAddress(customerRecord.address);
+        const defaultActivity: ActivityEntry[] = [
+          {
+            title: "Customer profile loaded",
+            date: `${formatFullDate(customerRecord.created_at)} - System`,
+            description: "- Showing database transactions for this account.",
+            color: "bg-emerald-500",
+          },
+        ];
+
+        const mappedCustomer: CustomerDetail = {
+          id: customerRecord.id,
+          firstName: parsedName.firstName,
+          middleName: parsedName.middleName,
+          lastName: parsedName.lastName,
+          name: customerRecord.full_name || "Unnamed Customer",
+          street: parsedAddress.street,
+          barangay: parsedAddress.barangay,
+          city: parsedAddress.city,
+          province: parsedAddress.province,
+          address: customerRecord.address || "-",
+          email: customerRecord.email || "-",
+          phone: customerRecord.contact_number || "-",
+          idType: customerRecord.id_presented || "-",
+          idNumber: customerRecord.id_number || "-",
+          profilePhoto: customerRecord.profile_photo_url || null,
+          idFrontPhoto: customerRecord.id_front_photo_url || null,
+          idBackPhoto: customerRecord.id_back_photo_url || null,
+          createdAt: formatFullDate(customerRecord.created_at),
+          branch: customerRecord.branch_id || "-",
+          totalItemsPawned: transactions.length,
+          activePawned,
+          totalLoanValue,
+          overduePayments,
+          loyaltyPoints: 0,
+          loyaltyMax: 100,
+          transactions,
+          rewards: [],
+          deadlines: [],
+          activityLog: defaultActivity,
+        };
+
+        setCustomer(mappedCustomer);
+        setActivityLog(defaultActivity);
+        setTransactionRecords(records);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load customer details.";
+        setLoadError(message);
+        setCustomer(null);
+        setActivityLog([]);
+        setTransactionRecords([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadCustomerData();
     setIsViewOpen(false);
     setIsNoteOpen(false);
+    setViewingTransaction(null);
     setNoteTitle("");
     setNoteBody("");
   }, [customerId]);
@@ -236,10 +494,21 @@ function EmployeeCustomerDetailContent() {
     setIsNoteOpen(false);
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
+        Loading customer details...
+      </div>
+    );
+  }
+
   if (!customer) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-lg font-semibold text-text-primary">Customer not found</p>
+        {loadError && (
+          <p className="max-w-md text-center text-xs text-red-500">{loadError}</p>
+        )}
         <button
           onClick={() => router.push("/employee/customers")}
           className="text-sm text-emerald-700 underline hover:text-emerald-800"
@@ -250,8 +519,9 @@ function EmployeeCustomerDetailContent() {
     );
   }
 
-  const loyaltyPercent = Math.round((customer.loyaltyPoints / customer.loyaltyMax) * 100);
-  const pointsToReward = customer.loyaltyMax - customer.loyaltyPoints;
+  const safeLoyaltyMax = customer.loyaltyMax > 0 ? customer.loyaltyMax : 100;
+  const loyaltyPercent = Math.round((customer.loyaltyPoints / safeLoyaltyMax) * 100);
+  const pointsToReward = Math.max(0, safeLoyaltyMax - customer.loyaltyPoints);
 
   return (
     <div className="space-y-5">
@@ -353,14 +623,14 @@ function EmployeeCustomerDetailContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.transactions.length === 0 ? (
+                  {transactionRecords.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-xs text-text-tertiary">
                         No transactions found.
                       </td>
                     </tr>
                   ) : (
-                    customer.transactions.map((tx, i) => (
+                    transactionRecords.map((tx, i) => (
                       <tr key={i} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{tx.date}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold text-text-primary">{tx.item}</td>
@@ -368,7 +638,11 @@ function EmployeeCustomerDetailContent() {
                         <td className="whitespace-nowrap px-4 py-2.5 text-center">{getStatusBadge(tx.status)}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{tx.branch}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-center">
-                          <button className="rounded border border-border-main bg-surface px-3 py-1 text-[10px] font-semibold text-text-secondary transition-colors hover:bg-surface-hover">
+                          <button
+                            type="button"
+                            onClick={() => setViewingTransaction(tx)}
+                            className="rounded border border-border-main bg-surface px-3 py-1 text-[10px] font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+                          >
                             View
                           </button>
                         </td>
@@ -485,6 +759,13 @@ function EmployeeCustomerDetailContent() {
       {/* View Modal only — employees cannot edit */}
       {isViewOpen && (
         <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
+      )}
+
+      {viewingTransaction && (
+        <TransactionViewModal
+          transaction={viewingTransaction}
+          onClose={() => setViewingTransaction(null)}
+        />
       )}
 
       {isNoteOpen && (
