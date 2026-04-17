@@ -637,9 +637,8 @@ export default function AdminBranchFinancePage() {
                         </td>
                         <td className="px-3 py-3 align-top">
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                              row.source === "transaction" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"
-                            }`}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${row.source === "transaction" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"
+                              }`}
                           >
                             {row.source === "transaction" ? "TXN" : "FUND REQ"}
                           </span>
