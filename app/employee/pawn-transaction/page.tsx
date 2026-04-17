@@ -52,6 +52,12 @@ interface TransactionRow {
   customerName?: string;
   customerAddress?: string;
   qrCode?: string;
+  serialNumber?: string;
+  itemsIncluded?: string;
+  condition?: string;
+  category?: string;
+  memoryStorage?: string;
+  remarks?: string;
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
 }
@@ -89,17 +95,49 @@ const DEFAULT_STATS = {
   endingBalance: 0,
 };
 
+function calculateGadgetInterest(pawnAmount: number, transactionDate: string) {
+  const start = new Date(transactionDate);
+  const now = new Date();
+  start.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  const diffTime = now.getTime() - start.getTime();
+  const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  let percentage = 0;
+  if (daysPassed <= 5) percentage = 5;
+  else if (daysPassed <= 10) percentage = 10;
+  else if (daysPassed <= 20) percentage = 20;
+  else if (daysPassed <= 30) percentage = 30;
+  else if (daysPassed <= 34) percentage = 40;
+  else percentage = 40;
+  
+  const interestAmount = pawnAmount * (percentage / 100);
+  return { percentage, totalAmount: pawnAmount + interestAmount };
+}
+
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
+  const pawnAmount = Number(transaction.pawn_amount || 0);
+  const calculations = calculateGadgetInterest(pawnAmount, transaction.transaction_date);
+
+  // If already a Buy Back transaction, use its actual cash_in as historical value
+  // Otherwise, if it's an active Pawn, show the current projected interest
+  const isBuyBackAction = transaction.purpose === "Buy Back";
+  const isPawnAction = transaction.purpose === "Pawn";
+
   return {
     transactionNo: transaction.transaction_no,
     purpose: transaction.purpose as PurposeType,
-    buyBack: transaction.purpose === "Buy Back" ? String(transaction.cash_in ?? 0) : "0",
+    buyBack: isBuyBackAction 
+      ? String(transaction.cash_in ?? 0) 
+      : "0",
     buyOut: transaction.purpose === "Buy Out" ? String(transaction.cash_out ?? 0) : "0",
     sold: transaction.purpose === "Sold Item" || transaction.purpose === "Sale" ? String(transaction.cash_in ?? 0) : "0",
+    percentage: isBuyBackAction || isPawnAction ? String(calculations.percentage) : "0",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
-    cashIn: String(transaction.cash_in ?? 0),
-    cashOut: String(transaction.cash_out ?? 0),
+    cashIn: isPawnAction ? "0" : String(transaction.cash_in ?? 0),
+    cashOut: (isBuyBackAction || transaction.purpose === "Sold Item" || transaction.purpose === "Sale") 
+      ? "0" 
+      : String(transaction.cash_out ?? 0),
     returnVal: String(transaction.return_amount ?? 0),
     unit: transaction.unit ?? "",
     unitCode: transaction.unit_code ?? "",
@@ -108,6 +146,12 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     customerName: (transaction as any).pawned_item?.customer?.full_name,
     customerAddress: (transaction as any).pawned_item?.customer?.address,
     qrCode: (transaction as any).pawned_item?.qr_code || (transaction as any).pawned_item?.[0]?.qr_code || undefined,
+    serialNumber: (transaction as any).pawned_item?.serial_number,
+    itemsIncluded: (transaction as any).pawned_item?.items_included,
+    condition: (transaction as any).pawned_item?.condition,
+    category: (transaction as any).pawned_item?.category,
+    memoryStorage: (transaction as any).pawned_item?.memory_storage,
+    remarks: (transaction as any).pawned_item?.remarks,
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
   };
@@ -244,11 +288,12 @@ export default function EmployeePawnTransactionsPage() {
       contactNo: "---",
       unitCode: tx.unitCode,
       unitName: tx.unit,
-      category: "---",
-      serialNumber: "---",
-      itemsIncluded: "---",
-      condition: "---",
-      remarks: "---",
+      category: tx.category || "---",
+      serialNumber: tx.serialNumber || "---",
+      itemsIncluded: tx.itemsIncluded || "---",
+      condition: tx.condition || "---",
+      memory: tx.memoryStorage || "---",
+      remarks: tx.remarks || "---",
       amount: tx.pawn,
       storageFee: tx.storage,
       purchasedDate: tx.date,
