@@ -63,6 +63,10 @@ function toStatusLabel(status: FundRequestRecord["status"]) {
   return status === "pending_confirmation" ? "Pending Confirmation" : status;
 }
 
+function fmtDate(value: string | null | undefined) {
+  return formatFinanceDate(value);
+}
+
 const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: string }> = {
   pawn: { label: "Pawn", bgClass: "bg-orange-100 text-orange-700", dotClass: "bg-orange-500" },
   buy_back: { label: "Buy Back", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
@@ -107,14 +111,6 @@ export default function EmployeeBranchFinancePage() {
   const [ledgerDateTo, setLedgerDateTo] = useState("");
   const [ledgerViewFilter, setLedgerViewFilter] = useState<"all" | "transactions" | "fund_requests">("all");
 
-  const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
-  const [branchSummary, setBranchSummary] = useState<BranchFinanceSummaryApi | null>(null);
-  const [ledgerTypeFilter, setLedgerTypeFilter] = useState("all");
-  const [ledgerSearch, setLedgerSearch] = useState("");
-  const [ledgerDateFrom, setLedgerDateFrom] = useState("");
-  const [ledgerDateTo, setLedgerDateTo] = useState("");
-  const [ledgerViewFilter, setLedgerViewFilter] = useState<"all" | "transactions" | "fund_requests">("all");
-
   const showToast = useCallback((message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(null), 2500);
@@ -125,18 +121,13 @@ export default function EmployeeBranchFinancePage() {
     setError(null);
     try {
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
-      const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
         api.get<EmployeeDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
-        api.get<BranchFinanceSummaryApi[]>("/branch-finance/summary"),
-        api.get<{ entries: LedgerEntry[]; total: number }>("/branch-finance/ledger?limit=100"),
         api.get<BranchFinanceSummaryApi[]>("/branch-finance/summary"),
         api.get<{ entries: LedgerEntry[]; total: number }>("/branch-finance/ledger?limit=100"),
       ]);
       setDashboard(dashboardData);
       setRequests(requestData);
-      setBranchSummary(summaryData?.[0] ?? null);
-      setLedgerEntries(ledgerData?.entries ?? []);
       setBranchSummary(summaryData?.[0] ?? null);
       setLedgerEntries(ledgerData?.entries ?? []);
     } catch (err) {
@@ -224,85 +215,6 @@ export default function EmployeeBranchFinancePage() {
     [loadFinanceData, selectedConfirmRequest, showToast],
   );
 
-  // ── Unified rows: merge ledger entries + fund requests ──
-  const unifiedRows = useMemo<UnifiedRow[]>(() => {
-    const rows: UnifiedRow[] = [];
-
-    // Add transaction rows
-    if (ledgerViewFilter !== "fund_requests") {
-      for (const entry of ledgerEntries) {
-        if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) continue;
-        const cfg = TYPE_CONFIG[entry.type] ?? TYPE_CONFIG.other;
-        rows.push({
-          id: `txn-${entry.id}`,
-          sortDate: entry.date + (entry.time ? `T${entry.time}` : "T00:00:00"),
-          displayDate: fmtDate(entry.date),
-          displayTime: entry.time,
-          source: "transaction",
-          typeBadge: (
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.bgClass}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
-              {cfg.label}
-            </span>
-          ),
-          itemName: entry.itemName ?? null,
-          description: entry.description,
-          cashIn: entry.cashIn,
-          cashOut: entry.cashOut,
-          reference: entry.reference,
-        });
-      }
-    }
-
-    // Add fund request rows
-    if (ledgerViewFilter !== "transactions") {
-      for (const req of requests) {
-        const amount = req.confirmedReceivedAmount ?? req.amountTransferred ?? req.approvedAmount ?? req.amountRequested;
-        const isIncoming = req.status === "transferred" || req.status === "pending_confirmation";
-
-        rows.push({
-          id: `fr-${req.id}`,
-          sortDate: req.createdAt,
-          displayDate: fmtDate(req.createdAt),
-          displayTime: null,
-          source: "fund_request",
-          typeBadge: (
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold capitalize ${toStatusClass(req.status)}`}>
-              {toStatusLabel(req.status)}
-            </span>
-          ),
-          itemName: null,
-          description: `${req.requestNo} — ${req.purpose}${req.transferNotes ? ` | ${req.transferNotes}` : ""}${req.confirmationNotes ? ` | ${req.confirmationNotes}` : ""}`,
-          cashIn: isIncoming ? amount : 0,
-          cashOut: 0,
-          reference: req.requestNo,
-        });
-      }
-    }
-
-    // Sort by date descending
-    rows.sort((a, b) => b.sortDate.localeCompare(a.sortDate));
-
-    // Apply search filter
-    const searched = ledgerSearch
-      ? rows.filter((r) => {
-          const q = ledgerSearch.toLowerCase();
-          return (
-            r.description.toLowerCase().includes(q) ||
-            (r.itemName ?? "").toLowerCase().includes(q) ||
-            (r.reference ?? "").toLowerCase().includes(q)
-          );
-        })
-      : rows;
-
-    // Apply date filters
-    return searched.filter((r) => {
-      const d = r.sortDate.split("T")[0];
-      if (ledgerDateFrom && d < ledgerDateFrom) return false;
-      if (ledgerDateTo && d > ledgerDateTo) return false;
-      return true;
-    });
-  }, [ledgerEntries, requests, ledgerViewFilter, ledgerTypeFilter, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
   // ── Unified rows: merge ledger entries + fund requests ──
   const unifiedRows = useMemo<UnifiedRow[]>(() => {
     const rows: UnifiedRow[] = [];
@@ -646,10 +558,7 @@ export default function EmployeeBranchFinancePage() {
                 </thead>
                 <tbody>
                   {unifiedRows.length === 0 ? (
-                  {unifiedRows.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-3 py-10 text-center text-text-tertiary">
-                        No records found for the selected filters.
                       <td colSpan={8} className="px-3 py-10 text-center text-text-tertiary">
                         No records found for the selected filters.
                       </td>
@@ -694,48 +603,7 @@ export default function EmployeeBranchFinancePage() {
                           <span className={`text-sm font-bold ${row.cashOut > 0 ? "text-red-600" : "text-text-muted"}`}>
                             {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                           </span>
-                    unifiedRows.map((row) => (
-                      <tr key={row.id} className="border-b border-border-subtle transition-colors hover:bg-surface-secondary/50">
-                        <td className="px-3 py-3 align-top">
-                          <span className="text-sm text-text-secondary">{row.displayDate}</span>
-                          {row.displayTime ? (
-                            <span className="ml-1.5 text-xs text-text-muted">{row.displayTime}</span>
-                          ) : null}
                         </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            row.source === "transaction"
-                              ? "bg-indigo-100 text-indigo-700"
-                              : "bg-cyan-100 text-cyan-700"
-                          }`}>
-                            {row.source === "transaction" ? "TXN" : "FUND REQ"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          {row.typeBadge}
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className="block max-w-[160px] truncate text-sm font-medium text-text-primary" title={row.itemName ?? ""}>
-                            {row.itemName || "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className="block max-w-[240px] truncate text-sm text-text-secondary" title={row.description}>
-                            {row.description || "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top text-right">
-                          <span className={`text-sm font-bold ${row.cashIn > 0 ? "text-emerald-600" : "text-text-muted"}`}>
-                            {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top text-right">
-                          <span className={`text-sm font-bold ${row.cashOut > 0 ? "text-red-600" : "text-text-muted"}`}>
-                            {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className="text-xs font-mono text-text-muted">{row.reference || "—"}</span>
                         <td className="px-3 py-3 align-top">
                           <span className="text-xs font-mono text-text-muted">{row.reference || "—"}</span>
                         </td>

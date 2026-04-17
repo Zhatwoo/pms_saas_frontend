@@ -94,8 +94,6 @@ function toStatusClass(status: FundRequestRecord["status"]) {
       return "bg-blue-100 text-blue-700";
     case "pending_source_confirmation":
       return "bg-orange-100 text-orange-700";
-    case "pending_source_confirmation":
-      return "bg-orange-100 text-orange-700";
     case "pending_confirmation":
       return "bg-violet-100 text-violet-700";
     case "rejected":
@@ -108,9 +106,6 @@ function toStatusClass(status: FundRequestRecord["status"]) {
 }
 
 function toStatusLabel(status: FundRequestRecord["status"]) {
-  if (status === "pending_source_confirmation") return "Pending Source Confirmation";
-  if (status === "pending_confirmation") return "Pending Confirmation";
-  return status;
   if (status === "pending_source_confirmation") return "Pending Source Confirmation";
   if (status === "pending_confirmation") return "Pending Confirmation";
   return status;
