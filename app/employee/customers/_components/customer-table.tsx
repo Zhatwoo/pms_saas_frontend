@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
 import { api } from "@/lib/api";
+import { useBranch } from "@/contexts/branch-context";
 import type { Column } from "@/components/shared/data-table";
 
 interface CustomerData {
@@ -81,6 +82,7 @@ function mapCustomerToRow(customer: CustomerData): CustomerRow {
 
 export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
   const router = useRouter();
+  const { selectedBranch, isAllBranches } = useBranch();
   const [currentPage, setCurrentPage] = useState(1);
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +94,8 @@ export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await api.get<CustomerData[]>("/customers");
+        const branchParam = isAllBranches ? "" : `?branchId=${encodeURIComponent(selectedBranch.id)}`;
+        const data = await api.get<CustomerData[]>(`/customers${branchParam}`);
         setCustomers((data || []).map(mapCustomerToRow));
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load customers.";
@@ -104,7 +107,7 @@ export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
     }
 
     void loadCustomers();
-  }, []);
+  }, [selectedBranch.id, isAllBranches]);
 
   useEffect(() => {
     setCurrentPage(1);

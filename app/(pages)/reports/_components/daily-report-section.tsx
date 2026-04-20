@@ -19,16 +19,35 @@ const downloadIcon = (
   </svg>
 );
 
-export function DailyReportSection() {
+interface DailyReportData {
+  date: string;
+  openingBalance: number;
+  totalSales: number;
+  totalExpenses: number;
+  netTotal: number;
+}
+
+interface DailyReportSectionProps {
+  data?: DailyReportData;
+  date?: string;
+}
+
+export function DailyReportSection({ data, date }: DailyReportSectionProps) {
+  const displayDate = date || new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
       <div className="border-b border-border-main px-5 py-4">
         <h3 className="text-sm font-semibold text-text-primary">
-          Daily Sales Report (DSR) &mdash; April 1, 2026
+          Daily Sales Report (DSR) &mdash; {displayDate}
         </h3>
         <p className="mt-1 text-[11px] text-zinc-400">
-          Generated: 11:59 PM &middot; Period: 12:00 AM &ndash; 11:59 PM
+          Generated: {new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} &middot; Period: 12:00 AM &ndash; 11:59 PM
           &middot; Currency: \u20B1
         </p>
       </div>
@@ -40,7 +59,7 @@ export function DailyReportSection() {
             Opening Balance
           </p>
           <p className="mt-1.5 text-xl font-bold text-text-primary">
-            {formatPeso(8420000)}
+            {formatPeso(data?.openingBalance ?? 0)}
           </p>
         </div>
         <div className="bg-surface p-4">
@@ -48,7 +67,7 @@ export function DailyReportSection() {
             Total Sales
           </p>
           <p className="mt-1.5 text-xl font-bold text-emerald-700">
-            {formatPeso(1284500)}
+            {formatPeso(data?.totalSales ?? 0)}
           </p>
         </div>
         <div className="bg-surface p-4">
@@ -56,7 +75,7 @@ export function DailyReportSection() {
             Total Expenses
           </p>
           <p className="mt-1.5 text-xl font-bold text-red-500">
-            {formatPeso(342180)}
+            {formatPeso(data?.totalExpenses ?? 0)}
           </p>
         </div>
         <div className="bg-surface p-4">
@@ -64,7 +83,7 @@ export function DailyReportSection() {
             Net Total
           </p>
           <p className="mt-1.5 text-xl font-bold text-text-primary">
-            {formatPeso(942320)}
+            {formatPeso(data?.netTotal ?? 0)}
           </p>
         </div>
       </div>

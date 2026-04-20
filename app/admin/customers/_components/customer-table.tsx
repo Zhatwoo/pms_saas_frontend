@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
+import { api } from "@/lib/api";
+import { useBranch } from "@/contexts/branch-context";
 import type { Column } from "@/components/shared/data-table";
 import { ActionButton } from "@/components/shared/action-button";
 import { AddCustomerModal } from "./add-customer-modal";
@@ -35,35 +37,47 @@ const columns: Column[] = [
   { key: "actions", label: "Actions", align: "center" },
 ];
 
-const customers = [
-  {
-    id: "1",
-    name: "Juan Dela Cruz",
-    phone: "09123456789",
-    email: "juandelacruz@gmail.com",
-    idType: "Driver's License",
-    idNumber: "N5012345678",
-    registered: "February 14, 2022",
-  },
-  {
-    id: "2",
-    name: "John Doe",
-    phone: "09123456789",
-    email: "jhondoe@gmail.com",
-    idType: "National ID",
-    idNumber: "72120002152",
-    registered: "February 15, 2022",
-  },
-  {
-    id: "3",
-    name: "Park Jimin Neutron",
-    phone: "09123456789",
-    email: "jiminneutron@gmail.com",
-    idType: "Passport",
-    idNumber: "44443334444",
-    registered: "February 16, 2022",
-  },
-];
+interface CustomerData {
+  id: string;
+  full_name: string;
+  contact_number: string;
+  email: string;
+  id_presented: string;
+  id_number?: string | null;
+  created_at: string;
+}
+
+interface CustomerRow {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  idType: string;
+  idNumber: string;
+  registered: string;
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function mapCustomerToRow(customer: CustomerData): CustomerRow {
+  return {
+    id: customer.id,
+    name: customer.full_name || "Unnamed Customer",
+    phone: customer.contact_number || "-",
+    email: customer.email || "-",
+    idType: customer.id_presented || "-",
+    idNumber: customer.id_number || "-",
+    registered: formatDate(customer.created_at),
+  };
+}
 
 const eyeIcon = (
   <svg
@@ -83,13 +97,60 @@ const eyeIcon = (
 
 export function CustomerTable() {
   const router = useRouter();
+  const { selectedBranch, isAllBranches } = useBranch();
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const itemsPerPage = 10;
+
+  async function loadCustomers() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const branchParam = isAllBranches ? "" : `?branchId=${encodeURIComponent(selectedBranch.id)}`;
+      const data = await api.get<CustomerData[]>(`/customers${branchParam}`);
+      setCustomers((data || []).map(mapCustomerToRow));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load customers.";
+      setError(message);
+      setCustomers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadCustomers();
+  }, [selectedBranch.id, isAllBranches]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [customers.length]);
+
+  const totalPages = Math.max(1, Math.ceil(customers.length / itemsPerPage));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return customers.slice(start, start + itemsPerPage);
+  }, [customers, currentPage]);
 
   async function handleSaveCustomer(input: CustomerFormInput) {
-    // TODO: Replace with actual API call once backend endpoint is ready
-    console.log("New customer data:", input);
-    setIsAddModalOpen(false);
+    try {
+      await api.post("/customers", {
+        full_name: `${input.firstName} ${input.middleName ? input.middleName + " " : ""}${input.lastName}`,
+        contact_number: input.contactNo,
+        email: input.email,
+        address: input.address,
+        id_presented: input.idPresented,
+        id_number: input.idNumber,
+        branch_id: selectedBranch.id,
+      });
+      setIsAddModalOpen(false);
+      await loadCustomers();
+    } catch (err) {
+      console.error("Failed to save customer:", err);
+    }
   }
 
   return (
@@ -99,6 +160,11 @@ export function CustomerTable() {
         <div className="flex items-center justify-between px-5 py-4">
           <h3 className="text-base font-semibold text-emerald-text">
             Customer Management
+            {!isAllBranches && (
+              <span className="ml-2 text-xs font-normal text-text-tertiary">
+                — {selectedBranch.name}
+              </span>
+            )}
           </h3>
           <ActionButton variant="primary" onClick={() => setIsAddModalOpen(true)}>
             <span className="flex items-center justify-center gap-1.5">
@@ -108,10 +174,17 @@ export function CustomerTable() {
           </ActionButton>
         </div>
 
+        {isLoading && (
+          <p className="px-5 pb-2 text-xs text-text-tertiary">Loading customers...</p>
+        )}
+        {error && (
+          <p className="px-5 pb-2 text-xs text-red-500">{error}</p>
+        )}
+
         {/* Table */}
         <DataTable
           columns={columns}
-          data={customers}
+          data={paginatedCustomers}
           renderCell={(key, value, row) => {
             if (key === "actions") {
               return (
@@ -131,9 +204,9 @@ export function CustomerTable() {
         {/* Pagination */}
         <Pagination
           currentPage={currentPage}
-          totalPages={3}
-          totalItems={3}
-          itemsPerPage={10}
+          totalPages={totalPages}
+          totalItems={customers.length}
+          itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
         />
       </div>
@@ -148,4 +221,3 @@ export function CustomerTable() {
     </>
   );
 }
-

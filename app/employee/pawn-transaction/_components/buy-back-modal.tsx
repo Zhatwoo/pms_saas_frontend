@@ -2,21 +2,55 @@
 
 import { useState, useMemo, useEffect, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
-import { 
-  X, 
-  Search, 
-  ArrowRight, 
-  Package, 
-  ShieldCheck, 
-  Hash, 
-  Smartphone,
-  Info,
-  Undo2,
-  Calendar,
-  DollarSign,
-  Tag,
-  AlertTriangle
-} from "lucide-react";
+
+/* ── Inline SVG Icons ── */
+
+const tagIcon = (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+const closeIcon = (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const searchIcon = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+const packageIcon = (sz: number) => (
+  <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+  </svg>
+);
+const alertIcon = (sz: number) => (
+  <svg width={sz} height={sz} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+);
+const shieldIcon = (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
+  </svg>
+);
+const arrowRightIcon = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+  </svg>
+);
+const smartphoneIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+  </svg>
+);
+const dollarIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+  </svg>
+);
 
 interface BuyBackModalProps {
   isOpen: boolean;
@@ -146,7 +180,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
         <div className="flex items-center justify-between bg-zinc-900 px-6 py-4 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3 text-white">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <Tag className="w-6 h-6" />
+              {tagIcon}
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-tight">Buy Back / Repurchase</h2>
@@ -157,7 +191,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
             onClick={onClose}
             className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white"
           >
-            <X className="w-6 h-6" />
+            {closeIcon}
           </button>
         </div>
 
@@ -166,7 +200,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
           <div className="w-full lg:w-[400px] border-r border-zinc-100 bg-zinc-50 flex flex-col shrink-0">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 mb-2">
-                <Search className="w-5 h-5 text-zinc-400" />
+                <span className="text-zinc-400">{searchIcon}</span>
                 <h3 className="text-xs font-black text-zinc-500 uppercase tracking-wider">Search Expired Item</h3>
               </div>
               
@@ -178,7 +212,9 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-300 group-focus-within:text-blue-500 transition-colors" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-blue-500 transition-colors">
+                  {searchIcon}
+                </span>
               </div>
             </div>
 
@@ -190,8 +226,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
-                  <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center mb-3">
-                    <Package className="w-6 h-6 text-zinc-300" />
+                  <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center mb-3 text-zinc-300">
+                    {packageIcon(24)}
                   </div>
                   <p className="text-sm font-bold text-zinc-400">No expired items found</p>
                   <p className="text-[10px] text-zinc-400/60 uppercase mt-1 tracking-tighter">Try different unit code or name</p>
@@ -243,7 +279,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                   </div>
                   <div className="bg-red-50 border border-red-100 px-4 py-2 rounded-xl flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-600/20">
-                      <AlertTriangle className="w-5 h-5" />
+                      {alertIcon(20)}
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-red-600 uppercase tracking-widest">Item Terminated</p>
@@ -253,14 +289,14 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                  <DetailSection title="Record Details" icon={Smartphone}>
+                  <DetailSection title="Record Details" icon={smartphoneIcon}>
                     <DetailRow label="Original Loan" value={`₱ ${selectedItem.amount.toLocaleString()}`} />
                     <DetailRow label="Unit Code" value={selectedItem.itemId} />
                     <DetailRow label="Pawn Date" value={selectedItem.pawnDate || '---'} />
                     <DetailRow label="Category" value={selectedItem.category} />
                   </DetailSection>
 
-                  <DetailSection title="Repurchase Agreement" icon={DollarSign}>
+                  <DetailSection title="Repurchase Agreement" icon={dollarIcon}>
                     <div className="p-4 bg-zinc-50 rounded-xl space-y-4">
                       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Agreed Buy Back Price</p>
                       <div className="relative">
@@ -284,9 +320,9 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                 <div className="p-8 rounded-3xl bg-zinc-900 text-white relative overflow-hidden">
                   <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
                     <div className="flex-1 space-y-8">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-8 h-8 text-blue-500" />
-                        <h4 className="text-xl font-black uppercase">Authorize Repurchase</h4>
+                      <div className="flex items-center gap-2 text-blue-500">
+                        {shieldIcon}
+                        <h4 className="text-xl font-black uppercase text-white">Authorize Repurchase</h4>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -297,14 +333,14 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                             placeholder="••••••••"
                             className="w-full h-12 px-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium"
                             value={adminForm.password}
-                            onChange={(e) => setAdminForm(e({...adminForm, password: e.target.value}))}
+                            onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
                           />
                         </div>
                       </div>
 
                       {error && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
-                          <AlertTriangle className="w-5 h-5 text-red-500" />
+                          <span className="text-red-500">{alertIcon(20)}</span>
                           <p className="text-xs font-bold text-red-200">{error}</p>
                         </div>
                       )}
@@ -326,7 +362,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                         {isConfirming ? "Processing..." : (
                           <>
                             Finalize Buy Back
-                            <ArrowRight className="w-5 h-5" />
+                            {arrowRightIcon}
                           </>
                         )}
                       </button>
@@ -336,12 +372,12 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-12">
-                <div className="w-24 h-24 rounded-3xl bg-zinc-50 flex items-center justify-center mb-6">
-                  <Package className="w-12 h-12 text-zinc-200" />
+                <div className="w-24 h-24 rounded-3xl bg-zinc-50 flex items-center justify-center mb-6 text-zinc-200">
+                  {packageIcon(48)}
                 </div>
                 <h3 className="text-2xl font-black text-zinc-300 uppercase tracking-tight">Select Item to Repurchase</h3>
                 <p className="text-zinc-400 font-bold max-w-xs mt-2 leading-relaxed italic">
-                  "Only items with Expired or For Sale status are eligible for a Buy Back arrangement."
+                  &quot;Only items with Expired or For Sale status are eligible for a Buy Back arrangement.&quot;
                 </p>
               </div>
             )}
@@ -354,11 +390,11 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-function DetailSection({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) {
+function DetailSection({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 px-1">
-        <Icon className="w-4 h-4 text-zinc-400" />
+      <div className="flex items-center gap-2 px-1 text-zinc-400">
+        {icon}
         <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[2px]">{title}</h4>
       </div>
       <div className="divide-y divide-zinc-50 border-t border-zinc-100">

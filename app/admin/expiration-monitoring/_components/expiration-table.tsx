@@ -12,62 +12,47 @@ const columns: Column[] = [
   { key: "actions", label: "Actions", align: "center" },
 ];
 
-const expirationData = [
-  {
-    ticketNo: "PT-2026-001",
-    customer: "Juan Dela Cruz",
-    item: "21K Gold Necklace",
-    principal: 35000,
-    totalDue: 36225,
-    maturityDate: "Mar 17, 2026",
-    daysRemaining: 14,
-  },
-  {
-    ticketNo: "PT-2026-002",
-    customer: "Maria Santos",
-    item: "Apple MacBook Pro M3",
-    principal: 85000,
-    totalDue: 87975,
-    maturityDate: "Mar 22, 2026",
-    daysRemaining: 19,
-  },
-  {
-    ticketNo: "PT-2026-004",
-    customer: "Juan Dela Cruz",
-    item: "Samsung Galaxy S24 Ultra",
-    principal: 48000,
-    totalDue: 49680,
-    maturityDate: "Apr 01, 2026",
-    daysRemaining: 29,
-  },
-  {
-    ticketNo: "PT-2026-005",
-    customer: "Maria Santos",
-    item: "Rolex Submariner",
-    principal: 500000,
-    totalDue: 517500,
-    maturityDate: "Mar 27, 2026",
-    daysRemaining: 24,
-  },
-];
+interface ExpirationItemRow {
+  id: string;
+  ticketNo: string;
+  customer: string;
+  item: string;
+  principal: number;
+  totalDue: number;
+  maturityDate: string;
+  daysRemaining: number;
+}
 
 function formatPeso(amount: number): string {
   return `\u20B1${amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+function formatDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-PH", { month: "short", day: "2-digit", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 function DaysRemainingBadge({ days }: { days: number }) {
   let bgColor = "bg-green-100 text-green-700";
-  if (days <= 7) {
+  if (days <= 0) {
     bgColor = "bg-red-100 text-red-600";
+  } else if (days <= 3) {
+    bgColor = "bg-red-100 text-red-600";
+  } else if (days <= 7) {
+    bgColor = "bg-orange-100 text-orange-600";
   } else if (days <= 14) {
     bgColor = "bg-yellow-100 text-yellow-700";
   }
 
   return (
     <span
-      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${bgColor}`}
+      className={`inline-block rounded px-2.5 py-1 text-xs font-bold ${bgColor}`}
     >
-      {days} days
+      {days <= 0 ? "Overdue" : `${days} days`}
     </span>
   );
 }
@@ -88,11 +73,38 @@ const bellIcon = (
   </svg>
 );
 
-export function ExpirationTable() {
+interface ExpirationTableProps {
+  data?: ExpirationItemRow[];
+  isLoading?: boolean;
+}
+
+export function ExpirationTable({ data = [], isLoading }: ExpirationTableProps) {
+  if (isLoading) {
+    return (
+      <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
+        <div className="flex items-center justify-center gap-3 text-text-tertiary">
+          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <span className="text-sm font-medium">Loading expiration data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
+        <p className="text-sm text-text-tertiary">No items found in this category</p>
+      </div>
+    );
+  }
+
   return (
     <DataTable
       columns={columns}
-      data={expirationData}
+      data={data}
       renderCell={(key, value, row) => {
         if (key === "principal" || key === "totalDue") {
           return (
@@ -100,6 +112,9 @@ export function ExpirationTable() {
               {formatPeso(value)}
             </span>
           );
+        }
+        if (key === "maturityDate") {
+          return <span>{formatDate(value)}</span>;
         }
         if (key === "daysRemaining") {
           return <DaysRemainingBadge days={value} />;
