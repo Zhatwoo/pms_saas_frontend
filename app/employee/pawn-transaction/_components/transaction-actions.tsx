@@ -39,8 +39,17 @@ const salesIcon = (
   </svg>
 );
 
-// ↩️ Buy Back — undo arrow
-const buyBackIcon = (
+// 🛒 Buy Back — shopping cart (for repurchase)
+const cartIcon = (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="21" r="1" />
+    <circle cx="20" cy="21" r="1" />
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+  </svg>
+);
+
+// ↩️ Redeem — undo arrow
+const redeemIcon = (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 14 4 9 9 4" />
     <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
@@ -59,7 +68,7 @@ const plusIcon = (
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-const filters = ["Renew", "Sales / Transfer", "Buy Back"] as const;
+const filters = ["Renew", "Sales / Transfer", "Redeem", "Buy Back"] as const;
 type FilterButton = (typeof filters)[number];
 type FilterType = "All" | FilterButton;
 
@@ -70,6 +79,7 @@ interface TransactionActionsProps {
   onExportCSV?: () => void;
   onPrintReport?: () => void;
   onNewPawn?: () => void;
+  onRedeem?: () => void;
   onBuyBack?: () => void;
   onSalesTransfer?: () => void;
   onStartDay?: () => void;
@@ -79,13 +89,15 @@ interface TransactionActionsProps {
 const filterVariantMap: Record<FilterButton, ActionVariant> = {
   Renew: "renew",
   "Sales / Transfer": "sales",
-  "Buy Back": "buyback",
+  Redeem: "buyback",
+  "Buy Back": "sales",
 };
 
 const filterIconMap: Record<FilterButton, React.ReactElement> = {
   Renew: renewIcon,
   "Sales / Transfer": salesIcon,
-  "Buy Back": buyBackIcon,
+  Redeem: redeemIcon,
+  "Buy Back": cartIcon,
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -97,6 +109,7 @@ export function TransactionActions({
   onExportCSV,
   onPrintReport,
   onNewPawn,
+  onRedeem,
   onBuyBack,
   onSalesTransfer,
   onStartDay,
@@ -136,17 +149,31 @@ export function TransactionActions({
           Sales / Transfer
         </button>
 
-        {/* Buy Back — sky/blue solid */}
+        {/* Redeem — sky/blue solid */}
+        <button
+          onClick={() => {
+            onFilterChange?.("Redeem");
+            onRedeem?.();
+          }}
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-sky-600 hover:bg-sky-700 ${
+            activeFilter === "Redeem" ? "ring-2 ring-offset-1 ring-sky-400" : "opacity-80 hover:opacity-100"
+          }`}
+        >
+          {redeemIcon}
+          Redeem
+        </button>
+
+        {/* Buy Back — indigo solid */}
         <button
           onClick={() => {
             onFilterChange?.("Buy Back");
             onBuyBack?.();
           }}
-          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-sky-600 hover:bg-sky-700 ${
-            activeFilter === "Buy Back" ? "ring-2 ring-offset-1 ring-sky-400" : "opacity-80 hover:opacity-100"
+          className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold text-white transition shadow-sm bg-indigo-600 hover:bg-indigo-700 ${
+            activeFilter === "Buy Back" ? "ring-2 ring-offset-1 ring-indigo-400" : "opacity-80 hover:opacity-100"
           }`}
         >
-          {buyBackIcon}
+          {cartIcon}
           Buy Back
         </button>
       </div>

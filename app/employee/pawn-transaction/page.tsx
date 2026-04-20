@@ -7,6 +7,7 @@ import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
 import { RenewModal } from "./_components/renew-modal";
 import { NewPawnModal } from "./_components/new-pawn-modal";
+import { RedeemModal } from "./_components/redeem-modal";
 import { BuyBackModal } from "./_components/buy-back-modal";
 import { SalesTransferModal } from "./_components/sales-transfer-modal";
 import { MoaModal } from "./_components/moa-modal";
@@ -15,6 +16,8 @@ import { TransactionDetailsModal } from "@/components/shared/transaction-details
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
+import { Role } from "@/types";
+import { calculateGadgetInterest } from "@/lib/interest";
 
 type PurposeType =
   | "Start"
@@ -95,24 +98,7 @@ const DEFAULT_STATS = {
   endingBalance: 0,
 };
 
-function calculateGadgetInterest(pawnAmount: number, transactionDate: string) {
-  const start = new Date(transactionDate);
-  const now = new Date();
-  start.setHours(0, 0, 0, 0);
-  now.setHours(0, 0, 0, 0);
-  const diffTime = now.getTime() - start.getTime();
-  const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  let percentage = 0;
-  if (daysPassed <= 5) percentage = 5;
-  else if (daysPassed <= 10) percentage = 10;
-  else if (daysPassed <= 20) percentage = 20;
-  else if (daysPassed <= 30) percentage = 30;
-  else if (daysPassed <= 34) percentage = 40;
-  else percentage = 40;
-  
-  const interestAmount = pawnAmount * (percentage / 100);
-  return { percentage, totalAmount: pawnAmount + interestAmount };
-}
+// Shared logic imported from @/lib/interest.ts
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
@@ -163,6 +149,7 @@ export default function EmployeePawnTransactionsPage() {
   const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
+  const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
@@ -311,11 +298,12 @@ export default function EmployeePawnTransactionsPage() {
         activeFilter={activeFilter}
         onFilterChange={(f) => setActiveFilter(f)}
         onRenewClick={() => handleActionWithPassword(() => setIsRenewModalOpen(true))}
+        onRedeem={() => handleActionWithPassword(() => setIsRedeemModalOpen(true))}
+        onBuyBack={() => handleActionWithPassword(() => setIsBuyBackModalOpen(true))}
+        onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
         onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
-        onBuyBack={() => handleActionWithPassword(openBuyBackForm)}
-        onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onStartDay={() => setBalanceModal({ open: true, type: "starting" })}
         onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
       />
@@ -363,6 +351,7 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={isRenewModalOpen}
         onClose={() => setIsRenewModalOpen(false)}
         branchName={selectedBranch.name}
+        branchId={selectedBranch.id}
       />
 
       <NewPawnModal
@@ -376,9 +365,18 @@ export default function EmployeePawnTransactionsPage() {
         loggedInUserName={user?.fullName}
       />
 
+      <RedeemModal
+        isOpen={isRedeemModalOpen}
+        onClose={() => setIsRedeemModalOpen(false)}
+        branchId={selectedBranch.id}
+        branchName={selectedBranch.name}
+      />
+
+      {/* Buy Back Modal will handle Expired/For-Sale items */}
       <BuyBackModal
         isOpen={isBuyBackModalOpen}
         onClose={() => setIsBuyBackModalOpen(false)}
+        branchId={selectedBranch.id}
         branchName={selectedBranch.name}
       />
 
