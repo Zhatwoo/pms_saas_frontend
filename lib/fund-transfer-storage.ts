@@ -1,10 +1,4 @@
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-
-const FUND_TRANSFER_BUCKET = "fund-transfer-proofs";
-
-function sanitizeName(value: string): string {
-  return value.replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
-}
+import { api } from "@/lib/api";
 
 export async function uploadFundTransferProof(params: {
   file: File;
@@ -12,30 +6,94 @@ export async function uploadFundTransferProof(params: {
   stage: "source" | "destination" | "release";
   branchId?: string | null;
 }): Promise<string> {
-  const client = getSupabaseBrowserClient();
-  if (!client) {
-    throw new Error("Supabase client is not available for uploads.");
+  const fileData = await prepareProofFileData(params.file);
+  const result = await api.post<{ proofUrl: string }>("/fund-requests/proof-upload", {
+    requestNo: params.requestNo,
+    stage: params.stage,
+    fileName: params.file.name,
+    branchId: params.branchId ?? undefined,
+    fileData,
+  });
+
+  if (!result.proofUrl) {
+    throw new Error("Proof upload did not return a public URL.");
   }
 
-  const extension = params.file.name.includes(".")
-    ? params.file.name.split(".").pop()?.toLowerCase() ?? "png"
-    : "png";
-  const safeRequestNo = sanitizeName(params.requestNo || "fund-request");
-  const safeBranch = sanitizeName(params.branchId || "super-admin");
-  const safeStage = sanitizeName(params.stage);
-  const filePath = `${safeBranch}/${safeRequestNo}/${safeStage}-${Date.now()}.${extension}`;
+  return result.proofUrl;
+}
 
-  const { error } = await client.storage
-    .from(FUND_TRANSFER_BUCKET)
-    .upload(filePath, params.file, {
-      upsert: false,
-      contentType: params.file.type || "image/*",
-    });
-
-  if (error) {
-    throw new Error(error.message);
+async function prepareProofFileData(file: File): Promise<string> {
+  if (file.size <= 4_000_000 && file.type !== "image/png") {
+    return fileToDataUrl(file);
   }
 
-  const { data } = client.storage.from(FUND_TRANSFER_BUCKET).getPublicUrl(filePath);
-  return data.publicUrl;
+  try {
+    const compressedFile = await compressImageFile(file);
+    return fileToDataUrl(compressedFile);
+  } catch {
+    return fileToDataUrl(file);
+  }
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Failed to read proof image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function compressImageFile(file: File): Promise<File> {
+  const dataUrl = await fileToDataUrl(file);
+  const image = await loadImage(dataUrl);
+
+  const maxWidth = 1600;
+  const scale = Math.min(1, maxWidth / image.width);
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return file;
+  }
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(image, 0, 0, width, height);
+
+  const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+  const blob = await dataUrlToBlob(compressedDataUrl);
+  return new File([blob], replaceExtension(file.name, "jpg"), {
+    type: "image/jpeg",
+    lastModified: file.lastModified,
+  });
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Failed to load proof image."));
+    image.src = src;
+  });
+}
+
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const response = await fetch(dataUrl);
+  return response.blob();
+}
+
+function replaceExtension(fileName: string, extension: string): string {
+  const parts = fileName.split(".");
+  if (parts.length <= 1) {
+    return `${fileName}.${extension}`;
+  }
+
+  parts.pop();
+  return `${parts.join(".")}.${extension}`;
 }
