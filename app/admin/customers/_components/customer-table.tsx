@@ -138,11 +138,11 @@ export function CustomerTable() {
   async function handleSaveCustomer(input: CustomerFormInput) {
     try {
       await api.post("/customers", {
-        full_name: `${input.firstName} ${input.middleName ? input.middleName + " " : ""}${input.lastName}`,
-        contact_number: input.contactNo,
+        full_name: input.fullName,
+        contact_number: input.phoneNumber,
         email: input.email,
         address: input.address,
-        id_presented: input.idPresented,
+        id_presented: input.idType,
         id_number: input.idNumber,
         branch_id: selectedBranch.id,
       });

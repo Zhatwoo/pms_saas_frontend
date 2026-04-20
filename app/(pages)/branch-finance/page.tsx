@@ -672,7 +672,7 @@ export default function BranchFinancePage() {
               dateFrom={ledgerDateFrom}
               dateTo={ledgerDateTo}
               branchName={isAllBranches ? null : selectedBranch.name}
-              branchCode={isAllBranches ? null : (financeSummaries[0]?.branchCode ?? selectedBranch.branch_code ?? null)}
+              branchCode={isAllBranches ? null : (financeSummaries[0]?.branchCode ?? selectedBranch.code ?? null)}
             />
           </div>
         </>
