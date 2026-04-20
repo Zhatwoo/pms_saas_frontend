@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
@@ -97,10 +97,6 @@ export default function PawnedItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [expireRequestItem, setExpireRequestItem] = useState<PawnedItem | null>(null);
-  const [expireRequestMessage, setExpireRequestMessage] = useState("");
-  const [expireRequestError, setExpireRequestError] = useState("");
-  const [isSubmittingExpireRequest, setIsSubmittingExpireRequest] = useState(false);
 
   useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id]);
 
@@ -137,85 +133,15 @@ export default function PawnedItemsPage() {
     }
   }, []);
 
-  const openExpireRequestModal = useCallback((item: PawnedItem) => {
-    setExpireRequestItem(item);
-    setExpireRequestMessage("");
-    setExpireRequestError("");
-  }, []);
-
-  const closeExpireRequestModal = useCallback(() => {
-    if (isSubmittingExpireRequest) return;
-    setExpireRequestItem(null);
-    setExpireRequestMessage("");
-    setExpireRequestError("");
-  }, [isSubmittingExpireRequest]);
-
-  const handleSubmitExpireRequest = useCallback(async () => {
-    if (!expireRequestItem) return;
-
-    const message = expireRequestMessage.trim();
-    if (!message) {
-      setExpireRequestError("Please enter your message for the super admin.");
-      return;
-    }
-
+  const handleMarkExpired = useCallback(async (itemId: string) => {
+    if (!confirm("Mark this item as Expired? It will be auto-transferred to Items For Sale.")) return;
     try {
-      setIsSubmittingExpireRequest(true);
-      setExpireRequestError("");
-
-      const requestPaths = [
-        `/inventory/pawned/${expireRequestItem.id}/expire-request`,
-        `/inventory/pawned/${expireRequestItem.id}/request-expire`,
-      ];
-
-      let lastError: unknown = null;
-      let requestSent = false;
-
-      for (const path of requestPaths) {
-        try {
-          await api.post(path, { message });
-          requestSent = true;
-          break;
-        } catch (err) {
-          lastError = err;
-          const errorText = err instanceof Error ? err.message : String(err);
-          const isRouteMissing =
-            errorText.includes("Cannot POST") ||
-            errorText.toLowerCase().includes("not found");
-
-          if (!isRouteMissing) {
-            throw err;
-          }
-        }
-      }
-
-      if (!requestSent) {
-        throw lastError instanceof Error
-          ? lastError
-          : new Error("Expire request endpoint is unavailable");
-      }
-
-      alert("Expire request sent to super admin for approval.");
-      setExpireRequestItem(null);
-      setExpireRequestMessage("");
+      await api.post(`/inventory/pawned/${itemId}/expire`, {});
+      setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: "Expired" as PawnedStatus } : i)));
     } catch (err) {
-      console.error("Failed to send expire request:", err);
-      const errorText = err instanceof Error ? err.message : String(err);
-      const isRouteMissing =
-        errorText.includes("Cannot POST") ||
-        errorText.toLowerCase().includes("not found");
-
-      if (isRouteMissing) {
-        setExpireRequestError(
-          "Approval endpoint is not available yet. Restart PMS_backend so the new expire-request route is loaded.",
-        );
-      } else {
-        setExpireRequestError("Unable to send request. Please try again.");
-      }
-    } finally {
-      setIsSubmittingExpireRequest(false);
+      console.error("Failed to expire item:", err);
     }
-  }, [expireRequestItem, expireRequestMessage]);
+  }, []);
 
   const handleDelete = useCallback(async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this pawned item? This cannot be undone.")) return;
@@ -286,8 +212,8 @@ export default function PawnedItemsPage() {
                   <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
-                    <Fragment key={item.id || item.itemId}>
-                      <tr className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
+                    <>
+                      <tr key={item.itemId} className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
@@ -311,7 +237,7 @@ export default function PawnedItemsPage() {
                                   Edit
                                 </button>
                                 {item.status === "Active" && (
-                                  <button onClick={() => openExpireRequestModal(item)} className="rounded px-2 py-1 text-[10px] font-bold text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100">
+                                  <button onClick={() => handleMarkExpired(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100">
                                     Expire
                                   </button>
                                 )}
@@ -324,13 +250,13 @@ export default function PawnedItemsPage() {
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr className="bg-amber-50/50">
+                        <tr key={`${item.itemId}-exp`} className="bg-amber-50/50">
                           <td colSpan={9} className="px-6 py-3 border-t border-amber-100">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>
                       )}
-                    </Fragment>
+                    </>
                   ))
                 )}
               </tbody>
@@ -362,55 +288,6 @@ export default function PawnedItemsPage() {
         onSaveRemarks={handleSaveRemarks}
         userRole={userRole}
       />
-
-      {expireRequestItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-lg border border-border-main bg-surface p-5 shadow-xl">
-            <h3 className="text-base font-bold text-text-primary">Request Expire Approval</h3>
-            <p className="mt-1 text-xs text-text-tertiary">
-              Send a message to super admin for item
-              <span className="font-semibold text-text-secondary"> {expireRequestItem.itemId}</span>
-              .
-            </p>
-
-            <label className="mt-4 block text-[11px] font-bold uppercase tracking-wide text-text-tertiary">
-              Message
-            </label>
-            <textarea
-              value={expireRequestMessage}
-              onChange={(e) => setExpireRequestMessage(e.target.value)}
-              placeholder="Explain why this pawned item should be marked as expired."
-              rows={5}
-              maxLength={500}
-              className="mt-1 w-full resize-none rounded-md border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none focus:border-emerald-500"
-            />
-            <div className="mt-1 text-right text-[11px] text-text-tertiary">
-              {expireRequestMessage.length}/500
-            </div>
-
-            {expireRequestError && (
-              <p className="mt-2 text-xs font-medium text-red-600">{expireRequestError}</p>
-            )}
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={closeExpireRequestModal}
-                disabled={isSubmittingExpireRequest}
-                className="rounded-md border border-border-main px-3 py-1.5 text-xs font-semibold text-text-secondary hover:bg-surface-hover disabled:opacity-60"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitExpireRequest}
-                disabled={isSubmittingExpireRequest}
-                className="rounded-md border border-emerald-700 bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-              >
-                {isSubmittingExpireRequest ? "Sending..." : "Send for Approval"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
