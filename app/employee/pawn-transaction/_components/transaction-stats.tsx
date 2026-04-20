@@ -1,4 +1,5 @@
 import { StatCard } from "@/components/shared/stat-card";
+import { formatPeso } from "@/lib/currency";
 
 const pawnedIcon = (
   <svg
@@ -127,34 +128,32 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={soldIcon}
         borderColor="bg-orange-500"
       />
-      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-4">
+      <div className="flex flex-col justify-between rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
         <div className="mb-3 h-1 w-full rounded-full bg-zinc-800" />
-        
-        {/* Starting Balance */}
+
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               Start Balance
             </p>
-            <p className="mt-0.5 text-xl font-bold text-zinc-900">
-              ₱ {data?.startingBalance?.toLocaleString() || "0"}
+            <p className="mt-0.5 text-xl font-bold text-text-primary">
+              {formatPeso(data?.startingBalance)}
             </p>
           </div>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-600">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
             {balanceIcon}
           </div>
         </div>
 
-        <div className="my-2.5 border-t border-dashed border-zinc-200" />
+        <div className="my-2.5 border-t border-dashed border-border-subtle" />
 
-        {/* Ending Balance */}
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               End Balance
             </p>
             <p className="mt-0.5 text-xl font-bold text-emerald-600">
-              ₱ {data?.endingBalance?.toLocaleString() || "0"}
+              {formatPeso(data?.endingBalance)}
             </p>
           </div>
         </div>
