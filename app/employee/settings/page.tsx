@@ -6,40 +6,17 @@ import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 
 export default function EmployeeSettingsPage() {
-  const [activeTab, setActiveTab] = useState("Profile");
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { selectedBranch } = useBranch();
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("Profile");
   const [toast, setToast] = useState<string | null>(null);
+  const branchName = selectedBranch?.name || "Taguig Branch";
 
-  useEffect(() => {
-    if (user) {
-      setFullName(user.fullName || "");
-      setEmail(user.email || "");
-    }
-  }, [user]);
-
-  const branchName = selectedBranch?.name || "Branch";
-  const roleLabel = user?.role === "admin" ? "Branch Admin" : user?.role === "super_admin" ? "Super Admin" : "Branch Associate";
-  const initials = fullName ? fullName.charAt(0).toUpperCase() : "U";
-
-  async function handleSave() {
-    setIsSaving(true);
-    try {
-      await api.patch("/users/me", { fullName, email });
-      setToast("Profile updated successfully.");
-      setTimeout(() => setToast(null), 2500);
-    } catch (err) {
-      console.error("Failed to update profile:", err);
-      setToast("Failed to update profile.");
-      setTimeout(() => setToast(null), 2500);
-    } finally {
-      setIsSaving(false);
-    }
-  }
+  const setMessage = (val: string | null) => {
+    // If we wanted to keep the old message logic, we would, 
+    // but for now we just clear the toast if null is passed.
+    if (val === null) setToast(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -59,7 +36,10 @@ export default function EmployeeSettingsPage() {
         {["Profile", "Branch Config"].map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => {
+              setActiveTab(tab);
+              setMessage(null);
+            }}
             className={`px-6 py-2 text-xs font-bold transition-all rounded-md ${
               activeTab === tab
                 ? "bg-emerald-700 text-white shadow-sm"
@@ -74,38 +54,30 @@ export default function EmployeeSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
           {activeTab === "Profile" && (
-            <div className="rounded-xl border border-zinc-200 dark:border-border-main bg-white dark:bg-surface p-6 shadow-sm">
-              <h3 className="text-base font-bold text-zinc-800 dark:text-text-primary mb-4 pb-2 border-b border-border-subtle">My Account Profile</h3>
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <h3 className="text-base font-bold text-zinc-800 mb-4 pb-2 border-b">My Account Profile</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase text-zinc-500 dark:text-text-muted tracking-wide">Full Name</label>
-                    <input
-                      className="rounded-lg border border-zinc-300 dark:border-border-main bg-white dark:bg-surface-secondary px-3 py-2 text-sm text-zinc-800 dark:text-text-primary focus:border-emerald-500 outline-none"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                    />
+                    <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Full Name</label>
+                    <input className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 focus:border-emerald-500 outline-none" defaultValue="Employee Name" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                     <label className="text-[10px] font-bold uppercase text-zinc-500 dark:text-text-muted tracking-wide">Job Title</label>
-                     <div className="rounded-lg border border-zinc-100 dark:border-border-subtle bg-zinc-50 dark:bg-surface-secondary px-3 py-2 text-sm text-zinc-500 dark:text-text-secondary">{roleLabel}</div>
+                     <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Job Title</label>
+                     <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500">Branch Associate / Auditor</div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500 dark:text-text-muted tracking-wide">Email Address</label>
-                  <input
-                    className="rounded-lg border border-zinc-300 dark:border-border-main bg-white dark:bg-surface-secondary px-3 py-2 text-sm text-zinc-800 dark:text-text-primary focus:border-emerald-500 outline-none"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                  <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Email Address</label>
+                  <input className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 focus:border-emerald-500 outline-none" defaultValue="employee@gmail.com" />
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === "Branch Config" && (
-            <div className="rounded-xl border border-zinc-200 dark:border-border-main bg-white dark:bg-surface p-6 shadow-sm">
-              <h3 className="text-base font-bold text-emerald-800 dark:text-emerald-400 mb-4 pb-2 border-b border-border-subtle">Current Location: {branchName}</h3>
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <h3 className="text-base font-bold text-emerald-800 mb-4 pb-2 border-b">Current Location: {branchName}</h3>
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                   <div>
@@ -132,34 +104,23 @@ export default function EmployeeSettingsPage() {
           )}
 
           <div className="flex items-center gap-3">
-             <button
-               onClick={handleSave}
-               disabled={isSaving}
-               className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors disabled:opacity-50"
-             >
-               {isSaving ? "Saving..." : "Save Changes"}
+             <button className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors">
+               Save Changes
              </button>
-             <button
-               onClick={() => {
-                 setFullName(user?.fullName || "");
-                 setEmail(user?.email || "");
-               }}
-               className="rounded-lg border border-zinc-300 dark:border-border-main px-6 py-2 text-xs font-bold text-zinc-600 dark:text-text-secondary hover:bg-zinc-50 dark:hover:bg-surface-secondary"
-             >
+             <button className="rounded-lg border border-zinc-300 px-6 py-2 text-xs font-bold text-zinc-600 hover:bg-zinc-50">
                Discard
              </button>
           </div>
         </div>
 
         <div className="space-y-6">
-           <div className="rounded-xl border border-zinc-200 dark:border-border-main bg-white dark:bg-surface p-6 shadow-sm text-center">
-              <div className="mx-auto w-20 h-20 rounded-full bg-emerald-800 flex items-center justify-center text-white text-3xl font-bold mb-4 border-4 border-emerald-50 dark:border-emerald-900">
-                 {initials}
+           <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm text-center">
+              <div className="mx-auto w-20 h-20 rounded-full bg-emerald-800 flex items-center justify-center text-white text-3xl font-bold mb-4 border-4 border-emerald-50">
+                 E
               </div>
-              <h4 className="text-lg font-bold text-zinc-900 dark:text-text-primary">{fullName || "User"}</h4>
-              <p className="text-xs text-zinc-500 dark:text-text-muted mb-1">{roleLabel}</p>
-              <p className="text-xs text-zinc-500 dark:text-text-muted mb-4">{branchName}</p>
-              <button className="w-full py-2 rounded-lg border border-emerald-100 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 dark:hover:bg-emerald-900/40">
+              <h4 className="text-lg font-bold text-zinc-900">Branch Analyst</h4>
+              <p className="text-xs text-zinc-500 mb-4">{branchName}</p>
+              <button className="w-full py-2 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100">
                 Change Avatar
               </button>
            </div>
