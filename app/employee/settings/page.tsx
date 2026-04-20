@@ -10,13 +10,49 @@ export default function EmployeeSettingsPage() {
   const { selectedBranch } = useBranch();
   const [activeTab, setActiveTab] = useState("Profile");
   const [toast, setToast] = useState<string | null>(null);
-  const branchName = selectedBranch?.name || "Taguig Branch";
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const branchName = selectedBranch?.name || "Bgc Branch";
 
-  const setMessage = (val: string | null) => {
-    // If we wanted to keep the old message logic, we would, 
-    // but for now we just clear the toast if null is passed.
-    if (val === null) setToast(null);
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName || "");
+      setEmail(user.email || "");
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    setToast(null);
+    try {
+      await api.patch("/auth/profile", { fullName });
+      await refreshProfile();
+      setToast("Profile updated successfully!");
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  const handleDiscard = () => {
+    if (user) {
+      setFullName(user.fullName || "");
+      setToast(null);
+    }
+  };
+
+  const initials = fullName
+    ? fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : user?.email?.charAt(0).toUpperCase() || "U";
 
   return (
     <div className="space-y-6">
@@ -38,7 +74,7 @@ export default function EmployeeSettingsPage() {
             key={tab}
             onClick={() => {
               setActiveTab(tab);
-              setMessage(null);
+              setToast(null);
             }}
             className={`px-6 py-2 text-xs font-bold transition-all rounded-md ${
               activeTab === tab
@@ -60,16 +96,29 @@ export default function EmployeeSettingsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Full Name</label>
-                    <input className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 focus:border-emerald-500 outline-none" defaultValue="Employee Name" />
+                    <input 
+                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 focus:border-emerald-500 outline-none transition-colors" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Your full name"
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                     <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Job Title</label>
-                     <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500">Branch Associate / Auditor</div>
+                     <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Account Role</label>
+                     <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 capitalize">
+                       {user?.role || "Employee"}
+                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Email Address</label>
-                  <input className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 focus:border-emerald-500 outline-none" defaultValue="employee@gmail.com" />
+                  <input 
+                    className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-400 outline-none cursor-not-allowed" 
+                    value={email}
+                    readOnly
+                    title="Email cannot be changed from this page"
+                  />
+                  <p className="text-[10px] text-zinc-400 italic">Email updates require administrative verification.</p>
                 </div>
               </div>
             </div>
@@ -104,10 +153,17 @@ export default function EmployeeSettingsPage() {
           )}
 
           <div className="flex items-center gap-3">
-             <button className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors">
-               Save Changes
+             <button 
+               onClick={handleSave}
+               disabled={isSaving || fullName === user?.fullName}
+               className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               {isSaving ? "Saving..." : "Save Changes"}
              </button>
-             <button className="rounded-lg border border-zinc-300 px-6 py-2 text-xs font-bold text-zinc-600 hover:bg-zinc-50">
+             <button 
+               onClick={handleDiscard}
+               className="rounded-lg border border-zinc-300 px-6 py-2 text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-colors"
+             >
                Discard
              </button>
           </div>
@@ -115,12 +171,12 @@ export default function EmployeeSettingsPage() {
 
         <div className="space-y-6">
            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm text-center">
-              <div className="mx-auto w-20 h-20 rounded-full bg-emerald-800 flex items-center justify-center text-white text-3xl font-bold mb-4 border-4 border-emerald-50">
-                 E
+              <div className="mx-auto w-20 h-20 rounded-full bg-emerald-800 flex items-center justify-center text-white text-3xl font-bold mb-4 border-4 border-emerald-50 overflow-hidden">
+                 {initials}
               </div>
-              <h4 className="text-lg font-bold text-zinc-900">Branch Analyst</h4>
+              <h4 className="text-lg font-bold text-zinc-900 truncate px-2">{fullName || "Employee"}</h4>
               <p className="text-xs text-zinc-500 mb-4">{branchName}</p>
-              <button className="w-full py-2 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100">
+              <button className="w-full py-2 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">
                 Change Avatar
               </button>
            </div>
