@@ -4,6 +4,67 @@ import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "reac
 import { api } from "@/lib/api";
 import { MoaModal } from "./moa-modal";
 
+const NO_ID_VALUE = "No ID / None";
+const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
+
+type CustomerMode = "new" | "existing";
+
+interface CustomerLookupRecord {
+  id: string;
+  full_name: string;
+  contact_number: string | null;
+  email: string | null;
+  address: string | null;
+  barangay: string | null;
+  city: string | null;
+  province: string | null;
+  id_presented: string | null;
+}
+
+interface TransactionsResponse {
+  transactions: Array<{
+    pawned_item?: { customer_id?: string | null } | null;
+  }>;
+}
+
+function splitFullName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+
+  if (parts.length === 1) {
+    return { firstName: parts[0], middleName: "", lastName: "" };
+  }
+
+  if (parts.length === 2) {
+    return { firstName: parts[0], middleName: "", lastName: parts[1] };
+  }
+
+  return {
+    firstName: parts[0],
+    middleName: parts.slice(1, -1).join(" "),
+    lastName: parts[parts.length - 1],
+  };
+}
+
+function getVerificationMode(idPresented: string) {
+  if (!idPresented) {
+    return "pending" as const;
+  }
+
+  if (idPresented === NO_ID_VALUE) {
+    return "no-id" as const;
+  }
+
+  if (SINGLE_IMAGE_ID_TYPES.has(idPresented)) {
+    return "single-document" as const;
+  }
+
+  return "front-back" as const;
+}
+
 interface NewPawnModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -50,6 +111,7 @@ export function NewPawnModal({
     storageFeeAmount: "",
     profilePhoto: null as string | null,
     idPhoto: null as string | null,
+    idBackPhoto: null as string | null,
   });
 
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -58,6 +120,13 @@ export function NewPawnModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [isMoaOpen, setIsMoaOpen] = useState(false);
+  const [customerMode, setCustomerMode] = useState<CustomerMode>("new");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [branchCustomers, setBranchCustomers] = useState<CustomerLookupRecord[]>([]);
+  const [customerBranchTransactions, setCustomerBranchTransactions] = useState<Set<string>>(new Set());
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
+  const [customerLookupError, setCustomerLookupError] = useState<string | null>(null);
 
   // Auto-generate Unit Code when modal opens
   useEffect(() => {
@@ -78,10 +147,83 @@ export function NewPawnModal({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !branchId || branchId === "__all__") {
+      setBranchCustomers([]);
+      setCustomerBranchTransactions(new Set());
+      setCustomerLookupError(null);
+      setIsLoadingCustomers(false);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadBranchCustomers = async () => {
+      setIsLoadingCustomers(true);
+      setCustomerLookupError(null);
+
+      try {
+        const [customers, transactions] = await Promise.all([
+          api.get<CustomerLookupRecord[]>(`/customers?branchId=${encodeURIComponent(branchId)}`),
+          api.get<TransactionsResponse>(
+            `/transactions?branch=${encodeURIComponent(branchId)}&range=all`,
+          ),
+        ]);
+
+        if (!isActive) {
+          return;
+        }
+
+        const branchCustomerIds = new Set<string>();
+        for (const transaction of transactions.transactions ?? []) {
+          const customerId = transaction?.pawned_item?.customer_id;
+          if (customerId) {
+            branchCustomerIds.add(customerId);
+          }
+        }
+
+        setBranchCustomers(Array.isArray(customers) ? customers : []);
+        setCustomerBranchTransactions(branchCustomerIds);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+
+        setCustomerLookupError(
+          error instanceof Error ? error.message : "Unable to load branch customers.",
+        );
+        setBranchCustomers([]);
+        setCustomerBranchTransactions(new Set());
+      } finally {
+        if (isActive) {
+          setIsLoadingCustomers(false);
+        }
+      }
+    };
+
+    void loadBranchCustomers();
+
+    return () => {
+      isActive = false;
+    };
+  }, [branchId, isOpen]);
+
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const target = event.target as HTMLInputElement | HTMLSelectElement;
     const { name, type, value } = target;
     const checked = "checked" in target ? target.checked : false;
+
+    if (name === "idPresented") {
+      setForm((prev) => ({
+        ...prev,
+        idPresented: value,
+        profilePhoto: null,
+        idPhoto: null,
+        idBackPhoto: null,
+      }));
+      setQrUrl(null);
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
@@ -120,12 +262,65 @@ export function NewPawnModal({
       storageFeeAmount: "",
       profilePhoto: null,
       idPhoto: null,
+      idBackPhoto: null,
     });
     setQrUrl(null);
     setPassword("");
     setErrorMessage(null);
+    setCustomerMode("new");
+    setSelectedCustomerId(null);
+    setCustomerSearch("");
+    setBranchCustomers([]);
+    setCustomerBranchTransactions(new Set());
+    setCustomerLookupError(null);
     onClose();
   }, [onClose]);
+
+  const handleSelectExistingCustomer = useCallback((customer: CustomerLookupRecord) => {
+    const nameParts = splitFullName(customer.full_name);
+
+    setSelectedCustomerId(customer.id);
+    setForm((prev) => ({
+      ...prev,
+      firstName: nameParts.firstName,
+      middleName: nameParts.middleName,
+      lastName: nameParts.lastName,
+      address: customer.address ?? "",
+      barangay: customer.barangay ?? "",
+      city: customer.city ?? "",
+      province: customer.province ?? "",
+      contactNo: customer.contact_number ?? "",
+      email: customer.email ?? "",
+      idPresented: customer.id_presented ?? "",
+      profilePhoto: null,
+      idPhoto: null,
+      idBackPhoto: null,
+    }));
+    setCustomerMode("new");
+    setErrorMessage(null);
+    setQrUrl(null);
+  }, []);
+
+  const handleUseAsNewCustomer = useCallback(() => {
+    setSelectedCustomerId(null);
+  }, []);
+
+  const handleSwitchToExistingCustomers = useCallback(() => {
+    setCustomerMode("existing");
+  }, []);
+
+  const filteredBranchCustomers = branchCustomers.filter((customer) => {
+    const query = customerSearch.trim().toLowerCase();
+    if (!query) {
+      return true;
+    }
+
+    return customer.full_name.toLowerCase().includes(query);
+  });
+
+  const selectedCustomer = selectedCustomerId
+    ? branchCustomers.find((customer) => customer.id === selectedCustomerId) ?? null
+    : null;
 
   const handleGenerateQR = () => {
     // Required fields for QR generation
@@ -245,11 +440,31 @@ export function NewPawnModal({
     const amountValue = Number(form.amount || 0);
     const storageAmount = form.storageFee ? Number(form.storageFeeAmount || 0) : 0;
     const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ").trim();
+    const verificationMode = getVerificationMode(form.idPresented);
+
+    if (verificationMode === "no-id" && !form.profilePhoto) {
+      setIsSaving(false);
+      setErrorMessage("Customer photo is required when No ID / None is selected.");
+      return;
+    }
+
+    if (verificationMode === "single-document" && !form.idPhoto) {
+      setIsSaving(false);
+      setErrorMessage("Document image is required for clearance verification.");
+      return;
+    }
+
+    if (verificationMode === "front-back" && (!form.idPhoto || !form.idBackPhoto)) {
+      setIsSaving(false);
+      setErrorMessage("Front and back ID photos are required for this ID type.");
+      return;
+    }
 
     try {
       await api.post('/pawn-tickets', {
         branchId,
         branchName,
+        customerId: selectedCustomerId ?? undefined,
         customer: {
           fullName,
           address: form.address.trim(),
@@ -274,6 +489,7 @@ export function NewPawnModal({
           qrCode: qrUrl || undefined,
           profilePhoto: form.profilePhoto || undefined,
           idPhoto: form.idPhoto || undefined,
+          idBackPhoto: form.idBackPhoto || undefined,
         },
         transaction: {
           pawnAmount: amountValue,
@@ -386,86 +602,230 @@ export function NewPawnModal({
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Customer Information */}
               <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <h3 className="text-sm font-black text-zinc-800 uppercase tracking-widest">Customer Details</h3>
                   </div>
-                  <h3 className="text-sm font-black text-zinc-800 uppercase tracking-widest">Customer Details</h3>
+
+                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-zinc-200 bg-zinc-100 p-1 shadow-sm">
+                    <span
+                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomerMode("new")}
+                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "new" ? "text-emerald-900" : "text-zinc-500"}`}
+                    >
+                      New Customer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSwitchToExistingCustomers}
+                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "existing" ? "text-emerald-900" : "text-zinc-500"}`}
+                    >
+                      Existing Customer
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
-                    <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
-                    <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
-                  </div>
-                  
-                  <Input label="Street / Subdivision / Compound" name="address" value={form.address} onChange={handleChange} />
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input label="Barangay / District / Locality" name="barangay" value={form.barangay} onChange={handleChange} />
-                    <Input label="City / Municipality" name="city" value={form.city} onChange={handleChange} />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input label="Province" name="province" value={form.province} onChange={handleChange} />
-                    <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
-                  </div>
-
-                  <Input label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="example@email.com" />
-
-                  <div className="space-y-1.5 w-full">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">ID Presented</label>
-                    <select
-                      name="idPresented"
-                      value={form.idPresented}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="">— Select ID Type —</option>
-                      <optgroup label="Government IDs">
-                        <option value="PhilSys / National ID">PhilSys / National ID</option>
-                        <option value="Passport">Passport</option>
-                        <option value="Driver's License">Driver&apos;s License</option>
-                        <option value="SSS ID">SSS ID</option>
-                        <option value="GSIS ID">GSIS ID</option>
-                        <option value="PRC ID">PRC ID</option>
-                        <option value="Voter's ID">Voter&apos;s ID</option>
-                        <option value="PhilHealth ID">PhilHealth ID</option>
-                        <option value="Pag-IBIG ID">Pag-IBIG ID</option>
-                        <option value="Senior Citizen ID">Senior Citizen ID</option>
-                        <option value="PWD ID">PWD ID</option>
-                        <option value="Postal ID">Postal ID</option>
-                        <option value="NBI Clearance">NBI Clearance</option>
-                        <option value="Police Clearance">Police Clearance</option>
-                        <option value="Barangay ID">Barangay ID</option>
-                        <option value="OFW ID">OFW ID</option>
-                        <option value="UMID">UMID</option>
-                      </optgroup>
-                      <optgroup label="Other">
-                        <option value="No ID / None">No ID / None — Take Customer Photo</option>
-                      </optgroup>
-                    </select>
-                  </div>
-
-                  {/* Camera capture section */}
-                  <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
-                    <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                       ID & Verification Scan
-                    </span>
-                    <div className="grid grid-cols-2 gap-3">
-                      <PhotoUpload 
-                        label="ID Photo / Serial" 
-                        onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
-                      />
-                      <PhotoUpload 
-                        label="Customer Facing View" 
-                        onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
-                      />
+                {selectedCustomer && customerMode === "new" && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Loaded branch customer</p>
+                        <p className="mt-1 text-sm font-black text-emerald-950">{selectedCustomer.full_name}</p>
+                        <p className="mt-0.5 text-xs font-medium text-emerald-800/70">This contract will reuse the selected branch record.</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSwitchToExistingCustomers}
+                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition-colors hover:bg-emerald-50"
+                        >
+                          Change Customer
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleUseAsNewCustomer}
+                          className="rounded-xl border border-emerald-200 bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-800"
+                        >
+                          Use As New
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {customerMode === "existing" ? (
+                  <div className="space-y-4 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Search by name only</p>
+                      <p className="text-xs font-medium text-zinc-500">
+                        Find a branch customer, review the contact details, and load the record into the pawn form.
+                      </p>
+                    </div>
+
+                    <Input
+                      label="Customer Name"
+                      name="customerSearch"
+                      value={customerSearch}
+                      onChange={(event) => setCustomerSearch(event.target.value)}
+                      placeholder="Search existing customer by name"
+                    />
+
+                    {isLoadingCustomers ? (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center text-sm font-medium text-zinc-400">
+                        Loading branch customers...
+                      </div>
+                    ) : customerLookupError ? (
+                      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                        {customerLookupError}
+                      </div>
+                    ) : filteredBranchCustomers.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center text-sm font-medium text-zinc-400">
+                        No matching branch customer found.
+                      </div>
+                    ) : (
+                      <div className="max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                        {filteredBranchCustomers.map((customer) => {
+                          const statusLabel = customerBranchTransactions.has(customer.id)
+                            ? "Existing customer"
+                            : "First time transaction";
+
+                          return (
+                            <button
+                              key={customer.id}
+                              type="button"
+                              onClick={() => handleSelectExistingCustomer(customer)}
+                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-zinc-200 bg-white hover:border-emerald-200"}`}
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0 space-y-1">
+                                  <p className="truncate text-sm font-black text-zinc-900">{customer.full_name}</p>
+                                  <p className="truncate text-xs font-medium text-zinc-500">
+                                    {customer.contact_number || "No contact number"}
+                                  </p>
+                                  <p className="truncate text-xs font-medium text-zinc-500">
+                                    {customer.email || "No email address"}
+                                  </p>
+                                </div>
+
+                                <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${customerBranchTransactions.has(customer.id) ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                                  {statusLabel}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                      <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                      <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                    </div>
+
+                    <Input label="Street / Subdivision / Compound" name="address" value={form.address} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Barangay / District / Locality" name="barangay" value={form.barangay} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                      <Input label="City / Municipality" name="city" value={form.city} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Province" name="province" value={form.province} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                      <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" readOnly={Boolean(selectedCustomerId)} />
+                    </div>
+
+                    <Input label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="example@email.com" readOnly={Boolean(selectedCustomerId)} />
+
+                    <div className="space-y-1.5 w-full">
+                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">ID Presented</label>
+                      <select
+                        name="idPresented"
+                        value={form.idPresented}
+                        onChange={handleChange}
+                        disabled={Boolean(selectedCustomerId)}
+                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100"
+                      >
+                        <option value="">— Select ID Type —</option>
+                        <optgroup label="Government IDs">
+                          <option value="PhilSys / National ID">PhilSys / National ID</option>
+                          <option value="Passport">Passport</option>
+                          <option value="Driver's License">Driver&apos;s License</option>
+                          <option value="SSS ID">SSS ID</option>
+                          <option value="GSIS ID">GSIS ID</option>
+                          <option value="PRC ID">PRC ID</option>
+                          <option value="Voter's ID">Voter&apos;s ID</option>
+                          <option value="PhilHealth ID">PhilHealth ID</option>
+                          <option value="Pag-IBIG ID">Pag-IBIG ID</option>
+                          <option value="Senior Citizen ID">Senior Citizen ID</option>
+                          <option value="PWD ID">PWD ID</option>
+                          <option value="Postal ID">Postal ID</option>
+                          <option value="NBI Clearance">NBI Clearance</option>
+                          <option value="Police Clearance">Police Clearance</option>
+                          <option value="Barangay ID">Barangay ID</option>
+                          <option value="OFW ID">OFW ID</option>
+                          <option value="UMID">UMID</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                          <option value="No ID / None">No ID / None — Take Customer Photo</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Camera capture section */}
+                    <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
+                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                         {getVerificationMode(form.idPresented) === "no-id"
+                           ? "Customer Photo"
+                           : getVerificationMode(form.idPresented) === "single-document"
+                             ? "Document Upload"
+                             : getVerificationMode(form.idPresented) === "front-back"
+                               ? "ID Front / Back"
+                               : "ID & Verification"}
+                      </span>
+
+                      {getVerificationMode(form.idPresented) === "pending" ? (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-6 text-center text-xs font-medium text-zinc-400">
+                          Select an ID type to show the required verification photo fields.
+                        </div>
+                      ) : getVerificationMode(form.idPresented) === "no-id" ? (
+                        <div className="grid grid-cols-1 gap-3">
+                          <PhotoUpload 
+                            label="Take Customer Facing Photo" 
+                            onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
+                          />
+                        </div>
+                      ) : getVerificationMode(form.idPresented) === "single-document" ? (
+                        <div className="grid grid-cols-1 gap-3">
+                          <PhotoUpload 
+                            label="Upload Image" 
+                            onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                          />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          <PhotoUpload 
+                            label="Front of ID" 
+                            onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                          />
+                          <PhotoUpload 
+                            label="Back of ID" 
+                            onCapture={(data) => setForm(prev => ({ ...prev, idBackPhoto: data }))}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Unit Information */}

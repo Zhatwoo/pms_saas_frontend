@@ -20,6 +20,7 @@ interface MoaModalProps {
     itemsIncluded: string;
     condition: string;
     remarks: string;
+    memory: string;
     amount: string;
     storageFee: string;
     purchasedDate: string;
