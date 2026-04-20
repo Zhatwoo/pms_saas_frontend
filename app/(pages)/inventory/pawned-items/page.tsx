@@ -30,26 +30,6 @@ interface PawnedItem {
   conditionReport?: string;
 }
 
-interface ActivityLogEntry {
-  id: string;
-  action: string;
-  details?: string | null;
-  createdAt: string;
-  userFullName?: string;
-  branchName?: string;
-}
-
-interface ExpireApprovalRequest {
-  id: string;
-  pawnedItemId: string;
-  itemId: string;
-  itemName: string;
-  branch: string;
-  message: string;
-  requestedBy: string;
-  createdAt: string;
-}
-
 const branchOptions = [
   { value: "all", label: "All Branches" },
   { value: "taguig", label: "Taguig" },
@@ -189,9 +169,6 @@ export default function PawnedItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewingItem, setViewingItem] = useState<PawnedItem | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [expireRequests, setExpireRequests] = useState<ExpireApprovalRequest[]>([]);
-  const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
-  const [reviewError, setReviewError] = useState("");
 
   useEffect(() => { setCurrentPage(1); }, [branch, category, status, searchQuery]);
 
@@ -221,55 +198,6 @@ export default function PawnedItemsPage() {
     }
     fetchData();
   }, [branch, category, status, searchQuery, currentPage]);
-
-  useEffect(() => {
-    async function fetchExpireRequests() {
-      if (!isSuperAdmin) {
-        setExpireRequests([]);
-        return;
-      }
-
-      try {
-        const logs = await api.get<ActivityLogEntry[]>("/activity-logs");
-
-        const requests = logs
-          .filter((log) => log.action === "PAWN_ITEM_EXPIRE_REQUEST")
-          .map((log) => {
-            let parsed: Record<string, string> = {};
-
-            if (log.details) {
-              try {
-                parsed = JSON.parse(log.details) as Record<string, string>;
-              } catch {
-                parsed = {};
-              }
-            }
-
-            const requestStatus = (parsed.requestStatus || "pending").toLowerCase();
-
-            return {
-              id: log.id,
-              pawnedItemId: parsed.pawnedItemId || "",
-              itemId: parsed.itemId || "Unknown",
-              itemName: parsed.itemName || "Unnamed item",
-              branch: parsed.branch || log.branchName || "Unknown branch",
-              message: parsed.message || "(No message)",
-              requestedBy: log.userFullName || "Unknown user",
-              createdAt: log.createdAt,
-              requestStatus,
-            };
-          })
-          .filter((request) => request.requestStatus === "pending")
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        setExpireRequests(requests);
-      } catch (err) {
-        console.error("Failed to fetch expire approval requests:", err);
-      }
-    }
-
-    void fetchExpireRequests();
-  }, [isSuperAdmin]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
@@ -304,149 +232,8 @@ export default function PawnedItemsPage() {
     alert("QR Scanner will open here. Scan all items in the vault to tally physical count vs system inventory.");
   }, []);
 
-  const handleReviewExpireRequest = useCallback(
-    async (request: ExpireApprovalRequest, decision: "approve" | "reject") => {
-      if (!request.pawnedItemId) {
-        setReviewError("This request is missing pawned item metadata and cannot be reviewed.");
-        return;
-      }
-
-      try {
-        setReviewingRequestId(request.id);
-        setReviewError("");
-
-        const requestPaths = [
-          `/inventory/pawned/${request.pawnedItemId}/expire-request/${request.id}/review`,
-          `/inventory/pawned/${request.pawnedItemId}/request-expire/${request.id}/review`,
-        ];
-
-        let processed = false;
-        let lastError: unknown = null;
-
-        for (const path of requestPaths) {
-          try {
-            await api.patch(path, { decision });
-            processed = true;
-            break;
-          } catch (patchErr) {
-            lastError = patchErr;
-            const patchText =
-              patchErr instanceof Error ? patchErr.message.toLowerCase() : String(patchErr).toLowerCase();
-            const patchRouteMissing = patchText.includes("cannot patch") || patchText.includes("not found");
-
-            if (!patchRouteMissing) {
-              throw patchErr;
-            }
-
-            try {
-              await api.post(path, { decision });
-              processed = true;
-              break;
-            } catch (postErr) {
-              lastError = postErr;
-              const postText =
-                postErr instanceof Error ? postErr.message.toLowerCase() : String(postErr).toLowerCase();
-              const postRouteMissing = postText.includes("cannot post") || postText.includes("not found");
-
-              if (!postRouteMissing) {
-                throw postErr;
-              }
-            }
-          }
-        }
-
-        if (!processed) {
-          throw lastError instanceof Error ? lastError : new Error("Review endpoint is unavailable");
-        }
-
-        setExpireRequests((prev) => prev.filter((entry) => entry.id !== request.id));
-
-        if (decision === "approve") {
-          setPawnedItems((prev) =>
-            prev.map((item) =>
-              item.id === request.pawnedItemId
-                ? { ...item, status: "Expired" as PawnedStatus }
-                : item,
-            ),
-          );
-        }
-      } catch (err) {
-        console.error("Failed to review expire request:", err);
-        const errorText = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
-        if (errorText.includes("cannot post") || errorText.includes("cannot patch") || errorText.includes("not found")) {
-          setReviewError("Review endpoint is not available yet. Restart PMS_backend so the latest routes are loaded.");
-        } else {
-          setReviewError("Unable to process request. Please try again.");
-        }
-      } finally {
-        setReviewingRequestId(null);
-      }
-    },
-    [],
-  );
-
   return (
     <div className="space-y-3 pb-4">
-      {isSuperAdmin && (
-        <div className="w-full md:max-w-3xl rounded-lg border border-amber-200 bg-amber-50/60 p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Pending Approval Requests</p>
-              <p className="text-xs text-amber-900/80">Expire requests submitted by admins and employees</p>
-            </div>
-            <span className="rounded bg-amber-200/70 px-2 py-1 text-[11px] font-bold text-amber-800">
-              {expireRequests.length}
-            </span>
-          </div>
-
-          {expireRequests.length === 0 ? (
-            <p className="text-xs text-amber-900/70">No pending expire approval requests.</p>
-          ) : (
-            <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
-              {expireRequests.map((request) => (
-                <div key={request.id} className="rounded-md border border-amber-200 bg-white px-3 py-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-bold text-text-primary">
-                      {request.itemId} - {request.itemName}
-                    </p>
-                    <span className="text-[11px] text-text-tertiary">
-                      {new Date(request.createdAt).toLocaleString("en-PH")}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[11px] text-text-tertiary">
-                    Branch: {request.branch} | Requested by: {request.requestedBy}
-                  </p>
-                  <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs text-text-secondary">
-                    {request.message}
-                  </p>
-
-                  <div className="mt-2 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => handleReviewExpireRequest(request, "reject")}
-                      disabled={reviewingRequestId === request.id || !request.pawnedItemId}
-                      className="rounded border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100 disabled:opacity-60"
-                    >
-                      {reviewingRequestId === request.id ? "Processing..." : "Reject"}
-                    </button>
-                    <button
-                      onClick={() => handleReviewExpireRequest(request, "approve")}
-                      disabled={reviewingRequestId === request.id || !request.pawnedItemId}
-                      className="rounded border border-emerald-700 bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
-                    >
-                      {reviewingRequestId === request.id ? "Processing..." : "Approve"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {reviewError && (
-            <p className="mt-2 text-xs font-medium text-red-600">{reviewError}</p>
-          )}
-        </div>
-      )}
-
       {/* Filters and Controls */}
       <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main transition-colors duration-300">
         <div className="flex flex-wrap items-end gap-3">
