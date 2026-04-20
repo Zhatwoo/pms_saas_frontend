@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 
 type ExtensionRow = {
   date: string;
@@ -98,6 +99,21 @@ export default function SettingsPage() {
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
 
+  useEffect(() => {
+    async function fetchMoaTemplate() {
+      try {
+        const data = await api.get<{ terms_text: string; labels: typeof topLabels }>(`/settings/moa_template`);
+        if (data) {
+          setTermsText(data.terms_text);
+          setTopLabels(data.labels);
+        }
+      } catch (error) {
+        console.error("Failed to fetch MOA template:", error);
+      }
+    }
+    fetchMoaTemplate();
+  }, []);
+
   const canEditMoa = isMoaEditMode && !isMoaLocked;
 
   const lineInputClass =
@@ -125,8 +141,17 @@ export default function SettingsPage() {
     );
   };
 
-  const handleSaveMoa = () => {
-    setMoaSavedAt(new Date().toLocaleString());
+  const handleSaveMoa = async () => {
+    try {
+      await api.post(`/settings/moa_template`, {
+        terms_text: termsText,
+        labels: topLabels,
+      });
+      setMoaSavedAt(new Date().toLocaleString());
+    } catch (error) {
+      console.error("Failed to save MOA template:", error);
+      alert("Failed to save MOA template. Please try again.");
+    }
   };
 
   const handleSendToAllBranches = () => {
@@ -663,12 +688,17 @@ export default function SettingsPage() {
                         topLabels.termsHeading
                       )}
                     </p>
-                    <textarea
-                      value={termsText}
-                      onChange={(e) => setTermsText(e.target.value)}
-                      disabled={!canEditMoa}
-                      className="min-h-[175px] w-full resize-y rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-4 outline-none disabled:cursor-not-allowed"
-                    />
+                    {canEditMoa ? (
+                      <textarea
+                        value={termsText}
+                        onChange={(e) => setTermsText(e.target.value)}
+                        className="min-h-[200px] w-full resize-none rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed outline-none focus:border-emerald-500"
+                      />
+                    ) : (
+                      <div className="whitespace-pre-wrap p-3 text-[10px] leading-relaxed text-zinc-800 bg-emerald-50/10 rounded-lg">
+                        {termsText}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-8 pt-4 md:grid-cols-2">

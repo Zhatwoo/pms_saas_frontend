@@ -8,7 +8,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE transaction_purpose AS ENUM ('Start', 'Buy Back', 'Renew', 'Sold Item', 'Pawn');
+    CREATE TYPE transaction_purpose AS ENUM ('Start', 'Buy Back', 'Renew', 'Sold Item', 'Pawn', 'Cash Transfer', 'Fund Transfer');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -16,8 +16,10 @@ END $$;
 -- 2. BRANCHES TABLE (Supports Multi-Branch)
 CREATE TABLE IF NOT EXISTS branches (
     id SERIAL PRIMARY KEY,
+    branch_code VARCHAR(20) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     location VARCHAR(255),
+    contact_number VARCHAR(20) NOT NULL,
     -- Balance caching optionally handled here, but proper historical balance is in daily_balances
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -65,6 +67,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     unit_code VARCHAR(100),
     pawn NUMERIC(12, 2) DEFAULT 0.00,
     storage NUMERIC(12, 2) DEFAULT 0.00,
+    profile_photo TEXT,
+    id_photo TEXT,
     
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -93,7 +97,8 @@ CREATE TABLE IF NOT EXISTS pawned_items (
     status pawned_status NOT NULL DEFAULT 'Active',
     remarks TEXT,                          -- Admin editable notes (defects, investigations, etc.)
     qr_code TEXT,                          -- QR code data for vault tally
-    original_photo TEXT,                   -- Photo URL taken at time of pawn
+    profile_photo TEXT,                    -- Customer photo
+    id_photo TEXT,                         -- ID photo
     condition_report TEXT,                 -- Condition when received
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -34,33 +34,45 @@ const boxIcon = (
   </svg>
 );
 
-export function ExpirationStats() {
+interface ExpirationStatsData {
+  overdue: number;
+  threeDays: number;
+  sevenDays: number;
+  thirtyDays: number;
+}
+
+interface ExpirationStatsProps {
+  data?: ExpirationStatsData;
+  isLoading?: boolean;
+}
+
+export function ExpirationStats({ data, isLoading }: ExpirationStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Overdue"
-        value={0}
+        value={isLoading ? "..." : (data?.overdue ?? 0)}
         subtitle="Past maturity date"
         icon={warningIcon}
         borderColor="border-red-500"
       />
       <StatCard
         label="3 Days"
-        value={0}
+        value={isLoading ? "..." : (data?.threeDays ?? 0)}
         subtitle="Expiring within 3 Days"
         icon={boxIcon}
         borderColor="border-orange-500"
       />
       <StatCard
         label="7 Days"
-        value={0}
+        value={isLoading ? "..." : (data?.sevenDays ?? 0)}
         subtitle="Expiring within 7 Days"
         icon={boxIcon}
         borderColor="border-yellow-500"
       />
       <StatCard
         label="30 Days"
-        value={0}
+        value={isLoading ? "..." : (data?.thirtyDays ?? 0)}
         subtitle="Expiring within 30 Days"
         icon={boxIcon}
         borderColor="border-green-500"

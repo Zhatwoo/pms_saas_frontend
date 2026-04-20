@@ -5,10 +5,19 @@ import { useEffect, useState } from "react";
 interface ConfirmFundModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (notes: string) => void;
+  onConfirm: (data: {
+    receivedAmount: number;
+    notes: string;
+    proofFile: File | null;
+  }) => void;
   amount: number;
   requestNo?: string;
   branchName?: string;
+  sourceBranchName?: string | null;
+  transferMode?: string | null;
+  stageLabel?: string;
+  amountLabel?: string;
+  helperText?: string;
 }
 
 export function ConfirmFundModal({
@@ -18,20 +27,47 @@ export function ConfirmFundModal({
   amount,
   requestNo,
   branchName,
+  sourceBranchName,
+  transferMode,
+  stageLabel = "Confirm Fund Receipt",
+  amountLabel = "Actual Amount Received",
+  helperText = "Upload a proof image of the transaction and enter the actual amount received. The system will use this amount as the transfer basis.",
 }: ConfirmFundModalProps) {
   const [notes, setNotes] = useState("");
+  const [receivedAmount, setReceivedAmount] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofName, setProofName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setNotes("");
+      setReceivedAmount(amount > 0 ? String(amount) : "");
+      setProofFile(null);
+      setProofName(null);
+      setError(null);
     }
-  }, [isOpen]);
+  }, [amount, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(notes.trim());
+    const parsed = Number(receivedAmount.replace(/,/g, ""));
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setError("Enter a valid amount.");
+      return;
+    }
+    if (!proofFile) {
+      setError("Upload a proof image before confirming.");
+      return;
+    }
+
+    onConfirm({
+      receivedAmount: parsed,
+      notes: notes.trim(),
+      proofFile,
+    });
   };
 
   return (
@@ -46,7 +82,7 @@ export function ConfirmFundModal({
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-text-primary">Confirm Fund Receipt</h2>
+              <h2 className="text-lg font-bold text-text-primary">{stageLabel}</h2>
               <p className="text-xs text-text-secondary">
                 Finalize the transfer after your branch has received the funds.
               </p>
@@ -66,18 +102,63 @@ export function ConfirmFundModal({
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/60 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
-              Awaiting Your Confirmation
+              Receipt Confirmation
             </p>
             <p className="mt-2 text-3xl font-extrabold text-emerald-900">
-              PHP {amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₱{amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             <p className="mt-2 text-xs text-emerald-800/80">
               {requestNo ? `${requestNo} ` : ""}{branchName ? `for ${branchName}` : ""}
             </p>
+            {sourceBranchName ? (
+              <p className="mt-1 text-xs text-emerald-800/80">
+                Source: {sourceBranchName}
+              </p>
+            ) : null}
+            {transferMode ? (
+              <p className="mt-1 text-xs text-emerald-800/80">
+                Transfer mode: {transferMode.replaceAll("_", " ")}
+              </p>
+            ) : null}
           </div>
 
           <div className="rounded-xl border border-border-main bg-surface-secondary px-4 py-3 text-sm text-text-secondary">
-            Confirm this only after the transfer has been received by your branch. Once confirmed, the request will be marked as transferred and recorded in the branch ledger.
+            {helperText}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
+              {amountLabel}
+            </label>
+            <input
+              type="text"
+              value={receivedAmount}
+              onChange={(e) => setReceivedAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+              className="w-full rounded-lg border border-input-border bg-input-bg p-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              placeholder="Enter actual amount received"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-text-primary">
+              Proof of Transaction
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                setProofFile(file);
+                setProofName(file?.name ?? null);
+                setError(null);
+              }}
+              className="w-full rounded-lg border border-input-border bg-input-bg p-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              required
+            />
+            {proofName ? (
+              <p className="mt-2 text-xs text-text-muted">Selected proof: {proofName}</p>
+            ) : null}
           </div>
 
           <div>
@@ -92,6 +173,12 @@ export function ConfirmFundModal({
               className="w-full resize-none rounded-lg border border-input-border bg-input-bg p-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
             />
           </div>
+
+          {error ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          ) : null}
 
           <div className="flex justify-end gap-3 pt-2">
             <button

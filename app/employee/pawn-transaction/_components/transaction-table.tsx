@@ -1,10 +1,15 @@
 import { StatusBadge } from "@/components/shared/status-badge";
+import { formatTimeWithAmPm } from "@/lib/time";
 
-type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
+type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn" | "Fund Transfer" | "Cash Transfer";
 
 interface TransactionRow {
   transactionNo: string;
   purpose: PurposeType;
+  buyBack: string;
+  percentage: string;
+  buyOut: string;
+  sold: string;
   date: string;
   time: string;
   cashIn: string;
@@ -14,6 +19,9 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  qrCode?: string;
+  relatedPawnedItemId?: string | null;
+  relatedSaleItemId?: string | null;
 }
 
 const columns = [
@@ -21,6 +29,10 @@ const columns = [
   { key: "purpose", label: "Purpose" },
   { key: "date", label: "Date" },
   { key: "time", label: "Time" },
+  { key: "buyBack", label: "Buy Back", align: "right" as const },
+  { key: "percentage", label: "%", align: "center" as const },
+  { key: "buyOut", label: "Buy Out", align: "right" as const },
+  { key: "sold", label: "Sold", align: "right" as const },
   { key: "cashIn", label: "Cash In", align: "right" as const },
   { key: "cashOut", label: "Cash Out", align: "right" as const },
   { key: "returnVal", label: "Return", align: "right" as const },
@@ -28,6 +40,8 @@ const columns = [
   { key: "unitCode", label: "Unit Code" },
   { key: "pawn", label: "Pawn", align: "right" as const },
   { key: "storage", label: "Storage", align: "right" as const },
+  { key: "qrCode", label: "QR Code", align: "center" as const },
+  { key: "actions", label: "Actions", align: "center" as const },
 ];
 
 function isHighlightedPawn(value: string): boolean {
@@ -46,17 +60,46 @@ const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple"
   Renew: "green",
   "Sold Item": "orange",
   Pawn: "purple",
+  "Fund Transfer": "blue",
+  "Cash Transfer": "blue",
 };
 
 interface TransactionTableProps {
   data?: TransactionRow[];
+  onReprint?: (transactionNo: string) => void;
+  onViewDetails?: (transaction: TransactionRow) => void;
+  viewRange: "daily" | "weekly" | "monthly" | "all";
+  onRangeChange: (range: "daily" | "weekly" | "monthly" | "all") => void;
 }
 
-export function TransactionTable({ data = [] }: TransactionTableProps) {
+export function TransactionTable({ 
+  data = [], 
+  onReprint, 
+  onViewDetails,
+  viewRange,
+  onRangeChange
+}: TransactionTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-      <div className="flex items-center justify-between bg-white px-4 py-3">
-        <h3 className="text-sm font-bold text-zinc-800">Daily Transactions</h3>
+    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-zinc-100 bg-white px-4 py-3">
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-bold text-zinc-800">
+            {viewRange === "daily" ? "Daily Transactions" : 
+             viewRange === "weekly" ? "Weekly Transactions" : 
+             viewRange === "monthly" ? "Monthly Transactions" : "All Transactions"}
+          </h3>
+          <span className="h-4 w-[1px] bg-zinc-200" />
+          <select
+            value={viewRange}
+            onChange={(e) => onRangeChange(e.target.value as any)}
+            className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 focus:border-emerald-500 focus:outline-none"
+          >
+            <option value="daily">Today</option>
+            <option value="weekly">This Week</option>
+            <option value="monthly">This Month</option>
+            <option value="all">All Records</option>
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -78,7 +121,7 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-4 text-center text-sm text-zinc-500">
+                <td colSpan={columns.length} className="py-4 text-center text-sm text-zinc-500">
                   No transactions found
                 </td>
               </tr>
@@ -89,7 +132,10 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
               return (
                 <tr
                   key={row.transactionNo}
-                  className={`border-t border-zinc-100 ${
+                  onClick={() => onViewDetails?.(row)}
+                  role="button"
+                  tabIndex={0}
+                  className={`cursor-pointer border-t border-zinc-100 ${
                     isStartRow
                       ? "border-l-4 border-l-emerald-700 bg-emerald-50/60"
                       : idx % 2 === 0
@@ -117,21 +163,50 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
 
                   {/* Time */}
                   <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-600">
-                    {row.time}
+                    {formatTimeWithAmPm(row.time)}
                   </td>
 
-                  {/* Cash In */}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
-                    <input 
-                      type="text" 
-                      defaultValue={row.cashIn}
-                      placeholder="0"
-                      className="w-16 ml-auto block text-right border-b border-zinc-200 outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
-                    />
+                  {/* Buy Back */}
+                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-blue-700">
+                    {(() => {
+                      const num = Number(row.buyBack);
+                      return !isNaN(num) && num !== 0 
+                        ? `₱${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                        : "₱0.00";
+                    })()}
+                  </td>
+
+                  {/* Percentage */}
+                  <td className="whitespace-nowrap px-3 py-2 text-center text-xs font-bold text-zinc-600">
+                    {row.percentage !== "0" ? `${row.percentage}%` : "—"}
+                  </td>
+
+                  {/* Buy Out */}
+                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-orange-700">
+                    {(() => {
+                      const num = Number(row.buyOut);
+                      return !isNaN(num) && num !== 0 
+                        ? `₱${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                        : "₱0.00";
+                    })()}
+                  </td>
+
+                  {/* Sold */}
+                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-emerald-700">
+                    {(() => {
+                      const num = Number(row.sold);
+                      return !isNaN(num) && num !== 0 
+                        ? `₱${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                        : "₱0.00";
+                    })()}
+                  </td>
+
+                  <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-text-secondary">
+                    {row.cashIn}
                   </td>
 
                   {/* Cash Out */}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-zinc-700">
+                  <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-text-secondary">
                     {row.cashOut}
                   </td>
 
@@ -166,6 +241,41 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                     ) : (
                       <span className="text-zinc-700">{row.storage}</span>
                     )}
+                  </td>
+
+                  {/* QR Code */}
+                  <td className="whitespace-nowrap px-3 py-2 text-center">
+                    {row.qrCode ? (
+                      <div className="flex justify-center">
+                        <img 
+                          src={row.qrCode} 
+                          alt="QR Code" 
+                          className="w-10 h-10 object-contain rounded-md border border-zinc-100 bg-white p-0.5" 
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-zinc-300">—</span>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td className="whitespace-nowrap px-3 py-2 text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {row.purpose === "Pawn" && (
+                        <button 
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onReprint?.(row.transactionNo);
+                              }}
+                          title="Reprint MOA Slip"
+                          className="rounded-lg p-1.5 text-zinc-400 transition-all hover:bg-emerald-50 hover:text-emerald-700"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

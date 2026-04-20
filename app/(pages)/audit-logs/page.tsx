@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Pagination } from "@/components/shared/pagination";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 
 interface ActivityLog {
@@ -17,16 +18,457 @@ interface ActivityLog {
   branchName: string;
 }
 
-const branchOptions = [
-  { value: "all", label: "All Branches" },
-  { value: "taguig", label: "Taguig" },
-  { value: "makati", label: "Makati" },
-  { value: "pasay", label: "Pasay" },
-];
+interface UserDirectoryEntry {
+  id?: string;
+  authId?: string;
+  auth_id?: string;
+  fullName?: string | null;
+  full_name?: string | null;
+  email?: string | null;
+}
+
+type JsonRecord = Record<string, unknown>;
 
 function getInitials(name: string) {
   if (!name) return "U";
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+}
+
+function isRecord(value: unknown): value is JsonRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function tryParseJson(value: string | null): unknown {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function stripApiPrefix(path: string) {
+  return path.replace(/^\/api\//, "").replace(/^api\//, "");
+}
+
+function humanizeText(value: string) {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleCase(value: string) {
+  return humanizeText(value)
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function formatMoney(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: 2,
+  }).format(value);
+}
+
+function getPathFromAction(action: string) {
+  const parts = action.split(" ");
+  return parts.length > 1 ? parts.slice(1).join(" ").trim() : "";
+}
+
+function summarizePath(path: string) {
+  const cleaned = stripApiPrefix(path).split("/").filter(Boolean);
+  const labels = cleaned
+    .filter((segment) => !/^[0-9a-f-]{8,}$/i.test(segment))
+    .map(titleCase);
+
+  return labels.length > 0 ? labels.join(" / ") : "Record";
+}
+
+function formatFriendlyActionLabel(action: string, details: string | null) {
+  const parsed = tryParseJson(details);
+  const record = isRecord(parsed) ? parsed : null;
+  const path = typeof record?.url === "string" ? record.url.split("?")[0] : getPathFromAction(action);
+
+  if (path.includes("/api/pawn-tickets")) {
+    return "Pawn ticket transaction";
+  }
+
+  if (path.includes("/api/auth/verify-password")) {
+    return "Security confirmation";
+  }
+
+  if (path.includes("/api/users/") && path.includes("/transfer-branch")) {
+    return "Branch reassignment";
+  }
+
+  if (path.includes("/api/users/") && action.startsWith("DELETE ")) {
+    return "User account removal";
+  }
+
+  if (path.includes("/api/users/")) {
+    return "User account update";
+  }
+
+  if (path.includes("/api/auth/register")) {
+    return "Account access request";
+  }
+
+  if (path.includes("/api/fund-requests/") && path.includes("/review")) {
+    return "Fund request review";
+  }
+
+  if (path.includes("/api/fund-requests/") && path.includes("/confirm")) {
+    return "Fund transfer confirmation";
+  }
+
+  if (path.includes("/api/fund-requests/") && path.includes("/transfer")) {
+    return "Fund transfer";
+  }
+
+  if (path.includes("/api/inventory/pawned/") && path.includes("/remarks")) {
+    return "Pawned item remark";
+  }
+
+  if (path.includes("/api/inventory/pawned/") && path.includes("/renew")) {
+    return "Pawn renewal";
+  }
+
+  if (path.includes("/api/inventory/pawned/") && path.includes("/expire")) {
+    return "Pawn expiration";
+  }
+
+  return humanizeText(summarizePath(path));
+}
+
+function getChangedFields(body: JsonRecord | null) {
+  if (!body) return [];
+
+  return Object.keys(body)
+    .filter((key) => key !== "password")
+    .map(titleCase);
+}
+
+function findBranchName(
+  branchId: unknown,
+  branches: { id: string; name: string }[],
+  fallback?: string | null,
+) {
+  if (typeof branchId !== "string" || !branchId) {
+    return fallback ?? null;
+  }
+
+  return branches.find((branch) => branch.id === branchId)?.name ?? fallback ?? branchId;
+}
+
+function findUserName(
+  userId: unknown,
+  userNamesById: Map<string, string>,
+  body?: JsonRecord | null,
+  record?: JsonRecord | null,
+) {
+  if (
+    record &&
+    typeof record.targetUserName === "string" &&
+    record.targetUserName.trim()
+  ) {
+    return record.targetUserName.trim();
+  }
+
+  if (body && typeof body.fullName === "string" && body.fullName.trim()) {
+    return body.fullName.trim();
+  }
+
+  if (typeof userId !== "string" || !userId) {
+    return null;
+  }
+
+  return userNamesById.get(userId) ?? null;
+}
+
+function formatActivityDescription(
+  action: string,
+  details: string | null,
+  branches: { id: string; name: string }[],
+  userNamesById: Map<string, string>,
+) {
+  const parsed = tryParseJson(details);
+  const record = isRecord(parsed) ? parsed : null;
+  const body = isRecord(record?.body) ? record.body : null;
+  const path = typeof record?.url === "string" ? record.url.split("?")[0] : getPathFromAction(action);
+
+  if (action === "FUND_REQUEST_REVIEWED" && record) {
+    const requestNo = typeof record.requestNo === "string" ? record.requestNo : "the request";
+    const decision = typeof record.decision === "string" ? humanizeText(record.decision) : "reviewed";
+    const approvedAmount = formatMoney(record.approvedAmount);
+    const branchName = findBranchName(record.destinationBranchId ?? record.branchId, branches);
+
+    if (approvedAmount && branchName) {
+      return `Reviewed fund request ${requestNo} for ${branchName} and ${decision} it for ${approvedAmount}.`;
+    }
+
+    if (branchName) {
+      return `Reviewed fund request ${requestNo} for ${branchName} and ${decision} it.`;
+    }
+
+    return approvedAmount
+      ? `Reviewed fund request ${requestNo} and ${decision} it for ${approvedAmount}.`
+      : `Reviewed fund request ${requestNo} and ${decision} it.`;
+  }
+
+  if (action === "FUND_TRANSFER_CONFIRMED" && record) {
+    const requestNo = typeof record.requestNo === "string" ? record.requestNo : "the request";
+    const amount = formatMoney(record.confirmedReceivedAmount);
+    const destinationBranch = findBranchName(record.destinationBranchId, branches);
+    return amount
+      ? `Confirmed receipt of transferred funds for ${destinationBranch ?? "the branch"} under ${requestNo} worth ${amount}.`
+      : `Confirmed receipt of transferred funds for ${destinationBranch ?? "the branch"} under ${requestNo}.`;
+  }
+
+  if (action === "FUND_TRANSFER_RELEASED" && record) {
+    const requestNo = typeof record.requestNo === "string" ? record.requestNo : "the request";
+    const amount = formatMoney(record.amountTransferred);
+    const sourceBranch = findBranchName(record.sourceBranchId, branches, "Main vault");
+    const destinationBranch = findBranchName(record.destinationBranchId, branches);
+
+    if (sourceBranch && destinationBranch && amount) {
+      return `Released ${amount} from ${sourceBranch} to ${destinationBranch} for ${requestNo}.`;
+    }
+
+    if (sourceBranch && destinationBranch) {
+      return `Released funds from ${sourceBranch} to ${destinationBranch} for ${requestNo}.`;
+    }
+
+    return amount
+      ? `Released funds for ${requestNo} amounting to ${amount}.`
+      : `Released funds for ${requestNo}.`;
+  }
+
+  if (action === "FUND_TRANSFER_SOURCE_CONFIRMED" && record) {
+    const requestNo = typeof record.requestNo === "string" ? record.requestNo : "the request";
+    const sourceBranch = findBranchName(record.sourceBranchId, branches);
+    const destinationBranch = findBranchName(record.destinationBranchId, branches);
+
+    if (sourceBranch && destinationBranch) {
+      return `Confirmed transfer of funds from ${sourceBranch} to ${destinationBranch} for ${requestNo}.`;
+    }
+
+    return `Confirmed the source branch transfer for ${requestNo}.`;
+  }
+
+  if (action === "BRANCH_CASH_ON_HAND_UPDATED" && record) {
+    const requestNo = typeof record.requestNo === "string" ? record.requestNo : "the request";
+    const delta = formatMoney(record.delta);
+    return delta
+      ? `Updated branch cash on hand by ${delta} for ${requestNo}.`
+      : `Updated branch cash on hand for ${requestNo}.`;
+  }
+
+  if (action === "FUND_REQUEST_CREATED" && record) {
+    const requestNo = typeof record.requestNo === "string" ? record.requestNo : "a new request";
+    const amount = formatMoney(record.amountRequested);
+    const targetBranch =
+      findBranchName(record.destinationBranchId ?? record.branchId, branches) ?? "a branch";
+
+    return amount
+      ? `Created fund request ${requestNo} for ${targetBranch} worth ${amount}.`
+      : `Created fund request ${requestNo} for ${targetBranch}.`;
+  }
+
+  if (path.includes("/api/auth/verify-password")) {
+    return "Confirmed identity by entering their password for a protected action.";
+  }
+
+  if (path.includes("/api/auth/register") && action.startsWith("POST ")) {
+    const applicantName =
+      (typeof body?.fullName === "string" && body.fullName.trim()) ||
+      (typeof body?.email === "string" && body.email.trim()) ||
+      "a new applicant";
+    const requestedRole =
+      typeof body?.role === "string" ? humanizeText(body.role) : "account access";
+    const branchName = findBranchName(body?.branchId, branches) ?? "the selected branch";
+    return `Submitted an account access request for ${applicantName} as ${requestedRole} at ${branchName}.`;
+  }
+
+  const remarkMatch = path.match(/\/api\/inventory\/pawned\/([^/]+)\/remarks$/);
+  if (remarkMatch) {
+    return "Added a remark to a pawned item record.";
+  }
+
+  const renewMatch = path.match(/\/api\/inventory\/pawned\/([^/]+)\/renew$/);
+  if (renewMatch) {
+    const amountPaid = formatMoney(body?.amount_paid);
+    return amountPaid
+      ? `Recorded a renewal payment of ${amountPaid} for a pawned item.`
+      : "Recorded a renewal for a pawned item.";
+  }
+
+  const expireMatch = path.match(/\/api\/inventory\/pawned\/([^/]+)\/expire$/);
+  if (expireMatch) {
+    return "Marked a pawned item as expired and transferred it.";
+  }
+
+  if (path.includes("/api/pawn-tickets") && action.startsWith("POST ")) {
+    return "Created a new pawn ticket transaction.";
+  }
+
+  const userUpdateMatch = path.match(/\/api\/users\/([^/]+)$/);
+  if (userUpdateMatch && action.startsWith("PATCH ")) {
+    const changedFields = getChangedFields(body);
+    const targetUserName = findUserName(userUpdateMatch[1], userNamesById, body, record) ?? "a user";
+    return changedFields.length > 0
+      ? `Updated ${targetUserName}'s details: ${changedFields.join(", ")}.`
+      : `Updated ${targetUserName}'s account details.`;
+  }
+
+  const userTransferBranchMatch = path.match(/\/api\/users\/([^/]+)\/transfer-branch$/);
+  if (userTransferBranchMatch) {
+    const targetUserName =
+      findUserName(userTransferBranchMatch[1], userNamesById, body, record) ?? "a user";
+    const branchName =
+      findBranchName(body?.branchId, branches, typeof record?.targetBranchName === "string" ? record.targetBranchName : null) ??
+      "another branch";
+    return `Transferred ${targetUserName} to ${branchName}.`;
+  }
+
+  const deleteUserMatch = path.match(/\/api\/users\/([^/]+)$/);
+  if (deleteUserMatch && action.startsWith("DELETE ")) {
+    const targetUserName = findUserName(deleteUserMatch[1], userNamesById, body, record) ?? "a user";
+    return `Deleted ${targetUserName}'s account.`;
+  }
+
+  const fundReviewMatch = path.match(/\/api\/fund-requests\/([^/]+)\/review$/);
+  if (fundReviewMatch) {
+    const decision = typeof body?.decision === "string" ? humanizeText(body.decision) : "reviewed";
+    const approvedAmount = formatMoney(body?.approvedAmount);
+    const branchName =
+      findBranchName(body?.branchId ?? record?.branchId ?? record?.destinationBranchId, branches) ??
+      "the selected branch";
+    return approvedAmount
+      ? `Reviewed a fund request for ${branchName} and ${decision} it for ${approvedAmount}.`
+      : `Reviewed a fund request for ${branchName} and ${decision} it.`;
+  }
+
+  const fundConfirmMatch = path.match(/\/api\/fund-requests\/([^/]+)\/confirm$/);
+  if (fundConfirmMatch) {
+    const branchName =
+      findBranchName(body?.branchId ?? record?.destinationBranchId ?? record?.branchId, branches) ??
+      "the receiving branch";
+    return `Confirmed a fund transfer request for ${branchName}.`;
+  }
+
+  const fundTransferMatch = path.match(/\/api\/fund-requests\/([^/]+)\/transfer$/);
+  if (fundTransferMatch) {
+    const sourceBranch = findBranchName(body?.sourceBranchId ?? record?.sourceBranchId, branches, "Main vault");
+    const destinationBranch =
+      findBranchName(body?.toBranchId ?? body?.branchId ?? record?.destinationBranchId, branches) ??
+      "the destination branch";
+    return `Transferred funds from ${sourceBranch ?? "the source"} to ${destinationBranch}.`;
+  }
+
+  if (typeof parsed === "string" && parsed.trim()) {
+    return parsed;
+  }
+
+  const method = action.split(" ")[0]?.toUpperCase();
+  const methodVerb =
+    method === "POST"
+      ? "Created"
+      : method === "PATCH" || method === "PUT"
+        ? "Updated"
+        : method === "DELETE"
+          ? "Deleted"
+          : "Processed";
+
+  return `${methodVerb} ${summarizePath(path).toLowerCase()}.`;
+}
+
+function formatActivityReference(
+  action: string,
+  details: string | null,
+  branches: { id: string; name: string }[],
+  userNamesById: Map<string, string>,
+) {
+  const parsed = tryParseJson(details);
+  const record = isRecord(parsed) ? parsed : null;
+  const body = isRecord(record?.body) ? record.body : null;
+  const params = isRecord(record?.params) ? record.params : null;
+  const path = typeof record?.url === "string" ? record.url.split("?")[0] : getPathFromAction(action);
+
+  if (record) {
+    if (typeof record.requestNo === "string") {
+      return `Reference: ${record.requestNo}`;
+    }
+
+    if (typeof record.transferReference === "string") {
+      return `Reference: ${record.transferReference}`;
+    }
+  }
+
+  if (path.includes("/api/inventory/pawned/") && typeof body?.remark === "string") {
+    return `Remark: ${body.remark}`;
+  }
+
+  if (path.includes("/api/auth/verify-password")) {
+    return "Security confirmation";
+  }
+
+  if (path.includes("/api/auth/register")) {
+    const applicantName =
+      (typeof body?.fullName === "string" && body.fullName.trim()) ||
+      (typeof body?.email === "string" && body.email.trim()) ||
+      null;
+    const branchName = findBranchName(body?.branchId, branches);
+
+    if (applicantName && branchName) {
+      return `${applicantName} - ${branchName}`;
+    }
+
+    if (applicantName) {
+      return `Applicant: ${applicantName}`;
+    }
+
+    if (branchName) {
+      return `Branch: ${branchName}`;
+    }
+
+    return "Account access request";
+  }
+
+  const userPathMatch = path.match(/\/api\/users\/([^/]+)(?:\/transfer-branch)?$/);
+  if (userPathMatch) {
+    const targetUserId =
+      (params && typeof params.id === "string" && params.id) || userPathMatch[1];
+    const targetUserName = findUserName(targetUserId, userNamesById, body, record);
+    return targetUserName ? `User: ${targetUserName}` : "User account";
+  }
+
+  if (path.includes("/api/fund-requests/") && params && typeof params.id === "string") {
+    const sourceBranch = findBranchName(body?.sourceBranchId ?? record?.sourceBranchId, branches);
+    const destinationBranch =
+      findBranchName(
+        body?.toBranchId ?? body?.branchId ?? record?.destinationBranchId ?? record?.branchId,
+        branches,
+      );
+
+    if (sourceBranch && destinationBranch) {
+      return `${sourceBranch} -> ${destinationBranch}`;
+    }
+
+    if (destinationBranch) {
+      return `Branch: ${destinationBranch}`;
+    }
+
+    return `Request ID: ${params.id}`;
+  }
+
+  return null;
 }
 
 
@@ -63,12 +505,15 @@ function getGuessStatus(action: string, details: string) {
 
 export default function AuditLogsPage() {
   const { user } = useAuth();
+  const { branches, selectedBranch, setSelectedBranch, canSwitchBranch, isAllBranches } =
+    useBranch();
   const userId = user?.id;
   const userRole = user?.role;
-  const isSuperAdmin = userRole === "super_admin";
+  const canViewAuditLogs =
+    userRole === "super_admin" || userRole === "admin" || userRole === "employee";
 
-  const [branch, setBranch] = useState("all");
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [userDirectory, setUserDirectory] = useState<Map<string, string>>(new Map());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("All Logs");
   const [isLoading, setIsLoading] = useState(true);
@@ -76,17 +521,65 @@ export default function AuditLogsPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
+  const branchOptions = useMemo(() => {
+    return branches.map((branchOption) => ({
+      value: branchOption.id,
+      label: branchOption.name,
+    }));
+  }, [branches]);
+
+  const activeBranchId = useMemo(() => {
+    if (isAllBranches) {
+      return null;
+    }
+
+    return selectedBranch.id;
+  }, [isAllBranches, selectedBranch.id]);
+
+  const selectedBranchValue = activeBranchId ?? "__all__";
+
+  const handleBranchChange = (branchId: string) => {
+    const nextBranch = branches.find((branchOption) => branchOption.id === branchId);
+    if (nextBranch) {
+      setSelectedBranch(nextBranch);
+    }
+  };
+
+  const scopedBranchLabel = canSwitchBranch
+    ? selectedBranch.name
+    : user?.branchName || selectedBranch.name || "Assigned Branch";
+
+  const pageBranchOptions = useMemo(() => {
+    if (branchOptions.length > 0) {
+      return branchOptions;
+    }
+
+    return [
+      {
+        value: selectedBranchValue,
+        label: scopedBranchLabel,
+      },
+    ];
+  }, [branchOptions, scopedBranchLabel, selectedBranchValue]);
 
   useEffect(() => {
     async function fetchLogs() {
-      if (!userId) return;
+      if (!userId || !canViewAuditLogs) {
+        setLogs([]);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const queryParams = new URLSearchParams();
-        if (isSuperAdmin && branch !== "all") {
-          // Send branch filtering logic
+        if (canSwitchBranch && activeBranchId) {
+          queryParams.set("branchId", activeBranchId);
         }
-        const data = await api.get<ActivityLog[]>(`/activity-logs?${queryParams}`);
+        const queryString = queryParams.toString();
+        const data = await api.get<ActivityLog[]>(
+          `/activity-logs${queryString ? `?${queryString}` : ""}`,
+        );
         setLogs(data);
       } catch (err) {
         console.error("Fetch error:", err);
@@ -95,17 +588,70 @@ export default function AuditLogsPage() {
       }
     }
     fetchLogs();
-  }, [userId, branch, isSuperAdmin]);
+  }, [userId, activeBranchId, canSwitchBranch, canViewAuditLogs]);
+
+  useEffect(() => {
+    async function fetchUserDirectory() {
+      if (!canViewAuditLogs || userRole === "employee") {
+        setUserDirectory(new Map());
+        return;
+      }
+
+      try {
+        const data = await api.get<UserDirectoryEntry[]>("/users");
+        const nextDirectory = new Map<string, string>();
+
+        data.forEach((entry) => {
+          const resolvedName =
+            entry.fullName?.trim() ||
+            entry.full_name?.trim() ||
+            entry.email?.trim() ||
+            null;
+
+          if (!resolvedName) return;
+
+          if (entry.id) {
+            nextDirectory.set(entry.id, resolvedName);
+          }
+
+          if (entry.authId) {
+            nextDirectory.set(entry.authId, resolvedName);
+          }
+
+          if (entry.auth_id) {
+            nextDirectory.set(entry.auth_id, resolvedName);
+          }
+        });
+
+        setUserDirectory(nextDirectory);
+      } catch (error) {
+        console.warn("Failed to load user directory for audit logs:", error);
+        setUserDirectory(new Map());
+      }
+    }
+
+    void fetchUserDirectory();
+  }, [canViewAuditLogs, userRole]);
 
   // Derive synthetic data fields for UI matching
   const enrichedLogs = useMemo(() => {
+    const userNamesById = new Map(userDirectory);
+
+    logs
+      .filter((log) => log.userId && log.userFullName)
+      .forEach((log) => {
+        userNamesById.set(log.userId, log.userFullName);
+      });
+
     return logs.map(l => ({
       ...l,
       logType: guessLogType(l.action, l.details || ""),
       actionBadge: getBadgeAction(l.action),
-      statusGuess: getGuessStatus(l.action, l.details || "")
+      statusGuess: getGuessStatus(l.action, l.details || ""),
+      description: formatActivityDescription(l.action, l.details || "", branches, userNamesById),
+      reference: formatActivityReference(l.action, l.details || "", branches, userNamesById),
     }));
-  }, [logs]);
+  }, [branches, logs, userDirectory]);
 
   // Statistics
   const totalLogs = enrichedLogs.length;
@@ -118,8 +664,8 @@ export default function AuditLogsPage() {
 
   const filteredLogs = useMemo(() => {
     let result = enrichedLogs;
-    if (isSuperAdmin && branch !== "all") {
-      result = result.filter(l => l.branchName?.toLowerCase().includes(branch.toLowerCase()));
+    if (canSwitchBranch && activeBranchId) {
+      result = result.filter(l => l.branchId === activeBranchId);
     }
     if (filterType !== "All Logs") {
       if (filterType === "Transaction Logs") result = result.filter(l => l.logType === "TRANSACTION");
@@ -136,12 +682,23 @@ export default function AuditLogsPage() {
       );
     }
     return result;
-  }, [enrichedLogs, branch, searchQuery, isSuperAdmin, filterType]);
+  }, [activeBranchId, canSwitchBranch, enrichedLogs, searchQuery, filterType]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType, branch]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType, activeBranchId]);
 
   const totalItems = filteredLogs.length;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  if (!canViewAuditLogs) {
+    return (
+      <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-text-primary">Access Restricted</h2>
+        <p className="mt-2 text-sm text-text-muted">
+          Audit logs are available only to Employee, Admin, and Super Admin accounts.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-8 max-w-[1600px] mx-auto">
@@ -149,9 +706,9 @@ export default function AuditLogsPage() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
 
-          {user?.branchId && !isSuperAdmin && (
+          {user?.branchId && !canSwitchBranch && (
             <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 tracking-wider">
-              BRANCH: {user.branchId.split('-')[0].toUpperCase()}
+              BRANCH: {scopedBranchLabel}
             </span>
           )}
         </div>
@@ -224,13 +781,17 @@ export default function AuditLogsPage() {
               />
             </div>
 
-            {isSuperAdmin && (
+            {canSwitchBranch && (
               <select
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
+                value={selectedBranchValue}
+                onChange={(e) => handleBranchChange(e.target.value)}
                 className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500"
               >
-                {branchOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {pageBranchOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             )}
 
@@ -254,7 +815,7 @@ export default function AuditLogsPage() {
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">User</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Log Type</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Action</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%]">Details / Reference</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%]">Description</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-right">Status</th>
               </tr>
             </thead>
@@ -307,9 +868,14 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col max-w-sm">
-                          <span className="text-sm font-bold text-text-primary truncate" title={log.action}>{log.action}</span>
-                          <span className="text-xs text-text-tertiary mt-1 line-clamp-2" title={log.details || ""}>
-                            {log.details || "System automatic trigger without details"}
+                          <span className="text-sm font-bold text-text-primary line-clamp-2" title={log.description}>
+                            {log.description}
+                          </span>
+                          <span
+                            className="text-xs text-text-tertiary mt-1 line-clamp-2"
+                            title={log.reference || log.action}
+                          >
+                            {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
                           </span>
                         </div>
                       </td>
@@ -345,6 +911,7 @@ export default function AuditLogsPage() {
             totalItems={totalItems}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
+            mode="edge-pairs"
           />
         </div>
       </div>

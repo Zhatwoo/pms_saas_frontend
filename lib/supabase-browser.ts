@@ -3,6 +3,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let supabase: SupabaseClient | null = null;
+let supabaseToken: string | null = null;
 
 export function getTokenFromCookie(): string | null {
   if (typeof document === "undefined") return null;
@@ -23,7 +24,9 @@ export function getTokenFromCookie(): string | null {
 export function getSupabaseBrowserClient(): SupabaseClient | null {
   if (typeof window === "undefined") return null;
 
-  if (supabase) return supabase;
+  const token = getTokenFromCookie();
+
+  if (supabase && supabaseToken === token) return supabase;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -40,7 +43,15 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
       persistSession: false,
       autoRefreshToken: false,
     },
+    global: token
+      ? {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      : undefined,
   });
+  supabaseToken = token;
 
   return supabase;
 }

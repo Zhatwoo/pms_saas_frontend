@@ -19,6 +19,7 @@ export interface BranchOption {
   id: string;
   name: string;
   location?: string;
+  phone?: string;
   /** Human-readable branch code from API (optional) */
   code?: string;
 }
@@ -54,6 +55,7 @@ interface BranchApiItem {
   branch_code: string;
   name: string;
   location: string;
+  contact_number?: string;
 }
 
 /* ── Provider ────────────────────────────────────────────── */
@@ -73,13 +75,15 @@ export function BranchProvider({ children }: { children: ReactNode }) {
           id: branch.id,
           name: branch.name,
           location: branch.location,
+          phone: branch.contact_number,
           code: branch.branch_code,
         }))
         : [{
-          id: data.id,
-          name: data.name,
-          location: data.location,
-          code: data.branch_code,
+          id: (data as any).id,
+          name: (data as any).name,
+          location: (data as any).location,
+          phone: (data as any).contact_number || (data as any).contactNumber,
+          code: (data as any).branch_code,
         }];
 
       setBaseBranches(normalized);

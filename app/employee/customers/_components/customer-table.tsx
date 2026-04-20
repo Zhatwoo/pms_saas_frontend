@@ -1,18 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { Pagination } from "@/components/shared/pagination";
-import { AddCustomerModal } from "./add-customer-modal";
+import { api } from "@/lib/api";
+import { useBranch } from "@/contexts/branch-context";
 import type { Column } from "@/components/shared/data-table";
+
+interface CustomerData {
+  id: string;
+  full_name: string;
+  contact_number: string;
+  email: string;
+  id_presented: string;
+  id_number?: string | null;
+  created_at: string;
+}
+
+interface CustomerRow {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  idType: string;
+  idNumber: string;
+  registered: string;
+}
 
 const columns: Column[] = [
   { key: "name", label: "Name" },
   { key: "phone", label: "Phone" },
   { key: "email", label: "Email" },
   { key: "idType", label: "ID Type" },
-  { key: "idNumber", label: "ID" },
+  { key: "idNumber", label: "ID Number" },
   { key: "registered", label: "Registered" },
   { key: "actions", label: "Actions", align: "center" },
 ];
@@ -37,73 +58,87 @@ interface CustomerTableProps {
   branchName?: string;
 }
 
-export function CustomerTable({ branchName }: CustomerTableProps) {
-  const router = useRouter();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-  const handleSaveCustomer = async (input: {
-    fullName: string;
-    phoneNumber: string;
-    email: string;
-    idType: string;
-    idNumber: string;
-    address: string;
-  }) => {
-    console.log("Customer saved:", input, branchName);
-    setIsModalOpen(false);
+function mapCustomerToRow(customer: CustomerData): CustomerRow {
+  return {
+    id: customer.id,
+    name: customer.full_name || "Unnamed Customer",
+    phone: customer.contact_number || "-",
+    email: customer.email || "-",
+    idType: customer.id_presented || "-",
+    idNumber: customer.id_number || "-",
+    registered: formatDate(customer.created_at),
   };
+}
 
-  const customers = [
-    {
-      id: "1",
-      name: "Juan Dela Cruz",
-      phone: "09123456789",
-      email: "juandelacruz@gmail.com",
-      idType: "Driver's License",
-      idNumber: "N5012345678",
-      registered: "February 14, 2022",
-    },
-    {
-      id: "2",
-      name: "John Doe",
-      phone: "09123456789",
-      email: "jhondoe@gmail.com",
-      idType: "National ID",
-      idNumber: "72120002152",
-      registered: "February 15, 2022",
-    },
-    {
-      id: "3",
-      name: "Park Jimin Neutron",
-      phone: "09123456789",
-      email: "jiminneutron@gmail.com",
-      idType: "Passport",
-      idNumber: "44443334444",
-      registered: "February 16, 2022",
-    },
-  ];
+export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
+  const router = useRouter();
+  const { selectedBranch, isAllBranches } = useBranch();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    async function loadCustomers() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const branchParam = isAllBranches ? "" : `?branchId=${encodeURIComponent(selectedBranch.id)}`;
+        const data = await api.get<CustomerData[]>(`/customers${branchParam}`);
+        setCustomers((data || []).map(mapCustomerToRow));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load customers.";
+        setError(message);
+        setCustomers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    void loadCustomers();
+  }, [selectedBranch.id, isAllBranches]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [customers.length]);
+
+  const totalPages = Math.max(1, Math.ceil(customers.length / itemsPerPage));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return customers.slice(start, start + itemsPerPage);
+  }, [customers, currentPage]);
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <div>
-          <h3 className="text-base font-semibold text-emerald-800">
-            Internal Customer Records
-          </h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-        >
-          + Add New Customer
-        </button>
+        <h3 className="text-base font-semibold text-emerald-text">
+          Customer Management
+        </h3>
       </div>
 
+      {isLoading && (
+        <p className="px-5 pb-2 text-xs text-text-tertiary">Loading customers...</p>
+      )}
+      {error && (
+        <p className="px-5 pb-2 text-xs text-red-500">{error}</p>
+      )}
+
+      {/* Table */}
       <DataTable
         columns={columns}
-        data={customers}
+        data={paginatedCustomers}
         renderCell={(key, value, row) => {
           if (key === "actions") {
             return (
@@ -120,21 +155,13 @@ export function CustomerTable({ branchName }: CustomerTableProps) {
         }}
       />
 
-      <div className="border-t border-zinc-100 italic px-5 py-3 text-[10px] text-zinc-400">
-        Showing customers registered under this branch.
-      </div>
+      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
-        totalPages={1}
+        totalPages={totalPages}
         totalItems={customers.length}
-        itemsPerPage={10}
+        itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
-      />
-
-      <AddCustomerModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveCustomer}
       />
     </div>
   );

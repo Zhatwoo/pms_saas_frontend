@@ -54,7 +54,7 @@ export function CancelFundModal({ isOpen, onClose, onConfirm, amount }: CancelFu
               Amount to Cancel
             </p>
             <p className="mt-1 text-3xl font-extrabold text-red-800 dark:text-red-300">
-              ₱{amount.toLocaleString("en-PH")}
+              ₱{amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
 

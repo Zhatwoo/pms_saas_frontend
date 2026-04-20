@@ -4,6 +4,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  mode?: "default" | "edge-pairs";
 }
 
 export function Pagination({
@@ -12,11 +13,38 @@ export function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  mode = "edge-pairs",
 }: PaginationProps) {
   const showing = Math.min(itemsPerPage, totalItems - (currentPage - 1) * itemsPerPage);
 
-  const pages: number[] = [];
-  for (let i = 1; i <= totalPages; i++) pages.push(i);
+  const pages: Array<number | "ellipsis"> = [];
+
+  if (mode === "edge-pairs" && totalPages > 5) {
+    const numericPages = new Set<number>([1, totalPages]);
+
+    if (currentPage <= 3) {
+      numericPages.add(2);
+      numericPages.add(3);
+    } else if (currentPage >= totalPages - 2) {
+      numericPages.add(totalPages - 2);
+      numericPages.add(totalPages - 1);
+    } else {
+      numericPages.add(currentPage - 1);
+      numericPages.add(currentPage);
+      numericPages.add(currentPage + 1);
+    }
+
+    const orderedPages = Array.from(numericPages).sort((a, b) => a - b);
+
+    orderedPages.forEach((page, index) => {
+      if (index > 0 && page - orderedPages[index - 1] > 1) {
+        pages.push("ellipsis");
+      }
+      pages.push(page);
+    });
+  } else {
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+  }
 
   return (
     <div className="flex items-center justify-end gap-3 px-5 py-4 text-sm text-text-secondary">
@@ -31,19 +59,28 @@ export function Pagination({
         >
           &lt;
         </button>
-        {pages.map((p) => (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
-              p === currentPage
-                ? "bg-emerald-700 font-bold text-white"
-                : "text-text-secondary hover:bg-surface-hover"
-            }`}
-          >
-            {p}
-          </button>
-        ))}
+        {pages.map((p, index) =>
+          p === "ellipsis" ? (
+            <span
+              key={`ellipsis-${index}`}
+              className="flex h-8 min-w-8 items-center justify-center px-1 text-text-muted"
+            >
+              ...
+            </span>
+          ) : (
+            <button
+              key={p}
+              onClick={() => onPageChange(p)}
+              className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+                p === currentPage
+                  ? "bg-emerald-700 font-bold text-white"
+                  : "text-text-secondary hover:bg-surface-hover"
+              }`}
+            >
+              {p}
+            </button>
+          ),
+        )}
         <button
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}

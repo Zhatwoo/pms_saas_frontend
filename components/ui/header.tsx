@@ -122,8 +122,17 @@ function formatDateTime(): string {
 }
 
 function getPageTitle(pathname: string): string {
+  const customTitles: Record<string, string> = {
+    "view_user": "View Customer",
+  };
+
   const segments = pathname.split("/").filter(Boolean);
   const last = segments[segments.length - 1] || "Dashboard";
+  
+  if (customTitles[last]) {
+    return customTitles[last];
+  }
+
   return last
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

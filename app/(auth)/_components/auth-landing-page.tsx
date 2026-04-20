@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
   onSignUpClick?: () => void;
 }
 
-const navItems = ["HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS"];
+const navItems = ["HOME", "HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS", "CONTACT US"];
 
 const steps = [
   {
@@ -82,26 +83,144 @@ export function AuthLandingPage({
   onLoginClick,
   onSignUpClick,
 }: AuthLandingPageProps) {
+  const [activeNavItem, setActiveNavItem] = useState("HOME");
+  const [underlineLeft, setUnderlineLeft] = useState(0);
+  const [underlineWidth, setUnderlineWidth] = useState(0);
+  const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  const handleScroll = (e: React.MouseEvent, id: string, item: string) => {
+    e.preventDefault();
+    setActiveNavItem(item);
+    const element = document.getElementById(id);
+    if (element) {
+      const offset = 64; // Fixed header height (h-16)
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+
+      // Update URL hash without jumping
+      window.history.pushState(null, "", `#${id}`);
+    }
+  };
+
+  useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px",
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+        } else {
+          entry.target.classList.remove("is-visible");
+        }
+      });
+    }, observerOptions);
+
+    const revealElements = document.querySelectorAll(".reveal-on-scroll");
+    revealElements.forEach((el) => observer.observe(el));
+
+    const handleScrollSync = () => {
+      const sections = document.querySelectorAll("section[id]");
+      const scrollPos = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Force "CONTACT US" at the very bottom
+      if (scrollPos + windowHeight >= documentHeight - 60) {
+        setActiveNavItem("CONTACT US");
+        return;
+      }
+
+      let currentSection = activeNavItem;
+      let minDistance = Infinity;
+
+      sections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        const id = section.id;
+        
+        // We look for sections whose top is near the header (64px)
+        // or which occupy the top portion of the screen
+        const distance = Math.abs(rect.top - 64);
+        
+        if (rect.top <= 120 && rect.bottom >= 100) {
+          if (distance < minDistance) {
+            minDistance = distance;
+            const mappedItem = navItems.find(
+              (item) => item.toLowerCase().replace(/ /g, "-") === id
+            );
+            if (mappedItem) {
+              currentSection = mappedItem;
+            }
+          }
+        }
+      });
+
+      if (currentSection !== activeNavItem) {
+        setActiveNavItem(currentSection);
+      }
+    };
+
+    window.addEventListener("scroll", handleScrollSync);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScrollSync);
+    };
+  }, [activeNavItem]);
+
+  useEffect(() => {
+    const activeIndex = navItems.indexOf(activeNavItem);
+    const activeRef = navRefs.current[activeIndex];
+    if (activeRef) {
+      setUnderlineLeft(activeRef.offsetLeft);
+      setUnderlineWidth(activeRef.offsetWidth);
+    }
+  }, [activeNavItem]);
+
   return (
-    <div className="min-h-screen bg-emerald-50">
-      <nav className="fixed left-0 right-0 top-0 z-40 flex h-20 items-center justify-between bg-emerald-900 px-12">
+    <div className="min-h-screen bg-emerald-50 selection:bg-amber-300 selection:text-emerald-900">
+      <nav className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between bg-emerald-900 px-12 transition-all">
         <Image
-          src="/logo.jpg"
+          src="/logo.png"
           alt="JCLB"
           width={56}
           height={56}
-          className="rounded-lg"
+          className="rounded-lg cursor-pointer"
+          onClick={(e) => handleScroll(e, "home", "HOME")}
         />
-        <div className="hidden items-center gap-8 md:flex">
-          {navItems.map((item) => (
-            <a
-              key={item}
-              href={`#${item.toLowerCase().replace(/ /g, "-")}`}
-              className="text-sm font-medium text-white hover:text-amber-300"
-            >
-              {item}
-            </a>
-          ))}
+        <div className="relative hidden items-center gap-8 md:flex">
+          {navItems.map((item, index) => {
+            const id = item.toLowerCase().replace(/ /g, "-");
+            return (
+              <a
+                key={item}
+                ref={(el) => {
+                  navRefs.current[index] = el;
+                }}
+                href={`#${id}`}
+                onClick={(e) => handleScroll(e, id, item)}
+                className={`group relative text-sm font-bold tracking-wider transition-colors ${
+                  activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"
+                }`}
+              >
+                {item}
+              </a>
+            );
+          })}
+          <span
+            className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300 ease-in-out"
+            style={{
+              left: `${underlineLeft}px`,
+              width: `${underlineWidth}px`,
+            }}
+          />
         </div>
         <button
           onClick={onLoginClick}
@@ -111,102 +230,105 @@ export function AuthLandingPage({
         </button>
       </nav>
 
-      <section className="relative overflow-hidden bg-emerald-50 px-12 pb-20 pt-32">
-        <div className="mx-auto flex max-w-7xl items-center gap-12">
-          <div className="flex-1">
-            <div className="mb-6 inline-block rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-amber-400">
+      <section id="home" className="relative overflow-hidden bg-emerald-50 px-6 pb-0 pt-8 md:px-12 md:pb-0 md:pt-12 lg:pb-0 lg:pt-12">
+        <div className="mx-auto flex max-w-[1600px] flex-col items-center gap-12 lg:flex-row lg:items-center lg:justify-between lg:text-left reveal-on-scroll">
+          <div className="z-10 flex-1 shrink-0 text-center lg:max-w-xl lg:text-left">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-amber-400">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] text-emerald-900">
+                ★
+              </div>
               TRUSTED BUY BACK SHOP FOR FILIPINO FAMILIES
             </div>
-            <h1 className="text-6xl font-bold leading-tight text-emerald-900 lg:text-7xl">
-              Sell Your Items.
-              <br />
-              Get Paid Today.
+            <h1 className="text-4xl font-black leading-tight text-emerald-900 md:text-6xl lg:text-8xl">
+              <span className="lg:block lg:whitespace-nowrap">Sell Your Items.</span>
+              <span className="text-slate-800 lg:block lg:whitespace-nowrap">Get Paid Today.</span>
             </h1>
-            <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-700">
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-700 md:text-lg lg:mx-0 mx-auto">
               JCLB Buy Back Shop provides honest, secure, and compassionate
               financial solutions that uplift lives and build lasting
               relationships within our community.
             </p>
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
               <button
                 type="button"
                 onClick={onSignUpClick ?? onLoginClick}
-                className="rounded-lg bg-emerald-900 px-8 py-4 font-bold text-white transition hover:bg-emerald-800"
+                className="rounded-xl bg-emerald-900 px-8 py-4 font-bold text-white transition-all hover:bg-emerald-800 hover:shadow-lg active:scale-95"
               >
                 GET STARTED
               </button>
               <a
                 href="#how-it-works"
-                className="rounded-lg border border-emerald-900 px-8 py-4 font-bold text-emerald-900 transition hover:bg-emerald-900 hover:text-white"
+                onClick={(e) => handleScroll(e, "how-it-works", "HOW IT WORKS")}
+                className="rounded-xl border-2 border-emerald-900 px-8 py-4 font-bold text-emerald-900 transition-all hover:bg-emerald-900 hover:text-white"
               >
                 HOW IT WORKS
               </a>
             </div>
 
-            <div className="mt-12 flex gap-12 border-t border-emerald-900/20 pt-8">
-              <div>
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-bold text-emerald-900">
+            <div className="mt-12 flex flex-wrap justify-center gap-8 border-t border-emerald-900/10 pt-8 lg:justify-start lg:gap-12">
+              <div className="text-center lg:text-left">
+                <div className="flex items-end justify-center gap-1 lg:justify-start">
+                  <span className="text-4xl font-bold text-emerald-900 md:text-5xl">
                     100
                   </span>
-                  <span className="mb-1 text-2xl font-bold text-emerald-900">
+                  <span className="mb-1 text-xl font-bold text-emerald-900 md:text-2xl">
                     %
                   </span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-emerald-900">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">
                   TRUSTED & LEGIT
                 </p>
               </div>
-              <div>
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-bold text-emerald-900">24</span>
-                  <span className="mb-1 text-2xl font-bold text-emerald-900">
+              <div className="text-center lg:text-left">
+                <div className="flex items-end justify-center gap-1 lg:justify-start">
+                  <span className="text-4xl font-bold text-emerald-900 md:text-5xl">24</span>
+                  <span className="mb-1 text-xl font-bold text-emerald-900 md:text-2xl">
                     hrs
                   </span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-emerald-900">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">
                   QUICK PAYOUT
                 </p>
               </div>
-              <div>
-                <div className="flex items-end gap-1">
-                  <span className="text-5xl font-bold text-emerald-900">
+              <div className="text-center lg:text-left">
+                <div className="flex items-end justify-center gap-1 lg:justify-start">
+                  <span className="text-4xl font-bold text-emerald-900 md:text-5xl">
                     500
                   </span>
-                  <span className="mb-1 text-2xl text-emerald-900">+</span>
+                  <span className="mb-1 text-xl text-emerald-900 md:text-2xl">+</span>
                 </div>
-                <p className="mt-1 text-sm font-bold text-emerald-900">
+                <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">
                   HAPPY SELLERS
                 </p>
               </div>
             </div>
           </div>
-          <div className="hidden flex-1 lg:block">
-            <div className="relative h-[500px] w-full rounded-3xl bg-emerald-900/10">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Image
-                  src="/logo.jpg"
-                  alt="JCLB"
-                  width={200}
-                  height={200}
-                  className="rounded-3xl opacity-60"
-                />
-              </div>
+          
+          <div className="relative flex-1 lg:flex-[1.2] flex justify-center lg:justify-end lg:translate-x-32">
+            <div className="animate-slow-pulse transition-transform duration-700 hover:scale-105 w-full flex justify-center lg:justify-end">
+              <Image
+                src="/logo.png"
+                alt="JCLB"
+                width={1000}
+                height={1000}
+                className="h-auto w-full max-w-[400px] drop-shadow-2xl md:max-w-[600px] lg:max-w-[800px] xl:max-w-[1000px]"
+                priority
+              />
             </div>
           </div>
         </div>
       </section>
 
-      <section id="how-it-works" className="bg-emerald-50 px-12 py-20">
-        <div className="mx-auto max-w-7xl">
-          <h2 className="text-6xl font-bold text-emerald-900">
+      <section id="how-it-works" className="bg-emerald-50 px-6 pb-20 pt-0 md:px-12 md:pb-32 md:pt-0 lg:pb-48 lg:pt-0">
+        <div className="mx-auto max-w-7xl reveal-on-scroll">
+          <h2 className="text-4xl font-bold text-emerald-900 md:text-6xl">
             <span className="text-amber-500">3</span> Steps to Get Your Cash
           </h2>
           <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {steps.map((item) => (
+            {steps.map((item, index) => (
               <div
                 key={item.step}
-                className="rounded-xl bg-emerald-900 p-8 text-white"
+                className={`reveal-on-scroll reveal-delay-${(index + 1) * 100} rounded-xl bg-emerald-900 p-8 text-white`}
               >
                 <span className="text-4xl font-bold text-amber-400">
                   {item.step}
@@ -221,8 +343,8 @@ export function AuthLandingPage({
         </div>
       </section>
 
-      <section id="categories" className="bg-emerald-900 px-12 py-20">
-        <div className="mx-auto max-w-7xl">
+      <section id="categories" className="bg-emerald-900 px-6 py-20 md:px-12 md:py-32 lg:py-48">
+        <div className="mx-auto max-w-7xl reveal-on-scroll">
           <p className="text-sm font-bold text-amber-400">WHAT WE BUY</p>
           <h2 className="mt-2 text-4xl font-black text-white md:text-5xl">
             We Accept a <span className="text-amber-400">WIDE RANGE</span> of
@@ -233,10 +355,10 @@ export function AuthLandingPage({
             <span className="text-amber-400"> we want it.</span>
           </p>
           <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {categories.map((cat) => (
+            {categories.map((cat, index) => (
               <div
                 key={cat.name}
-                className="rounded-xl border border-amber-300 bg-emerald-50/75 p-6"
+                className={`reveal-on-scroll reveal-delay-${(index % 4) * 100} rounded-xl border border-amber-300 bg-emerald-50/75 p-6 shadow-lg transition-transform hover:scale-105`}
               >
                 <h3 className="font-bold text-zinc-900">{cat.name}</h3>
                 <p className="mt-1 text-sm text-zinc-600">{cat.desc}</p>
@@ -246,8 +368,8 @@ export function AuthLandingPage({
         </div>
       </section>
 
-      <section id="why-us" className="bg-emerald-50 px-12 py-20">
-        <div className="mx-auto flex max-w-7xl flex-col gap-16 lg:flex-row">
+      <section id="why-us" className="bg-emerald-50 px-6 py-20 md:px-12 md:py-32 lg:py-48">
+        <div className="mx-auto flex max-w-7xl flex-col gap-16 lg:flex-row reveal-on-scroll">
           <div className="flex-1">
             <p className="text-sm font-bold text-amber-500">WHY CHOOSE US?</p>
             <h2 className="mt-2 text-4xl font-bold leading-tight text-emerald-900 md:text-5xl">
@@ -255,7 +377,7 @@ export function AuthLandingPage({
               <br />
               <span className="text-slate-700">ZERO HASSLE.</span>
             </h2>
-            <div className="mt-8 rounded-2xl bg-emerald-900 p-8">
+            <div className="mt-8 rounded-2xl bg-emerald-900 p-8 shadow-2xl reveal-on-scroll">
               <p className="text-lg leading-relaxed text-white">
                 We believe everyone deserves a fair price for their pre-loved
                 items - no low-balling, no runarounds.
@@ -272,10 +394,10 @@ export function AuthLandingPage({
             </div>
           </div>
           <div className="flex flex-1 flex-col gap-6">
-            {reasons.map((item) => (
+            {reasons.map((item, index) => (
               <div
                 key={item.title}
-                className="flex gap-4 rounded-lg bg-amber-400/20 p-5"
+                className={`reveal-on-scroll reveal-delay-${(index + 1) * 100} flex gap-4 rounded-lg bg-amber-400/20 p-5 transition-colors hover:bg-amber-400/30`}
               >
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-md bg-emerald-900">
                   <svg
@@ -305,15 +427,15 @@ export function AuthLandingPage({
         </div>
       </section>
 
-      <section id="reviews" className="bg-emerald-50 px-12 py-20">
-        <div className="mx-auto max-w-7xl">
+      <section id="reviews" className="bg-emerald-50 px-6 py-20 md:px-12 md:py-32 lg:py-48">
+        <div className="mx-auto max-w-7xl reveal-on-scroll">
           <p className="text-sm font-bold text-amber-500">CUSTOMER REVIEWS</p>
           <h2 className="mt-2 text-4xl font-bold text-emerald-900 md:text-5xl">
             What Our Sellers Say
           </h2>
           <div className="mt-12 grid gap-8 md:grid-cols-3">
-            {reviews.map((review) => (
-              <div key={review.name} className="overflow-hidden rounded-2xl">
+            {reviews.map((review, index) => (
+              <div key={review.name} className={`reveal-on-scroll reveal-delay-${(index + 1) * 100} overflow-hidden rounded-2xl shadow-xl transition-transform hover:scale-[1.02]`}>
                 <div className="bg-white p-6">
                   <div className="flex gap-1">
                     {[...Array(5)].map((_, i) => (
@@ -343,26 +465,26 @@ export function AuthLandingPage({
         </div>
       </section>
 
-      <section className="bg-red-700 px-12 py-20">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div>
-            <h2 className="text-4xl font-bold text-white md:text-5xl">
+      <section id="contact-us" className="bg-red-700 px-6 py-20 md:px-12 md:py-32 lg:py-48">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 md:flex-row reveal-on-scroll">
+          <div className="text-center md:text-left">
+            <h2 className="text-4xl font-bold text-white md:text-5xl lg:text-6xl">
               Ready to Turn Your Items Into Cash?
             </h2>
-            <p className="mt-2 text-4xl font-bold text-white/60 md:text-5xl">
+            <p className="mt-4 text-3xl font-bold text-white/60 md:text-4xl lg:text-5xl">
               It only takes a minute to start.
             </p>
           </div>
           <button
-            onClick={onLoginClick}
-            className="flex-shrink-0 rounded-lg bg-white px-10 py-4 font-bold text-zinc-900 transition hover:bg-zinc-100"
+            onClick={onSignUpClick ?? onLoginClick}
+            className="flex-shrink-0 rounded-xl bg-white px-10 py-5 font-bold text-emerald-900 shadow-2xl transition-all hover:scale-105 hover:bg-zinc-100 active:scale-95"
           >
             CONTACT US
           </button>
         </div>
       </section>
 
-      <footer className="bg-emerald-950 px-12 py-10 text-center text-sm text-white/50">
+      <footer className="bg-emerald-900 px-12 py-10 text-center text-sm text-white/50">
         <p>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</p>
       </footer>
     </div>

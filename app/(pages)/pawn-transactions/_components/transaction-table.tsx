@@ -1,10 +1,13 @@
 import { StatusBadge } from "@/components/shared/status-badge";
+import { formatTimeWithAmPm } from "@/lib/time";
 
-type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
+type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn" | "Fund Transfer" | "Cash Transfer";
 
 interface TransactionRow {
   transactionNo: string;
+  branch: string;
   purpose: PurposeType;
+  details: string;
   date: string;
   time: string;
   cashIn: string;
@@ -14,11 +17,15 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  relatedPawnedItemId?: string | null;
+  relatedSaleItemId?: string | null;
 }
 
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
+  { key: "branch", label: "Branch" },
   { key: "purpose", label: "Purpose" },
+  { key: "details", label: "Details" },
   { key: "date", label: "Date" },
   { key: "time", label: "Time" },
   { key: "cashIn", label: "Cash In", align: "right" as const },
@@ -46,15 +53,18 @@ const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple"
   Renew: "green",
   "Sold Item": "orange",
   Pawn: "purple",
+  "Fund Transfer": "blue",
+  "Cash Transfer": "blue",
 };
 
 interface TransactionTableProps {
   data?: TransactionRow[];
+  onViewDetails?: (transaction: TransactionRow) => void;
 }
 
 
 
-export function TransactionTable({ data = [] }: TransactionTableProps) {
+export function TransactionTable({ data = [], onViewDetails }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       <div className="flex items-center justify-between bg-surface px-4 py-3">
@@ -80,18 +90,22 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-4 text-center text-base text-text-tertiary">
+                <td colSpan={columns.length} className="py-4 text-center text-base text-text-tertiary">
                   No transactions found
                 </td>
               </tr>
             ) : (
               data.map((row, idx) => {
                 const isStartRow = row.purpose === "Start";
+                const rowKey = `${row.transactionNo || "transaction"}-${idx}`;
 
               return (
                 <tr
-                  key={row.transactionNo}
-                  className={`border-t border-border-subtle transition-colors bg-surface-secondary hover:bg-emerald-surface/60 ${
+                  key={rowKey}
+                  onClick={() => onViewDetails?.(row)}
+                  role="button"
+                  tabIndex={0}
+                  className={`cursor-pointer border-t border-border-subtle transition-colors bg-surface-secondary hover:bg-emerald-surface/60 ${
                     isStartRow
                       ? "border-l-4 border-l-emerald-700 !bg-emerald-surface"
                       : ""
@@ -102,12 +116,21 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                     {row.transactionNo}
                   </td>
 
+                  {/* Branch */}
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                    {row.branch || "—"}
+                  </td>
+
                   {/* Purpose */}
                   <td className="whitespace-nowrap px-4 py-3">
                     <StatusBadge
                       label={row.purpose}
                       variant={purposeVariant[row.purpose]}
                     />
+                  </td>
+
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                    {row.details || "—"}
                   </td>
 
                   {/* Date */}
@@ -117,34 +140,17 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
 
                   {/* Time */}
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                    {row.time}
+                    {formatTimeWithAmPm(row.time)}
                   </td>
 
                   {/* Cash In */}
                   <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-text-secondary">
-                    <input 
-                      type="text" 
-                      defaultValue={row.cashIn}
-                      placeholder="0"
-                      onChange={(e) => {
-                        console.log(`Updating Cash In for ${row.transactionNo}:`, e.target.value);
-                        // In a real app, this would trigger an API call or update state
-                      }}
-                      className="w-20 ml-auto block text-right border-b border-border-main outline-none focus:border-emerald-500 bg-transparent text-sm py-0.5"
-                    />
+                    {row.cashIn}
                   </td>
 
                   {/* Cash Out */}
                   <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-text-secondary">
-                    <input 
-                      type="text" 
-                      defaultValue={row.cashOut}
-                      placeholder="0"
-                      onChange={(e) => {
-                        console.log(`Updating Cash Out for ${row.transactionNo}:`, e.target.value);
-                      }}
-                      className="w-20 ml-auto block text-right border-b border-border-main outline-none focus:border-red-500 bg-transparent text-sm py-0.5"
-                    />
+                    {row.cashOut}
                   </td>
 
                   {/* Return */}

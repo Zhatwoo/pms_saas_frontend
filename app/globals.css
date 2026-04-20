@@ -4,6 +4,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── Light theme (default) ──────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --font-inter: "Aptos", "Segoe UI", "Helvetica Neue", sans-serif;
   --background: #ffffff;
@@ -113,6 +117,10 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+section[id] {
+  scroll-margin-top: 80px;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -146,6 +154,85 @@ body {
     transform: translateY(0);
   }
 }
+
+@keyframes slowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+.animate-slow-pulse {
+  animation: slowPulse 8s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(150%);
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(260%);
+    opacity: 0;
+  }
+}
+
+@keyframes scanGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: scale(1.01);
+  }
+}
+
+.animate-scan-line {
+  animation: scanLine 2.6s linear infinite;
+}
+
+.animate-scan-glow {
+  animation: scanGlow 1.8s ease-in-out infinite;
+}
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-100 { transition-delay: 100ms; }
+.reveal-delay-200 { transition-delay: 200ms; }
+.reveal-delay-300 { transition-delay: 300ms; }
+.reveal-delay-400 { transition-delay: 400ms; }
+.reveal-delay-500 { transition-delay: 500ms; }
 
 /* ── Dark mode overrides for select option elements ──── */
 .dark select option {

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { PHONE_REGEX, normalizePhoneNumber } from "@/lib/phone-number";
 
 interface BranchFormData {
   id?: string;
   branchId: string;
   name: string;
   location: string;
+  contactNumber: string;
   status: string;
 }
 
@@ -31,6 +33,7 @@ export function BranchModal({
 }: BranchModalProps) {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [contactNumber, setContactNumber] = useState("+63");
   const [status, setStatus] = useState("Active");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,19 +48,46 @@ export function BranchModal({
     if (initialData) {
       setName(initialData.name);
       setLocation(initialData.location);
+      setContactNumber(initialData.contactNumber || "+63");
       setStatus(initialData.status);
     } else {
       setName("");
       setLocation("");
+      setContactNumber("+63");
       setStatus("Active");
     }
     setErrors({});
   }, [initialData, isOpen]);
 
+  function updateContactNumber(value: string) {
+    const normalized = normalizePhoneNumber(value);
+    setContactNumber(normalized);
+
+    setErrors((current) => {
+      const nextErrors = { ...current };
+
+      if (!normalized || normalized === "+63") {
+        nextErrors.contactNumber = "Contact number is required";
+      } else if (!PHONE_REGEX.test(normalized)) {
+        nextErrors.contactNumber = "Use format +639XXXXXXXXX";
+      } else {
+        delete nextErrors.contactNumber;
+      }
+
+      return nextErrors;
+    });
+  }
+
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "Branch name is required";
     if (!location.trim()) newErrors.location = "Location is required";
+    const trimmedContact = contactNumber.trim();
+    if (!trimmedContact || trimmedContact === "+63") {
+      newErrors.contactNumber = "Contact number is required";
+    } else if (!PHONE_REGEX.test(trimmedContact)) {
+      newErrors.contactNumber = "Use format +639XXXXXXXXX";
+    }
     if (!status) newErrors.status = "Status is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -73,6 +103,7 @@ export function BranchModal({
         branchId: generatedId,
         name: name.trim(),
         location: location.trim(),
+        contactNumber: contactNumber.trim(),
         status,
       });
 
@@ -171,6 +202,25 @@ export function BranchModal({
             />
             {errors.location && (
               <span className="text-[10px] text-red-500">{errors.location}</span>
+            )}
+          </div>
+
+          {/* Contact Number */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-text-secondary">
+              Contact Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={contactNumber}
+              onChange={(e) => updateContactNumber(e.target.value)}
+              placeholder="+639XXXXXXXXX"
+              className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-pawn-sidebar transition-colors duration-200 ${
+                errors.contactNumber ? "border-red-400" : "border-input-border"
+              }`}
+            />
+            {errors.contactNumber && (
+              <span className="text-[10px] text-red-500">{errors.contactNumber}</span>
             )}
           </div>
 

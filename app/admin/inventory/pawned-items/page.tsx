@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
+import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -70,80 +73,14 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
 }
 
 // ─── View Modal ───────────────────────────────────────────────
-function ViewModal({ item, onClose, onSaveRemarks, userRole }: {
-  item: PawnedItem;
-  onClose: () => void;
-  onSaveRemarks: (id: string, remarks: string) => void;
-  userRole: string;
-}) {
-  const [editRemarks, setEditRemarks] = useState(item.remarks || "");
-  const canEdit = userRole === "super_admin" || userRole === "admin";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
-        <div className="bg-emerald-900 px-6 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Item #{item.itemId}</p>
-            <h2 className="text-white text-lg font-bold">{item.itemName}</h2>
-          </div>
-          <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
-        </div>
-        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-3">
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Category</p><p className="text-sm text-text-primary">{item.category}</p></div>
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Branch</p><p className="text-sm text-text-primary">{item.branch}</p></div>
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Pawn Date</p><p className="text-sm text-text-primary">{item.pawnDate}</p></div>
-            <div><p className="text-[10px] uppercase text-text-muted font-bold">Renewal Count</p><p className="text-sm text-text-primary font-bold">{item.renewalCount}x</p></div>
-          </div>
-          {item.status === "Expired" && (
-            <div className="rounded-lg border border-red-200 bg-red-50/50 p-3 space-y-2">
-              <p className="text-[10px] font-bold uppercase text-red-600 tracking-wider">Expired Item — QR Security Info</p>
-              {item.originalPhoto && <div><p className="text-[10px] text-text-tertiary">Original Photo:</p><p className="text-xs text-text-secondary">{item.originalPhoto}</p></div>}
-              {item.conditionReport && <div><p className="text-[10px] text-text-tertiary">Condition Report:</p><p className="text-xs text-text-secondary">{item.conditionReport}</p></div>}
-              {item.qrCode && <div><p className="text-[10px] text-text-tertiary">QR Code:</p><p className="text-xs font-mono text-text-secondary">{item.qrCode}</p></div>}
-            </div>
-          )}
-          <div>
-            <p className="text-[10px] uppercase text-text-muted font-bold mb-2">Renewal History</p>
-            <RenewalDetails renewals={item.renewals} />
-          </div>
-          <div>
-            <p className="text-[10px] uppercase text-text-muted font-bold mb-1">Remarks / Notes</p>
-            {canEdit ? (
-              <textarea
-                value={editRemarks}
-                onChange={(e) => setEditRemarks(e.target.value)}
-                rows={3}
-                placeholder="Add remarks about item condition, defects, investigations..."
-                className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-xs text-text-primary outline-none focus:border-emerald-500 resize-none"
-              />
-            ) : (
-              <p className="text-xs text-text-secondary bg-surface-secondary rounded-md p-2 border border-border-subtle">{item.remarks || "No remarks"}</p>
-            )}
-          </div>
-        </div>
-        <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">
-          <button onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
-          {canEdit && (
-            <button
-              onClick={() => { onSaveRemarks(item.id, editRemarks); onClose(); }}
-              className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800"
-            >
-              Save Remarks
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════
 // PAWNED ITEMS PAGE (Under Inventory)
 // ═══════════════════════════════════════════════════════════════
 export default function PawnedItemsPage() {
-  const userRole = "super_admin";
+  const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
+  const userRole = user?.role || "employee";
   const isSuperAdmin = userRole === "super_admin";
   const canEdit = userRole === "super_admin" || userRole === "admin";
 
@@ -158,10 +95,10 @@ export default function PawnedItemsPage() {
 
   const [pawnedItems, setPawnedItems] = useState<PawnedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewingItem, setViewingItem] = useState<PawnedItem | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery]);
+  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id]);
 
   useEffect(() => {
     async function fetchData() {
@@ -171,6 +108,7 @@ export default function PawnedItemsPage() {
         if (category !== "all") params.set("category", category);
         if (status !== "all") params.set("status", status);
         if (searchQuery) params.set("search", searchQuery);
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
 
@@ -184,7 +122,7 @@ export default function PawnedItemsPage() {
       }
     }
     fetchData();
-  }, [category, status, searchQuery, currentPage]);
+  }, [category, status, searchQuery, currentPage, selectedBranch.id, isAllBranches]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
@@ -274,8 +212,8 @@ export default function PawnedItemsPage() {
                   <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
-                    <>
-                      <tr key={item.itemId} className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
+                    <Fragment key={item.id}>
+                      <tr className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
@@ -290,7 +228,7 @@ export default function PawnedItemsPage() {
                         <td className="px-3 py-2 text-xs text-text-tertiary max-w-[120px] truncate" title={item.remarks}>{item.remarks || "—"}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
                           <div className="inline-flex items-center gap-1">
-                            <button onClick={() => setViewingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                            <button onClick={() => setSelectedItemId(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
                               View
                             </button>
                             {canEdit && (
@@ -318,7 +256,7 @@ export default function PawnedItemsPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   ))
                 )}
               </tbody>
@@ -343,7 +281,13 @@ export default function PawnedItemsPage() {
         <Pagination currentPage={currentPage} totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
       </div>
 
-      {viewingItem && <ViewModal item={viewingItem} onClose={() => setViewingItem(null)} onSaveRemarks={handleSaveRemarks} userRole={userRole} />}
+      <PawnedItemDetailsModal 
+        isOpen={Boolean(selectedItemId)} 
+        itemId={selectedItemId} 
+        onClose={() => setSelectedItemId(null)} 
+        onSaveRemarks={handleSaveRemarks}
+        userRole={userRole}
+      />
     </div>
   );
 }

@@ -2,7 +2,6 @@ import type { NavGroup, Role } from "@/types";
 import {
   DashboardIcon,
   PawnTransactionIcon,
-  PawnTicketIcon,
   CustomersIcon,
   InventoryIcon,
   ExpirationIcon,
@@ -28,8 +27,6 @@ const SUPERADMIN_NAV: NavGroup[] = [
     section: "TRANSACTION",
     items: [
       { label: "Pawn Transactions", href: "/pawn-transactions", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/pawn-ticket", icon: <PawnTicketIcon /> },
-      { label: "Customers", href: "/customers", icon: <CustomersIcon /> },
     ],
   },
   {
@@ -48,8 +45,9 @@ const SUPERADMIN_NAV: NavGroup[] = [
     ],
   },
   {
-    section: "ADMIN",
+    section: "MANAGEMENT",
     items: [
+      { label: "Customers", href: "/customers", icon: <CustomersIcon /> },
       { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
       {
         label: "Branch Management",
@@ -60,7 +58,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
           { label: "Finance", href: "/branch-finance" },
         ],
       },
-      { label: "User Management", href: "/users", icon: <UserManagementIcon /> },
+      { label: "Employee Management", href: "/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
     ],
@@ -78,8 +76,6 @@ const ADMIN_NAV: NavGroup[] = [
     section: "TRANSACTION",
     items: [
       { label: "Pawn Transactions", href: "/admin/pawn-transactions", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/admin/pawn-ticket", icon: <PawnTicketIcon /> },
-      { label: "Customers", href: "/admin/customers", icon: <CustomersIcon /> },
     ],
   },
   {
@@ -100,6 +96,7 @@ const ADMIN_NAV: NavGroup[] = [
   {
     section: "ADMIN",
     items: [
+      { label: "Customers", href: "/admin/customers", icon: <CustomersIcon /> },
       {
         label: "Branch Management",
         href: "/admin/branches",
@@ -128,7 +125,6 @@ const BRANCH_NAV: NavGroup[] = [
     section: "TRANSACTION",
     items: [
       { label: "Pawn Transactions", href: "/employee/pawn-transaction", icon: <PawnTransactionIcon /> },
-      { label: "Pawn Ticket", href: "/employee/pawn-ticket", icon: <PawnTicketIcon /> },
     ],
   },
   {
@@ -144,13 +140,14 @@ const BRANCH_NAV: NavGroup[] = [
           { label: "Items For Sale", href: "/employee/inventory/items-for-sale" },
         ],
       },
+      { label: "Expiration Monitoring", href: "/employee/expiration-monitoring", icon: <ExpirationIcon /> },
+      { label: "Branch Finance", href: "/employee/branch-finance", icon: <ReportsIcon /> },
     ],
   },
   {
     section: "SYSTEM",
     items: [
       { label: "Settings", href: "/employee/settings", icon: <SettingsIcon /> },
-      { label: "Audit Logs", href: "/employee/audit-logs", icon: <AuditLogIcon /> },
     ],
   },
 ];

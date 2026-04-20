@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Pagination } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -64,7 +66,9 @@ const statusVariant: Record<string, "green" | "orange"> = {
 // ITEMS FOR SALE PAGE (Under Inventory)
 // ===============================================================
 export default function ItemsForSalePage() {
-  const userRole = "super_admin";
+  const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
+  const userRole = user?.role || "employee";
   const isSuperAdmin = userRole === "super_admin";
   const canEdit = userRole === "super_admin" || userRole === "admin";
 
@@ -86,7 +90,7 @@ export default function ItemsForSalePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [category, status, searchQuery, saleViewMode]);
+  }, [category, status, searchQuery, saleViewMode, selectedBranch.id]);
 
   useEffect(() => {
     async function fetchData() {
@@ -96,6 +100,7 @@ export default function ItemsForSalePage() {
         if (category !== "all") params.set("category", category);
         if (status !== "all") params.set("status", status);
         if (searchQuery) params.set("search", searchQuery);
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("viewMode", saleViewMode);
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
@@ -110,7 +115,7 @@ export default function ItemsForSalePage() {
       }
     }
     fetchData();
-  }, [category, status, searchQuery, saleViewMode, currentPage]);
+  }, [category, status, searchQuery, saleViewMode, currentPage, selectedBranch.id, isAllBranches]);
 
   const handleDelete = async (itemId: string) => {
     if (!confirm("Are you sure you want to delete this sale item? This cannot be undone.")) return;

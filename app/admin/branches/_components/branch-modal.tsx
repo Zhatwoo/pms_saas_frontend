@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { PHONE_REGEX, normalizePhoneNumber } from "@/lib/phone-number";
 
 interface BranchFormData {
   branchId: string;
   name: string;
   location: string;
+  contactNumber: string;
   status: string;
 }
 
@@ -35,31 +37,64 @@ export function BranchModal({
 }: BranchModalProps) {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
+  const [contactNumber, setContactNumber] = useState("+63");
   const [status, setStatus] = useState("Active");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const generatedId = useMemo(
-    () => (mode === "create" ? generateBranchId(existingCount) : initialData?.branchId || ""),
-    [mode, existingCount, initialData, isOpen]
+    () =>
+      mode === "create"
+        ? generateBranchId(existingCount)
+        : initialData?.branchId || "",
+    [mode, existingCount, initialData, isOpen],
   );
 
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
       setLocation(initialData.location);
+      setContactNumber(initialData.contactNumber || "+63");
       setStatus(initialData.status);
     } else {
       setName("");
       setLocation("");
+      setContactNumber("+63");
       setStatus("Active");
     }
     setErrors({});
   }, [initialData, isOpen]);
 
+  function updateContactNumber(value: string) {
+    const normalized = normalizePhoneNumber(value);
+    setContactNumber(normalized);
+
+    setErrors((current) => {
+      const nextErrors = { ...current };
+
+      if (!normalized || normalized === "+63") {
+        nextErrors.contactNumber = "Contact number is required";
+      } else if (!PHONE_REGEX.test(normalized)) {
+        nextErrors.contactNumber = "Use format +639XXXXXXXXX";
+      } else {
+        delete nextErrors.contactNumber;
+      }
+
+      return nextErrors;
+    });
+  }
+
   function validate(): boolean {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "Branch name is required";
     if (!location.trim()) newErrors.location = "Location is required";
+
+    const trimmedContact = contactNumber.trim();
+    if (!trimmedContact || trimmedContact === "+63") {
+      newErrors.contactNumber = "Contact number is required";
+    } else if (!PHONE_REGEX.test(trimmedContact)) {
+      newErrors.contactNumber = "Use format +639XXXXXXXXX";
+    }
+
     if (!status) newErrors.status = "Status is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -68,7 +103,13 @@ export function BranchModal({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit({ branchId: generatedId, name: name.trim(), location: location.trim(), status });
+    onSubmit({
+      branchId: generatedId,
+      name: name.trim(),
+      location: location.trim(),
+      contactNumber: contactNumber.trim(),
+      status,
+    });
     onClose();
   }
 
@@ -76,15 +117,12 @@ export function BranchModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="relative z-10 w-full max-w-md animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
           <div>
             <h2 className="text-base font-bold text-text-primary">
@@ -107,9 +145,7 @@ export function BranchModal({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
-          {/* Branch ID — auto-generated, read-only */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-text-secondary">
               Branch ID
@@ -124,7 +160,6 @@ export function BranchModal({
             <span className="text-[10px] text-text-muted">Auto-generated and cannot be edited</span>
           </div>
 
-          {/* Branch Name */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-text-secondary">
               Branch Name <span className="text-red-500">*</span>
@@ -143,7 +178,6 @@ export function BranchModal({
             )}
           </div>
 
-          {/* Location */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-text-secondary">
               Location <span className="text-red-500">*</span>
@@ -162,7 +196,24 @@ export function BranchModal({
             )}
           </div>
 
-          {/* Status */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-text-secondary">
+              Contact Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={contactNumber}
+              onChange={(e) => updateContactNumber(e.target.value)}
+              placeholder="+639XXXXXXXXX"
+              className={`rounded-lg border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-pawn-sidebar transition-colors duration-200 ${
+                errors.contactNumber ? "border-red-400" : "border-input-border"
+              }`}
+            />
+            {errors.contactNumber && (
+              <span className="text-[10px] text-red-500">{errors.contactNumber}</span>
+            )}
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-text-secondary">
               Status <span className="text-red-500">*</span>
@@ -185,7 +236,6 @@ export function BranchModal({
             )}
           </div>
 
-          {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"

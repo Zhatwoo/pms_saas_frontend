@@ -17,6 +17,7 @@ interface BranchDetail {
   branchId: string;
   name: string;
   location: string;
+  contactNumber: string;
   status: string;
   pawnedItems: number;
   forSaleItems: number;
@@ -128,6 +129,14 @@ export function BranchDetailDrawer({
                     </p>
                     <p className="mt-1 text-sm text-text-secondary">
                       {branch.location}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
+                      Contact Number
+                    </p>
+                    <p className="mt-1 text-sm text-text-secondary">
+                      {branch.contactNumber || "—"}
                     </p>
                   </div>
                 </div>
