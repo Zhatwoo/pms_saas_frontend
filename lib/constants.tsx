@@ -148,6 +148,7 @@ const BRANCH_NAV: NavGroup[] = [
     section: "SYSTEM",
     items: [
       { label: "Settings", href: "/employee/settings", icon: <SettingsIcon /> },
+      { label: "Audit Logs", href: "/employee/audit-logs", icon: <AuditLogIcon /> },
     ],
   },
 ];

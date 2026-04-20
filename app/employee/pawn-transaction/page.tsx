@@ -97,6 +97,8 @@ const DEFAULT_STATS = {
   buyBack: 0,
   renewed: 0,
   soldItem: 0,
+  redeemed: 0,
+  transfer: 0,
   startingBalance: 0,
   endingBalance: 0,
 };
@@ -160,8 +162,14 @@ export default function EmployeePawnTransactionsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [currentStats, setCurrentStats] = useState({
-    pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
-    startingBalance: 0, endingBalance: 0,
+    pawnedToday: 0, 
+    buyBack: 0, 
+    renewed: 0, 
+    soldItem: 0,
+    redeemed: 0,
+    transfer: 0,
+    startingBalance: 0, 
+    endingBalance: 0,
   });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -188,6 +196,7 @@ export default function EmployeePawnTransactionsPage() {
         if (data) {
           setCurrentStats(data.stats || {
             pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
+            redeemed: 0, transfer: 0,
             startingBalance: 0, endingBalance: 0,
           });
           setAllTransactions((data.transactions || []).map(toTransactionRow));
@@ -320,6 +329,8 @@ export default function EmployeePawnTransactionsPage() {
         onStartDay={() => setBalanceModal({ open: true, type: "starting" })}
         onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
       />
+
+      <TransactionStats data={currentStats} />
 
             <TransactionTable 
               data={paginatedTransactions} 
