@@ -297,7 +297,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                             placeholder="••••••••"
                             className="w-full h-12 px-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium"
                             value={adminForm.password}
-                            onChange={(e) => setAdminForm(e({...adminForm, password: e.target.value}))}
+                            onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
                           />
                         </div>
                       </div>

@@ -6,7 +6,10 @@ import { useBranch } from "@/contexts/branch-context";
 import { TransactionActions } from "./_components/transaction-actions";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
-import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
+import {
+  TransactionDetailsModal,
+  type TransactionDetailsData,
+} from "@/components/shared/transaction-details-modal";
 import {
   ManualTransactionModal,
   type ManualTransactionPayload,
@@ -25,6 +28,10 @@ interface TransactionRow {
   transactionNo: string;
   branch: string;
   purpose: PurposeType;
+  buyBack: string;
+  percentage: string;
+  buyOut: string;
+  sold: string;
   details: string;
   date: string;
   time: string;
@@ -35,6 +42,26 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  qrCode?: string;
+  relatedPawnedItemId?: string | null;
+  relatedSaleItemId?: string | null;
+}
+
+interface TransactionTableRow {
+  transactionNo: string;
+  branch: string;
+  purpose: PurposeType;
+  details: string;
+  date: string;
+  time: string;
+  cashIn: string;
+  cashOut: string;
+  returnVal: string;
+  unit: string;
+  unitCode: string;
+  pawn: string;
+  storage: string;
+  qrCode?: string;
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
 }
@@ -73,10 +100,16 @@ const DEFAULT_STATS = {
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const purpose = transaction.purpose as PurposeType;
+  const isBuyBackAction = transaction.purpose === "Buy Back";
+  const isPawnAction = transaction.purpose === "Pawn";
   return {
     transactionNo: transaction.transaction_no,
     branch: transaction.branch ?? "",
     purpose,
+    buyBack: isBuyBackAction ? String(transaction.cash_in ?? 0) : "0",
+    percentage: "0",
+    buyOut: transaction.purpose === "Buy Out" ? String(transaction.cash_out ?? 0) : "0",
+    sold: transaction.purpose === "Sold Item" || transaction.purpose === "Sale" ? String(transaction.cash_in ?? 0) : "0",
     details: transaction.details ?? "",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
@@ -87,8 +120,31 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     unitCode: transaction.unit_code ?? "",
     pawn: String(transaction.pawn_amount ?? 0),
     storage: String(transaction.storage_fee ?? 0),
+    qrCode: undefined,
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
+  };
+}
+
+function toTransactionDetailsData(transaction: TransactionTableRow): TransactionDetailsData {
+  return {
+    transactionNo: transaction.transactionNo,
+    purpose: transaction.purpose,
+    buyBack: transaction.purpose === "Buy Back" ? transaction.cashIn : "0",
+    buyOut: "0",
+    sold: transaction.purpose === "Sold Item" ? transaction.cashIn : "0",
+    date: transaction.date,
+    time: transaction.time,
+    cashIn: transaction.cashIn,
+    cashOut: transaction.cashOut,
+    returnVal: transaction.returnVal,
+    unit: transaction.unit,
+    unitCode: transaction.unitCode,
+    pawn: transaction.pawn,
+    storage: transaction.storage,
+    qrCode: transaction.qrCode,
+    relatedPawnedItemId: transaction.relatedPawnedItemId,
+    relatedSaleItemId: transaction.relatedSaleItemId,
   };
 }
 
@@ -102,7 +158,7 @@ export default function PawnTransactionsPage() {
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionDetailsData | null>(null);
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -148,6 +204,10 @@ export default function PawnTransactionsPage() {
       transactionNo: data.transactionNo,
       branch: selectedBranch.name,
       purpose: "Start",
+      buyBack: "0",
+      percentage: "0",
+      buyOut: "0",
+      sold: "0",
       details: "Manual Entry",
       date: data.date,
       time: data.time,
@@ -158,6 +218,7 @@ export default function PawnTransactionsPage() {
       unitCode: data.type,
       pawn: "0",
       storage: "0",
+      qrCode: undefined,
     };
     setAllTransactions(prev => [newTransaction, ...prev]);
   };
@@ -180,7 +241,12 @@ export default function PawnTransactionsPage() {
         />
       </div>
       <TransactionStats data={currentStats} />
-      <TransactionTable data={allTransactions} onViewDetails={setSelectedTransaction} />
+      <TransactionTable
+        data={allTransactions}
+        onViewDetails={(transaction) =>
+          setSelectedTransaction(toTransactionDetailsData(transaction))
+        }
+      />
 
       <TransactionDetailsModal
         isOpen={Boolean(selectedTransaction)}

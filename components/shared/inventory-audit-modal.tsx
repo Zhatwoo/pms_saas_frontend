@@ -56,9 +56,7 @@ type ZXingDecodeResult = {
   getText: () => string;
 };
 
-type ZXingControls = {
-  stop: () => Promise<void>;
-};
+type ZXingControls = Awaited<ReturnType<BrowserQRCodeReader["decodeFromConstraints"]>>;
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",

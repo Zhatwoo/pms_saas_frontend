@@ -4,6 +4,25 @@ import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "reac
 import { api } from "@/lib/api";
 import { MoaModal } from "./moa-modal";
 
+const NO_ID_VALUE = "No ID / None";
+const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
+
+function getVerificationMode(idPresented: string) {
+  if (!idPresented) {
+    return "pending" as const;
+  }
+
+  if (idPresented === NO_ID_VALUE) {
+    return "no-id" as const;
+  }
+
+  if (SINGLE_IMAGE_ID_TYPES.has(idPresented)) {
+    return "single-document" as const;
+  }
+
+  return "front-back" as const;
+}
+
 interface NewPawnModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -50,6 +69,7 @@ export function NewPawnModal({
     storageFeeAmount: "",
     profilePhoto: null as string | null,
     idPhoto: null as string | null,
+    idBackPhoto: null as string | null,
   });
 
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -82,6 +102,18 @@ export function NewPawnModal({
     const target = event.target as HTMLInputElement | HTMLSelectElement;
     const { name, type, value } = target;
     const checked = "checked" in target ? target.checked : false;
+
+    if (name === "idPresented") {
+      setForm((prev) => ({
+        ...prev,
+        idPresented: value,
+        profilePhoto: null,
+        idPhoto: null,
+        idBackPhoto: null,
+      }));
+      setQrUrl(null);
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
@@ -120,6 +152,7 @@ export function NewPawnModal({
       storageFeeAmount: "",
       profilePhoto: null,
       idPhoto: null,
+      idBackPhoto: null,
     });
     setQrUrl(null);
     setPassword("");
@@ -245,6 +278,25 @@ export function NewPawnModal({
     const amountValue = Number(form.amount || 0);
     const storageAmount = form.storageFee ? Number(form.storageFeeAmount || 0) : 0;
     const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ").trim();
+    const verificationMode = getVerificationMode(form.idPresented);
+
+    if (verificationMode === "no-id" && !form.profilePhoto) {
+      setIsSaving(false);
+      setErrorMessage("Customer photo is required when No ID / None is selected.");
+      return;
+    }
+
+    if (verificationMode === "single-document" && !form.idPhoto) {
+      setIsSaving(false);
+      setErrorMessage("Document image is required for clearance verification.");
+      return;
+    }
+
+    if (verificationMode === "front-back" && (!form.idPhoto || !form.idBackPhoto)) {
+      setIsSaving(false);
+      setErrorMessage("Front and back ID photos are required for this ID type.");
+      return;
+    }
 
     try {
       await api.post('/pawn-tickets', {
@@ -274,6 +326,7 @@ export function NewPawnModal({
           qrCode: qrUrl || undefined,
           profilePhoto: form.profilePhoto || undefined,
           idPhoto: form.idPhoto || undefined,
+          idBackPhoto: form.idBackPhoto || undefined,
         },
         transaction: {
           pawnAmount: amountValue,
@@ -452,18 +505,45 @@ export function NewPawnModal({
                   <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
                     <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                       ID & Verification Scan
+                       {getVerificationMode(form.idPresented) === "no-id"
+                         ? "Customer Photo"
+                         : getVerificationMode(form.idPresented) === "single-document"
+                           ? "Document Upload"
+                           : getVerificationMode(form.idPresented) === "front-back"
+                             ? "ID Front / Back"
+                             : "ID & Verification"}
                     </span>
-                    <div className="grid grid-cols-2 gap-3">
-                      <PhotoUpload 
-                        label="ID Photo / Serial" 
-                        onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
-                      />
-                      <PhotoUpload 
-                        label="Customer Facing View" 
-                        onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
-                      />
-                    </div>
+
+                    {getVerificationMode(form.idPresented) === "pending" ? (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-6 text-center text-xs font-medium text-zinc-400">
+                        Select an ID type to show the required verification photo fields.
+                      </div>
+                    ) : getVerificationMode(form.idPresented) === "no-id" ? (
+                      <div className="grid grid-cols-1 gap-3">
+                        <PhotoUpload 
+                          label="Take Customer Facing Photo" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
+                        />
+                      </div>
+                    ) : getVerificationMode(form.idPresented) === "single-document" ? (
+                      <div className="grid grid-cols-1 gap-3">
+                        <PhotoUpload 
+                          label="Upload Image" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                        />
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <PhotoUpload 
+                          label="Front of ID" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                        />
+                        <PhotoUpload 
+                          label="Back of ID" 
+                          onCapture={(data) => setForm(prev => ({ ...prev, idBackPhoto: data }))}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

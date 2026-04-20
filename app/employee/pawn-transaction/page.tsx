@@ -28,12 +28,13 @@ type PurposeType =
   | "Fund Transfer"
   | "Cash Transfer";
 
-type FilterType = "All" | "Renew" | "Sales / Transfer" | "Buy Back";
+type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back";
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
   "Sales / Transfer": "Sold Item",
+  "Redeem": "Pawn",
   "Buy Back": "Buy Back",
 };
 
@@ -41,6 +42,7 @@ interface TransactionRow {
   transactionNo: string;
   purpose: PurposeType;
   buyBack: string;
+  percentage: string;
   buyOut: string;
   sold: string;
   date: string;
@@ -115,13 +117,13 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     buyBack: isBuyBackAction 
       ? String(transaction.cash_in ?? 0) 
       : "0",
-    buyOut: transaction.purpose === "Buy Out" ? String(transaction.cash_out ?? 0) : "0",
-    sold: transaction.purpose === "Sold Item" || transaction.purpose === "Sale" ? String(transaction.cash_in ?? 0) : "0",
     percentage: isBuyBackAction || isPawnAction ? String(calculations.percentage) : "0",
+    buyOut: "0",
+    sold: transaction.purpose === "Sold Item" ? String(transaction.cash_in ?? 0) : "0",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     cashIn: isPawnAction ? "0" : String(transaction.cash_in ?? 0),
-    cashOut: (isBuyBackAction || transaction.purpose === "Sold Item" || transaction.purpose === "Sale") 
+    cashOut: (isBuyBackAction || transaction.purpose === "Sold Item") 
       ? "0" 
       : String(transaction.cash_out ?? 0),
     returnVal: String(transaction.return_amount ?? 0),
