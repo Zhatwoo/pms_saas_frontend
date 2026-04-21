@@ -223,10 +223,8 @@ export default function ReportsPage() {
           <span className="text-sm text-zinc-500">{todayFormatted}</span>
         </div>
         <button 
-          onClick={handleDownloadPDF}
-          disabled={isLoading || !reportData}
-          className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+          onClick={() => window.print()}
+          className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
           {downloadIcon}
           Download PDF
         </button>

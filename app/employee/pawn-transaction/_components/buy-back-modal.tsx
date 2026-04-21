@@ -218,7 +218,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -264,7 +264,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
           </div>
 
           {/* Right Side: Details & Repurchase Price */}
-          <div className="flex-1 bg-white dark:bg-zinc-900 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 bg-white dark:bg-zinc-900 overflow-y-auto scrollbar-hide">
             {selectedItem ? (
               <div className="p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="flex flex-wrap items-start justify-between gap-6 mb-10">

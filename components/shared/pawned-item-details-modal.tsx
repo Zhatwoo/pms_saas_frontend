@@ -60,7 +60,7 @@ interface PawnedItemDetailsModalProps {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-4 w-full border-b border-emerald-100 pb-2 text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/70">
+    <h3 className="mb-6 w-full text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/70">
       {children}
     </h3>
   );
@@ -254,9 +254,9 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full md:w-[350px] bg-emerald-950 p-8 flex flex-col text-white shrink-0">
-          <div className="flex h-full flex-col gap-6">
-            <div className="flex min-h-0 flex-1 flex-col items-center text-center">
+        <div className="w-full md:w-[350px] bg-emerald-950 p-8 flex flex-col text-white shrink-0 md:max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="flex flex-col gap-6 min-h-max">
+            <div className="flex min-h-[220px] flex-1 flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Image of the Owner</span></SectionTitle>
               <div className="relative flex-1 w-full overflow-hidden rounded-[2rem] border border-emerald-800 bg-emerald-900/60 shadow-2xl">
                 {ownerVisual ? (
@@ -283,7 +283,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col items-center text-center">
+            <div className="flex min-h-[220px] flex-1 flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Item Visuals</span></SectionTitle>
               <div
                 className="relative flex-1 w-full overflow-hidden rounded-[2rem] border border-emerald-800 bg-emerald-900/60 shadow-2xl"
@@ -363,20 +363,20 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col items-center text-center">
+            <div className="flex min-h-[220px] flex-1 flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Security Identity</span></SectionTitle>
               <div className="relative flex flex-1 w-full items-center justify-center">
                 {qrVisual ? (
                   <Image
                     src={qrVisual}
                     alt="Security QR"
-                    width={280}
-                    height={280}
+                    width={220}
+                    height={220}
                     unoptimized
-                    className="max-h-full max-w-full object-contain"
+                    className="object-contain bg-white p-4 rounded-[2rem] shadow-2xl"
                   />
                 ) : (
-                  <div className="flex h-44 w-44 items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
+                  <div className="flex h-[220px] w-[220px] items-center justify-center rounded-[2rem] border-2 border-dashed border-emerald-300 bg-emerald-100/30">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/70">No QR generated</p>
                   </div>
                 )}
@@ -386,7 +386,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         </div>
 
         {/* Right Section: Detailed Information */}
-        <div className="flex-1 p-8 md:p-12 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="flex-1 p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide">
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-50">
                <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />

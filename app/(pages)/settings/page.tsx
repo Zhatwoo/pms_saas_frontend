@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 
 type ExtensionRow = {
   date: string;
@@ -23,6 +24,9 @@ const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every T
 10. Seller confirms ownership and freedom from liens and encumbrances.`;
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+  
   const [isMoaEditMode, setIsMoaEditMode] = useState(false);
   const [isMoaLocked, setIsMoaLocked] = useState(false);
   const [moaFields, setMoaFields] = useState({
@@ -99,6 +103,22 @@ export default function SettingsPage() {
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
 
+  const [shopSettings, setShopSettings] = useState({
+    shopName: "JCLB BUY BACK SHOP",
+    shopAddress: "123 Main Street, Manila, Philippines",
+    phoneNumber: "+63 2 1234 5678",
+    email: "info@jclbbuyback.com",
+  });
+
+  const [policies, setPolicies] = useState({
+    interestRate: "3.5",
+    pawnDuration: "30",
+    gracePeriod: "3",
+  });
+  
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsSavedAt, setSettingsSavedAt] = useState<string | null>(null);
+
   useEffect(() => {
     async function fetchMoaTemplate() {
       try {
@@ -111,10 +131,22 @@ export default function SettingsPage() {
         console.error("Failed to fetch MOA template:", error);
       }
     }
+    async function fetchSettings() {
+      try {
+        const data = await api.get<{ shopInfo: typeof shopSettings; policies: typeof policies }>('/settings/general');
+        if (data) {
+          if (data.shopInfo) setShopSettings(data.shopInfo);
+          if (data.policies) setPolicies(data.policies);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch settings, using defaults.");
+      }
+    }
     fetchMoaTemplate();
+    fetchSettings();
   }, []);
 
-  const canEditMoa = isMoaEditMode && !isMoaLocked;
+  const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
 
   const lineInputClass =
     "h-5 w-full border-b border-border-subtle bg-transparent px-1 text-[10px] text-text-primary outline-none disabled:cursor-not-allowed disabled:text-text-muted";
@@ -141,6 +173,32 @@ export default function SettingsPage() {
     );
   };
 
+  const handleShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
+    setShopSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handlePolicyChange = (field: keyof typeof policies, value: string) => {
+    setPolicies((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveAllSettings = async () => {
+    if (!isSuperAdmin) {
+      alert("Only Super Admins can save these settings.");
+      return;
+    }
+    setIsSavingSettings(true);
+    try {
+      await api.post('/settings/general', { shopInfo: shopSettings, policies });
+      setSettingsSavedAt(new Date().toLocaleString());
+      setTimeout(() => setSettingsSavedAt(null), 3000);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save settings");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   const handleSaveMoa = async () => {
     try {
       await api.post(`/settings/moa_template`, {
@@ -154,12 +212,17 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSendToAllBranches = () => {
+  const handleSendToAllBranches = async () => {
     setSendStatus("sending");
-    setTimeout(() => {
+    try {
+      await api.post('/settings/moa_template/distribute', {});
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);
-    }, 700);
+    } catch (error) {
+      console.error("Failed to send to all branches:", error);
+      setSendStatus("idle");
+      alert("Failed to send to all branches.");
+    }
   };
 
   const renderTopLabel = (
@@ -218,8 +281,10 @@ export default function SettingsPage() {
                   Shop Name
                 </label>
                 <input
-                  defaultValue="JCLB BUY BACK SHOP"
-                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                  value={shopSettings.shopName}
+                  onChange={(e) => handleShopSettingChange("shopName", e.target.value)}
+                  disabled={!isSuperAdmin}
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -228,8 +293,10 @@ export default function SettingsPage() {
                   Shop Address
                 </label>
                 <input
-                  defaultValue="123 Main Street, Manila, Philippines"
-                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                  value={shopSettings.shopAddress}
+                  onChange={(e) => handleShopSettingChange("shopAddress", e.target.value)}
+                  disabled={!isSuperAdmin}
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -239,8 +306,10 @@ export default function SettingsPage() {
                     Phone Number
                   </label>
                   <input
-                    defaultValue="+63 2 1234 5678"
-                    className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                    value={shopSettings.phoneNumber}
+                    onChange={(e) => handleShopSettingChange("phoneNumber", e.target.value)}
+                    disabled={!isSuperAdmin}
+                    className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -249,8 +318,11 @@ export default function SettingsPage() {
                     Email
                   </label>
                   <input
-                    defaultValue="info@jclbbuyback.com"
-                    className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                    type="email"
+                    value={shopSettings.email}
+                    onChange={(e) => handleShopSettingChange("email", e.target.value)}
+                    disabled={!isSuperAdmin}
+                    className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -268,8 +340,10 @@ export default function SettingsPage() {
                   Default Interest Rate (%)
                 </label>
                 <input
-                  defaultValue="3.5"
-                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                  value={policies.interestRate}
+                  onChange={(e) => handlePolicyChange("interestRate", e.target.value)}
+                  disabled={!isSuperAdmin}
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
                 <p className="text-[9px] text-text-muted">per month</p>
               </div>
@@ -279,8 +353,10 @@ export default function SettingsPage() {
                   Default Pawn Duration (Days)
                 </label>
                 <input
-                  defaultValue="30"
-                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                  value={policies.pawnDuration}
+                  onChange={(e) => handlePolicyChange("pawnDuration", e.target.value)}
+                  disabled={!isSuperAdmin}
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -289,8 +365,10 @@ export default function SettingsPage() {
                   Grace Period (Days)
                 </label>
                 <input
-                  defaultValue="3"
-                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                  value={policies.gracePeriod}
+                  onChange={(e) => handlePolicyChange("gracePeriod", e.target.value)}
+                  disabled={!isSuperAdmin}
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -318,28 +396,31 @@ export default function SettingsPage() {
                       return next;
                     })
                   }
+                  disabled={!isSuperAdmin}
                   className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-colors ${
                     isMoaEditMode
                       ? "border border-emerald-700 bg-emerald-700 text-white"
                       : "border border-border-main bg-surface text-text-secondary hover:bg-surface-hover"
-                  }`}
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                 </button>
 
-                <label className="inline-flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-text-secondary">
+                <label className={`inline-flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-text-secondary ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <input
                     type="checkbox"
                     checked={isMoaLocked}
                     onChange={(e) => setIsMoaLocked(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-input-border bg-input-bg text-emerald-600 focus:ring-emerald-500"
+                    disabled={!isSuperAdmin}
+                    className="h-3.5 w-3.5 rounded border-input-border bg-input-bg text-emerald-600 focus:ring-emerald-500 disabled:cursor-not-allowed"
                   />
                   Lock Template (Prevent Editing)
                 </label>
 
                 <button
                   onClick={() => setIsTopHeaderSwapped((v) => !v)}
-                  className="rounded-lg border border-border-main bg-surface px-3 py-2 text-[11px] font-bold text-text-secondary transition-colors hover:bg-surface-hover"
+                  disabled={!isSuperAdmin}
+                  className="rounded-lg border border-border-main bg-surface px-3 py-2 text-[11px] font-bold text-text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
@@ -735,14 +816,14 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={handleSaveMoa}
-                    disabled={!canEditMoa}
+                    disabled={!canEditMoa || !isSuperAdmin}
                     className="rounded-lg bg-emerald-700 px-4 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Save MOA Template
                   </button>
                   <button
                     onClick={handleSendToAllBranches}
-                    disabled={sendStatus === "sending"}
+                    disabled={sendStatus === "sending" || !isSuperAdmin}
                     className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {sendStatus === "sending"
@@ -761,13 +842,24 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <div className="flex gap-3">
-            <button className="rounded-lg bg-emerald-700 px-5 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800">
-              Save Changes
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handleSaveAllSettings}
+              disabled={isSavingSettings || !isSuperAdmin}
+              className="rounded-lg bg-emerald-700 px-5 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed">
+              {isSavingSettings ? "Saving..." : "Save Changes"}
             </button>
-            <button className="rounded-lg border border-border-main bg-surface px-5 py-2 text-[11px] font-bold text-text-secondary transition-colors hover:bg-surface-hover">
+            <button 
+              onClick={() => window.location.reload()}
+              disabled={!isSuperAdmin}
+              className="rounded-lg border border-border-main bg-surface px-5 py-2 text-[11px] font-bold text-text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed">
               Discard
             </button>
+            {settingsSavedAt && (
+              <span className="text-[10px] text-emerald-700 font-medium">
+                Settings saved: {settingsSavedAt}
+              </span>
+            )}
           </div>
         </div>
 
