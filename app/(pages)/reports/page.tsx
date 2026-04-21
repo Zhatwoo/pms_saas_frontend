@@ -80,6 +80,136 @@ export default function ReportsPage() {
     year: "numeric",
   });
 
+  const handleDownloadPDF = async () => {
+    if (!reportData) return;
+
+    try {
+      const jsPDF = (await import("jspdf")).default;
+      const autoTable = (await import("jspdf-autotable")).default;
+      const doc = new jsPDF();
+
+      // Currency formatter for PDF (using 'P' to avoid font encoding issues)
+      const fP = (num: number) => `P ${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+
+      // Report Header
+      doc.setFontSize(22);
+      doc.setTextColor(5, 150, 105); // emerald-600
+      doc.text("System Performance Report", 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      const branchLabel = isAllBranches ? "All Branches" : selectedBranch.name;
+      doc.text(`Generated for: ${branchLabel}`, 14, 28);
+      doc.text(`Period: ${activePeriod}`, 14, 33);
+      doc.text(`Date: ${todayFormatted}`, 14, 38);
+
+      // 1. Executive Summary
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("Executive Summary", 14, 50);
+      
+      const stats = reportData.stats;
+      const summaryData = [
+        ["Total Sales Today", fP(stats.totalSalesToday)],
+        ["Total Transactions", stats.totalTransactions.toString()],
+        ["Avg. Sale per Branch", fP(stats.avgPerBranch)],
+        ["Active Branches", `${stats.activeBranches} / ${stats.totalBranches}`],
+      ];
+
+      autoTable(doc, {
+        startY: 55,
+        head: [["Metric", "Value"]],
+        body: summaryData,
+        theme: "striped",
+        headStyles: { fillColor: [6, 78, 59] }, // emerald-900
+      });
+
+      // 2. Sales Trend Chart (Capture from DOM)
+      const currentY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text("Historical Sales Trend", 14, currentY + 5);
+
+      const chartElement = document.getElementById("sales-trend-chart");
+      if (chartElement) {
+        try {
+          const { domToPng } = await import("modern-screenshot");
+          const imgData = await domToPng(chartElement, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+          });
+          doc.addImage(imgData, "PNG", 14, currentY + 10, 180, 80);
+        } catch (chartErr) {
+          console.warn("Could not capture chart image, skipping:", chartErr);
+          doc.setFontSize(10);
+          doc.setTextColor(150);
+          doc.text("(Chart could not be rendered in PDF - see web dashboard for visualization)", 14, currentY + 20);
+          doc.setTextColor(0);
+        }
+      }
+
+      // 3. Branch Breakdown (New Page if needed)
+      doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("Branch Breakdown", 14, 20);
+
+      const branchRows = reportData.branchSales.map(b => [
+        b.name,
+        b.txn.toString(),
+        fP(b.sales),
+        `${b.share}%`
+      ]);
+
+      autoTable(doc, {
+        startY: 25,
+        head: [["Branch", "Transactions", "Total Sales", "Share"]],
+        body: branchRows,
+        theme: "grid",
+        headStyles: { fillColor: [4, 120, 87] }, // emerald-700
+      });
+
+      // 4. Daily Sales Report (DSR) Summary
+      const dsrY = (doc as any).lastAutoTable.finalY + 15;
+      doc.setFontSize(14);
+      doc.text("Daily Sales Report (DSR) Summary", 14, dsrY);
+
+      const dsr = reportData.dailyReport;
+      const dsrData = [
+        ["Opening Balance", fP(dsr.openingBalance)],
+        ["Total Sales", fP(dsr.totalSales)],
+        ["Total Expenses", fP(dsr.totalExpenses)],
+        ["Net Total", fP(dsr.netTotal)],
+      ];
+
+      autoTable(doc, {
+        startY: dsrY + 5,
+        body: dsrData,
+        theme: "plain",
+        styles: { fontStyle: "bold" },
+        columnStyles: { 0: { cellWidth: 50 }, 1: { halign: "left" } }
+      });
+
+      // Footer
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Page ${i} of ${pageCount} - Pawnshop Management System`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: "center" }
+        );
+      }
+
+      doc.save(`Report_${branchLabel.replace(/\s+/g, "_")}_${activePeriod}.pdf`);
+    } catch (err) {
+      console.error("PDF Generation failed:", err);
+      alert("Failed to generate PDF. Please check console for details.");
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Header row */}
@@ -115,13 +245,15 @@ export default function ReportsPage() {
           <ReportStats data={reportData?.stats} />
 
           {/* Side by side: branch table + chart */}
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <BranchSalesTable data={reportData?.branchSales} date={todayFormatted} />
-            <SalesTrendChart
-              data={reportData?.salesTrend}
-              summary={reportData?.trendSummary}
-              todaySales={reportData?.stats?.totalSalesToday ?? 0}
-            />
+            <div id="sales-trend-chart">
+              <SalesTrendChart
+                data={reportData?.salesTrend}
+                summary={reportData?.trendSummary}
+                todaySales={reportData?.stats?.totalSalesToday ?? 0}
+              />
+            </div>
           </div>
 
           <DailyReportSection data={reportData?.dailyReport} date={todayFormatted} />

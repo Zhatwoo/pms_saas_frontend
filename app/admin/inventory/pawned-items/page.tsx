@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 
@@ -250,7 +250,7 @@ export default function PawnedItemsPage() {
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr key={`${item.itemId}-exp`} className="bg-amber-50/50">
+                        <tr className="bg-amber-50/50">
                           <td colSpan={9} className="px-6 py-3 border-t border-amber-100">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
@@ -278,7 +278,13 @@ export default function PawnedItemsPage() {
       )}
 
       <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <Pagination currentPage={currentPage} totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       <PawnedItemDetailsModal 

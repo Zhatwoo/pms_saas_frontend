@@ -1,8 +1,8 @@
+import { cn } from "@/lib/utils";
+
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
   onPageChange: (page: number) => void;
   mode?: "default" | "edge-pairs";
 }
@@ -10,13 +10,9 @@ interface PaginationProps {
 export function Pagination({
   currentPage,
   totalPages,
-  totalItems,
-  itemsPerPage,
   onPageChange,
   mode = "edge-pairs",
 }: PaginationProps) {
-  const showing = Math.min(itemsPerPage, totalItems - (currentPage - 1) * itemsPerPage);
-
   const pages: Array<number | "ellipsis"> = [];
 
   if (mode === "edge-pairs" && totalPages > 5) {
@@ -47,48 +43,82 @@ export function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-end gap-3 px-5 py-4 text-sm text-text-secondary">
-      <span>
-        Showing {showing} out of {totalItems}
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage === 1}
+        className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
+      >
+        &lt;
+      </button>
+      {pages.map((p, index) =>
+        p === "ellipsis" ? (
+          <span
+            key={`ellipsis-${index}`}
+            className="flex h-8 min-w-8 items-center justify-center px-1 text-text-muted"
+          >
+            ...
+          </span>
+        ) : (
+          <button
+            key={p}
+            onClick={() => onPageChange(p)}
+            className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+              p === currentPage
+                ? "bg-emerald-700 font-bold text-white"
+                : "text-text-secondary hover:bg-surface-hover"
+            }`}
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage === totalPages}
+        className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
+      >
+        &gt;
+      </button>
+    </div>
+  );
+}
+
+interface PaginationFooterProps extends PaginationProps {
+  totalItems: number;
+  itemsPerPage: number;
+  className?: string;
+}
+
+export function PaginationFooter({
+  currentPage,
+  totalPages,
+  totalItems,
+  itemsPerPage,
+  onPageChange,
+  mode = "edge-pairs",
+  className,
+}: PaginationFooterProps) {
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+  const endItem = totalItems === 0 ? 0 : Math.min(currentPage * itemsPerPage, totalItems);
+
+  return (
+    <div
+      className={cn(
+        "border-t border-border-subtle bg-surface-secondary/50 p-4",
+        "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+        className,
+      )}
+    >
+      <span className="text-xs font-bold uppercase tracking-widest text-text-tertiary">
+        SHOWING {startItem}-{endItem} OF {totalItems} RECORDS
       </span>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-          className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
-        >
-          &lt;
-        </button>
-        {pages.map((p, index) =>
-          p === "ellipsis" ? (
-            <span
-              key={`ellipsis-${index}`}
-              className="flex h-8 min-w-8 items-center justify-center px-1 text-text-muted"
-            >
-              ...
-            </span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p)}
-              className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
-                p === currentPage
-                  ? "bg-emerald-700 font-bold text-white"
-                  : "text-text-secondary hover:bg-surface-hover"
-              }`}
-            >
-              {p}
-            </button>
-          ),
-        )}
-        <button
-          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-          className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
-        >
-          &gt;
-        </button>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        mode={mode}
+      />
     </div>
   );
 }

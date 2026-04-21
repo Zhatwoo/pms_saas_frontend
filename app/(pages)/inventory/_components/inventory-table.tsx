@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { AlertBanner } from "@/components/shared/alert-banner";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { DataTable } from "@/components/shared/data-table";
 import type { Column } from "@/components/shared/data-table";
 
@@ -203,13 +203,14 @@ export function InventoryTable() {
       />
 
       {/* Pagination */}
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <Pagination
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <PaginationFooter
           currentPage={currentPage}
           totalPages={7}
           totalItems={22}
           itemsPerPage={6}
           onPageChange={setCurrentPage}
+          className="border-t-0"
         />
       </div>
     </div>

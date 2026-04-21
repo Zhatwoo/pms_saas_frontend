@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { useBranch } from "@/contexts/branch-context";
@@ -177,7 +177,13 @@ export default function EmployeeItemsForSalePage() {
       )}
 
       <div className="rounded-lg border border-zinc-200 bg-white">
-        <Pagination currentPage={currentPage} totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))} totalItems={totalItems} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} />
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       {viewingItem && (

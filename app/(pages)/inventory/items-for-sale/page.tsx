@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 
 type SaleViewMode = "current" | "history";
@@ -337,13 +337,14 @@ export default function ItemsForSalePage() {
       )}
 
       {/* ── Pagination ─────────────────────────────────────── */}
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <Pagination
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           onPageChange={setCurrentPage}
+          className="border-t-0"
         />
       </div>
     </div>

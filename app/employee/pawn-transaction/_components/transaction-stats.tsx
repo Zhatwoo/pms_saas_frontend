@@ -1,4 +1,5 @@
 import { StatCard } from "@/components/shared/stat-card";
+import { formatPeso } from "@/lib/currency";
 
 const pawnedIcon = (
   <svg
@@ -67,6 +68,38 @@ const soldIcon = (
   </svg>
 );
 
+const redeemIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h12a5 5 0 0 1 0 10H7" />
+  </svg>
+);
+
+const transferIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m16 3 4 4-4 4" />
+    <path d="M20 7H9a7 7 0 0 0 0 14h1" />
+  </svg>
+);
+
 const balanceIcon = (
   <svg
     width="16"
@@ -88,6 +121,8 @@ export interface TransactionStatsData {
   buyBack: number;
   renewed: number;
   soldItem: number;
+  redeemed?: number;
+  transfer?: number;
   startingBalance: number;
   endingBalance: number;
 }
@@ -98,27 +133,41 @@ interface TransactionStatsProps {
 
 export function TransactionStats({ data }: TransactionStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       <StatCard
-        label="Pawned Today"
+        label="Pawn Today"
         value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
         borderColor="bg-emerald-600"
       />
       <StatCard
+        label="Redeem"
+        value={data?.redeemed || 0}
+        subtitle="Claimed items"
+        icon={redeemIcon}
+        borderColor="bg-blue-500"
+      />
+      <StatCard
         label="Buy Back"
         value={data?.buyBack || 0}
-        subtitle="Purchased today"
+        subtitle="Repurchased units"
         icon={buyBackIcon}
-        borderColor="bg-blue-600"
+        borderColor="bg-indigo-600"
       />
       <StatCard
         label="Renewed"
         value={data?.renewed || 0}
-        subtitle="Contracts renewed"
+        subtitle="Extended terms"
         icon={renewedIcon}
         borderColor="bg-amber-500"
+      />
+      <StatCard
+        label="Transfer"
+        value={data?.transfer || 0}
+        subtitle="Internal moves"
+        icon={transferIcon}
+        borderColor="bg-purple-500"
       />
       <StatCard
         label="Sold Item"
@@ -127,17 +176,17 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={soldIcon}
         borderColor="bg-orange-500"
       />
-      <div className="flex flex-col justify-between rounded-lg border border-zinc-200 bg-white p-4">
-        <div className="mb-3 h-1 w-full rounded-full bg-zinc-800" />
-        
-        {/* Starting Balance */}
+      
+      <div className="flex flex-col justify-between rounded-lg border border-border-main bg-surface p-3 shadow-sm transition-colors duration-300">
+        <div className="mb-2 h-1 w-full rounded-full bg-emerald-950" />
+
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
-              Start Balance
+            <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
+              Start Day
             </p>
-            <p className="mt-0.5 text-xl font-bold text-zinc-900">
-              ₱ {data?.startingBalance?.toLocaleString() || "0"}
+            <p className="mt-0.5 text-lg font-black text-emerald-950 leading-none">
+              ₱ {(data?.startingBalance || 0).toLocaleString()}
             </p>
           </div>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-600">
@@ -145,16 +194,15 @@ export function TransactionStats({ data }: TransactionStatsProps) {
           </div>
         </div>
 
-        <div className="my-2.5 border-t border-dashed border-zinc-200" />
+        <div className="my-2 border-t border-dashed border-zinc-100" />
 
-        {/* Ending Balance */}
         <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
-              End Balance
+          <div className="text-right w-full">
+            <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
+              End Day
             </p>
-            <p className="mt-0.5 text-xl font-bold text-emerald-600">
-              ₱ {data?.endingBalance?.toLocaleString() || "0"}
+            <p className="mt-0.5 text-lg font-black text-emerald-600 leading-none">
+              ₱ {(data?.endingBalance || 0).toLocaleString()}
             </p>
           </div>
         </div>

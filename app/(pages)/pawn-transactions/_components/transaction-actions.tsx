@@ -1,7 +1,8 @@
-import type { ComponentProps } from "react";
 import { ActionButton } from "@/components/shared/action-button";
-
-type ActionVariant = NonNullable<ComponentProps<typeof ActionButton>["variant"]>;
+import {
+  PURPOSE_OPTIONS,
+  type TransactionPurposeFilter,
+} from "./types";
 
 const downloadIcon = (
   <svg
@@ -37,40 +38,114 @@ const printerIcon = (
   </svg>
 );
 
+const plusIcon = (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
 interface TransactionActionsProps {
+  search: string;
+  purposeFilter: TransactionPurposeFilter;
+  selectedBranchLabel: string;
+  onSearchChange: (value: string) => void;
+  onPurposeFilterChange: (value: TransactionPurposeFilter) => void;
+  onAddTransaction?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
-  onManualInput?: () => void;
 }
 
-export function TransactionActions({ 
-  onExportCSV, 
-  onPrintReport, 
-  onManualInput
+export function TransactionActions({
+  search,
+  purposeFilter,
+  selectedBranchLabel,
+  onSearchChange,
+  onPurposeFilterChange,
+  onAddTransaction,
+  onExportCSV,
+  onPrintReport,
 }: TransactionActionsProps) {
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      <div className="flex items-center gap-2">
-        <ActionButton variant="outline" onClick={onManualInput} className="border-emerald-600 text-emerald-700 bg-emerald-50">
-          <span className="flex items-center gap-1.5">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            Cash Transfer
-          </span>
-        </ActionButton>
-        <ActionButton variant="outline" onClick={onExportCSV}>
-          <span className="flex items-center gap-1.5">
-            {downloadIcon}
-            Export CSV
-          </span>
-        </ActionButton>
-        <ActionButton variant="primary" className="bg-emerald-700 border-pawn-gold text-pawn-gold" onClick={onPrintReport}>
-          <span className="flex items-center gap-1.5">
-            {printerIcon}
-            Print Report
-          </span>
-        </ActionButton>
+    <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_220px]">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+              Search Transactions
+            </label>
+            <input
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search by transaction no, customer, item, or branch"
+              className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+              Purpose Filter
+            </label>
+            <select
+              value={purposeFilter}
+              onChange={(event) =>
+                onPurposeFilterChange(event.target.value as TransactionPurposeFilter)
+              }
+              className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+            >
+              <option value="All">All Purposes</option>
+              {PURPOSE_OPTIONS.map((purpose) => (
+                <option key={purpose} value={purpose}>
+                  {purpose}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+            Scope: {selectedBranchLabel}
+          </div>
+          <ActionButton
+            variant="outline"
+            onClick={onExportCSV}
+            className="border-emerald-600 bg-emerald-50 text-emerald-700"
+          >
+            <span className="flex items-center gap-1.5">
+              {downloadIcon}
+              Export CSV
+            </span>
+          </ActionButton>
+          <ActionButton
+            variant="primary"
+            onClick={onPrintReport}
+            className="border-pawn-gold bg-emerald-700 text-pawn-gold"
+          >
+            <span className="flex items-center gap-1.5">
+              {printerIcon}
+              Print Report
+            </span>
+          </ActionButton>
+          {onAddTransaction ? (
+            <ActionButton variant="primary" onClick={onAddTransaction}>
+              <span className="flex items-center gap-1.5">
+                {plusIcon}
+                Add Transaction
+              </span>
+            </ActionButton>
+          ) : null}
+        </div>
       </div>
     </div>
   );
 }
-

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
 import type { Column } from "@/components/shared/data-table";
@@ -138,11 +138,11 @@ export function CustomerTable() {
   async function handleSaveCustomer(input: CustomerFormInput) {
     try {
       await api.post("/customers", {
-        full_name: `${input.firstName} ${input.middleName ? input.middleName + " " : ""}${input.lastName}`,
-        contact_number: input.contactNo,
+        full_name: input.fullName,
+        contact_number: input.phoneNumber,
         email: input.email,
         address: input.address,
-        id_presented: input.idPresented,
+        id_presented: input.idType,
         id_number: input.idNumber,
         branch_id: selectedBranch.id,
       });
@@ -202,7 +202,7 @@ export function CustomerTable() {
         />
 
         {/* Pagination */}
-        <Pagination
+        <PaginationFooter
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={customers.length}

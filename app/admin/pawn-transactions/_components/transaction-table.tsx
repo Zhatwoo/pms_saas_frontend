@@ -64,7 +64,7 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-emerald-900 text-white">
+            <tr className="bg-emerald-900 text-amber-400">
               {columns.map((col) => (
                 <th
                   key={col.key}

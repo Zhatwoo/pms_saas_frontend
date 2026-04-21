@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useAuth } from "./auth-context";
 import { useRouter, usePathname } from "next/navigation";
+import { api } from "@/lib/api";
 
 export type ChecklistStep = 
   | "CASH_ON_HAND" 
@@ -32,24 +33,6 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
   const [isComplete, setIsComplete] = useState(false);
 
-  // Load state from localStorage on mount (persistence across refresh during the workday)
-  useEffect(() => {
-    if (!user || user.role !== "employee") {
-      setIsComplete(true);
-      return;
-    }
-
-    const saved = localStorage.getItem(`opening_checklist_${user.id}_${new Date().toDateString()}`);
-    if (saved) {
-      const { step, complete } = JSON.parse(saved);
-      setCurrentStep(step);
-      setIsComplete(complete);
-    } else {
-      setCurrentStep("CASH_ON_HAND");
-      setIsComplete(false);
-    }
-  }, [user]);
-
   const saveState = useCallback((step: ChecklistStep, complete: boolean) => {
     if (!user) return;
     const state = { step, complete, timestamp: new Date().toISOString() };
@@ -58,6 +41,47 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       JSON.stringify(state)
     );
   }, [user]);
+
+  // Load state from localStorage on mount (persistence across refresh during the workday)
+  useEffect(() => {
+    if (!user || user.role !== "employee") {
+      setIsComplete(true);
+      return;
+    }
+
+    const saved = localStorage.getItem(`opening_checklist_${user.id}_${new Date().toDateString()}`);
+    
+    if (saved) {
+      const { step, complete } = JSON.parse(saved);
+      setCurrentStep(step);
+      setIsComplete(complete);
+    } else {
+      // NEW: Check if there's any inventory. If none, we might be a new branch or have 0 items.
+      const checkInventory = async () => {
+        try {
+          const tally = await api.post<any>("/inventory/pawned/qr-tally", {
+            branch_id: user.branchId,
+            scanned_item_ids: [],
+          });
+          
+          if (tally && tally.totalInSystem === 0) {
+            console.log("[Checklist] No items found in inventory. Auto-completing checklist.");
+            setCurrentStep("COMPLETED");
+            setIsComplete(true);
+            saveState("COMPLETED", true);
+            return;
+          }
+        } catch (err) {
+          console.warn("[Checklist] Could not verify inventory for auto-skip:", err);
+        }
+        
+        setCurrentStep("CASH_ON_HAND");
+        setIsComplete(false);
+      };
+      
+      void checkInventory();
+    }
+  }, [user, saveState]);
 
   const completeCashOnHand = useCallback(async (amount: string) => {
     // Here you would typically call an API to log the starting cash

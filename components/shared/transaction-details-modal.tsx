@@ -1,9 +1,17 @@
 "use client";
 
 import { StatusBadge } from "./status-badge";
+import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 
-type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn" | "Fund Transfer" | "Cash Transfer";
+type PurposeType =
+  | "Start"
+  | "Buy Back"
+  | "Renew"
+  | "Sold Item"
+  | "Pawn"
+  | "Fund Transfer"
+  | "Cash Transfer";
 
 export interface TransactionDetailsData {
   transactionNo: string;
@@ -34,13 +42,19 @@ interface TransactionDetailsModalProps {
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
-      <p className="mt-1 break-words text-sm font-semibold text-text-primary">{value || "—"}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+        {label}
+      </p>
+      <p className="mt-1 break-words text-sm font-semibold text-text-primary">
+        {value || "—"}
+      </p>
     </div>
   );
 }
 
-function purposeVariant(purpose: PurposeType): "blue" | "green" | "orange" | "purple" | "black" {
+function purposeVariant(
+  purpose: PurposeType,
+): "blue" | "green" | "orange" | "purple" | "black" {
   if (purpose === "Sold Item") return "orange";
   if (purpose === "Renew") return "green";
   if (purpose === "Buy Back") return "blue";
@@ -48,18 +62,33 @@ function purposeVariant(purpose: PurposeType): "blue" | "green" | "orange" | "pu
   return "black";
 }
 
-export function TransactionDetailsModal({ isOpen, transaction, onClose }: TransactionDetailsModalProps) {
+function moneyValue(value: string) {
+  return formatPeso(value, { compactZero: true });
+}
+
+export function TransactionDetailsModal({
+  isOpen,
+  transaction,
+  onClose,
+}: TransactionDetailsModalProps) {
   if (!isOpen || !transaction) return null;
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 backdrop-blur-md">
-      <div className="max-h-[90vh] w-full max-w-4xl scale-in-center overflow-y-auto rounded-3xl border border-border-main bg-surface p-6 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-4xl scale-in-center overflow-y-auto rounded-3xl border border-border-main bg-surface p-6 shadow-2xl transition-colors dark:border-zinc-800 dark:bg-zinc-950">
         <div className="flex items-start justify-between gap-4 border-b border-border-main pb-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">Transaction Details</p>
-            <h2 className="mt-1 text-2xl font-black text-text-primary">{transaction.transactionNo}</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">
+              Transaction Details
+            </p>
+            <h2 className="mt-1 text-2xl font-black text-text-primary">
+              {transaction.transactionNo}
+            </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <StatusBadge label={transaction.purpose} variant={purposeVariant(transaction.purpose)} />
+              <StatusBadge
+                label={transaction.purpose}
+                variant={purposeVariant(transaction.purpose)}
+              />
             </div>
           </div>
           <button
@@ -75,22 +104,37 @@ export function TransactionDetailsModal({ isOpen, transaction, onClose }: Transa
           <InfoBlock label="Time" value={formatTimeWithAmPm(transaction.time)} />
           <InfoBlock label="Unit" value={transaction.unit} />
           <InfoBlock label="Unit Code" value={transaction.unitCode} />
-          <InfoBlock label="Pawn" value={transaction.pawn} />
-          <InfoBlock label="Storage" value={transaction.storage} />
-          <InfoBlock label="Related Pawned Item ID" value={transaction.relatedPawnedItemId || "—"} />
+          <InfoBlock label="Buy Back" value={moneyValue(transaction.buyBack)} />
+          <InfoBlock label="Buy Out" value={moneyValue(transaction.buyOut)} />
+          <InfoBlock label="Sold" value={moneyValue(transaction.sold)} />
+          <InfoBlock label="Cash In" value={moneyValue(transaction.cashIn)} />
+          <InfoBlock label="Cash Out" value={moneyValue(transaction.cashOut)} />
+          <InfoBlock label="Return" value={moneyValue(transaction.returnVal)} />
+          <InfoBlock label="Pawn" value={moneyValue(transaction.pawn)} />
+          <InfoBlock label="Storage" value={moneyValue(transaction.storage)} />
+          <InfoBlock
+            label="Related Pawned Item ID"
+            value={transaction.relatedPawnedItemId || "—"}
+          />
         </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-1">
-          {/* Details removed */}
-
           <div className="rounded-2xl border border-border-main bg-surface-secondary p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Performance QR Code</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+              Performance QR Code
+            </p>
             {transaction.qrCode ? (
               <div className="mt-3 flex flex-col items-center">
-                <img src={transaction.qrCode} alt="Transaction QR" className="h-44 w-44 rounded-xl border border-border-main bg-white p-2 object-contain shadow-sm" />
+                <img
+                  src={transaction.qrCode}
+                  alt="Transaction QR"
+                  className="h-44 w-44 rounded-xl border border-border-main bg-white p-2 object-contain shadow-sm dark:bg-zinc-900"
+                />
               </div>
             ) : (
-              <p className="mt-3 text-sm text-text-tertiary">No QR code security record available.</p>
+              <p className="mt-3 text-sm text-text-tertiary">
+                No QR code security record available.
+              </p>
             )}
           </div>
         </div>

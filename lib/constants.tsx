@@ -58,7 +58,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
           { label: "Finance", href: "/branch-finance" },
         ],
       },
-      { label: "User Management", href: "/users", icon: <UserManagementIcon /> },
+      { label: "Employee Management", href: "/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
     ],
@@ -148,6 +148,7 @@ const BRANCH_NAV: NavGroup[] = [
     section: "SYSTEM",
     items: [
       { label: "Settings", href: "/employee/settings", icon: <SettingsIcon /> },
+      { label: "Audit Logs", href: "/employee/audit-logs", icon: <AuditLogIcon /> },
     ],
   },
 ];

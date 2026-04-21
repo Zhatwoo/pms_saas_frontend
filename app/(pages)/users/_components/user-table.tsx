@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import type { AccountStatusUi, UserRecord, UserRole } from "../page";
 
 interface UserTableProps {
@@ -241,13 +241,14 @@ export function UserTable({
       </div>
 
       {users.length > 0 && (
-        <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-          <Pagination
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+          <PaginationFooter
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={users.length}
             itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
+            className="border-t-0"
           />
         </div>
       )}

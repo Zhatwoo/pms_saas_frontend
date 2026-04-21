@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 
 interface ActivityLog {
   id: string;
@@ -587,7 +588,32 @@ export default function AuditLogsPage() {
         setIsLoading(false);
       }
     }
-    fetchLogs();
+
+    void fetchLogs();
+
+    // ─── Realtime Subscription ───────────────────────────────────────────
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !userId) return;
+
+    const token = getTokenFromCookie();
+    if (token) {
+      void supabase.realtime.setAuth(token);
+    }
+
+    const channel = supabase
+      .channel("audit-logs-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "activity_logs" },
+        () => {
+          void fetchLogs();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [userId, activeBranchId, canSwitchBranch, canViewAuditLogs]);
 
   useEffect(() => {
@@ -706,11 +732,7 @@ export default function AuditLogsPage() {
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-3">
 
-          {user?.branchId && !canSwitchBranch && (
-            <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 tracking-wider">
-              BRANCH: {scopedBranchLabel}
-            </span>
-          )}
+          {/* Branch badge removed per user request */}
         </div>
       </div>
 
@@ -901,19 +923,14 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Footer Pagination */}
-        <div className="p-4 border-t border-border-subtle bg-surface-secondary/50 flex items-center justify-between">
-          <span className="text-xs font-bold text-text-tertiary tracking-widest uppercase">
-            SHOWING {totalItems === 0 ? "0" : (currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalItems)} OF {totalItems} RECORDS
-          </span>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            mode="edge-pairs"
-          />
-        </div>
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={Math.ceil(totalItems / itemsPerPage) || 1}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          mode="edge-pairs"
+        />
       </div>
     </div>
   );

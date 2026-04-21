@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/shared/data-table";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import type { Column } from "@/components/shared/data-table";
 
 export interface FinanceTransaction {
@@ -168,13 +168,14 @@ export function TransactionTable({
         }}
       />
 
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <Pagination
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <PaginationFooter
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={filtered.length}
           itemsPerPage={ITEMS_PER_PAGE}
           onPageChange={setCurrentPage}
+          className="border-t-0"
         />
       </div>
     </div>

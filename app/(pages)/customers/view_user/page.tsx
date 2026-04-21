@@ -175,10 +175,12 @@ function formatNoteDate(date: Date) {
 /* ──────────────────────────── Icons ──────────────────────────── */
 
 const backIcon = (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 18l-6-6 6-6" />
   </svg>
 );
+
+const customersListHref = "/customers";
 
 const userIcon = (
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-900">
@@ -219,10 +221,10 @@ function EmployeeCustomerDetailContent() {
         if (data) {
           setCustomer({
             id: data.id,
-            firstName: data.full_name.split(" ")[0] || "",
+            firstName: data.full_name?.split(" ")[0] || "",
             middleName: "",
-            lastName: data.full_name.split(" ").slice(1).join(" ") || "",
-            name: data.full_name,
+            lastName: data.full_name?.split(" ").slice(1).join(" ") || "",
+            name: data.full_name || "",
             street: data.address,
             barangay: data.barangay,
             city: data.city,
@@ -300,9 +302,13 @@ function EmployeeCustomerDetailContent() {
       <div className="flex flex-col items-center justify-center gap-4 py-20">
         <p className="text-lg font-semibold text-text-primary">Customer not found</p>
         <button
-          onClick={() => router.push("/employee/customers")}
-          className="text-sm text-emerald-700 underline hover:text-emerald-800"
+          type="button"
+          onClick={() => router.push(customersListHref)}
+          className="group inline-flex items-center gap-2 rounded-full border border-border-main bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
         >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-200">
+            {backIcon}
+          </span>
           Back to Customers
         </button>
       </div>
@@ -317,10 +323,15 @@ function EmployeeCustomerDetailContent() {
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => router.push("/employee/customers")}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
+          type="button"
+          onClick={() => router.push(customersListHref)}
+          className="group inline-flex h-11 items-center gap-3 rounded-full border border-border-main bg-surface px-4 pl-2 pr-5 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+          aria-label="Back to customers list"
         >
-          {backIcon}
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-200">
+            {backIcon}
+          </span>
+          <span className="leading-none">Back to customers</span>
         </button>
         <div>
           <h1 className="text-2xl font-bold text-text-primary">{customer.name}</h1>

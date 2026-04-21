@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { DataTable } from "@/components/shared/data-table";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import type { Column } from "@/components/shared/data-table";
 
 export type LedgerEntryType =
@@ -327,13 +327,14 @@ export function FinanceLedgerTable({
       </div>
 
       {filtered.length > ITEMS_PER_PAGE && (
-        <div className="rounded-lg border border-border-main bg-surface print:hidden">
-          <Pagination
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface print:hidden">
+          <PaginationFooter
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={filtered.length}
             itemsPerPage={ITEMS_PER_PAGE}
             onPageChange={setCurrentPage}
+            className="border-t-0"
           />
         </div>
       )}

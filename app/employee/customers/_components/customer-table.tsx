@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
 import type { Column } from "@/components/shared/data-table";
@@ -156,7 +156,7 @@ export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
       />
 
       {/* Pagination */}
-      <Pagination
+      <PaginationFooter
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={customers.length}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 
 const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
   Active: "green",
@@ -299,15 +299,13 @@ export function BranchTable({
       </div>
 
       {/* Pagination */}
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filtered.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          onPageChange={setCurrentPage}
-        />
-      </div>
+      <PaginationFooter
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

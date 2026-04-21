@@ -56,6 +56,17 @@ interface TransactionsResponse {
   transactions: ApiTransaction[];
 }
 
+interface ApiCustomerActivityLog {
+  id: string;
+  action: string;
+  createdAt: string;
+  actorName?: string;
+  details?: {
+    title?: string;
+    note?: string;
+  };
+}
+
 function splitName(fullName: string) {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
   if (parts.length <= 1) {
@@ -324,6 +335,19 @@ function formatNoteDate(date: Date) {
   });
 }
 
+function mapApiActivityToEntry(log: ApiCustomerActivityLog): ActivityEntry {
+  const actor = log.actorName?.trim() || "System";
+  const title = log.details?.title?.trim() || "Customer activity";
+  const note = log.details?.note?.trim() || "Activity recorded.";
+
+  return {
+    title,
+    date: `${formatFullDate(log.createdAt)} - ${actor}`,
+    description: `- ${note}`,
+    color: log.action === "CUSTOMER_NOTE_ADDED" ? "bg-emerald-500" : "bg-blue-500",
+  };
+}
+
 /* ──────────────────────────── Icons ──────────────────────────── */
 
 const backIcon = (
@@ -362,6 +386,8 @@ function EmployeeCustomerDetailContent() {
   const [viewingTransaction, setViewingTransaction] = useState<CustomerTransactionRecord | null>(null);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadCustomerData() {
@@ -377,9 +403,10 @@ function EmployeeCustomerDetailContent() {
       setLoadError(null);
 
       try {
-        const [customerRecord, txResponse] = await Promise.all([
+        const [customerRecord, txResponse, fetchedActivityLogs] = await Promise.all([
           api.get<ApiCustomer | null>(`/customers/${encodeURIComponent(customerId)}`),
           api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}`),
+          api.get<ApiCustomerActivityLog[]>(`/customers/${encodeURIComponent(customerId)}/activity-logs`),
         ]);
 
         if (!customerRecord) {
@@ -411,6 +438,8 @@ function EmployeeCustomerDetailContent() {
             color: "bg-emerald-500",
           },
         ];
+        const fetchedActivity = (fetchedActivityLogs || []).map(mapApiActivityToEntry);
+        const combinedActivity = [...fetchedActivity, ...defaultActivity];
 
         const mappedCustomer: CustomerDetail = {
           id: customerRecord.id,
@@ -441,11 +470,11 @@ function EmployeeCustomerDetailContent() {
           transactions,
           rewards: [],
           deadlines: [],
-          activityLog: defaultActivity,
+          activityLog: combinedActivity,
         };
 
         setCustomer(mappedCustomer);
-        setActivityLog(defaultActivity);
+        setActivityLog(combinedActivity);
         setTransactionRecords(records);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to load customer details.";
@@ -464,6 +493,7 @@ function EmployeeCustomerDetailContent() {
     setViewingTransaction(null);
     setNoteTitle("");
     setNoteBody("");
+    setNoteError(null);
   }, [customerId]);
 
   useEffect(() => {
@@ -472,26 +502,41 @@ function EmployeeCustomerDetailContent() {
     }
   }, [customer]);
 
-  function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
+  async function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const trimmedBody = noteBody.trim();
-    if (!trimmedBody) return;
+    if (!trimmedBody || !customerId) return;
 
     const trimmedTitle = noteTitle.trim();
     const now = new Date();
 
-    const nextEntry: ActivityEntry = {
-      title: trimmedTitle || "Note added",
-      date: `${formatNoteDate(now)} · Employee`,
-      description: `— ${trimmedBody}`,
-      color: "bg-emerald-500",
-    };
+    try {
+      setIsSavingNote(true);
+      setNoteError(null);
 
-    setActivityLog((current) => [nextEntry, ...current]);
-    setNoteTitle("");
-    setNoteBody("");
-    setIsNoteOpen(false);
+      await api.post(`/customers/${encodeURIComponent(customerId)}/activity-logs`, {
+        title: trimmedTitle || "Manual Note",
+        note: trimmedBody,
+      });
+
+      const nextEntry: ActivityEntry = {
+        title: trimmedTitle || "Manual Note",
+        date: `${formatNoteDate(now)} · Employee`,
+        description: `- ${trimmedBody}`,
+        color: "bg-emerald-500",
+      };
+
+      setActivityLog((current) => [nextEntry, ...current]);
+      setNoteTitle("");
+      setNoteBody("");
+      setIsNoteOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save note.";
+      setNoteError(message);
+    } finally {
+      setIsSavingNote(false);
+    }
   }
 
   if (isLoading) {
@@ -842,6 +887,10 @@ function EmployeeCustomerDetailContent() {
                 This note will appear at the top of the activity log.
               </div>
 
+              {noteError && (
+                <p className="text-xs font-medium text-red-600">{noteError}</p>
+              )}
+
               <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
                 <button
                   type="button"
@@ -852,9 +901,10 @@ function EmployeeCustomerDetailContent() {
                 </button>
                 <button
                   type="submit"
+                  disabled={isSavingNote}
                   className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
                 >
-                  Save Note
+                  {isSavingNote ? "Saving..." : "Save Note"}
                 </button>
               </div>
             </form>

@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { Pagination } from "@/components/shared/pagination";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 
 type SaleViewMode = "current" | "history";
@@ -281,15 +281,13 @@ export default function ItemsForSalePage() {
       </div>
 
       {/* ── Pagination ─────────────────────────────────────── */}
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-        />
-      </div>
+      <PaginationFooter
+        currentPage={currentPage}
+        totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

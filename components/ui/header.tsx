@@ -5,6 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
+import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 
 type NotificationTab = "All" | "Transactions" | "Alerts" | "Requests";
 type NotificationGroup = "Today" | "Earlier";
@@ -205,21 +208,78 @@ export function Header({
   branchName,
   hideBranchSelector = false,
 }: HeaderProps) {
+  const { user } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [time, setTime] = useState("");
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<NotificationTab>("All");
-  const [notifications, setNotifications] = useState<HeaderNotification[]>(
-    DEFAULT_NOTIFICATIONS,
-  );
+  const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const notificationRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setTime(formatDateTime());
-    const interval = setInterval(() => setTime(formatDateTime()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+    const clockInterval = setInterval(() => setTime(formatDateTime()), 1000);
+
+    async function fetchNotifications() {
+      try {
+        const data = await api.get<any[]>("/notifications");
+        if (data && Array.isArray(data)) {
+          const now = new Date();
+          const today = now.toISOString().split("T")[0];
+
+          const mapped: HeaderNotification[] = data.map((item) => {
+            const itemDate = new Date(item.created_at).toISOString().split("T")[0];
+            return {
+              id: item.id,
+              title: item.title,
+              subtitle: item.subtitle,
+              category: item.category as any,
+              unread: !item.is_read,
+              group: itemDate === today ? "Today" : "Earlier",
+            };
+          });
+          setNotifications(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+      }
+    }
+
+    void fetchNotifications();
+
+    // ─── Realtime Subscription ───────────────────────────────────────────
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase || !user) {
+      // Fallback to polling if realtime is unavailable
+      const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
+      return () => {
+        clearInterval(clockInterval);
+        clearInterval(interval);
+      };
+    }
+
+    const token = getTokenFromCookie();
+    if (token) {
+      void supabase.realtime.setAuth(token);
+    }
+
+    const channel = supabase
+      .channel("header-notifications-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        () => {
+          void fetchNotifications();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(clockInterval);
+      void supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {
@@ -265,14 +325,24 @@ export function Header({
     (item) => item.group === "Earlier",
   );
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((item) => ({ ...item, unread: false })));
+  const markAllAsRead = async () => {
+    try {
+      await api.patch("/notifications/read-all", {});
+      setNotifications((prev) => prev.map((item) => ({ ...item, unread: false })));
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
   };
 
-  const markOneAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
-    );
+  const markOneAsRead = async (id: string) => {
+    try {
+      await api.patch(`/notifications/${id}/read`, {});
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
+      );
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
   };
 
   const handleViewAllNotifications = () => {
@@ -352,9 +422,6 @@ export function Header({
             <div className="absolute right-0 top-12 z-50 w-[420px] rounded-xl border border-border-main bg-header-bg p-4 shadow-xl">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-base font-bold text-text-primary">Notifications</h3>
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold uppercase text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                  Bell {badgeCount}
-                </span>
               </div>
 
               <div className="mb-3 grid grid-cols-4 gap-1 rounded-lg border border-border-main bg-surface-subtle p-1">

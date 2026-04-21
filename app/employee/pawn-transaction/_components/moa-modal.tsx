@@ -20,8 +20,10 @@ interface MoaModalProps {
     itemsIncluded: string;
     condition: string;
     remarks: string;
+    memory: string;
     amount: string;
     storageFee: string;
+    parkingFee?: string;
     purchasedDate: string;
     idPresented: string;
     branchName: string;
@@ -79,7 +81,8 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
 
   const amount = Number(data.amount) || 0;
   const storageFee = Number(data.storageFee) || 0;
-  const netProceeds = amount - storageFee;
+  const parkingFee = Number(data.parkingFee) || 0;
+  const totalDue = amount + storageFee + parkingFee;
 
   // Maturity dates calc (every 10 days)
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
@@ -199,11 +202,11 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
                 </div>
                 <div className="grid grid-cols-2 items-center">
                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.parkingFee || "Parking fee:"}</span>
-                   <span className="font-medium text-zinc-400 text-right pr-4 italic">₱0.00</span>
+                   <span className="font-medium text-zinc-900 text-right pr-4">₱{parkingFee.toLocaleString()}</span>
                 </div>
                 <div className="grid grid-cols-2 items-center border-t border-zinc-200 pt-2">
-                   <span className="font-black uppercase text-emerald-800 text-[9px]">{labels?.netProceeds || "Net Proceeds:"}</span>
-                   <span className="font-black text-emerald-800 text-lg">₱{netProceeds.toLocaleString()}</span>
+                   <span className="font-black uppercase text-emerald-800 text-[9px]">{labels?.totalDue || "Total Due:"}</span>
+                   <span className="font-black text-emerald-800 text-lg">₱{totalDue.toLocaleString()}</span>
                 </div>
               </div>
             </div>

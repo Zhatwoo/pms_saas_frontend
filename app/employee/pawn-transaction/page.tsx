@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { TransactionActions } from "./_components/transaction-actions";
 import { api } from "@/lib/api";
+import { PaginationFooter } from "@/components/shared/pagination";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable } from "./_components/transaction-table";
 import { RenewModal } from "./_components/renew-modal";
@@ -28,12 +29,13 @@ type PurposeType =
   | "Fund Transfer"
   | "Cash Transfer";
 
-type FilterType = "All" | "Renew" | "Sales / Transfer" | "Buy Back";
+type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back";
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
   "Sales / Transfer": "Sold Item",
+  "Redeem": "Pawn",
   "Buy Back": "Buy Back",
 };
 
@@ -41,6 +43,7 @@ interface TransactionRow {
   transactionNo: string;
   purpose: PurposeType;
   buyBack: string;
+  percentage: string;
   buyOut: string;
   sold: string;
   date: string;
@@ -94,6 +97,8 @@ const DEFAULT_STATS = {
   buyBack: 0,
   renewed: 0,
   soldItem: 0,
+  redeemed: 0,
+  transfer: 0,
   startingBalance: 0,
   endingBalance: 0,
 };
@@ -115,13 +120,13 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     buyBack: isBuyBackAction 
       ? String(transaction.cash_in ?? 0) 
       : "0",
-    buyOut: transaction.purpose === "Buy Out" ? String(transaction.cash_out ?? 0) : "0",
-    sold: transaction.purpose === "Sold Item" || transaction.purpose === "Sale" ? String(transaction.cash_in ?? 0) : "0",
     percentage: isBuyBackAction || isPawnAction ? String(calculations.percentage) : "0",
+    buyOut: "0",
+    sold: transaction.purpose === "Sold Item" ? String(transaction.cash_in ?? 0) : "0",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     cashIn: isPawnAction ? "0" : String(transaction.cash_in ?? 0),
-    cashOut: (isBuyBackAction || transaction.purpose === "Sold Item" || transaction.purpose === "Sale") 
+    cashOut: (isBuyBackAction || transaction.purpose === "Sold Item") 
       ? "0" 
       : String(transaction.cash_out ?? 0),
     returnVal: String(transaction.return_amount ?? 0),
@@ -157,8 +162,14 @@ export default function EmployeePawnTransactionsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [currentStats, setCurrentStats] = useState({
-    pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
-    startingBalance: 0, endingBalance: 0,
+    pawnedToday: 0, 
+    buyBack: 0, 
+    renewed: 0, 
+    soldItem: 0,
+    redeemed: 0,
+    transfer: 0,
+    startingBalance: 0, 
+    endingBalance: 0,
   });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,6 +182,7 @@ export default function EmployeePawnTransactionsPage() {
     onConfirm: () => { },
   });
   const [viewRange, setViewRange] = useState<"daily" | "weekly" | "monthly" | "all">("daily");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -184,6 +196,7 @@ export default function EmployeePawnTransactionsPage() {
         if (data) {
           setCurrentStats(data.stats || {
             pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
+            redeemed: 0, transfer: 0,
             startingBalance: 0, endingBalance: 0,
           });
           setAllTransactions((data.transactions || []).map(toTransactionRow));
@@ -203,6 +216,15 @@ export default function EmployeePawnTransactionsPage() {
     if (!targetPurpose) return allTransactions;
     return allTransactions.filter((t) => t.purpose === targetPurpose);
   }, [allTransactions, activeFilter]);
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
+  const paginatedTransactions = useMemo(() => {
+    return filteredTransactions.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE,
+    );
+  }, [filteredTransactions, currentPage]);
 
   useEffect(() => {
     async function fetchBranchAdmin() {
@@ -308,12 +330,22 @@ export default function EmployeePawnTransactionsPage() {
         onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
       />
 
+      <TransactionStats data={currentStats} />
+
             <TransactionTable 
-              data={filteredTransactions} 
+              data={paginatedTransactions} 
               onReprint={handleReprint} 
               onViewDetails={setSelectedTransaction}
               viewRange={viewRange}
               onRangeChange={setViewRange}
+            />
+
+            <PaginationFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredTransactions.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setCurrentPage}
             />
 
             <TransactionDetailsModal

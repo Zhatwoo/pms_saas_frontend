@@ -320,15 +320,23 @@ export default function BranchFinancePage() {
     async (data: UnifiedFundResult) => {
       try {
         if (selectedTransferRequest) {
+          const approvedAmount = data.amount || selectedTransferRequest.amountRequested;
+
+          await api.patch<FundRequestRecord>(`/fund-requests/${selectedTransferRequest.id}/review`, {
+            decision: "approved",
+            approvedAmount,
+            reviewNotes: data.notes || selectedTransferRequest.notes || undefined,
+          });
+
           await api.patch<FundRequestRecord>(`/fund-requests/${selectedTransferRequest.id}/transfer`, {
-            amount: data.amount,
+            amount: approvedAmount,
             transferNotes: data.notes,
             sourceBranchId: data.sourceType === "BRANCH_TRANSFER" ? data.fromBranchId : undefined,
           });
           showToast(
             data.sourceType === "BRANCH_TRANSFER"
-              ? "Funds routed through the source branch and are now awaiting source confirmation."
-              : "Funds sent to the branch and are now awaiting branch confirmation.",
+              ? "Fund request approved and routed through the source branch."
+              : "Fund request approved and sent to the branch.",
           );
         } else {
           await api.post<FundRequestRecord>("/fund-requests/direct-transfer", {
@@ -672,7 +680,7 @@ export default function BranchFinancePage() {
               dateFrom={ledgerDateFrom}
               dateTo={ledgerDateTo}
               branchName={isAllBranches ? null : selectedBranch.name}
-              branchCode={isAllBranches ? null : (financeSummaries[0]?.branchCode ?? selectedBranch.branch_code ?? null)}
+              branchCode={isAllBranches ? null : (financeSummaries[0]?.branchCode ?? selectedBranch.code ?? null)}
             />
           </div>
         </>

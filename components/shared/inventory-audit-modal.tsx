@@ -56,9 +56,7 @@ type ZXingDecodeResult = {
   getText: () => string;
 };
 
-type ZXingControls = {
-  stop: () => Promise<void>;
-};
+type ZXingControls = Awaited<ReturnType<BrowserQRCodeReader["decodeFromConstraints"]>>;
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
@@ -510,9 +508,10 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
 
   const canComplete = Boolean(
     tally &&
-      tally.totalInSystem > 0 &&
-      tally.missingInVault.length === 0 &&
-      tally.extraInVault.length === 0,
+      (tally.totalInSystem === 0 ||
+        (tally.totalInSystem > 0 &&
+          tally.missingInVault.length === 0 &&
+          tally.extraInVault.length === 0)),
   );
 
   const completionLabel = tally
@@ -642,6 +641,21 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
                       <span>QR Scan Window</span>
                       <span>{scanStageLabel}</span>
                     </div>
+
+                    {tally && tally.totalInSystem === 0 && !isCheckingTally && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 text-center p-8 z-10 animate-in fade-in duration-500">
+                        <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4 text-emerald-400">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                          </svg>
+                        </div>
+                        <h4 className="text-lg font-black text-white uppercase tracking-tight">Empty Inventory</h4>
+                        <p className="mt-2 text-xs text-white/60 font-bold max-w-xs leading-relaxed">
+                          No active pawned items found for this branch. You can complete the audit immediately.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

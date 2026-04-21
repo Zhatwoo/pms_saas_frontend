@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type TouchEvent } from "react";
+import Image from "next/image";
 import { api } from "@/lib/api";
 import { StatusBadge } from "./status-badge";
 
@@ -33,7 +34,11 @@ export interface DetailedPawnedItem {
   remarks: string;
   qr_code?: string;
   profile_photo?: string;
+  item_photo?: string;
+  itemPhotos?: string[];
+  item_photos?: string[];
   id_photo?: string;
+  id_back_photo?: string;
   condition?: string;
   serial_number?: string;
   items_included?: string;
@@ -55,7 +60,7 @@ interface PawnedItemDetailsModalProps {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/70 border-b border-emerald-100 pb-2">
+    <h3 className="mb-4 w-full border-b border-emerald-100 pb-2 text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/70">
       {children}
     </h3>
   );
@@ -84,6 +89,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [error, setError] = useState<string | null>(null);
   const [remarks, setRemarks] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [itemPhotoIndex, setItemPhotoIndex] = useState(0);
+  const touchStartXRef = useRef<number | null>(null);
 
   const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
 
@@ -122,6 +129,63 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       setIsSaving(false);
     }
   };
+
+  const itemPhotos = item
+    ? Array.from(new Set([
+        ...(item.itemPhotos ?? item.item_photos ?? []),
+      ].filter((photo): photo is string => Boolean(photo))))
+    : [];
+
+  useEffect(() => {
+    setItemPhotoIndex(0);
+  }, [item?.id, itemPhotos.length]);
+
+  useEffect(() => {
+    if (itemPhotos.length <= 1) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setItemPhotoIndex((currentIndex) => (currentIndex + 1) % itemPhotos.length);
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, [itemPhotos.length]);
+
+  const handleItemTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const handleItemTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const startX = touchStartXRef.current;
+    touchStartXRef.current = null;
+
+    if (startX === null || itemPhotos.length <= 1) {
+      return;
+    }
+
+    const endX = event.changedTouches[0]?.clientX ?? startX;
+    const delta = endX - startX;
+
+    if (Math.abs(delta) < 40) {
+      return;
+    }
+
+    setItemPhotoIndex((currentIndex) => {
+      if (delta < 0) {
+        return (currentIndex + 1) % itemPhotos.length;
+      }
+
+      return (currentIndex - 1 + itemPhotos.length) % itemPhotos.length;
+    });
+  };
+
+  const ownerVisual = item?.profile_photo || item?.id_photo || item?.id_back_photo || null;
+  const qrVisual = item?.qr_code
+    ? item.qr_code.startsWith('data:')
+      ? item.qr_code
+      : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${item.qr_code}`
+    : null;
 
   if (!isOpen) return null;
 
@@ -189,44 +253,135 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         className="relative w-full max-w-5xl bg-surface rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row transition-all duration-500 scale-in-center print:hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Left Section: Visuals & QR */}
-        <div className="w-full md:w-[350px] bg-emerald-950 p-8 flex flex-col items-center text-center text-white shrink-0">
-          <div className="mb-8 w-full">
-             <SectionTitle><span className="text-emerald-400">Item Visuals</span></SectionTitle>
-             <div className="relative group">
-               <div className="aspect-square w-full rounded-3xl bg-emerald-900/50 border border-emerald-800 flex items-center justify-center overflow-hidden shadow-2xl">
-                 {item?.profile_photo ? (
-                   <img src={item.profile_photo} alt={item.item_name} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                 ) : (
-                   <div className="flex flex-col items-center opacity-30">
-                     <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                     <p className="mt-4 text-[10px] font-black uppercase tracking-widest">No Image Available</p>
-                   </div>
-                 )}
-               </div>
-               <div className="absolute top-4 right-4">
-                 <StatusBadge label={item?.status || "..."} variant={statusVariant[item?.status || ""] || "black"} />
-               </div>
-             </div>
-          </div>
+        {/* Left Section: Visuals */}
+        <div className="w-full md:w-[350px] bg-emerald-950 p-8 flex flex-col text-white shrink-0">
+          <div className="flex h-full flex-col gap-6">
+            <div className="flex min-h-0 flex-1 flex-col items-center text-center">
+              <SectionTitle><span className="text-emerald-400">Image of the Owner</span></SectionTitle>
+              <div className="relative flex-1 w-full overflow-hidden rounded-[2rem] border border-emerald-800 bg-emerald-900/60 shadow-2xl">
+                {ownerVisual ? (
+                  <Image
+                    src={ownerVisual}
+                    alt="Image of the Owner"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center px-6 text-center">
+                    <div className="space-y-2 opacity-60">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
+                        No owner image saved
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
-          <div className="w-full mt-auto">
-             <p className="mb-6 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400/50">Security Identity</p>
-             <div className="bg-white p-4 rounded-[2rem] shadow-inner inline-block mx-auto mb-4 border-4 border-emerald-500/20">
-               {item?.qr_code ? (
-                 <img 
-                   src={item.qr_code.startsWith('data:') ? item.qr_code : `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${item.qr_code}`} 
-                   alt="Security QR" 
-                   className="w-40 h-40 object-contain"
-                 />
-               ) : (
-                 <div className="w-40 h-40 flex items-center justify-center bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-2xl">
-                   <p className="text-[10px] font-bold text-zinc-400">NO QR GENERATED</p>
-                 </div>
-               )}
-             </div>
-             <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">Scan to verify physical item</p>
-             <p className="mt-1 text-[8px] opacity-40 uppercase">ITEM ID: {item?.item_id}</p>
+            <div className="flex min-h-0 flex-1 flex-col items-center text-center">
+              <SectionTitle><span className="text-emerald-400">Item Visuals</span></SectionTitle>
+              <div
+                className="relative flex-1 w-full overflow-hidden rounded-[2rem] border border-emerald-800 bg-emerald-900/60 shadow-2xl"
+                onTouchStart={handleItemTouchStart}
+                onTouchEnd={handleItemTouchEnd}
+              >
+                {itemPhotos.length > 0 ? (
+                  <div
+                    className="flex h-full w-full transition-transform duration-700 ease-out"
+                    style={{ transform: `translateX(-${itemPhotoIndex * 100}%)` }}
+                  >
+                    {itemPhotos.map((photo, index) => (
+                      <div key={`${photo.slice(0, 24)}-${index}`} className="relative h-full w-full shrink-0">
+                        <Image
+                          src={photo}
+                          alt={`${item?.item_name || "Item photo"} ${index + 1}`}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center px-6 text-center">
+                    <div className="space-y-2 opacity-60">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                      </svg>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
+                        No item photo saved
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {itemPhotos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setItemPhotoIndex((currentIndex) => (currentIndex - 1 + itemPhotos.length) % itemPhotos.length)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-lg font-black text-white backdrop-blur transition hover:bg-black/60"
+                      aria-label="Previous item photo"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setItemPhotoIndex((currentIndex) => (currentIndex + 1) % itemPhotos.length)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-lg font-black text-white backdrop-blur transition hover:bg-black/60"
+                      aria-label="Next item photo"
+                    >
+                      ›
+                    </button>
+                    <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
+                      {itemPhotos.map((_, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setItemPhotoIndex(index)}
+                          className={`h-2 rounded-full transition-all ${index === itemPhotoIndex ? "w-6 bg-white" : "w-2 bg-white/50"}`}
+                          aria-label={`Show item photo ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+                <div className="absolute top-4 right-4">
+                  <StatusBadge label={item?.status || "..."} variant={statusVariant[item?.status || ""] || "black"} />
+                </div>
+                {itemPhotos.length > 0 && (
+                  <div className="absolute bottom-4 left-4 rounded-full bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur">
+                    {itemPhotoIndex + 1} / {itemPhotos.length}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-col items-center text-center">
+              <SectionTitle><span className="text-emerald-400">Security Identity</span></SectionTitle>
+              <div className="relative flex flex-1 w-full items-center justify-center">
+                {qrVisual ? (
+                  <Image
+                    src={qrVisual}
+                    alt="Security QR"
+                    width={280}
+                    height={280}
+                    unoptimized
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <div className="flex h-44 w-44 items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/70">No QR generated</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
