@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
 import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 import { ViewCustomerModal } from "@/app/(pages)/customers/view_user/_components/view-customer-modal";
 import type {
   ActivityEntry,
@@ -22,6 +23,9 @@ interface ApiCustomer {
   profile_photo_url?: string | null;
   id_front_photo_url?: string | null;
   id_back_photo_url?: string | null;
+  matching_customer_count?: number;
+  matching_branch_count?: number;
+  matching_customer_ids?: string[];
   branch_id: string | null;
   created_at: string;
 }
@@ -205,106 +209,83 @@ function TransactionViewModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl rounded-3xl border border-border-main bg-surface p-6 shadow-2xl"
+        className="w-full max-w-4xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border-main pb-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">
-              Transaction Details
-            </p>
-            <h2 className="mt-1 text-2xl font-black text-text-primary">{transaction.item}</h2>
-            <p className="mt-1 text-xs font-medium text-text-tertiary">
-              Transaction No: {transaction.transactionNo} · {transaction.purpose}
-            </p>
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300/90">
+                Transaction Details
+              </p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">{transaction.item}</h2>
+              <p className="mt-1 text-sm text-emerald-50/80">
+                Transaction No: {transaction.transactionNo} · {transaction.purpose}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20"
+            >
+              Close
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-border-main px-3 py-2 text-sm font-bold text-text-secondary transition-colors hover:bg-surface-secondary"
-          >
-            Close
-          </button>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Transaction Date</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.date}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Time</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.time}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Amount</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{formatCurrency(transaction.amount)}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Status</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.status}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Branch</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.branch}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Category</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.category}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Item ID</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.itemId}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Serial Number</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.serialNumber}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Condition</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.condition}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Items Included</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.itemsIncluded}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Memory / Storage</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.memoryStorage}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3 sm:col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3 sm:col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
-            <div className="mt-3 flex min-h-[220px] items-center justify-center">
-              {transaction.qrCode && transaction.qrCode !== "-" ? (
-                isImageUrl(transaction.qrCode) ? (
-                  <img
-                    src={transaction.qrCode}
-                    alt={`${transaction.item} QR code`}
-                    className="h-44 w-44 rounded-xl border border-border-main bg-white object-contain p-2 shadow-sm"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <p className="text-sm font-semibold text-text-primary">
-                    QR code unavailable for this record.
-                  </p>
-                )
-              ) : (
-                <p className="text-sm font-semibold text-text-primary">
-                  No QR code available.
-                </p>
-              )}
+        <div className="grid gap-6 p-6 xl:grid-cols-[1fr_320px]">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <InfoCard label="Transaction Date" value={transaction.date} />
+            <InfoCard label="Time" value={transaction.time} />
+            <InfoCard label="Amount" value={formatCurrency(transaction.amount)} highlight />
+            <InfoCard label="Status" value={transaction.status} />
+            <InfoCard label="Branch" value={transaction.branch} />
+            <InfoCard label="Category" value={transaction.category} />
+            <InfoCard label="Item ID" value={transaction.itemId} />
+            <InfoCard label="Serial Number" value={transaction.serialNumber} />
+            <InfoCard label="Condition" value={transaction.condition} />
+            <InfoCard label="Items Included" value={transaction.itemsIncluded} />
+            <InfoCard label="Memory / Storage" value={transaction.memoryStorage} />
+            <div className="rounded-2xl border border-border-main bg-surface-secondary p-4 sm:col-span-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
+              <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
             </div>
           </div>
-        </div>
 
-        <div className="mt-5 rounded-2xl border border-emerald-border bg-emerald-surface p-4 text-sm text-emerald-text">
-          This history row belongs to the currently opened customer account.
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-border-main bg-surface-secondary p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
+              <div className="mt-3 flex min-h-[250px] items-center justify-center rounded-2xl border border-dashed border-border-main bg-surface">
+                {transaction.qrCode && transaction.qrCode !== "-" ? (
+                  isImageUrl(transaction.qrCode) ? (
+                    <img
+                      src={transaction.qrCode}
+                      alt={`${transaction.item} QR code`}
+                      className="h-48 w-48 rounded-2xl border border-border-main bg-white object-contain p-2 shadow-sm"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold text-text-primary">
+                      QR code unavailable for this record.
+                    </p>
+                  )
+                ) : (
+                  <p className="text-sm font-semibold text-text-primary">
+                    No QR code available.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">Account Scope</p>
+              <p className="mt-1 font-medium">
+                This transaction is attached to the currently opened customer profile.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -325,6 +306,23 @@ function getStatusBadge(status: string) {
 
 function formatCurrency(value: number) {
   return `₱${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function InfoCard({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-border-main bg-surface-secondary p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-semibold ${highlight ? "text-emerald-700" : "text-text-primary"}`}>{value}</p>
+    </div>
+  );
 }
 
 function formatNoteDate(date: Date) {
@@ -375,6 +373,7 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
@@ -405,7 +404,7 @@ function EmployeeCustomerDetailContent() {
       try {
         const [customerRecord, txResponse, fetchedActivityLogs] = await Promise.all([
           api.get<ApiCustomer | null>(`/customers/${encodeURIComponent(customerId)}`),
-          api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}`),
+          api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}&range=all`),
           api.get<ApiCustomerActivityLog[]>(`/customers/${encodeURIComponent(customerId)}/activity-logs`),
         ]);
 
@@ -459,6 +458,9 @@ function EmployeeCustomerDetailContent() {
           profilePhoto: customerRecord.profile_photo_url || null,
           idFrontPhoto: customerRecord.id_front_photo_url || null,
           idBackPhoto: customerRecord.id_back_photo_url || null,
+          matchingCustomerCount: customerRecord.matching_customer_count || 1,
+          matchingBranchCount: customerRecord.matching_branch_count || 1,
+          matchingCustomerIds: customerRecord.matching_customer_ids || [],
           createdAt: formatFullDate(customerRecord.created_at),
           branch: customerRecord.branch_id || "-",
           totalItemsPawned: transactions.length,
@@ -567,6 +569,12 @@ function EmployeeCustomerDetailContent() {
   const safeLoyaltyMax = customer.loyaltyMax > 0 ? customer.loyaltyMax : 100;
   const loyaltyPercent = Math.round((customer.loyaltyPoints / safeLoyaltyMax) * 100);
   const pointsToReward = Math.max(0, safeLoyaltyMax - customer.loyaltyPoints);
+  const primaryVisual = customer.idType !== "No ID / None"
+    ? customer.idFrontPhoto || customer.profilePhoto || null
+    : customer.profilePhoto || customer.idFrontPhoto || null;
+  const matchWarning = (customer.matchingCustomerCount || 1) > 1
+    ? `${customer.matchingCustomerCount} customer records match this exact name across ${customer.matchingBranchCount || 1} branch${(customer.matchingBranchCount || 1) === 1 ? "" : "es"}. Verify spelling before creating a new profile or linking rewards.`
+    : null;
 
   return (
     <div className="space-y-5">
@@ -599,9 +607,9 @@ function EmployeeCustomerDetailContent() {
                 className="flex items-center gap-4 text-left transition-opacity hover:opacity-80"
               >
                 <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm">
-                  {customer.profilePhoto ? (
+                  {primaryVisual ? (
                     <img
-                      src={customer.profilePhoto}
+                      src={primaryVisual}
                       alt={`${customer.name} profile`}
                       className="h-full w-full object-cover"
                     />
@@ -627,6 +635,13 @@ function EmployeeCustomerDetailContent() {
                 </div>
               </div>
             </div>
+
+            {matchWarning && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">Name verification required</p>
+                <p className="mt-1 font-medium">{matchWarning}</p>
+              </div>
+            )}
           </div>
 
           {/* Stats Row */}
@@ -651,7 +666,14 @@ function EmployeeCustomerDetailContent() {
           {/* Transaction History */}
           <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
             <div className="px-5 py-4">
-              <h3 className="text-sm font-bold text-text-primary">Transaction History</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-bold text-text-primary">Transaction History</h3>
+                {user?.role === "super_admin" && (
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">
+                    Global customer timeline
+                  </span>
+                )}
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

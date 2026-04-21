@@ -16,6 +16,9 @@ export interface CustomerDetail {
   profilePhoto: string | null;
   idFrontPhoto: string | null;
   idBackPhoto: string | null;
+  matchingCustomerCount?: number;
+  matchingBranchCount?: number;
+  matchingCustomerIds?: string[];
   createdAt: string;
   branch: string;
   totalItemsPawned: number;

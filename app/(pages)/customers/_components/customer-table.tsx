@@ -6,7 +6,7 @@ import { DataTable } from "@/components/shared/data-table";
 import type { Column } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { useBranch } from "@/contexts/branch-context";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -123,39 +123,29 @@ export function CustomerTable() {
       setIsLoading(true);
       setError(null);
 
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) {
-        if (!cancelled) {
-          setCustomers([]);
-          setError("Supabase client is unavailable.");
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      const branchId = isAllBranches ? null : selectedBranch.id;
-      let query = supabase
-        .from("customers")
-        .select("id, full_name, contact_number, email, id_presented, branch_id, created_at")
-        .order("created_at", { ascending: false });
-
-      if (branchId) {
-        query = query.eq("branch_id", branchId);
-      }
-
-      const { data, error: supabaseError } = await query;
-
       if (cancelled) return;
 
-      if (supabaseError) {
-        setCustomers([]);
-        setError(supabaseError.message);
-      } else {
+      try {
+        const branchParam = isAllBranches
+          ? ""
+          : `?branchId=${encodeURIComponent(selectedBranch.id)}`;
+        const data = await api.get<CustomerApiRecord[]>(`/customers${branchParam}`);
+
+        if (cancelled) return;
+
         const rows = (data ?? []).map((customer) =>
           mapCustomerRecord(customer as CustomerApiRecord, branchNames),
         );
         setCustomers(rows);
+      } catch (error) {
+        if (cancelled) return;
+
+        const message = error instanceof Error ? error.message : "Failed to load customers.";
+        setCustomers([]);
+        setError(message);
       }
+
+      if (cancelled) return;
 
       setIsLoading(false);
     }
