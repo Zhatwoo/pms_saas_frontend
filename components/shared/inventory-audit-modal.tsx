@@ -57,7 +57,7 @@ type ZXingDecodeResult = {
 };
 
 type ZXingControls = {
-  stop: () => Promise<void>;
+  stop: () => void;
 };
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
