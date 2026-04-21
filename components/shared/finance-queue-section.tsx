@@ -26,19 +26,19 @@ const styles: Record<
 > = {
   blue: {
     wrapper:
-      "border-blue-300/40 bg-blue-50/60 ring-blue-500/10 hover:border-blue-300 hover:bg-blue-50/70",
-    headerIcon: "bg-blue-100 text-blue-700",
-    badge: "bg-blue-100 text-blue-700",
-    bodyBorder: "border-blue-200",
-    childBorder: "border-blue-200",
+      "border-blue-500/20 bg-surface-secondary/75 ring-blue-500/10 hover:border-blue-400/30 hover:bg-surface-secondary",
+    headerIcon: "bg-blue-500/15 text-blue-300",
+    badge: "bg-blue-500/15 text-blue-300",
+    bodyBorder: "border-blue-500/20",
+    childBorder: "border-blue-500/20",
   },
   orange: {
     wrapper:
-      "border-orange-300/40 bg-orange-50/60 ring-orange-500/10 hover:border-orange-300 hover:bg-orange-50/70",
-    headerIcon: "bg-orange-100 text-orange-700",
-    badge: "bg-orange-100 text-orange-700",
-    bodyBorder: "border-orange-200",
-    childBorder: "border-orange-200",
+      "border-orange-500/20 bg-surface-secondary/75 ring-orange-500/10 hover:border-orange-400/30 hover:bg-surface-secondary",
+    headerIcon: "bg-orange-500/15 text-orange-300",
+    badge: "bg-orange-500/15 text-orange-300",
+    bodyBorder: "border-orange-500/20",
+    childBorder: "border-orange-500/20",
   },
 };
 
@@ -58,7 +58,7 @@ export function FinanceQueueSection({
 
   return (
     <section
-      className={`flex flex-col overflow-hidden rounded-xl border shadow-sm transition-all duration-300 ${sectionClass}`}
+      className={`flex flex-col overflow-hidden rounded-2xl border shadow-lg shadow-black/15 transition-all duration-300 ${sectionClass}`}
     >
       <button
         type="button"
@@ -96,7 +96,7 @@ export function FinanceQueueSection({
         }`}
       >
         <div className="overflow-hidden">
-          <div className={`border-t ${palette.bodyBorder}/20 px-5 pb-5 pt-3`}>
+          <div className={`border-t ${palette.bodyBorder} px-5 pb-5 pt-3`}>
             <div className="space-y-3">{children}</div>
           </div>
         </div>

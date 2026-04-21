@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
 import { api } from "@/lib/api";
-import { ViewCustomerModal } from "@/app/(pages)/customers/view_user/_components/view-customer-modal";
+import { ViewCustomerModal } from "../../../(pages)/customers/view_user/_components/view-customer-modal";
 import type {
   ActivityEntry,
   CustomerDetail,
@@ -22,6 +22,9 @@ interface ApiCustomer {
   profile_photo_url?: string | null;
   id_front_photo_url?: string | null;
   id_back_photo_url?: string | null;
+  matching_customer_count?: number;
+  matching_branch_count?: number;
+  matching_customer_ids?: string[];
   branch_id: string | null;
   created_at: string;
 }
@@ -46,6 +49,8 @@ interface ApiTransaction {
     memory_storage?: string | null;
     remarks?: string | null;
     qr_code?: string | null;
+    item_photo?: string | null;
+    item_photos?: string[] | null;
     pawn_date?: string | null;
     amount?: number | string | null;
     branch?: string | null;
@@ -166,6 +171,14 @@ interface CustomerTransactionRecord {
   memoryStorage: string;
   remarks: string;
   qrCode: string;
+  itemPhotos: string[];
+}
+
+function collectItemPhotos(tx: ApiTransaction) {
+  const photos = (Array.isArray(tx.pawned_item?.item_photos) ? tx.pawned_item?.item_photos : [])
+    .filter((value): value is string => typeof value === "string" && isImageUrl(value));
+
+  return Array.from(new Set(photos));
 }
 
 function mapTx(tx: ApiTransaction): CustomerTransactionRecord {
@@ -187,6 +200,7 @@ function mapTx(tx: ApiTransaction): CustomerTransactionRecord {
     memoryStorage: tx.pawned_item?.memory_storage || "-",
     remarks: tx.pawned_item?.remarks || "-",
     qrCode: tx.pawned_item?.qr_code || "-",
+    itemPhotos: collectItemPhotos(tx),
   };
 }
 
@@ -197,7 +211,30 @@ function TransactionViewModal({
   transaction: CustomerTransactionRecord | null;
   onClose: () => void;
 }) {
+  const router = useRouter();
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [transaction?.transactionNo, transaction?.itemPhotos.length]);
+
   if (!transaction) return null;
+
+  const photos = transaction.itemPhotos;
+  const hasPhotos = photos.length > 0;
+  const currentPhoto = hasPhotos ? photos[photoIndex] : null;
+  const canMovePhotos = photos.length > 1;
+  const targetItemId = transaction.itemId !== "-" ? transaction.itemId : transaction.unitCode;
+
+  function movePhoto(direction: number) {
+    if (!canMovePhotos) return;
+    setPhotoIndex((current) => {
+      const nextIndex = current + direction;
+      if (nextIndex < 0) return photos.length - 1;
+      if (nextIndex >= photos.length) return 0;
+      return nextIndex;
+    });
+  }
 
   return (
     <div
@@ -205,106 +242,179 @@ function TransactionViewModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl rounded-3xl border border-border-main bg-surface p-6 shadow-2xl"
+        className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border-main pb-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">
-              Transaction Details
-            </p>
-            <h2 className="mt-1 text-2xl font-black text-text-primary">{transaction.item}</h2>
-            <p className="mt-1 text-xs font-medium text-text-tertiary">
-              Transaction No: {transaction.transactionNo} · {transaction.purpose}
-            </p>
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300/90">Transaction Details</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">{transaction.item}</h2>
+              <p className="mt-1 text-sm text-emerald-50/80">
+                Transaction No: {transaction.transactionNo} · {transaction.purpose}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20"
+            >
+              Close
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-border-main px-3 py-2 text-sm font-bold text-text-secondary transition-colors hover:bg-surface-secondary"
-          >
-            Close
-          </button>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Transaction Date</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.date}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Time</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.time}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Amount</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{formatCurrency(transaction.amount)}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Status</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.status}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Branch</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.branch}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Category</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.category}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Item ID</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.itemId}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Serial Number</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.serialNumber}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Condition</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.condition}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Items Included</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.itemsIncluded}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Memory / Storage</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.memoryStorage}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3 sm:col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
-            <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
-          </div>
-          <div className="rounded-xl border border-border-main bg-surface-secondary p-3 sm:col-span-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
-            <div className="mt-3 flex min-h-[220px] items-center justify-center">
-              {transaction.qrCode && transaction.qrCode !== "-" ? (
-                isImageUrl(transaction.qrCode) ? (
-                  <img
-                    src={transaction.qrCode}
-                    alt={`${transaction.item} QR code`}
-                    className="h-44 w-44 rounded-xl border border-border-main bg-white object-contain p-2 shadow-sm"
-                    onError={(event) => {
-                      event.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <p className="text-sm font-semibold text-text-primary">
-                    QR code unavailable for this record.
+        <div className="grid gap-6 p-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
+          <div className="space-y-4 self-start">
+            <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Item Photos</p>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {hasPhotos ? `${photoIndex + 1} of ${photos.length}` : "No item photos available"}
                   </p>
-                )
-              ) : (
-                <p className="text-sm font-semibold text-text-primary">
-                  No QR code available.
-                </p>
-              )}
+                </div>
+                {canMovePhotos && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => movePhoto(-1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
+                      aria-label="Previous photo"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => movePhoto(1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
+                      aria-label="Next photo"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-border-main bg-surface">
+                {currentPhoto ? (
+                  <div className="relative aspect-[4/3] w-full">
+                    <img
+                      src={currentPhoto}
+                      alt={`${transaction.item} photo ${photoIndex + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {canMovePhotos && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(-1)}
+                          className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                          aria-label="Previous photo"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(1)}
+                          className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                          aria-label="Next photo"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center px-6 text-center">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">No item photos available</p>
+                      <p className="mt-1 text-xs text-text-tertiary">This transaction only has its QR reference on file.</p>
+                    </div>
+                  </div>
+                )}
+
+                {hasPhotos && (
+                  <div className="flex gap-2 overflow-x-auto border-t border-border-main px-3 py-3">
+                    {photos.map((photo, index) => (
+                      <button
+                        key={`${photo}-${index}`}
+                        type="button"
+                        onClick={() => setPhotoIndex(index)}
+                        className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border transition-colors ${index === photoIndex ? "border-emerald-600 ring-2 ring-emerald-100" : "border-border-main hover:border-emerald-300"}`}
+                        aria-label={`Select item photo ${index + 1}`}
+                      >
+                        <img src={photo} alt={`Item photo ${index + 1}`} className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
+              <div className="mt-3 flex min-h-[320px] items-center justify-center">
+                {transaction.qrCode && transaction.qrCode !== "-" ? (
+                  isImageUrl(transaction.qrCode) ? (
+                    <img
+                      src={transaction.qrCode}
+                      alt={`${transaction.item} QR code`}
+                      className="h-72 w-72 object-contain"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold text-text-primary">QR code unavailable for this record.</p>
+                  )
+                ) : (
+                  <p className="text-sm font-semibold text-text-primary">No QR code available.</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-5 rounded-2xl border border-emerald-border bg-emerald-surface p-4 text-sm text-emerald-text">
-          This history row belongs to the currently opened customer account.
+          <div className="space-y-4 min-w-0 self-start xl:sticky xl:top-0">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoCard label="Transaction Date" value={transaction.date} />
+              <InfoCard label="Time" value={transaction.time} />
+              <InfoCard label="Amount" value={formatCurrency(transaction.amount)} highlight />
+              <InfoCard label="Status" value={transaction.status} />
+              <InfoCard label="Branch" value={transaction.branch} />
+              <InfoCard label="Category" value={transaction.category} />
+              <InfoCard label="Item ID" value={transaction.itemId} />
+              <InfoCard label="Serial Number" value={transaction.serialNumber} />
+              <InfoCard label="Condition" value={transaction.condition} />
+              <InfoCard label="Items Included" value={transaction.itemsIncluded} />
+              <InfoCard label="Memory / Storage" value={transaction.memoryStorage} />
+              <div className="rounded-2xl border border-border-main bg-surface-secondary p-4 sm:col-span-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
+                <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!targetItemId || targetItemId === "-") return;
+                  router.push(`/employee/inventory/pawned-items?itemId=${encodeURIComponent(targetItemId)}`);
+                }}
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+              >
+                View Item
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -325,6 +435,23 @@ function getStatusBadge(status: string) {
 
 function formatCurrency(value: number) {
   return `₱${value.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function InfoCard({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-border-main bg-surface-secondary p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-semibold ${highlight ? "text-emerald-700" : "text-text-primary"}`}>{value}</p>
+    </div>
+  );
 }
 
 function formatNoteDate(date: Date) {
@@ -405,7 +532,7 @@ function EmployeeCustomerDetailContent() {
       try {
         const [customerRecord, txResponse, fetchedActivityLogs] = await Promise.all([
           api.get<ApiCustomer | null>(`/customers/${encodeURIComponent(customerId)}`),
-          api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}`),
+          api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}&range=all`),
           api.get<ApiCustomerActivityLog[]>(`/customers/${encodeURIComponent(customerId)}/activity-logs`),
         ]);
 
@@ -459,6 +586,9 @@ function EmployeeCustomerDetailContent() {
           profilePhoto: customerRecord.profile_photo_url || null,
           idFrontPhoto: customerRecord.id_front_photo_url || null,
           idBackPhoto: customerRecord.id_back_photo_url || null,
+          matchingCustomerCount: customerRecord.matching_customer_count || 1,
+          matchingBranchCount: customerRecord.matching_branch_count || 1,
+          matchingCustomerIds: customerRecord.matching_customer_ids || [],
           createdAt: formatFullDate(customerRecord.created_at),
           branch: customerRecord.branch_id || "-",
           totalItemsPawned: transactions.length,
@@ -567,6 +697,12 @@ function EmployeeCustomerDetailContent() {
   const safeLoyaltyMax = customer.loyaltyMax > 0 ? customer.loyaltyMax : 100;
   const loyaltyPercent = Math.round((customer.loyaltyPoints / safeLoyaltyMax) * 100);
   const pointsToReward = Math.max(0, safeLoyaltyMax - customer.loyaltyPoints);
+  const primaryVisual = customer.idType !== "No ID / None"
+    ? customer.idFrontPhoto || customer.profilePhoto || null
+    : customer.profilePhoto || customer.idFrontPhoto || null;
+  const matchWarning = (customer.matchingCustomerCount || 1) > 1
+    ? `${customer.matchingCustomerCount} customer records match this exact name across ${customer.matchingBranchCount || 1} branch${(customer.matchingBranchCount || 1) === 1 ? "" : "es"}. Verify spelling before creating a new profile or linking rewards.`
+    : null;
 
   return (
     <div className="space-y-5">
@@ -599,9 +735,9 @@ function EmployeeCustomerDetailContent() {
                 className="flex items-center gap-4 text-left transition-opacity hover:opacity-80"
               >
                 <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm">
-                  {customer.profilePhoto ? (
+                  {primaryVisual ? (
                     <img
-                      src={customer.profilePhoto}
+                      src={primaryVisual}
                       alt={`${customer.name} profile`}
                       className="h-full w-full object-cover"
                     />
@@ -627,6 +763,13 @@ function EmployeeCustomerDetailContent() {
                 </div>
               </div>
             </div>
+
+            {matchWarning && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">Name verification required</p>
+                <p className="mt-1 font-medium">{matchWarning}</p>
+              </div>
+            )}
           </div>
 
           {/* Stats Row */}
@@ -676,7 +819,19 @@ function EmployeeCustomerDetailContent() {
                     </tr>
                   ) : (
                     transactionRecords.map((tx, i) => (
-                      <tr key={i} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
+                      <tr
+                        key={i}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setViewingTransaction(tx)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setViewingTransaction(tx);
+                          }
+                        }}
+                        className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
+                      >
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{tx.date}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold text-text-primary">{tx.item}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{formatCurrency(tx.amount)}</td>
@@ -685,7 +840,10 @@ function EmployeeCustomerDetailContent() {
                         <td className="whitespace-nowrap px-4 py-2.5 text-center">
                           <button
                             type="button"
-                            onClick={() => setViewingTransaction(tx)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setViewingTransaction(tx);
+                            }}
                             className="rounded border border-border-main bg-surface px-3 py-1 text-[10px] font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
                           >
                             View

@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { StatCard } from "@/components/shared/stat-card";
+import { useAuth } from "@/contexts/auth-context";
+import { api } from "@/lib/api";
 import type { TransactionStatsData } from "./types";
 
 const pawnedIcon = (
@@ -68,13 +71,53 @@ const soldIcon = (
   </svg>
 );
 
+const balanceIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
+
 interface TransactionStatsProps {
   data?: TransactionStatsData;
 }
 
 export function TransactionStats({ data }: TransactionStatsProps) {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+  const [liveCompanyBalance, setLiveCompanyBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (isSuperAdmin) {
+      api.get<any[]>('/branch-finance/summary')
+        .then((res) => {
+           if (!active) return;
+           const total = res.reduce((acc, curr) => acc + (curr.currentBalance || 0), 0);
+           setLiveCompanyBalance(total);
+        })
+        .catch(console.error);
+    }
+    return () => { active = false; };
+  }, [isSuperAdmin]);
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div 
+      className={`grid gap-4 ${
+        isSuperAdmin 
+          ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' 
+          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+      }`}
+    >
       <StatCard
         label="Pawned Today"
         value={data?.pawnedToday || 0}
@@ -103,6 +146,59 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={soldIcon}
         borderColor="bg-orange-500"
       />
+
+      {isSuperAdmin && (
+        <div className="flex flex-col justify-between rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+          <div className="mb-3 h-1 w-full rounded-full bg-text-primary" />
+          
+          {/* Starting Balance */}
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                Start Balance
+              </p>
+              <p className="mt-0.5 text-xl font-bold text-text-primary">
+                ₱ {data?.startingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+              </p>
+            </div>
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
+              {balanceIcon}
+            </div>
+          </div>
+
+          <div className="my-2.5 border-t border-dashed border-border-main" />
+
+          {/* Ending Balance (Range End) */}
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                End Balance (Range)
+              </p>
+              <p className="mt-0.5 text-xl font-bold text-emerald-600">
+                ₱ {data?.endingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSuperAdmin && (
+        <div className="flex flex-col justify-between rounded-lg border border-emerald-900 bg-emerald-900 p-4 shadow-sm">
+          <div className="flex items-center gap-3 h-full">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-800 text-yellow-400">
+              {balanceIcon}
+            </div>
+            <div>
+              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-emerald-200">
+                Live Total Balance
+              </p>
+              <p className="mt-0.5 text-lg xl:text-xl font-bold text-yellow-500">
+                ₱ {liveCompanyBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

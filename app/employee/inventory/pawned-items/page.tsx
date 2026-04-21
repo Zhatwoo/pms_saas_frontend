@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, Fragment } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -64,12 +65,12 @@ const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
 };
 
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-zinc-400 text-[10px]">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-[10px] text-zinc-400">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200">
+          <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
             Renew {i + 1}
           </span>
           <span className="text-[10px] text-zinc-500">{r.date}</span>
@@ -82,8 +83,11 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
 
 
 export default function EmployeePawnedItemsPage() {
+  const searchParams = useSearchParams();
   const { selectedBranch } = useBranch();
   const branchIdent = selectedBranch.id;
+  const highlightedItemId = searchParams.get("itemId")?.trim() || "";
+  const hasHighlightedItem = Boolean(highlightedItemId);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -106,6 +110,21 @@ export default function EmployeePawnedItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (highlightedItemId) {
+      setViewMode("list");
+    }
+  }, [highlightedItemId]);
+
+  useEffect(() => {
+    if (!highlightedItemId || isLoading) return;
+
+    const highlightedRow = document.getElementById(`pawned-item-${highlightedItemId}`);
+    if (highlightedRow) {
+      highlightedRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightedItemId, isLoading, pawnedItems]);
 
   useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery]);
 
@@ -150,8 +169,8 @@ export default function EmployeePawnedItemsPage() {
 
 
   return (
-    <div className="space-y-3 pb-4">
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface p-3 transition-colors duration-300">
+    <div className="space-y-4 pb-4 text-text-primary">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-3xl border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="flex flex-wrap items-end gap-3">
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
@@ -162,13 +181,13 @@ export default function EmployeePawnedItemsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none focus:border-emerald-500 w-44"
+              className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500 w-44"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md border border-zinc-200 overflow-hidden">
+          <div className="flex rounded-md border border-zinc-200 overflow-hidden bg-surface">
             <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
               List
             </button>
@@ -179,12 +198,18 @@ export default function EmployeePawnedItemsPage() {
         </div>
       </div>
 
+      {hasHighlightedItem && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 shadow-sm shadow-black/10">
+          Highlighted item from customer transaction history. The full list remains visible.
+        </div>
+      )}
+
       {viewMode === "list" && (
-        <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <div className="overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-white">
+                <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-white">
                   {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", ""].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : ""}`}>{h}</th>
                   ))}
@@ -198,12 +223,24 @@ export default function EmployeePawnedItemsPage() {
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
-                      <tr className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} transition-colors hover:bg-surface-hover`}>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-secondary">{item.itemName}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-bold text-text-primary">₱{(item.amount || 0).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-tertiary">
+                      <tr
+                        id={`pawned-item-${item.itemId}`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedItemId(item.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setSelectedItemId(item.id);
+                          }
+                        }}
+                        className={`cursor-pointer border-t border-border-subtle transition-colors ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} ${highlightedItemId === item.itemId ? "bg-amber-400/10 ring-2 ring-amber-400/60 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.25)]" : "hover:bg-surface-hover"} ${hasHighlightedItem && highlightedItemId === item.itemId ? "scroll-mt-24" : ""}`}
+                      >
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-primary">{item.itemName}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.category}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right">₱{(item.amount || 0).toLocaleString()}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary">
                       <tr className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700 font-medium">{item.itemName}</td>
@@ -222,7 +259,7 @@ export default function EmployeePawnedItemsPage() {
                         </td>
                         <td className="px-3 py-2 text-[10px] font-bold text-zinc-600 max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
-                          <button onClick={() => setSelectedItemId(item.id)} className="rounded px-3 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors">
+                          <button onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} className="rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20">
                             View Details
                           </button>
                         </td>
@@ -247,7 +284,7 @@ export default function EmployeePawnedItemsPage() {
         <InventoryCalendar items={pawnedItems} />
       )}
 
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
+      <div className="overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}

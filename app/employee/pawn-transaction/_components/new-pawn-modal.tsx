@@ -66,6 +66,10 @@ function getVerificationMode(idPresented: string) {
   return "front-back" as const;
 }
 
+function normalizeCustomerName(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function createEmptyForm() {
   return {
     firstName: "",
@@ -364,6 +368,20 @@ export function NewPawnModal({
     }
 
     return customer.full_name.toLowerCase().includes(query);
+  }).sort((left, right) => {
+    const query = normalizeCustomerName(customerSearch);
+    if (!query) {
+      return left.full_name.localeCompare(right.full_name);
+    }
+
+    const leftExact = normalizeCustomerName(left.full_name) === query;
+    const rightExact = normalizeCustomerName(right.full_name) === query;
+
+    if (leftExact !== rightExact) {
+      return leftExact ? -1 : 1;
+    }
+
+    return left.full_name.localeCompare(right.full_name);
   });
 
   const selectedCustomer = selectedCustomerId
@@ -608,8 +626,7 @@ export function NewPawnModal({
           purchasedDate: form.purchasedDate,
           qrCode: qrUrl || undefined,
           profilePhoto: form.profilePhoto || undefined,
-            itemPhoto: form.itemPhotos[0] || undefined,
-            itemPhotos: form.itemPhotos.length > 0 ? form.itemPhotos : undefined,
+          itemPhotos: form.itemPhotos.length > 0 ? form.itemPhotos : undefined,
           idPhoto: form.idPhoto || undefined,
           idBackPhoto: form.idBackPhoto || undefined,
         },
@@ -794,7 +811,14 @@ export function NewPawnModal({
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Search by name only</p>
                       <p className="text-xs font-medium text-zinc-500">
-                        Find a branch customer, review the contact details, and load the record into the pawn form.
+                          Find a branch customer, review the contact details, and load the record into the pawn form.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">Exact name match required</p>
+                      <p className="mt-1 font-medium">
+                        Double-check the spelling before selecting a customer. Rewards and future cross-branch matching use the exact full name.
                       </p>
                     </div>
 
@@ -802,8 +826,8 @@ export function NewPawnModal({
                       label="Customer Name"
                       name="customerSearch"
                       value={customerSearch}
-                      onChange={(event) => setCustomerSearch(event.target.value)}
-                      placeholder="Search existing customer by name"
+                        onChange={(event) => setCustomerSearch(event.target.value)}
+                        placeholder="Search existing customer by exact full name"
                     />
 
                     {isLoadingCustomers ? (

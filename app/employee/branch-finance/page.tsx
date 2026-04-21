@@ -53,12 +53,12 @@ interface BranchFinanceSummaryApi {
 
 function toStatusClass(status: FundRequestRecord["status"]) {
   switch (status) {
-    case "pending": return "bg-amber-100 text-amber-700";
-    case "approved": return "bg-blue-100 text-blue-700";
-    case "pending_confirmation": return "bg-violet-100 text-violet-700";
-    case "rejected": return "bg-red-100 text-red-700";
-    case "transferred": return "bg-emerald-100 text-emerald-700";
-    case "cancelled": return "bg-zinc-200 text-zinc-700";
+    case "pending": return "bg-amber-500/15 text-amber-300";
+    case "approved": return "bg-blue-500/15 text-blue-300";
+    case "pending_confirmation": return "bg-violet-500/15 text-violet-300";
+    case "rejected": return "bg-red-500/15 text-red-300";
+    case "transferred": return "bg-emerald-500/15 text-emerald-300";
+    case "cancelled": return "bg-slate-500/15 text-slate-300";
   }
 }
 
@@ -71,14 +71,14 @@ function fmtDate(value: string | null | undefined) {
 }
 
 const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: string }> = {
-  pawn: { label: "Pawn", bgClass: "bg-orange-100 text-orange-700", dotClass: "bg-orange-500" },
-  buy_back: { label: "Buy Back", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
-  renewal: { label: "Renewal", bgClass: "bg-teal-100 text-teal-700", dotClass: "bg-teal-500" },
-  sale: { label: "Sale", bgClass: "bg-purple-100 text-purple-700", dotClass: "bg-purple-500" },
-  fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-100 text-emerald-700", dotClass: "bg-emerald-500" },
-  fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-100 text-red-600", dotClass: "bg-red-500" },
-  start: { label: "Opening", bgClass: "bg-indigo-100 text-indigo-700", dotClass: "bg-indigo-500" },
-  other: { label: "Other", bgClass: "bg-zinc-100 text-zinc-600", dotClass: "bg-zinc-400" },
+  pawn: { label: "Pawn", bgClass: "bg-orange-500/15 text-orange-300", dotClass: "bg-orange-400" },
+  buy_back: { label: "Buy Back", bgClass: "bg-blue-500/15 text-blue-300", dotClass: "bg-blue-400" },
+  renewal: { label: "Renewal", bgClass: "bg-teal-500/15 text-teal-300", dotClass: "bg-teal-400" },
+  sale: { label: "Sale", bgClass: "bg-purple-500/15 text-purple-300", dotClass: "bg-purple-400" },
+  fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-500/15 text-emerald-300", dotClass: "bg-emerald-400" },
+  fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-500/15 text-red-300", dotClass: "bg-red-400" },
+  start: { label: "Opening", bgClass: "bg-indigo-500/15 text-indigo-300", dotClass: "bg-indigo-400" },
+  other: { label: "Other", bgClass: "bg-slate-500/15 text-slate-300", dotClass: "bg-slate-400" },
 };
 
 interface UnifiedRow {
@@ -325,7 +325,7 @@ export default function EmployeeBranchFinancePage() {
     <div className="space-y-6">
       {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+          <div className="rounded-xl border border-emerald-500/20 bg-surface-secondary px-5 py-3 text-sm font-semibold text-emerald-300 shadow-xl shadow-black/20">
             {toast}
           </div>
         </div>
@@ -339,14 +339,14 @@ export default function EmployeeBranchFinancePage() {
         </div>
         <button
           onClick={() => setRequestModalOpen(true)}
-          className="rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+          className="rounded-lg border border-blue-500/20 bg-blue-500/15 px-4 py-2 text-sm font-bold text-blue-300 transition-colors hover:bg-blue-500/25"
         >
           Request Funds
         </button>
       </div>
 
       {error ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
           {error}
         </div>
       ) : null}
@@ -361,7 +361,7 @@ export default function EmployeeBranchFinancePage() {
             <h2 className="text-lg font-bold text-text-primary">
               {finance?.name ?? dashboard?.branch?.name ?? "Branch Finance"}
             </h2>
-            <p className="mt-2 text-3xl font-black text-emerald-700">
+            <p className="mt-2 text-3xl font-black text-emerald-300">
               {formatCurrency(resolvedCurrentBalance)}
             </p>
             <p className="mt-1 text-xs text-text-muted">
@@ -383,7 +383,7 @@ export default function EmployeeBranchFinancePage() {
             >
               {queues.pendingReview.length > 0 ? (
                 queues.pendingReview.map((request) => (
-                  <div key={request.id} className="rounded-xl border border-blue-200 bg-white p-4 shadow-sm">
+                  <div key={request.id} className="rounded-xl border border-blue-500/20 bg-surface px-4 py-4 shadow-sm shadow-black/10">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-bold text-text-primary">
@@ -393,14 +393,14 @@ export default function EmployeeBranchFinancePage() {
                         {request.notes ? <p className="mt-1 text-xs text-text-muted">{request.notes}</p> : null}
                         <p className="mt-1 text-xs text-text-muted">Requested: {formatFinanceDate(request.createdAt)}</p>
                       </div>
-                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+                      <span className="rounded-full bg-blue-500/15 px-2.5 py-1 text-[11px] font-bold text-blue-300">
                         Pending
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="rounded-xl border border-blue-200 bg-white p-4 text-sm text-text-tertiary">
+                <div className="rounded-xl border border-blue-500/20 bg-surface px-4 py-4 text-sm text-text-tertiary">
                   No requests are waiting for review.
                 </div>
               )}
@@ -421,7 +421,7 @@ export default function EmployeeBranchFinancePage() {
                 confirmationRequests.map((request) => {
                   const isSourceConfirmation = request.status === "pending_source_confirmation";
                   return (
-                    <div key={request.id} className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm">
+                    <div key={request.id} className="rounded-xl border border-orange-500/20 bg-surface px-4 py-4 shadow-sm shadow-black/10">
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-sm font-bold text-text-primary">
@@ -451,7 +451,7 @@ export default function EmployeeBranchFinancePage() {
                           type="button"
                           onClick={() => handleConfirmRequestClick(request)}
                           disabled={isSubmitting}
-                          className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {getConfirmationLabel(request)}
                         </button>
@@ -460,7 +460,7 @@ export default function EmployeeBranchFinancePage() {
                   );
                 })
               ) : (
-                <div className="rounded-xl border border-orange-200 bg-white p-4 text-sm text-text-tertiary">
+                <div className="rounded-xl border border-orange-500/20 bg-surface px-4 py-4 text-sm text-text-tertiary">
                   No transfers are waiting for confirmation.
                 </div>
               )}
@@ -470,14 +470,14 @@ export default function EmployeeBranchFinancePage() {
           {/* ── Unified Branch Finance Ledger ── */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                   <line x1="1" y1="10" x2="23" y2="10" />
                 </svg>
               </div>
               <h2 className="text-sm font-bold text-text-primary">Branch Finance Ledger</h2>
-              <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-600">
+              <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] font-bold text-text-secondary">
                 View Only
               </span>
             </div>
@@ -530,7 +530,7 @@ export default function EmployeeBranchFinancePage() {
                     setLedgerDateFrom("");
                     setLedgerDateTo("");
                   }}
-                  className="text-xs font-bold text-red-600 hover:underline"
+                  className="text-xs font-bold text-red-300 hover:underline"
                 >
                   Clear Filters
                 </button>
@@ -540,7 +540,7 @@ export default function EmployeeBranchFinancePage() {
             <div className="flex justify-end print:hidden mb-2">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-lg border border-emerald-600 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50"
+                className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
@@ -657,11 +657,11 @@ export default function EmployeeBranchFinancePage() {
                           ) : null}
                         </td>
                         <td className="px-3 py-3 align-top">
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            row.source === "transaction"
-                              ? "bg-indigo-100 text-indigo-700"
-                              : "bg-cyan-100 text-cyan-700"
-                          }`}>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                              row.source === "transaction"
+                                ? "bg-indigo-500/15 text-indigo-300"
+                                : "bg-cyan-500/15 text-cyan-300"
+                            }`}>
                             {row.source === "transaction" ? "TXN" : "FUND REQ"}
                           </span>
                         </td>

@@ -75,7 +75,7 @@ export function ConfirmFundModal({
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-border-main px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
@@ -100,23 +100,23 @@ export function ConfirmFundModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
               Receipt Confirmation
             </p>
-            <p className="mt-2 text-3xl font-extrabold text-emerald-900">
+            <p className="mt-2 text-3xl font-extrabold text-emerald-200">
               ₱{amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <p className="mt-2 text-xs text-emerald-800/80">
+            <p className="mt-2 text-xs text-emerald-200/80">
               {requestNo ? `${requestNo} ` : ""}{branchName ? `for ${branchName}` : ""}
             </p>
             {sourceBranchName ? (
-              <p className="mt-1 text-xs text-emerald-800/80">
+              <p className="mt-1 text-xs text-emerald-200/80">
                 Source: {sourceBranchName}
               </p>
             ) : null}
             {transferMode ? (
-              <p className="mt-1 text-xs text-emerald-800/80">
+              <p className="mt-1 text-xs text-emerald-200/80">
                 Transfer mode: {transferMode.replaceAll("_", " ")}
               </p>
             ) : null}
@@ -175,7 +175,7 @@ export function ConfirmFundModal({
           </div>
 
           {error ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           ) : null}
@@ -184,7 +184,7 @@ export function ConfirmFundModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-input-border px-5 py-2.5 text-sm font-bold text-text-secondary transition-colors hover:bg-surface-secondary"
+              className="rounded-lg border border-input-border bg-surface-secondary px-5 py-2.5 text-sm font-bold text-text-secondary transition-colors hover:bg-surface-hover"
             >
               Cancel
             </button>

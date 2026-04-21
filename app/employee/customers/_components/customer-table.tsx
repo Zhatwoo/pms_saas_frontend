@@ -139,11 +139,16 @@ export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
       <DataTable
         columns={columns}
         data={paginatedCustomers}
+        onRowClick={(row) => router.push(`/employee/customers/view_user?id=${row.id}`)}
         renderCell={(key, value, row) => {
           if (key === "actions") {
             return (
               <button
-                onClick={() => router.push(`/employee/customers/view_user?id=${row.id}`)}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  router.push(`/employee/customers/view_user?id=${row.id}`);
+                }}
                 className="mx-auto flex h-8 w-8 items-center justify-center rounded-md text-emerald-text transition-colors hover:bg-emerald-surface/50"
                 title={`View ${row.name}`}
               >
