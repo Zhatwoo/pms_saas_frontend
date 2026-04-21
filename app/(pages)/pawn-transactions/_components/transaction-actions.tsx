@@ -60,6 +60,8 @@ interface TransactionActionsProps {
   selectedBranchLabel: string;
   onSearchChange: (value: string) => void;
   onPurposeFilterChange: (value: TransactionPurposeFilter) => void;
+  dateFilter?: string;
+  onDateFilterChange?: (value: string) => void;
   onAddTransaction?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
@@ -71,6 +73,8 @@ export function TransactionActions({
   selectedBranchLabel,
   onSearchChange,
   onPurposeFilterChange,
+  dateFilter = "",
+  onDateFilterChange,
   onAddTransaction,
   onExportCSV,
   onPrintReport,
@@ -78,7 +82,7 @@ export function TransactionActions({
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_220px]">
+        <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.4fr)_220px_180px]">
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
               Search Transactions
@@ -109,6 +113,18 @@ export function TransactionActions({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+              Date Filter
+            </label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(event) => onDateFilterChange?.(event.target.value)}
+              className="w-full h-[42px] px-3 text-sm text-text-primary rounded-lg border border-border-main bg-surface-secondary outline-none transition-colors focus:border-emerald-500"
+            />
           </div>
         </div>
 

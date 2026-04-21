@@ -57,7 +57,7 @@ function DaysRemainingBadge({ days }: { days: number }) {
   );
 }
 
-const bellIcon = (
+const sendIcon = (
   <svg
     width="14"
     height="14"
@@ -68,8 +68,8 @@ const bellIcon = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
 );
 
@@ -127,9 +127,9 @@ export function ExpirationTable({ data = [], isLoading }: ExpirationTableProps) 
               </button>
               <button
                 className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
-                title={`Notify ${row.customer}`}
+                title={`Send email to ${row.customer}`}
               >
-                {bellIcon}
+                {sendIcon}
               </button>
             </div>
           );

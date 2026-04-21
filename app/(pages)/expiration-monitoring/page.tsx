@@ -7,6 +7,22 @@ import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
 
+const sendIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+  </svg>
+);
+
 interface ExpirationItem {
   id: string;
   ticketNo: string;
@@ -97,10 +113,20 @@ export default function ExpirationMonitoringPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <p className="mt-1 text-sm text-zinc-500">
-          Track contracts nearing expiration and overdue items
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <p className="mt-1 text-sm text-zinc-500">
+            Track contracts nearing expiration and overdue items
+          </p>
+        </div>
+        <button
+          type="button"
+          className="flex flex-none items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-bold text-pawn-gold shadow-sm transition-all hover:bg-emerald-800"
+          title="Send mass email to all customers with nearing expirations"
+        >
+          {sendIcon}
+          Instant Email Blast
+        </button>
       </div>
 
       <ExpirationStats data={stats} isLoading={isLoading} />

@@ -148,8 +148,11 @@ export default function PawnTransactionsPage() {
   const { selectedBranch, branches } = useBranch();
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
-  const [purposeFilter, setPurposeFilter] =
-    useState<TransactionPurposeFilter>("All");
+  const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
+  const [dateFilter, setDateFilter] = useState(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [viewingTransaction, setViewingTransaction] =
     useState<TransactionRow | null>(null);
@@ -185,8 +188,9 @@ export default function PawnTransactionsPage() {
       setIsLoading(true);
 
       try {
+        const dateQuery = dateFilter ? `&date=${dateFilter}` : "&range=all";
         const data = await api.get<TransactionsResponse>(
-          `/transactions?branch=${encodeURIComponent(selectedBranch.id)}&range=all`,
+          `/transactions?branch=${encodeURIComponent(selectedBranch.id)}${dateQuery}`,
         );
 
         if (!active) {
@@ -216,11 +220,11 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id]);
+  }, [selectedBranch.id, dateFilter]);
 
   const filteredTransactions = transactions.filter((transaction) => {
-    const matchesPurpose =
-      purposeFilter === "All" || transaction.purpose === purposeFilter;
+    const matchesPurpose = purposeFilter === "All" || transaction.purpose === purposeFilter;
+    const matchesDate = !dateFilter || transaction.date === dateFilter;
     const query = search.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -231,7 +235,7 @@ export default function PawnTransactionsPage() {
       transaction.unitCode.toLowerCase().includes(query) ||
       transaction.details.toLowerCase().includes(query);
 
-    return matchesPurpose && matchesSearch;
+    return matchesPurpose && matchesDate && matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
@@ -360,9 +364,11 @@ export default function PawnTransactionsPage() {
       <TransactionActions
         search={search}
         purposeFilter={purposeFilter}
+        dateFilter={dateFilter}
         selectedBranchLabel={selectedBranch.name}
         onSearchChange={setSearch}
         onPurposeFilterChange={setPurposeFilter}
+        onDateFilterChange={setDateFilter}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
       />
