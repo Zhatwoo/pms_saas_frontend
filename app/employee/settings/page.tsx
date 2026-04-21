@@ -38,102 +38,23 @@ export default function EmployeeSettingsPage() {
     }
   }
 
-  async function handleChangePassword() {
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      setToast("Please complete all password fields.");
-      setTimeout(() => setToast(null), 2500);
-      return false;
+  const handleDiscard = () => {
+    if (user) {
+      setFullName(user.fullName || "");
+      setEmail(user.email || "");
     }
+  };
 
-    if (newPassword.length < 6) {
-      setToast("New password must be at least 6 characters.");
-      setTimeout(() => setToast(null), 2500);
-      return false;
-    }
+  const initials = fullName
+    ? fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2)
+    : "EM";
 
-    if (newPassword !== confirmNewPassword) {
-      setToast("New passwords do not match.");
-      setTimeout(() => setToast(null), 2500);
-      return false;
-    }
 
-    try {
-      setIsChangingPassword(true);
-      const requiresApproval = user?.role === "admin" || user?.role === "employee";
-      await api.post("/auth/change-password", {
-        currentPassword,
-        newPassword,
-      });
-
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmNewPassword(false);
-
-      if (requiresApproval) {
-        const approverLabel = user?.role === "admin" ? "Super Admin" : "Branch Admin";
-        setToast(`Password change request sent to ${approverLabel} for approval.`);
-      } else {
-        setToast("Password changed successfully.");
-      }
-      setTimeout(() => setToast(null), 2500);
-      return true;
-    } catch (err) {
-      console.error("Failed to change password:", err);
-      const errorText = err instanceof Error ? err.message : "Failed to change password.";
-      setToast(errorText);
-      setTimeout(() => setToast(null), 2500);
-      return false;
-    } finally {
-      setIsChangingPassword(false);
-    }
-  }
-
-  function closePasswordModal() {
-    if (isChangingPassword) return;
-    setIsPasswordModalOpen(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmNewPassword("");
-    setShowCurrentPassword(false);
-    setShowNewPassword(false);
-    setShowConfirmNewPassword(false);
-  }
-
-  async function submitPasswordChangeFromModal() {
-    const changed = await handleChangePassword();
-    if (changed) {
-      closePasswordModal();
-    }
-  }
-
-  async function handleReviewPasswordRequest(
-    requestId: string,
-    decision: "approve" | "reject",
-  ) {
-    try {
-      setReviewingRequestId(requestId);
-      await api.patch(`/auth/password-change-requests/${encodeURIComponent(requestId)}/review`, {
-        decision,
-      });
-
-      setPasswordRequests((prev) => prev.filter((request) => request.id !== requestId));
-      setToast(
-        decision === "approve"
-          ? "Password change request approved."
-          : "Password change request rejected.",
-      );
-      setTimeout(() => setToast(null), 2500);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to review request.";
-      setToast(errorMessage);
-      setTimeout(() => setToast(null), 2500);
-    } finally {
-      setReviewingRequestId(null);
-    }
-  }
 
   return (
     <div className="space-y-6">
