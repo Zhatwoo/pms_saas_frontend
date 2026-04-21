@@ -5,7 +5,6 @@ import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
 import { api } from "@/lib/api";
-import { useAuth } from "@/contexts/auth-context";
 import { ViewCustomerModal } from "../../../(pages)/customers/view_user/_components/view-customer-modal";
 import type {
   ActivityEntry,
@@ -505,7 +504,6 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
@@ -798,14 +796,7 @@ function EmployeeCustomerDetailContent() {
           {/* Transaction History */}
           <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
             <div className="px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-bold text-text-primary">Transaction History</h3>
-                {user?.role === "super_admin" && (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">
-                    Global customer timeline
-                  </span>
-                )}
-              </div>
+              <h3 className="text-sm font-bold text-text-primary">Transaction History</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">

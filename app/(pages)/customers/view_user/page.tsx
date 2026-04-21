@@ -23,6 +23,48 @@ interface BackendCustomer {
   created_at: string;
 }
 
+interface ApiTransaction {
+  transaction_no?: string | null;
+  transaction_date?: string | null;
+  purpose?: string | null;
+  cash_in?: number | string | null;
+  pawn_amount?: number | string | null;
+  branch?: string | null;
+  branch_id?: string | null;
+  pawned_item?: {
+    item_name?: string | null;
+    category?: string | null;
+    status?: string | null;
+    branch?: string | null;
+    amount?: number | string | null;
+  } | null;
+}
+
+interface TransactionsResponse {
+  transactions: ApiTransaction[];
+}
+
+interface CustomerTransactionRecord {
+  transactionNo: string;
+  date: string;
+  time: string;
+  item: string;
+  category: string;
+  amount: number;
+  status: string;
+  branch: string;
+  unitCode: string;
+  itemId: string;
+  purpose: string;
+  serialNumber: string;
+  condition: string;
+  itemsIncluded: string;
+  memoryStorage: string;
+  remarks: string;
+  qrCode: string;
+  itemPhotos: string[];
+}
+
 /* ──────────────────────────── Mock Data ──────────────────────────── */
 
 const mockCustomers: Record<string, CustomerDetail> = {
@@ -172,6 +214,327 @@ function formatNoteDate(date: Date) {
   });
 }
 
+function formatShortDate(dateValue?: string | null) {
+  if (!dateValue) return "-";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatTime(dateValue?: string | null) {
+  if (!dateValue) return "-";
+  const [hours, minutes] = dateValue.split(":");
+  const parsedHours = Number(hours);
+  const parsedMinutes = Number(minutes);
+  if (!Number.isFinite(parsedHours) || !Number.isFinite(parsedMinutes)) return dateValue;
+
+  const period = parsedHours >= 12 ? "PM" : "AM";
+  const hour12 = ((parsedHours + 11) % 12) + 1;
+  return `${hour12}:${minutes.padStart(2, "0")} ${period}`;
+}
+
+function isImageUrl(value: string) {
+  return /^https?:\/\//i.test(value) || /^data:image\//i.test(value);
+}
+
+function normalizeTransactionStatus(tx: ApiTransaction) {
+  const status = tx.pawned_item?.status;
+  if (status) return status;
+
+  switch (tx.purpose) {
+    case "Pawn":
+    case "Renew":
+      return "Active";
+    case "Buy Back":
+      return "Redeemed";
+    case "Sold Item":
+      return "Forfeited";
+    default:
+      return "Active";
+  }
+}
+
+function mapTransaction(tx: ApiTransaction): Transaction {
+  return {
+    date: formatShortDate(tx.transaction_date),
+    item: tx.pawned_item?.item_name || "Item",
+    amount: Number(tx.pawn_amount ?? tx.cash_in ?? tx.pawned_item?.amount ?? 0),
+    status: normalizeTransactionStatus(tx),
+    branch: tx.branch || tx.branch_id || tx.pawned_item?.branch || "-",
+  };
+}
+
+function collectItemPhotos(tx: ApiTransaction) {
+  const photos = [
+    ...(Array.isArray((tx as ApiTransaction & { pawned_item?: { item_photos?: string[] | null } }).pawned_item?.item_photos)
+      ? (tx as ApiTransaction & { pawned_item?: { item_photos?: string[] | null } }).pawned_item?.item_photos
+      : []),
+    (tx as ApiTransaction & { pawned_item?: { item_photo?: string | null } }).pawned_item?.item_photo ?? null,
+  ].filter((value): value is string => typeof value === "string" && isImageUrl(value));
+
+  return Array.from(new Set(photos));
+}
+
+function mapTransactionRecord(tx: ApiTransaction): CustomerTransactionRecord {
+  return {
+    transactionNo: tx.transaction_no || "-",
+    date: formatShortDate(tx.transaction_date),
+    time: formatTime(tx.transaction_time),
+    item: tx.pawned_item?.item_name || "Item",
+    category: tx.pawned_item?.category || "-",
+    amount: Number(tx.pawn_amount ?? tx.cash_in ?? tx.pawned_item?.amount ?? 0),
+    status: normalizeTransactionStatus(tx),
+    branch: tx.branch || tx.branch_id || tx.pawned_item?.branch || "-",
+    unitCode: tx.pawned_item?.item_id || "-",
+    itemId: tx.pawned_item?.item_id || "-",
+    purpose: tx.purpose || "-",
+    serialNumber: tx.pawned_item?.serial_number || "-",
+    condition: tx.pawned_item?.condition || "-",
+    itemsIncluded: tx.pawned_item?.items_included || "-",
+    memoryStorage: tx.pawned_item?.memory_storage || "-",
+    remarks: tx.pawned_item?.remarks || "-",
+    qrCode: tx.pawned_item?.qr_code || "-",
+    itemPhotos: collectItemPhotos(tx),
+  };
+}
+
+function InfoCard({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-border-main bg-surface-secondary p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
+      <p className={`mt-1 text-sm font-semibold ${highlight ? "text-emerald-700" : "text-text-primary"}`}>{value}</p>
+    </div>
+  );
+}
+
+function TransactionViewModal({
+  transaction,
+  onClose,
+}: {
+  transaction: CustomerTransactionRecord | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [transaction?.transactionNo, transaction?.itemPhotos.length]);
+
+  if (!transaction) return null;
+
+  const photos = transaction.itemPhotos;
+  const hasPhotos = photos.length > 0;
+  const currentPhoto = hasPhotos ? photos[photoIndex] : null;
+  const canMovePhotos = photos.length > 1;
+  const targetItemId = transaction.itemId !== "-" ? transaction.itemId : transaction.unitCode;
+
+  function movePhoto(direction: number) {
+    if (!canMovePhotos) return;
+    setPhotoIndex((current) => {
+      const nextIndex = current + direction;
+      if (nextIndex < 0) return photos.length - 1;
+      if (nextIndex >= photos.length) return 0;
+      return nextIndex;
+    });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300/90">Transaction Details</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight">{transaction.item}</h2>
+              <p className="mt-1 text-sm text-emerald-50/80">
+                Transaction No: {transaction.transactionNo} · {transaction.purpose}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-6 p-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
+          <div className="space-y-4 self-start">
+            <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Item Photos</p>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {hasPhotos ? `${photoIndex + 1} of ${photos.length}` : "No item photos available"}
+                  </p>
+                </div>
+                {canMovePhotos && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => movePhoto(-1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
+                      aria-label="Previous photo"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => movePhoto(1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
+                      aria-label="Next photo"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-border-main bg-surface">
+                {currentPhoto ? (
+                  <div className="relative aspect-[4/3] w-full">
+                    <img
+                      src={currentPhoto}
+                      alt={`${transaction.item} photo ${photoIndex + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                    {canMovePhotos && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(-1)}
+                          className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                          aria-label="Previous photo"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => movePhoto(1)}
+                          className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+                          aria-label="Next photo"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex aspect-[4/3] items-center justify-center px-6 text-center">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">No item photos available</p>
+                      <p className="mt-1 text-xs text-text-tertiary">This transaction only has its QR reference on file.</p>
+                    </div>
+                  </div>
+                )}
+
+                {hasPhotos && (
+                  <div className="flex gap-2 overflow-x-auto border-t border-border-main px-3 py-3">
+                    {photos.map((photo, index) => (
+                      <button
+                        key={`${photo}-${index}`}
+                        type="button"
+                        onClick={() => setPhotoIndex(index)}
+                        className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border transition-colors ${index === photoIndex ? "border-emerald-600 ring-2 ring-emerald-100" : "border-border-main hover:border-emerald-300"}`}
+                        aria-label={`Select item photo ${index + 1}`}
+                      >
+                        <img src={photo} alt={`Item photo ${index + 1}`} className="h-full w-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
+              <div className="mt-3 flex min-h-[320px] items-center justify-center">
+                {transaction.qrCode && transaction.qrCode !== "-" ? (
+                  isImageUrl(transaction.qrCode) ? (
+                    <img
+                      src={transaction.qrCode}
+                      alt={`${transaction.item} QR code`}
+                      className="h-72 w-72 object-contain"
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold text-text-primary">QR code unavailable for this record.</p>
+                  )
+                ) : (
+                  <p className="text-sm font-semibold text-text-primary">No QR code available.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 min-w-0 self-start xl:sticky xl:top-0">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoCard label="Transaction Date" value={transaction.date} />
+              <InfoCard label="Time" value={transaction.time} />
+              <InfoCard label="Amount" value={formatCurrency(transaction.amount)} highlight />
+              <InfoCard label="Status" value={transaction.status} />
+              <InfoCard label="Branch" value={transaction.branch} />
+              <InfoCard label="Category" value={transaction.category} />
+              <InfoCard label="Item ID" value={transaction.itemId} />
+              <InfoCard label="Serial Number" value={transaction.serialNumber} />
+              <InfoCard label="Condition" value={transaction.condition} />
+              <InfoCard label="Items Included" value={transaction.itemsIncluded} />
+              <InfoCard label="Memory / Storage" value={transaction.memoryStorage} />
+              <div className="rounded-2xl border border-border-main bg-surface-secondary p-4 sm:col-span-2">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
+                <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!targetItemId || targetItemId === "-") return;
+                  router.push(`/inventory/pawned-items?itemId=${encodeURIComponent(targetItemId)}`);
+                }}
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+              >
+                View Item
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ──────────────────────────── Icons ──────────────────────────── */
 
 const backIcon = (
@@ -202,71 +565,88 @@ function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const customerId = searchParams.get("id") ?? "";
-  const [customer, setCustomer] = useState<CustomerDetail | null>(
-    mockCustomers[customerId] ?? null,
-  );
-  const [isLoading, setIsLoading] = useState(false);
+  const initialCustomer = mockCustomers[customerId] ?? null;
+  const [customer, setCustomer] = useState<CustomerDetail | null>(initialCustomer);
+  const [isLoading, setIsLoading] = useState(Boolean(customerId && !initialCustomer));
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  const [transactionRecords, setTransactionRecords] = useState<CustomerTransactionRecord[]>([]);
+  const [viewingTransaction, setViewingTransaction] = useState<CustomerTransactionRecord | null>(null);
 
   useEffect(() => {
     async function fetchCustomer() {
-      if (!customerId) return;
+      if (!customerId) {
+        setCustomer(null);
+        setActivityLog([]);
+        setTransactionRecords([]);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
-        const data = await api.get<BackendCustomer>(`/customers/${customerId}`);
-        if (data) {
+        const [customerData, transactionData] = await Promise.all([
+          api.get<BackendCustomer | null>(`/customers/${customerId}`),
+          api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}&range=all`),
+        ]);
+
+        if (customerData) {
+          const transactions = (transactionData?.transactions || []).map(mapTransaction);
+          const detailedTransactions = (transactionData?.transactions || []).map(mapTransactionRecord);
           setCustomer({
-            id: data.id,
-            firstName: data.full_name?.split(" ")[0] || "",
+            id: customerData.id,
+            firstName: customerData.full_name?.split(" ")[0] || "",
             middleName: "",
-            lastName: data.full_name?.split(" ").slice(1).join(" ") || "",
-            name: data.full_name || "",
-            street: data.address,
-            barangay: data.barangay,
-            city: data.city,
-            province: data.province,
-            address: [data.address, data.barangay, data.city, data.province].filter(Boolean).join(", "),
-            email: data.email || "N/A",
-            phone: data.contact_number || "N/A",
-            idType: data.id_presented || "N/A",
-            idNumber: data.id_presented || "N/A",
+            lastName: customerData.full_name?.split(" ").slice(1).join(" ") || "",
+            name: customerData.full_name || "",
+            street: customerData.address,
+            barangay: customerData.barangay,
+            city: customerData.city,
+            province: customerData.province,
+            address: [customerData.address, customerData.barangay, customerData.city, customerData.province].filter(Boolean).join(", "),
+            email: customerData.email || "N/A",
+            phone: customerData.contact_number || "N/A",
+            idType: customerData.id_presented || "N/A",
+            idNumber: customerData.id_presented || "N/A",
             profilePhoto: null,
             idFrontPhoto: null,
             idBackPhoto: null,
-            createdAt: new Date(data.created_at).toLocaleDateString("en-US", {
+            createdAt: new Date(customerData.created_at).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
               year: "numeric"
             }),
             branch: "Current Branch", 
-            totalItemsPawned: 0,
-            activePawned: 0,
-            totalLoanValue: 0,
-            overduePayments: 0,
+            totalItemsPawned: transactions.length,
+            activePawned: transactions.filter((transaction) => transaction.status === "Active").length,
+            totalLoanValue: transactions.reduce((sum, transaction) => sum + transaction.amount, 0),
+            overduePayments: transactions.filter((transaction) => transaction.status === "Overdue").length,
             loyaltyPoints: 0,
             loyaltyMax: 100,
-            transactions: [],
+            transactions,
             rewards: [],
             deadlines: [],
             activityLog: [
               { 
                 title: "Client Registered", 
-                date: new Date(data.created_at).toLocaleDateString(), 
+                date: new Date(customerData.created_at).toLocaleDateString(), 
                 description: "Basic profile created in the system.", 
                 color: "bg-emerald-500" 
               }
             ],
           });
+          setTransactionRecords(detailedTransactions);
         } else {
           setCustomer(null);
+          setTransactionRecords([]);
         }
       } catch (err) {
         console.error("Failed to fetch customer:", err);
         setCustomer(null);
+        setTransactionRecords([]);
       } finally {
         setIsLoading(false);
       }
@@ -279,6 +659,14 @@ function EmployeeCustomerDetailContent() {
       setActivityLog(customer.activityLog);
     }
   }, [customer]);
+
+  useEffect(() => {
+    setIsViewOpen(false);
+    setIsNoteOpen(false);
+    setViewingTransaction(null);
+    setNoteTitle("");
+    setNoteBody("");
+  }, [customerId]);
 
   function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -295,6 +683,17 @@ function EmployeeCustomerDetailContent() {
     setNoteTitle("");
     setNoteBody("");
     setIsNoteOpen(false);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
+        <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+          Loading customer details...
+        </div>
+      </div>
+    );
   }
 
   if (!customer) {
@@ -423,22 +822,41 @@ function EmployeeCustomerDetailContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.transactions.length === 0 ? (
+                  {transactionRecords.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-xs text-text-tertiary">
                         No transactions found.
                       </td>
                     </tr>
                   ) : (
-                    customer.transactions.map((tx, i) => (
-                      <tr key={i} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
+                    transactionRecords.map((tx, i) => (
+                      <tr
+                        key={i}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setViewingTransaction(tx)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            setViewingTransaction(tx);
+                          }
+                        }}
+                        className="cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
+                      >
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{tx.date}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold text-text-primary">{tx.item}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{formatCurrency(tx.amount)}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-center">{getStatusBadge(tx.status)}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{tx.branch}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-center">
-                          <button className="rounded border border-border-main bg-surface px-3 py-1 text-[10px] font-semibold text-text-secondary transition-colors hover:bg-surface-hover">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setViewingTransaction(tx);
+                            }}
+                            className="rounded border border-border-main bg-surface px-3 py-1 text-[10px] font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+                          >
                             View
                           </button>
                         </td>
@@ -555,6 +973,10 @@ function EmployeeCustomerDetailContent() {
       {/* View Modal only — employees cannot edit */}
       {isViewOpen && (
         <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
+      )}
+
+      {viewingTransaction && (
+        <TransactionViewModal transaction={viewingTransaction} onClose={() => setViewingTransaction(null)} />
       )}
 
       {isNoteOpen && (
