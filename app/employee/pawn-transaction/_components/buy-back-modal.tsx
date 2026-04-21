@@ -57,6 +57,7 @@ interface BuyBackModalProps {
   onClose: () => void;
   branchId: string;
   branchName: string;
+  onSuccess?: () => void;
 }
 
 interface ForSaleItem {
@@ -74,7 +75,7 @@ interface ForSaleItem {
   };
 }
 
-export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackModalProps) {
+export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess }: BuyBackModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<ForSaleItem | null>(null);
   const [buyBackPrice, setBuyBackPrice] = useState<string>("");
@@ -156,11 +157,12 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
         related_pawned_item_id: selectedItem.id
       });
 
-      // 3. Mark Item as Redeemed (or Sold)
       await api.patch(`/inventory/pawned/${selectedItem.id}`, { status: 'Redeemed' });
 
+      if (onSuccess) {
+        onSuccess();
+      }
       onClose();
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "Action failed.");
     } finally {

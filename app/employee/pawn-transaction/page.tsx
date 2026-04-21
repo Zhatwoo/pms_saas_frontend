@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { TransactionActions } from "./_components/transaction-actions";
 import { api } from "@/lib/api";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type PurposeType =
   | "Start"
@@ -184,31 +185,73 @@ export default function EmployeePawnTransactionsPage() {
   const [viewRange, setViewRange] = useState<"daily" | "weekly" | "monthly" | "all">("daily");
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    async function fetchTransactions() {
-      if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
+  const fetchTransactions = useCallback(async () => {
+    if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
 
-      setIsLoading(true);
-      try {
-        const data = await api.get<TransactionsResponse>(
-          `/transactions?branch=${encodeURIComponent(selectedBranch.id)}&range=${viewRange}`
-        );
-        if (data) {
-          setCurrentStats(data.stats || {
-            pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
-            redeemed: 0, transfer: 0,
-            startingBalance: 0, endingBalance: 0,
-          });
-          setAllTransactions((data.transactions || []).map(toTransactionRow));
-        }
-      } catch (error) {
-        console.error("Failed to load transactions:", error);
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const data = await api.get<TransactionsResponse>(
+        `/transactions?branch=${encodeURIComponent(selectedBranch.id)}&range=${viewRange}`
+      );
+      if (data) {
+        setCurrentStats(data.stats || {
+          pawnedToday: 0, buyBack: 0, renewed: 0, soldItem: 0,
+          redeemed: 0, transfer: 0,
+          startingBalance: 0, endingBalance: 0,
+        });
+        setAllTransactions((data.transactions || []).map(toTransactionRow));
       }
+    } catch (error) {
+      console.error("Failed to load transactions:", error);
+    } finally {
+      setIsLoading(false);
     }
-    fetchTransactions();
-  }, [selectedBranch, viewRange]);
+  }, [selectedBranch, viewRange, canSwitchBranch]);
+
+  useEffect(() => {
+    void fetchTransactions();
+  }, [fetchTransactions]);
+
+  const fetchTransactionsRef = useRef(fetchTransactions);
+  useEffect(() => {
+    fetchTransactionsRef.current = fetchTransactions;
+  }, [fetchTransactions]);
+
+  // Realtime subscription for transactions table
+  useEffect(() => {
+    if (selectedBranch.id === "__all__") return;
+
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const channelName = `transactions-live-${selectedBranch.id}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { 
+          event: "*", 
+          schema: "public", 
+          table: "transactions"
+        },
+        (payload) => {
+          console.log("[Transactions] Realtime event received:", payload);
+          const newTx = payload.new as any;
+          if (newTx && newTx.branch_id === selectedBranch.id) {
+            void fetchTransactionsRef.current();
+          } else if (payload.eventType === "DELETE") {
+             void fetchTransactionsRef.current();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`[Transactions] Realtime subscription status:`, status);
+      });
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [selectedBranch.id]);
 
   const filteredTransactions = useMemo(() => {
     if (activeFilter === "All") return allTransactions;
@@ -314,6 +357,11 @@ export default function EmployeePawnTransactionsPage() {
     setIsMoaReprintOpen(true);
   }, [allTransactions]);
 
+  const handleTransactionSuccess = useCallback(() => {
+    void fetchTransactionsRef.current();
+    window.dispatchEvent(new CustomEvent("transaction_created"));
+  }, []);
+
   return (
     <div className="space-y-3 pb-4">
       <TransactionActions
@@ -382,6 +430,7 @@ export default function EmployeePawnTransactionsPage() {
       <RenewModal
         isOpen={isRenewModalOpen}
         onClose={() => setIsRenewModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
         branchId={selectedBranch.id}
       />
@@ -389,6 +438,7 @@ export default function EmployeePawnTransactionsPage() {
       <NewPawnModal
         isOpen={isNewPawnModalOpen}
         onClose={() => setIsNewPawnModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
         branchId={selectedBranch.id}
         branchName={selectedBranch.name}
         branchAddress={selectedBranch.location}
@@ -400,6 +450,7 @@ export default function EmployeePawnTransactionsPage() {
       <RedeemModal
         isOpen={isRedeemModalOpen}
         onClose={() => setIsRedeemModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
         branchId={selectedBranch.id}
         branchName={selectedBranch.name}
       />
@@ -408,6 +459,7 @@ export default function EmployeePawnTransactionsPage() {
       <BuyBackModal
         isOpen={isBuyBackModalOpen}
         onClose={() => setIsBuyBackModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
         branchId={selectedBranch.id}
         branchName={selectedBranch.name}
       />
@@ -415,6 +467,7 @@ export default function EmployeePawnTransactionsPage() {
       <SalesTransferModal
         isOpen={isSalesTransferModalOpen}
         onClose={() => setIsSalesTransferModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
       />
 

@@ -55,6 +55,7 @@ interface RenewModalProps {
   onClose: () => void;
   branchName: string;
   branchId: string;
+  onSuccess?: () => void;
 }
 
 interface PawnItemDetails {
@@ -77,7 +78,7 @@ interface PawnItemDetails {
   amount: number;
 }
 
-export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModalProps) {
+export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }: RenewModalProps) {
   const [searchCode, setSearchCode] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnItemDetails | null>(null);
   const [itemsRenewed, setItemsRenewed] = useState(1);
@@ -178,8 +179,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
         await api.patch(`/inventory/pawned/${selectedItem.id}`, { amount: newPrincipal });
       }
 
+      if (onSuccess) {
+        onSuccess();
+      }
       onClose();
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "Failed to process transaction.");
     } finally {

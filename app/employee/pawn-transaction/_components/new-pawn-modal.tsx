@@ -111,6 +111,7 @@ interface NewPawnModalProps {
   branchPhone?: string;
   branchAdminName?: string;
   loggedInUserName?: string;
+  onSuccess?: () => void;
 }
 
 export function NewPawnModal({ 
@@ -121,7 +122,8 @@ export function NewPawnModal({
   branchAddress,
   branchPhone,
   branchAdminName, 
-  loggedInUserName 
+  loggedInUserName,
+  onSuccess
 }: NewPawnModalProps) {
   const [form, setForm] = useState(() => createEmptyForm());
 
@@ -639,6 +641,7 @@ export function NewPawnModal({
         },
       });
 
+      if (onSuccess) onSuccess();
       setIsMoaOpen(false);
       onClose();
     } catch (error) {

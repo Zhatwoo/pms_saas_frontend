@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
+import { toast } from "sonner";
 
 type NotificationTab = "All" | "Transactions" | "Alerts" | "Requests";
 type NotificationGroup = "Today" | "Earlier";
@@ -209,6 +211,7 @@ export function Header({
   hideBranchSelector = false,
 }: HeaderProps) {
   const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
   const pathname = usePathname();
   const router = useRouter();
   const [time, setTime] = useState("");
@@ -217,36 +220,50 @@ export function Header({
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const notificationRef = useRef<HTMLDivElement | null>(null);
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      // NOTE: If using an endpoint that filters by branch, change this.
+      // But it looks like /notifications returns global or scoped to token.
+      const data = await api.get<any[]>("/notifications");
+      if (data && Array.isArray(data)) {
+        const now = new Date();
+        const today = now.toISOString().split("T")[0];
+
+        const mapped: HeaderNotification[] = data.map((item) => {
+          const itemDate = new Date(item.created_at).toISOString().split("T")[0];
+          return {
+            id: item.id,
+            title: item.title,
+            subtitle: item.subtitle,
+            category: item.category as any,
+            unread: !item.is_read,
+            group: itemDate === today ? "Today" : "Earlier",
+          };
+        });
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  }, []);
+
+  const fetchNotificationsRef = useRef(fetchNotifications);
+  useEffect(() => {
+    fetchNotificationsRef.current = fetchNotifications;
+  }, [fetchNotifications]);
+
   useEffect(() => {
     setTime(formatDateTime());
     const clockInterval = setInterval(() => setTime(formatDateTime()), 1000);
 
-    async function fetchNotifications() {
-      try {
-        const data = await api.get<any[]>("/notifications");
-        if (data && Array.isArray(data)) {
-          const now = new Date();
-          const today = now.toISOString().split("T")[0];
-
-          const mapped: HeaderNotification[] = data.map((item) => {
-            const itemDate = new Date(item.created_at).toISOString().split("T")[0];
-            return {
-              id: item.id,
-              title: item.title,
-              subtitle: item.subtitle,
-              category: item.category as any,
-              unread: !item.is_read,
-              group: itemDate === today ? "Today" : "Earlier",
-            };
-          });
-          setNotifications(mapped);
-        }
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err);
-      }
-    }
-
     void fetchNotifications();
+
+    // ─── Custom Event Listener (Bulletproof Fallback) ────────────────────
+    const handleTransactionCreated = () => {
+      console.log("[Header] Custom event triggered, refreshing notifications...");
+      void fetchNotificationsRef.current();
+    };
+    window.addEventListener("transaction_created", handleTransactionCreated);
 
     // ─── Realtime Subscription ───────────────────────────────────────────
     const supabase = getSupabaseBrowserClient();
@@ -265,21 +282,57 @@ export function Header({
     }
 
     const channel = supabase
-      .channel("header-notifications-live")
+      .channel("header-notifications-live-" + (user.id || ''))
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
-        () => {
-          void fetchNotifications();
+        (payload) => {
+          console.log("[Notifications] Realtime event received:", payload);
+          const newNotif = payload.new as any;
+          if (payload.eventType === "INSERT") {
+             const isMatch = !newNotif.branch_id || 
+                             newNotif.branch_id === user?.branchId || 
+                             newNotif.branch_id === selectedBranch?.id ||
+                             isAllBranches ||
+                             user?.role === "admin" || 
+                             user?.role === "super_admin";
+             if (isMatch) {
+                toast.success(newNotif.title, {
+                  description: newNotif.subtitle,
+                });
+                
+                // Add it instantly to the dropdown UI
+                setNotifications((prev) => {
+                  const itemDate = new Date(newNotif.created_at || new Date()).toISOString().split("T")[0];
+                  const today = new Date().toISOString().split("T")[0];
+                  
+                  const mappedItem: HeaderNotification = {
+                    id: newNotif.id,
+                    title: newNotif.title,
+                    subtitle: newNotif.subtitle,
+                    category: newNotif.category as any,
+                    unread: !newNotif.is_read,
+                    group: itemDate === today ? "Today" : "Earlier",
+                  };
+                  return [mappedItem, ...prev];
+                });
+             }
+          } else {
+            // For updates/deletes, fetch the fresh list
+            void fetchNotificationsRef.current();
+          }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[Notifications] Realtime status:", status);
+      });
 
     return () => {
       clearInterval(clockInterval);
+      window.removeEventListener("transaction_created", handleTransactionCreated);
       void supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, selectedBranch?.id, isAllBranches]);
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {

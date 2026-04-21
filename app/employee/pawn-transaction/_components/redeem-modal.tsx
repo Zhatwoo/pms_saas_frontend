@@ -31,6 +31,7 @@ interface RedeemModalProps {
   onClose: () => void;
   branchId: string;
   branchName: string;
+  onSuccess?: () => void;
 }
 
 interface PawnedSearchItem {
@@ -51,7 +52,7 @@ interface PawnedSearchItem {
   status: string;
 }
 
-export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemModalProps) {
+export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }: RedeemModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnedSearchItem | null>(null);
   const [adminForm, setAdminForm] = useState({
@@ -143,11 +144,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
         related_pawned_item_id: selectedItem.id
       });
 
-      // 3. Update Item status to Redeemed
       await api.patch(`/inventory/pawned/${selectedItem.id}`, { status: 'Redeemed' });
 
+      if (onSuccess) {
+        onSuccess();
+      }
       onClose();
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "Action failed.");
     } finally {

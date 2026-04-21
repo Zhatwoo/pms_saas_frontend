@@ -5,6 +5,7 @@ import { useState, useMemo, type ChangeEvent } from "react";
 interface SalesTransferModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   branchName: string;
 }
 
@@ -29,7 +30,7 @@ const MOCK_INVENTORY: InventoryItem[] = [
   { id: "6", unitId: "11229", unit: "Samsung SM...", serialNumber: "OY603NHY...", included: "Remote,...", condition: "FAIR M...", memory: "100692", barcodeId: "", srp: "15000" },
 ];
 
-export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransferModalProps) {
+export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: SalesTransferModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [form, setForm] = useState({
