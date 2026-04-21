@@ -66,11 +66,11 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4">
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-3xl border border-emerald-500/20 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-3xl border border-emerald-500/20 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 px-8 py-5 border-b border-emerald-50 dark:border-zinc-700 shrink-0">
+        <div className="flex items-center justify-between bg-white px-8 py-5 border-b border-emerald-50 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -78,13 +78,13 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-black text-emerald-950 dark:text-emerald-200 uppercase tracking-tight leading-none">Sales / Transfer</h1>
+              <h1 className="text-2xl font-black text-emerald-950 uppercase tracking-tight leading-none">Sales / Transfer</h1>
               <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1.5">{branchName}</p>
             </div>
           </div>
           
-          <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors group">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+          <button onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-xl transition-colors group">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-zinc-400 group-hover:text-zinc-900">
               <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
@@ -94,7 +94,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
         <div className="flex-1 flex overflow-hidden">
           
           {/* Left Side: Inventory & Selection Details */}
-          <div className="w-[60%] border-r border-emerald-50 dark:border-zinc-700 p-8 flex flex-col gap-8 bg-slate-50/30 dark:bg-zinc-900 overflow-y-auto">
+          <div className="w-[60%] border-r border-emerald-50 p-8 flex flex-col gap-8 bg-slate-50/30 overflow-y-auto">
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -108,7 +108,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
                     placeholder="Search Unit ID / Serial..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-64 bg-white dark:bg-zinc-800 border border-emerald-100 dark:border-zinc-700 rounded-xl px-4 py-2 text-xs font-bold focus:ring-4 ring-emerald-500/10 outline-none transition-all"
+                    className="w-64 bg-white border border-emerald-100 rounded-xl px-4 py-2 text-xs font-bold focus:ring-4 ring-emerald-500/10 outline-none transition-all"
                   />
                   <div className="absolute right-3 top-2 text-emerald-200">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -117,10 +117,10 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
               </div>
 
               {/* Inventory Table Container */}
-              <div className="rounded-2xl border border-emerald-100 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+              <div className="rounded-2xl border border-emerald-100 bg-white overflow-hidden shadow-sm">
                 <div className="overflow-x-auto max-h-[350px]">
                   <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-emerald-50 dark:bg-zinc-800 z-10">
+                    <thead className="sticky top-0 bg-emerald-50 z-10">
                       <tr>
                         {["UnitID", "Unit", "Serial #", "Included", "Condition", "Memory", "Barcode ID"].map((h) => (
                           <th key={h} className="px-4 py-3 text-[10px] font-black text-emerald-900 uppercase tracking-widest border-b border-emerald-100">{h}</th>
@@ -190,11 +190,11 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
             <div className="space-y-8">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-emerald-950 dark:text-emerald-200 uppercase tracking-tight">Buyer's Information</h3>
+                    <h3 className="text-lg font-black text-emerald-950 uppercase tracking-tight">Buyer's Information</h3>
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Please fill in current details</p>
                   </div>
                 </div>
@@ -217,8 +217,8 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
 
                 <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
 
-                 <div className="aspect-video rounded-3xl border-2 border-dashed border-emerald-100 dark:border-zinc-700 bg-emerald-50/30 dark:bg-zinc-800 flex flex-col items-center justify-center text-center p-6 group hover:bg-emerald-50 dark:hover:bg-zinc-700 hover:border-emerald-300 transition-all cursor-pointer">
-                   <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
+                <div className="aspect-video rounded-3xl border-2 border-dashed border-emerald-100 bg-emerald-50/30 flex flex-col items-center justify-center text-center p-6 group hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer">
+                   <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mb-3 shadow-sm group-hover:scale-110 transition-transform">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-emerald-600"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                    </div>
                    <h5 className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">Upload Customer ID</h5>
@@ -230,7 +230,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-emerald-50 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
+        <div className="p-8 border-t border-emerald-50 bg-white flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
           <div className="flex items-center gap-8 w-full sm:w-auto">
              <button 
                 onClick={onClose}
@@ -238,7 +238,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName }: SalesTransfe
               >
                 Cancel Process
               </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-zinc-700 hidden sm:block" />
+              <div className="h-10 w-px bg-zinc-100 hidden sm:block" />
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="w-48">
                   <Input label="Processed By" name="processedBy" value={form.processedBy} onChange={handleChange} size="sm" bg="bg-slate-50" placeholder="Admin Name" />
@@ -280,9 +280,9 @@ function DetailInput({ label, name, value, onChange, placeholder, type = "text",
 }) {
   return (
     <div className="flex items-center justify-between gap-4 group">
-      <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-400 uppercase tracking-widest shrink-0">{label}:</span>
-      <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-zinc-700" />
-      <div className={`relative flex items-center rounded-xl border border-emerald-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 transition-all focus-within:ring-4 ring-emerald-500/10 ${highlight ? 'min-w-[140px]' : 'min-w-[120px]'}`}>
+      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest shrink-0">{label}:</span>
+      <div className="flex-1 border-b border-dashed border-emerald-100" />
+      <div className={`relative flex items-center rounded-xl border border-emerald-100 bg-white transition-all focus-within:ring-4 ring-emerald-500/10 ${highlight ? 'min-w-[140px]' : 'min-w-[120px]'}`}>
         {prefix && <span className="pl-3 text-[10px] font-black text-emerald-400">{prefix}</span>}
         <input 
           name={name}
@@ -290,7 +290,7 @@ function DetailInput({ label, name, value, onChange, placeholder, type = "text",
           onChange={onChange}
           type={type}
           placeholder={placeholder}
-          className={`w-full bg-transparent px-3 py-1.5 text-xs font-black text-emerald-950 dark:text-emerald-100 outline-none ${highlight ? 'text-right' : ''}`}
+          className={`w-full bg-transparent px-3 py-1.5 text-xs font-black text-emerald-950 outline-none ${highlight ? 'text-right' : ''}`}
         />
       </div>
     </div>
@@ -309,14 +309,14 @@ function Input({ label, name, value, onChange, placeholder, type = "text", bg = 
 }) {
   return (
     <div className="space-y-1.5 w-full">
-      {label && <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">{label}</label>}
+      {label && <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{label}</label>}
       <input
         name={name}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         type={type}
-        className={`w-full rounded-xl border border-emerald-100 dark:border-zinc-700 ${bg} dark:bg-zinc-800 ${size === 'sm' ? 'py-2' : 'py-3'} px-4 text-xs font-bold text-emerald-950 dark:text-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none placeholder:text-zinc-300 placeholder:font-medium`}
+        className={`w-full rounded-xl border border-emerald-100 ${bg} ${size === 'sm' ? 'py-2' : 'py-3'} px-4 text-xs font-bold text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none placeholder:text-zinc-300 placeholder:font-medium`}
       />
     </div>
   );

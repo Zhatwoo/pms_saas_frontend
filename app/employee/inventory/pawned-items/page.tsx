@@ -64,7 +64,7 @@ const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
 };
 
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-text-muted text-[10px]">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-zinc-400 text-[10px]">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
@@ -72,8 +72,8 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
           <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-text-tertiary">{r.date}</span>
-          <span className="text-[10px] font-bold text-text-secondary">₱{r.amount.toLocaleString()}</span>
+          <span className="text-[10px] text-zinc-500">{r.date}</span>
+          <span className="text-[10px] font-bold text-zinc-700">₱{r.amount.toLocaleString()}</span>
         </div>
       ))}
     </div>
@@ -156,23 +156,23 @@ export default function EmployeePawnedItemsPage() {
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
+            <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 w-44 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none focus:border-emerald-500"
+              className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none focus:border-emerald-500 w-44"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex overflow-hidden rounded-md border border-border-main">
-            <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+          <div className="flex rounded-md border border-zinc-200 overflow-hidden">
+            <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
               List
             </button>
-            <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+            <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
               Calendar
             </button>
           </div>
@@ -184,7 +184,7 @@ export default function EmployeePawnedItemsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-amber-400">
+                <tr className="bg-emerald-900 text-white">
                   {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", ""].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : ""}`}>{h}</th>
                   ))}
@@ -192,9 +192,9 @@ export default function EmployeePawnedItemsPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-sm text-text-muted">Loading branch inventory...</td></tr>
+                  <tr><td colSpan={8} className="py-8 text-center text-sm text-zinc-400">Loading branch inventory...</td></tr>
                 ) : pawnedItems.length === 0 ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-sm text-text-muted">No pawned items found for this branch</td></tr>
+                  <tr><td colSpan={8} className="py-8 text-center text-sm text-zinc-400">No pawned items found for this branch</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
@@ -204,6 +204,12 @@ export default function EmployeePawnedItemsPage() {
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-bold text-text-primary">₱{(item.amount || 0).toLocaleString()}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-tertiary">
+                      <tr className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700 font-medium">{item.itemName}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-zinc-800 text-right">₱{(item.amount || 0).toLocaleString()}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-zinc-500">
                           <div className="font-bold">{item.pawnDate}</div>
                           <div className="opacity-50">10:30 AM</div> {/* Real time would come from API */}
                         </td>
@@ -214,7 +220,7 @@ export default function EmployeePawnedItemsPage() {
                             {getRenewalLabel(item.renewalCount)}
                           </span>
                         </td>
-                        <td className="max-w-[200px] truncate px-3 py-2 text-[10px] font-bold text-text-tertiary" title={item.remarks}>{item.remarks || "No description provided"}</td>
+                        <td className="px-3 py-2 text-[10px] font-bold text-zinc-600 max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
                           <button onClick={() => setSelectedItemId(item.id)} className="rounded px-3 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 transition-colors">
                             View Details
@@ -222,8 +228,8 @@ export default function EmployeePawnedItemsPage() {
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr className="bg-surface-secondary">
-                          <td colSpan={8} className="border-t border-border-subtle px-6 py-3">
+                        <tr className="bg-amber-50/50">
+                          <td colSpan={8} className="px-6 py-3 border-t border-amber-100">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>

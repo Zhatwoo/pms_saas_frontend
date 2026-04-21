@@ -28,6 +28,61 @@ const downloadIcon = (
   </svg>
 );
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatPeso(amount: number) {
+  return `PHP ${amount.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function printHtmlDocument(html: string) {
+  const iframe = document.createElement("iframe");
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+  iframe.setAttribute("aria-hidden", "true");
+
+  const cleanup = () => {
+    window.setTimeout(() => iframe.remove(), 500);
+  };
+
+  iframe.onload = () => {
+    const frameWindow = iframe.contentWindow;
+    if (!frameWindow) {
+      cleanup();
+      return;
+    }
+
+    frameWindow.onafterprint = cleanup;
+    frameWindow.focus();
+    window.setTimeout(() => frameWindow.print(), 250);
+  };
+
+  document.body.appendChild(iframe);
+
+  const frameDocument = iframe.contentDocument;
+  if (!frameDocument) {
+    cleanup();
+    throw new Error("Unable to create print document.");
+  }
+
+  frameDocument.open();
+  frameDocument.write(html);
+  frameDocument.close();
+}
+
 interface ReportData {
   stats: {
     totalSalesToday: number;
@@ -84,126 +139,134 @@ export default function ReportsPage() {
     if (!reportData) return;
 
     try {
-      const jsPDF = (await import("jspdf")).default;
-      const autoTable = (await import("jspdf-autotable")).default;
-      const doc = new jsPDF();
-
-      // Currency formatter for PDF (using 'P' to avoid font encoding issues)
-      const fP = (num: number) => `P ${num.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-
-      // Report Header
-      doc.setFontSize(22);
-      doc.setTextColor(5, 150, 105); // emerald-600
-      doc.text("System Performance Report", 14, 20);
-      
-      doc.setFontSize(10);
-      doc.setTextColor(100);
       const branchLabel = isAllBranches ? "All Branches" : selectedBranch.name;
-      doc.text(`Generated for: ${branchLabel}`, 14, 28);
-      doc.text(`Period: ${activePeriod}`, 14, 33);
-      doc.text(`Date: ${todayFormatted}`, 14, 38);
-
-      // 1. Executive Summary
-      doc.setFontSize(14);
-      doc.setTextColor(0);
-      doc.text("Executive Summary", 14, 50);
-      
       const stats = reportData.stats;
-      const summaryData = [
-        ["Total Sales Today", fP(stats.totalSalesToday)],
-        ["Total Transactions", stats.totalTransactions.toString()],
-        ["Avg. Sale per Branch", fP(stats.avgPerBranch)],
-        ["Active Branches", `${stats.activeBranches} / ${stats.totalBranches}`],
-      ];
+      const branchRows = reportData.branchSales
+        .map(
+          (branch) => `
+            <tr>
+              <td>${escapeHtml(branch.name)}</td>
+              <td class="num">${branch.txn}</td>
+              <td class="num">${escapeHtml(formatPeso(branch.sales))}</td>
+              <td class="num">${branch.share}%</td>
+            </tr>`,
+        )
+        .join("");
 
-      autoTable(doc, {
-        startY: 55,
-        head: [["Metric", "Value"]],
-        body: summaryData,
-        theme: "striped",
-        headStyles: { fillColor: [6, 78, 59] }, // emerald-900
-      });
+      const dailyRows = [
+        ["Opening Balance", formatPeso(reportData.dailyReport.openingBalance)],
+        ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
+        ["Total Expenses", formatPeso(reportData.dailyReport.totalExpenses)],
+        ["Net Total", formatPeso(reportData.dailyReport.netTotal)],
+      ]
+        .map(
+          ([label, value]) => `
+            <tr>
+              <td>${escapeHtml(label)}</td>
+              <td class="num">${escapeHtml(value)}</td>
+            </tr>`,
+        )
+        .join("");
 
-      // 2. Sales Trend Chart (Capture from DOM)
-      const currentY = (doc as any).lastAutoTable.finalY + 10;
-      doc.setFontSize(14);
-      doc.text("Historical Sales Trend", 14, currentY + 5);
+      const html = `
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>System Performance Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; color: #111; margin: 36px 44px; }
+              .topline { text-align: center; font-size: 12px; margin-bottom: 36px; }
+              h1 { margin: 0 0 12px; font-size: 26px; font-weight: 700; }
+              .meta p { margin: 0 0 8px; font-size: 12px; }
+              .divider { border-top: 2px solid #111; margin: 18px 0 28px; }
+              h2 { margin: 0 0 14px; font-size: 16px; font-weight: 700; }
+              .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 26px; }
+              .card { border: 1px solid #222; min-height: 78px; padding: 14px; box-sizing: border-box; }
+              .label { font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+              .value { font-size: 20px; font-weight: 700; }
+              .summary { margin-bottom: 20px; }
+              .summary p { margin: 0 0 6px; font-size: 12px; }
+              .section { margin-top: 22px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+              th, td { border-bottom: 1px solid #cbd5e1; padding: 10px 8px; font-size: 12px; text-align: left; }
+              thead th { border-top: 2px solid #111; border-bottom: 2px solid #111; font-weight: 700; }
+              .num { text-align: right; }
+              .empty { color: #64748b; font-style: italic; text-align: center; }
+              .footer { margin-top: 28px; font-size: 11px; color: #666; text-align: center; }
+              @media print {
+                body { margin: 16px; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="topline">Pawnshop Management System</div>
+            <h1>System Performance Report</h1>
+            <div class="meta">
+              <p><strong>Generated for:</strong> ${escapeHtml(branchLabel)}</p>
+              <p><strong>Period:</strong> ${escapeHtml(activePeriod)}</p>
+              <p><strong>Date:</strong> ${escapeHtml(todayFormatted)}</p>
+              <p><strong>Generated:</strong> ${escapeHtml(
+                new Date().toLocaleString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                }),
+              )}</p>
+            </div>
+            <div class="divider"></div>
 
-      const chartElement = document.getElementById("sales-trend-chart");
-      if (chartElement) {
-        try {
-          const { domToPng } = await import("modern-screenshot");
-          const imgData = await domToPng(chartElement, {
-            scale: 2,
-            backgroundColor: "#ffffff",
-          });
-          doc.addImage(imgData, "PNG", 14, currentY + 10, 180, 80);
-        } catch (chartErr) {
-          console.warn("Could not capture chart image, skipping:", chartErr);
-          doc.setFontSize(10);
-          doc.setTextColor(150);
-          doc.text("(Chart could not be rendered in PDF - see web dashboard for visualization)", 14, currentY + 20);
-          doc.setTextColor(0);
-        }
-      }
+            <h2>Executive Summary</h2>
+            <div class="grid">
+              <div class="card"><div class="label">Total Sales Today</div><div class="value">${escapeHtml(formatPeso(stats.totalSalesToday))}</div></div>
+              <div class="card"><div class="label">Total Transactions</div><div class="value">${stats.totalTransactions}</div></div>
+              <div class="card"><div class="label">Avg. Per Branch</div><div class="value">${escapeHtml(formatPeso(stats.avgPerBranch))}</div></div>
+              <div class="card"><div class="label">Active Branches</div><div class="value">${stats.activeBranches} / ${stats.totalBranches}</div></div>
+            </div>
 
-      // 3. Branch Breakdown (New Page if needed)
-      doc.addPage();
-      doc.setFontSize(14);
-      doc.setTextColor(0);
-      doc.text("Branch Breakdown", 14, 20);
+            <div class="section summary">
+              <h2>Historical Sales Trend Summary</h2>
+              <p><strong>14-day Average:</strong> ${escapeHtml(formatPeso(reportData.trendSummary.average))}</p>
+              <p><strong>Peak Date:</strong> ${escapeHtml(reportData.trendSummary.peakDate)}</p>
+              <p><strong>Peak Sales:</strong> ${escapeHtml(formatPeso(reportData.trendSummary.peakSales))}</p>
+            </div>
 
-      const branchRows = reportData.branchSales.map(b => [
-        b.name,
-        b.txn.toString(),
-        fP(b.sales),
-        `${b.share}%`
-      ]);
+            <div class="section">
+              <h2>Branch Breakdown</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Branch</th>
+                    <th class="num">Transactions</th>
+                    <th class="num">Total Sales</th>
+                    <th class="num">Share</th>
+                  </tr>
+                </thead>
+                <tbody>${branchRows || '<tr><td colspan="4" class="empty">No branch sales data available.</td></tr>'}</tbody>
+              </table>
+            </div>
 
-      autoTable(doc, {
-        startY: 25,
-        head: [["Branch", "Transactions", "Total Sales", "Share"]],
-        body: branchRows,
-        theme: "grid",
-        headStyles: { fillColor: [4, 120, 87] }, // emerald-700
-      });
+            <div class="section">
+              <h2>Daily Sales Report (DSR)</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th class="num">Value</th>
+                  </tr>
+                </thead>
+                <tbody>${dailyRows}</tbody>
+              </table>
+            </div>
 
-      // 4. Daily Sales Report (DSR) Summary
-      const dsrY = (doc as any).lastAutoTable.finalY + 15;
-      doc.setFontSize(14);
-      doc.text("Daily Sales Report (DSR) Summary", 14, dsrY);
+            <div class="footer">Pawnshop Management System</div>
+          </body>
+        </html>
+      `;
 
-      const dsr = reportData.dailyReport;
-      const dsrData = [
-        ["Opening Balance", fP(dsr.openingBalance)],
-        ["Total Sales", fP(dsr.totalSales)],
-        ["Total Expenses", fP(dsr.totalExpenses)],
-        ["Net Total", fP(dsr.netTotal)],
-      ];
-
-      autoTable(doc, {
-        startY: dsrY + 5,
-        body: dsrData,
-        theme: "plain",
-        styles: { fontStyle: "bold" },
-        columnStyles: { 0: { cellWidth: 50 }, 1: { halign: "left" } }
-      });
-
-      // Footer
-      const pageCount = (doc as any).internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Page ${i} of ${pageCount} - Pawnshop Management System`,
-          doc.internal.pageSize.getWidth() / 2,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: "center" }
-        );
-      }
-
-      doc.save(`Report_${branchLabel.replace(/\s+/g, "_")}_${activePeriod}.pdf`);
+      printHtmlDocument(html);
     } catch (err) {
       console.error("PDF Generation failed:", err);
       alert("Failed to generate PDF. Please check console for details.");
@@ -223,7 +286,7 @@ export default function ReportsPage() {
           <span className="text-sm text-zinc-500">{todayFormatted}</span>
         </div>
         <button 
-          onClick={() => window.print()}
+          onClick={handleDownloadPDF}
           className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
           {downloadIcon}
           Download PDF
