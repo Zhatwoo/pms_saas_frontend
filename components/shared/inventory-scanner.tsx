@@ -100,7 +100,7 @@ export function InventoryScanner({ onComplete, isLocked = false, title = "Invent
         </div>
       </form>
 
-      <div className="flex-1 overflow-y-auto space-y-3 mb-8 pr-4 custom-scrollbar min-h-[300px]">
+      <div className="flex-1 overflow-y-auto space-y-3 mb-8 pr-4 scrollbar-hide min-h-[300px]">
         {scannedItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center opacity-30 select-none">
             <div className="mb-6 rounded-full bg-surface-tertiary p-10 border-4 border-dashed border-border-main">
