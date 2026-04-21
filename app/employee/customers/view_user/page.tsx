@@ -175,10 +175,8 @@ interface CustomerTransactionRecord {
 }
 
 function collectItemPhotos(tx: ApiTransaction) {
-  const photos = [
-    ...(Array.isArray(tx.pawned_item?.item_photos) ? tx.pawned_item?.item_photos : []),
-    tx.pawned_item?.item_photo ?? null,
-  ].filter((value): value is string => typeof value === "string" && isImageUrl(value));
+  const photos = (Array.isArray(tx.pawned_item?.item_photos) ? tx.pawned_item?.item_photos : [])
+    .filter((value): value is string => typeof value === "string" && isImageUrl(value));
 
   return Array.from(new Set(photos));
 }
