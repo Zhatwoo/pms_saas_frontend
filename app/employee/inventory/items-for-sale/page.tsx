@@ -127,11 +127,11 @@ export default function EmployeeItemsForSalePage() {
       {saleViewMode === "calendar" ? (
         <InventoryCalendar items={saleItems} />
       ) : (
-        <div className="overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20">
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-white">
+                <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-amber-400">
                   {["ID", "Item Name", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
@@ -176,7 +176,7 @@ export default function EmployeeItemsForSalePage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20">
+      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}

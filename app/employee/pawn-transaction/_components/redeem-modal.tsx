@@ -158,25 +158,25 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/80 backdrop-blur-sm p-4 text-zinc-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/80 backdrop-blur-sm p-4 text-zinc-900 dark:text-zinc-100">
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0">
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 px-6 py-4 border-b border-emerald-50 dark:border-zinc-700 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
               <Undo2 className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-emerald-950 uppercase tracking-tight">Redeem Pawn Ticket</h2>
+              <h2 className="text-xl font-black text-emerald-950 dark:text-emerald-200 uppercase tracking-tight">Redeem Pawn Ticket</h2>
               <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{branchName} | Active Pawn</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-emerald-50 rounded-full transition-colors text-emerald-900/40 hover:text-emerald-900"
+            className="p-2 hover:bg-emerald-50 dark:hover:bg-zinc-800 rounded-full transition-colors text-emerald-900/40 dark:text-emerald-300/60 hover:text-emerald-900 dark:hover:text-emerald-200"
           >
             <X className="w-6 h-6" />
           </button>
@@ -184,7 +184,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
 
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className="w-full lg:w-[400px] border-r border-emerald-50 bg-emerald-50/30 flex flex-col shrink-0">
+          <div className="w-full lg:w-[400px] border-r border-emerald-50 dark:border-zinc-700 bg-emerald-50/30 dark:bg-zinc-900 flex flex-col shrink-0">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 mb-2">
                 <Search className="w-5 h-5 text-emerald-600/40" />
@@ -195,7 +195,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                 <input 
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white border-2 border-emerald-100 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium shadow-sm"
+                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-zinc-800 border-2 border-emerald-100 dark:border-zinc-700 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -210,7 +210,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                   <p className="text-[10px] font-bold text-emerald-900/40 uppercase">Linking to Database...</p>
                 </div>
               ) : pawnedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white rounded-2xl border-2 border-dashed border-emerald-100 shadow-sm">
+                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white dark:bg-zinc-800 rounded-2xl border-2 border-dashed border-emerald-100 dark:border-zinc-700 shadow-sm">
                   <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
                     <Package className="w-6 h-6 text-emerald-200" />
                   </div>
@@ -224,8 +224,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                     onClick={() => setSelectedItem(item)}
                     className={`w-full p-4 mb-3 rounded-2xl border-2 transition-all flex flex-col gap-2 text-left relative group ${
                       selectedItem?.id === item.id 
-                        ? 'bg-white border-emerald-500 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5' 
-                        : 'bg-white/60 border-transparent hover:border-emerald-200 hover:bg-white hover:shadow-lg'
+                                ? 'bg-white dark:bg-zinc-800 border-emerald-500 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5' 
+                                : 'bg-white/60 dark:bg-zinc-800/70 border-transparent hover:border-emerald-200 dark:hover:border-emerald-700 hover:bg-white dark:hover:bg-zinc-800 hover:shadow-lg'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -246,12 +246,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
           </div>
 
           {/* Right Side: Details & Computation */}
-          <div className="flex-1 bg-white overflow-y-auto scrollbar-hide">
+          <div className="flex-1 bg-white dark:bg-zinc-900 overflow-y-auto scrollbar-hide">
             {selectedItem ? (
               <div className="p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-1 mb-8">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
-                  <h2 className="text-4xl font-black text-emerald-950 tracking-tighter leading-none">
+                  <h2 className="text-4xl font-black text-emerald-950 dark:text-emerald-100 tracking-tighter leading-none">
                     {selectedItem.unit}
                   </h2>
                   <p className="text-emerald-900/40 font-bold flex items-center gap-2">
@@ -284,11 +284,11 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                     <div className="mt-4 pt-4 border-t border-emerald-50 font-google">
                       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
                       {selectedItem.qrCode ? (
-                        <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white flex items-center justify-center shadow-sm">
+                        <div className="w-32 h-32 rounded-xl border border-zinc-100 dark:border-zinc-700 p-2 bg-white dark:bg-zinc-800 flex items-center justify-center shadow-sm">
                           <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                        <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center">
                           <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
                         </div>
                       )}
@@ -400,10 +400,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-12">
-                <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6">
+                <div className="w-24 h-24 rounded-3xl bg-emerald-50 dark:bg-zinc-800 flex items-center justify-center mb-6">
                   <Undo2 className="w-12 h-12 text-emerald-200" />
                 </div>
-                <h3 className="text-2xl font-black text-emerald-950 uppercase tracking-tight italic">Scan or Search Item</h3>
+                <h3 className="text-2xl font-black text-emerald-950 dark:text-emerald-100 uppercase tracking-tight italic">Scan or Search Item</h3>
                 <p className="text-emerald-900/30 font-bold max-w-xs mt-2 leading-relaxed">
                   "Only active items within the loan period are eligible for redemption."
                 </p>
@@ -438,7 +438,7 @@ function DetailSection({ title, icon: Icon, children }: { title: string, icon: a
         <Icon className="w-4 h-4 text-emerald-600/40" />
         <h4 className="text-[10px] font-black text-emerald-900/40 uppercase tracking-[2px]">{title}</h4>
       </div>
-      <div className="divide-y divide-emerald-50 border-t border-emerald-50">
+      <div className="divide-y divide-emerald-50 dark:divide-zinc-700 border-t border-emerald-50 dark:border-zinc-700">
         {children}
       </div>
     </div>
@@ -448,8 +448,8 @@ function DetailSection({ title, icon: Icon, children }: { title: string, icon: a
 function DetailRow({ label, value }: { label: string, value: string | React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3 px-1">
-      <span className="text-[10px] font-bold text-emerald-900/40 uppercase tracking-tighter">{label}</span>
-      <span className="text-xs font-black text-emerald-950">{value}</span>
+      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-300/60 uppercase tracking-tighter">{label}</span>
+      <span className="text-xs font-black text-emerald-950 dark:text-emerald-100">{value}</span>
     </div>
   );
 }

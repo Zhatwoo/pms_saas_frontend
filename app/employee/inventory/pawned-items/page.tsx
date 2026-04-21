@@ -73,8 +73,8 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
           <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-text-secondary">{r.date}</span>
-          <span className="text-[10px] font-bold text-text-primary">₱{r.amount.toLocaleString()}</span>
+          <span className="text-[10px] text-text-tertiary">{r.date}</span>
+          <span className="text-[10px] font-bold text-text-secondary">₱{r.amount.toLocaleString()}</span>
         </div>
       ))}
     </div>
@@ -209,7 +209,7 @@ export default function EmployeePawnedItemsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-white">
+                <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-amber-400">
                   {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", ""].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : ""}`}>{h}</th>
                   ))}
@@ -251,7 +251,7 @@ export default function EmployeePawnedItemsPage() {
                             {getRenewalLabel(item.renewalCount)}
                           </span>
                         </td>
-                        <td className="max-w-[200px] truncate px-3 py-2 text-[10px] font-bold text-text-secondary" title={item.remarks}>{item.remarks || "No description provided"}</td>
+                        <td className="max-w-[200px] truncate px-3 py-2 text-[10px] font-bold text-text-tertiary" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         <td className="px-3 py-2 whitespace-nowrap text-right">
                           <button onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} className="rounded border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-400 transition-colors hover:bg-emerald-500/20">
                             View Details
@@ -259,8 +259,8 @@ export default function EmployeePawnedItemsPage() {
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr className="bg-amber-400/5">
-                          <td colSpan={8} className="px-6 py-3 border-t border-amber-100">
+                        <tr className="bg-surface-secondary">
+                          <td colSpan={8} className="border-t border-border-subtle px-6 py-3">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>

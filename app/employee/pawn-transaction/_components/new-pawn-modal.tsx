@@ -652,11 +652,11 @@ export function NewPawnModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/80 backdrop-blur-sm p-4">
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0">
+        <div className="flex items-center justify-between bg-white dark:bg-zinc-900 px-6 py-4 border-b border-emerald-50 dark:border-zinc-700 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-900 flex items-center justify-center text-white shadow-lg shadow-emerald-900/20">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -665,12 +665,12 @@ export function NewPawnModal({
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-black text-emerald-950 uppercase tracking-tight leading-none">New Pawn Ticket</h1>
+              <h1 className="text-xl font-black text-emerald-950 dark:text-emerald-200 uppercase tracking-tight leading-none">New Pawn Ticket</h1>
               <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1.5">{branchName}</p>
             </div>
           </div>
           
-          <button onClick={handleReset} className="p-2 hover:bg-zinc-100 rounded-lg transition-colors group">
+          <button onClick={handleReset} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors group">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-zinc-400 group-hover:text-zinc-900">
               <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -678,19 +678,19 @@ export function NewPawnModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30">
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30 dark:bg-zinc-900">
           <div className="max-w-5xl mx-auto space-y-8">
             
             {/* QR Code Generator Section */}
-            <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="rounded-3xl border-2 border-dashed border-emerald-300 dark:border-zinc-700 bg-emerald-50/50 dark:bg-zinc-800 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm border border-emerald-100">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 text-emerald-700 dark:text-emerald-300 shadow-sm border border-emerald-100 dark:border-zinc-700">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-black text-emerald-900 uppercase tracking-tight">QR Code Generator</h3>
+                  <h3 className="text-lg font-black text-emerald-900 dark:text-emerald-200 uppercase tracking-tight">QR Code Generator</h3>
                   {errorMessage && errorMessage.includes("before generating QR") ? (
                     <p className="text-[11px] font-bold text-red-500 animate-pulse">{errorMessage}</p>
                   ) : (
@@ -709,7 +709,7 @@ export function NewPawnModal({
                       width={100}
                       height={100}
                       unoptimized
-                      className="rounded-xl border-2 border-emerald-200 shadow-md bg-white p-1 animate-in fade-in zoom-in duration-300"
+                      className="rounded-xl border-2 border-emerald-200 dark:border-zinc-700 shadow-md bg-white dark:bg-zinc-900 p-1 animate-in fade-in zoom-in duration-300"
                       onError={() => setQrUrl(null)}
                     />
                     <button
@@ -743,16 +743,16 @@ export function NewPawnModal({
               {/* Customer Information */}
               <div className="space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <h3 className="text-sm font-black text-zinc-800 uppercase tracking-widest">Customer Details</h3>
+                    <h3 className="text-sm font-black text-zinc-800 dark:text-zinc-100 uppercase tracking-widest">Customer Details</h3>
                   </div>
 
-                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-zinc-200 bg-zinc-100 p-1 shadow-sm">
+                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 p-1 shadow-sm">
                     <span
-                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
+                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
                     />
                     <button
                       type="button"
@@ -807,7 +807,7 @@ export function NewPawnModal({
                 )}
 
                 {customerMode === "existing" ? (
-                  <div className="space-y-4 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+                  <div className="space-y-4 rounded-3xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Search by name only</p>
                       <p className="text-xs font-medium text-zinc-500">
@@ -831,7 +831,7 @@ export function NewPawnModal({
                     />
 
                     {isLoadingCustomers ? (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center text-sm font-medium text-zinc-400">
+                      <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-4 py-6 text-center text-sm font-medium text-zinc-400">
                         Loading branch customers...
                       </div>
                     ) : customerLookupError ? (
@@ -843,7 +843,7 @@ export function NewPawnModal({
                         No matching branch customer found.
                       </div>
                     ) : (
-                      <div className="max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+                        <div className="max-h-[24rem] space-y-3 overflow-y-auto pr-1">
                         {filteredBranchCustomers.map((customer) => {
                           const statusLabel = customerBranchTransactions.has(customer.id)
                             ? "Existing customer"
@@ -854,11 +854,11 @@ export function NewPawnModal({
                               key={customer.id}
                               type="button"
                               onClick={() => handleSelectExistingCustomer(customer)}
-                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-zinc-200 bg-white hover:border-emerald-200"}`}
+                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm" : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-emerald-200"}`}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0 space-y-1">
-                                  <p className="truncate text-sm font-black text-zinc-900">{customer.full_name}</p>
+                                  <p className="truncate text-sm font-black text-zinc-900 dark:text-zinc-100">{customer.full_name}</p>
                                   <p className="truncate text-xs font-medium text-zinc-500">
                                     {customer.contact_number || "No contact number"}
                                   </p>
@@ -935,7 +935,7 @@ export function NewPawnModal({
                     </div>
 
                     {/* Camera capture section */}
-                    <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                    <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700">
                       <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                          {getVerificationMode(form.idPresented) === "no-id"
@@ -948,7 +948,7 @@ export function NewPawnModal({
                       </span>
 
                       {getVerificationMode(form.idPresented) === "pending" ? (
-                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-6 text-center text-xs font-medium text-zinc-400">
+                        <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-4 py-6 text-center text-xs font-medium text-zinc-400">
                           Select an ID type to show the required verification photo fields.
                         </div>
                       ) : getVerificationMode(form.idPresented) === "no-id" ? (
@@ -984,11 +984,11 @@ export function NewPawnModal({
 
               {/* Unit Information */}
               <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-700 dark:text-emerald-300">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                   </div>
-                  <h3 className="text-sm font-black text-zinc-800 uppercase tracking-widest">Unit Information</h3>
+                  <h3 className="text-sm font-black text-zinc-800 dark:text-zinc-100 uppercase tracking-widest">Unit Information</h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -1004,7 +1004,7 @@ export function NewPawnModal({
                     <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100" />
                   </div>
 
-                  <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 space-y-4">
+                  <div className="rounded-2xl border border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-4 space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Item Photo</p>
@@ -1022,11 +1022,11 @@ export function NewPawnModal({
                         onCapture={handleAddItemPhoto}
                       />
 
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-3">
+                      <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
                         {form.itemPhotos.length > 0 ? (
                           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                             {form.itemPhotos.map((photo, index) => (
-                              <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-sm">
+                              <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 shadow-sm">
                                 <Image
                                   src={photo}
                                   alt={`Item photo ${index + 1}`}
@@ -1049,7 +1049,7 @@ export function NewPawnModal({
                             ))}
                           </div>
                         ) : (
-                          <div className="flex h-full min-h-[10rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center text-xs font-medium text-zinc-400">
+                          <div className="flex h-full min-h-[10rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-4 text-center text-xs font-medium text-zinc-400">
                             No item photos captured yet.
                           </div>
                         )}
@@ -1148,7 +1148,7 @@ export function NewPawnModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-emerald-50 bg-white flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
+        <div className="p-6 border-t border-emerald-50 dark:border-zinc-700 bg-white dark:bg-zinc-900 flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
           <div className="flex items-center gap-6 w-full sm:w-auto">
             <button 
               onClick={handleReset}
@@ -1156,7 +1156,7 @@ export function NewPawnModal({
             >
               Cancel
             </button>
-            <div className="h-10 w-px bg-zinc-100 hidden sm:block" />
+            <div className="h-10 w-px bg-zinc-100 dark:bg-zinc-700 hidden sm:block" />
             <div className="flex flex-col sm:flex-row gap-4 flex-1 sm:flex-none">
               {/* Password — entered by the logged-in employee */}
               <div className="min-w-[200px] space-y-1.5">
@@ -1166,14 +1166,14 @@ export function NewPawnModal({
                     <span className="ml-1 text-emerald-600 normal-case font-bold">({loggedInUserName})</span>
                   )}
                 </label>
-                <div className="relative flex items-center rounded-xl border border-zinc-200 bg-zinc-50 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
+                <div className="relative flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
                   <input
                     name="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-transparent px-4 py-2 text-sm font-bold text-zinc-900 outline-none placeholder:text-zinc-300"
+                    className="w-full bg-transparent px-4 py-2 text-sm font-bold text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-300"
                   />
                 </div>
               </div>
@@ -1250,7 +1250,7 @@ function Input({
   return (
     <div className="space-y-1.5 w-full">
       {label && <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{label}</label>}
-      <div className={`relative flex items-center rounded-xl border border-zinc-200 ${bg} focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100' : ''}`}>
+      <div className={`relative flex items-center rounded-xl border border-zinc-200 dark:border-zinc-700 ${bg} dark:bg-zinc-800 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100 dark:bg-zinc-700' : ''}`}>
         {prefix && <span className="pl-4 text-zinc-400 font-bold">{prefix}</span>}
         <input
           name={name}
@@ -1259,7 +1259,7 @@ function Input({
           placeholder={placeholder}
           type={type}
           readOnly={readOnly}
-          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-sm font-bold text-zinc-900 outline-none placeholder:text-zinc-300 ${readOnly ? 'cursor-not-allowed select-none' : ''}`}
+          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-sm font-bold text-zinc-900 dark:text-zinc-100 outline-none placeholder:text-zinc-300 ${readOnly ? 'cursor-not-allowed select-none' : ''}`}
         />
       </div>
     </div>
@@ -1350,7 +1350,7 @@ function PhotoUpload({
       {/* Thumbnail / Placeholder */}
       <div
         onClick={allowMultipleCapture || !photo ? openCamera : undefined}
-        className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
+        className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white dark:bg-zinc-900 flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
           ${ photo ? "border-emerald-400 cursor-pointer" : "border-zinc-200 hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer" }`}
       >
         {photo && !allowMultipleCapture ? (
@@ -1374,7 +1374,7 @@ function PhotoUpload({
           </>
         ) : (
           <>
-            <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center mb-2 group-hover:bg-emerald-100 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center mb-2 group-hover:bg-emerald-100 transition-colors">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-400 group-hover:text-emerald-600 transition-colors">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
               </svg>
