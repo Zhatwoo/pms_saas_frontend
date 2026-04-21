@@ -130,6 +130,7 @@ export default function SettingsPage() {
       } catch (error) {
         console.error("Failed to fetch MOA template:", error);
       }
+    }
     async function fetchSettings() {
       try {
         const data = await api.get<{ shopInfo: typeof shopSettings; policies: typeof policies }>('/settings/general');
