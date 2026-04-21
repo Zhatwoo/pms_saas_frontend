@@ -117,9 +117,9 @@ export default function SettingsPage() {
   const canEditMoa = isMoaEditMode && !isMoaLocked;
 
   const lineInputClass =
-    "h-5 w-full border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
+    "h-5 w-full border-b border-border-subtle bg-transparent px-1 text-[10px] text-text-primary outline-none disabled:cursor-not-allowed disabled:text-text-muted";
   const labelInputClass =
-    "h-5 border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
+    "h-5 border-b border-border-subtle bg-transparent px-1 text-[10px] text-text-primary outline-none disabled:cursor-not-allowed disabled:text-text-muted";
 
   const updateMoaField = (field: keyof typeof moaFields, value: string) => {
     setMoaFields((prev) => ({ ...prev, [field]: value }));
@@ -199,107 +199,107 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-4">
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-zinc-900">Settings</h1>
-        <p className="mt-1 text-xs text-zinc-500">
+        <h1 className="text-2xl font-black tracking-tight text-text-primary">Settings</h1>
+        <p className="mt-1 text-xs text-text-tertiary">
           Configure pawnshop policies and system preferences.
         </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
         <div className="space-y-4">
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-4 py-3">
-              <h2 className="text-xs font-bold text-zinc-800">Shop Information</h2>
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
+            <div className="border-b border-border-subtle px-4 py-3">
+              <h2 className="text-xs font-bold text-text-primary">Shop Information</h2>
             </div>
 
             <div className="space-y-5 px-4 py-4">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                   Shop Name
                 </label>
                 <input
                   defaultValue="JCLB BUY BACK SHOP"
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                   Shop Address
                 </label>
                 <input
                   defaultValue="123 Main Street, Manila, Philippines"
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                 />
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                  <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                     Phone Number
                   </label>
                   <input
                     defaultValue="+63 2 1234 5678"
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                    className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                  <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                     Email
                   </label>
                   <input
                     defaultValue="info@jclbbuyback.com"
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                    className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                   />
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-4 py-3">
-              <h2 className="text-xs font-bold text-zinc-800">Pawnshop Policies</h2>
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
+            <div className="border-b border-border-subtle px-4 py-3">
+              <h2 className="text-xs font-bold text-text-primary">Pawnshop Policies</h2>
             </div>
 
             <div className="grid gap-3 px-4 py-4 md:grid-cols-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                   Default Interest Rate (%)
                 </label>
                 <input
                   defaultValue="3.5"
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                 />
-                <p className="text-[9px] text-zinc-400">per month</p>
+                <p className="text-[9px] text-text-muted">per month</p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                   Default Pawn Duration (Days)
                 </label>
                 <input
                   defaultValue="30"
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-text-tertiary">
                   Grace Period (Days)
                 </label>
                 <input
                   defaultValue="3"
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                  className="h-10 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
                 />
               </div>
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-4 py-3">
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
+            <div className="border-b border-border-subtle px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-xs font-bold text-zinc-800">Memorandum of Agreement Template</h2>
+                <h2 className="text-xs font-bold text-text-primary">Memorandum of Agreement Template</h2>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
                   Super Admin Only
                 </span>
@@ -321,32 +321,32 @@ export default function SettingsPage() {
                   className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-colors ${
                     isMoaEditMode
                       ? "border border-emerald-700 bg-emerald-700 text-white"
-                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      : "border border-border-main bg-surface text-text-secondary hover:bg-surface-hover"
                   }`}
                 >
                   {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                 </button>
 
-                <label className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-[11px] font-bold text-zinc-700">
+                <label className="inline-flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-text-secondary">
                   <input
                     type="checkbox"
                     checked={isMoaLocked}
                     onChange={(e) => setIsMoaLocked(e.target.checked)}
-                    className="h-3.5 w-3.5 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                    className="h-3.5 w-3.5 rounded border-input-border bg-input-bg text-emerald-600 focus:ring-emerald-500"
                   />
                   Lock Template (Prevent Editing)
                 </label>
 
                 <button
                   onClick={() => setIsTopHeaderSwapped((v) => !v)}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50"
+                  className="rounded-lg border border-border-main bg-surface px-3 py-2 text-[11px] font-bold text-text-secondary transition-colors hover:bg-surface-hover"
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
               </div>
 
-              <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6">
-                <div className="space-y-5 border border-emerald-800/70 p-5 text-[10px] text-zinc-800">
+              <div className="overflow-hidden rounded-md border border-border-main bg-surface-secondary p-6 transition-colors duration-300">
+                <div className="space-y-5 border border-emerald-800/70 p-5 text-[10px] text-text-primary">
                   <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] items-center gap-3">
                     {renderEditableLabel("originalCopy", "font-semibold")}
                     {renderEditableLabel("moaTitle", "text-center text-xs font-bold uppercase underline")}
@@ -677,12 +677,12 @@ export default function SettingsPage() {
                   </p>
 
                   <div className="space-y-2">
-                    <p className="text-center text-[10px] font-bold uppercase underline">
+                    <p className="text-center text-[10px] font-bold uppercase underline text-text-primary">
                       {canEditMoa ? (
                         <input
                           value={topLabels.termsHeading}
                           onChange={(e) => updateTopLabel("termsHeading", e.target.value)}
-                          className="w-full border-none bg-transparent text-center text-[10px] font-bold uppercase outline-none"
+                          className="w-full border-none bg-transparent text-center text-[10px] font-bold uppercase text-text-primary outline-none"
                         />
                       ) : (
                         topLabels.termsHeading
@@ -692,10 +692,10 @@ export default function SettingsPage() {
                       <textarea
                         value={termsText}
                         onChange={(e) => setTermsText(e.target.value)}
-                        className="min-h-[200px] w-full resize-none rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed outline-none focus:border-emerald-500"
+                        className="min-h-[200px] w-full resize-none rounded-sm border border-border-main bg-surface p-3 text-[10px] leading-relaxed text-text-primary outline-none focus:border-emerald-500"
                       />
                     ) : (
-                      <div className="whitespace-pre-wrap p-3 text-[10px] leading-relaxed text-zinc-800 bg-emerald-50/10 rounded-lg">
+                      <div className="whitespace-pre-wrap rounded-lg bg-surface p-3 text-[10px] leading-relaxed text-text-secondary">
                         {termsText}
                       </div>
                     )}
@@ -709,7 +709,7 @@ export default function SettingsPage() {
                         disabled={!canEditMoa}
                         className={lineInputClass}
                       />
-                      <p className="text-[9px]">{renderEditableLabel("sellerSignature", "inline")}</p>
+                      <p className="text-[9px] text-text-tertiary">{renderEditableLabel("sellerSignature", "inline")}</p>
                     </div>
                     <div className="space-y-2 text-center">
                       <p className="text-[11px] font-bold uppercase text-emerald-900">{renderEditableLabel("authorizedText", "inline")}</p>
@@ -721,14 +721,14 @@ export default function SettingsPage() {
                         disabled={!canEditMoa}
                         className={lineInputClass}
                       />
-                      <p className="text-[9px]">{renderEditableLabel("representativeSignature", "inline")}</p>
+                      <p className="text-[9px] text-text-tertiary">{renderEditableLabel("representativeSignature", "inline")}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[10px] text-zinc-500">
+                <p className="text-[10px] text-text-tertiary">
                   This template matches the printed MOA layout. Enable Edit Mode and unlock template to modify any section.
                 </p>
 
@@ -753,7 +753,7 @@ export default function SettingsPage() {
               </div>
 
               {(moaSavedAt || sendStatus === "sent") && (
-                <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] text-emerald-800">
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] text-emerald-800">
                   {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
                   {sendStatus === "sent" && <span>MOA template sent to all branches.</span>}
                 </div>
@@ -765,25 +765,25 @@ export default function SettingsPage() {
             <button className="rounded-lg bg-emerald-700 px-5 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800">
               Save Changes
             </button>
-            <button className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50">
+            <button className="rounded-lg border border-border-main bg-surface px-5 py-2 text-[11px] font-bold text-text-secondary transition-colors hover:bg-surface-hover">
               Discard
             </button>
           </div>
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
+          <section className="rounded-xl border border-border-main bg-surface p-4 text-center shadow-sm transition-colors duration-300">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-pawn-gold text-2xl font-bold text-zinc-900">
               AD
             </div>
-            <h3 className="text-sm font-bold text-zinc-900">Admin Panel</h3>
-            <p className="mt-1 text-[10px] text-zinc-500">Super Admin Settings</p>
+            <h3 className="text-sm font-bold text-text-primary">Admin Panel</h3>
+            <p className="mt-1 text-[10px] text-text-tertiary">Super Admin Settings</p>
             <button className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100">
               Change Avatar
             </button>
           </section>
 
-          <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
             <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">
               Security Restriction
             </p>

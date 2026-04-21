@@ -191,12 +191,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-7xl h-[85vh] overflow-hidden rounded-[2.5rem] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col border border-white/20">
+      <div className="relative w-full max-w-7xl h-[85vh] overflow-hidden rounded-[2.5rem] bg-white dark:bg-zinc-900 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col border border-white/20 dark:border-zinc-700">
         
         {/* Top Floating Header */}
-        <div className="flex items-center justify-between px-8 py-5 bg-white/80 backdrop-blur-md border-b border-emerald-100 shrink-0">
+        <div className="flex items-center justify-between px-8 py-5 bg-white/80 dark:bg-zinc-900/90 backdrop-blur-md border-b border-emerald-100 dark:border-zinc-700 shrink-0">
           <div className="space-y-0.5">
-            <h2 className="text-2xl font-black text-emerald-950 uppercase tracking-tight flex items-center gap-3">
+            <h2 className="text-2xl font-black text-emerald-950 dark:text-emerald-200 uppercase tracking-tight flex items-center gap-3">
               <span className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/20">
                 <RotateCcw className="w-6 h-6" />
               </span>
@@ -207,12 +207,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-[9px] font-black text-emerald-900/40 uppercase tracking-widest">Unit Code</span>
+              <span className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-300/50 uppercase tracking-widest">Unit Code</span>
               <div className="relative flex items-center">
                 <input 
                   type="text"
                   placeholder="Type Full Unit Code..."
-                  className="h-10 w-48 bg-white border-2 border-emerald-100 outline-none focus:border-emerald-500 transition-all px-4 font-black text-emerald-900 text-xs rounded-l-xl"
+                  className="h-10 w-48 bg-white dark:bg-zinc-800 border-2 border-emerald-100 dark:border-zinc-600 outline-none focus:border-emerald-500 transition-all px-4 font-black text-emerald-900 dark:text-emerald-100 text-xs rounded-l-xl"
                   value={searchCode}
                   onChange={(e) => setSearchCode(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -228,7 +228,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
             </div>
             <button 
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-50 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-all"
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-300 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 transition-all"
             >
               <X className="w-5 h-5" />
             </button>
@@ -237,7 +237,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
 
         <div className="flex-1 flex overflow-hidden">
           {/* Main Info Area */}
-          <div className="flex-1 p-8 flex gap-8 bg-emerald-50/20 overflow-hidden">
+          <div className="flex-1 p-8 flex gap-8 bg-emerald-50/20 dark:bg-zinc-900 overflow-hidden">
             {/* Left Column: Specs */}
             <div className="flex-1 space-y-5 flex flex-col">
               <SectionHeader title="Loan & Item Identity" icon={Info} />
@@ -266,10 +266,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
                 <StaticDetailRow label="Parking Fee" value={selectedItem?.parkingFee} />
                 <StaticDetailRow label="Purchased Date" value={selectedItem?.purchasedDate} />
                 <StaticDetailRow label="Expiration Date" value={selectedItem?.expirationDate} />
-                <div className="pt-3 border-t border-emerald-100 space-y-1 mt-auto">
-                   <p className="text-[9px] font-black text-emerald-900/30 uppercase tracking-widest">Principal Amount</p>
+                 <div className="pt-3 border-t border-emerald-100 dark:border-zinc-700 space-y-1 mt-auto">
+                   <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-300/40 uppercase tracking-widest">Principal Amount</p>
                    <div className="flex items-center gap-2">
-                     <span className="text-2xl font-black text-emerald-950">₱ {selectedItem?.amount.toLocaleString() || '0.00'}</span>
+                     <span className="text-2xl font-black text-emerald-950 dark:text-emerald-100">₱ {selectedItem?.amount.toLocaleString() || '0.00'}</span>
                      <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[8px] font-black uppercase tracking-tighter border border-emerald-200">Value Assessed</div>
                    </div>
                 </div>
@@ -307,10 +307,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
              <div className="space-y-3">
                 <SectionHeader title="Period Settings" icon={Calendar} isDark />
                 
-                <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl shadow-lg">
+                <div className="flex items-center justify-between bg-white dark:bg-zinc-800 px-4 py-2.5 rounded-xl shadow-lg">
                   <div className="space-y-0.5">
-                    <p className="text-[8px] font-black text-emerald-900/40 uppercase tracking-widest">Items Renewed</p>
-                    <p className="text-[7px] font-bold text-emerald-600/60 uppercase tracking-tighter">Extend Multiplier</p>
+                    <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-300/50 uppercase tracking-widest">Items Renewed</p>
+                    <p className="text-[7px] font-bold text-emerald-600/60 dark:text-emerald-300/50 uppercase tracking-tighter">Extend Multiplier</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
@@ -319,7 +319,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-2xl font-black text-emerald-950 min-w-[1.5ch] text-center">{itemsRenewed}</span>
+                    <span className="text-2xl font-black text-emerald-950 dark:text-emerald-100 min-w-[1.5ch] text-center">{itemsRenewed}</span>
                     <button 
                       onClick={() => setItemsRenewed(itemsRenewed + 1)}
                       className="w-7 h-7 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center transition-all active:scale-90 shadow-lg shadow-emerald-500/20"
@@ -421,10 +421,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId }: RenewModal
 function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: any, isDark?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-white text-emerald-600 shadow-sm border border-emerald-50'}`}>
+      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-300 shadow-sm border border-emerald-50 dark:border-zinc-700'}`}>
         <Icon className="w-3.5 h-3.5" />
       </div>
-      <h3 className={`text-[9px] font-black uppercase tracking-[2px] ${isDark ? 'text-emerald-400' : 'text-emerald-900/40'}`}>
+      <h3 className={`text-[9px] font-black uppercase tracking-[2px] ${isDark ? 'text-emerald-400' : 'text-emerald-900/40 dark:text-emerald-300/60'}`}>
         {title}
       </h3>
     </div>
@@ -434,11 +434,11 @@ function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, i
 function StaticDetailRow({ label, value }: { label: string, value: string | number | undefined }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5 group">
-      <span className="text-[10px] font-bold text-emerald-900/40 uppercase tracking-tighter whitespace-nowrap shrink-0">
+      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-300/60 uppercase tracking-tighter whitespace-nowrap shrink-0">
         {label}:
       </span>
-      <div className="flex-1 border-b border-emerald-100 border-dashed group-hover:border-emerald-300 transition-colors" />
-      <span className="text-[12px] font-black text-emerald-950 tracking-tight">
+      <div className="flex-1 border-b border-emerald-100 dark:border-zinc-700 border-dashed group-hover:border-emerald-300 transition-colors" />
+      <span className="text-[12px] font-black text-emerald-950 dark:text-emerald-100 tracking-tight">
         {value || "---"}
       </span>
     </div>

@@ -171,9 +171,9 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4 text-zinc-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4 text-zinc-900 dark:text-zinc-100">
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-zinc-800 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-zinc-800 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -197,7 +197,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
 
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className="w-full lg:w-[400px] border-r border-zinc-100 bg-zinc-50 flex flex-col shrink-0">
+          <div className="w-full lg:w-[400px] border-r border-zinc-100 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 flex flex-col shrink-0">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-zinc-400">{searchIcon}</span>
@@ -208,7 +208,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                 <input 
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white border-2 border-zinc-200 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium"
+                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -225,7 +225,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                   <p className="text-[10px] font-bold text-zinc-400 uppercase">Scanning Inventory...</p>
                 </div>
               ) : items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white rounded-2xl border-2 border-dashed border-zinc-200">
+                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white dark:bg-zinc-800 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-700">
                   <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center mb-3 text-zinc-300">
                     {packageIcon(24)}
                   </div>
@@ -242,8 +242,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                     }}
                     className={`w-full p-4 mb-3 rounded-2xl border-2 transition-all flex flex-col gap-2 text-left relative group ${
                       selectedItem?.id === item.id 
-                        ? 'bg-blue-50 border-blue-500' 
-                        : 'bg-white border-transparent hover:border-blue-200 hover:shadow-xl hover:shadow-zinc-200/50'
+                        ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-500' 
+                        : 'bg-white dark:bg-zinc-800 border-transparent hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-xl hover:shadow-zinc-200/50'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -252,7 +252,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                         {item.status}
                       </span>
                     </div>
-                    <h4 className="font-black text-zinc-800 leading-tight pr-8">{item.itemName}</h4>
+                    <h4 className="font-black text-zinc-800 dark:text-zinc-100 leading-tight pr-8">{item.itemName}</h4>
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100">
                       <p className="text-[10px] font-bold text-zinc-400 capitalize">{item.customers?.full_name || 'Unknown'}</p>
                       <p className="font-black text-zinc-900 text-xs">₱ {item.amount.toLocaleString()}</p>
@@ -264,20 +264,20 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
           </div>
 
           {/* Right Side: Details & Repurchase Price */}
-          <div className="flex-1 bg-white overflow-y-auto custom-scrollbar">
+          <div className="flex-1 bg-white dark:bg-zinc-900 overflow-y-auto custom-scrollbar">
             {selectedItem ? (
               <div className="p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
                   <div className="space-y-2">
                     <p className="text-xs font-black text-blue-600 uppercase tracking-[2px]">Expiration Buy Back</p>
-                    <h2 className="text-4xl font-black text-zinc-950 tracking-tighter leading-none">
+                    <h2 className="text-4xl font-black text-zinc-950 dark:text-zinc-100 tracking-tighter leading-none">
                       {selectedItem.itemName}
                     </h2>
                     <p className="text-zinc-500 font-bold flex items-center gap-2">
                       Owner: {selectedItem.customers?.full_name || 'Original Pawner'} • {selectedItem.customers?.contact_number || 'No Contact'}
                     </p>
                   </div>
-                  <div className="bg-red-50 border border-red-100 px-4 py-2 rounded-xl flex items-center gap-3">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 px-4 py-2 rounded-xl flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-600/20">
                       {alertIcon(20)}
                     </div>
@@ -297,13 +297,13 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
                   </DetailSection>
 
                   <DetailSection title="Repurchase Agreement" icon={dollarIcon}>
-                    <div className="p-4 bg-zinc-50 rounded-xl space-y-4">
+                    <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl space-y-4">
                       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Agreed Buy Back Price</p>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-zinc-400">₱</span>
                         <input 
                           type="number"
-                          className="w-full h-14 pl-10 pr-4 bg-white border-2 border-zinc-200 rounded-xl text-2xl font-black text-zinc-900 outline-none focus:border-blue-500 transition-all"
+                          className="w-full h-14 pl-10 pr-4 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-700 rounded-xl text-2xl font-black text-zinc-900 dark:text-zinc-100 outline-none focus:border-blue-500 transition-all"
                           placeholder="0"
                           value={buyBackPrice}
                           onChange={(e) => setBuyBackPrice(e.target.value)}
@@ -372,10 +372,10 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName }: BuyBackM
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-12">
-                <div className="w-24 h-24 rounded-3xl bg-zinc-50 flex items-center justify-center mb-6 text-zinc-200">
+                <div className="w-24 h-24 rounded-3xl bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center mb-6 text-zinc-200">
                   {packageIcon(48)}
                 </div>
-                <h3 className="text-2xl font-black text-zinc-300 uppercase tracking-tight">Select Item to Repurchase</h3>
+                <h3 className="text-2xl font-black text-zinc-300 dark:text-zinc-200 uppercase tracking-tight">Select Item to Repurchase</h3>
                 <p className="text-zinc-400 font-bold max-w-xs mt-2 leading-relaxed italic">
                   &quot;Only items with Expired or For Sale status are eligible for a Buy Back arrangement.&quot;
                 </p>
@@ -397,7 +397,7 @@ function DetailSection({ title, icon, children }: { title: string, icon: React.R
         {icon}
         <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[2px]">{title}</h4>
       </div>
-      <div className="divide-y divide-zinc-50 border-t border-zinc-100">
+      <div className="divide-y divide-zinc-50 dark:divide-zinc-700 border-t border-zinc-100 dark:border-zinc-700">
         {children}
       </div>
     </div>
@@ -407,8 +407,8 @@ function DetailSection({ title, icon, children }: { title: string, icon: React.R
 function DetailRow({ label, value }: { label: string, value: string | number }) {
   return (
     <div className="flex items-center justify-between py-3 px-1">
-      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">{label}</span>
-      <span className="text-xs font-black text-zinc-900">{value}</span>
+      <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-400 uppercase tracking-tighter">{label}</span>
+      <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">{value}</span>
     </div>
   );
 }
