@@ -27,6 +27,8 @@ interface ScannedItemDetails {
   customerIdPresented?: string;
   scanPayload?: string;
   serialNumber?: string;
+  itemPhotos?: string[];
+  item_photos?: string[];
 }
 
 interface ParsedScan {
@@ -146,6 +148,7 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
   const [pendingPhotoBroken, setPendingPhotoBroken] = useState(false);
   const [verifiedPhotoBroken, setVerifiedPhotoBroken] = useState(false);
   const [hasLoadedPersistedState, setHasLoadedPersistedState] = useState(false);
+  const [verifiedItemPhotoIndex, setVerifiedItemPhotoIndex] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -225,7 +228,8 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
 
   useEffect(() => {
     setVerifiedPhotoBroken(false);
-  }, [selectedVerifiedItem?.ownerIdPhoto, selectedVerifiedItem?.originalPhoto]);
+    setVerifiedItemPhotoIndex(0);
+  }, [selectedVerifiedItem?.ownerIdPhoto, selectedVerifiedItem?.originalPhoto, selectedVerifiedItem?.id]);
 
   const clearCameraLoop = useCallback(() => {
     if (controlsRef.current) {
@@ -670,7 +674,7 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
               </div>
             </div>
 
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm custom-scrollbar">
+            <div className="mt-4 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm scrollbar-hide">
               {(pendingItem || detectedScan) && (
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-center justify-between gap-3">
@@ -710,7 +714,7 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
             </div>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col overflow-y-auto bg-white p-4 lg:p-6 custom-scrollbar">
+          <aside className="flex h-full min-h-0 flex-col overflow-y-auto bg-white p-4 lg:p-6 scrollbar-hide">
             <div className="rounded-3xl border border-zinc-100 bg-zinc-50 p-4 shadow-sm lg:p-5">
               <div className="flex items-start justify-between gap-3">
                   <div>
@@ -803,7 +807,7 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
                       {tally?.missingItems?.length ?? 0} not yet scanned
                     </span>
                   </div>
-                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
                     {tally?.missingItems?.length ? (
                       tally.missingItems.map((item) => (
                         <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2">
@@ -921,7 +925,7 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
                 </div>
               </div>
 
-              <div className="flex-1 space-y-2 overflow-y-auto p-4 custom-scrollbar">
+              <div className="flex-1 space-y-2 overflow-y-auto p-4 scrollbar-hide">
                 {scannedItems.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-10 text-center text-zinc-400">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
@@ -994,14 +998,19 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
           </aside>
         </div>
 
-        {selectedVerifiedItem && (
+        {selectedVerifiedItem && (() => {
+          const itemPhotos = Array.from(new Set([
+            ...(selectedVerifiedItem.itemPhotos ?? selectedVerifiedItem.item_photos ?? []),
+          ].filter((photo): photo is string => Boolean(photo))));
+
+          return (
           <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 py-4 backdrop-blur-xl">
-            <div className="relative w-full max-w-2xl rounded-[1.75rem] border border-white/10 bg-surface p-5 shadow-2xl lg:p-6">
+            <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide rounded-[1.75rem] border border-white/10 bg-surface p-5 shadow-2xl lg:p-6">
               <button
                 type="button"
                 aria-label="Close item details"
                 onClick={() => setSelectedVerifiedItem(null)}
-                className="absolute right-4 top-4 rounded-full border border-zinc-200 bg-white p-2 text-zinc-600 transition-all hover:bg-zinc-50 hover:text-zinc-900"
+                className="absolute right-4 top-4 rounded-full border border-zinc-200 bg-white p-2 text-zinc-600 transition-all hover:bg-zinc-50 hover:text-zinc-900 z-10"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -1015,67 +1024,38 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
                 <p className="mt-1 text-sm font-semibold text-zinc-500">{selectedVerifiedItem.itemName}</p>
               </div>
 
-              <div className="mt-5 grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
-                <div className="rounded-3xl border border-zinc-100 bg-zinc-50 p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
-                      {((selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto) && !verifiedPhotoBroken) ? (
-                        <Image
-                          src={selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto || ""}
-                          alt={selectedVerifiedItem.customerName || selectedVerifiedItem.itemName}
-                          width={80}
-                          height={112}
-                          unoptimized
-                          className="h-full w-full rounded-xl object-cover object-center"
-                          onError={() => setVerifiedPhotoBroken(true)}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-zinc-300">
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
-                        </div>
-                      )}
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col">
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Owner / Customer</p>
+                    <h4 className="mt-1 break-words text-lg font-black text-zinc-900">{selectedVerifiedItem.customerName || "Unknown owner"}</h4>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl bg-zinc-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">ID Type</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900 uppercase">{selectedVerifiedItem.customerIdPresented || "None"}</p>
                     </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Owner / Customer</p>
-                      <h4 className="mt-1 break-words text-lg font-black text-zinc-900">{selectedVerifiedItem.customerName || "Unknown owner"}</h4>
-                      <div className="mt-3 space-y-2">
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">ID Type:</p>
-                          <p className="mt-0.5 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-600">
-                            {selectedVerifiedItem.customerIdPresented || "ID not captured"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Address:</p>
-                          <p className="mt-0.5 text-xs leading-5 text-zinc-600">
-                            {selectedVerifiedItem.customerAddress || "Customer address unavailable."}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Contact Number:</p>
-                          <p className="mt-0.5 text-xs font-semibold text-zinc-600">
-                            {selectedVerifiedItem.customerContact || "No contact number"}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="rounded-2xl bg-zinc-50 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Contact Number</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.customerContact || "—"}</p>
                     </div>
+                  </div>
+                  <div className="flex-1 rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Address</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900 leading-relaxed">{selectedVerifiedItem.customerAddress || "No address on file."}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm">
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Amount</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900">{formatCurrency(selectedVerifiedItem.amount)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-zinc-50 p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Serial</p>
+                    <p className="mt-2 break-words text-sm font-black text-zinc-900">{selectedVerifiedItem.serialNumber || detectedScan?.serialNumber || "N/A"}</p>
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-zinc-50 p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Amount</p>
-                      <p className="mt-2 text-sm font-black text-zinc-900">{formatCurrency(selectedVerifiedItem.amount)}</p>
-                    </div>
-                    <div className="rounded-2xl bg-zinc-50 p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Serial</p>
-                      <p className="mt-2 break-words text-sm font-black text-zinc-900">{selectedVerifiedItem.serialNumber || detectedScan?.serialNumber || "N/A"}</p>
-                    </div>
                     <div className="rounded-2xl bg-zinc-50 p-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Branch</p>
                       <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.branch || "N/A"}</p>
@@ -1092,9 +1072,112 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
                   </div>
                 </div>
               </div>
+
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col">
+                  <div className="flex-1 flex flex-col justify-center w-full">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400 mb-4 text-center">Customer Image</p>
+                    <div className="relative aspect-square w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
+                      {((selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto) && !verifiedPhotoBroken) ? (
+                        <Image
+                          src={selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto || ""}
+                          alt={selectedVerifiedItem.customerName || selectedVerifiedItem.itemName}
+                          fill
+                          unoptimized
+                          className="object-cover object-center"
+                          onError={() => setVerifiedPhotoBroken(true)}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center text-zinc-300 gap-2">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider">No Image</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col">
+                  <div className="flex-1 flex flex-col justify-center w-full">
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400 mb-4 text-center">Item Visuals</p>
+                    <div className="relative aspect-square w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
+                      {itemPhotos.length > 0 ? (
+                        <>
+                          <div
+                            className="flex h-full w-full transition-transform duration-500 ease-out"
+                            style={{ transform: `translateX(-${verifiedItemPhotoIndex * 100}%)` }}
+                          >
+                            {itemPhotos.map((photo, index) => (
+                              <div key={index} className="relative h-full w-full shrink-0">
+                                <Image
+                                  src={photo}
+                                  alt={`${selectedVerifiedItem.itemName} photo ${index + 1}`}
+                                  fill
+                                  unoptimized
+                                  className="object-cover object-center"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {itemPhotos.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVerifiedItemPhotoIndex((prev) => (prev - 1 + itemPhotos.length) % itemPhotos.length);
+                                }}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-2 py-1 text-sm font-black text-white backdrop-blur transition hover:bg-black/60"
+                              >
+                                ‹
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVerifiedItemPhotoIndex((prev) => (prev + 1) % itemPhotos.length);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-2 py-1 text-sm font-black text-white backdrop-blur transition hover:bg-black/60"
+                              >
+                                ›
+                              </button>
+                              <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1.5">
+                                {itemPhotos.map((_, index) => (
+                                  <button
+                                    key={index}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setVerifiedItemPhotoIndex(index);
+                                    }}
+                                    className={`h-1.5 rounded-full transition-all ${index === verifiedItemPhotoIndex ? "w-4 bg-white" : "w-1.5 bg-white/50"}`}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center text-zinc-300 gap-2">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider">No Visuals</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {rejectedScanItem && (
           <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 px-4 py-4 backdrop-blur-xl">
