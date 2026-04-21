@@ -690,10 +690,10 @@ export default function AdminBranchFinancePage() {
                     <tr className="border-b-2 border-black bg-gray-50 uppercase">
                       <td colSpan={4} className="p-2 font-bold text-right">Total:</td>
                       <td className="p-2 text-right font-bold font-mono">
-                        ₱{unifiedRows.reduce((acc, r) => acc + (r.cashIn || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₱{unifiedRows.reduce((acc, r) => acc + (r.source === "transaction" ? (r.cashIn || 0) : 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td className="p-2 text-right font-bold font-mono text-red-600">
-                        ₱{unifiedRows.reduce((acc, r) => acc + (r.cashOut || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₱{unifiedRows.reduce((acc, r) => acc + (r.source === "transaction" ? (r.cashOut || 0) : 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                       <td></td>
                     </tr>
