@@ -140,7 +140,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
         unit_code: selectedItem.unitCode,
         pawn_amount: Number(selectedItem.amount),
         storage_fee: interestCalc.interestAmount,
-        details: `Redeemed by ${selectedItem.name} | Days: ${interestCalc.daysPassed}`,
+        details: `Redeemed by ${selectedItem.name} | Days: ${interestCalc.daysPassed} | Processed by: ${adminForm.processedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id
       });
 
@@ -160,20 +160,21 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/80 backdrop-blur-sm p-4 text-zinc-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0">
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
               <Undo2 className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-emerald-950 uppercase tracking-tight">Redeem Pawn Ticket</h2>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{branchName} | Active Pawn</p>
+              <h1 className="text-xl font-black text-emerald-950 uppercase tracking-tight leading-none">Redeem Pawn Ticket</h1>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{branchName} | Active Pawn</p>
             </div>
           </div>
           <button 

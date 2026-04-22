@@ -636,7 +636,7 @@ export function NewPawnModal({
           pawnAmount: amountValue,
           storageFee: storageAmount,
           returnAmount: 0,
-          details: [form.itemsIncluded.trim(), form.idPresented].filter(Boolean).join(' | '),
+          details: [form.itemsIncluded.trim(), form.idPresented, `Processed by: ${loggedInUserName || 'Employee'}`].filter(Boolean).join(' | '),
         },
       });
 
@@ -681,71 +681,12 @@ export function NewPawnModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30">
-          <div className="max-w-5xl mx-auto space-y-8">
-            
-            {/* QR Code Generator Section */}
-            <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm border border-emerald-100">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-black text-emerald-900 uppercase tracking-tight">QR Code Generator</h3>
-                  {errorMessage && errorMessage.includes("before generating QR") ? (
-                    <p className="text-[11px] font-bold text-red-500 animate-pulse">{errorMessage}</p>
-                  ) : (
-                    <p className="text-xs font-medium text-emerald-700/70">Generate a unique QR code for this pawn item using Unit Code, Serial No., and Barcode ID.</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
-                {/* Generated QR Preview */}
-                {qrUrl && (
-                  <div className="flex flex-col items-center gap-2">
-                    <Image
-                      src={qrUrl}
-                      alt="Generated QR Code"
-                      width={100}
-                      height={100}
-                      unoptimized
-                      className="rounded-xl border-2 border-emerald-200 shadow-md bg-white p-1 animate-in fade-in zoom-in duration-300"
-                      onError={() => setQrUrl(null)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQrUrl(null)}
-                      className="text-[10px] font-bold text-red-500 underline hover:text-red-700 transition-colors"
-                    >
-                      Reset QR
-                    </button>
-                  </div>
-                )}
-
-                {!qrUrl && (
-                  <button
-                    type="button"
-                    onClick={handleGenerateQR}
-                    disabled={isGeneratingQR}
-                    className="w-full sm:w-auto rounded-xl bg-emerald-700 px-8 py-4 text-sm font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 active:scale-95 transition-all uppercase tracking-wider disabled:opacity-60 flex items-center gap-2"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-                      <path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" />
-                    </svg>
-                    {isGeneratingQR ? "Generating..." : "Generate QR Code"}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/30">
+          <div className="max-w-6xl mx-auto space-y-4">
+            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Customer Information */}
-              <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -909,7 +850,7 @@ export function NewPawnModal({
                         value={form.idPresented}
                         onChange={handleChange}
                         disabled={Boolean(selectedCustomerId)}
-                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100"
+                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100 [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                       >
                         <option value="">— Select ID Type —</option>
                         <optgroup label="Government IDs">
@@ -986,8 +927,8 @@ export function NewPawnModal({
               </div>
 
               {/* Unit Information */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                   </div>
@@ -1017,17 +958,19 @@ export function NewPawnModal({
                         {form.itemPhotos.length} photo{form.itemPhotos.length === 1 ? "" : "s"}
                       </span>
                     </div>
-                    <div className="space-y-4">
-                      <PhotoUpload
-                        label="Capture Item Photo"
-                        frameClassName="aspect-[16/9]"
-                        allowMultipleCapture
-                        onCapture={handleAddItemPhoto}
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-1 h-full">
+                        <PhotoUpload
+                          label="Capture Item Photo"
+                          frameClassName="h-32 sm:h-full min-h-[8rem] w-full"
+                          allowMultipleCapture
+                          onCapture={handleAddItemPhoto}
+                        />
+                      </div>
 
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-3">
+                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-zinc-200 bg-white p-3 flex flex-col">
                         {form.itemPhotos.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                             {form.itemPhotos.map((photo, index) => (
                               <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-sm">
                                 <Image
@@ -1052,7 +995,7 @@ export function NewPawnModal({
                             ))}
                           </div>
                         ) : (
-                          <div className="flex h-full min-h-[10rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center text-xs font-medium text-zinc-400">
+                          <div className="flex flex-1 h-full min-h-[8rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center text-xs font-medium text-zinc-400">
                             No item photos captured yet.
                           </div>
                         )}
@@ -1066,7 +1009,7 @@ export function NewPawnModal({
                       name="category"
                       value={form.category}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                     >
                       <option value="">— Select Category —</option>
                       <option value="Smartphone">Smartphone</option>
@@ -1103,7 +1046,7 @@ export function NewPawnModal({
                         name="condition"
                         value={form.condition}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
+                        className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                       >
                         <option value="">Select Condition</option>
                         <option value="New">New</option>
@@ -1184,26 +1127,63 @@ export function NewPawnModal({
           </div>
           
           <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-4 sm:pt-0">
-             <div className="text-right">
+             <div className="text-right hidden sm:block">
                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
-                <p className="text-2xl font-black text-emerald-900 tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
+                <p className="text-xl font-black text-emerald-900 tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
              </div>
              
-             {qrUrl && (
+             {qrUrl ? (
+               <div className="flex items-center gap-4">
+                 <div className="relative group shrink-0">
+                   <Image 
+                     src={qrUrl} 
+                     alt="QR Preview" 
+                     width={44} 
+                     height={44} 
+                     unoptimized
+                     className="rounded-lg shadow-sm border border-emerald-200 bg-white p-0.5" 
+                   />
+                   <button 
+                     onClick={() => setQrUrl(null)} 
+                     className="absolute -top-1.5 -right-1.5 bg-zinc-900 hover:bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-colors"
+                   >
+                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                   </button>
+                 </div>
+                 <button
+                   type="button"
+                   onClick={handleGenerateTicket}
+                   disabled={isSaving}
+                   className="bg-emerald-700 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-white font-black px-6 py-3 rounded-xl shadow-lg shadow-emerald-700/20 transition-all active:scale-[0.98] uppercase tracking-tight flex items-center gap-2"
+                 >
+                   {isSaving ? 'Processing...' : 'Generate Ticket'}
+                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                 </button>
+               </div>
+             ) : (
                <button
                  type="button"
-                 onClick={handleGenerateTicket}
-                 disabled={isSaving}
-                 className="bg-emerald-700 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-white font-black px-8 py-4 rounded-xl shadow-xl shadow-emerald-700/20 transition-all active:scale-[0.98] text-lg uppercase tracking-tight flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                 onClick={handleGenerateQR}
+                 disabled={isGeneratingQR}
+                 className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 font-black px-6 py-3 rounded-xl transition-all active:scale-[0.98] uppercase tracking-tight flex items-center gap-2 relative shadow-sm"
                >
-                 {isSaving ? 'Processing...' : 'Generate Ticket'}
-                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
+                 {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
+                 {errorMessage && errorMessage.includes("before generating QR") && (
+                   <span className="absolute -top-2 -right-2 flex h-3 w-3">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                   </span>
+                 )}
                </button>
              )}
           </div>
           {errorMessage && (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {errorMessage}
+            <div className="absolute top-4 right-6 left-6 z-50 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+              <p>{errorMessage}</p>
+              <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700 p-1">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
           )}
         </div>
@@ -1219,7 +1199,8 @@ export function NewPawnModal({
           idPresented: form.idPresented || "",
           branchName: branchName || "Pasig branch",
           branchAddress: branchAddress || "",
-          branchPhone: branchPhone || ""
+          branchPhone: branchPhone || "",
+          processedBy: loggedInUserName || branchAdminName || "AUTHORIZED PERSONNEL"
         }}
         isLoading={isSaving}
       />
@@ -1253,7 +1234,7 @@ function Input({
   return (
     <div className="space-y-1.5 w-full">
       {label && <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{label}</label>}
-      <div className={`relative flex items-center rounded-xl border border-zinc-200 ${bg} focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100' : ''}`}>
+      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 ${bg} focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100' : ''}`}>
         {prefix && <span className="pl-4 text-zinc-400 font-bold">{prefix}</span>}
         <input
           name={name}
@@ -1262,7 +1243,7 @@ function Input({
           placeholder={placeholder}
           type={type}
           readOnly={readOnly}
-          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-sm font-bold text-zinc-900 outline-none placeholder:text-zinc-300 ${readOnly ? 'cursor-not-allowed select-none' : ''}`}
+          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-sm font-bold text-zinc-900 outline-none placeholder:text-zinc-300 ${readOnly ? 'cursor-not-allowed select-none' : ''} [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
         />
       </div>
     </div>

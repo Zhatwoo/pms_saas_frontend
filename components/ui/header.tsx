@@ -222,21 +222,32 @@ export function Header({
 
   const fetchNotifications = useCallback(async () => {
     try {
-      // NOTE: If using an endpoint that filters by branch, change this.
-      // But it looks like /notifications returns global or scoped to token.
       const data = await api.get<any[]>("/notifications");
       if (data && Array.isArray(data)) {
         const now = new Date();
         const today = now.toISOString().split("T")[0];
+        
+        let readIds: string[] = [];
+        const readStorageKey = user ? `pms_read_notifs_${user.id}` : null;
+        if (readStorageKey) {
+          try {
+            readIds = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
+          } catch {}
+        }
 
         const mapped: HeaderNotification[] = data.map((item) => {
           const itemDate = new Date(item.created_at).toISOString().split("T")[0];
+          let isUnread = !item.is_read;
+          if (readIds.includes(item.id)) {
+            isUnread = false;
+          }
+
           return {
             id: item.id,
             title: item.title,
             subtitle: item.subtitle,
             category: item.category as any,
-            unread: !item.is_read,
+            unread: isUnread,
             group: itemDate === today ? "Today" : "Earlier",
           };
         });
@@ -245,7 +256,7 @@ export function Header({
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
     }
-  }, []);
+  }, [user]);
 
   const fetchNotificationsRef = useRef(fetchNotifications);
   useEffect(() => {
@@ -379,23 +390,33 @@ export function Header({
   );
 
   const markAllAsRead = async () => {
-    try {
-      await api.patch("/notifications/read-all", {});
-      setNotifications((prev) => prev.map((item) => ({ ...item, unread: false })));
-    } catch (err) {
-      console.error("Failed to mark all as read:", err);
-    }
+    if (!user) return;
+    const readStorageKey = `pms_read_notifs_${user.id}`;
+    
+    setNotifications((prev) => {
+      const allIds = prev.map((n) => n.id);
+      try {
+        const existing = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
+        const merged = Array.from(new Set([...existing, ...allIds]));
+        localStorage.setItem(readStorageKey, JSON.stringify(merged));
+      } catch {}
+      return prev.map((item) => ({ ...item, unread: false }));
+    });
   };
 
   const markOneAsRead = async (id: string) => {
+    if (!user) return;
+    const readStorageKey = `pms_read_notifs_${user.id}`;
+    
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
+    );
+    
     try {
-      await api.patch(`/notifications/${id}/read`, {});
-      setNotifications((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
-      );
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
-    }
+      const existing = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
+      const merged = Array.from(new Set([...existing, id]));
+      localStorage.setItem(readStorageKey, JSON.stringify(merged));
+    } catch {}
   };
 
   const handleViewAllNotifications = () => {

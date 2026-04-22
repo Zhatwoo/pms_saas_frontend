@@ -59,24 +59,9 @@ export default function EmployeeSettingsPage() {
 
   const handleDiscard = () => {
     setFullName(user?.fullName || "");
+    setEmail(user?.email || "");
     setToast(null);
   };
-
-  const handleDiscard = () => {
-    if (user) {
-      setFullName(user.fullName || "");
-      setEmail(user.email || "");
-    }
-  };
-
-  const initials = fullName
-    ? fullName
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2)
-    : "EM";
 
 
 

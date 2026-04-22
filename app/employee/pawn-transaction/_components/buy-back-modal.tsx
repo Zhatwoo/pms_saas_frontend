@@ -153,7 +153,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
         unit: selectedItem.itemName,
         unit_code: selectedItem.itemId,
         pawn_amount: selectedItem.amount,
-        details: `Repurchased by ${selectedItem.customers?.full_name || 'Original Owner'} | Status before sale: ${selectedItem.status}`,
+        details: `Repurchased by ${selectedItem.customers?.full_name || 'Original Owner'} | Status before sale: ${selectedItem.status} | Processed by: ${adminForm.processedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id
       });
 
@@ -173,25 +173,26 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm p-4 text-zinc-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-zinc-800 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-zinc-900 px-6 py-4 border-b border-zinc-800 shrink-0">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
               {tagIcon}
             </div>
             <div>
-              <h2 className="text-xl font-black uppercase tracking-tight">Buy Back / Repurchase</h2>
-              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{branchName} | Expired Inventory</p>
+              <h1 className="text-xl font-black text-emerald-950 uppercase tracking-tight leading-none">Buy Back / Repurchase</h1>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{branchName} | Expired Inventory</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white"
+            className="p-2 hover:bg-emerald-50 rounded-full transition-colors text-emerald-900/40 hover:text-emerald-900"
           >
             {closeIcon}
           </button>
@@ -199,11 +200,11 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className="w-full lg:w-[400px] border-r border-zinc-100 bg-zinc-50 flex flex-col shrink-0">
+          <div className="w-full lg:w-[400px] border-r border-emerald-50 bg-slate-50/30 flex flex-col shrink-0">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-zinc-400">{searchIcon}</span>
-                <h3 className="text-xs font-black text-zinc-500 uppercase tracking-wider">Search Expired Item</h3>
+                <span className="text-emerald-600/40">{searchIcon}</span>
+                <h3 className="text-xs font-black text-emerald-900/40 uppercase tracking-wider">Search Expired Item</h3>
               </div>
               
               <div className="relative group">
@@ -322,18 +323,28 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 <div className="p-8 rounded-3xl bg-zinc-900 text-white relative overflow-hidden">
                   <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
                     <div className="flex-1 space-y-8">
-                      <div className="flex items-center gap-2 text-blue-500">
+                      <div className="flex items-center gap-2 text-emerald-500">
                         {shieldIcon}
                         <h4 className="text-xl font-black uppercase text-white">Authorize Repurchase</h4>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Admin Password</label>
+                          <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-1">Processed By</label>
+                          <input 
+                            type="text"
+                            placeholder="Admin Name"
+                            className="w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium"
+                            value={adminForm.processedBy}
+                            onChange={(e) => setAdminForm({...adminForm, processedBy: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-1">Admin Password</label>
                           <input 
                             type="password"
                             placeholder="••••••••"
-                            className="w-full h-12 px-4 bg-zinc-800 border-2 border-zinc-700 rounded-xl outline-none focus:border-blue-500 transition-all text-sm font-medium"
+                            className="w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium"
                             value={adminForm.password}
                             onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
                           />
@@ -359,7 +370,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                       <button
                         onClick={handleConfirmBuyBack}
                         disabled={isConfirming}
-                        className="w-full h-14 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                        className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                       >
                         {isConfirming ? "Processing..." : (
                           <>

@@ -170,7 +170,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
         unit_code: selectedItem.unitCode,
         pawn_amount: isReappraiseActive ? newPrincipal : selectedItem.amount,
         storage_fee: interestCalc.interestAmount,
-        details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? `New Principal: ₱${newPrincipal}` : ''}`,
+        details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? `New Principal: ₱${newPrincipal}` : ''} | Processed by: ${adminForm.approvedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id
       });
 
@@ -193,19 +193,20 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/90 backdrop-blur-md p-4 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-7xl h-[85vh] overflow-hidden rounded-[2.5rem] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col border border-white/20">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
         
         {/* Top Floating Header */}
-        <div className="flex items-center justify-between px-8 py-5 bg-white/80 backdrop-blur-md border-b border-emerald-100 shrink-0">
-          <div className="space-y-0.5">
-            <h2 className="text-2xl font-black text-emerald-950 uppercase tracking-tight flex items-center gap-3">
-              <span className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-xl shadow-emerald-500/20">
-                <RotateCcw className="w-6 h-6" />
-              </span>
-              Renew Transaction
-            </h2>
-            <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-[4px] ml-14">{branchName} Branch</p>
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-emerald-950 uppercase tracking-tight leading-none">Renew Transaction</h1>
+              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1">{branchName} Branch</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -231,9 +232,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
             </div>
             <button 
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-50 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition-all"
+              className="p-2 hover:bg-emerald-50 rounded-full transition-colors text-emerald-900/40 hover:text-emerald-900"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
         </div>

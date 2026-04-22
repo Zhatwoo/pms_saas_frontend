@@ -29,6 +29,7 @@ interface MoaModalProps {
     branchName: string;
     branchAddress?: string;
     branchPhone?: string;
+    processedBy?: string;
   };
   isLoading: boolean;
 }
@@ -282,7 +283,11 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
              </div>
              <div className="text-center space-y-2">
                 <p className="font-black uppercase text-[9px] text-emerald-900 tracking-widest mb-4">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</p>
-                <div className="h-8 border-b-2 border-zinc-800"></div>
+                <div className="h-8 border-b-2 border-zinc-800 flex items-end justify-center pb-0.5">
+                   {data.processedBy && (
+                     <span className="font-bold text-[11px] uppercase tracking-wider text-zinc-900">{data.processedBy}</span>
+                   )}
+                </div>
                 <p className="font-black uppercase text-[8px] tracking-widest">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
              </div>
           </div>

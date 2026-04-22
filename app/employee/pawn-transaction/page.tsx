@@ -67,6 +67,7 @@ interface TransactionRow {
   remarks?: string;
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
+  details?: string;
 }
 
 interface ApiTransaction {
@@ -146,6 +147,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     remarks: (transaction as any).pawned_item?.remarks,
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
+    details: transaction.details ?? undefined,
   };
 }
 
@@ -352,10 +354,11 @@ export default function EmployeePawnTransactionsPage() {
       idPresented: "---",
       branchName: selectedBranch.name,
       branchAddress: branchInfo?.location || "",
-      branchPhone: branchInfo?.phone || ""
+      branchPhone: branchInfo?.phone || "",
+      processedBy: tx.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() || user?.fullName || branchAdminName || "AUTHORIZED PERSONNEL"
     });
     setIsMoaReprintOpen(true);
-  }, [allTransactions]);
+  }, [allTransactions, selectedBranch, branches, user]);
 
   const handleTransactionSuccess = useCallback(() => {
     void fetchTransactionsRef.current();
