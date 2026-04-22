@@ -241,19 +241,12 @@ export default function EmployeePawnedItemsPage() {
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.category}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right">₱{(item.amount || 0).toLocaleString()}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary">
-                      <tr className={`border-t border-zinc-100 ${idx % 2 === 0 ? "bg-white" : "bg-zinc-50"} hover:bg-emerald-50/30 transition-colors`}>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-700 font-medium">{item.itemName}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-zinc-500">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-zinc-800 text-right">₱{(item.amount || 0).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-zinc-500">
                           <div className="font-bold">{item.pawnDate}</div>
-                          <div className="opacity-50">10:30 AM</div> {/* Real time would come from API */}
+                          <div className="opacity-50">10:30 AM</div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${item.renewalCount > 0 ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            }`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${item.renewalCount > 0 ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
                             {getRenewalLabel(item.renewalCount)}
                           </span>
                         </td>
