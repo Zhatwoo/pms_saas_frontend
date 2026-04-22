@@ -13,7 +13,26 @@ export default function EmployeeSettingsPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordRequests, setPasswordRequests] = useState<any[]>([]);
+  const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
+  
   const branchName = selectedBranch?.name || "Bgc Branch";
+  const initials = fullName
+    ? fullName
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "E";
 
   useEffect(() => {
     if (user) {
@@ -37,6 +56,11 @@ export default function EmployeeSettingsPage() {
       setIsSaving(false);
     }
   }
+
+  const handleDiscard = () => {
+    setFullName(user?.fullName || "");
+    setToast(null);
+  };
 
   const handleDiscard = () => {
     if (user) {

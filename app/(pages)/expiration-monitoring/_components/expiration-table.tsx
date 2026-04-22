@@ -76,9 +76,20 @@ const sendIcon = (
 interface ExpirationTableProps {
   data?: ExpirationItemRow[];
   isLoading?: boolean;
+  onSendEmail?: (id: string) => void;
+  sendingItemId?: string | null;
+  onRenew?: (id: string) => void;
+  renewingItemId?: string | null;
 }
 
-export function ExpirationTable({ data = [], isLoading }: ExpirationTableProps) {
+export function ExpirationTable({
+  data = [],
+  isLoading,
+  onSendEmail,
+  sendingItemId,
+  onRenew,
+  renewingItemId,
+}: ExpirationTableProps) {
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
@@ -122,14 +133,29 @@ export function ExpirationTable({ data = [], isLoading }: ExpirationTableProps) 
         if (key === "actions") {
           return (
             <div className="flex items-center justify-center gap-2">
-              <button className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90">
-                Renew
+              <button
+                type="button"
+                onClick={() => onRenew?.(row.id)}
+                disabled={renewingItemId === row.id}
+                className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {renewingItemId === row.id ? "Renewing..." : "Renew"}
               </button>
               <button
+                type="button"
+                onClick={() => onSendEmail?.(row.id)}
+                disabled={sendingItemId === row.id}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
                 title={`Send email to ${row.customer}`}
               >
-                {sendIcon}
+                {sendingItemId === row.id ? (
+                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  sendIcon
+                )}
               </button>
             </div>
           );
