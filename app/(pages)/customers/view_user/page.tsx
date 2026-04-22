@@ -1,12 +1,13 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
-import { ViewCustomerModal } from "./_components/view-customer-modal";
-import { EditCustomerModal } from "./_components/edit-customer-modal";
-import type { CustomerDetail, ActivityEntry, Transaction, Reward, Deadline } from "./_components/types";
+import { ViewCustomerModal, resolveCustomerPrimaryVisual } from "@/components/shared/customer-profile-modal";
+import { useAuth } from "@/contexts/auth-context";
+import type { CustomerDetail, ActivityEntry, Transaction } from "./_components/types";
 import { api } from "@/lib/api";
 
 /* ──────────────────────────── Types ──────────────────────────── */
@@ -20,7 +21,17 @@ interface BackendCustomer {
   email: string;
   contact_number: string;
   id_presented: string;
+  branch_id?: string | null;
+  branch_name?: string | null;
+  profile_photo_url: string | null;
+  id_front_photo_url: string | null;
+  id_back_photo_url: string | null;
   created_at: string;
+}
+
+interface BranchOption {
+  id: string;
+  name: string;
 }
 
 interface ApiTransaction {
@@ -561,10 +572,13 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
+  const initialAction = searchParams.get("mode");
   const initialCustomer = mockCustomers[customerId] ?? null;
   const [customer, setCustomer] = useState<CustomerDetail | null>(initialCustomer);
   const [isLoading, setIsLoading] = useState(Boolean(customerId && !initialCustomer));
+  const [refreshToken, setRefreshToken] = useState(0);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
@@ -589,10 +603,16 @@ function EmployeeCustomerDetailContent() {
           api.get<BackendCustomer | null>(`/customers/${customerId}`),
           api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}&range=all`),
         ]);
+        const branchesResponse = await api.get<BranchOption[] | BranchOption>("/branches");
+        const branches = Array.isArray(branchesResponse) ? branchesResponse : [branchesResponse];
 
         if (customerData) {
           const transactions = (transactionData?.transactions || []).map(mapTransaction);
           const detailedTransactions = (transactionData?.transactions || []).map(mapTransactionRecord);
+          const customerBranchName =
+            customerData.branch_name ||
+            branches.find((branch) => branch.id === customerData.branch_id)?.name ||
+            "Current Branch";
           setCustomer({
             id: customerData.id,
             firstName: customerData.full_name?.split(" ")[0] || "",
@@ -608,15 +628,15 @@ function EmployeeCustomerDetailContent() {
             phone: customerData.contact_number || "N/A",
             idType: customerData.id_presented || "N/A",
             idNumber: customerData.id_presented || "N/A",
-            profilePhoto: null,
-            idFrontPhoto: null,
-            idBackPhoto: null,
+            profilePhoto: customerData.profile_photo_url,
+            idFrontPhoto: customerData.id_front_photo_url,
+            idBackPhoto: customerData.id_back_photo_url,
             createdAt: new Date(customerData.created_at).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
               year: "numeric"
             }),
-            branch: "Current Branch", 
+            branch: customerBranchName,
             totalItemsPawned: transactions.length,
             activePawned: transactions.filter((transaction) => transaction.status === "Active").length,
             totalLoanValue: transactions.reduce((sum, transaction) => sum + transaction.amount, 0),
@@ -649,13 +669,19 @@ function EmployeeCustomerDetailContent() {
       }
     }
     fetchCustomer();
-  }, [customerId]);
+  }, [customerId, refreshToken]);
 
   useEffect(() => {
     if (customer) {
       setActivityLog(customer.activityLog);
     }
   }, [customer]);
+
+  useEffect(() => {
+    if (customer && initialAction) {
+      setIsViewOpen(true);
+    }
+  }, [customer, initialAction]);
 
   useEffect(() => {
     setIsViewOpen(false);
@@ -686,7 +712,7 @@ function EmployeeCustomerDetailContent() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
         <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+          <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
           Loading customer details...
         </div>
       </div>
@@ -713,6 +739,7 @@ function EmployeeCustomerDetailContent() {
 
   const loyaltyPercent = Math.round((customer.loyaltyPoints / customer.loyaltyMax) * 100);
   const pointsToReward = customer.loyaltyMax - customer.loyaltyPoints;
+  const primaryVisual = resolveCustomerPrimaryVisual(customer);
 
   return (
     <div className="space-y-5">
@@ -750,9 +777,9 @@ function EmployeeCustomerDetailContent() {
                 className="flex items-center gap-4 text-left transition-opacity hover:opacity-80"
               >
                 <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm">
-                  {customer.profilePhoto ? (
+                  {primaryVisual ? (
                     <img
-                      src={customer.profilePhoto}
+                      src={primaryVisual}
                       alt={`${customer.name} profile`}
                       className="h-full w-full object-cover"
                     />
@@ -967,9 +994,15 @@ function EmployeeCustomerDetailContent() {
         </div>
       </div>
 
-      {/* View Modal only — employees cannot edit */}
+      {/* View Modal */}
       {isViewOpen && (
-        <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
+        <ViewCustomerModal
+          customer={customer}
+          onClose={() => setIsViewOpen(false)}
+          userRole={user?.role}
+          initialAction={initialAction === "edit" || initialAction === "request" ? initialAction : null}
+          onCustomerRefresh={() => setRefreshToken((value) => value + 1)}
+        />
       )}
 
       {viewingTransaction && (
@@ -1079,8 +1112,11 @@ export default function EmployeeCustomerDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
-          Loading customer details…
+        <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
+          <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
+            <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+            Loading customer details…
+          </div>
         </div>
       }
     >

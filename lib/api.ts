@@ -252,3 +252,16 @@ class ApiClient {
 }
 
 export const api = new ApiClient();
+
+export function updateCustomer(
+  id: string,
+  data: Record<string, unknown>,
+) {
+  return api.put(`/customers/${encodeURIComponent(id)}`, data);
+}
+
+export function requestCustomerEdit(id: string, notes: string) {
+  return api.post(`/customers/${encodeURIComponent(id)}/request-edit`, {
+    notes,
+  });
+}
