@@ -20,7 +20,7 @@ interface CustomerLookupRecord {
   address: string | null;
   barangay: string | null;
   city: string | null;
-  province: string | null;
+  region: string | null;
   id_presented: string | null;
 }
 
@@ -80,7 +80,7 @@ function createEmptyForm() {
     address: "",
     barangay: "",
     city: "",
-    province: "",
+    region: "",
     contactNo: "",
     email: "",
     idPresented: "",
@@ -341,7 +341,7 @@ export function NewPawnModal({
       address: customer.address ?? "",
       barangay: customer.barangay ?? "",
       city: customer.city ?? "",
-      province: customer.province ?? "",
+      region: customer.region ?? "",
       contactNo: customer.contact_number ?? "",
       email: customer.email ?? "",
       idPresented: customer.id_presented ?? "",
@@ -612,7 +612,7 @@ export function NewPawnModal({
           address: form.address.trim(),
           barangay: form.barangay.trim(),
           city: form.city.trim(),
-          province: form.province.trim(),
+          region: form.region.trim(),
           contactNumber: form.contactNo.trim(),
           email: form.email.trim(),
           idPresented: form.idPresented,
@@ -850,7 +850,7 @@ export function NewPawnModal({
                         address: form.address,
                         barangay: form.barangay,
                         city: form.city,
-                        province: form.province,
+                        region: form.region,
                       }}
                       disabled={Boolean(selectedCustomerId)}
                       onFieldChange={(field, nextValue) => {

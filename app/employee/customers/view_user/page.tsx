@@ -562,7 +562,6 @@ function EmployeeCustomerDetailContent() {
         const totalLoanValue = records.reduce((sum, tx) => sum + tx.amount, 0);
 
         const parsedName = splitName(customerRecord.full_name || "");
-        const parsedAddress = splitAddress(customerRecord.address);
         const defaultActivity: ActivityEntry[] = [
           {
             title: "Customer profile loaded",
@@ -580,10 +579,10 @@ function EmployeeCustomerDetailContent() {
           middleName: parsedName.middleName,
           lastName: parsedName.lastName,
           name: customerRecord.full_name || "Unnamed Customer",
-          street: parsedAddress.street,
-          barangay: parsedAddress.barangay,
-          city: parsedAddress.city,
-          province: parsedAddress.province,
+          street: customerRecord.address || "-",
+          barangay: (customerRecord as any).barangay || "-",
+          city: (customerRecord as any).city || "-",
+          region: (customerRecord as any).region || "-",
           address: customerRecord.address || "-",
           email: customerRecord.email || "-",
           phone: customerRecord.contact_number || "-",

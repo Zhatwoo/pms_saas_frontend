@@ -372,6 +372,7 @@ export function Header({
   }, [isNotificationOpen]);
 
   const title = getPageTitle(pathname || "");
+  const isCustomerDetailPage = (pathname || "").includes("view_user");
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badgeCount = Math.max(notificationCount, unreadCount);
 
@@ -474,7 +475,7 @@ export function Header({
 
       <div className="flex items-center justify-self-end gap-3">
         {/* Branch Selector – superadmin only */}
-        {!hideBranchSelector && <BranchSelectorDropdown />}
+        {!hideBranchSelector && !isCustomerDetailPage && <BranchSelectorDropdown />}
 
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>
