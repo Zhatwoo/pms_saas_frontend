@@ -124,11 +124,6 @@ export default function ExpirationMonitoringPage() {
     if (isBlasting) return;
     setIsBlasting(true);
     try {
-      const activeItems = getActiveItems();
-      if (activeItems.length === 0) {
-        showToast("No items to send.");
-        return;
-      }
       const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
       const res = await api.post<{ message?: string }>(
         `/dashboard/expiration-monitoring/email-blast${query}`,
