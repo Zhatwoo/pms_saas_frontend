@@ -27,6 +27,7 @@ interface ExpirationItem {
   id: string;
   ticketNo: string;
   customer: string;
+  customerEmail?: string | null;
   item: string;
   principal: number;
   totalDue: number;
@@ -54,6 +55,10 @@ export default function ExpirationMonitoringPage() {
   const [activeTab, setActiveTab] = useState("30days");
   const { selectedBranch, isAllBranches } = useBranch();
   const [isLoading, setIsLoading] = useState(true);
+  const [isBlastSending, setIsBlastSending] = useState(false);
+  const [sendingItemId, setSendingItemId] = useState<string | null>(null);
+  const [renewingItemId, setRenewingItemId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const [stats, setStats] = useState({
     overdue: 0,
@@ -95,6 +100,11 @@ export default function ExpirationMonitoringPage() {
     fetchExpirationData();
   }, [selectedBranch.id, isAllBranches]);
 
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2500);
+  };
+
   // Determine which bucket to show based on active tab
   const getActiveItems = (): ExpirationItem[] => {
     switch (activeTab) {
@@ -111,8 +121,72 @@ export default function ExpirationMonitoringPage() {
     }
   };
 
+  const handleBlastEmail = async () => {
+    setIsBlastSending(true);
+    try {
+      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
+      const result = await api.post<{ message?: string; sentCount?: number }>(
+        `/dashboard/expiration-monitoring/email-blast${query}`,
+        { bucket: activeTab },
+      );
+      showToast(
+        result?.message ||
+          `Email blast sent${result?.sentCount ? ` (${result.sentCount})` : ""}.`,
+      );
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to send email blast.");
+    } finally {
+      setIsBlastSending(false);
+    }
+  };
+
+  const handleSendSingleEmail = async (id: string) => {
+    setSendingItemId(id);
+    try {
+      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
+      const result = await api.post<{ message?: string }>(
+        `/dashboard/expiration-monitoring/${id}/send-email${query}`,
+        {},
+      );
+      showToast(result?.message || "Email sent successfully.");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to send email.");
+    } finally {
+      setSendingItemId(null);
+    }
+  };
+
+  const handleRenew = async (id: string) => {
+    setRenewingItemId(id);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      await api.post(`/inventory/pawned/${id}/renew`, {
+        renewal_date: today,
+        amount_paid: 0,
+      });
+      showToast("Item renewed successfully.");
+      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
+      const data = await api.get<ExpirationMonitoringResponse>(
+        `/dashboard/expiration-monitoring${query}`
+      );
+      if (data) {
+        setStats(data.stats);
+        setBuckets(data.buckets);
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Failed to renew item.");
+    } finally {
+      setRenewingItemId(null);
+    }
+  };
+
   return (
     <div className="space-y-5">
+      {toast ? (
+        <div className="fixed right-4 top-4 z-50 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md">
+          {toast}
+        </div>
+      ) : null}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <p className="mt-1 text-sm text-zinc-500">
@@ -121,11 +195,13 @@ export default function ExpirationMonitoringPage() {
         </div>
         <button
           type="button"
+          onClick={handleBlastEmail}
+          disabled={isBlastSending}
           className="flex flex-none items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-bold text-pawn-gold shadow-sm transition-all hover:bg-emerald-800"
           title="Send mass email to all customers with nearing expirations"
         >
           {sendIcon}
-          Instant Email Blast
+          {isBlastSending ? "Sending..." : "Instant Email Blast"}
         </button>
       </div>
 
@@ -135,7 +211,14 @@ export default function ExpirationMonitoringPage() {
         onTabChange={setActiveTab}
         counts={stats}
       />
-      <ExpirationTable data={getActiveItems()} isLoading={isLoading} />
+      <ExpirationTable
+        data={getActiveItems()}
+        isLoading={isLoading}
+        onSendEmail={handleSendSingleEmail}
+        sendingItemId={sendingItemId}
+        onRenew={handleRenew}
+        renewingItemId={renewingItemId}
+      />
     </div>
   );
 }

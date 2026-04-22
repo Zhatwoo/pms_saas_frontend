@@ -57,7 +57,7 @@ function DaysRemainingBadge({ days }: { days: number }) {
   );
 }
 
-const bellIcon = (
+const sendIcon = (
   <svg
     width="14"
     height="14"
@@ -68,17 +68,28 @@ const bellIcon = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    <line x1="22" y1="2" x2="11" y2="13" />
+    <polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
 );
 
 interface ExpirationTableProps {
   data?: ExpirationItemRow[];
   isLoading?: boolean;
+  sendingId?: string | null;
+  renewingId?: string | null;
+  onSendEmail?: (id: string, customer: string) => void;
+  onRenew?: (id: string) => void;
 }
 
-export function ExpirationTable({ data = [], isLoading }: ExpirationTableProps) {
+export function ExpirationTable({ 
+  data = [], 
+  isLoading,
+  sendingId,
+  renewingId,
+  onSendEmail,
+  onRenew,
+}: ExpirationTableProps) {
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
@@ -122,14 +133,30 @@ export function ExpirationTable({ data = [], isLoading }: ExpirationTableProps) 
         if (key === "actions") {
           return (
             <div className="flex items-center justify-center gap-2">
-              <button className="rounded-md bg-emerald-700 px-3 py-1 text-[10px] font-bold text-white transition-opacity hover:opacity-90">
-                Renew
+              <button
+                type="button"
+                onClick={() => onRenew?.(row.id)}
+                disabled={renewingId === row.id}
+                className="rounded-md bg-emerald-700 px-3 py-1 text-[10px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {renewingId === row.id ? "Renewing..." : "Renew"}
               </button>
               <button
-                className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
-                title={`Notify ${row.customer}`}
+                onClick={() => onSendEmail?.(row.id, row.customer)}
+                disabled={sendingId === row.id}
+                className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                  sendingId === row.id 
+                    ? "text-emerald-500 bg-emerald-50" 
+                    : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+                }`}
+                title={`Send email to ${row.customer}`}
               >
-                {bellIcon}
+                {sendingId === row.id ? (
+                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : sendIcon}
               </button>
             </div>
           );
