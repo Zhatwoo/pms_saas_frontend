@@ -413,7 +413,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
 
                  <button 
                     disabled={isLoading || !selectedItem}
-                    onClick={handleRenew}
+                    onClick={handleProceed}
                     className="h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center transition-all active:scale-[0.98]"
                   >
                    {isLoading ? (
