@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { useBranch } from "@/contexts/branch-context";
+import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -440,7 +441,7 @@ export default function PawnedItemsPage() {
   const [pawnedItems, setPawnedItems] = useState<PawnedItem[]>([]);
   const [allDayItems, setAllDayItems] = useState<PawnedItem[]>([]); // unfiltered day items for category counts
   const [isLoading, setIsLoading] = useState(true);
-  const [viewingItem, setViewingItem] = useState<PawnedItem | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   // Category counts (list mode)
   const [categoryList, setCategoryList] = useState<CategoryCount[]>([]);
@@ -791,7 +792,7 @@ export default function PawnedItemsPage() {
                     <tr
                       key={item.id}
                       className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
-                      onClick={() => setViewingItem(item)}
+                      onClick={() => setSelectedItemId(item.id)}
                     >
                       <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">
                         {item.itemId}
@@ -906,7 +907,7 @@ export default function PawnedItemsPage() {
                         <tr
                           key={item.id}
                           className="border-t border-border-subtle hover:bg-surface-hover cursor-pointer transition-colors"
-                          onClick={() => setViewingItem(item)}
+                          onClick={() => setSelectedItemId(item.id)}
                         >
                           <td className="whitespace-nowrap px-4 py-2.5 text-sm font-bold text-emerald-800 dark:text-emerald-400">
                             {item.itemId}
@@ -952,14 +953,12 @@ export default function PawnedItemsPage() {
         />
       </div>
 
-      {viewingItem && (
-        <ViewModal
-          item={viewingItem}
-          onClose={() => setViewingItem(null)}
-          onSaveRemarks={handleSaveRemarks}
-          userRole={userRole}
-        />
-      )}
+      <PawnedItemDetailsModal
+        isOpen={Boolean(selectedItemId)}
+        itemId={selectedItemId}
+        onClose={() => setSelectedItemId(null)}
+        userRole="viewer"
+      />
     </div>
   );
 }
