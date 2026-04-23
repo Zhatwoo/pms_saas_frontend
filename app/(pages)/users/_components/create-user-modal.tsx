@@ -9,6 +9,7 @@ import type {
 
 interface CreateUserModalProps {
   branches: BranchOption[];
+  availableRoles: CreateableUserRole[];
   onClose: () => void;
   onCreateUser: (input: CreateUserInput) => Promise<void>;
 }
@@ -21,24 +22,54 @@ interface FormState {
   branchId: string;
 }
 
-const roleOptions: CreateableUserRole[] = ["ADMIN", "EMPLOYEE"];
+function isGlobalRole(role: CreateableUserRole): boolean {
+  return role === "SUPER_ADMIN";
+}
 
-const initialFormState = (branches: BranchOption[]): FormState => ({
+const initialFormState = (
+  branches: BranchOption[],
+  availableRoles: CreateableUserRole[],
+) : FormState => {
+  const defaultRole =
+    branches.length > 0 && availableRoles.includes("EMPLOYEE")
+      ? "EMPLOYEE"
+      : availableRoles.includes("SUPER_ADMIN")
+      ? "SUPER_ADMIN"
+      : (availableRoles[0] ?? "ADMIN");
+
+  return {
   fullName: "",
   email: "",
   password: "",
-  role: "EMPLOYEE",
-  branchId: branches[0]?.id ?? "",
-});
+    role: defaultRole,
+    branchId: isGlobalRole(defaultRole) ? "" : (branches[0]?.id ?? ""),
+  };
+};
 
 export function CreateUserModal({
   branches,
+  availableRoles,
   onClose,
   onCreateUser,
 }: CreateUserModalProps) {
-  const [form, setForm] = useState<FormState>(() => initialFormState(branches));
+  const [form, setForm] = useState<FormState>(() => initialFormState(branches, availableRoles));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSuperAdminRole = isGlobalRole(form.role);
+
+  useEffect(() => {
+    setForm((current) => ({
+      ...initialFormState(branches, availableRoles),
+      fullName: current.fullName,
+      email: current.email,
+      password: current.password,
+      role: current.role,
+      branchId:
+        current.role === "SUPER_ADMIN"
+          ? ""
+          : current.branchId || branches[0]?.id || "",
+    }));
+  }, [availableRoles, branches]);
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
@@ -55,13 +86,26 @@ export function CreateUserModal({
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function updateRole(role: CreateableUserRole) {
+    setForm((current) => ({
+      ...current,
+      role,
+      branchId: isGlobalRole(role) ? "" : current.branchId || branches[0]?.id || "",
+    }));
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     const trimmedFullName = form.fullName.trim();
     const trimmedEmail = form.email.trim();
 
-    if (!trimmedFullName || !trimmedEmail || !form.password || !form.branchId) {
+    if (
+      !trimmedFullName ||
+      !trimmedEmail ||
+      !form.password ||
+      (!isSuperAdminRole && !form.branchId)
+    ) {
       setError("Complete all required fields before creating the user.");
       return;
     }
@@ -79,9 +123,9 @@ export function CreateUserModal({
         email: trimmedEmail,
         password: form.password,
         role: form.role,
-        branchId: form.branchId,
+        branchId: isSuperAdminRole ? null : form.branchId,
       });
-      setForm(initialFormState(branches));
+      setForm(initialFormState(branches, availableRoles));
     } catch (createError) {
       setError(
         createError instanceof Error
@@ -110,7 +154,9 @@ export function CreateUserModal({
             <div>
               <h2 className="text-2xl font-bold text-white">Create New User</h2>
               <p className="mt-1 text-base text-emerald-50/80">
-                Add a new employee or admin account and assign a branch.
+                {isSuperAdminRole
+                  ? "Create a global account with access across every branch."
+                  : "Add a new employee or admin account and assign a branch."}
               </p>
             </div>
             <button
@@ -189,12 +235,12 @@ export function CreateUserModal({
               </label>
               <select
                 value={form.role}
-                onChange={(event) => updateField("role", event.target.value as CreateableUserRole)}
+                onChange={(event) => updateRole(event.target.value as CreateableUserRole)}
                 className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
               >
-                {roleOptions.map((role) => (
+                {availableRoles.map((role) => (
                   <option key={role} value={role}>
-                    {role}
+                    {role === "SUPER_ADMIN" ? "SUPER ADMIN" : role}
                   </option>
                 ))}
               </select>
@@ -202,15 +248,17 @@ export function CreateUserModal({
 
             <div>
               <label className="mb-1.5 block text-sm font-bold uppercase tracking-wide text-zinc-500 dark:text-text-tertiary">
-                Branch
+                {isSuperAdminRole ? "Access Scope" : "Branch"}
               </label>
               <select
                 value={form.branchId}
                 onChange={(event) => updateField("branchId", event.target.value)}
                 className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
-                disabled={branches.length === 0}
+                disabled={isSuperAdminRole || branches.length === 0}
               >
-                {branches.length === 0 ? (
+                {isSuperAdminRole ? (
+                  <option value="">All Branches</option>
+                ) : branches.length === 0 ? (
                   <option value="">No branches available</option>
                 ) : (
                   branches.map((branch) => (
@@ -224,7 +272,9 @@ export function CreateUserModal({
           </div>
 
           <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-base text-emerald-text">
-            Users can only be assigned to branches that already exist in the branches table.
+            {isSuperAdminRole
+              ? "Super Admin accounts are global. They are not tied to one branch and can view data across all branches."
+              : "Users can only be assigned to branches that already exist in the branches table."}
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t border-border-main pt-4 sm:flex-row sm:justify-end">
@@ -237,7 +287,7 @@ export function CreateUserModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || branches.length === 0}
+              disabled={isSubmitting || (!isSuperAdminRole && branches.length === 0)}
               className="rounded-md bg-emerald-700 px-5 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-800"
             >
               {isSubmitting ? "Creating..." : "Create User"}
