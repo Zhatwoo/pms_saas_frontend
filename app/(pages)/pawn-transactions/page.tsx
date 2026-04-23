@@ -69,6 +69,12 @@ interface TransactionsResponse {
   transactions: ApiTransaction[];
 }
 
+interface BranchFinanceSummary {
+  branchId: string;
+  startingBalance: number;
+  currentBalance: number;
+}
+
 const EMPTY_STATS: TransactionStatsData = {
   pawnedToday: 0,
   buyBack: 0,
@@ -145,7 +151,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
 const ITEMS_PER_PAGE = 10;
 
 export default function PawnTransactionsPage() {
-  const { selectedBranch, branches } = useBranch();
+  const { selectedBranch, branches, isAllBranches } = useBranch();
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
@@ -189,19 +195,52 @@ export default function PawnTransactionsPage() {
 
       try {
         const dateQuery = dateFilter ? `&date=${dateFilter}` : "&range=all";
-        const data = await api.get<TransactionsResponse>(
-          `/transactions?branch=${encodeURIComponent(selectedBranch.id)}${dateQuery}`,
-        );
+        const branchParam = isAllBranches
+          ? ""
+          : `branch=${encodeURIComponent(selectedBranch.id)}`;
+        const [data, financeSummary] = await Promise.all([
+          api.get<TransactionsResponse>(
+            `/transactions?${branchParam}${dateQuery}`,
+          ),
+          api
+            .get<BranchFinanceSummary[]>(
+              `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`,
+            )
+            .catch(() => [] as BranchFinanceSummary[]),
+        ]);
+
+        let startingBalance = Number(data.stats?.startingBalance ?? 0);
+        let endingBalance = Number(data.stats?.endingBalance ?? 0);
+
+        // Super admin "All Branches" should show totals across branches, not a single-branch stat.
+        if (isAllBranches && financeSummary.length > 0) {
+          startingBalance = financeSummary.reduce(
+            (sum, row) => sum + Number(row.startingBalance ?? 0),
+            0,
+          );
+          endingBalance = financeSummary.reduce(
+            (sum, row) => sum + Number(row.currentBalance ?? 0),
+            0,
+          );
+        } else if (financeSummary.length === 1) {
+          // Keep branch values synced with branch-finance source-of-truth.
+          startingBalance = Number(financeSummary[0].startingBalance ?? startingBalance);
+          endingBalance = Number(financeSummary[0].currentBalance ?? endingBalance);
+        }
+
+        const normalizedStats: TransactionStatsData = {
+          ...EMPTY_STATS,
+          ...(data.stats || {}),
+          startingBalance,
+          endingBalance,
+        };
 
         if (!active) {
           return;
         }
 
         setTransactions((data.transactions || []).map(toTransactionRow));
-        setStats({
-          ...EMPTY_STATS,
-          ...(data.stats || {}),
-        });
+        setStats(normalizedStats);
       } catch (error) {
         console.error("Failed to load transactions:", error);
         if (active) {
@@ -220,7 +259,7 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, dateFilter]);
+  }, [selectedBranch.id, dateFilter, isAllBranches]);
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesPurpose = purposeFilter === "All" || transaction.purpose === purposeFilter;
@@ -350,10 +389,10 @@ export default function PawnTransactionsPage() {
     <div className="space-y-4 pb-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold leading-tight text-emerald-900 dark:text-text-primary">
+          <h1 className="text-xl font-bold leading-tight text-emerald-900 sm:text-2xl dark:text-text-primary">
             Pawn Transactions
           </h1>
-          <p className="mt-0.5 text-sm font-medium text-text-tertiary">
+          <p className="mt-0.5 text-xs font-medium text-text-tertiary sm:text-sm">
             Live transaction records across all branches with employee-style QR and print access.
           </p>
         </div>
@@ -380,13 +419,15 @@ export default function PawnTransactionsPage() {
         onPrint={handlePrintSlip}
       />
 
-      <PaginationFooter
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredTransactions.length}
-        itemsPerPage={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      {totalPages > 1 ? (
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      ) : null}
 
       <TransactionViewModal
         isOpen={Boolean(viewingTransaction)}

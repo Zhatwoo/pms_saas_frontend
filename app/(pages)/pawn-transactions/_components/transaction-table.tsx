@@ -92,7 +92,7 @@ export function TransactionTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-base">
+        <table className="w-full min-w-[1400px] text-sm">
           <thead>
             <tr className="bg-emerald-900 text-amber-400">
               {columns.map((col) => (
