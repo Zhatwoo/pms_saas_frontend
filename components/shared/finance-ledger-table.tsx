@@ -13,6 +13,7 @@ export type LedgerEntryType =
   | "fund_transfer_in"
   | "fund_transfer_out"
   | "start"
+  | "end"
   | "other";
 
 export interface LedgerEntry {
@@ -51,6 +52,7 @@ const TYPE_CONFIG: Record<
   fund_transfer_in: { label: "Fund In", bgClass: "bg-emerald-500/15 text-emerald-300", dotClass: "bg-emerald-400" },
   fund_transfer_out: { label: "Fund Out", bgClass: "bg-red-500/15 text-red-300", dotClass: "bg-red-400" },
   start: { label: "Opening", bgClass: "bg-indigo-500/15 text-indigo-300", dotClass: "bg-indigo-400" },
+  end: { label: "Closing", bgClass: "bg-amber-500/15 text-amber-300", dotClass: "bg-amber-400" },
   other: { label: "Other", bgClass: "bg-slate-500/15 text-slate-300", dotClass: "bg-slate-400" },
 };
 
@@ -411,6 +413,7 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "fund_transfer_in", label: "Fund Transfer In" },
   { value: "fund_transfer_out", label: "Fund Transfer Out" },
   { value: "start", label: "Opening Balance" },
+  { value: "end", label: "Closing Balance" },
   { value: "other", label: "Other" },
 ];
 
