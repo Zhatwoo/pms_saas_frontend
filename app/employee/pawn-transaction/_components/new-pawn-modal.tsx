@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "reac
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { MoaModal } from "./moa-modal";
+import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -829,17 +830,21 @@ export function NewPawnModal({
                       <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
                     </div>
 
-                    <Input label="Street / Subdivision / Compound" name="address" value={form.address} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                    <PhilippineAddressFields
+                      key={selectedCustomerId || "new-customer"}
+                      value={{
+                        address: form.address,
+                        barangay: form.barangay,
+                        city: form.city,
+                        province: form.province,
+                      }}
+                      disabled={Boolean(selectedCustomerId)}
+                      onFieldChange={(field, nextValue) => {
+                        setForm((prev) => ({ ...prev, [field]: nextValue }));
+                      }}
+                    />
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input label="Barangay / District / Locality" name="barangay" value={form.barangay} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
-                      <Input label="City / Municipality" name="city" value={form.city} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input label="Province" name="province" value={form.province} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
-                      <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" readOnly={Boolean(selectedCustomerId)} />
-                    </div>
+                    <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" readOnly={Boolean(selectedCustomerId)} />
 
                     <Input label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="example@email.com" readOnly={Boolean(selectedCustomerId)} />
 

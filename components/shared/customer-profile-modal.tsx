@@ -186,7 +186,7 @@ export function ViewCustomerModal({
   const hasIdPresented = !isKnownNoId(customer.idType);
   const hasIdentityPhotos = Boolean(customer.idFrontPhoto || customer.idBackPhoto);
   const matchWarning = formatMatchLabel(customer);
-  const canEdit = userRole === "admin" || userRole === "super_admin";
+  const canEdit = userRole === "admin";
   const canRequestEdit = userRole === "employee";
 
   const editableCustomer = useMemo(

@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
@@ -505,6 +505,7 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
   const initialAction = searchParams.get("mode");
@@ -587,7 +588,7 @@ function EmployeeCustomerDetailContent() {
           email: customerRecord.email || "-",
           phone: customerRecord.contact_number || "-",
           idType: customerRecord.id_presented || "-",
-          idNumber: customerRecord.id_number || "-",
+          idNumber: customerRecord.id_presented || customerRecord.id_number || "-",
           profilePhoto: customerRecord.profile_photo_url || null,
           idFrontPhoto: customerRecord.id_front_photo_url || null,
           idBackPhoto: customerRecord.id_back_photo_url || null,
@@ -699,7 +700,7 @@ function EmployeeCustomerDetailContent() {
           <p className="max-w-md text-center text-xs text-red-500">{loadError}</p>
         )}
         <button
-          onClick={() => router.push("/employee/customers")}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="text-sm text-emerald-700 underline hover:text-emerald-800"
         >
           Back to Customers
@@ -721,7 +722,7 @@ function EmployeeCustomerDetailContent() {
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => router.push("/employee/customers")}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
         >
           {backIcon}
@@ -761,7 +762,7 @@ function EmployeeCustomerDetailContent() {
                   <h2 className="text-sm font-bold text-text-primary">Basic Info</h2>
                   <p className="mt-0.5 text-xs text-text-tertiary">Email: {customer.email}</p>
                   <p className="text-xs text-text-tertiary">Phone: {customer.phone}</p>
-                  <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
+                  <p className="text-xs text-text-tertiary">ID Presented: {customer.idType || customer.idNumber}</p>
                   <p className="mt-1 text-[10px] text-emerald-600 underline decoration-dotted">
                     Click to view full details
                   </p>

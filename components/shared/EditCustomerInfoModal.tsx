@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PHONE_REGEX, normalizePhoneNumber } from "@/lib/phone-number";
+import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 
 export type CustomerUpdatePayload = {
   full_name?: string;
@@ -213,58 +214,26 @@ export function EditCustomerInfoModal({
             </Field>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Email Address">
-              <input
-                type="email"
-                value={values.email}
-                onChange={(event) => setField("email", event.target.value)}
-                className={inputClass}
-                placeholder="customer@example.com"
-                autoComplete="email"
-              />
-            </Field>
+          <Field label="Email Address">
+            <input
+              type="email"
+              value={values.email}
+              onChange={(event) => setField("email", event.target.value)}
+              className={inputClass}
+              placeholder="customer@example.com"
+              autoComplete="email"
+            />
+          </Field>
 
-            <Field label="Street / Subdivision / Compound">
-              <input
-                type="text"
-                value={values.address}
-                onChange={(event) => setField("address", event.target.value)}
-                className={inputClass}
-                placeholder="Street or house number"
-              />
-            </Field>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Barangay / District / Locality">
-              <input
-                type="text"
-                value={values.barangay}
-                onChange={(event) => setField("barangay", event.target.value)}
-                className={inputClass}
-                placeholder="Barangay"
-              />
-            </Field>
-            <Field label="City / Municipality">
-              <input
-                type="text"
-                value={values.city}
-                onChange={(event) => setField("city", event.target.value)}
-                className={inputClass}
-                placeholder="City"
-              />
-            </Field>
-            <Field label="Province">
-              <input
-                type="text"
-                value={values.province}
-                onChange={(event) => setField("province", event.target.value)}
-                className={inputClass}
-                placeholder="Province"
-              />
-            </Field>
-          </div>
+          <PhilippineAddressFields
+            value={{
+              address: values.address,
+              barangay: values.barangay,
+              city: values.city,
+              province: values.province,
+            }}
+            onFieldChange={setField}
+          />
 
           <div className="rounded-[1.25rem] border border-border-main bg-surface-secondary p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">

@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
@@ -572,6 +572,7 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
   const initialAction = searchParams.get("mode");
@@ -627,7 +628,7 @@ function EmployeeCustomerDetailContent() {
             email: customerData.email || "N/A",
             phone: customerData.contact_number || "N/A",
             idType: customerData.id_presented || "N/A",
-            idNumber: customerData.id_presented || "N/A",
+            idNumber: customerData.id_presented || customerData.id_number || "N/A",
             profilePhoto: customerData.profile_photo_url,
             idFrontPhoto: customerData.id_front_photo_url,
             idBackPhoto: customerData.id_back_photo_url,
@@ -725,7 +726,7 @@ function EmployeeCustomerDetailContent() {
         <p className="text-lg font-semibold text-text-primary">Customer not found</p>
         <button
           type="button"
-          onClick={() => router.push(customersListHref)}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="group inline-flex items-center gap-2 rounded-full border border-border-main bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-200">
@@ -747,7 +748,7 @@ function EmployeeCustomerDetailContent() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => router.push(customersListHref)}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="group inline-flex h-11 items-center gap-3 rounded-full border border-border-main bg-surface px-4 pl-2 pr-5 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
           aria-label="Back to customers list"
         >
@@ -791,7 +792,7 @@ function EmployeeCustomerDetailContent() {
                   <h2 className="text-sm font-bold text-text-primary">Basic Info</h2>
                   <p className="mt-0.5 text-xs text-text-tertiary">Email: {customer.email}</p>
                   <p className="text-xs text-text-tertiary">Phone: {customer.phone}</p>
-                  <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
+                  <p className="text-xs text-text-tertiary">ID Presented: {customer.idType || customer.idNumber}</p>
                   <p className="mt-1 text-[10px] text-emerald-600 underline decoration-dotted">
                     Click to view full details
                   </p>
