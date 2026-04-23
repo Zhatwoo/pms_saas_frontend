@@ -7,7 +7,7 @@ export interface CustomerDetail {
   street: string;
   barangay: string;
   city: string;
-  province: string;
+  region: string;
   address: string;
   email: string;
   phone: string;

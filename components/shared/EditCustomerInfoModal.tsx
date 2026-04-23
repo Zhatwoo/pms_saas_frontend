@@ -9,7 +9,7 @@ export type CustomerUpdatePayload = {
   address?: string;
   barangay?: string;
   city?: string;
-  province?: string;
+  region?: string;
   contact_number?: string;
   email?: string;
   id_presented?: string;
@@ -21,7 +21,7 @@ export type EditableCustomerInfo = {
   address: string;
   barangay: string;
   city: string;
-  province: string;
+  region: string;
   contact_number: string | null;
   email: string | null;
   id_presented: string | null;
@@ -73,7 +73,7 @@ export function EditCustomerInfoModal({
       address: customer.address || "",
       barangay: customer.barangay || "",
       city: customer.city || "",
-      province: customer.province || "",
+      region: customer.region || "",
       email: customer.email || "",
       hasIdPresented: Boolean(customer.id_presented?.trim()),
       idPresented: customer.id_presented || "",
@@ -111,7 +111,7 @@ export function EditCustomerInfoModal({
     const address = values.address.trim();
     const barangay = values.barangay.trim();
     const city = values.city.trim();
-    const province = values.province.trim();
+    const region = values.region.trim();
     const idPresented = values.hasIdPresented ? values.idPresented.trim() : "";
 
     if (!fullName) {
@@ -141,7 +141,7 @@ export function EditCustomerInfoModal({
       address: address || undefined,
       barangay: barangay || undefined,
       city: city || undefined,
-      province: province || undefined,
+      region: region || undefined,
       id_presented: values.hasIdPresented ? idPresented : undefined,
     };
 
@@ -230,7 +230,7 @@ export function EditCustomerInfoModal({
               address: values.address,
               barangay: values.barangay,
               city: values.city,
-              province: values.province,
+              region: values.region,
             }}
             onFieldChange={setField}
           />
