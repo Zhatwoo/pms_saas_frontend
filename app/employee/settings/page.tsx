@@ -62,24 +62,6 @@ export default function EmployeeSettingsPage() {
     setToast(null);
   };
 
-  const handleDiscard = () => {
-    if (user) {
-      setFullName(user.fullName || "");
-      setEmail(user.email || "");
-    }
-  };
-
-  const initials = fullName
-    ? fullName
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2)
-    : "EM";
-
-
-
   return (
     <div className="space-y-6">
       {toast && (
