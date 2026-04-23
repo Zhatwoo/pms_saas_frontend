@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
@@ -97,6 +98,7 @@ interface TransactionTableProps {
   data?: TransactionRow[];
   onReprint?: (transactionNo: string) => void;
   onViewDetails?: (transaction: TransactionRow) => void;
+  highlightedTransactionNo?: string | null;
   viewRange: "daily" | "weekly" | "monthly" | "all";
   onRangeChange: (range: "daily" | "weekly" | "monthly" | "all") => void;
 }
@@ -105,11 +107,38 @@ export function TransactionTable({
   data = [],
   onReprint,
   onViewDetails,
+  highlightedTransactionNo,
   viewRange,
   onRangeChange,
 }: TransactionTableProps) {
+  const highlightedRowRef = useRef<HTMLTableRowElement | null>(null);
+
+  useEffect(() => {
+    if (highlightedRowRef.current) {
+      highlightedRowRef.current.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [highlightedTransactionNo, data.length]);
+
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+      <style jsx global>{`
+        @keyframes transaction-highlight {
+          0%, 100% {
+            background-color: rgba(255, 247, 237, 0.9);
+            border-left-color: rgb(251, 191, 36);
+            box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.45);
+          }
+          50% {
+            background-color: rgba(255, 251, 235, 0.75);
+            border-left-color: rgba(251, 191, 36, 0.3);
+            box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.15);
+          }
+        }
+
+        .transaction-highlight-active {
+          animation: transaction-highlight 4s ease-in-out forwards;
+        }
+      `}</style>
       <div className="flex items-center justify-between border-b border-border-subtle bg-surface px-4 py-3">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-bold text-text-primary">
@@ -168,14 +197,18 @@ export function TransactionTable({
             ) : (
               data.map((row) => {
                 const isStartRow = row.purpose === "Start";
+                const isHighlightedRow = highlightedTransactionNo === row.transactionNo;
 
                 return (
                   <tr
                     key={row.transactionNo}
+                    ref={isHighlightedRow ? highlightedRowRef : null}
                     onClick={() => onViewDetails?.(row)}
                     role="button"
                     tabIndex={0}
                     className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${
+                      isHighlightedRow ? "transaction-highlight-active border-l-4 border-l-amber-500 bg-amber-50/80" : ""
+                    } ${
                       isStartRow
                         ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
                         : "bg-surface-secondary"

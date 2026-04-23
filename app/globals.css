@@ -277,3 +277,26 @@ section[id] {
   background-color: var(--surface);
   color: var(--text-primary);
 }
+
+/* ── Highlight blink animation for transaction rows ─────── */
+@keyframes highlightBlink {
+  0%, 100% {
+    background-color: transparent;
+    outline: 2px solid transparent;
+  }
+  25%, 75% {
+    background-color: rgba(16, 185, 129, 0.12);
+    outline: 2px solid rgba(16, 185, 129, 0.5);
+    outline-offset: -2px;
+  }
+  50% {
+    background-color: rgba(16, 185, 129, 0.2);
+    outline: 2px solid rgba(16, 185, 129, 0.8);
+    outline-offset: -2px;
+  }
+}
+
+.animate-highlight-blink {
+  animation: highlightBlink 1.2s ease-in-out 3;
+  background-color: rgba(16, 185, 129, 0.08);
+}

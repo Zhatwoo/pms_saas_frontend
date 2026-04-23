@@ -6,6 +6,7 @@ import { ClockIcon, BellIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api } from "@/lib/api";
+import { buildPawnTransactionHighlightHref, extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
@@ -435,20 +436,46 @@ export function Header({
   };
 
   const renderNotificationRow = (item: HeaderNotification) => (
-    <button
-      key={item.id}
-      type="button"
-      onClick={() => markOneAsRead(item.id)}
-      className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:bg-surface-hover"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
-          <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
-        </div>
-        {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
-      </div>
-    </button>
+    (() => {
+      const transactionNo = extractTransactionNoFromText(item.title) ?? extractTransactionNoFromText(item.subtitle);
+      const isClickableTransaction = Boolean(transactionNo);
+
+      const content = (
+        <>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
+            </div>
+            {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
+          </div>
+        </>
+      );
+
+      if (!isClickableTransaction || !transactionNo) {
+        return (
+          <div key={item.id} className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left">
+            {content}
+          </div>
+        );
+      }
+
+      return (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => {
+            void markOneAsRead(item.id);
+            setIsNotificationOpen(false);
+            router.push(buildPawnTransactionHighlightHref(transactionNo));
+          }}
+          className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/70"
+          title={`Open pawn transaction ${transactionNo}`}
+        >
+          {content}
+        </button>
+      );
+    })()
   );
 
   return (

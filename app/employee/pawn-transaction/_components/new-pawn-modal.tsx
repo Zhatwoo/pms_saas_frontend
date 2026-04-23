@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -113,7 +114,14 @@ interface NewPawnModalProps {
   branchPhone?: string;
   branchAdminName?: string;
   loggedInUserName?: string;
-  onSuccess?: () => void;
+  onSuccess?: (transactionNo?: string) => void;
+}
+
+interface CreatedPawnTicketResponse {
+  transaction?: {
+    transaction_no?: string;
+    transactionNo?: string;
+  };
 }
 
 export function NewPawnModal({ 
@@ -127,6 +135,8 @@ export function NewPawnModal({
   loggedInUserName,
   onSuccess
 }: NewPawnModalProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [form, setForm] = useState(() => createEmptyForm());
 
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -603,7 +613,7 @@ export function NewPawnModal({
     }
 
     try {
-      await api.post('/pawn-tickets', {
+      const response = await api.post<CreatedPawnTicketResponse>('/pawn-tickets', {
         branchId,
         branchName,
         customerId: selectedCustomerId ?? undefined,
@@ -642,10 +652,39 @@ export function NewPawnModal({
         },
       });
 
-      if (onSuccess) onSuccess();
+      const createdTransactionNo =
+        response?.transaction?.transaction_no ??
+        response?.transaction?.transactionNo ??
+        "";
+
+      if (createdTransactionNo) {
+        const targetPath = `${pathname || "/employee/pawn-transaction"}?transactionNo=${encodeURIComponent(createdTransactionNo)}&highlightTransaction=true`;
+
+        toast.custom((toastId) => (
+          <div className="flex w-[360px] items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-xl shadow-emerald-900/10">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-emerald-900">New pawn transaction created</p>
+              <p className="mt-0.5 truncate text-xs text-emerald-700">{createdTransactionNo}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                toast.dismiss(toastId);
+                router.push(targetPath);
+              }}
+              className="shrink-0 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-800"
+            >
+              View
+            </button>
+          </div>
+        ));
+      } else {
+        toast.success("New pawn ticket generated successfully!");
+      }
+
+      if (onSuccess) onSuccess(createdTransactionNo);
       setIsMoaOpen(false);
       onClose();
-      toast.success("New pawn ticket generated successfully!");
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       setErrorMessage(msg);
