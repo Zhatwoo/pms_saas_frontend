@@ -277,3 +277,7 @@ export function requestCustomerEdit(id: string, notes: string, field?: string, m
     ...(mode ? { mode } : {}),
   });
 }
+
+export function cancelCustomerEditRequest(id: string, logId: string) {
+  return api.delete(`/customers/${encodeURIComponent(id)}/request-edit/${encodeURIComponent(logId)}`);
+}

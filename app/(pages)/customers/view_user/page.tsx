@@ -6,10 +6,11 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { ViewCustomerModal, resolveCustomerPrimaryVisual } from "@/components/shared/customer-profile-modal";
 import { useAuth } from "@/contexts/auth-context";
 import type { CustomerDetail, ActivityEntry, Transaction } from "./_components/types";
-import { api } from "@/lib/api";
+import { api, cancelCustomerEditRequest } from "@/lib/api";
 
 /* ──────────────────────────── Types ──────────────────────────── */
 interface BackendCustomer {
@@ -620,6 +621,7 @@ function EmployeeCustomerDetailContent() {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [cancelRequestTarget, setCancelRequestTarget] = useState<BackendActivityLog | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [activityLogs, setActivityLogs] = useState<BackendActivityLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
@@ -787,6 +789,24 @@ function EmployeeCustomerDetailContent() {
       requestingEmployeeId: log.userId ?? undefined,
     });
     setIsViewOpen(true);
+  }
+
+  function handleCancelRequest(log: BackendActivityLog) {
+    if (!customer) return;
+    setCancelRequestTarget(log);
+  }
+
+  async function handleConfirmCancelRequest() {
+    if (!customer || !cancelRequestTarget) return;
+    try {
+      await cancelCustomerEditRequest(customer.id, cancelRequestTarget.id);
+      toast.success("Edit request canceled.");
+      setRefreshToken((value) => value + 1);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel edit request.");
+    } finally {
+      setCancelRequestTarget(null);
+    }
   }
 
   if (isLoading) {
@@ -1191,6 +1211,8 @@ function EmployeeCustomerDetailContent() {
                     const branchName = typeof rd.branchName === "string" ? rd.branchName : null;
                     const actorLabel = typeof rd.actorLabel === "string" ? rd.actorLabel : item.actor;
                     const customerName = typeof rd.customerName === "string" ? rd.customerName : null;
+                    const currentLog = activityLogs.find((log) => log.id === item.key);
+                    const canCancelRequest = user?.role === "employee" && currentLog?.userId === user?.id;
 
                     return (
                       <div key={item.key} className="flex items-start gap-3 px-5 py-4 hover:bg-surface-secondary/50 transition-colors">
@@ -1200,14 +1222,29 @@ function EmployeeCustomerDetailContent() {
                           </span>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
                             <p className="text-sm font-semibold text-text-primary">
                               Edit Request
                               {actorLabel && (
                                 <span className="ml-1.5 text-xs font-normal text-text-tertiary">· {actorLabel}</span>
                               )}
                             </p>
-                            <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                            <div className="flex flex-col items-end gap-1 text-right">
+                              <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                              {canCancelRequest && currentLog && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelRequest(currentLog)}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-red-700 transition-colors hover:bg-red-100"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 6 6 18" />
+                                    <path d="m6 6 12 12" />
+                                  </svg>
+                                  Cancel Request
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div className="mt-0.5 space-y-0.5">
                             {fieldLabel ? (
@@ -1400,6 +1437,17 @@ function EmployeeCustomerDetailContent() {
       {viewingTransaction && (
         <TransactionViewModal transaction={viewingTransaction} onClose={() => setViewingTransaction(null)} />
       )}
+
+      <ConfirmActionModal
+        isOpen={Boolean(cancelRequestTarget)}
+        title="Cancel Edit Request?"
+        message="This will remove the pending request log and the related admin notifications. This action cannot be undone."
+        confirmLabel="Cancel Request"
+        cancelLabel="Keep Request"
+        variant="danger"
+        onClose={() => setCancelRequestTarget(null)}
+        onConfirm={handleConfirmCancelRequest}
+      />
 
       {isNoteOpen && (
         <div
