@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
+import { toast } from "sonner";
 import { BranchStats } from "./_components/branch-stats";
 import { BranchFilters } from "./_components/branch-filters";
 import { BranchTable } from "./_components/branch-table";
@@ -30,7 +31,10 @@ type BranchFormData = {
   status: string;
 };
 
-function toBranchRow(branch: BranchApiItem): BranchRow {
+type OverviewStats = Record<string, { pawnedItems: number; forSaleItems: number; totalValue: number }>;
+
+function toBranchRow(branch: BranchApiItem, stats?: OverviewStats): BranchRow {
+  const s = stats?.[branch.id];
   return {
     id: branch.id,
     branchId: branch.branch_code,
@@ -38,9 +42,9 @@ function toBranchRow(branch: BranchApiItem): BranchRow {
     location: branch.location,
     contactNumber: branch.contact_number ?? "",
     status: branch.status,
-    pawnedItems: 0,
-    forSaleItems: 0,
-    totalValue: "₱0",
+    pawnedItems: s?.pawnedItems ?? 0,
+    forSaleItems: s?.forSaleItems ?? 0,
+    totalValue: s ? `₱${s.totalValue.toLocaleString("en-PH", { minimumFractionDigits: 0 })}` : "₱0",
   };
 }
 
@@ -60,7 +64,6 @@ export default function BranchesPage() {
   const [branches, setBranches] = useState<BranchRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,8 +82,11 @@ export default function BranchesPage() {
 
   const loadBranches = useCallback(async () => {
     try {
-      const data = await api.get<BranchApiItem[]>("/branches");
-      setBranches((data || []).map(toBranchRow));
+      const [data, stats] = await Promise.all([
+        api.get<BranchApiItem[]>("/branches"),
+        api.get<OverviewStats>("/branches/overview-stats").catch(() => ({} as OverviewStats)),
+      ]);
+      setBranches((data || []).map((b) => toBranchRow(b, stats)));
       setErrorMessage(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to load branches";
@@ -207,7 +213,7 @@ export default function BranchesPage() {
 
       await loadBranches();
       await refreshBranches();
-      setSuccessMessage("Branch has been terminated successfully!");
+      toast.success("Branch has been terminated successfully!");
       setErrorMessage(null);
     } catch (error) {
       const message =
@@ -231,7 +237,7 @@ export default function BranchesPage() {
         // Force immediate refresh after add.
         await loadBranches();
         await refreshBranches();
-        setSuccessMessage("Your new branch has been created successfully!");
+        toast.success("Your new branch has been created successfully!");
       } else if (data.id) {
         await api.fetch<BranchApiItem>(`/branches/${data.id}`, {
           method: "PATCH",
@@ -245,7 +251,7 @@ export default function BranchesPage() {
 
         await loadBranches();
         await refreshBranches();
-        setSuccessMessage("Branch details updated successfully!");
+        toast.success("Branch details updated successfully!");
       }
       setErrorMessage(null);
       return true;
@@ -259,16 +265,6 @@ export default function BranchesPage() {
 
   const nextBranchCode = useMemo(() => getNextBranchCode(branches), [branches]);
 
-  useEffect(() => {
-    if (!successMessage) return;
-
-    const timer = setTimeout(() => {
-      setSuccessMessage(null);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, [successMessage]);
-
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border-main bg-surface px-4 py-8 text-center text-sm text-text-secondary">
@@ -279,27 +275,6 @@ export default function BranchesPage() {
 
   return (
     <div className="space-y-5">
-      {successMessage && (
-        <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-300/70 bg-emerald-100/70 px-5 py-3 shadow-xl backdrop-blur-sm">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </span>
-            <span className="text-sm font-semibold text-emerald-900">{successMessage}</span>
-          </div>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex items-start justify-between">

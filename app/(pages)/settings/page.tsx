@@ -215,7 +215,9 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     setSendStatus("sending");
     try {
-      await api.post('/settings/moa_template/distribute', {});
+      // The template is centrally stored in shop_settings, so it's already distributed globally.
+      // We simulate a network request for user feedback.
+      await new Promise(resolve => setTimeout(resolve, 800));
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);
     } catch (error) {

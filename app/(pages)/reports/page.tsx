@@ -117,8 +117,10 @@ export default function ReportsPage() {
     async function fetchReport() {
       setIsLoading(true);
       try {
-        const branchQuery = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-        const data = await api.get<ReportData>(`/reports/system${branchQuery}`);
+        const params = new URLSearchParams();
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
+        params.set("period", activePeriod.toLowerCase());
+        const data = await api.get<ReportData>(`/reports/system?${params}`);
         setReportData(data);
       } catch (error) {
         console.error("Failed to load reports:", error);
@@ -127,7 +129,7 @@ export default function ReportsPage() {
       }
     }
     fetchReport();
-  }, [selectedBranch.id, isAllBranches]);
+  }, [selectedBranch.id, isAllBranches, activePeriod]);
 
   const todayFormatted = new Date().toLocaleDateString("en-US", {
     month: "long",

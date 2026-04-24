@@ -38,7 +38,7 @@ const columns: Column[] = [
   { key: "actions", label: "Actions", align: "center" },
 ];
 
-const eyeIcon = (
+const requestIcon = (
   <svg
     width="14"
     height="14"
@@ -49,14 +49,10 @@ const eyeIcon = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z" />
   </svg>
 );
-
-interface CustomerTableProps {
-  branchName?: string;
-}
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -80,7 +76,7 @@ function mapCustomerToRow(customer: CustomerData): CustomerRow {
   };
 }
 
-export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
+export function CustomerTable() {
   const router = useRouter();
   const { selectedBranch, isAllBranches } = useBranch();
   const [currentPage, setCurrentPage] = useState(1);
@@ -147,12 +143,13 @@ export function CustomerTable({ branchName: _branchName }: CustomerTableProps) {
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  router.push(`/employee/customers/view_user?id=${row.id}`);
+                  router.push(`/employee/customers/view_user?id=${row.id}&mode=request`);
                 }}
-                className="mx-auto flex h-8 w-8 items-center justify-center rounded-md text-emerald-text transition-colors hover:bg-emerald-surface/50"
-                title={`View ${row.name}`}
+                className="mx-auto inline-flex items-center gap-1.5 rounded-md border border-border-main bg-surface px-3 py-1.5 text-[11px] font-semibold text-emerald-text transition-colors hover:bg-emerald-surface/50"
+                title={`Request edit for ${row.name}`}
               >
-                {eyeIcon}
+                {requestIcon}
+                Request Edit
               </button>
             );
           }

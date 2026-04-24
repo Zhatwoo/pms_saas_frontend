@@ -128,26 +128,33 @@ export function BranchModal({
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
-          <div>
-            <h2 className="text-base font-bold text-text-primary">
-              {mode === "create" ? "Create New Branch" : "Edit Branch"}
-            </h2>
-            <p className="mt-0.5 text-xs text-text-tertiary">
-              {mode === "create"
-                ? "Add a new pawnshop branch location"
-                : "Update branch information"}
-            </p>
+        <div className="bg-emerald-900 px-6 py-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">
+            Branch Management
+          </p>
+          <div className="mt-2 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white">
+                {mode === "create" ? "Create New Branch" : "Edit Branch"}
+              </h2>
+              <p className="mt-1 text-base text-emerald-50/80">
+                {mode === "create"
+                  ? "Add a new pawnshop branch location"
+                  : "Update branch information"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
+              aria-label="Close branch modal"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface-hover hover:text-text-secondary"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
         </div>
 
         {/* Form */}

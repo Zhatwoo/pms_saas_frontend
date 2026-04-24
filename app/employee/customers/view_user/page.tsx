@@ -1,11 +1,13 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
 import { api } from "@/lib/api";
-import { ViewCustomerModal } from "../../../(pages)/customers/view_user/_components/view-customer-modal";
+import { ViewCustomerModal, resolveCustomerPrimaryVisual } from "@/components/shared/customer-profile-modal";
+import { useAuth } from "@/contexts/auth-context";
 import type {
   ActivityEntry,
   CustomerDetail,
@@ -22,6 +24,7 @@ interface ApiCustomer {
   profile_photo_url?: string | null;
   id_front_photo_url?: string | null;
   id_back_photo_url?: string | null;
+  branch_name?: string | null;
   matching_customer_count?: number;
   matching_branch_count?: number;
   matching_customer_ids?: string[];
@@ -502,7 +505,10 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
+  const initialAction = searchParams.get("mode");
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [transactionRecords, setTransactionRecords] = useState<CustomerTransactionRecord[]>([]);
@@ -556,7 +562,6 @@ function EmployeeCustomerDetailContent() {
         const totalLoanValue = records.reduce((sum, tx) => sum + tx.amount, 0);
 
         const parsedName = splitName(customerRecord.full_name || "");
-        const parsedAddress = splitAddress(customerRecord.address);
         const defaultActivity: ActivityEntry[] = [
           {
             title: "Customer profile loaded",
@@ -574,15 +579,15 @@ function EmployeeCustomerDetailContent() {
           middleName: parsedName.middleName,
           lastName: parsedName.lastName,
           name: customerRecord.full_name || "Unnamed Customer",
-          street: parsedAddress.street,
-          barangay: parsedAddress.barangay,
-          city: parsedAddress.city,
-          province: parsedAddress.province,
+          street: customerRecord.address || "-",
+          barangay: (customerRecord as any).barangay || "-",
+          city: (customerRecord as any).city || "-",
+          region: (customerRecord as any).region || "-",
           address: customerRecord.address || "-",
           email: customerRecord.email || "-",
           phone: customerRecord.contact_number || "-",
           idType: customerRecord.id_presented || "-",
-          idNumber: customerRecord.id_number || "-",
+          idNumber: customerRecord.id_presented || customerRecord.id_number || "-",
           profilePhoto: customerRecord.profile_photo_url || null,
           idFrontPhoto: customerRecord.id_front_photo_url || null,
           idBackPhoto: customerRecord.id_back_photo_url || null,
@@ -590,7 +595,7 @@ function EmployeeCustomerDetailContent() {
           matchingBranchCount: customerRecord.matching_branch_count || 1,
           matchingCustomerIds: customerRecord.matching_customer_ids || [],
           createdAt: formatFullDate(customerRecord.created_at),
-          branch: customerRecord.branch_id || "-",
+          branch: customerRecord.branch_name || user?.branchName || "Current Branch",
           totalItemsPawned: transactions.length,
           activePawned,
           totalLoanValue,
@@ -632,6 +637,12 @@ function EmployeeCustomerDetailContent() {
     }
   }, [customer]);
 
+  useEffect(() => {
+    if (customer && initialAction) {
+      setIsViewOpen(true);
+    }
+  }, [customer, initialAction]);
+
   async function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -671,8 +682,11 @@ function EmployeeCustomerDetailContent() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
-        Loading customer details...
+      <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
+        <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
+          <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+          Loading customer details...
+        </div>
       </div>
     );
   }
@@ -685,7 +699,7 @@ function EmployeeCustomerDetailContent() {
           <p className="max-w-md text-center text-xs text-red-500">{loadError}</p>
         )}
         <button
-          onClick={() => router.push("/employee/customers")}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="text-sm text-emerald-700 underline hover:text-emerald-800"
         >
           Back to Customers
@@ -697,9 +711,7 @@ function EmployeeCustomerDetailContent() {
   const safeLoyaltyMax = customer.loyaltyMax > 0 ? customer.loyaltyMax : 100;
   const loyaltyPercent = Math.round((customer.loyaltyPoints / safeLoyaltyMax) * 100);
   const pointsToReward = Math.max(0, safeLoyaltyMax - customer.loyaltyPoints);
-  const primaryVisual = customer.idType !== "No ID / None"
-    ? customer.idFrontPhoto || customer.profilePhoto || null
-    : customer.profilePhoto || customer.idFrontPhoto || null;
+  const primaryVisual = resolveCustomerPrimaryVisual(customer);
   const matchWarning = (customer.matchingCustomerCount || 1) > 1
     ? `${customer.matchingCustomerCount} customer records match this exact name across ${customer.matchingBranchCount || 1} branch${(customer.matchingBranchCount || 1) === 1 ? "" : "es"}. Verify spelling before creating a new profile or linking rewards.`
     : null;
@@ -709,7 +721,7 @@ function EmployeeCustomerDetailContent() {
       {/* Page Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => router.push("/employee/customers")}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface text-text-secondary transition-colors hover:bg-surface-hover"
         >
           {backIcon}
@@ -749,7 +761,7 @@ function EmployeeCustomerDetailContent() {
                   <h2 className="text-sm font-bold text-text-primary">Basic Info</h2>
                   <p className="mt-0.5 text-xs text-text-tertiary">Email: {customer.email}</p>
                   <p className="text-xs text-text-tertiary">Phone: {customer.phone}</p>
-                  <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
+                  <p className="text-xs text-text-tertiary">ID Presented: {customer.idType || customer.idNumber}</p>
                   <p className="mt-1 text-[10px] text-emerald-600 underline decoration-dotted">
                     Click to view full details
                   </p>
@@ -959,9 +971,14 @@ function EmployeeCustomerDetailContent() {
         </div>
       </div>
 
-      {/* View Modal only — employees cannot edit */}
+      {/* View Modal */}
       {isViewOpen && (
-        <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
+        <ViewCustomerModal
+          customer={customer}
+          onClose={() => setIsViewOpen(false)}
+          userRole={user?.role}
+          initialAction={initialAction === "request" || initialAction === "edit" ? initialAction : null}
+        />
       )}
 
       {viewingTransaction && (
@@ -1079,8 +1096,11 @@ export default function EmployeeCustomerDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
-          Loading customer details…
+        <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
+          <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
+            <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+            Loading customer details…
+          </div>
         </div>
       }
     >

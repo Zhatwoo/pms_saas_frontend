@@ -136,16 +136,16 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[420px] overflow-hidden rounded-2xl shadow-2xl"
+        className="relative flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl shadow-2xl md:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/5 text-zinc-500 hover:bg-black/10 hover:text-zinc-700"
           type="button"
           aria-label="Close"
         >
@@ -165,31 +165,33 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
           </svg>
         </button>
 
-        <div className="relative bg-emerald-800 px-8 pb-8 pt-10">
+        {/* Left Side Branding */}
+        <div className="relative flex w-full flex-col items-center justify-center bg-emerald-800 px-8 py-10 md:w-2/5">
           <div className="absolute right-[-20px] top-[-30px] h-40 w-40 rounded-full bg-white/5" />
+          <div className="absolute bottom-[-40px] left-[-40px] h-40 w-40 rounded-full bg-white/5" />
           <div className="relative flex flex-col items-center">
             <div className="rounded-2xl bg-emerald-950/50 p-2">
               <div className="overflow-hidden rounded-xl ring-2 ring-amber-400/60">
                 <Image
                   src="/logo.jpg"
                   alt="JCLB Logo"
-                  width={96}
-                  height={96}
-                  className="h-24 w-24 object-cover"
+                  width={120}
+                  height={120}
+                  className="h-28 w-28 object-cover"
                 />
               </div>
             </div>
-            <h2 className="mt-3 text-lg font-bold text-white">JCLB Buy Back</h2>
-            <p className="text-lg font-bold text-amber-400">Create account</p>
+            <h2 className="mt-4 text-center text-xl font-bold text-white">
+              JCLB Buy Back
+            </h2>
+            <p className="text-center text-lg font-bold text-amber-400">
+              Create account
+            </p>
           </div>
         </div>
 
-        <div className="relative bg-emerald-800">
-          <div className="h-2 rounded-t-xl bg-stone-100" />
-          <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
-        </div>
-
-        <div className="bg-stone-100 px-8 pb-8 pt-6">
+        {/* Right Side Form */}
+        <div className="flex w-full flex-col justify-center bg-stone-100 px-8 py-8 md:w-3/5">
           <h3 className="text-xl font-bold text-emerald-950">Request access</h3>
           <p className="mt-1 text-xs text-zinc-500">
             Your account must be approved by a Super Admin before you can sign
@@ -224,35 +226,37 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-zinc-700">
-                FULL NAME
-              </label>
-              <input
-                type="text"
-                required
-                value={form.fullName}
-                onChange={(e) => updateField("fullName", e.target.value)}
-                className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
-                placeholder="Your full name"
-                disabled={Boolean(success)}
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-zinc-700">
+                  FULL NAME
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.fullName}
+                  onChange={(e) => updateField("fullName", e.target.value)}
+                  className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
+                  placeholder="Your full name"
+                  disabled={Boolean(success)}
+                />
+              </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-zinc-700">
-                EMAIL
-              </label>
-              <input
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => updateField("email", e.target.value)}
-                className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
-                placeholder="you@example.com"
-                disabled={Boolean(success)}
-              />
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-zinc-700">
+                  EMAIL
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
+                  placeholder="you@example.com"
+                  disabled={Boolean(success)}
+                />
+              </div>
             </div>
 
             <div>
@@ -298,48 +302,50 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
               </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-zinc-700">
-                REQUESTED ROLE
-              </label>
-              <select
-                value={form.role}
-                onChange={(e) =>
-                  updateField("role", e.target.value as SignupRole)
-                }
-                className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none"
-                disabled={Boolean(success)}
-              >
-                <option value="EMPLOYEE">Employee</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-zinc-700">
+                  REQUESTED ROLE
+                </label>
+                <select
+                  value={form.role}
+                  onChange={(e) =>
+                    updateField("role", e.target.value as SignupRole)
+                  }
+                  className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none"
+                  disabled={Boolean(success)}
+                >
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="ADMIN">Admin</option>
+                </select>
+              </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-zinc-700">
-                BRANCH
-              </label>
-              <select
-                value={form.branchId}
-                onChange={(e) => updateField("branchId", e.target.value)}
-                className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none"
-                disabled={
-                  Boolean(success) || isLoadingBranches || branches.length === 0
-                }
-                required
-              >
-                {isLoadingBranches ? (
-                  <option value="">Loading branches…</option>
-                ) : branches.length === 0 ? (
-                  <option value="">No branches available</option>
-                ) : (
-                  branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))
-                )}
-              </select>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-zinc-700">
+                  BRANCH
+                </label>
+                <select
+                  value={form.branchId}
+                  onChange={(e) => updateField("branchId", e.target.value)}
+                  className="h-11 w-full border border-zinc-300 bg-white px-3 text-xs text-zinc-900 outline-none"
+                  disabled={
+                    Boolean(success) || isLoadingBranches || branches.length === 0
+                  }
+                  required
+                >
+                  {isLoadingBranches ? (
+                    <option value="">Loading branches…</option>
+                  ) : branches.length === 0 ? (
+                    <option value="">No branches available</option>
+                  ) : (
+                    branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
             </div>
 
             <button
@@ -350,13 +356,13 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
                 isLoadingBranches ||
                 branches.length === 0
               }
-              className="w-full bg-emerald-800 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              className="mt-2 w-full bg-emerald-800 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
             >
               {isSubmitting ? "Submitting…" : "Submit request"}
             </button>
           </form>
 
-          <div className="my-4 h-px bg-zinc-200" />
+          <div className="my-6 h-px w-full bg-zinc-200" />
           <p className="text-center text-xs text-zinc-500">
             Already have an account?{" "}
             <button

@@ -4,38 +4,13 @@ import { StatusBadge } from "./status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 
-type PurposeType =
-  | "Start"
-  | "Buy Back"
-  | "Renew"
-  | "Sold Item"
-  | "Pawn"
-  | "Fund Transfer"
-  | "Cash Transfer";
+import { type PurposeType, type TransactionRow } from "@/app/employee/pawn-transaction/_components/transaction-table";
 
-export interface TransactionDetailsData {
-  transactionNo: string;
-  purpose: PurposeType;
-  buyBack: string;
-  buyOut: string;
-  sold: string;
-  date: string;
-  time: string;
-  cashIn: string;
-  cashOut: string;
-  returnVal: string;
-  unit: string;
-  unitCode: string;
-  pawn: string;
-  storage: string;
-  qrCode?: string;
-  relatedPawnedItemId?: string | null;
-  relatedSaleItemId?: string | null;
-}
+
 
 interface TransactionDetailsModalProps {
   isOpen: boolean;
-  transaction: TransactionDetailsData | null;
+  transaction: TransactionRow | null;
   onClose: () => void;
 }
 
@@ -59,6 +34,8 @@ function purposeVariant(
   if (purpose === "Renew") return "green";
   if (purpose === "Buy Back") return "blue";
   if (purpose === "Pawn") return "purple";
+  if (purpose === "Buy Out") return "purple";
+  if (purpose === "Fund Transfer" || purpose === "Cash Transfer") return "blue";
   return "black";
 }
 

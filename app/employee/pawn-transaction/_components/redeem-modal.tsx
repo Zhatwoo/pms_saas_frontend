@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -31,6 +32,7 @@ interface RedeemModalProps {
   onClose: () => void;
   branchId: string;
   branchName: string;
+  onSuccess?: () => void;
 }
 
 interface PawnedSearchItem {
@@ -51,7 +53,7 @@ interface PawnedSearchItem {
   status: string;
 }
 
-export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemModalProps) {
+export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }: RedeemModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnedSearchItem | null>(null);
   const [adminForm, setAdminForm] = useState({
@@ -139,17 +141,21 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
         unit_code: selectedItem.unitCode,
         pawn_amount: Number(selectedItem.amount),
         storage_fee: interestCalc.interestAmount,
-        details: `Redeemed by ${selectedItem.name} | Days: ${interestCalc.daysPassed}`,
+        details: `Redeemed by ${selectedItem.name} | Days: ${interestCalc.daysPassed} | Processed by: ${adminForm.processedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id
       });
 
-      // 3. Update Item status to Redeemed
       await api.patch(`/inventory/pawned/${selectedItem.id}`, { status: 'Redeemed' });
 
+      if (onSuccess) {
+        onSuccess();
+      }
       onClose();
-      window.location.reload();
+      toast.success("Item redeemed successfully!");
     } catch (err: any) {
-      setError(err.message || "Action failed.");
+      const msg = err.message || "Failed to process transaction.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsConfirming(false);
     }
@@ -158,44 +164,53 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/80 backdrop-blur-sm p-4 text-zinc-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/20">
-              <Undo2 className="w-6 h-6" />
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+                <Undo2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                  {branchName} | Active Pawn
+                </p>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                  Redeem Pawn Ticket
+                </h1>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-black text-emerald-950 uppercase tracking-tight">Redeem Pawn Ticket</h2>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{branchName} | Active Pawn</p>
-            </div>
+            
+            <button 
+              onClick={onClose} 
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white dark:bg-surface/10 text-white transition-colors hover:bg-white dark:bg-surface/20"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 hover:bg-emerald-50 rounded-full transition-colors text-emerald-900/40 hover:text-emerald-900"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
 
         <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className="w-full lg:w-[400px] border-r border-emerald-50 bg-emerald-50/30 flex flex-col shrink-0">
+          <div className="w-full lg:w-[400px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0">
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 mb-2">
                 <Search className="w-5 h-5 text-emerald-600/40" />
-                <h3 className="text-xs font-black text-emerald-900/40 uppercase tracking-wider">Search Active Pawn</h3>
+                <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Active Pawn</h3>
               </div>
               
               <div className="relative group">
                 <input 
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white border-2 border-emerald-100 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium shadow-sm"
+                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -206,11 +221,11 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
             <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
-                  <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-[10px] font-bold text-emerald-900/40 uppercase">Linking to Database...</p>
+                  <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase">Linking to Database...</p>
                 </div>
               ) : pawnedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white rounded-2xl border-2 border-dashed border-emerald-100 shadow-sm">
+                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white dark:bg-surface rounded-2xl border-2 border-dashed border-emerald-100 dark:border-border-subtle shadow-sm">
                   <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
                     <Package className="w-6 h-6 text-emerald-200" />
                   </div>
@@ -224,8 +239,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                     onClick={() => setSelectedItem(item)}
                     className={`w-full p-4 mb-3 rounded-2xl border-2 transition-all flex flex-col gap-2 text-left relative group ${
                       selectedItem?.id === item.id 
-                        ? 'bg-white border-emerald-500 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5' 
-                        : 'bg-white/60 border-transparent hover:border-emerald-200 hover:bg-white hover:shadow-lg'
+                        ? 'bg-emerald-50 dark:bg-emerald-600/20 border-emerald-400 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5' 
+                        : 'bg-white dark:bg-surface/5 border-transparent hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-600/10 hover:shadow-lg'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -234,10 +249,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                         {item.status}
                       </span>
                     </div>
-                    <h4 className="font-black text-emerald-950 leading-tight pr-8">{item.unit}</h4>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-50">
-                      <p className="text-[10px] font-bold text-emerald-900/40 capitalize">{item.name}</p>
-                      <p className="font-black text-emerald-600 text-xs">₱ {Number(item.amount).toLocaleString()}</p>
+                    <h4 className="font-black text-emerald-950 dark:text-white leading-tight pr-8">{item.unit}</h4>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-50 dark:border-border">
+                      <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 capitalize">{item.name}</p>
+                      <p className="font-black text-emerald-600 dark:text-emerald-400 text-xs">₱ {Number(item.amount).toLocaleString()}</p>
                     </div>
                   </button>
                 ))
@@ -246,15 +261,15 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
           </div>
 
           {/* Right Side: Details & Computation */}
-          <div className="flex-1 bg-white overflow-y-auto scrollbar-hide">
+          <div className="flex-1 bg-white dark:bg-surface overflow-y-auto scrollbar-hide">
             {selectedItem ? (
               <div className="p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-1 mb-8">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
-                  <h2 className="text-4xl font-black text-emerald-950 tracking-tighter leading-none">
+                  <h2 className="text-4xl font-black text-emerald-950 dark:text-white dark:text-white tracking-tighter leading-none">
                     {selectedItem.unit}
                   </h2>
-                  <p className="text-emerald-900/40 font-bold flex items-center gap-2">
+                  <p className="text-emerald-900/40 dark:text-emerald-400 font-bold flex items-center gap-2">
                     {selectedItem.name} • {selectedItem.contactNumber}
                   </p>
                 </div>
@@ -264,7 +279,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                     <DetailRow label="Principal Amount" value={`₱ ${Number(selectedItem.amount).toLocaleString()}`} />
                     <DetailRow 
                       label="Maturity Interest" 
-                      value={<span className="text-orange-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
+                      value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
                     />
                     <DetailRow label="Purchased Date" value={selectedItem.purchasedDate} />
                     <DetailRow 
@@ -281,10 +296,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                     <DetailRow label="Memory" value={selectedItem.memory} />
                     <DetailRow label="Items Included" value={selectedItem.itemsIncluded} />
                     
-                    <div className="mt-4 pt-4 border-t border-emerald-50 font-google">
+                    <div className="mt-4 pt-4 border-t border-emerald-50 dark:border-border font-google">
                       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
                       {selectedItem.qrCode ? (
-                        <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white flex items-center justify-center shadow-sm">
+                        <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm">
                           <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
                         </div>
                       ) : (
@@ -297,26 +312,26 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                 </div>
 
                 {/* Computation Summary */}
-                <div className="mb-10 p-6 rounded-3xl bg-emerald-50 border border-emerald-100 relative overflow-hidden group">
+                <div className="mb-10 p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group">
                   <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                   <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-emerald-900/40 uppercase tracking-widest">Computation Summary</p>
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Computation Summary</p>
                       <div className="flex items-center gap-3">
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-emerald-900/30 uppercase">Principal</p>
-                          <p className="text-xl font-black text-emerald-900">₱{Number(selectedItem.amount).toLocaleString()}</p>
+                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Principal</p>
+                          <p className="text-xl font-black text-emerald-900 dark:text-white">₱{Number(selectedItem.amount).toLocaleString()}</p>
                         </div>
                         <div className="h-8 w-px bg-emerald-200" />
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-emerald-900/30 uppercase">Interest ({interestCalc.percentage}%)</p>
-                          <p className="text-xl font-black text-emerald-900">₱{interestCalc.interestAmount.toLocaleString()}</p>
+                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Interest ({interestCalc.percentage}%)</p>
+                          <p className="text-xl font-black text-emerald-900 dark:text-white">₱{interestCalc.interestAmount.toLocaleString()}</p>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-black text-emerald-900/40 uppercase tracking-widest">Total Amount Due</p>
-                      <p className="text-5xl font-black text-emerald-950 tracking-tighter">
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Total Amount Due</p>
+                      <p className="text-5xl font-black text-emerald-950 dark:text-emerald-400 tracking-tighter">
                         ₱ {interestCalc.totalAmount.toLocaleString()}
                       </p>
                     </div>
@@ -358,21 +373,21 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                       </div>
 
                       {error && (
-                        <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                          <p className="text-xs font-bold text-orange-200">{error}</p>
+                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                          <p className="text-xs font-bold text-red-200">{error}</p>
                         </div>
                       )}
                     </div>
 
-                    <div className="w-full md:w-[320px] bg-white/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md flex flex-col gap-6">
+                    <div className="w-full md:w-[320px] bg-white dark:bg-surface/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md flex flex-col gap-6">
                       <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-white/10 pb-4">
                           <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">Net Cash Received</p>
                           <p className="text-3xl font-black text-white leading-none">₱ {interestCalc.totalAmount.toLocaleString()}</p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
                             <Plus className="w-5 h-5" />
                           </div>
                           <div>
@@ -385,9 +400,14 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                       <button
                         onClick={handleConfirmRedeem}
                         disabled={isConfirming}
-                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-300 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-orange-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                        className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                       >
-                        {isConfirming ? "Processing..." : (
+                        {isConfirming ? (
+                          <div className="flex items-center gap-2">
+                            <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
+                            <span>Processing...</span>
+                          </div>
+                        ) : (
                           <>
                             Confirm Redemption
                             <ArrowRight className="w-5 h-5" />
@@ -403,7 +423,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName }: RedeemMod
                 <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6">
                   <Undo2 className="w-12 h-12 text-emerald-200" />
                 </div>
-                <h3 className="text-2xl font-black text-emerald-950 uppercase tracking-tight italic">Scan or Search Item</h3>
+                <h3 className="text-2xl font-black text-emerald-950 dark:text-white dark:text-white uppercase tracking-tight italic">Scan or Search Item</h3>
                 <p className="text-emerald-900/30 font-bold max-w-xs mt-2 leading-relaxed">
                   "Only active items within the loan period are eligible for redemption."
                 </p>
@@ -436,9 +456,9 @@ function DetailSection({ title, icon: Icon, children }: { title: string, icon: a
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-1">
         <Icon className="w-4 h-4 text-emerald-600/40" />
-        <h4 className="text-[10px] font-black text-emerald-900/40 uppercase tracking-[2px]">{title}</h4>
+        <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">{title}</h4>
       </div>
-      <div className="divide-y divide-emerald-50 border-t border-emerald-50">
+      <div className="divide-y divide-emerald-50 border-t border-emerald-50 dark:border-border">
         {children}
       </div>
     </div>
@@ -448,8 +468,8 @@ function DetailSection({ title, icon: Icon, children }: { title: string, icon: a
 function DetailRow({ label, value }: { label: string, value: string | React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3 px-1">
-      <span className="text-[10px] font-bold text-emerald-900/40 uppercase tracking-tighter">{label}</span>
-      <span className="text-xs font-black text-emerald-950">{value}</span>
+      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter">{label}</span>
+      <span className="text-xs font-black text-emerald-950 dark:text-white dark:text-white">{value}</span>
     </div>
   );
 }

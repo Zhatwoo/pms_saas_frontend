@@ -139,7 +139,12 @@ export default function EmployeeItemsForSalePage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">Loading branch items...</td></tr>
+                  <tr><td colSpan={7} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <span className="anim-loading h-6 w-6 border-emerald-500/50 border-t-emerald-600 rounded-full" />
+                      <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-widest">Loading branch items...</span>
+                    </div>
+                  </td></tr>
                 ) : saleItems.length === 0 ? (
                   <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">No items for sale found</td></tr>
                 ) : (

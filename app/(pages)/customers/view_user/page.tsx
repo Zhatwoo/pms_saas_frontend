@@ -1,12 +1,14 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
-import { ViewCustomerModal } from "./_components/view-customer-modal";
-import { EditCustomerModal } from "./_components/edit-customer-modal";
-import type { CustomerDetail, ActivityEntry, Transaction, Reward, Deadline } from "./_components/types";
+import { ViewCustomerModal, resolveCustomerPrimaryVisual } from "@/components/shared/customer-profile-modal";
+import { useAuth } from "@/contexts/auth-context";
+import type { CustomerDetail, ActivityEntry, Transaction } from "./_components/types";
 import { api } from "@/lib/api";
 
 /* ──────────────────────────── Types ──────────────────────────── */
@@ -16,11 +18,29 @@ interface BackendCustomer {
   address: string;
   barangay: string;
   city: string;
-  province: string;
+  region: string;
   email: string;
   contact_number: string;
   id_presented: string;
+  branch_id?: string | null;
+  branch_name?: string | null;
+  profile_photo_url: string | null;
+  id_front_photo_url: string | null;
+  id_back_photo_url: string | null;
   created_at: string;
+}
+
+interface BackendActivityLog {
+  id: string;
+  action: string;
+  details: Record<string, unknown>;
+  createdAt: string;
+  actorName: string;
+}
+
+interface BranchOption {
+  id: string;
+  name: string;
 }
 
 interface ApiTransaction {
@@ -47,6 +67,7 @@ interface TransactionsResponse {
 interface CustomerTransactionRecord {
   transactionNo: string;
   date: string;
+  rawDate: string;
   time: string;
   item: string;
   category: string;
@@ -208,7 +229,7 @@ function formatCurrency(value: number) {
 
 function formatNoteDate(date: Date) {
   return date.toLocaleDateString("en-US", {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   });
@@ -219,8 +240,9 @@ function formatShortDate(dateValue?: string | null) {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("en-US", {
-    month: "short",
+    month: "long",
     day: "numeric",
+    year: "numeric",
   });
 }
 
@@ -279,6 +301,7 @@ function mapTransactionRecord(tx: ApiTransaction): CustomerTransactionRecord {
   return {
     transactionNo: tx.transaction_no || "-",
     date: formatShortDate(tx.transaction_date),
+    rawDate: tx.transaction_date || "",
     time: formatTime(tx.transaction_time),
     item: tx.pawned_item?.item_name || "Item",
     category: tx.pawned_item?.category || "-",
@@ -561,15 +584,21 @@ const noteIcon = (
 function EmployeeCustomerDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
+  const initialAction = searchParams.get("mode");
   const initialCustomer = mockCustomers[customerId] ?? null;
   const [customer, setCustomer] = useState<CustomerDetail | null>(initialCustomer);
   const [isLoading, setIsLoading] = useState(Boolean(customerId && !initialCustomer));
+  const [refreshToken, setRefreshToken] = useState(0);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
+  const [activityLogs, setActivityLogs] = useState<BackendActivityLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [transactionRecords, setTransactionRecords] = useState<CustomerTransactionRecord[]>([]);
   const [viewingTransaction, setViewingTransaction] = useState<CustomerTransactionRecord | null>(null);
 
@@ -589,10 +618,16 @@ function EmployeeCustomerDetailContent() {
           api.get<BackendCustomer | null>(`/customers/${customerId}`),
           api.get<TransactionsResponse>(`/transactions?customerId=${encodeURIComponent(customerId)}&range=all`),
         ]);
+        const branchesResponse = await api.get<BranchOption[] | BranchOption>("/branches");
+        const branches = Array.isArray(branchesResponse) ? branchesResponse : [branchesResponse];
 
         if (customerData) {
           const transactions = (transactionData?.transactions || []).map(mapTransaction);
           const detailedTransactions = (transactionData?.transactions || []).map(mapTransactionRecord);
+          const customerBranchName =
+            customerData.branch_name ||
+            branches.find((branch) => branch.id === customerData.branch_id)?.name ||
+            "Current Branch";
           setCustomer({
             id: customerData.id,
             firstName: customerData.full_name?.split(" ")[0] || "",
@@ -602,21 +637,21 @@ function EmployeeCustomerDetailContent() {
             street: customerData.address,
             barangay: customerData.barangay,
             city: customerData.city,
-            province: customerData.province,
-            address: [customerData.address, customerData.barangay, customerData.city, customerData.province].filter(Boolean).join(", "),
+            region: customerData.region,
+            address: customerData.address || "",
             email: customerData.email || "N/A",
             phone: customerData.contact_number || "N/A",
             idType: customerData.id_presented || "N/A",
-            idNumber: customerData.id_presented || "N/A",
-            profilePhoto: null,
-            idFrontPhoto: null,
-            idBackPhoto: null,
+            idNumber: customerData.id_presented || customerData.id_number || "N/A",
+            profilePhoto: customerData.profile_photo_url,
+            idFrontPhoto: customerData.id_front_photo_url,
+            idBackPhoto: customerData.id_back_photo_url,
             createdAt: new Date(customerData.created_at).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
               year: "numeric"
             }),
-            branch: "Current Branch", 
+            branch: customerBranchName,
             totalItemsPawned: transactions.length,
             activePawned: transactions.filter((transaction) => transaction.status === "Active").length,
             totalLoanValue: transactions.reduce((sum, transaction) => sum + transaction.amount, 0),
@@ -649,13 +684,38 @@ function EmployeeCustomerDetailContent() {
       }
     }
     fetchCustomer();
-  }, [customerId]);
+  }, [customerId, refreshToken]);
 
   useEffect(() => {
     if (customer) {
       setActivityLog(customer.activityLog);
     }
   }, [customer]);
+
+  // Fetch real activity logs from backend
+  useEffect(() => {
+    if (!customerId) return;
+    let isActive = true;
+    async function fetchLogs() {
+      setIsLoadingLogs(true);
+      try {
+        const logs = await api.get<BackendActivityLog[]>(`/customers/${encodeURIComponent(customerId)}/activity-logs`);
+        if (isActive) setActivityLogs(Array.isArray(logs) ? logs : []);
+      } catch {
+        if (isActive) setActivityLogs([]);
+      } finally {
+        if (isActive) setIsLoadingLogs(false);
+      }
+    }
+    void fetchLogs();
+    return () => { isActive = false; };
+  }, [customerId, refreshToken]);
+
+  useEffect(() => {
+    if (customer && initialAction) {
+      setIsViewOpen(true);
+    }
+  }, [customer, initialAction]);
 
   useEffect(() => {
     setIsViewOpen(false);
@@ -665,28 +725,29 @@ function EmployeeCustomerDetailContent() {
     setNoteBody("");
   }, [customerId]);
 
-  function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
+  async function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!customer || !noteBody.trim()) return;
-
-    const newNote = {
-      title: noteTitle.trim() || "Manual Note",
-      date: formatNoteDate(new Date()),
-      description: noteBody.trim(),
-      color: "bg-amber-400",
-    };
-
-    setActivityLog((prev) => [newNote, ...prev]);
-    setNoteTitle("");
-    setNoteBody("");
-    setIsNoteOpen(false);
+    try {
+      await api.post(`/customers/${encodeURIComponent(customer.id)}/activity-logs`, {
+        title: noteTitle.trim() || "Manual Note",
+        note: noteBody.trim(),
+      });
+      toast.success("Note saved.");
+      setNoteTitle("");
+      setNoteBody("");
+      setIsNoteOpen(false);
+      setRefreshToken((v) => v + 1);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save note.");
+    }
   }
 
   if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
         <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+          <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
           Loading customer details...
         </div>
       </div>
@@ -699,7 +760,7 @@ function EmployeeCustomerDetailContent() {
         <p className="text-lg font-semibold text-text-primary">Customer not found</p>
         <button
           type="button"
-          onClick={() => router.push(customersListHref)}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="group inline-flex items-center gap-2 rounded-full border border-border-main bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-200">
@@ -713,14 +774,15 @@ function EmployeeCustomerDetailContent() {
 
   const loyaltyPercent = Math.round((customer.loyaltyPoints / customer.loyaltyMax) * 100);
   const pointsToReward = customer.loyaltyMax - customer.loyaltyPoints;
+  const primaryVisual = resolveCustomerPrimaryVisual(customer);
 
   return (
     <div className="space-y-5">
-      {/* Page Header */}
+      {/* Page Header — Back button only */}
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => router.push(customersListHref)}
+          onClick={() => router.push(pathname.replace("/view_user", ""))}
           className="group inline-flex h-11 items-center gap-3 rounded-full border border-border-main bg-surface px-4 pl-2 pr-5 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
           aria-label="Back to customers list"
         >
@@ -729,10 +791,6 @@ function EmployeeCustomerDetailContent() {
           </span>
           <span className="leading-none">Back to customers</span>
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">{customer.name}</h1>
-          <p className="text-sm text-text-tertiary">{customer.address}</p>
-        </div>
       </div>
 
       {/* Main Grid */}
@@ -740,19 +798,19 @@ function EmployeeCustomerDetailContent() {
         {/* ── Left Column ── */}
         <div className="space-y-5">
 
-          {/* Basic Info Card — View only (no edit button) */}
-          <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
-            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-              {/* Clickable info area → opens View modal */}
-              <button
-                type="button"
-                onClick={() => setIsViewOpen(true)}
-                className="flex items-center gap-4 text-left transition-opacity hover:opacity-80"
-              >
-                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm">
-                  {customer.profilePhoto ? (
+          {/* Basic Info Card — Clickable container opens View modal */}
+          <button
+            type="button"
+            onClick={() => setIsViewOpen(true)}
+            className="group w-full cursor-pointer rounded-lg border border-border-main bg-surface text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
+          >
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+              {/* Profile photo + customer details */}
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-pawn-gold shadow-sm transition-transform duration-300 group-hover:scale-105">
+                  {primaryVisual ? (
                     <img
-                      src={customer.profilePhoto}
+                      src={primaryVisual}
                       alt={`${customer.name} profile`}
                       className="h-full w-full object-cover"
                     />
@@ -760,25 +818,22 @@ function EmployeeCustomerDetailContent() {
                     userIcon
                   )}
                 </div>
-                <div>
-                  <h2 className="text-sm font-bold text-text-primary">Basic Info</h2>
-                  <p className="mt-0.5 text-xs text-text-tertiary">Email: {customer.email}</p>
-                  <p className="text-xs text-text-tertiary">Phone: {customer.phone}</p>
-                  <p className="text-xs text-text-tertiary">ID: {customer.idNumber}</p>
-                  <p className="mt-1 text-[10px] text-emerald-600 underline decoration-dotted">
-                    Click to view full details
-                  </p>
+                <div className="min-w-0">
+                  <h1 className="text-xl font-bold text-text-primary">{customer.name}</h1>
+                  <p className="mt-2 text-sm text-text-tertiary"><span className="font-semibold text-text-secondary">Address:</span> {[customer.address, customer.barangay, customer.city, customer.region].filter(Boolean).join(", ")}</p>
+                  <p className="mt-1 text-sm text-text-tertiary"><span className="font-semibold text-text-secondary">Email:</span> {customer.email} · <span className="font-semibold text-text-secondary">Phone:</span> {customer.phone}</p>
+                  <p className="mt-1 text-sm text-text-tertiary"><span className="font-semibold text-text-secondary">ID Presented:</span> {customer.idType || customer.idNumber}</p>
                 </div>
-              </button>
+              </div>
 
-              {/* Created-at badge only — no edit button for employee */}
+              {/* Created-at badge */}
               <div className="flex-shrink-0">
                 <div className="rounded-full border border-border-main bg-surface-secondary px-4 py-1.5 text-[11px] font-medium text-text-secondary">
                   Created on {customer.createdAt} at {customer.branch}
                 </div>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -865,41 +920,193 @@ function EmployeeCustomerDetailContent() {
             </div>
           </div>
 
-          {/* Notes & Activity Log */}
-          <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-text-primary">Notes &amp; Activity Log</h3>
-              <ActionButton
-                variant="primary"
-                size="sm"
-                onClick={() => setIsNoteOpen(true)}
-              >
-                <span className="flex items-center gap-1.5">
-                  {noteIcon}
-                  Add Note
-                </span>
+          {/* Activity Log */}
+          <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border-main">
+              <div>
+                <h3 className="text-sm font-bold text-text-primary">Activity Log</h3>
+                <p className="mt-0.5 text-[11px] text-text-tertiary">Transactions, notes, and system events</p>
+              </div>
+              <ActionButton variant="primary" size="sm" onClick={() => setIsNoteOpen(true)}>
+                <span className="flex items-center gap-1.5">{noteIcon} Add Note</span>
               </ActionButton>
             </div>
-            <div className="space-y-4">
-              {activityLog.length === 0 ? (
-                <p className="text-xs text-text-tertiary">No notes or activity yet.</p>
-              ) : (
-                activityLog.map((entry, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="mt-1 flex flex-col items-center">
-                    <span className={`h-3 w-3 rounded-full ${entry.color}`} />
-                    {i < activityLog.length - 1 && (
-                      <span className="mt-1 h-8 w-px bg-border-main" />
-                    )}
+
+            <div className="divide-y divide-border-subtle">
+              {/* Transaction events — derived from fetched records */}
+              {(() => {
+                // Merge transaction events + backend logs into one sorted feed
+                type FeedItem = {
+                  key: string;
+                  ts: number;
+                  kind: "pawn" | "note" | "edit_request" | "merge" | "registered" | "system";
+                  title: string;
+                  meta: string;
+                  detail: string;
+                  actor: string;
+                };
+
+                const feed: FeedItem[] = [];
+
+                // From transactions
+                for (const tx of transactionRecords) {
+                  const purposeLabel: Record<string, string> = {
+                    Pawn: "Pawned an item",
+                    Renew: "Renewed a pawn",
+                    "Buy Back": "Redeemed item",
+                    "Sold Item": "Item forfeited",
+                  };
+                  const txTs = tx.rawDate ? new Date(tx.rawDate).getTime() : 0;
+                  const txDateDisplay = tx.rawDate
+                    ? new Date(tx.rawDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+                    : tx.date;
+                  feed.push({
+                    key: `tx-${tx.transactionNo}`,
+                    ts: txTs,
+                    kind: "pawn",
+                    title: purposeLabel[tx.purpose] ?? tx.purpose ?? "Transaction",
+                    meta: `${txDateDisplay} · ${tx.branch}`,
+                    detail: `${tx.item} — ${formatCurrency(tx.amount)}`,
+                    actor: "",
+                  });
+                }
+
+                // From backend activity logs
+                for (const log of activityLogs) {
+                  const d = log.details as Record<string, unknown>;
+                  const ts = new Date(log.createdAt).getTime();
+                  const dateStr = new Date(log.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+                  const timeStr = new Date(log.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+                  if (log.action === "CUSTOMER_NOTE_ADDED") {
+                    feed.push({
+                      key: log.id,
+                      ts,
+                      kind: "note",
+                      title: typeof d.title === "string" ? d.title : "Manual Note",
+                      meta: `${dateStr} · ${timeStr}`,
+                      detail: typeof d.note === "string" ? d.note : "",
+                      actor: log.actorName,
+                    });
+                  } else if (log.action === "CUSTOMER_EDIT_REQUESTED") {
+                    feed.push({
+                      key: log.id,
+                      ts,
+                      kind: "edit_request",
+                      title: "Edit request submitted",
+                      meta: `${dateStr} · ${timeStr}`,
+                      detail: typeof d.notes === "string" ? d.notes : "",
+                      actor: log.actorName,
+                    });
+                  } else if (log.action === "CUSTOMER_DUPLICATES_MERGED") {
+                    feed.push({
+                      key: log.id,
+                      ts,
+                      kind: "merge",
+                      title: "Duplicate records merged",
+                      meta: `${dateStr} · ${timeStr}`,
+                      detail: `${d.mergedCount ?? 0} duplicate(s) consolidated`,
+                      actor: log.actorName,
+                    });
+                  } else {
+                    feed.push({
+                      key: log.id,
+                      ts,
+                      kind: "system",
+                      title: log.action.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase()),
+                      meta: `${dateStr} · ${timeStr}`,
+                      detail: "",
+                      actor: log.actorName,
+                    });
+                  }
+                }
+
+                // Registration event
+                if (customer) {
+                  feed.push({
+                    key: "registered",
+                    ts: new Date(customer.createdAt).getTime() || 0,
+                    kind: "registered",
+                    title: "Customer registered",
+                    meta: `${customer.createdAt} · ${customer.branch}`,
+                    detail: "Profile created in the system.",
+                    actor: "System",
+                  });
+                }
+
+                // Notes pinned to top (newest first), everything else below (newest first)
+                const notes = feed.filter((i) => i.kind === "note" || i.kind === "edit_request").sort((a, b) => b.ts - a.ts);
+                const rest = feed.filter((i) => i.kind !== "note" && i.kind !== "edit_request").sort((a, b) => b.ts - a.ts);
+                const sorted = [...notes, ...rest];
+
+                const iconMap: Record<FeedItem["kind"], React.ReactNode> = {
+                  pawn: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    </span>
+                  ),
+                  note: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    </span>
+                  ),
+                  edit_request: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4-10 10H8v-4L18 2z"/><path d="M13 6 18 11"/></svg>
+                    </span>
+                  ),
+                  merge: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-700">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+                    </span>
+                  ),
+                  registered: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </span>
+                  ),
+                  system: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </span>
+                  ),
+                };
+
+                if (isLoadingLogs) {
+                  return (
+                    <div className="flex items-center gap-3 px-5 py-6 text-sm text-text-tertiary">
+                      <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+                      Loading activity...
+                    </div>
+                  );
+                }
+
+                if (sorted.length === 0) {
+                  return (
+                    <div className="px-5 py-8 text-center text-xs text-text-tertiary">
+                      No activity recorded yet.
+                    </div>
+                  );
+                }
+
+                return sorted.map((item) => (
+                  <div key={item.key} className="flex items-start gap-3 px-5 py-4 hover:bg-surface-secondary/50 transition-colors">
+                    <div className="mt-0.5 flex-shrink-0">{iconMap[item.kind]}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                        <p className="text-sm font-semibold text-text-primary">{item.title}</p>
+                        <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                      </div>
+                      {item.detail && (
+                        <p className="mt-0.5 text-xs text-text-secondary">{item.detail}</p>
+                      )}
+                      {item.actor && (
+                        <p className="mt-1 text-[10px] text-text-tertiary">by {item.actor}</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-text-primary">{entry.title}</p>
-                    <p className="text-[10px] text-text-tertiary">{entry.date}</p>
-                    <p className="mt-0.5 text-xs text-text-secondary">{entry.description}</p>
-                  </div>
-                </div>
-                ))
-              )}
+                ));
+              })()}
             </div>
           </div>
         </div>
@@ -967,9 +1174,15 @@ function EmployeeCustomerDetailContent() {
         </div>
       </div>
 
-      {/* View Modal only — employees cannot edit */}
+      {/* View Modal */}
       {isViewOpen && (
-        <ViewCustomerModal customer={customer} onClose={() => setIsViewOpen(false)} />
+        <ViewCustomerModal
+          customer={customer}
+          onClose={() => setIsViewOpen(false)}
+          userRole={user?.role}
+          initialAction={initialAction === "edit" || initialAction === "request" ? initialAction : null}
+          onCustomerRefresh={() => setRefreshToken((value) => value + 1)}
+        />
       )}
 
       {viewingTransaction && (
@@ -1079,8 +1292,11 @@ export default function EmployeeCustomerDetailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-20 text-sm text-text-tertiary">
-          Loading customer details…
+        <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
+          <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
+            <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+            Loading customer details…
+          </div>
         </div>
       }
     >

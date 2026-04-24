@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { CreateUserModal } from "./_components/create-user-modal";
@@ -15,7 +16,7 @@ import { UpdateUserModal } from "./_components/update-user-modal";
 import { AccountStatusModal } from "./_components/account-status-modal";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
-export type CreateableUserRole = "ADMIN" | "EMPLOYEE";
+export type CreateableUserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type RoleFilter = "ALL" | UserRole | "PENDING";
 export type BranchFilter = "ALL" | string;
 
@@ -42,7 +43,14 @@ export interface CreateUserInput {
   email: string;
   password: string;
   role: CreateableUserRole;
-  branchId: string;
+  branchId: string | null;
+}
+
+export interface UpdateUserInput {
+  fullName?: string;
+  role?: UserRole;
+  branchId?: string | null;
+  currentPassword?: string;
 }
 
 interface BranchApiRecord {
@@ -109,7 +117,9 @@ function mapUserRecord(user: UserApiRecord): UserRecord {
     email: user.email,
     role: mapApiRoleToUi(user.role),
     branchId,
-    branch: branchName ?? "Unassigned",
+    branch:
+      branchName ??
+      (mapApiRoleToUi(user.role) === "SUPER_ADMIN" ? "All Branches" : "Unassigned"),
     created: new Date(createdAt).toLocaleDateString("en-US", {
       month: "short",
       day: "2-digit",
@@ -124,6 +134,14 @@ export default function UserManagementPage() {
   const { selectedBranch, isAllBranches } = useBranch();
   const searchParams = useSearchParams();
   const canManageUsers = user?.role === "super_admin";
+  const assignableUpdateRoles: UserRole[] =
+    user?.role === "super_admin"
+      ? ["SUPER_ADMIN", "ADMIN", "EMPLOYEE"]
+      : ["ADMIN", "EMPLOYEE"];
+  const assignableCreateRoles: CreateableUserRole[] =
+    user?.role === "super_admin"
+      ? ["SUPER_ADMIN", "ADMIN", "EMPLOYEE"]
+      : ["ADMIN", "EMPLOYEE"];
 
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [branches, setBranches] = useState<BranchOption[]>([]);
@@ -212,7 +230,7 @@ export default function UserManagementPage() {
       email: input.email.trim(),
       password: input.password,
       role: input.role.toLowerCase(),
-      branchId: input.branchId,
+      branchId: input.role === "SUPER_ADMIN" ? null : input.branchId,
     };
 
     if (user?.role !== "super_admin") {
@@ -225,6 +243,7 @@ export default function UserManagementPage() {
 
     setUsers((currentUsers) => [mapUserRecord(createdUser), ...currentUsers]);
     setIsCreateModalOpen(false);
+    toast.success("User created successfully!");
   }
 
   function handleUserClick(target: UserRecord) {
@@ -249,12 +268,11 @@ export default function UserManagementPage() {
       if (selectedUser?.id === userToDelete.id) {
         setIsDrawerOpen(false);
       }
+      toast.success("User deleted successfully!");
     } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Failed to delete user.",
-      );
+      const msg = deleteError instanceof Error ? deleteError.message : "Failed to delete user.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsDeletingUserId(null);
     }
@@ -284,39 +302,43 @@ export default function UserManagementPage() {
         ),
       );
       setIsStatusModalOpen(false);
+      toast.success("Account status updated successfully!");
     } catch (updateError) {
-      setError(
-        updateError instanceof Error
-          ? updateError.message
-          : "Failed to update user.",
-      );
+      const msg = updateError instanceof Error ? updateError.message : "Failed to update user.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setUpdatingUserId(null);
     }
   }
 
-  async function handleUpdateUser(id: string, input: Partial<UserRecord>) {
+  async function handleUpdateUser(id: string, input: UpdateUserInput) {
     if (!canManageUsers) return;
 
     setUpdatingUserId(id);
     setError("");
 
     try {
-      const payload: any = {};
+      const payload: {
+        fullName?: string;
+        role?: string;
+        branchId?: string | null;
+        currentPassword?: string;
+      } = {};
       if (input.fullName) payload.fullName = input.fullName;
       if (input.role) payload.role = input.role.toLowerCase();
-      if (input.branchId) payload.branchId = input.branchId;
+      if (input.branchId !== undefined) payload.branchId = input.branchId;
+      if (input.currentPassword) payload.currentPassword = input.currentPassword;
 
       const updated = await api.patch<UserApiRecord>(`/users/${id}`, payload);
       setUsers((current) =>
         current.map((u) => (u.id === id ? mapUserRecord(updated) : u)),
       );
+      toast.success("User updated successfully!");
     } catch (updateError) {
-      setError(
-        updateError instanceof Error
-          ? updateError.message
-          : "Failed to update user profile.",
-      );
+      const msg = updateError instanceof Error ? updateError.message : "Failed to update user profile.";
+      setError(msg);
+      toast.error(msg);
       throw updateError;
     } finally {
       setUpdatingUserId(null);
@@ -411,6 +433,7 @@ export default function UserManagementPage() {
       {isCreateModalOpen && canManageUsers && (
         <CreateUserModal
           branches={branches}
+          availableRoles={assignableCreateRoles}
           onClose={() => setIsCreateModalOpen(false)}
           onCreateUser={handleCreateUser}
         />
@@ -419,7 +442,7 @@ export default function UserManagementPage() {
       {isUpdateModalOpen && selectedUser && (
         <UpdateUserModal
           user={selectedUser}
-          branches={branches}
+          availableRoles={assignableUpdateRoles}
           onClose={() => setIsUpdateModalOpen(false)}
           onUpdateUser={handleUpdateUser}
         />

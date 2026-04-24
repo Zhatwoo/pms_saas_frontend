@@ -30,7 +30,7 @@ interface CustomerRow {
   branch: string;
 }
 
-const eyeIcon = (
+const editIcon = (
   <svg
     width="14"
     height="14"
@@ -41,8 +41,8 @@ const eyeIcon = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="m18 2 4 4-10 10H8v-4L18 2z" />
+    <path d="M13 6 18 11" />
   </svg>
 );
 
@@ -87,8 +87,8 @@ export function CustomerTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  function openCustomer(customerId: string) {
-    router.push(`/customers/view_user?id=${customerId}`);
+  function openCustomer(customerId: string, mode?: "edit") {
+    router.push(`/customers/view_user?id=${customerId}${mode ? `&mode=${mode}` : ""}`);
   }
 
   const branchNames = useMemo(
@@ -198,12 +198,12 @@ export function CustomerTable() {
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  openCustomer(row.id);
+                  openCustomer(row.id, "edit");
                 }}
                 className="mx-auto flex h-8 w-8 items-center justify-center rounded-md text-emerald-text transition-colors hover:bg-emerald-surface/50"
-                title={`View ${row.name}`}
+                title={`Edit ${row.name}`}
               >
-                {eyeIcon}
+                {editIcon}
               </button>
             );
           }

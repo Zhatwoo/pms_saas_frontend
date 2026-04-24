@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 import {
   buildFinanceQueues,
   formatCurrency,
@@ -11,7 +12,7 @@ import {
   type FundRequestRecord,
 } from "@/lib/fund-finance";
 import { AddFundsModal } from "./_components/add-funds-modal";
-import type { UnifiedFundResult } from "./_components/add-funds-modal";
+import type { UnifiedFundResult, Manager } from "./_components/add-funds-modal";
 import { BalanceOverview } from "./_components/balance-overview";
 import type { BranchBalance } from "./_components/balance-overview";
 import { RejectRequestModal } from "./_components/reject-request-modal";
@@ -104,9 +105,23 @@ function fmtCurrency(value: number) {
   })}`;
 }
 
+interface UserRecord {
+  id?: string;
+  authId?: string;
+  auth_id?: string;
+  fullName?: string;
+  full_name?: string;
+  email: string;
+  role: string;
+  branchId?: string | null;
+  branch_id?: string | null;
+}
+
 export default function BranchFinancePage() {
   const { selectedBranch, isAllBranches } = useBranch();
 
+  const [managers, setManagers] = useState<Manager[]>([]);
+  const [managersByBranch, setManagersByBranch] = useState<Record<string, Manager[]>>({});
   const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
   const [fundRequests, setFundRequests] = useState<FundRequestRecord[]>([]);
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
@@ -148,13 +163,37 @@ export default function BranchFinancePage() {
     const branchQuery = isAllBranches ? "" : `?branch=${selectedBranch.id}`;
 
     try {
-      const [dashboardData, requestData, transactionResponse, summaryData, ledgerData] = await Promise.all([
+      const [dashboardData, requestData, transactionResponse, summaryData, ledgerData, usersData] = await Promise.all([
         api.get<DashboardSummary>("/dashboard"),
         api.get<FundRequestRecord[]>(`/fund-requests${branchQuery}`),
         api.get<ApiTransaction[] | TransactionsResponse>(`/transactions${branchQuery}`),
         api.get<BranchFinanceSummaryItem[]>(`/branch-finance/summary${branchQuery}`),
         api.get<{ entries: LedgerEntry[]; total: number }>(`/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=100`),
+        api.get<UserRecord[]>("/users").catch(() => [] as UserRecord[]),
       ]);
+
+      const adminUsers = (usersData ?? []).filter(
+        (u) => u.role === "admin" || u.role === "super_admin",
+      );
+      const allManagers: Manager[] = adminUsers.map((u) => ({
+        id: u.id ?? u.authId ?? u.auth_id ?? u.email,
+        name: u.fullName ?? u.full_name ?? u.email,
+        role: u.role,
+      }));
+      setManagers(allManagers);
+
+      const byBranch: Record<string, Manager[]> = {};
+      for (const u of adminUsers) {
+        const bid = u.branchId ?? u.branch_id;
+        if (bid) {
+          (byBranch[bid] ??= []).push({
+            id: u.id ?? u.authId ?? u.auth_id ?? u.email,
+            name: u.fullName ?? u.full_name ?? u.email,
+            role: u.role,
+          });
+        }
+      }
+      setManagersByBranch(byBranch);
 
       const transactionData = Array.isArray(transactionResponse)
         ? transactionResponse
@@ -224,23 +263,72 @@ export default function BranchFinancePage() {
   }, [loadFinanceData]);
 
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+
+    const token = getTokenFromCookie();
+    if (token) {
+      void supabase.realtime.setAuth(token).catch(() => {
+        // ignore auth refresh errors for live dashboard updates
+      });
+    }
+
+    const channel = supabase
+      .channel("branch-finance-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "daily_balances" },
+        () => void loadFinanceData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transactions" },
+        () => void loadFinanceData(),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadFinanceData]);
+
+  useEffect(() => {
     setBranchFilter(isAllBranches ? "all" : selectedBranch.id);
   }, [isAllBranches, selectedBranch.id]);
 
-  const branchBalances = useMemo<BranchBalance[]>(
-    () =>
-      (dashboard?.branchBalances ?? []).map((branch) => ({
-        branchId: branch.branchId,
-        name: branch.name,
-        startingBalance: branch.startingBalance,
-        currentBalance: branch.currentBalance,
-        totalAdded: branch.totalAdded,
-        totalTransferred: branch.totalTransferred,
-        lastUpdated: branch.lastUpdated ?? new Date().toISOString(),
-        status: branch.status,
-      })),
-    [dashboard],
-  );
+  const branchBalances = useMemo<BranchBalance[]>(() => {
+    // Prefer branch-finance summary because it reflects latest daily_balances math.
+    if (financeSummaries.length > 0) {
+      const dashboardByBranch = new Map(
+        (dashboard?.branchBalances ?? []).map((b) => [b.branchId, b]),
+      );
+
+      return financeSummaries.map((summary) => {
+        const fallback = dashboardByBranch.get(summary.branchId);
+        return {
+          branchId: summary.branchId,
+          name: summary.branchName,
+          startingBalance: summary.startingBalance,
+          currentBalance: summary.currentBalance,
+          totalAdded: fallback?.totalAdded ?? 0,
+          totalTransferred: fallback?.totalTransferred ?? 0,
+          lastUpdated: fallback?.lastUpdated ?? new Date().toISOString(),
+          status: summary.status ?? "Unknown",
+        };
+      });
+    }
+
+    return (dashboard?.branchBalances ?? []).map((branch) => ({
+      branchId: branch.branchId,
+      name: branch.name,
+      startingBalance: branch.startingBalance,
+      currentBalance: branch.currentBalance,
+      totalAdded: branch.totalAdded,
+      totalTransferred: branch.totalTransferred,
+      lastUpdated: branch.lastUpdated ?? new Date().toISOString(),
+      status: branch.status,
+    }));
+  }, [dashboard, financeSummaries]);
 
   const scopedBalances = useMemo(() => {
     if (isAllBranches) return branchBalances;
@@ -705,10 +793,10 @@ export default function BranchFinancePage() {
         }}
         onSubmit={handleTransferSubmit}
         branchName={selectedTransferRequest?.branch?.name ?? selectedBranch.name}
-        managers={[]}
+        managers={managers}
         branches={branchBalances}
         currentBranchId={selectedTransferRequest?.branch?.id ?? (isAllBranches ? "001" : selectedBranch.id)}
-        getManagersForBranch={() => []}
+        getManagersForBranch={(branchId: string) => managersByBranch[branchId] ?? managers}
         defaultAmount={String(selectedTransferRequest?.approvedAmount ?? selectedTransferRequest?.amountRequested ?? "")}
         defaultNotes={selectedTransferRequest?.reviewNotes ?? selectedTransferRequest?.notes ?? ""}
         allowBranchTransfer={true}

@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api } from "@/lib/api";
+import { buildPawnTransactionHighlightHref, extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
+import { toast } from "sonner";
 
 type NotificationTab = "All" | "Transactions" | "Alerts" | "Requests";
 type NotificationGroup = "Today" | "Earlier";
@@ -209,6 +212,7 @@ export function Header({
   hideBranchSelector = false,
 }: HeaderProps) {
   const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
   const isSuperAdmin = user?.role === "super_admin";
   const pathname = usePathname();
   const router = useRouter();
@@ -218,36 +222,61 @@ export function Header({
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const notificationRef = useRef<HTMLDivElement | null>(null);
 
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const data = await api.get<any[]>("/notifications");
+      if (data && Array.isArray(data)) {
+        const now = new Date();
+        const today = now.toISOString().split("T")[0];
+        
+        let readIds: string[] = [];
+        const readStorageKey = user ? `pms_read_notifs_${user.id}` : null;
+        if (readStorageKey) {
+          try {
+            readIds = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
+          } catch {}
+        }
+
+        const mapped: HeaderNotification[] = data.map((item) => {
+          const itemDate = new Date(item.created_at).toISOString().split("T")[0];
+          let isUnread = !item.is_read;
+          if (readIds.includes(item.id)) {
+            isUnread = false;
+          }
+
+          return {
+            id: item.id,
+            title: item.title,
+            subtitle: item.subtitle,
+            category: item.category as any,
+            unread: isUnread,
+            group: itemDate === today ? "Today" : "Earlier",
+          };
+        });
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    }
+  }, [user]);
+
+  const fetchNotificationsRef = useRef(fetchNotifications);
+  useEffect(() => {
+    fetchNotificationsRef.current = fetchNotifications;
+  }, [fetchNotifications]);
+
   useEffect(() => {
     setTime(formatDateTime());
     const clockInterval = setInterval(() => setTime(formatDateTime()), 1000);
 
-    async function fetchNotifications() {
-      try {
-        const data = await api.get<any[]>("/notifications");
-        if (data && Array.isArray(data)) {
-          const now = new Date();
-          const today = now.toISOString().split("T")[0];
-
-          const mapped: HeaderNotification[] = data.map((item) => {
-            const itemDate = new Date(item.created_at).toISOString().split("T")[0];
-            return {
-              id: item.id,
-              title: item.title,
-              subtitle: item.subtitle,
-              category: item.category as any,
-              unread: !item.is_read,
-              group: itemDate === today ? "Today" : "Earlier",
-            };
-          });
-          setNotifications(mapped);
-        }
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err);
-      }
-    }
-
     void fetchNotifications();
+
+    // ─── Custom Event Listener (Bulletproof Fallback) ────────────────────
+    const handleTransactionCreated = () => {
+      console.log("[Header] Custom event triggered, refreshing notifications...");
+      void fetchNotificationsRef.current();
+    };
+    window.addEventListener("transaction_created", handleTransactionCreated);
 
     // ─── Realtime Subscription ───────────────────────────────────────────
     const supabase = getSupabaseBrowserClient();
@@ -266,21 +295,57 @@ export function Header({
     }
 
     const channel = supabase
-      .channel("header-notifications-live")
+      .channel("header-notifications-live-" + (user.id || ''))
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications" },
-        () => {
-          void fetchNotifications();
+        (payload) => {
+          console.log("[Notifications] Realtime event received:", payload);
+          const newNotif = payload.new as any;
+          if (payload.eventType === "INSERT") {
+             const isMatch = !newNotif.branch_id || 
+                             newNotif.branch_id === user?.branchId || 
+                             newNotif.branch_id === selectedBranch?.id ||
+                             isAllBranches ||
+                             user?.role === "admin" || 
+                             user?.role === "super_admin";
+             if (isMatch) {
+                toast.success(newNotif.title, {
+                  description: newNotif.subtitle,
+                });
+                
+                // Add it instantly to the dropdown UI
+                setNotifications((prev) => {
+                  const itemDate = new Date(newNotif.created_at || new Date()).toISOString().split("T")[0];
+                  const today = new Date().toISOString().split("T")[0];
+                  
+                  const mappedItem: HeaderNotification = {
+                    id: newNotif.id,
+                    title: newNotif.title,
+                    subtitle: newNotif.subtitle,
+                    category: newNotif.category as any,
+                    unread: !newNotif.is_read,
+                    group: itemDate === today ? "Today" : "Earlier",
+                  };
+                  return [mappedItem, ...prev];
+                });
+             }
+          } else {
+            // For updates/deletes, fetch the fresh list
+            void fetchNotificationsRef.current();
+          }
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("[Notifications] Realtime status:", status);
+      });
 
     return () => {
       clearInterval(clockInterval);
+      window.removeEventListener("transaction_created", handleTransactionCreated);
       void supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, selectedBranch?.id, isAllBranches]);
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {
@@ -309,6 +374,7 @@ export function Header({
   }, [isNotificationOpen]);
 
   const title = getPageTitle(pathname || "");
+  const isCustomerDetailPage = (pathname || "").includes("view_user");
   const isAllBranchesView = (branchName ?? "").toLowerCase() === "all branches";
   const superAdminScopeLabel = isAllBranchesView ? "Global Scope" : "Branch Scope";
   const superAdminScopeClass = isAllBranchesView
@@ -332,23 +398,33 @@ export function Header({
   );
 
   const markAllAsRead = async () => {
-    try {
-      await api.patch("/notifications/read-all", {});
-      setNotifications((prev) => prev.map((item) => ({ ...item, unread: false })));
-    } catch (err) {
-      console.error("Failed to mark all as read:", err);
-    }
+    if (!user) return;
+    const readStorageKey = `pms_read_notifs_${user.id}`;
+    
+    setNotifications((prev) => {
+      const allIds = prev.map((n) => n.id);
+      try {
+        const existing = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
+        const merged = Array.from(new Set([...existing, ...allIds]));
+        localStorage.setItem(readStorageKey, JSON.stringify(merged));
+      } catch {}
+      return prev.map((item) => ({ ...item, unread: false }));
+    });
   };
 
   const markOneAsRead = async (id: string) => {
+    if (!user) return;
+    const readStorageKey = `pms_read_notifs_${user.id}`;
+    
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
+    );
+    
     try {
-      await api.patch(`/notifications/${id}/read`, {});
-      setNotifications((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
-      );
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
-    }
+      const existing = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
+      const merged = Array.from(new Set([...existing, id]));
+      localStorage.setItem(readStorageKey, JSON.stringify(merged));
+    } catch {}
   };
 
   const handleViewAllNotifications = () => {
@@ -366,20 +442,46 @@ export function Header({
   };
 
   const renderNotificationRow = (item: HeaderNotification) => (
-    <button
-      key={item.id}
-      type="button"
-      onClick={() => markOneAsRead(item.id)}
-      className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:bg-surface-hover"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
-          <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
-        </div>
-        {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
-      </div>
-    </button>
+    (() => {
+      const transactionNo = extractTransactionNoFromText(item.title) ?? extractTransactionNoFromText(item.subtitle);
+      const isClickableTransaction = Boolean(transactionNo);
+
+      const content = (
+        <>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
+            </div>
+            {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
+          </div>
+        </>
+      );
+
+      if (!isClickableTransaction || !transactionNo) {
+        return (
+          <div key={item.id} className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left">
+            {content}
+          </div>
+        );
+      }
+
+      return (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => {
+            void markOneAsRead(item.id);
+            setIsNotificationOpen(false);
+            router.push(buildPawnTransactionHighlightHref(transactionNo));
+          }}
+          className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/70"
+          title={`Open pawn transaction ${transactionNo}`}
+        >
+          {content}
+        </button>
+      );
+    })()
   );
 
   return (
@@ -421,7 +523,7 @@ export function Header({
 
       <div className="flex items-center justify-self-end gap-3">
         {/* Branch Selector – superadmin only */}
-        {!hideBranchSelector && <BranchSelectorDropdown />}
+        {!hideBranchSelector && !isCustomerDetailPage && <BranchSelectorDropdown />}
 
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>

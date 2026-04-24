@@ -98,13 +98,7 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
   }, [isSuperAdmin]);
 
   return (
-    <div 
-      className={`grid gap-4 ${
-        isSuperAdmin 
-          ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6' 
-          : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
-      }`}
-    >
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
       <StatCard
         label="Total Contracts"
         value={data?.totalContracts || 0}
@@ -137,32 +131,15 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
               Total Overall Sales
             </p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-white">
-              {data?.totalOverallSales || "₱ 0"}
+              {isSuperAdmin 
+                ? `₱ ${liveCompanyBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`
+                : data?.totalOverallSales || "₱ 0"}
             </p>
           </div>
         </div>
       </div>
 
-      {isSuperAdmin && (
-        <div className="rounded-xl border border-blue-900 bg-blue-900 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-800 text-blue-200">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide font-bold text-blue-200">
-                Live Total Balance
-              </p>
-              <p className="mt-1 text-2xl font-bold tracking-tight text-blue-400">
-                ₱ {liveCompanyBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

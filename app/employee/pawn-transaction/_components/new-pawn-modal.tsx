@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
+import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -18,7 +21,7 @@ interface CustomerLookupRecord {
   address: string | null;
   barangay: string | null;
   city: string | null;
-  province: string | null;
+  region: string | null;
   id_presented: string | null;
 }
 
@@ -78,7 +81,7 @@ function createEmptyForm() {
     address: "",
     barangay: "",
     city: "",
-    province: "",
+    region: "",
     contactNo: "",
     email: "",
     idPresented: "",
@@ -111,6 +114,14 @@ interface NewPawnModalProps {
   branchPhone?: string;
   branchAdminName?: string;
   loggedInUserName?: string;
+  onSuccess?: (transactionNo?: string) => void;
+}
+
+interface CreatedPawnTicketResponse {
+  transaction?: {
+    transaction_no?: string;
+    transactionNo?: string;
+  };
 }
 
 export function NewPawnModal({ 
@@ -121,8 +132,11 @@ export function NewPawnModal({
   branchAddress,
   branchPhone,
   branchAdminName, 
-  loggedInUserName 
+  loggedInUserName,
+  onSuccess
 }: NewPawnModalProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [form, setForm] = useState(() => createEmptyForm());
 
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -337,7 +351,7 @@ export function NewPawnModal({
       address: customer.address ?? "",
       barangay: customer.barangay ?? "",
       city: customer.city ?? "",
-      province: customer.province ?? "",
+      region: customer.region ?? "",
       contactNo: customer.contact_number ?? "",
       email: customer.email ?? "",
       idPresented: customer.id_presented ?? "",
@@ -599,7 +613,7 @@ export function NewPawnModal({
     }
 
     try {
-      await api.post('/pawn-tickets', {
+      const response = await api.post<CreatedPawnTicketResponse>('/pawn-tickets', {
         branchId,
         branchName,
         customerId: selectedCustomerId ?? undefined,
@@ -608,7 +622,7 @@ export function NewPawnModal({
           address: form.address.trim(),
           barangay: form.barangay.trim(),
           city: form.city.trim(),
-          province: form.province.trim(),
+          region: form.region.trim(),
           contactNumber: form.contactNo.trim(),
           email: form.email.trim(),
           idPresented: form.idPresented,
@@ -634,14 +648,47 @@ export function NewPawnModal({
           pawnAmount: amountValue,
           storageFee: storageAmount,
           returnAmount: 0,
-          details: [form.itemsIncluded.trim(), form.idPresented].filter(Boolean).join(' | '),
+          details: [form.itemsIncluded.trim(), form.idPresented, `Processed by: ${loggedInUserName || 'Employee'}`].filter(Boolean).join(' | '),
         },
       });
 
+      const createdTransactionNo =
+        response?.transaction?.transaction_no ??
+        response?.transaction?.transactionNo ??
+        "";
+
+      if (createdTransactionNo) {
+        const targetPath = `${pathname || "/employee/pawn-transaction"}?transactionNo=${encodeURIComponent(createdTransactionNo)}&highlightTransaction=true`;
+
+        toast.custom((toastId) => (
+          <div className="flex w-[360px] items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-xl shadow-emerald-900/10">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-emerald-900">New pawn transaction created</p>
+              <p className="mt-0.5 truncate text-xs text-emerald-700">{createdTransactionNo}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                toast.dismiss(toastId);
+                router.push(targetPath);
+              }}
+              className="shrink-0 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-800"
+            >
+              View
+            </button>
+          </div>
+        ));
+      } else {
+        toast.success("New pawn ticket generated successfully!");
+      }
+
+      if (onSuccess) onSuccess(createdTransactionNo);
       setIsMoaOpen(false);
       onClose();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : String(error));
+      const msg = error instanceof Error ? error.message : String(error);
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -650,121 +697,73 @@ export function NewPawnModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-emerald-950/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] overflow-hidden rounded-2xl border border-emerald-500/20 bg-white shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-emerald-50 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-900 flex items-center justify-center text-white shadow-lg shadow-emerald-900/20">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                  {branchName}
+                </p>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                  New Pawn Ticket
+                </h1>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleReset} 
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white dark:bg-surface/10 text-white transition-colors hover:bg-white dark:bg-surface/20"
+              aria-label="Close"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-emerald-950 uppercase tracking-tight leading-none">New Pawn Ticket</h1>
-              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-1.5">{branchName}</p>
-            </div>
+            </button>
           </div>
-          
-          <button onClick={handleReset} className="p-2 hover:bg-zinc-100 rounded-lg transition-colors group">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-zinc-400 group-hover:text-zinc-900">
-              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-8 bg-slate-50/30">
-          <div className="max-w-5xl mx-auto space-y-8">
-            
-            {/* QR Code Generator Section */}
-            <div className="rounded-3xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm border border-emerald-100">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-black text-emerald-900 uppercase tracking-tight">QR Code Generator</h3>
-                  {errorMessage && errorMessage.includes("before generating QR") ? (
-                    <p className="text-[11px] font-bold text-red-500 animate-pulse">{errorMessage}</p>
-                  ) : (
-                    <p className="text-xs font-medium text-emerald-700/70">Generate a unique QR code for this pawn item using Unit Code, Serial No., and Barcode ID.</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
-                {/* Generated QR Preview */}
-                {qrUrl && (
-                  <div className="flex flex-col items-center gap-2">
-                    <Image
-                      src={qrUrl}
-                      alt="Generated QR Code"
-                      width={100}
-                      height={100}
-                      unoptimized
-                      className="rounded-xl border-2 border-emerald-200 shadow-md bg-white p-1 animate-in fade-in zoom-in duration-300"
-                      onError={() => setQrUrl(null)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQrUrl(null)}
-                      className="text-[10px] font-bold text-red-500 underline hover:text-red-700 transition-colors"
-                    >
-                      Reset QR
-                    </button>
-                  </div>
-                )}
-
-                {!qrUrl && (
-                  <button
-                    type="button"
-                    onClick={handleGenerateQR}
-                    disabled={isGeneratingQR}
-                    className="w-full sm:w-auto rounded-xl bg-emerald-700 px-8 py-4 text-sm font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 active:scale-95 transition-all uppercase tracking-wider disabled:opacity-60 flex items-center gap-2"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
-                      <path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" />
-                    </svg>
-                    {isGeneratingQR ? "Generating..." : "Generate QR Code"}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-emerald-50/30 dark:bg-surface-secondary">
+          <div className="max-w-6xl mx-auto space-y-4">
+            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Customer Information */}
-              <div className="space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <h3 className="text-sm font-black text-zinc-800 uppercase tracking-widest">Customer Details</h3>
+                    <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Customer Details</h3>
                   </div>
 
-                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-zinc-200 bg-zinc-100 p-1 shadow-sm">
+                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-emerald-100 dark:border-border-subtle bg-emerald-50/50 dark:bg-surface/50 p-1 shadow-sm">
                     <span
-                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
+                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white dark:bg-emerald-900/40 shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
                     />
                     <button
                       type="button"
                       onClick={() => setCustomerMode("new")}
-                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "new" ? "text-emerald-900" : "text-zinc-500"}`}
+                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "new" ? "text-emerald-900 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`}
                     >
                       New Customer
                     </button>
                     <button
                       type="button"
                       onClick={handleSwitchToExistingCustomers}
-                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "existing" ? "text-emerald-900" : "text-zinc-500"}`}
+                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "existing" ? "text-emerald-900 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`}
                     >
                       Existing Customer
                     </button>
@@ -776,14 +775,14 @@ export function NewPawnModal({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Loaded branch customer</p>
-                        <p className="mt-1 text-sm font-black text-emerald-950">{selectedCustomer.full_name}</p>
+                        <p className="mt-1 text-sm font-black text-emerald-950 dark:text-white">{selectedCustomer.full_name}</p>
                         <p className="mt-0.5 text-xs font-medium text-emerald-800/70">This contract will reuse the selected branch record.</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={handleSwitchToExistingCustomers}
-                          className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition-colors hover:bg-emerald-50"
+                          className="rounded-xl border border-emerald-200 bg-white dark:bg-surface px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition-colors hover:bg-emerald-50"
                         >
                           Change Customer
                         </button>
@@ -797,7 +796,7 @@ export function NewPawnModal({
                         <button
                           type="button"
                           onClick={handleClearForm}
-                          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600 transition-colors hover:bg-zinc-50"
+                          className="rounded-xl border border-zinc-200 dark:border-border bg-white dark:bg-surface px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600 transition-colors hover:bg-zinc-50 dark:bg-surface-secondary"
                         >
                           Clear Form
                         </button>
@@ -807,10 +806,10 @@ export function NewPawnModal({
                 )}
 
                 {customerMode === "existing" ? (
-                  <div className="space-y-4 rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm">
+                  <div className="space-y-4 rounded-3xl border border-zinc-200 dark:border-border bg-white dark:bg-surface p-4 shadow-sm">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Search by name only</p>
-                      <p className="text-xs font-medium text-zinc-500">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                           Find a branch customer, review the contact details, and load the record into the pawn form.
                       </p>
                     </div>
@@ -831,7 +830,7 @@ export function NewPawnModal({
                     />
 
                     {isLoadingCustomers ? (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center text-sm font-medium text-zinc-400">
+                      <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary px-4 py-6 text-center text-sm font-medium text-zinc-400">
                         Loading branch customers...
                       </div>
                     ) : customerLookupError ? (
@@ -839,7 +838,7 @@ export function NewPawnModal({
                         {customerLookupError}
                       </div>
                     ) : filteredBranchCustomers.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-6 text-center text-sm font-medium text-zinc-400">
+                      <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary px-4 py-6 text-center text-sm font-medium text-zinc-400">
                         No matching branch customer found.
                       </div>
                     ) : (
@@ -854,15 +853,15 @@ export function NewPawnModal({
                               key={customer.id}
                               type="button"
                               onClick={() => handleSelectExistingCustomer(customer)}
-                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-zinc-200 bg-white hover:border-emerald-200"}`}
+                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-zinc-200 dark:border-border bg-white dark:bg-surface hover:border-emerald-200"}`}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0 space-y-1">
-                                  <p className="truncate text-sm font-black text-zinc-900">{customer.full_name}</p>
-                                  <p className="truncate text-xs font-medium text-zinc-500">
+                                  <p className="truncate text-sm font-black text-zinc-900 dark:text-white">{customer.full_name}</p>
+                                  <p className="truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                     {customer.contact_number || "No contact number"}
                                   </p>
-                                  <p className="truncate text-xs font-medium text-zinc-500">
+                                  <p className="truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                     {customer.email || "No email address"}
                                   </p>
                                 </div>
@@ -885,28 +884,32 @@ export function NewPawnModal({
                       <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
                     </div>
 
-                    <Input label="Street / Subdivision / Compound" name="address" value={form.address} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
+                    <PhilippineAddressFields
+                      key={selectedCustomerId || "new-customer"}
+                      value={{
+                        address: form.address,
+                        barangay: form.barangay,
+                        city: form.city,
+                        region: form.region,
+                      }}
+                      disabled={Boolean(selectedCustomerId)}
+                      onFieldChange={(field, nextValue) => {
+                        setForm((prev) => ({ ...prev, [field]: nextValue }));
+                      }}
+                    />
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input label="Barangay / District / Locality" name="barangay" value={form.barangay} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
-                      <Input label="City / Municipality" name="city" value={form.city} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input label="Province" name="province" value={form.province} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
-                      <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" readOnly={Boolean(selectedCustomerId)} />
-                    </div>
+                    <Input label="Contact No." name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" readOnly={Boolean(selectedCustomerId)} />
 
                     <Input label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="example@email.com" readOnly={Boolean(selectedCustomerId)} />
 
                     <div className="space-y-1.5 w-full">
-                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">ID Presented</label>
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">ID Presented</label>
                       <select
                         name="idPresented"
                         value={form.idPresented}
                         onChange={handleChange}
                         disabled={Boolean(selectedCustomerId)}
-                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100"
+                        className="w-full rounded-xl border border-zinc-200 dark:border-border bg-white dark:bg-surface px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100 dark:bg-surface-hover [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                       >
                         <option value="">— Select ID Type —</option>
                         <optgroup label="Government IDs">
@@ -935,7 +938,7 @@ export function NewPawnModal({
                     </div>
 
                     {/* Camera capture section */}
-                    <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100">
+                    <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 dark:bg-surface-secondary border border-zinc-100">
                       <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                          {getVerificationMode(form.idPresented) === "no-id"
@@ -948,7 +951,7 @@ export function NewPawnModal({
                       </span>
 
                       {getVerificationMode(form.idPresented) === "pending" ? (
-                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-6 text-center text-xs font-medium text-zinc-400">
+                        <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-surface px-4 py-6 text-center text-xs font-medium text-zinc-400">
                           Select an ID type to show the required verification photo fields.
                         </div>
                       ) : getVerificationMode(form.idPresented) === "no-id" ? (
@@ -983,12 +986,12 @@ export function NewPawnModal({
               </div>
 
               {/* Unit Information */}
-              <div className="space-y-6">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-1">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                   </div>
-                  <h3 className="text-sm font-black text-zinc-800 uppercase tracking-widest">Unit Information</h3>
+                  <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Unit Information</h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -1001,32 +1004,34 @@ export function NewPawnModal({
                       bg="bg-zinc-200" 
                       readOnly={true}
                     />
-                    <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100" />
+                    <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
                   </div>
 
-                  <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 space-y-4">
+                  <div className="rounded-2xl border border-zinc-100 bg-zinc-50 dark:bg-surface-secondary p-4 space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Item Photo</p>
-                        <p className="text-xs font-medium text-zinc-500">Capture every angle of the pawned item for inventory review.</p>
+                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Capture every angle of the pawned item for inventory review.</p>
                       </div>
                       <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
                         {form.itemPhotos.length} photo{form.itemPhotos.length === 1 ? "" : "s"}
                       </span>
                     </div>
-                    <div className="space-y-4">
-                      <PhotoUpload
-                        label="Capture Item Photo"
-                        frameClassName="aspect-[16/9]"
-                        allowMultipleCapture
-                        onCapture={handleAddItemPhoto}
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="sm:col-span-1 h-full">
+                        <PhotoUpload
+                          label="Capture Item Photo"
+                          frameClassName="h-32 sm:h-full min-h-[8rem] w-full"
+                          allowMultipleCapture
+                          onCapture={handleAddItemPhoto}
+                        />
+                      </div>
 
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-3">
+                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-surface p-3 flex flex-col">
                         {form.itemPhotos.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                             {form.itemPhotos.map((photo, index) => (
-                              <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-sm">
+                              <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover shadow-sm">
                                 <Image
                                   src={photo}
                                   alt={`Item photo ${index + 1}`}
@@ -1049,7 +1054,7 @@ export function NewPawnModal({
                             ))}
                           </div>
                         ) : (
-                          <div className="flex h-full min-h-[10rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 text-center text-xs font-medium text-zinc-400">
+                          <div className="flex flex-1 h-full min-h-[8rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary px-4 text-center text-xs font-medium text-zinc-400">
                             No item photos captured yet.
                           </div>
                         )}
@@ -1058,12 +1063,12 @@ export function NewPawnModal({
                   </div>
 
                   <div className="space-y-1.5 w-full">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Category</label>
+                    <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">Category</label>
                     <select
                       name="category"
                       value={form.category}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
+                      className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                     >
                       <option value="">— Select Category —</option>
                       <option value="Smartphone">Smartphone</option>
@@ -1083,24 +1088,24 @@ export function NewPawnModal({
                       name="categorySpecify"
                       value={form.categorySpecify}
                       onChange={handleChange}
-                      bg="bg-zinc-100"
+                      bg="bg-zinc-100 dark:bg-surface-hover"
                       placeholder="Enter specific category"
                     />
                   )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <Input label="Serial Number" name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
-                    <Input label="Items Included" name="itemsIncluded" value={form.itemsIncluded} onChange={handleChange} bg="bg-zinc-100" />
+                    <Input label="Items Included" name="itemsIncluded" value={form.itemsIncluded} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Condition</label>
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">Condition</label>
                       <select
                         name="condition"
                         value={form.condition}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-3 text-sm font-bold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer"
+                        className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                       >
                         <option value="">Select Condition</option>
                         <option value="New">New</option>
@@ -1109,17 +1114,17 @@ export function NewPawnModal({
                         <option value="Poor">Poor</option>
                       </select>
                     </div>
-                    <Input label="Memory" name="memory" value={form.memory} onChange={handleChange} bg="bg-zinc-100" />
+                    <Input label="Memory" name="memory" value={form.memory} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
                   </div>
 
-                  <Input label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} bg="bg-zinc-100" />
+                  <Input label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
 
                   <div className="grid grid-cols-2 gap-3">
-                    <Input label="Amount" name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100" prefix="₱" />
-                    <Input label="Purchased Date" name="purchasedDate" value={form.purchasedDate} onChange={handleChange} type="date" bg="bg-zinc-100" />
+                    <Input label="Amount" name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
+                    <Input label="Purchased Date" name="purchasedDate" value={form.purchasedDate} onChange={handleChange} type="date" bg="bg-zinc-100 dark:bg-surface-hover" />
                   </div>
 
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 mt-2">
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 dark:border-border-subtle mt-2">
                     <div className="flex items-center gap-3">
                       <div className="relative flex items-center cursor-pointer">
                         <input
@@ -1148,7 +1153,7 @@ export function NewPawnModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-emerald-50 bg-white flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
+        <div className="p-6 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
           <div className="flex items-center gap-6 w-full sm:w-auto">
             <button 
               onClick={handleReset}
@@ -1156,24 +1161,24 @@ export function NewPawnModal({
             >
               Cancel
             </button>
-            <div className="h-10 w-px bg-zinc-100 hidden sm:block" />
+            <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
             <div className="flex flex-col sm:flex-row gap-4 flex-1 sm:flex-none">
               {/* Password — entered by the logged-in employee */}
               <div className="min-w-[200px] space-y-1.5">
-                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">
+                <label className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest ml-1">
                   Security Password Verification
                   {loggedInUserName && (
                     <span className="ml-1 text-emerald-600 normal-case font-bold">({loggedInUserName})</span>
                   )}
                 </label>
-                <div className="relative flex items-center rounded-xl border border-zinc-200 bg-zinc-50 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
+                <div className="relative flex items-center rounded-xl border border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
                   <input
                     name="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-transparent px-4 py-2 text-sm font-bold text-zinc-900 outline-none placeholder:text-zinc-300"
+                    className="w-full bg-transparent px-4 py-2 text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
                   />
                 </div>
               </div>
@@ -1181,26 +1186,68 @@ export function NewPawnModal({
           </div>
           
           <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-4 sm:pt-0">
-             <div className="text-right">
-                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
-                <p className="text-2xl font-black text-emerald-900 tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
+             <div className="text-right hidden sm:block">
+                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
+                <p className="text-xl font-black text-emerald-900 dark:text-white tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
              </div>
              
-             {qrUrl && (
+             {qrUrl ? (
+               <div className="flex items-center gap-4">
+                 <div className="relative group shrink-0">
+                   <Image 
+                     src={qrUrl} 
+                     alt="QR Preview" 
+                     width={44} 
+                     height={44} 
+                     unoptimized
+                     className="rounded-lg shadow-sm border border-emerald-200 bg-white dark:bg-surface p-0.5" 
+                   />
+                   <button 
+                     onClick={() => setQrUrl(null)} 
+                     className="absolute -top-1.5 -right-1.5 bg-zinc-900 hover:bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-colors"
+                   >
+                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                   </button>
+                 </div>
+                 <button
+                   type="button"
+                   onClick={handleGenerateTicket}
+                   disabled={isSaving}
+                   className="bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 text-white text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-emerald-700/20 transition-all active:scale-[0.98] flex items-center gap-2"
+                 >
+                   {isSaving ? (
+                    <div className="flex items-center gap-2">
+                      <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
+                      <span>Generating Ticket...</span>
+                    </div>
+                  ) : "Print Pawn Ticket"}
+                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                 </button>
+               </div>
+             ) : (
                <button
                  type="button"
-                 onClick={handleGenerateTicket}
-                 disabled={isSaving}
-                 className="bg-emerald-700 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-white font-black px-8 py-4 rounded-xl shadow-xl shadow-emerald-700/20 transition-all active:scale-[0.98] text-lg uppercase tracking-tight flex items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                 onClick={handleGenerateQR}
+                 disabled={isGeneratingQR}
+                 className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center gap-2 relative shadow-sm"
                >
-                 {isSaving ? 'Processing...' : 'Generate Ticket'}
-                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
+                 {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
+                 {errorMessage && errorMessage.includes("before generating QR") && (
+                   <span className="absolute -top-2 -right-2 flex h-3 w-3">
+                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                   </span>
+                 )}
                </button>
              )}
           </div>
           {errorMessage && (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {errorMessage}
+            <div className="absolute top-4 right-6 left-6 z-50 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+              <p>{errorMessage}</p>
+              <button onClick={() => setErrorMessage(null)} className="text-red-500 hover:text-red-700 p-1">
+                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
           )}
         </div>
@@ -1216,7 +1263,8 @@ export function NewPawnModal({
           idPresented: form.idPresented || "",
           branchName: branchName || "Pasig branch",
           branchAddress: branchAddress || "",
-          branchPhone: branchPhone || ""
+          branchPhone: branchPhone || "",
+          processedBy: loggedInUserName || branchAdminName || "AUTHORIZED PERSONNEL"
         }}
         isLoading={isSaving}
       />
@@ -1231,7 +1279,7 @@ function Input({
   onChange, 
   placeholder, 
   type = "text", 
-  bg = "bg-white",
+  bg = "bg-white dark:bg-surface",
   prefix,
   size = "md",
   readOnly = false
@@ -1249,8 +1297,8 @@ function Input({
 }) {
   return (
     <div className="space-y-1.5 w-full">
-      {label && <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{label}</label>}
-      <div className={`relative flex items-center rounded-xl border border-zinc-200 ${bg} focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100' : ''}`}>
+      {label && <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">{label}</label>}
+      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border ${bg} focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100 dark:bg-surface-hover' : ''}`}>
         {prefix && <span className="pl-4 text-zinc-400 font-bold">{prefix}</span>}
         <input
           name={name}
@@ -1259,7 +1307,7 @@ function Input({
           placeholder={placeholder}
           type={type}
           readOnly={readOnly}
-          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-sm font-bold text-zinc-900 outline-none placeholder:text-zinc-300 ${readOnly ? 'cursor-not-allowed select-none' : ''}`}
+          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-xs font-black text-emerald-950 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium ${readOnly ? 'cursor-not-allowed select-none' : ''} [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
         />
       </div>
     </div>
@@ -1350,8 +1398,8 @@ function PhotoUpload({
       {/* Thumbnail / Placeholder */}
       <div
         onClick={allowMultipleCapture || !photo ? openCamera : undefined}
-        className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
-          ${ photo ? "border-emerald-400 cursor-pointer" : "border-zinc-200 hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer" }`}
+        className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white dark:bg-surface flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
+          ${ photo ? "border-emerald-400 cursor-pointer" : "border-zinc-200 dark:border-border hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer" }`}
       >
         {photo && !allowMultipleCapture ? (
           <>
@@ -1366,7 +1414,7 @@ function PhotoUpload({
               <button
                 type="button"
                 onClick={retake}
-                className="bg-white text-emerald-700 font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-emerald-50 transition"
+                className="bg-white dark:bg-surface text-emerald-700 font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-emerald-50 transition"
               >
                 {allowMultipleCapture ? "Capture Again" : "Retake"}
               </button>
@@ -1374,7 +1422,7 @@ function PhotoUpload({
           </>
         ) : (
           <>
-            <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center mb-2 group-hover:bg-emerald-100 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-surface-secondary flex items-center justify-center mb-2 group-hover:bg-emerald-100 transition-colors">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-400 group-hover:text-emerald-600 transition-colors">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
               </svg>
@@ -1430,7 +1478,7 @@ function PhotoUpload({
               <button
                 type="button"
                 onClick={stopCamera}
-                className="px-5 py-2 rounded-xl bg-zinc-700 text-xs font-black text-zinc-300 hover:bg-zinc-600 transition"
+                className="px-5 py-2 rounded-xl bg-zinc-700 text-xs font-black text-zinc-300 dark:text-zinc-600 hover:bg-zinc-600 transition"
               >
                 Cancel
               </button>
@@ -1438,7 +1486,7 @@ function PhotoUpload({
                 type="button"
                 onClick={capturePhoto}
                 disabled={!isStreaming}
-                className="w-14 h-14 rounded-full bg-white border-4 border-emerald-500 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-40"
+                className="w-14 h-14 rounded-full bg-white dark:bg-surface border-4 border-emerald-500 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-40"
                 title="Capture photo"
               >
                 <span className="w-10 h-10 rounded-full bg-emerald-600 block" />

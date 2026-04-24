@@ -67,8 +67,10 @@ export default function DashboardPage() {
     async function fetchDashboardKpis() {
       setIsLoading(true);
       try {
-        const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-        const data = await api.get<PawnKpisResponse>(`/dashboard/pawn-kpis${query}`);
+        const params = new URLSearchParams();
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
+        params.set("period", activePeriod.toLowerCase());
+        const data = await api.get<PawnKpisResponse>(`/dashboard/pawn-kpis?${params}`);
         if (data) {
           setOverallData(data.overallData);
           setKpiData(data.kpiData);
@@ -84,7 +86,7 @@ export default function DashboardPage() {
       }
     }
     fetchDashboardKpis();
-  }, [selectedBranch.id, isAllBranches]);
+  }, [selectedBranch.id, isAllBranches, activePeriod]);
 
   return (
     <div className="space-y-5">

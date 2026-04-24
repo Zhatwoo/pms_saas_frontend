@@ -90,6 +90,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [remarks, setRemarks] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [itemPhotoIndex, setItemPhotoIndex] = useState(0);
+  const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
   const touchStartXRef = useRef<number | null>(null);
 
   const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
@@ -136,6 +137,20 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       ].filter((photo): photo is string => Boolean(photo))))
     : [];
 
+  const customerIdPresented = item?.customer?.id_presented?.trim().toLowerCase() || "";
+  const hasCustomerId = Boolean(
+    customerIdPresented &&
+      customerIdPresented !== "-" &&
+      customerIdPresented !== "n/a" &&
+      customerIdPresented !== "no id / none",
+  );
+  const identityMedia = hasCustomerId
+    ? [
+        { src: item?.id_photo || "", label: "Front ID" },
+        { src: item?.id_back_photo || "", label: "Back ID" },
+      ].filter((entry) => Boolean(entry.src))
+    : [{ src: item?.profile_photo || item?.id_photo || item?.item_photo || "", label: "Captured image" }].filter((entry) => Boolean(entry.src));
+
   useEffect(() => {
     setItemPhotoIndex(0);
   }, [item?.id, itemPhotos.length]);
@@ -180,7 +195,6 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
     });
   };
 
-  const ownerVisual = item?.profile_photo || item?.id_photo || item?.id_back_photo || null;
   const qrVisual = item?.qr_code
     ? item.qr_code.startsWith('data:')
       ? item.qr_code
@@ -190,6 +204,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   if (!isOpen) return null;
 
   return (
+    <>
     <div 
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md px-4 py-8 overflow-y-auto print:bg-white print:p-0 print:block"
       onClick={onClose}
@@ -254,39 +269,82 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full md:w-[350px] bg-emerald-950 p-8 flex flex-col text-white shrink-0 md:max-h-[90vh] overflow-y-auto scrollbar-hide">
-          <div className="flex flex-col gap-6 min-h-max">
-            <div className="flex min-h-[220px] flex-1 flex-col items-center text-center">
-              <SectionTitle><span className="text-emerald-400">Image of the Owner</span></SectionTitle>
-              <div className="relative flex-1 w-full overflow-hidden rounded-[2rem] border border-emerald-800 bg-emerald-900/60 shadow-2xl">
-                {ownerVisual ? (
-                  <Image
-                    src={ownerVisual}
-                    alt="Image of the Owner"
-                    fill
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center px-6 text-center">
-                    <div className="space-y-2 opacity-60">
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
-                        No owner image saved
-                      </p>
+        <div className="w-full md:w-[320px] bg-emerald-950 p-5 flex flex-col text-white shrink-0 md:max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="flex flex-col gap-4 min-h-max">
+            <div className="flex flex-col items-center text-center">
+              <SectionTitle><span className="text-emerald-400">Identity Media</span></SectionTitle>
+              {hasCustomerId ? (
+                <div className="grid w-full gap-3 md:grid-cols-2">
+                  {identityMedia.map((media) => (
+                    <button
+                      key={media.label}
+                      type="button"
+                      onClick={() => setPreview(media.src ? { src: media.src, title: media.label } : null)}
+                      className="group relative h-[180px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
+                    >
+                      <Image
+                        src={media.src}
+                        alt={media.label}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                      <div className="absolute left-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                        Expand
+                      </div>
+                      <div className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                        {media.label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (identityMedia[0]?.src) {
+                      setPreview({ src: identityMedia[0].src, title: identityMedia[0].label });
+                    }
+                  }}
+                  className="group relative h-[200px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
+                >
+                  {identityMedia[0]?.src ? (
+                    <>
+                      <Image
+                        src={identityMedia[0].src}
+                        alt={identityMedia[0].label}
+                        fill
+                        unoptimized
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                      <div className="absolute left-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                        Expand
+                      </div>
+                      <div className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                        {identityMedia[0].label}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center px-6 text-center">
+                      <div className="space-y-2 opacity-60">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
+                          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                          <circle cx="12" cy="13" r="3" />
+                        </svg>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
+                          No capture available
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </button>
+              )}
             </div>
 
-            <div className="flex min-h-[220px] flex-1 flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Item Visuals</span></SectionTitle>
               <div
-                className="relative flex-1 w-full overflow-hidden rounded-[2rem] border border-emerald-800 bg-emerald-900/60 shadow-2xl"
+                className="relative h-[200px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
                 onTouchStart={handleItemTouchStart}
                 onTouchEnd={handleItemTouchEnd}
               >
@@ -363,20 +421,20 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
             </div>
 
-            <div className="flex min-h-[220px] flex-1 flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Security Identity</span></SectionTitle>
-              <div className="relative flex flex-1 w-full items-center justify-center">
+              <div className="flex w-full items-center justify-center">
                 {qrVisual ? (
                   <Image
                     src={qrVisual}
                     alt="Security QR"
-                    width={220}
-                    height={220}
+                    width={180}
+                    height={180}
                     unoptimized
-                    className="object-contain bg-white p-4 rounded-[2rem] shadow-2xl"
+                    className="object-contain bg-white p-3 rounded-2xl shadow-xl"
                   />
                 ) : (
-                  <div className="flex h-[220px] w-[220px] items-center justify-center rounded-[2rem] border-2 border-dashed border-emerald-300 bg-emerald-100/30">
+                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/70">No QR generated</p>
                   </div>
                 )}
@@ -433,7 +491,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
 
               {/* Grid 2: Customer info */}
-              <div className="rounded-[2rem] bg-zinc-50 border border-zinc-100 p-8 space-y-6">
+              <div className="rounded-[2rem] bg-surface-secondary border border-border-main p-8 space-y-6">
                 <SectionTitle>Customer Profile</SectionTitle>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                    <DetailItem label="Full Name" value={item.customer?.full_name || "WALK-IN CUSTOMER"} />
@@ -458,7 +516,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                       value={remarks}
                       onChange={(e) => setRemarks(e.target.value)}
                       placeholder="Add internal notes about the item condition or specific investigations..."
-                      className="w-full min-h-[120px] rounded-3xl border border-border-main bg-white p-6 text-sm font-medium text-text-primary outline-none focus:border-emerald-500 shadow-inner"
+                      className="w-full min-h-[120px] rounded-3xl border border-border-main bg-surface-secondary p-6 text-sm font-medium text-text-primary outline-none focus:border-emerald-500"
                     />
                     {onSaveRemarks && (
                       <div className="flex justify-end">
@@ -474,7 +532,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-3xl bg-zinc-50 p-6 border border-zinc-200">
+                  <div className="rounded-3xl bg-surface-secondary p-6 border border-border-main">
                     <p className="text-sm font-medium italic text-text-secondary leading-relaxed">
                       "{item.remarks || "No additional notes or description provided for this item."}"
                     </p>
@@ -488,7 +546,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                  <div className="space-y-3">
                     {item.renewals.length > 0 ? (
                       item.renewals.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-5 bg-white rounded-2xl border border-zinc-100 group hover:border-emerald-200 transition-colors">
+                        <div key={i} className="flex items-center justify-between p-5 bg-surface-secondary rounded-2xl border border-border-main group hover:border-emerald-200 transition-colors">
                           <div className="flex items-center gap-4">
                              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-[10px] font-black text-emerald-700">R{i+1}</div>
                              <div>
@@ -500,7 +558,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                         </div>
                       ))
                     ) : (
-                      <div className="py-10 text-center opacity-30 border-2 border-dashed border-zinc-200 rounded-[2rem]">
+                      <div className="py-10 text-center opacity-30 border-2 border-dashed border-border-main rounded-[2rem]">
                          <p className="text-[10px] font-black uppercase tracking-widest">Original Pawn Cycle (No Renewals)</p>
                       </div>
                     )}
@@ -508,7 +566,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
 
               {/* Quick Actions Footer */}
-              <div className="pt-8 border-t border-zinc-100 flex items-center justify-between">
+              <div className="pt-8 border-t border-border-subtle flex items-center justify-between">
                  <p className="text-[10px] font-bold text-text-tertiary italic">Last updated: {item.created_at?.split('T')[0] || "—"}</p>
                  <div className="flex gap-4">
                     <button 
@@ -517,12 +575,14 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     >
                       CLOSE RECORD
                     </button>
-                    <button 
-                      onClick={() => window.print()}
-                      className="px-8 py-4 rounded-2xl bg-zinc-900 text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xl"
-                    >
-                      PRINT LABEL
-                    </button>
+                    {userRole !== "viewer" && (
+                      <button 
+                        onClick={() => window.print()}
+                        className="px-8 py-4 rounded-2xl bg-zinc-900 text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xl"
+                      >
+                        PRINT LABEL
+                      </button>
+                    )}
                  </div>
               </div>
             </div>
@@ -538,5 +598,34 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         </button>
       </div>
     </div>
+
+    {preview && (
+      <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-md" onClick={() => setPreview(null)}>
+        <div className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-surface shadow-2xl" onClick={(event) => event.stopPropagation()}>
+          <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Identity Preview</p>
+              <h3 className="mt-1 text-lg font-black text-text-primary">{preview.title}</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreview(null)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover"
+              aria-label="Close image preview"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex max-h-[calc(90vh-72px)] items-center justify-center bg-zinc-950 p-4">
+            <Image src={preview.src} alt={preview.title} width={1600} height={1200} unoptimized className="max-h-[calc(90vh-120px)] w-full object-contain" />
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
