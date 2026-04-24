@@ -8,7 +8,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { UserActions } from "./_components/user-actions";
 import { UserStats } from "./_components/user-stats";
 import { UserTable } from "./_components/user-table";
-import { UpdateUserModal } from "@/app/(pages)/users/_components/update-user-modal";
+import { UserDetailDrawer } from "./_components/user-detail-drawer";
+import { UpdateUserModal } from "./_components/update-user-modal";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
@@ -110,6 +111,7 @@ export default function AdminUserManagementPage() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -249,6 +251,11 @@ export default function AdminUserManagementPage() {
     [canAdminManageUser],
   );
 
+  const handleOpenDetails = useCallback((target: UserRecord) => {
+    setSelectedUser(target);
+    setIsDrawerOpen(true);
+  }, []);
+
   const handleUpdateUser = useCallback(
     async (id: string, input: UpdateUserInput) => {
       const target = users.find((u) => u.id === id);
@@ -326,7 +333,7 @@ export default function AdminUserManagementPage() {
           canApproveUser={false}
           deletingUserId={null}
           updatingUserId={updatingUserId}
-          onUserClick={handleOpenEdit}
+          onUserClick={handleOpenDetails}
           onEditUser={handleOpenEdit}
           onDeleteUser={() => {
             toast.error("Admin cannot delete user accounts.");
@@ -339,6 +346,14 @@ export default function AdminUserManagementPage() {
           }}
         />
       )}
+
+      <UserDetailDrawer
+        user={selectedUser}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        canEditUser={Boolean(selectedUser && canAdminManageUser(selectedUser))}
+        onEditUser={handleOpenEdit}
+      />
 
       {isUpdateModalOpen && selectedUser && (
         <UpdateUserModal
