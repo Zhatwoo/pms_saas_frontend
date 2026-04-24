@@ -22,6 +22,9 @@ interface HeaderNotification {
   category: Exclude<NotificationTab, "All">;
   group: NotificationGroup;
   unread: boolean;
+  userId?: string | null;
+  customerId?: string | null;
+  logId?: string | null;
 }
 
 const DEFAULT_NOTIFICATIONS: HeaderNotification[] = [
@@ -247,9 +250,12 @@ export function Header({
           return {
             id: item.id,
             title: item.title,
-            subtitle: item.subtitle,
+            subtitle: item.subtitle ?? "",
             category: item.category as any,
             unread: isUnread,
+            userId: item.user_id ?? null,
+            customerId: item.customer_id ?? null,
+            logId: item.log_id ?? null,
             group: itemDate === today ? "Today" : "Earlier",
           };
         });
@@ -303,12 +309,15 @@ export function Header({
           console.log("[Notifications] Realtime event received:", payload);
           const newNotif = payload.new as any;
           if (payload.eventType === "INSERT") {
-             const isMatch = !newNotif.branch_id || 
-                             newNotif.branch_id === user?.branchId || 
-                             newNotif.branch_id === selectedBranch?.id ||
-                             isAllBranches ||
-                             user?.role === "admin" || 
-                             user?.role === "super_admin";
+             const isPersonalNotification = Boolean(newNotif.user_id);
+             const isMatch = isPersonalNotification
+               ? newNotif.user_id === user?.id
+               : !newNotif.branch_id ||
+                 newNotif.branch_id === user?.branchId ||
+                 newNotif.branch_id === selectedBranch?.id ||
+                 isAllBranches ||
+                 user?.role === "admin" ||
+                 user?.role === "super_admin";
              if (isMatch) {
                 toast.success(newNotif.title, {
                   description: newNotif.subtitle,
@@ -322,9 +331,12 @@ export function Header({
                   const mappedItem: HeaderNotification = {
                     id: newNotif.id,
                     title: newNotif.title,
-                    subtitle: newNotif.subtitle,
+                    subtitle: newNotif.subtitle ?? "",
                     category: newNotif.category as any,
                     unread: !newNotif.is_read,
+                    userId: newNotif.user_id ?? null,
+                    customerId: newNotif.customer_id ?? null,
+                    logId: newNotif.log_id ?? null,
                     group: itemDate === today ? "Today" : "Earlier",
                   };
                   return [mappedItem, ...prev];
@@ -441,10 +453,38 @@ export function Header({
     router.push(targetPath);
   };
 
+  const customerProfileBasePath = pathname.startsWith("/admin")
+    ? "/admin/customers/view_user"
+    : pathname.startsWith("/employee")
+      ? "/employee/customers/view_user"
+      : "/customers/view_user";
+
+  const buildCustomerProfileHref = (customerId: string, logId?: string | null) => {
+    const params = new URLSearchParams({ id: customerId });
+    if (logId) {
+      params.set("highlightLogId", logId);
+    }
+
+    return `${customerProfileBasePath}?${params.toString()}`;
+  };
+
+  const resolveNotificationHref = (item: HeaderNotification) => {
+    if (item.customerId) {
+      return buildCustomerProfileHref(item.customerId, item.logId);
+    }
+
+    const transactionNo =
+      extractTransactionNoFromText(item.title) ?? extractTransactionNoFromText(item.subtitle);
+    if (transactionNo) {
+      return buildPawnTransactionHighlightHref(transactionNo);
+    }
+
+    return null;
+  };
+
   const renderNotificationRow = (item: HeaderNotification) => (
     (() => {
-      const transactionNo = extractTransactionNoFromText(item.title) ?? extractTransactionNoFromText(item.subtitle);
-      const isClickableTransaction = Boolean(transactionNo);
+      const notificationHref = resolveNotificationHref(item);
 
       const content = (
         <>
@@ -458,7 +498,7 @@ export function Header({
         </>
       );
 
-      if (!isClickableTransaction || !transactionNo) {
+      if (!notificationHref) {
         return (
           <div key={item.id} className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left">
             {content}
@@ -473,10 +513,10 @@ export function Header({
           onClick={() => {
             void markOneAsRead(item.id);
             setIsNotificationOpen(false);
-            router.push(buildPawnTransactionHighlightHref(transactionNo));
+            router.push(notificationHref);
           }}
-          className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/70"
-          title={`Open pawn transaction ${transactionNo}`}
+          className="w-full cursor-pointer rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/70"
+          title={item.customerId ? "Open customer profile" : "Open related record"}
         >
           {content}
         </button>

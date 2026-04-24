@@ -611,6 +611,7 @@ function EmployeeCustomerDetailContent() {
   const pathname = usePathname();
   const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
+  const highlightLogId = searchParams.get("highlightLogId") ?? "";
   const initialAction = searchParams.get("mode");
   const initialCustomer = mockCustomers[customerId] ?? null;
   const [customer, setCustomer] = useState<CustomerDetail | null>(initialCustomer);
@@ -750,6 +751,19 @@ function EmployeeCustomerDetailContent() {
       setIsViewOpen(true);
     }
   }, [customer, initialAction]);
+
+  useEffect(() => {
+    if (!highlightLogId) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.getElementById(`activity-log-${highlightLogId}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlightLogId, activityLogs, transactionRecords, customer]);
 
   useEffect(() => {
     setIsViewOpen(false);
@@ -1174,6 +1188,8 @@ function EmployeeCustomerDetailContent() {
                 }
 
                 return sorted.map((item) => {
+                  const isHighlighted = item.key === highlightLogId;
+
                   if (item.kind === "edit_request" && item.rawDetails) {
                     const rd = item.rawDetails;
                     const fieldMap: Record<string, string> = {
@@ -1215,7 +1231,11 @@ function EmployeeCustomerDetailContent() {
                     const canCancelRequest = user?.role === "employee" && currentLog?.userId === user?.id;
 
                     return (
-                      <div key={item.key} className="flex items-start gap-3 px-5 py-4 hover:bg-surface-secondary/50 transition-colors">
+                      <div
+                        key={item.key}
+                        id={`activity-log-${item.key}`}
+                        className={`flex scroll-mt-24 items-start gap-3 px-5 py-4 transition-colors ${isHighlighted ? "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/25" : "hover:bg-surface-secondary/50"}`}
+                      >
                         <div className="mt-0.5 flex-shrink-0">
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15 text-blue-400">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4-10 10H8v-4L18 2z"/><path d="M13 6 18 11"/></svg>
@@ -1298,7 +1318,11 @@ function EmployeeCustomerDetailContent() {
                     const adminName = typeof rd.adminName === "string" ? rd.adminName : item.actor;
 
                     return (
-                      <div key={item.key} className="flex items-start gap-3 px-5 py-4 hover:bg-surface-secondary/50 transition-colors">
+                      <div
+                        key={item.key}
+                        id={`activity-log-${item.key}`}
+                        className={`flex scroll-mt-24 items-start gap-3 px-5 py-4 transition-colors ${isHighlighted ? "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/25" : "hover:bg-surface-secondary/50"}`}
+                      >
                         <div className="mt-0.5 flex-shrink-0">
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1336,7 +1360,11 @@ function EmployeeCustomerDetailContent() {
                   }
 
                   return (
-                    <div key={item.key} className="flex items-start gap-3 px-5 py-4 hover:bg-surface-secondary/50 transition-colors">
+                    <div
+                      key={item.key}
+                      id={`activity-log-${item.key}`}
+                      className={`flex scroll-mt-24 items-start gap-3 px-5 py-4 transition-colors ${isHighlighted ? "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/25" : "hover:bg-surface-secondary/50"}`}
+                    >
                       <div className="mt-0.5 flex-shrink-0">{iconMap[item.kind]}</div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">

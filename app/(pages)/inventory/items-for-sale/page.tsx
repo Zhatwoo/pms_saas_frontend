@@ -29,6 +29,16 @@ interface SaleStats {
   revenueThisMonth: number;
 }
 
+interface CategoryCount {
+  category: string;
+  count: number;
+}
+
+interface CalendarDayData {
+  available?: number;
+  sold?: number;
+}
+
 const saleStatusOptions = [
   { value: "all", label: "All" },
   { value: "Available", label: "Available" },
@@ -216,16 +226,42 @@ function SaleCalendar({ calendarData, selectedDate, onSelectDate, calendarYear, 
 // ═══════════════════════════════════════════════════════════════
 export default function ItemsForSalePage() {
   const { selectedBranch, branches, setSelectedBranch, isAllBranches } = useBranch();
+  const today = new Date();
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [calendarCategory, setCalendarCategory] = useState("all");
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
+  const [stats, setStats] = useState<SaleStats | null>(null);
+  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
+  const [allDayItems, setAllDayItems] = useState<SaleItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [calendarData, setCalendarData] = useState<Record<string, CalendarDayData>>({});
+  const [categoryList, setCategoryList] = useState<CategoryCount[]>([]);
+  const [categoryTotal, setCategoryTotal] = useState(0);
+
+  const branchOptions = branches.map((branch) => ({
+    value: branch.id,
+    label: branch.name,
+  }));
+
+  const handleBranchChange = useCallback(
+    (value: string) => {
+      const found = branches.find((branch) => branch.id === value);
+      if (found) {
+        setSelectedBranch(found);
+      }
+    },
+    [branches, setSelectedBranch],
+  );
 
   useEffect(() => {
     setCurrentPage(1);
