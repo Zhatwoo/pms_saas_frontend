@@ -31,11 +31,14 @@ const purposeVariant: Record<
   "blue" | "green" | "orange" | "purple" | "black"
 > = {
   Start: "black",
+  End: "black",
+  Pawn: "purple",
+  Redeem: "green",
+  Renew: "green",
+  Reappraise: "green",
   "Buy Back": "blue",
   "Buy Out": "orange",
-  Renew: "green",
   "Sold Item": "orange",
-  Pawn: "purple",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
 };

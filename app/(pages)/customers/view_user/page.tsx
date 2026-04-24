@@ -596,6 +596,7 @@ function EmployeeCustomerDetailContent() {
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [activityLogs, setActivityLogs] = useState<BackendActivityLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
@@ -727,7 +728,8 @@ function EmployeeCustomerDetailContent() {
 
   async function handleAddNote(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!customer || !noteBody.trim()) return;
+    if (!customer || !noteBody.trim() || isSavingNote) return;
+    setIsSavingNote(true);
     try {
       await api.post(`/customers/${encodeURIComponent(customer.id)}/activity-logs`, {
         title: noteTitle.trim() || "Manual Note",
@@ -740,6 +742,8 @@ function EmployeeCustomerDetailContent() {
       setRefreshToken((v) => v + 1);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save note.");
+    } finally {
+      setIsSavingNote(false);
     }
   }
 
@@ -1273,9 +1277,10 @@ function EmployeeCustomerDetailContent() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+                  disabled={isSavingNote}
+                  className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
                 >
-                  Save Note
+                  {isSavingNote ? "Saving..." : "Save Note"}
                 </button>
               </div>
             </form>

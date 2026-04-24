@@ -23,9 +23,12 @@ function csvCell(value: string) {
 
 type ApiPurpose =
   | "Start"
+  | "End"
   | "Buy Back"
   | "Buy Out"
   | "Renew"
+  | "Reappraise"
+  | "Redeem"
   | "Sold Item"
   | "Sale"
   | "Pawn"
@@ -183,6 +186,7 @@ export default function PawnTransactionsPage() {
     serialNumber: string;
     itemsIncluded: string;
     condition: string;
+    memory: string;
     remarks: string;
     amount: string;
     storageFee: string;
@@ -396,6 +400,7 @@ export default function PawnTransactionsPage() {
         serialNumber: transaction.serialNumber || "---",
         itemsIncluded: transaction.itemsIncluded || "---",
         condition: transaction.condition || "---",
+        memory: transaction.memoryStorage || "---",
         remarks: transaction.remarks || transaction.notes || "---",
         amount: transaction.pawn,
         storageFee: transaction.storage,

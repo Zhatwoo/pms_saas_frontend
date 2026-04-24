@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -18,7 +17,6 @@ const barColorMap: Record<string, string> = {
   weekend: "#a1a1aa",
 };
 
-const trendTabs = ["Daily", "Weekly", "Monthly", "Yearly"];
 
 function formatPesoShort(value: number): string {
   if (value >= 1000000) return `\u20B1${(value / 1000000).toFixed(1)}M`;
@@ -44,10 +42,10 @@ interface SalesTrendChartProps {
     peakSales: number;
   };
   todaySales?: number;
+  activePeriod?: string;
 }
 
-export function SalesTrendChart({ data = [], summary, todaySales = 0 }: SalesTrendChartProps) {
-  const [activeTab, setActiveTab] = useState("Daily");
+export function SalesTrendChart({ data = [], summary, todaySales = 0, activePeriod }: SalesTrendChartProps) {
 
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
@@ -56,21 +54,11 @@ export function SalesTrendChart({ data = [], summary, todaySales = 0 }: SalesTre
         <h3 className="text-sm font-bold text-pawn-gold">
           Historical Sales Trend
         </h3>
-        <div className="flex gap-1">
-          {trendTabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`rounded-md px-3 py-1 text-[10px] font-bold transition-colors ${
-                tab === activeTab
-                  ? "bg-pawn-gold text-emerald-900"
-                  : "text-emerald-300 hover:text-white"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        {activePeriod && (
+          <span className="rounded-md bg-pawn-gold px-3 py-1 text-[10px] font-bold text-emerald-900">
+            {activePeriod}
+          </span>
+        )}
       </div>
 
       {/* Chart */}

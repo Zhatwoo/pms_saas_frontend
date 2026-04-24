@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function InventoryRootPage() {
-  redirect("/inventory/pawned-items");
+  redirect("/admin/inventory/pawned-items");
 }

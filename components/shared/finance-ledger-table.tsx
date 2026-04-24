@@ -7,6 +7,7 @@ import type { Column } from "@/components/shared/data-table";
 
 export type LedgerEntryType =
   | "pawn"
+  | "redeem"
   | "buy_back"
   | "renewal"
   | "sale"
@@ -32,6 +33,7 @@ export interface LedgerEntry {
 
 export interface FinanceSummaryBreakdown {
   pawnOut: number;
+  redeemIn: number;
   buyBackIn: number;
   renewalIn: number;
   saleIn: number;
@@ -46,6 +48,7 @@ const TYPE_CONFIG: Record<
   { label: string; bgClass: string; dotClass: string }
 > = {
   pawn: { label: "Pawn", bgClass: "bg-orange-500/15 text-orange-300", dotClass: "bg-orange-400" },
+  redeem: { label: "Redeem", bgClass: "bg-cyan-500/15 text-cyan-300", dotClass: "bg-cyan-400" },
   buy_back: { label: "Buy Back", bgClass: "bg-blue-500/15 text-blue-300", dotClass: "bg-blue-400" },
   renewal: { label: "Renewal", bgClass: "bg-teal-500/15 text-teal-300", dotClass: "bg-teal-400" },
   sale: { label: "Sale", bgClass: "bg-purple-500/15 text-purple-300", dotClass: "bg-purple-400" },
@@ -359,6 +362,7 @@ const BREAKDOWN_ITEMS: {
   direction: "in" | "out" | "neutral";
 }[] = [
   { key: "pawnOut", label: "Pawn Out", color: "text-orange-300", direction: "out" },
+  { key: "redeemIn", label: "Redeem", color: "text-cyan-300", direction: "in" },
   { key: "buyBackIn", label: "Buy Back", color: "text-blue-300", direction: "in" },
   { key: "renewalIn", label: "Renewals", color: "text-teal-300", direction: "in" },
   { key: "saleIn", label: "Sales", color: "text-purple-300", direction: "in" },
@@ -407,6 +411,7 @@ interface LedgerTypeFilterProps {
 const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "All Types" },
   { value: "pawn", label: "Pawn" },
+  { value: "redeem", label: "Redeem" },
   { value: "buy_back", label: "Buy Back" },
   { value: "renewal", label: "Renewal" },
   { value: "sale", label: "Sale" },

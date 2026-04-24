@@ -5,8 +5,7 @@ import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
-import { useBranch } from "@/contexts/branch-context";
-import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
+import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -555,71 +554,7 @@ export default function PawnedItemsPage() {
     fetchData();
   }, [selectedBranch.id, isAllBranches, viewMode, category, calendarCategory, status, searchQuery, selectedDate, currentPage]);
 
-  // Fetch category counts for list mode — scoped to branch only (no date)
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const params = new URLSearchParams();
-        if (!isAllBranches) params.set("branch", selectedBranch.id);
-        const data = await api.get<CategoryCount[]>(
-          `/inventory/pawned-categories?${params}`
-        );
-        setCategoryList(data || []);
-        setCategoryTotal((data || []).reduce((s, c) => s + c.count, 0));
-        setCategory((prev) => {
-          if (prev === "all") return prev;
-          const stillExists = (data || []).some((c) => c.category === prev);
-          return stillExists ? prev : "all";
-        });
-      } catch (err) {
-        console.error("Category fetch error:", err);
-      }
-    }
-    fetchCategories();
-  // selectedDate intentionally excluded — list categories are not date-scoped
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBranch.id, isAllBranches]);
-
-  // Fetch calendar data
-  useEffect(() => {
-    async function fetchCalendar() {
-      try {
-        const params = new URLSearchParams();
-        if (!isAllBranches) params.set("branch", selectedBranch.id);
-        params.set(
-          "month",
-          `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}`
-        );
-        const data = await api.get<Record<string, number>>(
-          `/inventory/pawned-calendar?${params}`
-        );
-        setCalendarData(data || {});
-      } catch (err) {
-        console.error("Calendar fetch error:", err);
-      }
-    }
-    fetchCalendar();
-  }, [selectedBranch.id, isAllBranches, calendarYear, calendarMonth]);
-
-  const handleSaveRemarks = useCallback(
-    async (itemId: string, remarks: string) => {
-      try {
-        await api.post(`/inventory/pawned/${itemId}/remarks`, { remark: remarks });
-        setPawnedItems((prev) =>
-          prev.map((i) => (i.id === itemId ? { ...i, remarks } : i))
-        );
-      } catch (err) {
-        console.error("Failed to save remarks:", err);
-      }
-    },
-    []
-  );
-
-  const handleQRScan = useCallback(() => {
-    alert(
-      "QR Scanner will open here. Scan all items in the vault to tally physical count vs system inventory."
-    );
-  }, []);
+  const [isQrScanOpen, setIsQrScanOpen] = useState(false);
 
   // Format selected date for display
   const selectedDateLabel = selectedDate
@@ -695,10 +630,7 @@ export default function PawnedItemsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleQRScan}
-            className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition-colors dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-500/50"
-          >
+          <button onClick={() => setIsQrScanOpen(true)} className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition-colors dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-500/50">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
               <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
@@ -953,12 +885,14 @@ export default function PawnedItemsPage() {
         />
       </div>
 
-      <PawnedItemDetailsModal
-        isOpen={Boolean(selectedItemId)}
-        itemId={selectedItemId}
-        onClose={() => setSelectedItemId(null)}
-        userRole="viewer"
-      />
+      {viewingItem && <ViewModal item={viewingItem} onClose={() => setViewingItem(null)} onSaveRemarks={handleSaveRemarks} userRole={userRole} />}
+
+      {isQrScanOpen && (
+        <InventoryAuditModal
+          isOpen={isQrScanOpen}
+          onConfirm={() => setIsQrScanOpen(false)}
+        />
+      )}
     </div>
   );
 }

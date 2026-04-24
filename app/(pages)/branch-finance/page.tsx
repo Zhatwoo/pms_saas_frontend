@@ -350,11 +350,12 @@ export default function BranchFinancePage() {
       ? financeSummaries
       : financeSummaries.filter((s) => s.branchId === selectedBranch.id);
     const agg: FinanceSummaryBreakdown = {
-      pawnOut: 0, buyBackIn: 0, renewalIn: 0, saleIn: 0,
+      pawnOut: 0, redeemIn: 0, buyBackIn: 0, renewalIn: 0, saleIn: 0,
       fundTransferIn: 0, fundTransferOut: 0, startBalance: 0, other: 0,
     };
     for (const s of scoped) {
       agg.pawnOut += s.breakdown.pawnOut;
+      agg.redeemIn += s.breakdown.redeemIn ?? 0;
       agg.buyBackIn += s.breakdown.buyBackIn;
       agg.renewalIn += s.breakdown.renewalIn;
       agg.saleIn += s.breakdown.saleIn;

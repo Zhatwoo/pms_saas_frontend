@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { useTheme } from "@/contexts/theme-context";
 
 export default function EmployeeSettingsPage() {
   const { user, refreshProfile } = useAuth();
@@ -23,6 +24,7 @@ export default function EmployeeSettingsPage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordRequests, setPasswordRequests] = useState<any[]>([]);
   const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
+  const { theme, toggleTheme, isDark } = useTheme();
 
   const branchName = selectedBranch?.name || "Bgc Branch";
   const initials = fullName
@@ -76,11 +78,11 @@ export default function EmployeeSettingsPage() {
       )}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-emerald-900 dark:text-text-primary leading-tight">Settings</h1>
+        <h1 className="text-2xl font-bold text-text-primary leading-tight">Settings</h1>
       </div>
 
-      <div className="flex gap-1 rounded-lg border border-zinc-200 dark:border-border-main bg-white dark:bg-surface p-1 max-w-fit overflow-hidden">
-        {["Profile", "Branch Config"].map((tab) => (
+      <div className="flex gap-1 rounded-lg border border-border-main bg-surface p-1 max-w-fit overflow-hidden">
+        {["Profile", "Appearance", "Branch Config"].map((tab) => (
           <button
             key={tab}
             onClick={() => {
@@ -89,7 +91,7 @@ export default function EmployeeSettingsPage() {
             }}
             className={`px-6 py-2 text-xs font-bold transition-all rounded-md ${activeTab === tab
                 ? "bg-emerald-700 text-white shadow-sm"
-                : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-surface-secondary hover:text-zinc-800 dark:hover:text-text-primary"
+                : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
           >
             {tab}
@@ -100,30 +102,30 @@ export default function EmployeeSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
           {activeTab === "Profile" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h3 className="text-base font-bold text-zinc-800 mb-4 pb-2 border-b">My Account Profile</h3>
+            <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+              <h3 className="text-base font-bold text-text-primary mb-4 pb-2 border-b border-border-main">My Account Profile</h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Full Name</label>
+                    <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Full Name</label>
                     <input
-                      className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-800 focus:border-emerald-500 outline-none transition-colors"
+                      className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary focus:border-emerald-500 outline-none transition-colors"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Your full name"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Account Role</label>
-                    <div className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 capitalize">
+                    <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Account Role</label>
+                    <div className="rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm text-text-tertiary capitalize">
                       {user?.role || "Employee"}
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold uppercase text-zinc-500 tracking-wide">Email Address</label>
+                  <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Email Address</label>
                   <input
-                    className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-400 outline-none cursor-not-allowed"
+                    className="rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm text-zinc-400 outline-none cursor-not-allowed"
                     value={email}
                     readOnly
                     title="Email cannot be changed from this page"
@@ -134,18 +136,60 @@ export default function EmployeeSettingsPage() {
             </div>
           )}
 
+          {activeTab === "Appearance" && (
+            <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+              <h3 className="text-base font-bold text-text-primary mb-4 pb-2 border-b border-border-main">Theme Preferences</h3>
+              <div className="space-y-4">
+                <p className="text-sm text-text-secondary">Choose how the application looks for you.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { if (isDark) toggleTheme(); }}
+                    className={`flex-1 rounded-xl border-2 p-4 text-center transition-all ${
+                      !isDark
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30"
+                        : "border-border-main bg-surface hover:border-emerald-300"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+                        <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                      </svg>
+                      <span className="text-sm font-bold text-text-primary">Light</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { if (!isDark) toggleTheme(); }}
+                    className={`flex-1 rounded-xl border-2 p-4 text-center transition-all ${
+                      isDark
+                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30"
+                        : "border-border-main bg-surface hover:border-emerald-300"
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                      </svg>
+                      <span className="text-sm font-bold text-text-primary">Dark</span>
+                    </div>
+                  </button>
+                </div>
+                <p className="text-xs text-text-muted">Current theme: <span className="font-bold capitalize">{theme}</span></p>
+              </div>
+            </div>
+          )}
+
           {activeTab === "Branch Config" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
               <h3 className="text-base font-bold text-emerald-800 mb-4 pb-2 border-b">Current Location: {branchName}</h3>
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500 dark:text-text-muted tracking-wide">Opening Time</label>
-                    <p className="text-sm text-zinc-800 dark:text-text-primary pt-1">08:00 AM</p>
+                    <label className="text-[10px] font-bold uppercase text-text-muted tracking-wide">Opening Time</label>
+                    <p className="text-sm text-text-primary pt-1">08:00 AM</p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500 dark:text-text-muted tracking-wide">Closing Time</label>
-                    <p className="text-sm text-zinc-800 dark:text-text-primary pt-1">06:00 PM</p>
+                    <label className="text-[10px] font-bold uppercase text-text-muted tracking-wide">Closing Time</label>
+                    <p className="text-sm text-text-primary pt-1">06:00 PM</p>
                   </div>
                   <div className="bg-emerald-50/50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 col-span-2">
                     <p className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wide mb-1 flex items-center gap-1.5">
@@ -172,7 +216,7 @@ export default function EmployeeSettingsPage() {
             </button>
             <button
               onClick={handleDiscard}
-              className="rounded-lg border border-zinc-300 px-6 py-2 text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition-colors"
+              className="rounded-lg border border-input-border px-6 py-2 text-xs font-bold text-zinc-600 hover:bg-surface-hover transition-colors"
             >
               Discard
             </button>
@@ -180,12 +224,12 @@ export default function EmployeeSettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm text-center">
+          <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm text-center">
             <div className="mx-auto w-20 h-20 rounded-full bg-emerald-800 flex items-center justify-center text-white text-3xl font-bold mb-4 border-4 border-emerald-50 overflow-hidden">
               {initials}
             </div>
-            <h4 className="text-lg font-bold text-zinc-900 truncate px-2">{fullName || "Employee"}</h4>
-            <p className="text-xs text-zinc-500 mb-4">{branchName}</p>
+            <h4 className="text-lg font-bold text-text-primary truncate px-2">{fullName || "Employee"}</h4>
+            <p className="text-xs text-text-tertiary mb-4">{branchName}</p>
             <button className="w-full py-2 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">
               Change Avatar
             </button>

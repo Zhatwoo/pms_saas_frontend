@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type TouchEvent } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { StatusBadge } from "./status-badge";
 
 interface Renewal {
@@ -124,8 +125,10 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
     setIsSaving(true);
     try {
       await onSaveRemarks(item.id, remarks);
+      toast.success("Remarks updated.");
+      await fetchDetails();
     } catch (err: any) {
-      alert("Failed to save remarks.");
+      toast.error(err?.message || "Failed to save remarks.");
     } finally {
       setIsSaving(false);
     }

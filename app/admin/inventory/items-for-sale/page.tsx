@@ -7,6 +7,8 @@ import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
+import { toast } from "sonner";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 
 type SaleViewMode = "current" | "history";
 
@@ -19,28 +21,7 @@ interface SaleItem {
   availableDate: string;
   price: number;
   status: "Available" | "Sold";
-  stockLevel: number;
   originalPawnId?: string;
-}
-
-function StockBadge({ stock }: { stock: number }) {
-  if (stock === 0)
-    return (
-      <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-200">
-        Out of Stock
-      </span>
-    );
-  if (stock <= 3)
-    return (
-      <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-700 border border-orange-200">
-        Low Stock: {stock}
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-700 border border-green-200">
-      In Stock: {stock}
-    </span>
-  );
 }
 
 const categoryOptions = [
@@ -82,11 +63,9 @@ export default function ItemsForSalePage() {
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 10;
-
-  // Low stock banner: items Available with stockLevel <= 3
-  const lowStockCount = saleItems.filter(
-    (i) => i.status === "Available" && i.stockLevel <= 3
-  ).length;
+  const [viewingItem, setViewingItem] = useState<SaleItem | null>(null);
+  const [editingItem, setEditingItem] = useState<SaleItem | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -116,16 +95,6 @@ export default function ItemsForSalePage() {
     }
     fetchData();
   }, [category, status, searchQuery, saleViewMode, currentPage, selectedBranch.id, isAllBranches]);
-
-  const handleDelete = async (itemId: string) => {
-    if (!confirm("Are you sure you want to delete this sale item? This cannot be undone.")) return;
-    try {
-      await api.delete(`/inventory/for-sale/${itemId}`);
-      setSaleItems((prev) => prev.filter((i) => i.id !== itemId));
-    } catch (err) {
-      console.error("Failed to delete item:", err);
-    }
-  };
 
   return (
     <div className="space-y-3 pb-4">
@@ -168,46 +137,13 @@ export default function ItemsForSalePage() {
         </div>
       </div>
 
-      {/* ── Low Stock Alert Banner ──────────────────────────── */}
-      {lowStockCount > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-orange-200 bg-orange-50 p-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-orange-800">Low Stock Alert</p>
-              <p className="text-[10px] text-orange-600 font-medium">
-                You have {lowStockCount} item(s) running low on stock (&le; 3).
-              </p>
-            </div>
-          </div>
-          <button className="text-[10px] font-bold text-orange-700 hover:text-orange-900 border border-orange-300 rounded px-3 py-1.5 transition-colors bg-surface">
-            Review Items
-          </button>
-        </div>
-      )}
-
       {/* ── Items For Sale Table ────────────────────────────── */}
       <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-emerald-900 text-amber-400">
-                {["ID", "Item Name", "Category", "Branch", "Available Date", "Price", "Stock Level", "Status", "Actions"].map((h) => (
+                {["ID", "Item Name", "Category", "Branch", "Available Date", "Price", "Status", "Actions"].map((h) => (
                   <th
                     key={h}
                     className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
@@ -222,13 +158,13 @@ export default function ItemsForSalePage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                  <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
                     Loading...
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                  <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
                     {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
                   </td>
                 </tr>
@@ -247,23 +183,20 @@ export default function ItemsForSalePage() {
                       &#8369;{item.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2">
-                      <StockBadge stock={item.stockLevel ?? 1} />
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-2">
                       <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <div className="flex items-center gap-1">
-                        <button className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                        <button onClick={() => setViewingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
                           View
                         </button>
                         {canEdit && (
                           <>
-                            <button className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
+                            <button onClick={() => setEditingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(item.id)}
+                              onClick={() => setDeleteConfirmId(item.id)}
                               className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"
                             >
                               Delete
@@ -288,6 +221,107 @@ export default function ItemsForSalePage() {
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
       />
+
+      {/* ── View Modal ──────────────────────────────────────── */}
+      {viewingItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setViewingItem(null)}>
+          <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-emerald-900 px-6 py-4 flex items-center justify-between">
+              <div>
+                <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">For Sale #{viewingItem.itemId}</p>
+                <h2 className="text-white text-lg font-bold">{viewingItem.itemName}</h2>
+              </div>
+              <StatusBadge label={viewingItem.status} variant={statusVariant[viewingItem.status] || "green"} />
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Category</p><p className="text-sm text-text-primary">{viewingItem.category}</p></div>
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-emerald-700">₱{viewingItem.price.toLocaleString()}</p></div>
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Available Date</p><p className="text-sm text-text-primary">{viewingItem.availableDate}</p></div>
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Branch</p><p className="text-sm text-text-primary">{viewingItem.branch}</p></div>
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Origin Pawn ID</p><p className="text-sm text-text-primary">{viewingItem.originalPawnId || "Manual Entry"}</p></div>
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Status</p><p className="text-sm text-text-primary">{viewingItem.status}</p></div>
+              </div>
+            </div>
+            <div className="border-t border-border-main px-6 py-3 flex justify-end bg-surface-secondary">
+              <button onClick={() => setViewingItem(null)} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit Modal ──────────────────────────────────────── */}
+      {editingItem && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setEditingItem(null)}>
+          <EditSaleItemForm item={editingItem} onClose={() => setEditingItem(null)} onSaved={(updated) => {
+            setSaleItems((prev) => prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i)));
+            setEditingItem(null);
+          }} />
+        </div>
+      )}
+
+      <ConfirmActionModal
+        isOpen={deleteConfirmId !== null}
+        title="Delete sale item?"
+        message="This cannot be undone. The item will be removed from inventory for sale."
+        confirmLabel="Yes, delete"
+        variant="danger"
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={async () => {
+          if (!deleteConfirmId) return;
+          try {
+            await api.delete(`/inventory/for-sale/${deleteConfirmId}`);
+            setSaleItems((prev) => prev.filter((i) => i.id !== deleteConfirmId));
+            toast.success("Item deleted successfully.");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to delete item.");
+            throw err;
+          }
+        }}
+      />
     </div>
+  );
+}
+
+function EditSaleItemForm({ item, onClose, onSaved }: { item: SaleItem; onClose: () => void; onSaved: (updated: Partial<SaleItem> & { id: string }) => void }) {
+  const [price, setPrice] = useState(String(item.price));
+  const [itemName, setItemName] = useState(item.itemName);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await api.patch(`/inventory/for-sale/${item.id}`, { item_name: itemName, price: Number(price) });
+      onSaved({ id: item.id, itemName, price: Number(price) });
+      toast.success("Item updated.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update item.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full max-w-md rounded-xl bg-surface border border-border-main shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-emerald-900 px-6 py-4">
+        <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Edit Sale Item</p>
+        <h2 className="text-white text-lg font-bold">{item.itemId}</h2>
+      </div>
+      <div className="p-6 space-y-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Item Name</label>
+          <input value={itemName} onChange={(e) => setItemName(e.target.value)} className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Price (₱)</label>
+          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500" />
+        </div>
+      </div>
+      <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">
+        <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">Cancel</button>
+        <button type="submit" disabled={isSaving} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800 disabled:opacity-50">{isSaving ? "Saving..." : "Save Changes"}</button>
+      </div>
+    </form>
   );
 }

@@ -110,20 +110,24 @@ interface ReportData {
 export default function ReportsPage() {
   const [activePeriod, setActivePeriod] = useState("Daily");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const { selectedBranch, isAllBranches } = useBranch();
 
   useEffect(() => {
     async function fetchReport() {
       setIsLoading(true);
+      setError(null);
       try {
         const params = new URLSearchParams();
         if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("period", activePeriod.toLowerCase());
         const data = await api.get<ReportData>(`/reports/system?${params}`);
         setReportData(data);
-      } catch (error) {
-        console.error("Failed to load reports:", error);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to load reports.";
+        console.error("Failed to load reports:", err);
+        setError(msg);
       } finally {
         setIsLoading(false);
       }
@@ -276,7 +280,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto w-full max-w-7xl space-y-5">
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -305,6 +309,13 @@ export default function ReportsPage() {
             <span className="text-sm font-medium">Loading reports...</span>
           </div>
         </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <p className="text-sm font-semibold text-red-600">{error}</p>
+          <button onClick={() => setActivePeriod(activePeriod)} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800">
+            Retry
+          </button>
+        </div>
       ) : (
         <>
           <ReportStats data={reportData?.stats} />
@@ -317,6 +328,7 @@ export default function ReportsPage() {
                 data={reportData?.salesTrend}
                 summary={reportData?.trendSummary}
                 todaySales={reportData?.stats?.totalSalesToday ?? 0}
+                activePeriod={activePeriod}
               />
             </div>
           </div>

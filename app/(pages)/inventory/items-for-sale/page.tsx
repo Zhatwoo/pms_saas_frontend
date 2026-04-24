@@ -18,19 +18,15 @@ interface SaleItem {
   availableDate: string;
   price: number;
   status: "Available" | "Sold";
-  stockLevel: number;
-  originalPawnId?: string | null;
+  originalPawnId?: string;
 }
 
-interface CategoryCount {
-  category: string;
-  count: number;
-}
-
-interface CalendarDayData {
-  available: number;
-  sold: number;
-}
+const branchOptions = [
+  { value: "all", label: "All Branches" },
+  { value: "taguig", label: "Taguig" },
+  { value: "makati", label: "Makati" },
+  { value: "pasay", label: "Pasay" },
+];
 
 interface SaleStats {
   totalAvailable: number;
@@ -240,27 +236,6 @@ export default function ItemsForSalePage() {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
 
-  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
-  const [allDayItems, setAllDayItems] = useState<SaleItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [stats, setStats] = useState<SaleStats | null>(null);
-  const [categoryList, setCategoryList] = useState<CategoryCount[]>([]);
-  const [categoryTotal, setCategoryTotal] = useState(0);
-  const [calendarCategory, setCalendarCategory] = useState("all");
-
-  const today = new Date();
-  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
-  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
-  const [calendarData, setCalendarData] = useState<Record<string, CalendarDayData>>({});
-
-  const branchOptions = branches.map((b) => ({ value: b.id, label: b.name }));
-
-  const handleBranchChange = useCallback((value: string) => {
-    const found = branches.find((b) => b.id === value);
-    if (found) setSelectedBranch(found);
-  }, [branches, setSelectedBranch]);
-
   useEffect(() => {
     setCurrentPage(1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -458,38 +433,36 @@ export default function ItemsForSalePage() {
         </div>
       </div>
 
-      {/* ── Category tabs — list mode only ───────────────────── */}
-      {viewMode === "list" && categoryList.length > 0 && (
-        <div className="bg-surface px-3 py-2.5 rounded-lg border border-border-main">
-          <CategoryTabs categories={categoryList} totalCount={categoryTotal} selected={category} onChange={setCategory} />
-        </div>
-      )}
-
-      {/* ── Active date indicator ────────────────────────────── */}
-      {selectedDate && viewMode === "list" && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          <span className="text-sm text-text-secondary">
-            Showing items for <span className="font-bold text-emerald-500">{selectedDateLabel}</span>
-          </span>
-          <button onClick={() => setSelectedDate(null)} className="ml-auto text-xs font-bold text-text-muted hover:text-text-primary">Clear</button>
-        </div>
-      )}
-
-      {/* ── List view ────────────────────────────────────────── */}
-      {viewMode === "list" && (
-        <div className="overflow-hidden rounded-lg border border-border-main bg-surface">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-emerald-900 text-amber-400">
-                  {["ID", "Item Name", "Category", "Branch", "Date Available", "Price", "Origin Pawn", "Status"].map((h) => (
-                    <th key={h} className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>
-                      {h}
-                    </th>
-                  ))}
+      {/* ── Items For Sale Table ────────────────────────────── */}
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-emerald-900 text-amber-400">
+                {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
+                  <th
+                    key={h}
+                    className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${
+                      h === "Price" ? "text-right" : "text-left"
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
+                    Loading...
+                  </td>
+                </tr>
+              ) : saleItems.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
+                    {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
+                  </td>
                 </tr>
               </thead>
               <tbody>
