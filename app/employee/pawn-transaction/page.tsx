@@ -301,9 +301,11 @@ export default function EmployeePawnTransactionsPage() {
       result = result.filter(
         (t) =>
           t.transactionNo.toLowerCase().includes(q) ||
+          t.purpose.toLowerCase().includes(q) ||
           t.customerName?.toLowerCase().includes(q) ||
           t.unit?.toLowerCase().includes(q) ||
-          t.unitCode?.toLowerCase().includes(q)
+          t.unitCode?.toLowerCase().includes(q) ||
+          t.details?.toLowerCase().includes(q)
       );
     }
 
@@ -499,7 +501,7 @@ export default function EmployeePawnTransactionsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by transaction no, customer, item, or branch"
+            placeholder="Search by transaction no, purpose, customer, item, or details"
             className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
           />
         </div>
