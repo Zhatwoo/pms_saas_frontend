@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
+import { useBranch } from "@/contexts/branch-context";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -437,6 +438,7 @@ export default function PawnedItemsPage() {
   const [allDayItems, setAllDayItems] = useState<PawnedItem[]>([]); // unfiltered day items for category counts
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const viewingItem = pawnedItems.find((item) => item.id === selectedItemId) ?? null;
 
   // Category counts (list mode)
   const [categoryList, setCategoryList] = useState<CategoryCount[]>([]);
@@ -548,7 +550,7 @@ export default function PawnedItemsPage() {
       }
     }
     fetchData();
-  }, [branch, category, status, searchQuery, currentPage]);
+  }, [selectedBranch.id, isAllBranches, viewMode, category, status, searchQuery, selectedDate, calendarCategory, currentPage]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
@@ -879,7 +881,7 @@ export default function PawnedItemsPage() {
         />
       </div>
 
-      {viewingItem && <ViewModal item={viewingItem} onClose={() => setViewingItem(null)} onSaveRemarks={handleSaveRemarks} userRole={userRole} />}
+      {viewingItem && <ViewModal item={viewingItem} onClose={() => setSelectedItemId(null)} onSaveRemarks={handleSaveRemarks} userRole={userRole} />}
 
       {isQrScanOpen && (
         <InventoryAuditModal
