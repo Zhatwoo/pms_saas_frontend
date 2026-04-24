@@ -274,11 +274,17 @@ section[id] {
 }
 
 .reveal-on-scroll {
-  opacity: 0; /* Fallback for no JS or first load */
-  view-timeline-name: --item-reveal;
-  animation: scroll-reveal linear both;
-  animation-timeline: --item-reveal;
-  animation-range: entry 0% exit 100%;
+  opacity: 1; /* Default visible fallback */
+}
+
+@supports (animation-timeline: view()) {
+  .reveal-on-scroll {
+    opacity: 0;
+    view-timeline-name: --item-reveal;
+    animation: scroll-reveal linear both;
+    animation-timeline: --item-reveal;
+    animation-range: entry 0% exit 100%;
+  }
 }
 
 .reveal-delay-100 { transition-delay: 100ms; }

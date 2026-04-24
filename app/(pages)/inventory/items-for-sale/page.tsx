@@ -18,18 +18,7 @@ interface SaleItem {
   availableDate: string;
   price: number;
   status: "Available" | "Sold";
-  stockLevel: number;
-  originalPawnId?: string | null;
-}
-
-interface CategoryCount {
-  category: string;
-  count: number;
-}
-
-interface CalendarDayData {
-  available: number;
-  sold: number;
+  originalPawnId?: string;
 }
 
 interface SaleStats {
@@ -51,8 +40,8 @@ const statusVariant: Record<string, "green" | "orange"> = {
   Sold: "orange",
 };
 
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ─── Stats Bar ────────────────────────────────────────────────
 function StatsBar({ stats }: { stats: SaleStats }) {
@@ -95,9 +84,8 @@ function CategoryTabs({ categories, totalCount, selected, onChange }: {
     <div className="flex flex-wrap gap-1.5">
       <button
         onClick={() => onChange("all")}
-        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-          selected === "all" ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
-        }`}
+        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${selected === "all" ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
+          }`}
       >
         All <span className="opacity-70">({totalCount})</span>
       </button>
@@ -105,9 +93,8 @@ function CategoryTabs({ categories, totalCount, selected, onChange }: {
         <button
           key={c.category}
           onClick={() => onChange(c.category)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-            selected === c.category ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
-          }`}
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${selected === c.category ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
+            }`}
         >
           {c.category} <span className="opacity-70">({c.count})</span>
         </button>
@@ -240,30 +227,9 @@ export default function ItemsForSalePage() {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 10;
 
-  const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
-  const [allDayItems, setAllDayItems] = useState<SaleItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [stats, setStats] = useState<SaleStats | null>(null);
-  const [categoryList, setCategoryList] = useState<CategoryCount[]>([]);
-  const [categoryTotal, setCategoryTotal] = useState(0);
-  const [calendarCategory, setCalendarCategory] = useState("all");
-
-  const today = new Date();
-  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
-  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
-  const [calendarData, setCalendarData] = useState<Record<string, CalendarDayData>>({});
-
-  const branchOptions = branches.map((b) => ({ value: b.id, label: b.name }));
-
-  const handleBranchChange = useCallback((value: string) => {
-    const found = branches.find((b) => b.id === value);
-    if (found) setSelectedBranch(found);
-  }, [branches, setSelectedBranch]);
-
   useEffect(() => {
     setCurrentPage(1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, viewMode, category, calendarCategory, status, searchQuery, selectedDate]);
 
   useEffect(() => {
@@ -330,7 +296,7 @@ export default function ItemsForSalePage() {
       }
     }
     fetchStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, isAllBranches]);
 
   // Fetch category counts
@@ -351,7 +317,7 @@ export default function ItemsForSalePage() {
       }
     }
     fetchCategories();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, isAllBranches]);
 
   // Fetch calendar data
@@ -458,92 +424,68 @@ export default function ItemsForSalePage() {
         </div>
       </div>
 
-      {/* ── Category tabs — list mode only ───────────────────── */}
-      {viewMode === "list" && categoryList.length > 0 && (
-        <div className="bg-surface px-3 py-2.5 rounded-lg border border-border-main">
-          <CategoryTabs categories={categoryList} totalCount={categoryTotal} selected={category} onChange={setCategory} />
-        </div>
-      )}
-
-      {/* ── Active date indicator ────────────────────────────── */}
-      {selectedDate && viewMode === "list" && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-500">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          <span className="text-sm text-text-secondary">
-            Showing items for <span className="font-bold text-emerald-500">{selectedDateLabel}</span>
-          </span>
-          <button onClick={() => setSelectedDate(null)} className="ml-auto text-xs font-bold text-text-muted hover:text-text-primary">Clear</button>
-        </div>
-      )}
-
-      {/* ── List view ────────────────────────────────────────── */}
-      {viewMode === "list" && (
-        <div className="overflow-hidden rounded-lg border border-border-main bg-surface">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-emerald-900 text-amber-400">
-                  {["ID", "Item Name", "Category", "Branch", "Date Available", "Price", "Origin Pawn", "Status"].map((h) => (
-                    <th key={h} className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-base text-zinc-400">Loading...</td></tr>
-                ) : saleItems.length === 0 ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-base text-zinc-400">No items for sale found</td></tr>
-                ) : (
-                  saleItems.map((item) => (
-                    <tr
-                      key={item.id}
-                      className={`border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 cursor-pointer ${
-                        item.price === 0 && item.status === "Available"
-                          ? "bg-orange-500/5"
-                          : "bg-surface-secondary"
+      {/* ── Items For Sale Table ────────────────────────────── */}
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-emerald-900 text-amber-400">
+                {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
+                  <th
+                    key={h}
+                    className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"
                       }`}
-                    >
-                      <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">
-                        <div className="flex items-center gap-2">
-                          {item.itemName}
-                          {item.price === 0 && item.status === "Available" && (
-                            <span className="rounded-full bg-orange-100 dark:bg-orange-900/30 border border-orange-300/50 px-1.5 py-0.5 text-[9px] font-black uppercase text-orange-600 dark:text-orange-400">
-                              Unpriced
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.availableDate}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-right font-medium">
-                        {item.price === 0
-                          ? <span className="text-orange-500 font-bold">—</span>
-                          : <span className="text-emerald-700">₱{item.price.toLocaleString()}</span>
-                        }
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">
-                        {item.originalPawnId
-                          ? <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{item.itemId}</span>
-                          : <span className="text-text-muted text-xs">Manual</span>
-                        }
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
+                    Loading...
+                  </td>
+                </tr>
+              ) : saleItems.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
+                    {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
+                  </td>
+                </tr>
+              ) : (
+                saleItems.map((item, idx) => (
+                  <tr
+                    key={item.id || item.itemId}
+                    className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
+                    onClick={() => setSelectedItem(item)}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.availableDate}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-right font-medium text-emerald-700">
+                      &#8369;{item.price.toLocaleString()}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button className="rounded px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                          View details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {/* ── Calendar view ────────────────────────────────────── */}
       {viewMode === "calendar" && (

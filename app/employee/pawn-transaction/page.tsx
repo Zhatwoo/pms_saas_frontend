@@ -13,6 +13,7 @@ import { RedeemModal } from "./_components/redeem-modal";
 import { BuyBackModal } from "./_components/buy-back-modal";
 import { SalesTransferModal } from "./_components/sales-transfer-modal";
 import { MoaModal } from "./_components/moa-modal";
+import { ActionButton } from "@/components/shared/action-button";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
 import { useBranch } from "@/contexts/branch-context";
@@ -21,10 +22,44 @@ import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { ActionButton } from "@/components/shared/action-button";
+
+type PurposeType =
+  | "Start"
+  | "End"
+  | "Buy Back"
+  | "Renew"
+  | "Reappraise"
+  | "Redeem"
+  | "Sold Item"
+  | "Pawn"
+  | "Fund Transfer"
+  | "Cash Transfer";
+
+type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back";
+
+const filterToPurpose: Record<FilterType, PurposeType | null> = {
+  "All": null,
+  "Renew": "Renew",
+  "Sales / Transfer": "Sold Item",
+  "Redeem": "Redeem",
+  "Buy Back": "Buy Back",
+  "Pawn": "Pawn",
+  "Start": "Start",
+  "Buy Out": "Buy Out",
+  "Sold Item": "Sold Item",
+};
 
 const downloadIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
     <polyline points="7 10 12 15 17 10" />
     <line x1="12" y1="15" x2="12" y2="3" />
@@ -32,28 +67,21 @@ const downloadIcon = (
 );
 
 const printerIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 6 2 18 2 18 9" />
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M6 9V2h12v7" />
     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
     <rect x="6" y="14" width="12" height="8" />
   </svg>
 );
-
-
-
-
-
-const filterToPurpose: Record<FilterType, PurposeType | null> = {
-  "All": null,
-  "Renew": "Renew",
-  "Sales / Transfer": "Sold Item",
-  "Redeem": "Pawn",
-  "Buy Back": "Buy Back",
-  "Pawn": "Pawn",
-  "Start": "Start",
-  "Buy Out": "Buy Out",
-  "Sold Item": "Sold Item",
-};
 
 
 
@@ -183,13 +211,13 @@ export default function EmployeePawnTransactionsPage() {
   const [dateFilter, setDateFilter] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [currentStats, setCurrentStats] = useState({
-    pawnedToday: 0, 
-    buyBack: 0, 
-    renewed: 0, 
+    pawnedToday: 0,
+    buyBack: 0,
+    renewed: 0,
     soldItem: 0,
     redeemed: 0,
     transfer: 0,
-    startingBalance: 0, 
+    startingBalance: 0,
     endingBalance: 0,
   });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
@@ -251,9 +279,9 @@ export default function EmployeePawnTransactionsPage() {
       .channel(channelName)
       .on(
         "postgres_changes",
-        { 
-          event: "*", 
-          schema: "public", 
+        {
+          event: "*",
+          schema: "public",
           table: "transactions"
         },
         (payload) => {
@@ -262,7 +290,7 @@ export default function EmployeePawnTransactionsPage() {
           if (newTx && newTx.branch_id === selectedBranch.id) {
             void fetchTransactionsRef.current();
           } else if (payload.eventType === "DELETE") {
-             void fetchTransactionsRef.current();
+            void fetchTransactionsRef.current();
           }
         }
       )
@@ -290,9 +318,11 @@ export default function EmployeePawnTransactionsPage() {
       result = result.filter(
         (t) =>
           t.transactionNo.toLowerCase().includes(q) ||
+          t.purpose.toLowerCase().includes(q) ||
           t.customerName?.toLowerCase().includes(q) ||
           t.unit?.toLowerCase().includes(q) ||
-          t.unitCode?.toLowerCase().includes(q)
+          t.unitCode?.toLowerCase().includes(q) ||
+          t.details?.toLowerCase().includes(q)
       );
     }
 
@@ -417,7 +447,7 @@ export default function EmployeePawnTransactionsPage() {
   const handleReprint = useCallback((transactionNo: string) => {
     const tx = allTransactions.find(t => t.transactionNo === transactionNo);
     if (!tx) return;
-    
+
     const branchInfo = branches.find(b => b.id === selectedBranch.id);
     const fullName = tx.customerName || "WALK-IN CUSTOMER";
     const names = fullName.split(" ");
@@ -488,7 +518,7 @@ export default function EmployeePawnTransactionsPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by transaction no, customer, item, or branch"
+            placeholder="Search by transaction no, purpose, customer, item, or details"
             className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
           />
         </div>
@@ -552,28 +582,28 @@ export default function EmployeePawnTransactionsPage() {
         </div>
       </div>
 
-            <TransactionTable 
-              data={paginatedTransactions} 
-              onReprint={handleReprint} 
-              onViewDetails={setSelectedTransaction}
-              highlightedTransactionNo={highlightedTransactionNo}
-              viewRange={viewRange}
-              onRangeChange={setViewRange}
-            />
+      <TransactionTable
+        data={paginatedTransactions}
+        onReprint={handleReprint}
+        onViewDetails={setSelectedTransaction}
+        highlightedTransactionNo={highlightedTransactionNo}
+        viewRange={viewRange}
+        onRangeChange={setViewRange}
+      />
 
-            <PaginationFooter
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredTransactions.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-              onPageChange={setCurrentPage}
-            />
+      <PaginationFooter
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredTransactions.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
 
-            <TransactionDetailsModal
-              isOpen={Boolean(selectedTransaction)}
-              transaction={selectedTransaction}
-              onClose={() => setSelectedTransaction(null)}
-            />
+      <TransactionDetailsModal
+        isOpen={Boolean(selectedTransaction)}
+        transaction={selectedTransaction}
+        onClose={() => setSelectedTransaction(null)}
+      />
 
       <DailyBalanceConfirmation
         isOpen={balanceModal.open}

@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
+import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -54,7 +57,6 @@ const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Expired: "red",
 };
 
-// ─── Renewal Details ──────────────────────────────────────────
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
   if (renewals.length === 0) return <span className="text-text-muted text-[10px]">No renewals yet</span>;
   return (
@@ -72,16 +74,98 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
   );
 }
 
-// ─── View Modal ───────────────────────────────────────────────
+function EditPawnedItemModal({
+  item,
+  onClose,
+  onSaved,
+}: {
+  item: PawnedItem;
+  onClose: () => void;
+  onSaved: (updated: Partial<PawnedItem> & { id: string }) => void;
+}) {
+  const [itemName, setItemName] = useState(item.itemName);
+  const [category, setCategory] = useState(item.category);
+  const [remarks, setRemarks] = useState(item.remarks || "");
+  const [isSaving, setIsSaving] = useState(false);
 
-// ═══════════════════════════════════════════════════════════════
-// PAWNED ITEMS PAGE (Under Inventory)
-// ═══════════════════════════════════════════════════════════════
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await api.patch(`/inventory/pawned/${item.id}`, {
+        item_name: itemName,
+        category,
+        remarks,
+      });
+      onSaved({ id: item.id, itemName, category, remarks });
+      toast.success("Item updated successfully.");
+      onClose();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update item.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={onClose}>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md rounded-xl bg-surface border border-border-main shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-emerald-900 px-6 py-4">
+          <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Edit Pawned Item</p>
+          <h2 className="text-white text-lg font-bold">{item.itemId}</h2>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Item Name</label>
+            <input
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
+            >
+              {categoryOptions.filter((o) => o.value !== "all").map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Remarks</label>
+            <textarea
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              rows={3}
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500 resize-none"
+            />
+          </div>
+        </div>
+        <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">
+            Cancel
+          </button>
+          <button type="submit" disabled={isSaving} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800 disabled:opacity-50">
+            {isSaving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function PawnedItemsPage() {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
   const userRole = user?.role || "employee";
-  const isSuperAdmin = userRole === "super_admin";
   const canEdit = userRole === "super_admin" || userRole === "admin";
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -97,6 +181,9 @@ export default function PawnedItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<PawnedItem | null>(null);
+  const [isQrScanOpen, setIsQrScanOpen] = useState(false);
+  const [confirmIntent, setConfirmIntent] = useState<null | { type: "expire" | "delete"; itemId: string }>(null);
 
   useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id]);
 
@@ -128,38 +215,21 @@ export default function PawnedItemsPage() {
     try {
       await api.post(`/inventory/pawned/${itemId}/remarks`, { remark: remarks });
       setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, remarks } : i)));
+      toast.success("Remarks saved.");
     } catch (err) {
-      console.error("Failed to save remarks:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to save remarks.");
+      throw err;
     }
   }, []);
 
-  const handleMarkExpired = useCallback(async (itemId: string) => {
-    if (!confirm("Mark this item as Expired? It will be auto-transferred to Items For Sale.")) return;
-    try {
-      await api.post(`/inventory/pawned/${itemId}/expire`, {});
-      setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: "Expired" as PawnedStatus } : i)));
-    } catch (err) {
-      console.error("Failed to expire item:", err);
-    }
-  }, []);
-
-  const handleDelete = useCallback(async (itemId: string) => {
-    if (!confirm("Are you sure you want to delete this pawned item? This cannot be undone.")) return;
-    try {
-      await api.delete(`/inventory/pawned/${itemId}`);
-      setPawnedItems((prev) => prev.filter((i) => i.id !== itemId));
-    } catch (err) {
-      console.error("Failed to delete item:", err);
-    }
-  }, []);
-
-  const handleQRScan = useCallback(() => {
-    alert("QR Scanner will open here. Scan all items in the vault to tally physical count vs system inventory.");
+  const handleEditSaved = useCallback((updated: Partial<PawnedItem> & { id: string }) => {
+    setPawnedItems((prev) =>
+      prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i)),
+    );
   }, []);
 
   return (
     <div className="space-y-3 pb-4">
-      {/* Filters and Controls */}
       <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main transition-colors duration-300">
         <div className="flex flex-wrap items-end gap-3">
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
@@ -177,7 +247,7 @@ export default function PawnedItemsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={handleQRScan} className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
+          <button onClick={() => setIsQrScanOpen(true)} className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
             </svg>
@@ -233,15 +303,29 @@ export default function PawnedItemsPage() {
                             </button>
                             {canEdit && (
                               <>
-                                <button className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
+                                <button onClick={() => setEditingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
                                   Edit
                                 </button>
                                 {item.status === "Active" && (
-                                  <button onClick={() => handleMarkExpired(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConfirmIntent({ type: "expire", itemId: item.id });
+                                    }}
+                                    className="rounded px-2 py-1 text-[10px] font-bold text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100"
+                                  >
                                     Expire
                                   </button>
                                 )}
-                                <button onClick={() => handleDelete(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmIntent({ type: "delete", itemId: item.id });
+                                  }}
+                                  className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"
+                                >
                                   Delete
                                 </button>
                               </>
@@ -293,6 +377,53 @@ export default function PawnedItemsPage() {
         onClose={() => setSelectedItemId(null)} 
         onSaveRemarks={handleSaveRemarks}
         userRole={userRole}
+      />
+
+      {editingItem && (
+        <EditPawnedItemModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSaved={handleEditSaved}
+        />
+      )}
+
+      {isQrScanOpen && (
+        <InventoryAuditModal
+          isOpen={isQrScanOpen}
+          onClose={() => setIsQrScanOpen(false)}
+          onConfirm={() => setIsQrScanOpen(false)}
+        />
+      )}
+
+      <ConfirmActionModal
+        isOpen={confirmIntent !== null}
+        title={confirmIntent?.type === "expire" ? "Mark as expired?" : "Delete pawned item?"}
+        message={
+          confirmIntent?.type === "expire"
+            ? "This item will be marked expired and auto-transferred to Items For Sale."
+            : "This cannot be undone. The pawned record will be removed from inventory."
+        }
+        confirmLabel={confirmIntent?.type === "expire" ? "Yes, mark expired" : "Yes, delete"}
+        variant={confirmIntent?.type === "delete" ? "danger" : "warning"}
+        onClose={() => setConfirmIntent(null)}
+        onConfirm={async () => {
+          if (!confirmIntent) return;
+          const { type, itemId } = confirmIntent;
+          try {
+            if (type === "expire") {
+              await api.post(`/inventory/pawned/${itemId}/expire`, {});
+              setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, status: "Expired" as PawnedStatus } : i)));
+              toast.success("Item marked as expired.");
+            } else {
+              await api.delete(`/inventory/pawned/${itemId}`);
+              setPawnedItems((prev) => prev.filter((i) => i.id !== itemId));
+              toast.success("Item deleted.");
+            }
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : type === "expire" ? "Failed to expire item." : "Failed to delete item.");
+            throw err;
+          }
+        }}
       />
     </div>
   );

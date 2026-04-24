@@ -23,9 +23,12 @@ function csvCell(value: string) {
 
 type ApiPurpose =
   | "Start"
+  | "End"
   | "Buy Back"
   | "Buy Out"
   | "Renew"
+  | "Reappraise"
+  | "Redeem"
   | "Sold Item"
   | "Sale"
   | "Pawn"
@@ -161,10 +164,8 @@ export default function PawnTransactionsPage() {
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
-  const [dateFilter, setDateFilter] = useState(() => {
-    const today = new Date();
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  });
+  const [dateFilter, setDateFilter] = useState("");
+  const [viewRange, setViewRange] = useState<"daily" | "weekly" | "monthly" | "all">("daily");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewingTransaction, setViewingTransaction] =
     useState<TransactionRow | null>(null);
@@ -183,6 +184,7 @@ export default function PawnTransactionsPage() {
     serialNumber: string;
     itemsIncluded: string;
     condition: string;
+    memory: string;
     remarks: string;
     memory: string;
     amount: string;
@@ -201,7 +203,7 @@ export default function PawnTransactionsPage() {
       setIsLoading(true);
 
       try {
-        const dateQuery = dateFilter ? `&date=${dateFilter}` : "&range=all";
+        const dateQuery = dateFilter ? `&date=${dateFilter}` : `&range=${viewRange}`;
         const branchParam = isAllBranches
           ? ""
           : `branch=${encodeURIComponent(selectedBranch.id)}`;
@@ -266,7 +268,7 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, dateFilter, isAllBranches]);
+  }, [selectedBranch.id, dateFilter, isAllBranches, viewRange]);
 
   // When navigating from a notification, clear date filter so the transaction is visible
   useEffect(() => {
@@ -397,6 +399,7 @@ export default function PawnTransactionsPage() {
         serialNumber: transaction.serialNumber || "---",
         itemsIncluded: transaction.itemsIncluded || "---",
         condition: transaction.condition || "---",
+        memory: transaction.memoryStorage || "---",
         remarks: transaction.remarks || transaction.notes || "---",
         memory: transaction.memoryStorage || transaction.notes || "---",
         amount: transaction.pawn,
@@ -434,7 +437,10 @@ export default function PawnTransactionsPage() {
         selectedBranchLabel={selectedBranch.name}
         onSearchChange={setSearch}
         onPurposeFilterChange={setPurposeFilter}
-        onDateFilterChange={setDateFilter}
+        onDateFilterChange={(value) => {
+          setDateFilter(value);
+          setCurrentPage(1);
+        }}
         onExportCSV={handleExportCSV}
         onPrintReport={handlePrintReport}
       />
@@ -446,6 +452,12 @@ export default function PawnTransactionsPage() {
         onPrint={handlePrintSlip}
         highlightTransactionNo={shouldHighlight ? highlightTransactionNo : null}
         highlightRowRef={highlightRowRef}
+        viewRange={viewRange}
+        onRangeChange={(range) => {
+          setViewRange(range);
+          setDateFilter("");
+          setCurrentPage(1);
+        }}
       />
 
       {totalPages > 1 ? (

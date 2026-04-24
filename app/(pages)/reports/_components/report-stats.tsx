@@ -12,11 +12,12 @@ interface ReportStatsProps {
     activeBranches: number;
     totalBranches: number;
   };
+  showBranchStats?: boolean;
 }
 
-export function ReportStats({ data }: ReportStatsProps) {
+export function ReportStats({ data, showBranchStats = true }: ReportStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${showBranchStats ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
       <StatCard
         label="TOTAL SALES TODAY"
         value={data ? formatPeso(data.totalSalesToday) : "₱ 0"}
@@ -27,18 +28,22 @@ export function ReportStats({ data }: ReportStatsProps) {
         value={data ? String(data.totalTransactions) : "0"}
         borderColor="border-zinc-300"
       />
-      <StatCard
-        label="AVG PER BRANCH"
-        value={data ? formatPeso(data.avgPerBranch) : "₱ 0"}
-        borderColor="border-zinc-300"
-      />
-      <StatCard
-        label="ACTIVE BRANCHES"
-        value={data ? `${data.activeBranches} / ${data.totalBranches}` : "0 / 0"}
-        change={data && data.activeBranches === data.totalBranches ? "All Online \u2713" : undefined}
-        changeType="positive"
-        borderColor="border-zinc-300"
-      />
+      {showBranchStats && (
+        <>
+          <StatCard
+            label="AVG PER BRANCH"
+            value={data ? formatPeso(data.avgPerBranch) : "₱ 0"}
+            borderColor="border-zinc-300"
+          />
+          <StatCard
+            label="ACTIVE BRANCHES"
+            value={data ? `${data.activeBranches} / ${data.totalBranches}` : "0 / 0"}
+            change={data && data.activeBranches === data.totalBranches ? "All Online \u2713" : undefined}
+            changeType="positive"
+            borderColor="border-zinc-300"
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -1,214 +1,129 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { AlertBanner } from "@/components/shared/alert-banner";
 import { PaginationFooter } from "@/components/shared/pagination";
-import { DataTable } from "@/components/shared/data-table";
-import type { Column } from "@/components/shared/data-table";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 
-const columns: Column[] = [
-  { key: "itemId", label: "Item ID" },
-  { key: "itemName", label: "Item Name" },
-  { key: "category", label: "Category" },
-  { key: "branch", label: "Branch" },
-  { key: "pawnDate", label: "Pawn Date" },
-  { key: "status", label: "Status" },
-  { key: "stockLevel", label: "Stock Level", align: "center" },
-  { key: "actions", label: "Actions", align: "center" },
-];
-
-const inventoryItems = [
-  {
-    itemId: "ITM-001",
-    itemName: "Laptop Lenovo",
-    category: "Electronics",
-    branch: "Taguig",
-    pawnDate: "Mar 01, 2026",
-    status: "Pawned",
-    stockLevel: 10,
-  },
-  {
-    itemId: "ITM-002",
-    itemName: "Laptop Lenovo",
-    category: "Jewellery",
-    branch: "Makati",
-    pawnDate: "Mar 02, 2026",
-    status: "Pawned",
-    stockLevel: 10,
-  },
-  {
-    itemId: "ITM-003",
-    itemName: "Laptop Lenovo",
-    category: "Electronics",
-    branch: "Pasay",
-    pawnDate: "Mar 03, 2026",
-    status: "Pawned",
-    stockLevel: 10,
-  },
-  {
-    itemId: "ITM-004",
-    itemName: "Laptop Lenovo",
-    category: "Jewellery",
-    branch: "Taguig",
-    pawnDate: "Mar 04, 2026",
-    status: "Pawned",
-    stockLevel: 10,
-  },
-  {
-    itemId: "ITM-005",
-    itemName: "Laptop Lenovo",
-    category: "Electronics",
-    branch: "Makati",
-    pawnDate: "Mar 05, 2026",
-    status: "Pawned",
-    stockLevel: 10,
-  },
-  {
-    itemId: "ITM-006",
-    itemName: "Laptop Lenovo",
-    category: "Jewellery",
-    branch: "Pasay",
-    pawnDate: "Mar 06, 2026",
-    status: "Pawned",
-    stockLevel: 10,
-  },
-];
-
-const warningIcon = (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-    <line x1="12" y1="9" x2="12" y2="13" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-);
-
-function StockLevelBadge({ level }: { level: number }) {
-  let bgColor = "bg-green-100 text-green-700";
-  if (level <= 3) {
-    bgColor = "bg-red-100 text-red-600";
-  } else if (level <= 5) {
-    bgColor = "bg-yellow-100 text-yellow-700";
-  }
-
-  return (
-    <span
-      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold ${bgColor}`}
-    >
-      {level} pcs
-    </span>
-  );
-}
-
-function ActionsDropdown({ itemId }: { itemId: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-colors hover:bg-surface-hover"
-        title={`Actions for ${itemId}`}
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <circle cx="12" cy="5" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="12" cy="19" r="2" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute right-0 z-10 mt-1 w-28 rounded-lg border border-border-main bg-surface py-1 shadow-lg">
-          <button
-            onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
-          >
-            View
-          </button>
-          <button
-            onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-text-secondary hover:bg-surface-hover"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => setOpen(false)}
-            className="w-full px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
-      )}
-    </div>
-  );
+interface InventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  branch: string;
+  pawnDate: string;
+  status: string;
 }
 
 export function InventoryTable() {
-  const [currentPage, setCurrentPage] = useState(6);
+  const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
+  const canEdit = user?.role === "super_admin" || user?.role === "admin";
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const itemsPerPage = 10;
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchItems() {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
+        params.set("page", String(currentPage));
+        params.set("limit", String(itemsPerPage));
+        const data = await api.get<{ items: InventoryItem[]; total: number }>(`/inventory/pawned?${params}`);
+        setItems(data.items || []);
+        setTotalItems(data.total || 0);
+      } catch {
+        setItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchItems();
+  }, [currentPage, selectedBranch.id, isAllBranches]);
+
+  const statusVariant: Record<string, "green" | "blue" | "red" | "orange" | "yellow"> = {
+    Active: "green",
+    Redeemed: "blue",
+    Expired: "red",
+    Pawned: "yellow",
+  };
 
   return (
     <div className="space-y-4">
-      {/* Low stock alert */}
-      <AlertBanner
-        variant="warning"
-        icon={warningIcon}
-        message="12 items are low in stock"
-        rightContent={
-          <button className="text-xs font-semibold text-amber-800 hover:underline">
-            View All &gt;
-          </button>
-        }
-      />
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-emerald-900 text-amber-400">
+                {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", ""].map((h) => (
+                  <th key={h} className="whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-text-tertiary">Loading...</td></tr>
+              ) : items.length === 0 ? (
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-text-tertiary">No items found</td></tr>
+              ) : (
+                items.map((item, idx) => (
+                  <tr key={item.id} className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.pawnDate}</td>
+                    <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "yellow"} /></td>
+                    <td className="px-3 py-2 whitespace-nowrap text-right">
+                      {canEdit && (
+                        <button type="button" onClick={() => setDeleteConfirmId(item.id)} className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100">
+                          Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={inventoryItems}
-        renderCell={(key, value, row) => {
-          if (key === "status") {
-            return <StatusBadge label={value} variant="yellow" />;
-          }
-          if (key === "stockLevel") {
-            return <StockLevelBadge level={value} />;
-          }
-          if (key === "actions") {
-            return <ActionsDropdown itemId={row.itemId} />;
-          }
-          return value;
-        }}
-      />
-
-      {/* Pagination */}
       <PaginationFooter
         currentPage={currentPage}
-        totalPages={7}
-        totalItems={22}
-        itemsPerPage={6}
+        totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
+      />
+
+      <ConfirmActionModal
+        isOpen={deleteConfirmId !== null}
+        title="Delete pawned item?"
+        message="This cannot be undone. The pawned record will be removed from inventory."
+        confirmLabel="Yes, delete"
+        variant="danger"
+        onClose={() => setDeleteConfirmId(null)}
+        onConfirm={async () => {
+          if (!deleteConfirmId) return;
+          try {
+            await api.delete(`/inventory/pawned/${deleteConfirmId}`);
+            setItems((prev) => prev.filter((i) => i.id !== deleteConfirmId));
+            toast.success("Item deleted.");
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to delete item.");
+            throw err;
+          }
+        }}
       />
     </div>
   );

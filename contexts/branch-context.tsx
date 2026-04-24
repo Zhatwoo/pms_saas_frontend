@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 import { useAuth } from "./auth-context";
 import { api } from "@/lib/api";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
+import { toast as sonnerToast } from "sonner";
 
 /* ── Branch option shape ─────────────────────────────────── */
 export interface BranchOption {
@@ -89,6 +90,7 @@ export function BranchProvider({ children }: { children: ReactNode }) {
       setBaseBranches(normalized);
     } catch (error) {
       console.warn("[BranchProvider] Failed to load branches:", error);
+      sonnerToast.error("Failed to load branches. Some features may not work correctly.");
       // Keep previous selector options on transient failures.
     }
   }, [user]);
@@ -145,7 +147,13 @@ export function BranchProvider({ children }: { children: ReactNode }) {
     return baseBranches.slice(0, 1);
   })();
 
-  const [selected, setSelected] = useState<BranchOption>(ALL_BRANCHES_OPTION);
+  const [selected, setSelected] = useState<BranchOption>(() => {
+    if (isSuperAdmin) return ALL_BRANCHES_OPTION;
+    if (user?.branchId) {
+      return { id: user.branchId, name: user.branchName || `Branch ${user.branchId}` };
+    }
+    return ALL_BRANCHES_OPTION;
+  });
 
   /* ── Sync selected branch with available branches ──────── */
   useEffect(() => {

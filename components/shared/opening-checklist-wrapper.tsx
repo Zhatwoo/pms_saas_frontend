@@ -22,6 +22,7 @@ export function OpeningChecklistWrapper() {
       <InventoryAuditModal
         isOpen={currentStep === "INVENTORY_AUDIT"}
         onConfirm={completeInventoryAudit}
+        onClose={() => {}} // Disabled close for mandatory workflow
       />
     </>
   );
