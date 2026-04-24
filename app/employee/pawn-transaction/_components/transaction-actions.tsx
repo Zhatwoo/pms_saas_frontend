@@ -117,14 +117,13 @@ const plusIcon = (
   </svg>
 );
 
-type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back";
+export type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back" | "Pawn" | "Start" | "Buy Out" | "Sold Item";
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
   onFilterChange?: (filter: FilterType) => void;
   onRenewClick?: () => void;
-  onExportCSV?: () => void;
-  onPrintReport?: () => void;
+
   onNewPawn?: () => void;
   onRedeem?: () => void;
   onBuyBack?: () => void;
@@ -137,8 +136,7 @@ export function TransactionActions({
   activeFilter = "All",
   onFilterChange,
   onRenewClick,
-  onExportCSV,
-  onPrintReport,
+
   onNewPawn,
   onRedeem,
   onBuyBack,
@@ -234,24 +232,7 @@ export function TransactionActions({
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
-            <ActionButton variant="outline" onClick={onExportCSV}>
-              <span className="flex items-center gap-1.5">
-                {downloadIcon}
-                Export CSV
-              </span>
-            </ActionButton>
-            <ActionButton
-              variant="primary"
-              className="border-pawn-gold bg-emerald-700 text-pawn-gold"
-              onClick={onPrintReport}
-            >
-              <span className="flex items-center gap-1.5">
-                {printerIcon}
-                Print Report
-              </span>
-            </ActionButton>
-          </div>
+
         </div>
       </div>
     </div>

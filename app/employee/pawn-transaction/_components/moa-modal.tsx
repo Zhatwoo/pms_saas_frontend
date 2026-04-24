@@ -103,24 +103,29 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
   const lineInputClass = "border-b border-zinc-400 bg-transparent px-1 text-[10px] text-zinc-900 outline-none w-full h-4";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-xl bg-white shadow-2xl border border-zinc-200" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+      <div 
+        className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10" 
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-emerald-900 px-6 py-4 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-white">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h2>
+            <h2 className="text-xl font-black tracking-tight text-white leading-none">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h2>
             <p className="text-xs text-emerald-100/70">Please review the details before finalizing the transaction.</p>
           </div>
           <button 
             onClick={onClose}
-            className="text-white/50 hover:text-white transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
 
         {/* MOA Content - Matches Image 2 */}
-        <div id="moa-slip-printable" ref={printRef} className="p-8 space-y-6 text-[11px] text-zinc-800 leading-tight bg-[#fafafa]">
+        <div className="flex-1 overflow-y-auto">
+          <div id="moa-slip-printable" ref={printRef} className="p-8 space-y-6 text-[11px] text-zinc-800 leading-tight bg-[#fafafa]">
           {/* Title moved to the very top */}
           <div className="text-center mb-8">
              <h1 className="text-xl font-black underline uppercase tracking-[0.2em] text-emerald-900">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h1>
@@ -291,6 +296,7 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
                 <p className="font-black uppercase text-[8px] tracking-widest">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
              </div>
           </div>
+        </div>
         </div>
 
         {/* Footer Actions */}

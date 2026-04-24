@@ -2,6 +2,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 import type { TransactionRow, PurposeType } from "./types";
+import { useRef, type RefObject } from "react";
 
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
@@ -73,6 +74,8 @@ interface TransactionTableProps {
   isLoading?: boolean;
   onViewDetails?: (transaction: TransactionRow) => void;
   onPrint?: (transaction: TransactionRow) => void;
+  highlightTransactionNo?: string | null;
+  highlightRowRef?: RefObject<HTMLTableRowElement | null>;
 }
 
 export function TransactionTable({
@@ -80,6 +83,8 @@ export function TransactionTable({
   isLoading = false,
   onViewDetails,
   onPrint,
+  highlightTransactionNo,
+  highlightRowRef,
 }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
@@ -136,15 +141,21 @@ export function TransactionTable({
             ) : (
               data.map((row) => {
                 const isStartRow = row.purpose === "Start";
+                const isHighlighted =
+                  highlightTransactionNo &&
+                  row.transactionNo === highlightTransactionNo;
 
                 return (
                   <tr
                     key={row.id}
+                    ref={isHighlighted ? (highlightRowRef as RefObject<HTMLTableRowElement>) : undefined}
                     onClick={() => onViewDetails?.(row)}
                     role="button"
                     tabIndex={0}
                     className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${
-                      isStartRow
+                      isHighlighted
+                        ? "animate-highlight-blink"
+                        : isStartRow
                         ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
                         : "bg-surface-secondary"
                     }`}

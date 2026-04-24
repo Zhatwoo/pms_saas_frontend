@@ -6,6 +6,7 @@ import { ClockIcon, BellIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api } from "@/lib/api";
+import { buildPawnTransactionHighlightHref, extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
@@ -212,6 +213,7 @@ export function Header({
 }: HeaderProps) {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
+  const isSuperAdmin = user?.role === "super_admin";
   const pathname = usePathname();
   const router = useRouter();
   const [time, setTime] = useState("");
@@ -373,6 +375,11 @@ export function Header({
 
   const title = getPageTitle(pathname || "");
   const isCustomerDetailPage = (pathname || "").includes("view_user");
+  const isAllBranchesView = (branchName ?? "").toLowerCase() === "all branches";
+  const superAdminScopeLabel = isAllBranchesView ? "All Branches" : "Branch View";
+  const superAdminScopeClass = isAllBranchesView
+    ? "border-emerald-700 bg-pawn-sidebar text-pawn-gold"
+    : "border-emerald-300 bg-emerald-50 text-emerald-800";
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badgeCount = Math.max(notificationCount, unreadCount);
 
@@ -435,31 +442,73 @@ export function Header({
   };
 
   const renderNotificationRow = (item: HeaderNotification) => (
-    <button
-      key={item.id}
-      type="button"
-      onClick={() => markOneAsRead(item.id)}
-      className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:bg-surface-hover"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
-          <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
-        </div>
-        {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
-      </div>
-    </button>
+    (() => {
+      const transactionNo = extractTransactionNoFromText(item.title) ?? extractTransactionNoFromText(item.subtitle);
+      const isClickableTransaction = Boolean(transactionNo);
+
+      const content = (
+        <>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
+              <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
+            </div>
+            {item.unread && <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />}
+          </div>
+        </>
+      );
+
+      if (!isClickableTransaction || !transactionNo) {
+        return (
+          <div key={item.id} className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left">
+            {content}
+          </div>
+        );
+      }
+
+      return (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => {
+            void markOneAsRead(item.id);
+            setIsNotificationOpen(false);
+            router.push(buildPawnTransactionHighlightHref(transactionNo));
+          }}
+          className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:border-emerald-300 hover:bg-emerald-50/70"
+          title={`Open pawn transaction ${transactionNo}`}
+        >
+          {content}
+        </button>
+      );
+    })()
   );
 
   return (
     <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border-main bg-header-bg px-6 py-4 transition-colors duration-300">
-      <div className="flex min-w-0 items-center gap-4 justify-self-start">
-        <h1 className="text-3xl font-bold text-text-primary leading-none">{title}</h1>
-        {branchName && (
-          <div className="flex items-center gap-4">
-            <span className="h-6 w-px bg-border-main" />
-            <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
-              {branchName}
+      <div className="flex min-w-0 flex-col gap-2 justify-self-start">
+        <div className="flex min-w-0 items-center gap-4">
+          <h1 className="text-3xl font-bold text-text-primary leading-none">{title}</h1>
+          {branchName && !isSuperAdmin && (
+            <div className="flex items-center gap-4">
+              <span className="h-6 w-px bg-border-main" />
+              <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                {branchName}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isSuperAdmin && (
+          <div className="inline-flex flex-wrap items-center gap-2 px-1 py-1">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-pawn-sidebar px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-pawn-gold shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-pawn-gold" />
+              Super Admin
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] shadow-sm ${superAdminScopeClass}`}
+            >
+              {superAdminScopeLabel}
             </span>
           </div>
         )}

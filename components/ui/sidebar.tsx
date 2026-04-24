@@ -280,7 +280,7 @@ export function Sidebar({
           </div>
           {!collapsed && (
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-white">
+              <p className="truncate text-base font-semibold text-red-500">
                 {userName || "Current User"}
               </p>
               <p className="text-sm uppercase tracking-wide text-white/60">

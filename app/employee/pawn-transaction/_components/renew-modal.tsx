@@ -197,9 +197,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
-      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
+      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
         
         {/* Top Floating Header */}
         <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
@@ -209,7 +209,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                 <RotateCcw className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90">
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
                   {branchName} Branch
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
@@ -252,7 +252,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
 
         <div className="flex-1 flex overflow-hidden">
           {/* Main Info Area */}
-          <div className="flex-1 p-8 flex gap-8 bg-emerald-50/20 overflow-hidden">
+          <div className="flex-1 p-8 flex gap-8 bg-emerald-50/20 dark:bg-surface-secondary overflow-hidden">
             {/* Left Column: Specs */}
             <div className="flex-1 space-y-5 flex flex-col">
               <SectionHeader title="Loan & Item Identity" icon={Info} />
@@ -282,9 +282,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                 <StaticDetailRow label="Purchased Date" value={selectedItem?.purchasedDate} />
                 <StaticDetailRow label="Expiration Date" value={selectedItem?.expirationDate} />
                 <div className="pt-3 border-t border-emerald-100 space-y-1 mt-auto">
-                   <p className="text-[9px] font-black text-emerald-900/30 uppercase tracking-widest">Principal Amount</p>
+                   <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Principal Amount</p>
                    <div className="flex items-center gap-2">
-                     <span className="text-2xl font-black text-emerald-950">₱ {selectedItem?.amount.toLocaleString() || '0.00'}</span>
+                     <span className="text-2xl font-black text-emerald-950 dark:text-white">₱ {selectedItem?.amount.toLocaleString() || '0.00'}</span>
                      <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[8px] font-black uppercase tracking-tighter border border-emerald-200">Value Assessed</div>
                    </div>
                 </div>
@@ -324,8 +324,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                 
                 <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl shadow-lg">
                   <div className="space-y-0.5">
-                    <p className="text-[8px] font-black text-emerald-900/40 uppercase tracking-widest">Items Renewed</p>
-                    <p className="text-[7px] font-bold text-emerald-600/60 uppercase tracking-tighter">Extend Multiplier</p>
+                    <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Items Renewed</p>
+                    <p className="text-[7px] font-bold text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-tighter">Extend Multiplier</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <button 
@@ -334,7 +334,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-2xl font-black text-emerald-950 min-w-[1.5ch] text-center">{itemsRenewed}</span>
+                    <span className="text-2xl font-black text-emerald-950 dark:text-white min-w-[1.5ch] text-center">{itemsRenewed}</span>
                     <button 
                       onClick={() => setItemsRenewed(itemsRenewed + 1)}
                       className="w-7 h-7 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center transition-all active:scale-90 shadow-lg shadow-emerald-500/20"
@@ -366,10 +366,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                ) : (
                  <div className="bg-white/5 rounded-xl border border-white/5 p-4 flex items-center justify-between">
                     <div>
-                      <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Interest Due</p>
+                      <p className="text-[8px] font-black text-emerald-900/40 dark:text-white uppercase tracking-widest">Interest Due</p>
                       <p className="text-[7px] font-bold text-emerald-500/50 uppercase">({interestCalc.percentage}% Rate)</p>
                     </div>
-                    <p className="text-xl font-black text-white">₱ {interestCalc.interestAmount.toLocaleString()}</p>
+                    <p className="text-xl font-black text-emerald-950 dark:text-white">₱ {interestCalc.interestAmount.toLocaleString()}</p>
                  </div>
                )}
              </div>
@@ -377,8 +377,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
              <div className="mt-auto space-y-3">
                  <div className="space-y-2">
                     <div className="flex items-center justify-between px-1">
-                       <p className="text-[9px] font-black text-white uppercase tracking-widest opacity-60">TOTAL INTEREST DUE</p>
-                       <p className="text-lg font-black text-emerald-400 font-mono">
+                       <p className="text-[9px] font-black text-emerald-100/60 dark:text-white/60 uppercase tracking-widest">TOTAL INTEREST DUE</p>
+                       <p className="text-lg font-black text-emerald-600 dark:text-white font-mono">
                          ₱ {(interestCalc.interestAmount * itemsRenewed).toLocaleString()}
                        </p>
                     </div>
@@ -441,10 +441,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
 function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: any, isDark?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-white text-emerald-600 shadow-sm border border-emerald-50'}`}>
+      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-white text-emerald-600 shadow-sm border border-emerald-50 dark:bg-surface dark:border-border-subtle'}`}>
         <Icon className="w-3.5 h-3.5" />
       </div>
-      <h3 className={`text-[9px] font-black uppercase tracking-[2px] ${isDark ? 'text-emerald-400' : 'text-emerald-900/40'}`}>
+      <h3 className={`text-[9px] font-black uppercase tracking-[2px] ${isDark ? 'text-emerald-400' : 'text-emerald-900/40 dark:text-white'}`}>
         {title}
       </h3>
     </div>
@@ -454,11 +454,11 @@ function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, i
 function StaticDetailRow({ label, value }: { label: string, value: string | number | undefined }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5 group">
-      <span className="text-[10px] font-bold text-emerald-900/40 uppercase tracking-tighter whitespace-nowrap shrink-0">
+      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-white/60 uppercase tracking-tighter whitespace-nowrap shrink-0">
         {label}:
       </span>
-      <div className="flex-1 border-b border-emerald-100 border-dashed group-hover:border-emerald-300 transition-colors" />
-      <span className="text-[12px] font-black text-emerald-950 tracking-tight">
+      <div className="flex-1 border-b border-emerald-100 dark:border-border-subtle border-dashed group-hover:border-emerald-300 transition-colors" />
+      <span className="text-[12px] font-black text-emerald-950 dark:text-white tracking-tight">
         {value || "---"}
       </span>
     </div>
@@ -471,15 +471,15 @@ function ActionToggle({ label, isActive, onClick, sub }: { label: string, isActi
       onClick={onClick}
       className={`relative p-3 rounded-2xl border-2 transition-all text-left flex flex-col gap-0.5 overflow-hidden group ${
         isActive 
-          ? 'bg-white border-emerald-400 shadow-xl' 
-          : 'bg-white/5 border-white/10 text-white/40 grayscale hover:grayscale-0 hover:bg-white/10'
+          ? 'bg-emerald-50 dark:bg-emerald-600/40 border-emerald-400 shadow-xl' 
+          : 'bg-white dark:bg-surface/5 border-transparent dark:border-white/5 text-zinc-400 dark:text-white/40 hover:border-emerald-200 dark:hover:bg-white/5'
       }`}
     >
-      <div className={`w-3 h-3 rounded-full border-2 mb-1 flex items-center justify-center ${isActive ? 'border-emerald-600' : 'border-current'}`}>
-        {isActive && <div className="w-1 h-1 rounded-full bg-emerald-600" />}
+      <div className={`w-3 h-3 rounded-full border-2 mb-1 flex items-center justify-center ${isActive ? 'border-emerald-600 dark:border-white' : 'border-current'}`}>
+        {isActive && <div className="w-1 h-1 rounded-full bg-emerald-600 dark:bg-white" />}
       </div>
-      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? 'text-emerald-950' : 'text-current'}`}>{label}</p>
-      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? 'text-emerald-600/60' : 'text-current'}`}>{sub}</p>}
+      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? 'text-emerald-950 dark:text-white' : 'text-current'}`}>{label}</p>
+      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? 'text-emerald-600/60 dark:text-white/60' : 'text-current'}`}>{sub}</p>}
     </button>
   );
 }
