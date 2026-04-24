@@ -438,6 +438,7 @@ export default function PawnedItemsPage() {
   const [allDayItems, setAllDayItems] = useState<PawnedItem[]>([]); // unfiltered day items for category counts
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const viewingItem = pawnedItems.find((item) => item.id === selectedItemId) ?? null;
 
   // Category counts (list mode)
   const [categoryList, setCategoryList] = useState<CategoryCount[]>([]);

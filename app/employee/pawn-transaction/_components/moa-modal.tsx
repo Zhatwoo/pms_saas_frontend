@@ -100,7 +100,7 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading }: MoaMod
   ];
   const gracePeriodEnd = addDays(baseDate, 34);
 
-  const lineInputClass = "border-b border-zinc-400 bg-transparent px-1 text-[10px] text-zinc-900 outline-none w-full h-4";
+  const lineInputClass = "border-b-2 border-zinc-400 bg-transparent px-2 text-xs font-bold text-zinc-900 outline-none w-full h-6 transition-all focus:border-emerald-600";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900">

@@ -107,7 +107,7 @@ const ADMIN_NAV: NavGroup[] = [
         ],
       },
       { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
-      { label: "User Management", href: "/admin/users", icon: <UserManagementIcon /> },
+      { label: "Employee Management", href: "/admin/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/admin/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/admin/audit-logs", icon: <AuditLogIcon /> },
     ],

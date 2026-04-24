@@ -17,6 +17,7 @@ type AddressValue = {
 interface PhilippineAddressFieldsProps {
   value: AddressValue;
   disabled?: boolean;
+  highlightedField?: keyof AddressValue | null;
   onFieldChange: (field: keyof AddressValue, value: string) => void;
 }
 
@@ -46,6 +47,7 @@ function normalizeText(value: string) {
 export function PhilippineAddressFields({
   value,
   disabled = false,
+  highlightedField = null,
   onFieldChange,
 }: PhilippineAddressFieldsProps) {
   const [regions, setRegions] = useState<AddressOption[]>([]);
@@ -278,6 +280,7 @@ export function PhilippineAddressFields({
   const selectedRegion = regions.find((r) => r.code === regionCode);
   const provinceFieldDisabled = disabled || !regions.length || addressMode === "region";
   const cityFieldDisabled = disabled || (addressMode === "province" ? !provinceCode : !regionCode);
+  const highlightClasses = "border-amber-400 ring-2 ring-amber-400/20";
 
   return (
     <div className="space-y-4 rounded-[1.35rem] border border-border-main bg-surface-secondary p-4">
@@ -289,7 +292,7 @@ export function PhilippineAddressFields({
           type="text"
           value={value.address}
           onChange={(e) => onFieldChange("address", e.target.value)}
-          className={fieldClass}
+          className={`${fieldClass} ${highlightedField === "address" ? highlightClasses : ""}`}
           placeholder="Street or house number"
           disabled={disabled}
         />
@@ -298,7 +301,7 @@ export function PhilippineAddressFields({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Region</label>
-          <select value={regionCode} onChange={handleRegionChange} disabled={disabled} className={fieldClass}>
+          <select value={regionCode} onChange={handleRegionChange} disabled={disabled} className={`${fieldClass} ${highlightedField === "region" ? highlightClasses : ""}`}>
             <option value="">Select region</option>
             {regions.map((r) => <option key={r.code} value={r.code}>{toOption(r)}</option>)}
           </select>
@@ -306,7 +309,7 @@ export function PhilippineAddressFields({
 
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Province / District</label>
-          <select value={provinceCode} onChange={handleProvinceChange} disabled={provinceFieldDisabled} className={fieldClass}>
+          <select value={provinceCode} onChange={handleProvinceChange} disabled={provinceFieldDisabled} className={`${fieldClass} ${highlightedField === "address" ? highlightClasses : highlightedField === "region" ? highlightClasses : ""}`}>
             <option value="">{addressMode === "region" ? "No province for this region" : "Select province"}</option>
             {provinces.map((p) => <option key={p.code} value={p.code}>{toOption(p)}</option>)}
           </select>
@@ -321,7 +324,7 @@ export function PhilippineAddressFields({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">City / Municipality</label>
-          <select value={cityCode} onChange={handleCityChange} disabled={cityFieldDisabled} className={fieldClass}>
+          <select value={cityCode} onChange={handleCityChange} disabled={cityFieldDisabled} className={`${fieldClass} ${highlightedField === "city" ? highlightClasses : ""}`}>
             <option value="">Select city / municipality</option>
             {value.city && !cities.some((c) => c.name === value.city) && (
               <option value={value.city}>{value.city}</option>
@@ -332,7 +335,7 @@ export function PhilippineAddressFields({
 
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Barangay</label>
-          <select value={barangayCode} onChange={handleBarangayChange} disabled={disabled || !cityCode} className={fieldClass}>
+          <select value={barangayCode} onChange={handleBarangayChange} disabled={disabled || !cityCode} className={`${fieldClass} ${highlightedField === "barangay" ? highlightClasses : ""}`}>
             <option value="">Select barangay</option>
             {value.barangay && !barangays.some((b) => b.name === value.barangay) && (
               <option value={value.barangay}>{value.barangay}</option>

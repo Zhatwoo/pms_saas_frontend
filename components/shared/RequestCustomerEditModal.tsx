@@ -48,7 +48,7 @@ export function RequestCustomerEditModal({
 }: RequestCustomerEditModalProps) {
   const [mode, setMode] = useState<RequestMode>("specific");
   const [field, setField] = useState<(typeof fieldOptions)[number]["value"]>("address");
-  const [notes, setNotes] = useState(buildTemplate("address", customerName));
+  const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const fieldLabel = useMemo(
@@ -63,7 +63,7 @@ export function RequestCustomerEditModal({
 
     setMode("specific");
     setField("address");
-    setNotes(buildTemplate("address", customerName));
+    setNotes("");
     setIsSaving(false);
   }, [customerName, isOpen]);
 
@@ -82,7 +82,7 @@ export function RequestCustomerEditModal({
 
     setIsSaving(true);
     try {
-      await requestCustomerEdit(customerId, trimmedNotes);
+      await requestCustomerEdit(customerId, trimmedNotes, mode === "specific" ? field : undefined, mode);
       toast.success("Edit request submitted.");
       onClose();
     } catch (error) {
@@ -96,21 +96,12 @@ export function RequestCustomerEditModal({
 
   function handleModeChange(nextMode: RequestMode) {
     setMode(nextMode);
-    if (nextMode === "specific") {
-      setNotes((current) => current.trim() || buildTemplate(field, customerName));
-      return;
-    }
-
-    if (notes === buildTemplate(field, customerName)) {
-      setNotes("");
-    }
+    setNotes("");
   }
 
   function handleFieldChange(nextField: (typeof fieldOptions)[number]["value"]) {
     setField(nextField);
-    if (mode === "specific") {
-      setNotes(buildTemplate(nextField, customerName));
-    }
+    setNotes("");
   }
 
   return (

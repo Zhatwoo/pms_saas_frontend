@@ -461,23 +461,12 @@ export function NewPawnModal({
       .join(" ")
       .trim();
 
-    const qrData = [
-      fullName && `Customer:${fullName}`,
-      form.contactNo && `Tel:${form.contactNo}`,
-      form.address && `Addr:${form.address}`,
-      form.unitCode && `Code:${form.unitCode}`,
-      form.unitName && `Item:${form.unitName}`,
-      resolvedCategory && `Cat:${resolvedCategory}`,
-      form.serialNumber && `SN:${form.serialNumber}`,
-      form.amount && `Loan:P${form.amount}`,
-      `Branch:${branchName}`
-    ]
-      .filter(Boolean)
-      .join(" | ");
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(form.unitCode)}`;
 
     setIsGeneratingQR(true);
-    const encoded = encodeURIComponent(qrData);
-    const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=200x200&color=065f46&bgcolor=f0fdf4&margin=2`;
+    const encoded = encodeURIComponent(publicViewUrl);
+    const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
     setQrUrl(url);
     setIsGeneratingQR(false);
   };

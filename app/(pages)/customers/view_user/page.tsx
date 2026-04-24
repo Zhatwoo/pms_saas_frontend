@@ -2,14 +2,15 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ActionButton } from "@/components/shared/action-button";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { ViewCustomerModal, resolveCustomerPrimaryVisual } from "@/components/shared/customer-profile-modal";
 import { useAuth } from "@/contexts/auth-context";
 import type { CustomerDetail, ActivityEntry, Transaction } from "./_components/types";
-import { api } from "@/lib/api";
+import { api, cancelCustomerEditRequest } from "@/lib/api";
 
 /* ──────────────────────────── Types ──────────────────────────── */
 interface BackendCustomer {
@@ -18,10 +19,12 @@ interface BackendCustomer {
   address: string;
   barangay: string;
   city: string;
+  province?: string | null;
   region: string;
   email: string;
   contact_number: string;
   id_presented: string;
+  id_number?: string | null;
   branch_id?: string | null;
   branch_name?: string | null;
   profile_photo_url: string | null;
@@ -36,7 +39,15 @@ interface BackendActivityLog {
   details: Record<string, unknown>;
   createdAt: string;
   actorName: string;
+  userId?: string | null;
 }
+
+type ReviewContext = {
+  logId: string;
+  field: string | null;
+  notes: string;
+  requestingEmployeeId?: string;
+};
 
 interface BranchOption {
   id: string;
@@ -46,6 +57,7 @@ interface BranchOption {
 interface ApiTransaction {
   transaction_no?: string | null;
   transaction_date?: string | null;
+  transaction_time?: string | null;
   purpose?: string | null;
   cash_in?: number | string | null;
   pawn_amount?: number | string | null;
@@ -57,6 +69,14 @@ interface ApiTransaction {
     status?: string | null;
     branch?: string | null;
     amount?: number | string | null;
+    item_id?: string | null;
+    serial_number?: string | null;
+    condition?: string | null;
+    items_included?: string | null;
+    memory_storage?: string | null;
+    remarks?: string | null;
+    qr_code?: string | null;
+    item_photos?: string[] | null;
   } | null;
 }
 
@@ -99,6 +119,7 @@ const mockCustomers: Record<string, CustomerDetail> = {
     barangay: "Brgy. Ususan",
     city: "Taguig City",
     province: "Metro Manila",
+    region: "NCR",
     address: "Brgy. Ususan, Taguig City",
     email: "juandelacruz@gmail.com",
     phone: "0912-345-6789",
@@ -145,6 +166,7 @@ const mockCustomers: Record<string, CustomerDetail> = {
     barangay: "Brgy. San Antonio",
     city: "Makati",
     province: "Metro Manila",
+    region: "NCR",
     address: "Brgy. San Antonio, Makati",
     email: "jhondoe@gmail.com",
     phone: "0912-345-6789",
@@ -183,6 +205,7 @@ const mockCustomers: Record<string, CustomerDetail> = {
     barangay: "Brgy. Commonwealth",
     city: "Quezon City",
     province: "Metro Manila",
+    region: "NCR",
     address: "Brgy. Commonwealth, Quezon City",
     email: "jiminneutron@gmail.com",
     phone: "0912-345-6789",
@@ -290,9 +313,10 @@ function mapTransaction(tx: ApiTransaction): Transaction {
 }
 
 function collectItemPhotos(tx: ApiTransaction) {
-  const photos = (Array.isArray((tx as ApiTransaction & { pawned_item?: { item_photos?: string[] | null } }).pawned_item?.item_photos)
-    ? (tx as ApiTransaction & { pawned_item?: { item_photos?: string[] | null } }).pawned_item?.item_photos
-    : []).filter((value): value is string => typeof value === "string" && isImageUrl(value));
+  const itemPhotos = tx.pawned_item?.item_photos;
+  const photos = (Array.isArray(itemPhotos) ? itemPhotos : []).filter(
+    (value): value is string => typeof value === "string" && isImageUrl(value),
+  );
 
   return Array.from(new Set(photos));
 }
@@ -587,6 +611,7 @@ function EmployeeCustomerDetailContent() {
   const pathname = usePathname();
   const { user } = useAuth();
   const customerId = searchParams.get("id") ?? "";
+  const highlightLogId = searchParams.get("highlightLogId") ?? "";
   const initialAction = searchParams.get("mode");
   const initialCustomer = mockCustomers[customerId] ?? null;
   const [customer, setCustomer] = useState<CustomerDetail | null>(initialCustomer);
@@ -597,9 +622,17 @@ function EmployeeCustomerDetailContent() {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteBody, setNoteBody] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [cancelRequestTarget, setCancelRequestTarget] = useState<BackendActivityLog | null>(null);
   const [activityLog, setActivityLog] = useState<ActivityEntry[]>([]);
   const [activityLogs, setActivityLogs] = useState<BackendActivityLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  const [reviewContext, setReviewContext] = useState<ReviewContext | null>(null);
+
+  const requestingEmployeeId = useMemo(() => {
+    const editRequest = activityLogs.find((log) => log.action === "CUSTOMER_EDIT_REQUESTED");
+    return editRequest?.userId ?? undefined;
+  }, [activityLogs]);
   const [transactionRecords, setTransactionRecords] = useState<CustomerTransactionRecord[]>([]);
   const [viewingTransaction, setViewingTransaction] = useState<CustomerTransactionRecord | null>(null);
 
@@ -638,6 +671,7 @@ function EmployeeCustomerDetailContent() {
             street: customerData.address,
             barangay: customerData.barangay,
             city: customerData.city,
+            province: customerData.province || "N/A",
             region: customerData.region,
             address: customerData.address || "",
             email: customerData.email || "N/A",
@@ -719,6 +753,19 @@ function EmployeeCustomerDetailContent() {
   }, [customer, initialAction]);
 
   useEffect(() => {
+    if (!highlightLogId) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.getElementById(`activity-log-${highlightLogId}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlightLogId, activityLogs, transactionRecords, customer]);
+
+  useEffect(() => {
     setIsViewOpen(false);
     setIsNoteOpen(false);
     setViewingTransaction(null);
@@ -744,6 +791,35 @@ function EmployeeCustomerDetailContent() {
       toast.error(err instanceof Error ? err.message : "Failed to save note.");
     } finally {
       setIsSavingNote(false);
+    }
+  }
+
+  function handleReview(log: BackendActivityLog) {
+    const d = log.details as Record<string, unknown>;
+    setReviewContext({
+      logId: log.id,
+      field: typeof d.field === "string" && d.field ? d.field : null,
+      notes: typeof d.notes === "string" ? d.notes : "",
+      requestingEmployeeId: log.userId ?? undefined,
+    });
+    setIsViewOpen(true);
+  }
+
+  function handleCancelRequest(log: BackendActivityLog) {
+    if (!customer) return;
+    setCancelRequestTarget(log);
+  }
+
+  async function handleConfirmCancelRequest() {
+    if (!customer || !cancelRequestTarget) return;
+    try {
+      await cancelCustomerEditRequest(customer.id, cancelRequestTarget.id);
+      toast.success("Edit request canceled.");
+      setRefreshToken((value) => value + 1);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to cancel edit request.");
+    } finally {
+      setCancelRequestTarget(null);
     }
   }
 
@@ -943,11 +1019,12 @@ function EmployeeCustomerDetailContent() {
                 type FeedItem = {
                   key: string;
                   ts: number;
-                  kind: "pawn" | "note" | "edit_request" | "merge" | "registered" | "system";
+                  kind: "pawn" | "note" | "edit_request" | "edit_approved" | "merge" | "registered" | "system";
                   title: string;
                   meta: string;
                   detail: string;
                   actor: string;
+                  rawDetails?: Record<string, unknown>;
                 };
 
                 const feed: FeedItem[] = [];
@@ -1001,6 +1078,18 @@ function EmployeeCustomerDetailContent() {
                       meta: `${dateStr} · ${timeStr}`,
                       detail: typeof d.notes === "string" ? d.notes : "",
                       actor: log.actorName,
+                      rawDetails: d,
+                    });
+                  } else if (log.action === "CUSTOMER_EDIT_PROCESSED" && typeof d.reviewedField === "string") {
+                    feed.push({
+                      key: log.id,
+                      ts,
+                      kind: "edit_approved",
+                      title: "Edit Approved",
+                      meta: `${dateStr} · ${timeStr}`,
+                      detail: "",
+                      actor: log.actorName,
+                      rawDetails: d,
                     });
                   } else if (log.action === "CUSTOMER_DUPLICATES_MERGED") {
                     feed.push({
@@ -1039,8 +1128,8 @@ function EmployeeCustomerDetailContent() {
                 }
 
                 // Notes pinned to top (newest first), everything else below (newest first)
-                const notes = feed.filter((i) => i.kind === "note" || i.kind === "edit_request").sort((a, b) => b.ts - a.ts);
-                const rest = feed.filter((i) => i.kind !== "note" && i.kind !== "edit_request").sort((a, b) => b.ts - a.ts);
+                const notes = feed.filter((i) => i.kind === "note" || i.kind === "edit_request" || i.kind === "edit_approved").sort((a, b) => b.ts - a.ts);
+                const rest = feed.filter((i) => i.kind !== "note" && i.kind !== "edit_request" && i.kind !== "edit_approved").sort((a, b) => b.ts - a.ts);
                 const sorted = [...notes, ...rest];
 
                 const iconMap: Record<FeedItem["kind"], React.ReactNode> = {
@@ -1057,6 +1146,11 @@ function EmployeeCustomerDetailContent() {
                   edit_request: (
                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-700">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4-10 10H8v-4L18 2z"/><path d="M13 6 18 11"/></svg>
+                    </span>
+                  ),
+                  edit_approved: (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                     </span>
                   ),
                   merge: (
@@ -1093,23 +1187,200 @@ function EmployeeCustomerDetailContent() {
                   );
                 }
 
-                return sorted.map((item) => (
-                  <div key={item.key} className="flex items-start gap-3 px-5 py-4 hover:bg-surface-secondary/50 transition-colors">
-                    <div className="mt-0.5 flex-shrink-0">{iconMap[item.kind]}</div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                        <p className="text-sm font-semibold text-text-primary">{item.title}</p>
-                        <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                return sorted.map((item) => {
+                  const isHighlighted = item.key === highlightLogId;
+
+                  if (item.kind === "edit_request" && item.rawDetails) {
+                    const rd = item.rawDetails;
+                    const fieldMap: Record<string, string> = {
+                      full_name: "Full Name",
+                      contact_number: "Contact Number",
+                      address: "Address",
+                      email: "Email",
+                      id_presented: "ID Presented",
+                    };
+
+                    // Infer field from notes text ONLY if it exactly matches the auto-generated template
+                    // (i.e. user didn't edit the notes). This avoids false positives on custom notes.
+                    function inferField(notesText: string): string | null {
+                      const t = notesText.toLowerCase().trim();
+                      // Template pattern: "request to review <field> for <name>. please verify and update the customer record if needed."
+                      if (!/^request to review .+ for .+\. please verify and update the customer record if needed\.?$/.test(t)) {
+                        return null;
+                      }
+                      if (t.startsWith("request to review full name")) return "full_name";
+                      if (t.startsWith("request to review contact number")) return "contact_number";
+                      if (t.startsWith("request to review address")) return "address";
+                      if (t.startsWith("request to review email")) return "email";
+                      if (t.startsWith("request to review id presented")) return "id_presented";
+                      return null;
+                    }
+
+                    const storedField = typeof rd.field === "string" && rd.field ? rd.field : null;
+                    const notesText = typeof rd.notes === "string" ? rd.notes : "";
+                    const resolvedField = storedField ?? inferField(notesText);
+                    const fieldLabel = resolvedField ? (fieldMap[resolvedField] ?? resolvedField) : null;
+
+                    const storedMode = typeof rd.mode === "string" ? rd.mode : null;
+                    const requestMode = storedMode ?? (resolvedField ? "specific" : "freeform");
+
+                    const branchName = typeof rd.branchName === "string" ? rd.branchName : null;
+                    const actorLabel = typeof rd.actorLabel === "string" ? rd.actorLabel : item.actor;
+                    const customerName = typeof rd.customerName === "string" ? rd.customerName : null;
+                    const currentLog = activityLogs.find((log) => log.id === item.key);
+                    const canCancelRequest = user?.role === "employee" && currentLog?.userId === user?.id;
+
+                    return (
+                      <div
+                        key={item.key}
+                        id={`activity-log-${item.key}`}
+                        className={`flex scroll-mt-24 items-start gap-3 px-5 py-4 transition-colors ${isHighlighted ? "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/25" : "hover:bg-surface-secondary/50"}`}
+                      >
+                        <div className="mt-0.5 flex-shrink-0">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15 text-blue-400">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4-10 10H8v-4L18 2z"/><path d="M13 6 18 11"/></svg>
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                            <p className="text-sm font-semibold text-text-primary">
+                              Edit Request
+                              {actorLabel && (
+                                <span className="ml-1.5 text-xs font-normal text-text-tertiary">· {actorLabel}</span>
+                              )}
+                            </p>
+                            <div className="flex flex-col items-end gap-1 text-right">
+                              <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                              {canCancelRequest && currentLog && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelRequest(currentLog)}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-red-700 transition-colors hover:bg-red-100"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 6 6 18" />
+                                    <path d="m6 6 12 12" />
+                                  </svg>
+                                  Cancel Request
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-0.5 space-y-0.5">
+                            {fieldLabel ? (
+                              <p className="text-xs text-text-secondary">
+                                Field to Review: <span className="font-semibold text-text-primary">{fieldLabel}</span>
+                              </p>
+                            ) : (
+                              <p className="text-xs text-text-tertiary">Free-form note</p>
+                            )}
+                            {notesText && (
+                              <p className="text-xs text-text-secondary">{notesText}</p>
+                            )}
+                            {(user?.role === "admin" || user?.role === "super_admin") && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const log = activityLogs.find((l) => l.id === item.key);
+                                  if (log) handleReview(log);
+                                }}
+                                className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-800 transition-colors hover:bg-blue-100"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                Review
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      {item.detail && (
-                        <p className="mt-0.5 text-xs text-text-secondary">{item.detail}</p>
-                      )}
-                      {item.actor && (
-                        <p className="mt-1 text-[10px] text-text-tertiary">by {item.actor}</p>
-                      )}
+                    );
+                  }
+
+                  if (item.kind === "edit_approved" && item.rawDetails) {
+                    const rd = item.rawDetails;
+                    const fieldMap: Record<string, string> = {
+                      full_name: "Full Name",
+                      contact_number: "Contact Number",
+                      address: "Address",
+                      email: "Email Address",
+                      barangay: "Barangay",
+                      city: "City",
+                      region: "Region",
+                      id_presented: "ID Presented",
+                    };
+                    const reviewedField = typeof rd.reviewedField === "string" ? rd.reviewedField : null;
+                    const approvedFieldLabel = reviewedField ? (fieldMap[reviewedField] ?? reviewedField) : null;
+                    const oldValue = typeof rd.oldValue === "string" ? rd.oldValue : null;
+                    const newValue = typeof rd.newValue === "string" ? rd.newValue : null;
+                    const adminName = typeof rd.adminName === "string" ? rd.adminName : item.actor;
+
+                    return (
+                      <div
+                        key={item.key}
+                        id={`activity-log-${item.key}`}
+                        className={`flex scroll-mt-24 items-start gap-3 px-5 py-4 transition-colors ${isHighlighted ? "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/25" : "hover:bg-surface-secondary/50"}`}
+                      >
+                        <div className="mt-0.5 flex-shrink-0">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                            <p className="text-sm font-semibold text-emerald-700">
+                              Edit Approved
+                              {adminName && (
+                                <span className="ml-1.5 text-xs font-normal text-text-tertiary">· {adminName} (Admin)</span>
+                              )}
+                            </p>
+                            <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                          </div>
+                          <div className="mt-0.5 space-y-0.5">
+                            {approvedFieldLabel && (
+                              <p className="text-xs text-text-secondary">
+                                Field: <span className="font-semibold text-text-primary">{approvedFieldLabel}</span>
+                              </p>
+                            )}
+                            {oldValue && newValue && (
+                              <p className="text-xs text-text-secondary">
+                                <span className="text-text-tertiary line-through">{oldValue}</span>
+                                <span className="mx-1.5 text-text-tertiary">→</span>
+                                <span className="font-medium text-emerald-700">{newValue}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={item.key}
+                      id={`activity-log-${item.key}`}
+                      className={`flex scroll-mt-24 items-start gap-3 px-5 py-4 transition-colors ${isHighlighted ? "bg-emerald-50/80 ring-2 ring-inset ring-emerald-500/25" : "hover:bg-surface-secondary/50"}`}
+                    >
+                      <div className="mt-0.5 flex-shrink-0">{iconMap[item.kind]}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                          <p className="text-sm font-semibold text-text-primary">{item.title}</p>
+                          <p className="text-[10px] font-medium text-text-tertiary whitespace-nowrap">{item.meta}</p>
+                        </div>
+                        {item.detail && (
+                          <p className="mt-0.5 text-xs text-text-secondary">{item.detail}</p>
+                        )}
+                        {item.actor && (
+                          <p className="mt-1 text-[10px] text-text-tertiary">by {item.actor}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ));
+                  );
+                });
               })()}
             </div>
           </div>
@@ -1182,16 +1453,29 @@ function EmployeeCustomerDetailContent() {
       {isViewOpen && (
         <ViewCustomerModal
           customer={customer}
-          onClose={() => setIsViewOpen(false)}
+          onClose={() => { setIsViewOpen(false); setReviewContext(null); }}
           userRole={user?.role}
           initialAction={initialAction === "edit" || initialAction === "request" ? initialAction : null}
           onCustomerRefresh={() => setRefreshToken((value) => value + 1)}
+          requestingEmployeeId={reviewContext?.requestingEmployeeId ?? requestingEmployeeId}
+          reviewContext={reviewContext ?? undefined}
         />
       )}
 
       {viewingTransaction && (
         <TransactionViewModal transaction={viewingTransaction} onClose={() => setViewingTransaction(null)} />
       )}
+
+      <ConfirmActionModal
+        isOpen={Boolean(cancelRequestTarget)}
+        title="Cancel Edit Request?"
+        message="This will remove the pending request log and the related admin notifications. This action cannot be undone."
+        confirmLabel="Cancel Request"
+        cancelLabel="Keep Request"
+        variant="danger"
+        onClose={() => setCancelRequestTarget(null)}
+        onConfirm={handleConfirmCancelRequest}
+      />
 
       {isNoteOpen && (
         <div
