@@ -6,6 +6,7 @@ interface UserActionsProps {
   onSearchChange: (value: string) => void;
   roleFilter: RoleFilter;
   onRoleFilterChange: (value: RoleFilter) => void;
+  onExportUsers: () => void;
   canCreateUser: boolean;
   onCreateUser: () => void;
   /** Super Admin tab + filter; only for super_admin viewers */
@@ -78,6 +79,7 @@ export function UserActions({
   onSearchChange,
   roleFilter,
   onRoleFilterChange,
+  onExportUsers,
   canCreateUser,
   onCreateUser,
   showSuperAdminRoleTab = false,
@@ -129,7 +131,7 @@ export function UserActions({
 
         {/* Global Actions */}
         <div className="flex items-center gap-2 border-t border-border-main pt-4 xl:border-none xl:pt-0">
-          <ActionButton variant="outline" className="flex-1 xl:flex-none">
+          <ActionButton variant="outline" className="flex-1 xl:flex-none" onClick={onExportUsers}>
             <span className="flex items-center justify-center gap-1.5">
               {exportIcon}
               Export Users

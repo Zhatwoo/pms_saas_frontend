@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
@@ -19,6 +21,7 @@ export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type RoleFilter = "ALL" | UserRole | "PENDING";
 export type BranchFilter = "ALL" | string;
+type ExportFormat = "csv" | "pdf";
 
 export type AccountStatusUi = "Pending" | "Active" | "Rejected";
 
@@ -74,6 +77,10 @@ interface UserApiRecord {
   auth_id?: string;
   accountStatus?: string | null;
   account_status?: string | null;
+}
+
+function csvCell(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
 }
 
 function mapApiRoleToUi(role: UserApiRecord["role"]): UserRole {
@@ -159,6 +166,7 @@ export default function UserManagementPage() {
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [highlightTransfer, setHighlightTransfer] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const loadUsersPage = useCallback(async () => {
     setIsLoading(true);
@@ -373,6 +381,123 @@ export default function UserManagementPage() {
   const activeUsers = users.filter((u) => u.status === "Active").length;
   const pendingUsers = users.filter((u) => u.status === "Pending").length;
 
+  const handleExportUsersCsv = useCallback(() => {
+    if (filteredUsers.length === 0) {
+      toast.error("No users to export.");
+      return;
+    }
+
+    const headers = [
+      "Full Name",
+      "Email",
+      "Role",
+      "Branch",
+      "Created",
+      "Status",
+    ];
+
+    const rows = filteredUsers.map((record) =>
+      [
+        record.fullName,
+        record.email,
+        record.role,
+        record.branch,
+        record.created,
+        record.status,
+      ]
+        .map((cell) => csvCell(String(cell)))
+        .join(","),
+    );
+
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    const branchLabel = isAllBranches
+      ? "all_branches"
+      : selectedBranch.name.toLowerCase().replace(/\s+/g, "_");
+    const dateLabel = new Date().toISOString().slice(0, 10);
+
+    link.href = url;
+    link.download = `users_${branchLabel}_${dateLabel}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success("Users exported successfully.");
+  }, [filteredUsers, isAllBranches, selectedBranch.name]);
+
+  const handleExportUsersPdf = useCallback(() => {
+    if (filteredUsers.length === 0) {
+      toast.error("No users to export.");
+      return;
+    }
+
+    const branchLabel = isAllBranches ? "All Branches" : selectedBranch.name;
+    const dateLabel = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    });
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("User Management Export", 14, 16);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Branch Scope: ${branchLabel}`, 14, 23);
+    doc.text(`Generated: ${dateLabel}`, 14, 29);
+
+    autoTable(doc, {
+      startY: 36,
+      head: [["Full Name", "Email", "Role", "Branch", "Created", "Status"]],
+      body: filteredUsers.map((record) => [
+        record.fullName,
+        record.email,
+        record.role.replace("_", " "),
+        record.branch,
+        record.created,
+        record.status,
+      ]),
+      styles: {
+        font: "helvetica",
+        fontSize: 9,
+        cellPadding: 2.5,
+        textColor: [17, 24, 39],
+        lineColor: [209, 213, 219],
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        fillColor: [6, 95, 70],
+        textColor: [251, 191, 36],
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251],
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    const fileName = `users_${isAllBranches ? "all_branches" : selectedBranch.name.toLowerCase().replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(fileName);
+    toast.success("PDF downloaded successfully.");
+  }, [filteredUsers, isAllBranches, selectedBranch.name]);
+
+  const handleExportUsers = useCallback(
+    (format: ExportFormat) => {
+      if (format === "csv") {
+        handleExportUsersCsv();
+      } else {
+        handleExportUsersPdf();
+      }
+      setIsExportModalOpen(false);
+    },
+    [handleExportUsersCsv, handleExportUsersPdf],
+  );
+
   return (
     <div className="space-y-6">
       {error && (
@@ -392,6 +517,7 @@ export default function UserManagementPage() {
         onSearchChange={setSearch}
         roleFilter={roleFilter}
         onRoleFilterChange={setRoleFilter}
+        onExportUsers={() => setIsExportModalOpen(true)}
         canCreateUser={canManageUsers}
         onCreateUser={() => setIsCreateModalOpen(true)}
         showSuperAdminRoleTab={canManageUsers}
@@ -483,6 +609,50 @@ export default function UserManagementPage() {
         onClose={() => setIsStatusModalOpen(false)}
         onConfirm={handleUpdateAccountStatus}
       />
+
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsExportModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-xl border border-border-main bg-surface shadow-2xl">
+            <div className="px-6 pt-6">
+              <h3 className="text-lg font-bold text-text-primary">Export Users</h3>
+              <p className="mt-2 text-sm text-text-tertiary">
+                Choose your preferred export format.
+              </p>
+            </div>
+
+            <div className="mt-5 space-y-2 px-6">
+              <button
+                type="button"
+                onClick={() => handleExportUsers("csv")}
+                className="w-full rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+              >
+                Export as CSV
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExportUsers("pdf")}
+                className="w-full rounded-lg border border-pawn-sidebar bg-surface px-4 py-2.5 text-sm font-bold text-pawn-sidebar transition-colors hover:bg-surface-secondary"
+              >
+                Export as PDF
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-full rounded-lg border border-border-main bg-surface px-4 py-2.5 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
