@@ -209,6 +209,7 @@ export function Header({
   hideBranchSelector = false,
 }: HeaderProps) {
   const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const pathname = usePathname();
   const router = useRouter();
   const [time, setTime] = useState("");
@@ -308,6 +309,11 @@ export function Header({
   }, [isNotificationOpen]);
 
   const title = getPageTitle(pathname || "");
+  const isAllBranchesView = (branchName ?? "").toLowerCase() === "all branches";
+  const superAdminScopeLabel = isAllBranchesView ? "Global Scope" : "Branch Scope";
+  const superAdminScopeClass = isAllBranchesView
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : "border-sky-200 bg-sky-50 text-sky-700";
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badgeCount = Math.max(notificationCount, unreadCount);
 
@@ -378,13 +384,28 @@ export function Header({
 
   return (
     <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border-main bg-header-bg px-6 py-4 transition-colors duration-300">
-      <div className="flex min-w-0 items-center gap-4 justify-self-start">
-        <h1 className="text-3xl font-bold text-text-primary leading-none">{title}</h1>
-        {branchName && (
-          <div className="flex items-center gap-4">
-            <span className="h-6 w-px bg-border-main" />
-            <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
-              {branchName}
+      <div className="flex min-w-0 flex-col gap-2 justify-self-start">
+        <div className="flex min-w-0 items-center gap-4">
+          <h1 className="text-3xl font-bold text-text-primary leading-none">{title}</h1>
+          {branchName && (
+            <div className="flex items-center gap-4">
+              <span className="h-6 w-px bg-border-main" />
+              <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                {branchName}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isSuperAdmin && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-700">
+              Super Admin
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${superAdminScopeClass}`}
+            >
+              {superAdminScopeLabel}
             </span>
           </div>
         )}
