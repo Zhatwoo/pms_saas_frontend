@@ -390,6 +390,7 @@ export default function PawnedItemsPage() {
       {isQrScanOpen && (
         <InventoryAuditModal
           isOpen={isQrScanOpen}
+          onClose={() => setIsQrScanOpen(false)}
           onConfirm={() => setIsQrScanOpen(false)}
         />
       )}

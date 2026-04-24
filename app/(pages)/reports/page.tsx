@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { PeriodTabs } from "@/components/shared/period-tabs";
 import { ReportStats } from "./_components/report-stats";
 import { BranchSalesTable } from "./_components/branch-sales-table";
@@ -113,6 +114,8 @@ export default function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const { selectedBranch, isAllBranches } = useBranch();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
 
   useEffect(() => {
     async function fetchReport() {
@@ -318,7 +321,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <>
-          <ReportStats data={reportData?.stats} />
+          <ReportStats data={reportData?.stats} showBranchStats={isSuperAdmin} />
 
           {/* Side by side: branch table + chart */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">

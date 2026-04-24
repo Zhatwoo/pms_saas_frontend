@@ -8,6 +8,7 @@ import { StatusBadge } from "./status-badge";
 interface InventoryAuditModalProps {
   isOpen: boolean;
   onConfirm: () => void;
+  onClose: () => void;
 }
 
 interface ScannedItemDetails {
@@ -128,7 +129,7 @@ interface InventoryAuditStorageState {
   currentScan: string;
 }
 
-export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalProps) {
+export function InventoryAuditModal({ isOpen, onConfirm, onClose }: InventoryAuditModalProps) {
   const { selectedBranch } = useBranch();
   const [scannedItems, setScannedItems] = useState<ScannedItemDetails[]>([]);
   const [currentScan, setCurrentScan] = useState("");
@@ -527,7 +528,18 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
   if (showCompletionConfirm) {
     return (
       <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/75 px-4 backdrop-blur-xl">
-        <div className="w-full max-w-sm scale-in-center rounded-3xl border border-emerald-500/20 bg-surface p-8 text-center shadow-2xl">
+        <div className="relative w-full max-w-sm scale-in-center rounded-3xl border border-emerald-500/20 bg-surface p-8 text-center shadow-2xl">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            aria-label="Close inventory audit modal"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
@@ -599,7 +611,18 @@ export function InventoryAuditModal({ isOpen, onConfirm }: InventoryAuditModalPr
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-3 py-3 backdrop-blur-xl lg:px-6 lg:py-6">
-      <div className="h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl">
+      <div className="relative h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/55"
+          aria-label="Close inventory audit modal"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
         <div className="grid h-full min-h-0 lg:grid-cols-[1.25fr_.88fr]">
           <section className="relative flex min-h-0 flex-col bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.18),_transparent_40%),linear-gradient(180deg,_#03150f_0%,_#07140f_100%)] p-4 text-white lg:p-6">
             <div className="flex items-start justify-between gap-4">

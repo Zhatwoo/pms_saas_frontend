@@ -21,13 +21,6 @@ interface SaleItem {
   originalPawnId?: string;
 }
 
-const branchOptions = [
-  { value: "all", label: "All Branches" },
-  { value: "taguig", label: "Taguig" },
-  { value: "makati", label: "Makati" },
-  { value: "pasay", label: "Pasay" },
-];
-
 interface SaleStats {
   totalAvailable: number;
   totalSold: number;
@@ -47,8 +40,8 @@ const statusVariant: Record<string, "green" | "orange"> = {
   Sold: "orange",
 };
 
-const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ─── Stats Bar ────────────────────────────────────────────────
 function StatsBar({ stats }: { stats: SaleStats }) {
@@ -91,9 +84,8 @@ function CategoryTabs({ categories, totalCount, selected, onChange }: {
     <div className="flex flex-wrap gap-1.5">
       <button
         onClick={() => onChange("all")}
-        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-          selected === "all" ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
-        }`}
+        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${selected === "all" ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
+          }`}
       >
         All <span className="opacity-70">({totalCount})</span>
       </button>
@@ -101,9 +93,8 @@ function CategoryTabs({ categories, totalCount, selected, onChange }: {
         <button
           key={c.category}
           onClick={() => onChange(c.category)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-            selected === c.category ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
-          }`}
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${selected === c.category ? "bg-emerald-700 text-white" : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
+            }`}
         >
           {c.category} <span className="opacity-70">({c.count})</span>
         </button>
@@ -238,7 +229,7 @@ export default function ItemsForSalePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, viewMode, category, calendarCategory, status, searchQuery, selectedDate]);
 
   useEffect(() => {
@@ -305,7 +296,7 @@ export default function ItemsForSalePage() {
       }
     }
     fetchStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, isAllBranches]);
 
   // Fetch category counts
@@ -326,7 +317,7 @@ export default function ItemsForSalePage() {
       }
     }
     fetchCategories();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, isAllBranches]);
 
   // Fetch calendar data
@@ -442,9 +433,8 @@ export default function ItemsForSalePage() {
                 {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
                   <th
                     key={h}
-                    className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${
-                      h === "Price" ? "text-right" : "text-left"
-                    }`}
+                    className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"
+                      }`}
                   >
                     {h}
                   </th>
@@ -464,59 +454,38 @@ export default function ItemsForSalePage() {
                     {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
                   </td>
                 </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-base text-zinc-400">Loading...</td></tr>
-                ) : saleItems.length === 0 ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-base text-zinc-400">No items for sale found</td></tr>
-                ) : (
-                  saleItems.map((item) => (
-                    <tr
-                      key={item.id}
-                      className={`border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 cursor-pointer ${
-                        item.price === 0 && item.status === "Available"
-                          ? "bg-orange-500/5"
-                          : "bg-surface-secondary"
-                      }`}
-                    >
-                      <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">
-                        <div className="flex items-center gap-2">
-                          {item.itemName}
-                          {item.price === 0 && item.status === "Available" && (
-                            <span className="rounded-full bg-orange-100 dark:bg-orange-900/30 border border-orange-300/50 px-1.5 py-0.5 text-[9px] font-black uppercase text-orange-600 dark:text-orange-400">
-                              Unpriced
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.availableDate}</td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-right font-medium">
-                        {item.price === 0
-                          ? <span className="text-orange-500 font-bold">—</span>
-                          : <span className="text-emerald-700">₱{item.price.toLocaleString()}</span>
-                        }
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">
-                        {item.originalPawnId
-                          ? <span className="font-mono text-xs text-emerald-600 dark:text-emerald-400">{item.itemId}</span>
-                          : <span className="text-text-muted text-xs">Manual</span>
-                        }
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+              ) : (
+                saleItems.map((item, idx) => (
+                  <tr
+                    key={item.id || item.itemId}
+                    className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
+                    onClick={() => setSelectedItem(item)}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.availableDate}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-right font-medium text-emerald-700">
+                      &#8369;{item.price.toLocaleString()}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button className="rounded px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                          View details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
       {/* ── Calendar view ────────────────────────────────────── */}
       {viewMode === "calendar" && (

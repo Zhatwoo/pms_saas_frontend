@@ -215,11 +215,10 @@ function CategoryTabs({
     <div className="flex flex-wrap gap-1.5">
       <button
         onClick={() => onChange("all")}
-        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-          selected === "all"
+        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${selected === "all"
             ? "bg-emerald-700 text-white"
             : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
-        }`}
+          }`}
       >
         All <span className="opacity-70">({totalCount})</span>
       </button>
@@ -227,11 +226,10 @@ function CategoryTabs({
         <button
           key={c.category}
           onClick={() => onChange(c.category)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-            selected === c.category
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${selected === c.category
               ? "bg-emerald-700 text-white"
               : "bg-surface-secondary text-text-secondary border border-border-main hover:bg-surface-hover"
-          }`}
+            }`}
         >
           {c.category} <span className="opacity-70">({c.count})</span>
         </button>
@@ -242,10 +240,10 @@ function CategoryTabs({
 
 // ─── Redesigned Calendar ──────────────────────────────────────
 const MONTH_NAMES = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
-const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function PawnedCalendar({
   calendarData,
@@ -357,22 +355,20 @@ function PawnedCalendar({
             <button
               key={day}
               onClick={() => onSelectDate(isSelected ? null : dateStr)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${bgIntensity} ${
-                isSelected
+              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${bgIntensity} ${isSelected
                   ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/20"
                   : ""
-              } ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+                } ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span
-                className={`text-xs font-bold leading-none ${
-                  isSelected
+                className={`text-xs font-bold leading-none ${isSelected
                     ? "text-emerald-400"
                     : isToday
-                    ? "text-amber-400"
-                    : count > 0
-                    ? "text-text-primary"
-                    : "text-text-muted"
-                }`}
+                      ? "text-amber-400"
+                      : count > 0
+                        ? "text-text-primary"
+                        : "text-text-muted"
+                  }`}
               >
                 {day}
               </span>
@@ -486,7 +482,7 @@ export default function PawnedItemsPage() {
   // Reset page on filter change
   useEffect(() => {
     setCurrentPage(1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch.id, viewMode, category, status, searchQuery, selectedDate]);
 
   // Reset calendar category when date changes
@@ -552,18 +548,18 @@ export default function PawnedItemsPage() {
       }
     }
     fetchData();
-  }, [selectedBranch.id, isAllBranches, viewMode, category, calendarCategory, status, searchQuery, selectedDate, currentPage]);
+  }, [branch, category, status, searchQuery, currentPage]);
+
+  const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
+    try {
+      await api.post(`/inventory/pawned/${itemId}/remarks`, { remark: remarks });
+      setPawnedItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, remarks } : i)));
+    } catch (err) {
+      console.error("Failed to save remarks:", err);
+    }
+  }, []);
 
   const [isQrScanOpen, setIsQrScanOpen] = useState(false);
-
-  // Format selected date for display
-  const selectedDateLabel = selectedDate
-    ? new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : null;
 
   return (
     <div className="space-y-3 pb-4">
@@ -640,21 +636,19 @@ export default function PawnedItemsPage() {
           <div className="flex rounded-md border border-border-main overflow-hidden">
             <button
               onClick={() => setViewMode("list")}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                viewMode === "list"
+              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list"
                   ? "bg-emerald-700 text-white"
                   : "bg-surface text-text-secondary hover:bg-surface-hover"
-              }`}
+                }`}
             >
               List
             </button>
             <button
               onClick={() => setViewMode("calendar")}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                viewMode === "calendar"
+              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar"
                   ? "bg-emerald-700 text-white"
                   : "bg-surface text-text-secondary hover:bg-surface-hover"
-              }`}
+                }`}
             >
               Calendar
             </button>
@@ -890,6 +884,7 @@ export default function PawnedItemsPage() {
       {isQrScanOpen && (
         <InventoryAuditModal
           isOpen={isQrScanOpen}
+          onClose={() => setIsQrScanOpen(false)}
           onConfirm={() => setIsQrScanOpen(false)}
         />
       )}
