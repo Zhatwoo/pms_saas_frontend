@@ -9,12 +9,21 @@ import { updateCustomer } from "@/lib/api";
 import type { Role } from "@/types";
 import type { CustomerDetail } from "@/app/(pages)/customers/view_user/_components/types";
 
+type ReviewContext = {
+  logId: string;
+  field: string | null;
+  notes: string;
+  requestingEmployeeId?: string;
+};
+
 interface ViewCustomerModalProps {
   customer: CustomerDetail;
   onClose: () => void;
   userRole?: Role;
   initialAction?: "edit" | "request" | null;
   onCustomerRefresh?: () => Promise<void> | void;
+  requestingEmployeeId?: string;
+  reviewContext?: ReviewContext;
 }
 
 type PreviewState = {
@@ -112,6 +121,8 @@ export function ViewCustomerModal({
   userRole,
   initialAction,
   onCustomerRefresh,
+  requestingEmployeeId,
+  reviewContext,
 }: ViewCustomerModalProps) {
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [isRequestOpen, setIsRequestOpen] = useState(false);
@@ -126,6 +137,15 @@ export function ViewCustomerModal({
   const canRequestEdit = userRole === "employee";
   const showIdGallery = hasIdPresented && hasIdentityPhotos;
   const primaryVisual = resolveCustomerPrimaryVisual(customer);
+  const highlightedField = reviewContext?.field ?? null;
+  const reviewNotes = reviewContext?.notes.trim() || "";
+  const highlightedAddressField =
+    highlightedField === "address" ||
+    highlightedField === "barangay" ||
+    highlightedField === "city" ||
+    highlightedField === "region"
+      ? highlightedField
+      : null;
 
   // Inline edit form state — address is street-only, strip old concatenated parts
   function extractStreet(fullAddress: string, barangay: string, city: string, region: string): string {
@@ -180,6 +200,12 @@ export function ViewCustomerModal({
     appliedInitialAction.current = true;
   }, [canEdit, canRequestEdit, initialAction, userRole]);
 
+  useEffect(() => {
+    if (!reviewContext) return;
+    setIsEditing(true);
+    appliedInitialAction.current = true;
+  }, [reviewContext]);
+
   const isDirty =
     fields.full_name !== customer.name ||
     fields.contact_number !== (customer.phone !== "N/A" ? customer.phone : "") ||
@@ -213,6 +239,8 @@ export function ViewCustomerModal({
         barangay: fields.barangay.trim(),
         city: fields.city.trim(),
         region: fields.region.trim(),
+        ...(reviewContext?.logId ? { logId: reviewContext.logId } : {}),
+        ...(requestingEmployeeId ? { requestingEmployeeId } : {}),
       });
       toast.success("Customer profile updated.");
       setIsEditing(false);
@@ -316,22 +344,31 @@ export function ViewCustomerModal({
                 <div className="flex flex-col items-center text-center">
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Customer Profile</p>
                   <h3 className="mt-1 text-lg font-black text-text-primary">Record details</h3>
-                  {canRequestEdit && (
-                    <div className="mt-2">
-                      <button type="button" onClick={() => setIsRequestOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-border-main bg-surface px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-text-secondary transition-colors hover:bg-surface-hover">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                        Request Edit
-                      </button>
-                    </div>
-                  )}
                 </div>
+
+                {reviewNotes && (
+                  <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z" />
+                        </svg>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">Employee Note</p>
+                        <p className="mt-1 text-sm leading-6 text-amber-950">{reviewNotes}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Fields */}
                 <div className="mt-5 space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <EditableField label="Full Name" value={fields.full_name} editing={isEditing} onChange={(v) => setField("full_name", v)} />
-                    <EditableField label="Contact Number" value={fields.contact_number} editing={isEditing} onChange={(v) => setField("contact_number", v)} />
-                    <EditableField label="Email Address" value={fields.email} editing={isEditing} onChange={(v) => setField("email", v)} />
+                    <EditableField label="Full Name" value={fields.full_name} editing={isEditing} highlighted={highlightedField === "full_name"} onChange={(v) => setField("full_name", v)} />
+                    <EditableField label="Contact Number" value={fields.contact_number} editing={isEditing} highlighted={highlightedField === "contact_number"} onChange={(v) => setField("contact_number", v)} />
+                    <EditableField label="Email Address" value={fields.email} editing={isEditing} highlighted={highlightedField === "email"} onChange={(v) => setField("email", v)} />
                     <div className="space-y-1.5">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Customer ID</p>
                       <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">{customer.id || "—"}</div>
@@ -346,6 +383,7 @@ export function ViewCustomerModal({
                         city: fields.city,
                         region: fields.region,
                       }}
+                      highlightedField={highlightedAddressField}
                       onFieldChange={(field, val) => setField(field, val)}
                     />
                   ) : (
@@ -416,6 +454,23 @@ export function ViewCustomerModal({
               </div>
             </div>
           </div>
+
+          {/* ── Footer ── */}
+          {canRequestEdit && (
+            <div className="border-t border-border-main px-6 py-4 flex justify-end bg-surface">
+              <button
+                type="button"
+                onClick={() => setIsRequestOpen(true)}
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-900 transition-colors hover:bg-emerald-100"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
+                Request Edit
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -439,11 +494,13 @@ function EditableField({
   label,
   value,
   editing,
+  highlighted = false,
   onChange,
 }: {
   label: string;
   value: string;
   editing: boolean;
+  highlighted?: boolean;
   onChange: (v: string) => void;
 }) {
   return (
@@ -454,10 +511,10 @@ function EditableField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-2xl border border-input-border bg-input-bg px-3 py-2.5 text-sm font-semibold text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15"
+          className={`w-full rounded-2xl border bg-input-bg px-3 py-2.5 text-sm font-semibold text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 ${highlighted ? "border-amber-400 ring-2 ring-amber-400/20" : "border-input-border"}`}
         />
       ) : (
-        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">
+        <div className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold text-text-primary break-words ${highlighted ? "border-amber-400 bg-amber-50" : "border-border-main bg-surface"}`}>
           {value || "—"}
         </div>
       )}

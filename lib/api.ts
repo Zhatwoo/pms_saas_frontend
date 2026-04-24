@@ -255,13 +255,25 @@ export const api = new ApiClient();
 
 export function updateCustomer(
   id: string,
-  data: Record<string, unknown>,
+  data: {
+    full_name?: string;
+    contact_number?: string;
+    email?: string;
+    address?: string;
+    barangay?: string;
+    city?: string;
+    region?: string;
+    requestingEmployeeId?: string;
+    logId?: string;
+  },
 ) {
   return api.put(`/customers/${encodeURIComponent(id)}`, data);
 }
 
-export function requestCustomerEdit(id: string, notes: string) {
+export function requestCustomerEdit(id: string, notes: string, field?: string, mode?: string) {
   return api.post(`/customers/${encodeURIComponent(id)}/request-edit`, {
     notes,
+    ...(field ? { field } : {}),
+    ...(mode ? { mode } : {}),
   });
 }

@@ -145,6 +145,9 @@ function formatFriendlyActionLabel(action: string, details: string | null) {
     return "Pawn expiration";
   }
 
+  if (action === "CUSTOMER_EDIT_PROCESSED") return "Customer profile update";
+  if (action === "CUSTOMER_EDIT_REQUESTED") return "Customer edit request";
+
   return humanizeText(summarizePath(path));
 }
 
@@ -371,6 +374,25 @@ function formatActivityDescription(
       findBranchName(body?.toBranchId ?? body?.branchId ?? record?.destinationBranchId, branches) ??
       "the destination branch";
     return `Transferred funds from ${sourceBranch ?? "the source"} to ${destinationBranch}.`;
+  }
+
+  if (action === "CUSTOMER_EDIT_PROCESSED" && record) {
+    const customerName = typeof record.customerName === "string" ? record.customerName : "a customer";
+    const actorLabel = typeof record.actorLabel === "string" ? record.actorLabel : "Admin";
+    const changedFields = isRecord(record.changedFields) ? Object.keys(record.changedFields) : [];
+    const fieldList = changedFields.map(titleCase).join(", ");
+    return fieldList
+      ? `${actorLabel} updated ${customerName}'s profile: ${fieldList}.`
+      : `${actorLabel} updated ${customerName}'s profile.`;
+  }
+
+  if (action === "CUSTOMER_EDIT_REQUESTED" && record) {
+    const customerName = typeof record.customerName === "string" ? record.customerName : "a customer";
+    const actorLabel = typeof record.actorLabel === "string" ? record.actorLabel : "Employee";
+    const branchName = typeof record.branchName === "string" ? record.branchName : null;
+    return branchName
+      ? `${actorLabel} requested an edit for ${customerName} (${branchName}).`
+      : `${actorLabel} requested an edit for ${customerName}.`;
   }
 
   if (typeof parsed === "string" && parsed.trim()) {
@@ -669,7 +691,20 @@ export default function AuditLogsPage() {
         userNamesById.set(log.userId, log.userFullName);
       });
 
-    return logs.map(l => ({
+    // Filter out raw HTTP logs for endpoints that have a structured counterpart
+    const SUPPRESSED_PATH_PATTERNS = [
+      /\/api\/customers\/[^/]+\/request-edit/,
+    ];
+
+    const filteredRaw = logs.filter((l) => {
+      const parsed = tryParseJson(l.details);
+      const record = isRecord(parsed) ? parsed : null;
+      const url = typeof record?.url === "string" ? record.url : "";
+      if (!url) return true; // keep structured logs (no url field)
+      return !SUPPRESSED_PATH_PATTERNS.some((pattern) => pattern.test(url));
+    });
+
+    return filteredRaw.map(l => ({
       ...l,
       logType: guessLogType(l.action, l.details || ""),
       actionBadge: getBadgeAction(l.action),

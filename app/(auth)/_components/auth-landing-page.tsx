@@ -204,7 +204,7 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
       });
     };
     window.addEventListener("scroll", handleScrollSync);
-    return () => { observer.disconnect(); window.removeEventListener("scroll", handleScrollSync); };
+    return () => { window.removeEventListener("scroll", handleScrollSync); };
   }, []);
 
   useEffect(() => {

@@ -184,6 +184,7 @@ export default function PawnTransactionsPage() {
     itemsIncluded: string;
     condition: string;
     remarks: string;
+    memory: string;
     amount: string;
     storageFee: string;
     purchasedDate: string;
@@ -397,6 +398,7 @@ export default function PawnTransactionsPage() {
         itemsIncluded: transaction.itemsIncluded || "---",
         condition: transaction.condition || "---",
         remarks: transaction.remarks || transaction.notes || "---",
+        memory: transaction.memoryStorage || transaction.notes || "---",
         amount: transaction.pawn,
         storageFee: transaction.storage,
         purchasedDate: transaction.date,
