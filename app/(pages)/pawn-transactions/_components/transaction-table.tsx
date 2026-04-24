@@ -76,6 +76,8 @@ interface TransactionTableProps {
   onPrint?: (transaction: TransactionRow) => void;
   highlightTransactionNo?: string | null;
   highlightRowRef?: RefObject<HTMLTableRowElement | null>;
+  viewRange: "daily" | "weekly" | "monthly" | "all";
+  onRangeChange: (range: "daily" | "weekly" | "monthly" | "all") => void;
 }
 
 export function TransactionTable({
@@ -85,17 +87,33 @@ export function TransactionTable({
   onPrint,
   highlightTransactionNo,
   highlightRowRef,
+  viewRange,
+  onRangeChange,
 }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       <div className="flex items-center justify-between border-b border-border-subtle bg-surface px-4 py-3">
-        <div>
+        <div className="flex items-center gap-3">
           <h3 className="text-base font-bold text-text-primary">
-            Pawn Transactions
+            {viewRange === "daily"
+              ? "Daily Transactions"
+              : viewRange === "weekly"
+                ? "Weekly Transactions"
+                : viewRange === "monthly"
+                  ? "Monthly Transactions"
+                  : "All Transactions"}
           </h3>
-          <p className="text-xs text-text-tertiary">
-            View live transaction records across branches.
-          </p>
+          <span className="h-4 w-[1px] bg-border-subtle" />
+          <select
+            value={viewRange}
+            onChange={(event) => onRangeChange(event.target.value as never)}
+            className="rounded-md border border-border-main bg-surface-secondary px-2 py-1 text-xs font-semibold text-text-primary outline-none transition-colors focus:border-emerald-500"
+          >
+            <option value="daily">Today</option>
+            <option value="weekly">This Week</option>
+            <option value="monthly">This Month</option>
+            <option value="all">All Records</option>
+          </select>
         </div>
       </div>
 
