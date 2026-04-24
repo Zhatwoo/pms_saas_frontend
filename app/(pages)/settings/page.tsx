@@ -148,8 +148,10 @@ export default function SettingsPage() {
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
 
-  const lineInputClass = "border-b-2 border-emerald-800/30 bg-white/40 px-2 text-xs font-bold text-zinc-900 outline-none w-full h-8 transition-all focus:border-emerald-700 focus:bg-white focus:shadow-sm";
-  const labelInputClass = "border-b-2 border-emerald-800/30 bg-white/40 px-2 text-xs font-bold text-zinc-900 outline-none h-8 transition-all focus:border-emerald-700 focus:bg-white focus:shadow-sm";
+  const lineInputClass =
+    "h-5 w-full border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
+  const labelInputClass =
+    "h-5 border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
 
   const updateMoaField = (field: keyof typeof moaFields, value: string) => {
     setMoaFields((prev) => ({ ...prev, [field]: value }));
@@ -769,17 +771,14 @@ export default function SettingsPage() {
                         topLabels.termsHeading
                       )}
                     </p>
-                    {canEditMoa ? (
-                      <textarea
-                        value={termsText}
-                        onChange={(e) => setTermsText(e.target.value)}
-                        className="min-h-[500px] w-full resize-y rounded-lg border border-zinc-300 bg-white p-5 text-xs leading-loose outline-none shadow-inner focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
-                      />
-                    ) : (
-                      <div className="whitespace-pre-wrap p-3 text-[10px] leading-relaxed text-zinc-800 bg-emerald-50/10 rounded-lg">
-                        {termsText}
-                      </div>
-                    )}
+                    <div
+                      contentEditable={canEditMoa}
+                      suppressContentEditableWarning
+                      onInput={(e) => setTermsText(e.currentTarget.textContent ?? "")}
+                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none"
+                    >
+                      {termsText}
+                    </div>
                   </div>
 
                   <div className="grid gap-8 pt-4 md:grid-cols-2">
