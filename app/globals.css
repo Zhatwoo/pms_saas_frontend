@@ -300,3 +300,60 @@ section[id] {
   animation: highlightBlink 1.2s ease-in-out 3;
   background-color: rgba(16, 185, 129, 0.08);
 }
+
+/* ── Logo highlight animations ────────────────────────── */
+@keyframes logoOrbit {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(15%, -10%) scale(1.1);
+  }
+  50% {
+    transform: translate(0, -15%) scale(1.05);
+  }
+  75% {
+    transform: translate(-15%, -5%) scale(1.08);
+  }
+}
+
+@keyframes logoOrbitReverse {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-12%, 8%) scale(1.15);
+  }
+  50% {
+    transform: translate(0, 12%) scale(1.1);
+  }
+  75% {
+    transform: translate(12%, 5%) scale(1.12);
+  }
+}
+
+@keyframes logoCloud {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  33% {
+    transform: translate(20%, -15%) scale(1.3);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translate(-18%, 10%) scale(1.2);
+    opacity: 0.6;
+  }
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.6;
+  }
+}
