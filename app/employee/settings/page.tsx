@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { useTheme } from "@/contexts/theme-context";
+import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 
 export default function EmployeeSettingsPage() {
   const { user, refreshProfile } = useAuth();
@@ -233,6 +234,7 @@ export default function EmployeeSettingsPage() {
             <button className="w-full py-2 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">
               Change Avatar
             </button>
+            <PasswordChangeRequestCard />
           </div>
         </div>
       </div>
