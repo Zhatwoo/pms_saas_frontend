@@ -189,8 +189,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
             
             <button 
               onClick={onClose} 
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white dark:bg-surface/10 text-white transition-colors hover:bg-white dark:bg-surface/20"
-              aria-label="Close"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+              aria-label="Close Redeem Pawn Ticket"
             >
               <X className="w-5 h-5" />
             </button>
