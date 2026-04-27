@@ -1,4 +1,14 @@
 class ApiClient {
+  private notifySessionExpired(message: string, path: string) {
+    if (typeof window === "undefined") return;
+
+    window.dispatchEvent(
+      new CustomEvent("pms:auth-expired", {
+        detail: { message, path },
+      }),
+    );
+  }
+
   private logApiIssue(status: number, path: string, details: unknown) {
     const prefix = `[API Error ${status}] ${path}:`;
     if (status >= 500) {
@@ -53,6 +63,7 @@ class ApiClient {
       console.warn(
         `[API] Missing auth token for ${path}. Check if login was successful and token is stored in cookies.`,
       );
+      this.notifySessionExpired("Your session expired. Please sign in again.", path);
     }
 
     let res: Response;
@@ -81,6 +92,7 @@ class ApiClient {
         console.warn(
           `[API] 401 Unauthorized for ${path}. Token present: ${!!token}`,
         );
+        this.notifySessionExpired(errorMessage, path);
       }
 
       throw new Error(errorMessage);

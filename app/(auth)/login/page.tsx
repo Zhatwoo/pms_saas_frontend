@@ -1,9 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AuthLandingPage } from "../_components/auth-landing-page";
 import { LoginModal } from "../_components/login-modal";
 import { SignupModal } from "../_components/signup-modal";
+import { toast } from "sonner";
+
+const SESSION_EXPIRED_REASON = "session-expired";
 
 export default function LoginPage() {
   return (
@@ -14,8 +18,30 @@ export default function LoginPage() {
 }
 
 function LoginExperience() {
+  const searchParams = useSearchParams();
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const hasShownSessionExpiredRef = useRef(false);
+
+  useEffect(() => {
+    if (searchParams.get("reason") !== SESSION_EXPIRED_REASON) return;
+    if (hasShownSessionExpiredRef.current) return;
+
+    hasShownSessionExpiredRef.current = true;
+    setShowSignup(false);
+    setShowLogin(true);
+
+    const alreadyShown =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("pms_session_expired_notice") === "shown";
+
+    if (alreadyShown) {
+      sessionStorage.removeItem("pms_session_expired_notice");
+      return;
+    }
+
+    toast.error("Your session expired. Please sign in again.");
+  }, [searchParams]);
 
   return (
     <>

@@ -7,7 +7,7 @@ import { getDefaultRouteForRole } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isSessionExpiryActive, requireReLogin } = useAuth();
 
   useEffect(() => {
     if (isLoading) {
@@ -15,12 +15,21 @@ export default function Home() {
     }
 
     if (!user) {
+      const hasToken = document.cookie.includes("pms_token");
+      const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
+      if (!hasToken && hadPreviousSession) {
+        requireReLogin();
+        return;
+      }
+      if (isSessionExpiryActive) {
+        return;
+      }
       router.replace("/login");
       return;
     }
 
     router.replace(getDefaultRouteForRole(user.role));
-  }, [isLoading, router, user]);
+  }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
 
   return (
     <div className="flex h-screen items-center justify-center bg-pawn-content">

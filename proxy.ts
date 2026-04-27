@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const publicPaths = ["/login"];
+const SESSION_EXPIRED_REASON = "session-expired";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -16,6 +17,8 @@ export function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get("pms_token")?.value;
+  const hadPreviousSession =
+    request.cookies.get("pms_was_logged_in")?.value === "1";
   const isPublicPath = publicPaths.some(
     (p) => pathname === p || pathname.startsWith(p + "/"),
   );
@@ -23,7 +26,11 @@ export function proxy(request: NextRequest) {
   // No token + protected path -> redirect to login
   if (!token && !isPublicPath) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    const redirectTarget = `${pathname}${request.nextUrl.search}`;
+    loginUrl.searchParams.set("redirect", redirectTarget);
+    if (hadPreviousSession) {
+      loginUrl.searchParams.set("reason", SESSION_EXPIRED_REASON);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
