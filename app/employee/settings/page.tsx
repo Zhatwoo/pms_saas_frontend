@@ -6,6 +6,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { useTheme } from "@/contexts/theme-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
+import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 
 export default function EmployeeSettingsPage() {
   const { user, refreshProfile } = useAuth();
@@ -15,6 +16,8 @@ export default function EmployeeSettingsPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -64,6 +67,25 @@ export default function EmployeeSettingsPage() {
     setFullName(user?.fullName || "");
     setEmail(user?.email || "");
     setToast(null);
+  };
+
+  const handleSaveAvatar = async (avatarDataUrl: string) => {
+    if (!user) return;
+
+    setIsSavingAvatar(true);
+    setToast(null);
+
+    try {
+      await api.patch("/auth/profile", { avatarUrl: avatarDataUrl });
+      await refreshProfile();
+      setIsAvatarModalOpen(false);
+      setToast("Avatar updated successfully!");
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Failed to update avatar");
+    } finally {
+      setIsSavingAvatar(false);
+    }
   };
 
 
@@ -226,18 +248,43 @@ export default function EmployeeSettingsPage() {
 
         <div className="space-y-6">
           <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm text-center">
-            <div className="mx-auto w-20 h-20 rounded-full bg-emerald-800 flex items-center justify-center text-white text-3xl font-bold mb-4 border-4 border-emerald-50 overflow-hidden">
-              {initials}
+            <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full border-4 border-emerald-50 bg-emerald-800">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="Profile avatar"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-white">
+                  {initials}
+                </div>
+              )}
             </div>
             <h4 className="text-lg font-bold text-text-primary truncate px-2">{fullName || "Employee"}</h4>
             <p className="text-xs text-text-tertiary mb-4">{branchName}</p>
-            <button className="w-full py-2 rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">
+            <button
+              onClick={() => setIsAvatarModalOpen(true)}
+              className="w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100"
+            >
               Change Avatar
             </button>
             <PasswordChangeRequestCard />
           </div>
         </div>
       </div>
+
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        isSaving={isSavingAvatar}
+        currentAvatarUrl={user?.avatarUrl}
+        onClose={() => {
+          if (!isSavingAvatar) {
+            setIsAvatarModalOpen(false);
+          }
+        }}
+        onSave={handleSaveAvatar}
+      />
     </div>
   );
 }

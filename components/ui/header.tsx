@@ -389,6 +389,13 @@ export function Header({
   const isCustomerDetailPage = (pathname || "").includes("view_user");
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badgeCount = Math.max(notificationCount, unreadCount);
+  const resolvedInitials =
+    user?.fullName
+      ?.split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || userInitials;
 
   const filteredNotifications = useMemo(() => {
     if (activeTab === "All") {
@@ -644,8 +651,18 @@ export function Header({
         <ThemeToggleButton />
 
         {/* User Avatar */}
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-pawn-sidebar text-base font-semibold text-white">
-          {userInitials}
+        <div className="h-11 w-11 overflow-hidden rounded-full bg-pawn-sidebar">
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt="User avatar"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-base font-semibold text-white">
+              {resolvedInitials}
+            </div>
+          )}
         </div>
       </div>
     </header>

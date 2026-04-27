@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
+import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 
 type ExtensionRow = {
   date: string;
@@ -25,8 +26,11 @@ const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every T
 10. Seller confirms ownership and freedom from liens and encumbrances.`;
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [avatarToast, setAvatarToast] = useState<string | null>(null);
   
   const [isMoaEditMode, setIsMoaEditMode] = useState(false);
   const [isMoaLocked, setIsMoaLocked] = useState(false);
@@ -119,6 +123,13 @@ export default function SettingsPage() {
   
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsSavedAt, setSettingsSavedAt] = useState<string | null>(null);
+
+  const adminInitials = (user?.fullName || "Admin")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   useEffect(() => {
     async function fetchMoaTemplate() {
@@ -223,6 +234,24 @@ export default function SettingsPage() {
       console.error("Failed to send to all branches:", error);
       setSendStatus("idle");
       alert("Failed to send to all branches.");
+    }
+  };
+
+  const handleSaveAvatar = async (avatarDataUrl: string) => {
+    setIsSavingAvatar(true);
+
+    try {
+      await api.patch("/auth/profile", { avatarUrl: avatarDataUrl });
+      await refreshProfile();
+      setIsAvatarModalOpen(false);
+      setAvatarToast("Avatar updated successfully.");
+      setTimeout(() => setAvatarToast(null), 2500);
+    } catch (error) {
+      console.error("Failed to update avatar:", error);
+      setAvatarToast("Failed to update avatar.");
+      setTimeout(() => setAvatarToast(null), 3000);
+    } finally {
+      setIsSavingAvatar(false);
     }
   };
 
@@ -850,14 +879,30 @@ export default function SettingsPage() {
 
         <aside className="space-y-4">
           <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
-            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-pawn-gold text-2xl font-bold text-zinc-900">
-              AD
+            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-pawn-gold">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt="Profile avatar"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-zinc-900">
+                  {adminInitials}
+                </div>
+              )}
             </div>
             <h3 className="text-sm font-bold text-zinc-900">Admin Panel</h3>
             <p className="mt-1 text-[10px] text-zinc-500">Super Admin Settings</p>
-            <button className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100">
+            <button
+              onClick={() => setIsAvatarModalOpen(true)}
+              className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100"
+            >
               Change Avatar
             </button>
+            {avatarToast && (
+              <p className="mt-2 text-[10px] font-medium text-emerald-700">{avatarToast}</p>
+            )}
             <PasswordChangeRequestCard />
           </section>
 
@@ -871,6 +916,18 @@ export default function SettingsPage() {
           </section>
         </aside>
       </div>
+
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        isSaving={isSavingAvatar}
+        currentAvatarUrl={user?.avatarUrl}
+        onClose={() => {
+          if (!isSavingAvatar) {
+            setIsAvatarModalOpen(false);
+          }
+        }}
+        onSave={handleSaveAvatar}
+      />
     </div>
   );
 }
