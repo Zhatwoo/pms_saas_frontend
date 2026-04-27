@@ -118,7 +118,7 @@ interface UserRecord {
 }
 
 export default function BranchFinancePage() {
-  const { selectedBranch, isAllBranches } = useBranch();
+  const { selectedBranch, isAllBranches, setSelectedBranch, branches: contextBranches } = useBranch();
 
   const [managers, setManagers] = useState<Manager[]>([]);
   const [managersByBranch, setManagersByBranch] = useState<Record<string, Manager[]>>({});
@@ -129,9 +129,8 @@ export default function BranchFinancePage() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [branchFilter, setBranchFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const branchFilter = isAllBranches ? "all" : selectedBranch.id;
+  const [dateFilter, setDateFilter] = useState("");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedRejectRequest, setSelectedRejectRequest] = useState<FundRequestRecord | null>(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -166,7 +165,7 @@ export default function BranchFinancePage() {
       const [dashboardData, requestData, transactionResponse, summaryData, ledgerData, usersData] = await Promise.all([
         api.get<DashboardSummary>("/dashboard"),
         api.get<FundRequestRecord[]>(`/fund-requests${branchQuery}`),
-        api.get<ApiTransaction[] | TransactionsResponse>(`/transactions${branchQuery}`),
+        api.get<ApiTransaction[] | TransactionsResponse>(`/transactions${branchQuery ? branchQuery + "&" : "?"}range=all`),
         api.get<BranchFinanceSummaryItem[]>(`/branch-finance/summary${branchQuery}`),
         api.get<{ entries: LedgerEntry[]; total: number }>(`/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=100`),
         api.get<UserRecord[]>("/users").catch(() => [] as UserRecord[]),
@@ -292,9 +291,6 @@ export default function BranchFinancePage() {
     };
   }, [loadFinanceData]);
 
-  useEffect(() => {
-    setBranchFilter(isAllBranches ? "all" : selectedBranch.id);
-  }, [isAllBranches, selectedBranch.id]);
 
   const branchBalances = useMemo<BranchBalance[]>(() => {
     // Prefer branch-finance summary because it reflects latest daily_balances math.
@@ -461,12 +457,17 @@ export default function BranchFinancePage() {
     });
   }, [loadFinanceData]);
 
+  const handleBranchFilterChange = useCallback((val: string) => {
+    const target = contextBranches.find((b) => b.id === (val === "all" ? "__all__" : val));
+    if (target) {
+      setSelectedBranch(target);
+    }
+  }, [contextBranches, setSelectedBranch]);
+
   const clearFilters = useCallback(() => {
     setSearchQuery("");
-    setBranchFilter(isAllBranches ? "all" : selectedBranch.id);
-    setDateFrom("");
-    setDateTo("");
-  }, [isAllBranches, selectedBranch.id]);
+    setDateFilter("");
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -490,12 +491,12 @@ export default function BranchFinancePage() {
         </div>
       ) : null}
 
-      {isLoading ? (
+      {!dashboard && isLoading ? (
         <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
           Loading branch finance data...
         </div>
-      ) : (
-        <>
+      ) : dashboard ? (
+        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
           <BalanceOverview
             isAllBranches={isAllBranches}
             selectedBranchId={selectedBranch.id}
@@ -504,8 +505,10 @@ export default function BranchFinancePage() {
             onAddFunds={handleHeaderTransfer}
           />
 
-          <div className="rounded-lg border border-border-main bg-surface-secondary px-4 py-3 text-[11px] text-text-muted">
-            Branch admins submit requests first. Super Admin can fulfill directly from management or route the transfer through another branch. Source-branch deductions must be confirmed before destination receipt confirmations can complete the transfer.
+          <div>
+            <p className="mt-1 text-sm text-text-tertiary">
+              Branch admins submit requests first. Super Admin can fulfill directly from management or route the transfer through another branch. Source-branch deductions must be confirmed before destination receipt confirmations can complete the transfer.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -562,7 +565,7 @@ export default function BranchFinancePage() {
                   </div>
                 ))
               ) : (
-                <div className="rounded-xl border border-blue-200 bg-white p-4 text-sm text-text-tertiary">
+                <div className="py-6 text-center text-sm text-text-tertiary">
                   No requests are waiting for review.
                 </div>
               )}
@@ -580,7 +583,7 @@ export default function BranchFinancePage() {
               expanded
             >
               {queues.sourceConfirmation.length === 0 && queues.destinationConfirmation.length === 0 ? (
-                <div className="rounded-xl border border-orange-200 bg-white p-4 text-sm text-text-tertiary">
+                <div className="py-6 text-center text-sm text-text-tertiary">
                   No transfers are waiting for confirmation.
                 </div>
               ) : (
@@ -685,11 +688,9 @@ export default function BranchFinancePage() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               branchFilter={branchFilter}
-              onBranchFilterChange={setBranchFilter}
-              dateFrom={dateFrom}
-              onDateFromChange={setDateFrom}
-              dateTo={dateTo}
-              onDateToChange={setDateTo}
+              onBranchFilterChange={handleBranchFilterChange}
+              dateFilter={dateFilter}
+              onDateFilterChange={setDateFilter}
               branches={availableBranches}
               onClearFilters={clearFilters}
             />
@@ -698,8 +699,7 @@ export default function BranchFinancePage() {
               transactions={transactions}
               searchQuery={searchQuery}
               branchFilter={branchFilter}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
+              dateFilter={dateFilter}
             />
           </div>
 
@@ -772,8 +772,8 @@ export default function BranchFinancePage() {
               branchCode={isAllBranches ? null : (financeSummaries[0]?.branchCode ?? selectedBranch.code ?? null)}
             />
           </div>
-        </>
-      )}
+          </div>
+      ) : null}
 
       <RejectRequestModal
         isOpen={rejectModalOpen}

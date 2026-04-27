@@ -180,7 +180,6 @@ function SingleBranchCard({
   );
 }
 
-/* ── All Branches Aggregate Card ──────────────────────── */
 function AggregateBranchCard({
   totalBranches,
   branchRows,
@@ -190,74 +189,95 @@ function AggregateBranchCard({
   branchRows: BranchBalanceRow[];
   onAddFunds?: () => void;
 }) {
+  const totalCurrent = branchRows.reduce((sum, b) => sum + b.currentBalance, 0);
+
   return (
     <div className="space-y-4">
-      {/* Per-branch list */}
-      <div className="rounded-xl border border-border-main bg-surface shadow-sm">
-        <div className="flex items-center justify-between border-b border-border-subtle px-5 py-3">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-text-muted">
-            Per-Branch Balances
-          </h3>
-          <div className="flex items-center gap-2">
-            {onAddFunds ? (
+      {/* Overview Banner */}
+      <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
+        <div className="flex items-center justify-between px-6 pt-5 pb-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
+              <WalletIcon />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">All Branches Overview</h2>
+              <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
+                Combined Balance
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm">
+            <span className="text-[10px] font-bold text-emerald-300">
+              {totalBranches} Active Branches
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-6 py-4">
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
+              Total Current Balance
+            </p>
+            <div className="flex items-end gap-3">
+              <span className="text-4xl font-extrabold tracking-tight text-white">
+                {fmt(totalCurrent)}
+              </span>
+            </div>
+          </div>
+
+          {onAddFunds && (
+            <div className="flex items-center gap-2">
               <button
                 onClick={onAddFunds}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                className="flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-5 py-2.5 text-base font-bold text-white transition-colors hover:bg-emerald-500/30"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
                 Manual Cash Transfer
               </button>
-            ) : null}
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-              {totalBranches} branches
-            </span>
-          </div>
+            </div>
+          )}
         </div>
-        <div className="divide-y divide-border-subtle">
-          {branchRows.map((b) => (
-            <div
-              key={b.branchId}
-              className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-surface-secondary"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-base font-semibold text-text-primary">{b.name}</p>
-                  <p className="text-xs text-text-muted">ID: {b.branchId}</p>
-                </div>
+      </div>
+
+      {/* Grid of branches */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {branchRows.map((b) => (
+          <div
+            key={b.branchId}
+            className="flex flex-col justify-between rounded-xl border border-border-main bg-surface px-5 py-4 shadow-sm transition-colors hover:border-emerald-500/30 hover:bg-surface-secondary"
+          >
+            <div className="mb-3 flex items-start justify-between">
+              <div>
+                <p className="text-sm font-bold text-text-primary">{b.name}</p>
+                <p className="text-[10px] uppercase text-text-muted">ID: {b.branchId}</p>
               </div>
-              <div className="flex items-center gap-8 text-right">
-                <div className="hidden sm:block">
-                  <p className="text-xs font-bold tracking-wider uppercase text-text-tertiary">Start Balance</p>
-                  <p className={`text-base font-semibold ${b.startingBalance < 50000 ? "text-amber-600" : "text-text-secondary"}`}>{fmt(b.startingBalance)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold tracking-wider uppercase text-emerald-600">End / Current</p>
-                  <p className="text-base font-extrabold text-emerald-700">{fmt(b.currentBalance)}</p>
-                </div>
-                <div className="w-16">
-                  <span
-                    className={`inline-flex w-full items-center justify-center rounded px-2 py-1 text-xs font-bold ${
-                      b.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-zinc-200 text-zinc-600"
-                    }`}
-                  >
-                    {b.status}
-                  </span>
-                </div>
+              <span
+                className={`inline-flex items-center justify-center rounded px-2 py-0.5 text-[10px] font-bold ${
+                  b.status === "Active"
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : "bg-zinc-500/15 text-zinc-300"
+                }`}
+              >
+                {b.status}
+              </span>
+            </div>
+            
+            <div className="mt-auto grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Start</p>
+                <p className={`text-sm font-semibold ${b.startingBalance < 50000 ? "text-amber-500/80" : "text-text-secondary"}`}>{fmt(b.startingBalance)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600/70">Current</p>
+                <p className="text-sm font-extrabold text-emerald-400">{fmt(b.currentBalance)}</p>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

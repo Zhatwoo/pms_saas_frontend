@@ -351,12 +351,12 @@ export default function EmployeeBranchFinancePage() {
         </div>
       ) : null}
 
-      {isLoading ? (
+      {!dashboard && isLoading ? (
         <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
           Loading branch finance data...
         </div>
-      ) : (
-        <>
+      ) : dashboard ? (
+        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
           <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm">
             <h2 className="text-lg font-bold text-text-primary">
               {finance?.name ?? dashboard?.branch?.name ?? "Branch Finance"}
@@ -400,7 +400,7 @@ export default function EmployeeBranchFinancePage() {
                   </div>
                 ))
               ) : (
-                <div className="rounded-xl border border-blue-500/20 bg-surface px-4 py-4 text-sm text-text-tertiary">
+                <div className="py-6 text-center text-sm text-text-tertiary">
                   No requests are waiting for review.
                 </div>
               )}
@@ -460,7 +460,7 @@ export default function EmployeeBranchFinancePage() {
                   );
                 })
               ) : (
-                <div className="rounded-xl border border-orange-500/20 bg-surface px-4 py-4 text-sm text-text-tertiary">
+                <div className="py-6 text-center text-sm text-text-tertiary">
                   No transfers are waiting for confirmation.
                 </div>
               )}
@@ -698,8 +698,8 @@ export default function EmployeeBranchFinancePage() {
               </table>
             </div>
           </div>
-        </>
-      )}
+          </div>
+      ) : null}
 
       <RequestFundsModal
         isOpen={requestModalOpen}

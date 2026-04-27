@@ -60,8 +60,7 @@ interface TransactionTableProps {
   transactions: FinanceTransaction[];
   searchQuery: string;
   branchFilter: string;
-  dateFrom: string;
-  dateTo: string;
+  dateFilter: string;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -70,8 +69,7 @@ export function TransactionTable({
   transactions,
   searchQuery,
   branchFilter,
-  dateFrom,
-  dateTo,
+  dateFilter,
 }: TransactionTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -83,15 +81,14 @@ export function TransactionTable({
 
     const matchesBranch = branchFilter === "all" || t.branchId === branchFilter;
 
-    const matchesFrom = !dateFrom || t.date >= dateFrom;
-    const matchesTo = !dateTo || t.date <= dateTo;
+    const matchesDate = !dateFilter || t.date.startsWith(dateFilter);
 
-    return matchesSearch && matchesBranch && matchesFrom && matchesTo;
+    return matchesSearch && matchesBranch && matchesDate;
   });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, branchFilter, dateFrom, dateTo]);
+  }, [searchQuery, branchFilter, dateFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(

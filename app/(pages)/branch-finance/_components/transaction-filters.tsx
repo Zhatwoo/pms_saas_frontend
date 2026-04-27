@@ -5,10 +5,8 @@ interface TransactionFiltersProps {
   onSearchChange: (q: string) => void;
   branchFilter: string;
   onBranchFilterChange: (b: string) => void;
-  dateFrom: string;
-  onDateFromChange: (d: string) => void;
-  dateTo: string;
-  onDateToChange: (d: string) => void;
+  dateFilter: string;
+  onDateFilterChange: (d: string) => void;
   branches: { branchId: string; name: string }[];
   onClearFilters: () => void;
 }
@@ -18,14 +16,12 @@ export function TransactionFilters({
   onSearchChange,
   branchFilter,
   onBranchFilterChange,
-  dateFrom,
-  onDateFromChange,
-  dateTo,
-  onDateToChange,
+  dateFilter,
+  onDateFilterChange,
   branches,
   onClearFilters,
 }: TransactionFiltersProps) {
-  const hasFilters = searchQuery || branchFilter !== "all" || dateFrom || dateTo;
+  const hasFilters = searchQuery || branchFilter !== "all" || dateFilter;
 
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
@@ -78,28 +74,15 @@ export function TransactionFilters({
         </select>
       </div>
 
-      {/* Date From */}
+      {/* Date */}
       <div className="flex flex-col gap-1">
         <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
-          From
+          Date
         </label>
         <input
           type="date"
-          value={dateFrom}
-          onChange={(e) => onDateFromChange(e.target.value)}
-          className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400"
-        />
-      </div>
-
-      {/* Date To */}
-      <div className="flex flex-col gap-1">
-        <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
-          To
-        </label>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => onDateToChange(e.target.value)}
+          value={dateFilter}
+          onChange={(e) => onDateFilterChange(e.target.value)}
           className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400"
         />
       </div>

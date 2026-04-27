@@ -394,12 +394,12 @@ export default function AdminBranchFinancePage() {
         <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
-      {isLoading ? (
+      {!dashboard && isLoading ? (
         <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
           Loading branch finance data...
         </div>
-      ) : (
-        <>
+      ) : dashboard ? (
+        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
           <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
               <div>
@@ -468,7 +468,7 @@ export default function AdminBranchFinancePage() {
                   </div>
                 ))
               ) : (
-                <div className="rounded-xl border border-blue-200 bg-white p-4 text-sm text-text-tertiary">
+                <div className="py-6 text-center text-sm text-text-tertiary">
                   No requests are waiting for review.
                 </div>
               )}
@@ -524,7 +524,7 @@ export default function AdminBranchFinancePage() {
                   );
                 })
               ) : (
-                <div className="rounded-xl border border-orange-200 bg-white p-4 text-sm text-text-tertiary">
+                <div className="py-6 text-center text-sm text-text-tertiary">
                   No transfers are waiting for confirmation.
                 </div>
               )}
@@ -769,8 +769,8 @@ export default function AdminBranchFinancePage() {
               </table>
             </div>
           </div>
-        </>
-      )}
+          </div>
+      ) : null}
 
       <RequestFundsModal isOpen={requestModalOpen} onClose={() => setRequestModalOpen(false)} onSubmit={handleRequestFunds} />
 
