@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
+import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 
 type ExtensionRow = {
   date: string;
@@ -872,6 +873,7 @@ export default function SettingsPage() {
             <button className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100">
               Change Avatar
             </button>
+            <PasswordChangeRequestCard />
           </section>
 
           <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
