@@ -165,7 +165,6 @@ export default function PawnTransactionsPage() {
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
   const [dateFilter, setDateFilter] = useState("");
-  const [viewRange, setViewRange] = useState<"daily" | "weekly" | "monthly" | "all">("daily");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewingTransaction, setViewingTransaction] =
     useState<TransactionRow | null>(null);
@@ -203,7 +202,7 @@ export default function PawnTransactionsPage() {
       setIsLoading(true);
 
       try {
-        const dateQuery = dateFilter ? `&date=${dateFilter}` : `&range=${viewRange}`;
+        const dateQuery = dateFilter ? `&date=${dateFilter}` : `&range=daily`;
         const branchParam = isAllBranches
           ? ""
           : `branch=${encodeURIComponent(selectedBranch.id)}`;
@@ -268,7 +267,7 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, dateFilter, isAllBranches, viewRange]);
+  }, [selectedBranch.id, dateFilter, isAllBranches]);
 
   // When navigating from a notification, clear date filter so the transaction is visible
   useEffect(() => {
@@ -452,12 +451,6 @@ export default function PawnTransactionsPage() {
         onPrint={handlePrintSlip}
         highlightTransactionNo={shouldHighlight ? highlightTransactionNo : null}
         highlightRowRef={highlightRowRef}
-        viewRange={viewRange}
-        onRangeChange={(range) => {
-          setViewRange(range);
-          setDateFilter("");
-          setCurrentPage(1);
-        }}
       />
 
       {totalPages > 1 ? (

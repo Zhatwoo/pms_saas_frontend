@@ -129,9 +129,6 @@ export function TransactionActions({
         </div>
 
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-800">
-            Scope: {selectedBranchLabel}
-          </div>
           <ActionButton
             variant="outline"
             onClick={onExportCSV}
