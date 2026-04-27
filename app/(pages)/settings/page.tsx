@@ -151,8 +151,6 @@ export default function SettingsPage() {
 
   const lineInputClass =
     "h-5 w-full border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
-  const labelInputClass =
-    "h-5 border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
 
   const updateMoaField = (field: keyof typeof moaFields, value: string) => {
     setMoaFields((prev) => ({ ...prev, [field]: value }));
@@ -228,36 +226,25 @@ export default function SettingsPage() {
     }
   };
 
-  const renderTopLabel = (
-    field: keyof typeof topLabels,
-    widthClass: string,
-  ) => {
-    if (!canEditMoa) {
-      return <span className={widthClass}>{topLabels[field]}</span>;
-    }
-
-    return (
-      <input
-        value={topLabels[field]}
-        onChange={(e) => updateTopLabel(field, e.target.value)}
-        className={`${labelInputClass} ${widthClass}`}
-      />
-    );
-  };
-
   const renderEditableLabel = (
     field: keyof typeof topLabels,
     className: string,
   ) => {
-    if (!canEditMoa) {
-      return <span className={className}>{topLabels[field]}</span>;
-    }
+    const isInline = className.split(" ").includes("inline");
+    const sanitizedClassName = className
+      .split(" ")
+      .filter((part) => part !== "inline")
+      .join(" ");
 
     return (
       <input
         value={topLabels[field]}
         onChange={(e) => updateTopLabel(field, e.target.value)}
-        className={`${labelInputClass} ${className}`}
+        readOnly={!canEditMoa}
+        tabIndex={canEditMoa ? 0 : -1}
+        spellCheck={false}
+        className={`${sanitizedClassName} ${isInline ? "inline-block" : "block"} min-w-0 border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+        style={isInline ? { width: `${Math.max(topLabels[field].length + 1, 6)}ch` } : undefined}
       />
     );
   };
@@ -749,28 +736,26 @@ export default function SettingsPage() {
                   </div>
 
                   <p className="border-y border-emerald-900/40 bg-emerald-50 py-1 text-center text-[10px] font-bold uppercase text-emerald-950">
-                    {canEditMoa ? (
-                      <input
-                        value={topLabels.adviseText}
-                        onChange={(e) => updateTopLabel("adviseText", e.target.value)}
-                        className="w-full border-none bg-transparent text-center text-[10px] font-bold uppercase text-emerald-950 outline-none"
-                      />
-                    ) : (
-                      topLabels.adviseText
-                    )}
+                    <input
+                      value={topLabels.adviseText}
+                      onChange={(e) => updateTopLabel("adviseText", e.target.value)}
+                      readOnly={!canEditMoa}
+                      tabIndex={canEditMoa ? 0 : -1}
+                      spellCheck={false}
+                      className={`block w-full border-none bg-transparent text-center text-[10px] font-bold uppercase text-emerald-950 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                    />
                   </p>
 
                   <div className="space-y-2">
                     <p className="text-center text-[10px] font-bold uppercase underline">
-                      {canEditMoa ? (
-                        <input
-                          value={topLabels.termsHeading}
-                          onChange={(e) => updateTopLabel("termsHeading", e.target.value)}
-                          className="w-full border-none bg-transparent text-center text-[10px] font-bold uppercase outline-none"
-                        />
-                      ) : (
-                        topLabels.termsHeading
-                      )}
+                      <input
+                        value={topLabels.termsHeading}
+                        onChange={(e) => updateTopLabel("termsHeading", e.target.value)}
+                        readOnly={!canEditMoa}
+                        tabIndex={canEditMoa ? 0 : -1}
+                        spellCheck={false}
+                        className={`block w-full border-none bg-transparent text-center text-[10px] font-bold uppercase outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                      />
                     </p>
                     <div
                       contentEditable={canEditMoa}
