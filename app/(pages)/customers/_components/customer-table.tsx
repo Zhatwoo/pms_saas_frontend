@@ -7,6 +7,7 @@ import type { Column } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -186,7 +187,7 @@ export function CustomerTable() {
         onRowClick={(row) => openCustomer(row.id)}
         emptyMessage={
           isLoading
-            ? "Loading customers..."
+            ? <LoadingSpinnerLabel text="Loading customers..." className="justify-center text-base text-text-tertiary" />
             : error
               ? error
               : "No customers found for the selected branch."

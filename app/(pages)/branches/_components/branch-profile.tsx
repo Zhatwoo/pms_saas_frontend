@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 /* ── Status badge mapping ─────────────────────────────────── */
 const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
@@ -694,7 +695,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               )}
               {isLoadingStaff && (
                 <div className="mb-2 rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-tertiary">
-                  Loading assigned users...
+                  <LoadingSpinnerLabel text="Loading assigned users..." className="justify-center text-sm text-text-secondary" />
                 </div>
               )}
               <div className="space-y-2">

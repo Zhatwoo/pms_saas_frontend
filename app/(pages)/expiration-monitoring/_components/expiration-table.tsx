@@ -1,6 +1,7 @@
 import { DataTable } from "@/components/shared/data-table";
 import type { Column } from "@/components/shared/data-table";
 import { useEffect, useState } from "react";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const columns: Column[] = [
   { key: "ticketNo", label: "Ticket No." },
@@ -108,11 +109,7 @@ export function ExpirationTable({
     return (
       <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
         <div className="flex items-center justify-center gap-3 text-text-tertiary">
-          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <span className="text-sm font-medium">Loading expiration data...</span>
+          <LoadingSpinnerLabel text="Loading expiration data..." className="text-sm font-medium text-text-tertiary" />
         </div>
       </div>
     );

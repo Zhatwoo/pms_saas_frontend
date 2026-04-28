@@ -31,9 +31,5 @@ export default function Home() {
     router.replace(getDefaultRouteForRole(user.role));
   }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
 
-  return (
-    <div className="flex h-screen items-center justify-center bg-pawn-content">
-      <div className="text-sm text-text-tertiary">Redirecting...</div>
-    </div>
-  );
+  return null;
 }

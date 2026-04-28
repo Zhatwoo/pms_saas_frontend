@@ -36,14 +36,6 @@ export default function ProtectedLayout({
     }
   }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-pawn-content">
-        <div className="text-sm text-text-tertiary">Loading...</div>
-      </div>
-    );
-  }
-
   if (!user) {
     return null;
   }

@@ -178,8 +178,7 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
     setActiveNavItem(item);
     const element = document.getElementById(id);
     if (element) {
-      const offsetPosition = element.getBoundingClientRect().top + window.pageYOffset - 64;
-      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
       window.history.pushState(null, "", `#${id}`);
     }
   };
@@ -334,8 +333,8 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
         </section>
 
         {/* ── CATEGORIES ── */}
-        <section id="categories" className="bg-emerald-900/90 px-6 py-48 md:px-12 md:py-64">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
+        <section id="categories" className="bg-emerald-900/90 px-6 pt-28 pb-24 md:px-12 md:pt-32 md:pb-32">
+          <div className="mx-auto flex max-w-6xl flex-col items-center text-center reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-amber-400">WHAT WE BUY</p>
             <h2 className="mt-2 text-4xl font-black text-white md:text-5xl">
               We Accept a <span className="text-amber-400">WIDE RANGE</span> of items
@@ -343,10 +342,10 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
             <p className="mt-3 text-lg text-white/70">
               From the latest smartphones to vintage electronics — if it has value, <span className="text-amber-400">we want it.</span>
             </p>
-            <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="mt-10 grid w-full grid-cols-2 gap-4 md:grid-cols-4 justify-items-center">
               {categories.map((cat) => (
                 <div key={cat.name}
-                  className="flex flex-col items-center text-center rounded-2xl bg-emerald-50 p-6 shadow-md transition-transform hover:scale-105 hover:shadow-xl h-full">
+                  className="flex h-full w-full max-w-[220px] flex-col items-center rounded-2xl bg-emerald-50 p-6 text-center shadow-md transition-transform hover:scale-105 hover:shadow-xl">
                   <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-900 text-emerald-100 mb-4">
                     {cat.icon}
                   </div>
@@ -397,7 +396,7 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
         </section>
 
         {/* ── REVIEWS CAROUSEL ── */}
-        <section id="reviews" className="bg-white px-6 py-48 md:px-12 md:py-64">
+        <section id="reviews" className="bg-white px-6 pt-20 pb-48 md:px-12 md:pt-24 md:pb-64">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-amber-500">CUSTOMER REVIEWS</p>
             <h2 className="mt-2 text-4xl font-black text-emerald-900 md:text-5xl">What Our Sellers Say</h2>

@@ -1,6 +1,7 @@
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type { TransactionRow, PurposeType } from "./types";
 import { useRef, type RefObject } from "react";
 
@@ -125,7 +126,9 @@ export function TransactionTable({
                   colSpan={columns.length}
                   className="py-8 text-center text-base text-text-tertiary"
                 >
-                  Loading transactions...
+                  <div className="flex items-center justify-center">
+                    <LoadingSpinnerLabel text="Loading transactions..." className="text-base text-text-tertiary" />
+                  </div>
                 </td>
               </tr>
             ) : data.length === 0 ? (

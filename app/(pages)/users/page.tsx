@@ -16,6 +16,7 @@ import { UserDetailDrawer } from "./_components/user-detail-drawer";
 import { DeleteUserModal } from "./_components/delete-user-modal";
 import { UpdateUserModal } from "./_components/update-user-modal";
 import { AccountStatusModal } from "./_components/account-status-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
@@ -524,7 +525,7 @@ export default function UserManagementPage() {
       />
       {isLoading ? (
         <div className="rounded-lg border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary">
-          Loading users...
+          <LoadingSpinnerLabel text="Loading users..." className="justify-center text-sm text-text-tertiary" />
         </div>
       ) : (
         <UserTable

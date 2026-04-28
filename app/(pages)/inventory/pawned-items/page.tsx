@@ -7,6 +7,7 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 import { useBranch } from "@/contexts/branch-context";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -729,7 +730,9 @@ export default function PawnedItemsPage() {
                 {isLoading && pawnedItems.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
-                      Loading...
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinnerLabel text="Loading..." className="text-base text-zinc-400" />
+                      </div>
                     </td>
                   </tr>
                 ) : pawnedItems.length === 0 ? (
@@ -844,7 +847,9 @@ export default function PawnedItemsPage() {
                     {isLoading && pawnedItems.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
-                          Loading...
+                          <div className="flex items-center justify-center">
+                            <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
+                          </div>
                         </td>
                       </tr>
                     ) : pawnedItems.length === 0 ? (
