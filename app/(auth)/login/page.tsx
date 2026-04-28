@@ -50,10 +50,6 @@ function LoginExperience() {
           setShowSignup(false);
           setShowLogin(true);
         }}
-        onSignUpClick={() => {
-          setShowLogin(false);
-          setShowSignup(true);
-        }}
       />
       {showLogin && (
         <LoginModal

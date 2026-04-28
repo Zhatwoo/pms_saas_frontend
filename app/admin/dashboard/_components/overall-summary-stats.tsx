@@ -1,4 +1,5 @@
 import { StatCard } from "@/components/shared/stat-card";
+import { formatPeso } from "@/lib/currency";
 
 const folderIcon = (
   <svg
@@ -30,23 +31,6 @@ const checkIcon = (
   </svg>
 );
 
-const alertCircleIcon = (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="12" />
-    <line x1="12" y1="16" x2="12.01" y2="16" />
-  </svg>
-);
-
 const salesIcon = (
   <svg
     width="16"
@@ -69,6 +53,8 @@ interface OverallSummaryData {
   redeemed: number | string;
   redeemedOverdue: number | string;
   totalOverallSales: string;
+  branchSales?: number;
+  allBranchSales?: number;
 }
 
 interface OverallSummaryStatsProps {
@@ -76,8 +62,13 @@ interface OverallSummaryStatsProps {
 }
 
 export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
+  const allBranchSales = data?.allBranchSales;
+  const branchSales = data?.branchSales;
+  const hasBranchComparison =
+    branchSales != null && allBranchSales != null && branchSales !== allBranchSales;
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Total Contracts"
         value={data?.totalContracts || 0}
@@ -91,30 +82,14 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
       <StatCard
         label="Redeemed"
         value={data?.redeemed || 0}
-        icon={checkIcon}
+        icon={<div className="text-emerald-600">{checkIcon}</div>}
       />
       <StatCard
-        label="Redeemed"
-        value={data?.redeemedOverdue || 0}
-        icon={<div className="text-red-500">{alertCircleIcon}</div>}
+        label="Total Overall Sales"
+        value={allBranchSales != null ? formatPeso(allBranchSales) : data?.totalOverallSales || "₱ 0"}
+        subtitle={hasBranchComparison ? `Branch total: ${formatPeso(branchSales)}` : undefined}
+        icon={<div className="text-emerald-600">{salesIcon}</div>}
       />
-      
-      {/* Custom Card for Total Overall Sales */}
-      <div className="rounded-xl border border-emerald-900 bg-emerald-900 p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-800 text-yellow-400">
-            {salesIcon}
-          </div>
-          <div>
-            <p className="text-xs font-medium text-emerald-100">
-              Total Overall Sales
-            </p>
-            <p className="mt-1 text-2xl font-bold tracking-tight text-yellow-500">
-              {data?.totalOverallSales || "₱ 0"}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

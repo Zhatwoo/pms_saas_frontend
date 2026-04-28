@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
-import { PeriodTabs } from "@/components/shared/period-tabs";
+import { DateFilterSelector } from "@/components/shared/date-filter-selector";
 import type { ContractTrendData } from "./_components/contract-trends-chart";
 import type { RevenueTrendData } from "./_components/revenue-trend-chart";
 import type { NotificationItem } from "./_components/notifications-panel";
@@ -25,6 +25,8 @@ interface PawnKpisResponse {
     redeemed: number;
     redeemedOverdue: number;
     totalOverallSales: string;
+    branchSales?: number;
+    allBranchSales?: number;
   };
   kpiData: {
     activeContracts: number;
@@ -40,6 +42,8 @@ interface PawnKpisResponse {
 
 export default function DashboardPage() {
   const [activePeriod, setActivePeriod] = useState("Monthly");
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const { selectedBranch, isAllBranches } = useBranch();
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -50,6 +54,8 @@ export default function DashboardPage() {
     redeemed: 0,
     redeemedOverdue: 0,
     totalOverallSales: "₱ 0",
+    branchSales: 0,
+    allBranchSales: 0,
   });
 
   const [kpiData, setKpiData] = useState({
@@ -71,9 +77,17 @@ export default function DashboardPage() {
         const params = new URLSearchParams();
         if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("period", activePeriod.toLowerCase());
+        if (startDate && endDate) {
+          params.set("startDate", startDate);
+          params.set("endDate", endDate);
+        }
         const data = await api.get<PawnKpisResponse>(`/dashboard/pawn-kpis?${params}`);
         if (data) {
-          setOverallData(data.overallData);
+          setOverallData({
+            ...data.overallData,
+            branchSales: data.overallData.branchSales || 0,
+            allBranchSales: data.overallData.allBranchSales || 0,
+          });
           setKpiData(data.kpiData);
           setContractTrendsData(data.contractTrends || []);
           setRevenueTrendData(data.revenueTrend || []);
@@ -88,7 +102,7 @@ export default function DashboardPage() {
       }
     }
     fetchDashboardKpis();
-  }, [selectedBranch.id, isAllBranches, activePeriod]);
+  }, [selectedBranch.id, isAllBranches, activePeriod, startDate, endDate]);
 
   return (
     <div className="space-y-5">
@@ -99,10 +113,14 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <PeriodTabs
-            tabs={periods}
-            activeTab={activePeriod}
-            onTabChange={setActivePeriod}
+          <DateFilterSelector
+            periods={periods}
+            activePeriod={activePeriod}
+            onPeriodChange={setActivePeriod}
+            onDateRangeChange={useCallback((start: string | null, end: string | null) => {
+              setStartDate(start);
+              setEndDate(end);
+            }, [])}
           />
         </div>
       </div>
@@ -123,7 +141,7 @@ export default function DashboardPage() {
         <>
           <OverallSummaryStats data={overallData} />
 
-          <DashboardStats data={kpiData} />
+          <DashboardStats data={kpiData} period={activePeriod} />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <ContractTrendsChart data={contractTrendsData} />
