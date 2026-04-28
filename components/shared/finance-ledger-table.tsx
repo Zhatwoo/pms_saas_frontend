@@ -145,7 +145,7 @@ export function FinanceLedgerTable({
     currentPage * ITEMS_PER_PAGE,
   );
 
-  if (isLoading) {
+  if (isLoading && entries.length === 0) {
     return (
       <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-center text-sm text-text-tertiary">
         Loading financial activity...

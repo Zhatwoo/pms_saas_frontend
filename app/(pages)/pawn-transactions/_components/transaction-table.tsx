@@ -76,6 +76,7 @@ interface TransactionTableProps {
   onPrint?: (transaction: TransactionRow) => void;
   highlightTransactionNo?: string | null;
   highlightRowRef?: RefObject<HTMLTableRowElement | null>;
+  isToday?: boolean;
 }
 
 export function TransactionTable({
@@ -85,6 +86,7 @@ export function TransactionTable({
   onPrint,
   highlightTransactionNo,
   highlightRowRef,
+  isToday = true,
 }: TransactionTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
@@ -117,7 +119,7 @@ export function TransactionTable({
             </tr>
           </thead>
           <tbody>
-            {isLoading ? (
+            {isLoading && data.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
@@ -132,7 +134,7 @@ export function TransactionTable({
                   colSpan={columns.length}
                   className="py-8 text-center text-base text-text-tertiary"
                 >
-                  No transactions found
+                  {isToday ? "No transactions found for today" : "No transactions found"}
                 </td>
               </tr>
             ) : (

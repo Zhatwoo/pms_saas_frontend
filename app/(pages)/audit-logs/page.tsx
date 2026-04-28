@@ -785,7 +785,7 @@ export default function AuditLogsPage() {
               <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
             </div>
             <div className="mt-4 z-10">
-              <span className="text-4xl font-black text-text-primary">{isLoading ? "-" : card.count}</span>
+              <span className="text-4xl font-black text-text-primary">{card.count}</span>
             </div>
             <div className="mt-2 flex items-center gap-2 z-10">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
@@ -817,7 +817,7 @@ export default function AuditLogsPage() {
               >
                 {tab}
                 <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400" : "bg-surface-secondary text-text-tertiary"}`}>
-                  {isLoading ? "-" : count}
+                  {count}
                 </span>
               </button>
             )
@@ -877,7 +877,7 @@ export default function AuditLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
-              {isLoading ? (
+              {isLoading && enrichedLogs.length === 0 ? (
                 <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">Loading audit trail...</td></tr>
               ) : paginatedLogs.length === 0 ? (
                 <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>

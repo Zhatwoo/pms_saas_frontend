@@ -478,7 +478,7 @@ export default function ItemsForSalePage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {isLoading && saleItems.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                     Loading...
@@ -487,7 +487,9 @@ export default function ItemsForSalePage() {
               ) : saleItems.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
-                    {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
+                    {viewMode === "calendar" && selectedDate
+                      ? "No items on this day"
+                      : "No items for sale found"}
                   </td>
                 </tr>
               ) : (
@@ -574,7 +576,7 @@ export default function ItemsForSalePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isLoading ? (
+                    {isLoading && saleItems.length === 0 ? (
                       <tr><td colSpan={6} className="py-6 text-center text-sm text-zinc-400">Loading...</td></tr>
                     ) : saleItems.length === 0 ? (
                       <tr><td colSpan={6} className="py-6 text-center text-sm text-zinc-400">No items on this day</td></tr>

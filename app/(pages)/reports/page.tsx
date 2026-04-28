@@ -111,6 +111,7 @@ interface ReportData {
 export default function ReportsPage() {
   const [activePeriod, setActivePeriod] = useState("Daily");
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const { selectedBranch, isAllBranches } = useBranch();
@@ -133,6 +134,7 @@ export default function ReportsPage() {
         setError(msg);
       } finally {
         setIsLoading(false);
+        setHasLoadedData(true);
       }
     }
     fetchReport();
@@ -302,7 +304,7 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isLoading && !hasLoadedData ? (
         <div className="flex items-center justify-center py-12">
           <div className="flex items-center gap-3 text-text-tertiary">
             <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -321,6 +323,15 @@ export default function ReportsPage() {
         </div>
       ) : (
         <>
+          {isLoading && hasLoadedData ? (
+            <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+              <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span>Refreshing reports...</span>
+            </div>
+          ) : null}
           <ReportStats data={reportData?.stats} showBranchStats={isSuperAdmin} />
 
           {/* Side by side: branch table + chart */}

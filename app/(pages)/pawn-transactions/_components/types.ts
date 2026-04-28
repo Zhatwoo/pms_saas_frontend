@@ -62,12 +62,9 @@ export interface TransactionStatsData {
 }
 
 export const PURPOSE_OPTIONS: PurposeType[] = [
-  "Start",
-  "End",
   "Pawn",
   "Redeem",
   "Renew",
-  "Reappraise",
   "Buy Back",
   "Buy Out",
   "Sold Item",

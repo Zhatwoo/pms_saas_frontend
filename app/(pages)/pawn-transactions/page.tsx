@@ -185,7 +185,6 @@ export default function PawnTransactionsPage() {
     condition: string;
     memory: string;
     remarks: string;
-    memory: string;
     amount: string;
     storageFee: string;
     purchasedDate: string;
@@ -398,7 +397,6 @@ export default function PawnTransactionsPage() {
         serialNumber: transaction.serialNumber || "---",
         itemsIncluded: transaction.itemsIncluded || "---",
         condition: transaction.condition || "---",
-        memory: transaction.memoryStorage || "---",
         remarks: transaction.remarks || transaction.notes || "---",
         memory: transaction.memoryStorage || transaction.notes || "---",
         amount: transaction.pawn,
@@ -451,6 +449,7 @@ export default function PawnTransactionsPage() {
         onPrint={handlePrintSlip}
         highlightTransactionNo={shouldHighlight ? highlightTransactionNo : null}
         highlightRowRef={highlightRowRef}
+        isToday={!dateFilter || dateFilter === new Date().toISOString().split("T")[0]}
       />
 
       {totalPages > 1 ? (

@@ -726,7 +726,7 @@ export default function PawnedItemsPage() {
                 </tr>
               </thead>
               <tbody>
-                {isLoading ? (
+                {isLoading && pawnedItems.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                       Loading...
@@ -841,7 +841,7 @@ export default function PawnedItemsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isLoading ? (
+                    {isLoading && pawnedItems.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
                           Loading...

@@ -104,7 +104,7 @@ export function ExpirationTable({
     }
   }, [highlightTicketNo]);
 
-  if (isLoading) {
+  if (isLoading && data.length === 0) {
     return (
       <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
         <div className="flex items-center justify-center gap-3 text-text-tertiary">
