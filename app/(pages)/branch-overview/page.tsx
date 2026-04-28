@@ -88,6 +88,7 @@ export default function BranchOverviewPage() {
   // Terminate
   const [terminateModalOpen, setTerminateModalOpen] = useState(false);
   const [terminatingBranch, setTerminatingBranch] = useState<BranchRow | null>(null);
+  const canCreateBranch = user?.role === "super_admin";
 
   const loadBranches = useCallback(async () => {
     if (!user) return;
@@ -186,6 +187,10 @@ export default function BranchOverviewPage() {
   }
 
   function handleCreateBranch() {
+    if (!canCreateBranch) {
+      setErrorMessage("Only super admins can create branches.");
+      return;
+    }
     setEditingBranch(null);
     setModalMode("create");
     setModalOpen(true);
@@ -359,7 +364,7 @@ export default function BranchOverviewPage() {
             onSearchChange={setSearchQuery}
             statusFilter={statusFilter}
             onStatusChange={setStatusFilter}
-            onCreateBranch={handleCreateBranch}
+            onCreateBranch={canCreateBranch ? handleCreateBranch : undefined}
           />
 
           {/* Table */}

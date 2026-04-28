@@ -80,6 +80,7 @@ export default function BranchesPage() {
   const [selectedBranchRow, setSelectedBranchRow] = useState<BranchRow | null>(
     null,
   );
+  const canCreateBranch = user?.role === "super_admin";
 
   const loadBranches = useCallback(async () => {
     try {
@@ -186,6 +187,10 @@ export default function BranchesPage() {
   }
 
   function handleCreateBranch() {
+    if (!canCreateBranch) {
+      setErrorMessage("Only super admins can create branches.");
+      return;
+    }
     setEditingBranch(null);
     setModalMode("create");
     setModalOpen(true);
@@ -285,25 +290,27 @@ export default function BranchesPage() {
             Create, edit, and manage all pawnshop branches.
           </p>
         </div>
-        <button
-          onClick={handleCreateBranch}
-          className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {canCreateBranch && (
+          <button
+            onClick={handleCreateBranch}
+            className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
           >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Create Branch
-        </button>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create Branch
+          </button>
+        )}
       </div>
 
       {errorMessage && (
