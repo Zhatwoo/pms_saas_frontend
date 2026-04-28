@@ -136,6 +136,7 @@ export default function BranchFinancePage() {
   const [selectedRejectRequest, setSelectedRejectRequest] = useState<FundRequestRecord | null>(null);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [selectedTransferRequest, setSelectedTransferRequest] = useState<FundRequestRecord | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [financeSummaries, setFinanceSummaries] = useState<BranchFinanceSummaryItem[]>([]);
@@ -385,7 +386,8 @@ export default function BranchFinancePage() {
 
   const handleRejectConfirm = useCallback(
     async (reason: string) => {
-      if (!selectedRejectRequest) return;
+      if (!selectedRejectRequest || isSubmitting) return;
+      setIsSubmitting(true);
       try {
         await api.patch<FundRequestRecord>(`/fund-requests/${selectedRejectRequest.id}/review`, {
           decision: "rejected",
@@ -397,13 +399,17 @@ export default function BranchFinancePage() {
         await loadFinanceData();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to reject request.");
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [loadFinanceData, selectedRejectRequest, showToast],
+    [isSubmitting, loadFinanceData, selectedRejectRequest, showToast],
   );
 
   const handleTransferSubmit = useCallback(
     async (data: UnifiedFundResult) => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
       try {
         if (selectedTransferRequest) {
           const approvedAmount = data.amount || selectedTransferRequest.amountRequested;
@@ -446,9 +452,11 @@ export default function BranchFinancePage() {
         await loadFinanceData();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to transfer funds.");
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [loadFinanceData, selectedTransferRequest, showToast],
+    [isSubmitting, loadFinanceData, selectedTransferRequest, showToast],
   );
 
   const handleHeaderTransfer = useCallback(() => {

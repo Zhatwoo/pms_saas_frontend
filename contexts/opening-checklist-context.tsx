@@ -84,15 +84,25 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   }, [user, saveState]);
 
   const completeCashOnHand = useCallback(async (amount: string) => {
-    // Here you would typically call an API to log the starting cash
-    console.log(`Starting cash confirmed: ₱${amount}`);
+    // Call Start Day API to persist the starting cash balance
+    try {
+      await api.post("/branch-finance/daily-balance", {
+        type: "starting",
+        amount: parseFloat(amount) || 0,
+      });
+    } catch (err) {
+      console.error("Failed to confirm starting cash:", err);
+    }
+
     const nextStep: ChecklistStep = "INVENTORY_AUDIT";
     setCurrentStep(nextStep);
     saveState(nextStep, false);
-    
-    // Automatic redirect to inventory
-    router.push("/employee/inventory/pawned-items");
-  }, [saveState, router]);
+
+    // Only redirect to inventory if not already on pawn transaction page
+    if (!pathname?.includes("/pawn-transaction")) {
+      router.push("/employee/inventory/pawned-items");
+    }
+  }, [saveState, router, pathname]);
 
   const completeInventoryAudit = useCallback(async () => {
     console.log("Unified inventory audit complete");

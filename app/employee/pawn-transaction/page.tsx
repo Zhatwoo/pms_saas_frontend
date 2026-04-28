@@ -227,6 +227,7 @@ export default function EmployeePawnTransactionsPage() {
     open: false,
     type: "starting",
   });
+  const [expectedCash, setExpectedCash] = useState("0");
   const [passwordModal, setPasswordModal] = useState<{ open: boolean; onConfirm: () => void }>({
     open: false,
     onConfirm: () => { },
@@ -503,8 +504,21 @@ export default function EmployeePawnTransactionsPage() {
         onBuyBack={() => handleActionWithPassword(() => setIsBuyBackModalOpen(true))}
         onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
-        onStartDay={() => setBalanceModal({ open: true, type: "starting" })}
-        onEndDay={() => setBalanceModal({ open: true, type: "ending" })}
+        onStartDay={async () => {
+          try {
+            const bal = await api.get<{ startingBalance: number; endingBalance: number }>(
+              `/branch-finance/latest-balance`
+            );
+            setExpectedCash(String(bal?.endingBalance ?? 0));
+          } catch {
+            setExpectedCash(String(currentStats.endingBalance || 0));
+          }
+          setBalanceModal({ open: true, type: "starting" });
+        }}
+        onEndDay={() => {
+          setExpectedCash(String(currentStats.endingBalance || 0));
+          setBalanceModal({ open: true, type: "ending" });
+        }}
       />
 
       <TransactionStats data={currentStats} />
@@ -608,11 +622,7 @@ export default function EmployeePawnTransactionsPage() {
       <DailyBalanceConfirmation
         isOpen={balanceModal.open}
         type={balanceModal.type}
-        currentCash={
-          balanceModal.type === "starting"
-            ? String(currentStats.endingBalance || currentStats.startingBalance || 0)
-            : String(currentStats.endingBalance || 0)
-        }
+        currentCash={expectedCash}
         onClose={() => setBalanceModal((p) => ({ ...p, open: false }))}
         onConfirm={async (amt) => {
           try {

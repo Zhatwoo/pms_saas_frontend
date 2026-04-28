@@ -18,23 +18,29 @@ export function RequestExpensesModal({ isOpen, onClose, onSubmit }: RequestExpen
   const [amount, setAmount] = useState<string>("");
   const [category, setCategory] = useState("Expense - Supplies");
   const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || isNaN(Number(amount))) return;
+    if (!amount || isNaN(Number(amount)) || isSubmitting) return;
 
-    onSubmit({
-      amount: Number(amount),
-      category,
-      notes,
-    });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        amount: Number(amount),
+        category,
+        notes,
+      });
 
-    setAmount("");
-    setCategory("Expense - Supplies");
-    setNotes("");
-    onClose();
+      setAmount("");
+      setCategory("Expense - Supplies");
+      setNotes("");
+      onClose();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -49,8 +55,8 @@ export function RequestExpensesModal({ isOpen, onClose, onSubmit }: RequestExpen
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-text-primary">Request Expenses</h2>
-              <p className="text-xs text-text-secondary">Submit expense request to Super Admin</p>
+              <h2 className="text-lg font-bold text-text-primary">Request Approve Expense</h2>
+              <p className="text-xs text-text-secondary">Submit expense for Super Admin approval — deducted from branch balance</p>
             </div>
           </div>
           <button
@@ -123,10 +129,10 @@ export function RequestExpensesModal({ isOpen, onClose, onSubmit }: RequestExpen
             </button>
             <button
               type="submit"
-              disabled={!amount}
+              disabled={!amount || isSubmitting}
                 className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Submit Request
+              {isSubmitting ? "Submitting..." : "Submit Request"}
             </button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface DailyBalanceConfirmationProps {
   isOpen: boolean;
@@ -18,8 +18,26 @@ export function DailyBalanceConfirmation({
   onClose,
 }: DailyBalanceConfirmationProps) {
   const [confirmedAmount, setConfirmedAmount] = useState(currentCash);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmedAmount(currentCash);
+      setIsSubmitting(false);
+    }
+  }, [isOpen, currentCash]);
 
   if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onConfirm(confirmedAmount);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -50,7 +68,8 @@ export function DailyBalanceConfirmation({
                 type="text"
                 value={confirmedAmount}
                 onChange={(e) => setConfirmedAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-                className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500 transition-all"
+                disabled={isSubmitting}
+                className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
               />
             </div>
           </div>
@@ -65,17 +84,19 @@ export function DailyBalanceConfirmation({
         <div className="mt-8 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors"
+            disabled={isSubmitting}
+            className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
-            onClick={() => onConfirm(confirmedAmount)}
-            className={`flex-1 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 ${
+            onClick={handleConfirm}
+            disabled={isSubmitting}
+            className={`flex-1 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
               type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
             }`}
           >
-            Confirm & Proceed
+            {isSubmitting ? "Processing..." : "Confirm & Proceed"}
           </button>
         </div>
       </div>
