@@ -168,6 +168,30 @@ export function ClockIcon() {
   );
 }
 
+export function MenuIcon() {
+  return (
+    <svg {...iconProps}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 7.5h15M4.5 12h15M4.5 16.5h15"
+      />
+    </svg>
+  );
+}
+
+export function CloseIcon() {
+  return (
+    <svg {...iconProps}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 6l12 12M18 6 6 18"
+      />
+    </svg>
+  );
+}
+
 export function BellIcon() {
   return (
     <svg {...iconProps}>

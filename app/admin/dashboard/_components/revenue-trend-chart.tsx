@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { formatPeso } from "@/lib/currency";
 
 export interface RevenueTrendData {
   month: string;
@@ -53,7 +54,7 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
                 border: "1px solid #e4e4e7",
                 fontSize: "12px",
               }}
-              formatter={(value) => [`$${Number(value).toLocaleString()}`, "Revenue"]}
+              formatter={(value) => [formatPeso(value), "Revenue"]}
             />
             <Line
               type="monotone"

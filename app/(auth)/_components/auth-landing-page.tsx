@@ -6,7 +6,6 @@ import { AnimatedGradient } from "@/components/shared/animated-gradient";
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
-  onSignUpClick?: () => void;
 }
 
 const navItems = ["HOME", "HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS", "BRANCHES", "CONTACT US"];
@@ -148,7 +147,7 @@ const allReviews = [
   { name: "Maria L.", sold: "Sold an iPad Pro", initials: "ML", quote: "Quick and easy process. Got a great offer for my iPad and the payment was instant. Very satisfied with the service!" },
 ];
 
-export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPageProps) {
+export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [activeNavItem, setActiveNavItem] = useState("HOME");
   const [underlineLeft, setUnderlineLeft] = useState(0);
   const [underlineWidth, setUnderlineWidth] = useState(0);
@@ -180,6 +179,14 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
       window.history.pushState(null, "", `#${id}`);
+    }
+  };
+
+  const handleContactUsClick = () => {
+    const element = document.getElementById("contact-us");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.pushState(null, "", "#contact-us");
     }
   };
 
@@ -219,7 +226,7 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
         {/* ── NAV ── */}
         <nav className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-emerald-900/90 px-12 backdrop-blur-sm">
           <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e as any, "home", "HOME")} />
-          <div className="relative hidden items-center gap-8 md:flex">
+          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
             {navItems.map((item, index) => {
               const id = item.toLowerCase().replace(/ /g, "-");
               return (
@@ -232,9 +239,7 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
             })}
             <span className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
           </div>
-          <button onClick={onLoginClick} className="rounded-lg bg-amber-400 px-6 py-2.5 text-sm font-bold text-emerald-900 transition hover:bg-amber-300">
-            LOGIN
-          </button>
+          <div className="w-[96px] shrink-0" aria-hidden="true" />
         </nav>
 
         {/* ── HERO ── */}
@@ -253,9 +258,9 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
                 JCLB Buy Back Shop provides honest, secure, and compassionate financial solutions that uplift lives and build lasting relationships within our community.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
-                <button type="button" onClick={onSignUpClick ?? onLoginClick}
+                <button type="button" onClick={handleContactUsClick}
                   className="rounded-xl bg-emerald-900 px-8 py-4 font-bold text-white transition-all hover:bg-emerald-800 hover:shadow-lg active:scale-95">
-                  GET STARTED
+                  CONTACT US
                 </button>
                 <a href="#how-it-works" onClick={(e) => handleScroll(e, "how-it-works", "HOW IT WORKS")}
                   className="rounded-xl border-2 border-emerald-900 px-8 py-4 font-bold text-emerald-900 transition-all hover:bg-emerald-900 hover:text-white">
@@ -532,15 +537,11 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
 
         {/* ── CONTACT CTA ── */}
         <section id="contact-us" className="bg-red-600 px-6 py-20 md:px-12 md:py-28">
-          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 md:flex-row reveal-on-scroll">
-            <div className="text-center md:text-left">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-8 text-center reveal-on-scroll">
+            <div>
               <h2 className="text-4xl font-black text-white md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
               <p className="mt-3 text-xl text-white/60">It only takes a minute to start.</p>
             </div>
-            <button onClick={onSignUpClick ?? onLoginClick}
-              className="shrink-0 rounded-xl bg-emerald-900 px-10 py-5 font-black text-white shadow-2xl transition-all hover:scale-105 hover:bg-emerald-800 active:scale-95">
-              GET STARTED
-            </button>
           </div>
         </section>
 
@@ -568,14 +569,17 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
                 <div className="w-fit">
                   <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">QUICK LINKS</p>
                   <ul className="space-y-2.5">
-                    {["How It Works", "What We Buy", "Why Choose Us", "Reviews", "Get Started"].map((link) => (
-                      <li key={link}>
-                        <a href="#" className="flex items-center gap-2 text-sm text-white/60 hover:text-amber-400 transition-colors">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
-                          {link}
-                        </a>
-                      </li>
-                    ))}
+                    {["How It Works", "What We Buy", "Why Choose Us", "Reviews", "Contact Us"].map((link) => {
+                      const href = `#${link.toLowerCase().replace(/ /g, "-")}`;
+                      return (
+                        <li key={link}>
+                          <a href={href} className="flex items-center gap-2 text-sm text-white/60 hover:text-amber-400 transition-colors">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                            {link}
+                          </a>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
@@ -635,7 +639,9 @@ export function AuthLandingPage({ onLoginClick, onSignUpClick }: AuthLandingPage
               {/* Right: Slogans */}
               <div className="flex items-center gap-4 text-center md:text-right whitespace-nowrap">
                 <span>Made with ❤️ for our customers</span>
-                <span className="italic text-amber-400/60">&ldquo;Madaling Kausap&rdquo;</span>
+                <button type="button" onClick={onLoginClick} className="italic text-amber-400/60 transition hover:text-amber-300 hover:underline">
+                  &ldquo;Madaling Kausap&rdquo;
+                </button>
               </div>
             </div>
           </div>

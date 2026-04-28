@@ -63,7 +63,7 @@ export default function ProtectedLayout({
       userRole={user.role}
       onLogout={logout}
       branchName={selectedBranch.name}
-      hideBranchSelector={true}
+      hideBranchSelector={false}
     >
       {children}
     </AppLayout>

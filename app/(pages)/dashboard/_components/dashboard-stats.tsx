@@ -49,20 +49,13 @@ const cartIcon = (
   </svg>
 );
 
-const dollarIcon = (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
+const pesoIcon = (
+  <span
+    aria-hidden="true"
+    className="flex h-4 w-4 items-center justify-center text-[17px] font-black leading-none text-current"
   >
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
+    ₱
+  </span>
 );
 
 export interface DashboardStatData {
@@ -74,9 +67,10 @@ export interface DashboardStatData {
 
 interface DashboardStatsProps {
   data?: DashboardStatData;
+  period?: string;
 }
 
-export function DashboardStats({ data }: DashboardStatsProps) {
+export function DashboardStats({ data, period }: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
@@ -100,11 +94,11 @@ export function DashboardStats({ data }: DashboardStatsProps) {
         icon={cartIcon}
       />
       <StatCard
-        label="Monthly Revenue"
-        value={data?.monthlyRevenue || "$ 0"}
+        label={`${period || "Monthly"} Revenue`}
+        value={data?.monthlyRevenue || "₱ 0"}
         change="0% from last month"
         changeType="positive"
-        icon={dollarIcon}
+        icon={pesoIcon}
       />
     </div>
   );

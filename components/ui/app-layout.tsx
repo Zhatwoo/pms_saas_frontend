@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import type { NavGroup, Role } from "@/types";
 import { Sidebar } from "@/components/ui/sidebar";
 import { Header } from "@/components/ui/header";
@@ -32,14 +33,39 @@ export function AppLayout({
   children,
 }: AppLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { selectedBranch, isAllBranches } = useBranch();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-40 cursor-default bg-black/50 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
       <Sidebar
         navGroups={navGroups}
         collapsed={collapsed}
-        onToggle={() => setCollapsed(!collapsed)}
+        isMobileOpen={mobileMenuOpen}
+        onToggle={() => setCollapsed((prev) => !prev)}
+        onMobileClose={() => setMobileMenuOpen(false)}
+        onNavigate={() => setMobileMenuOpen(false)}
         userName={userName}
         userRole={userRole}
         onLogout={onLogout}
@@ -51,6 +77,7 @@ export function AppLayout({
           notificationCount={notificationCount}
           branchName={branchName || (isAllBranches ? "All Branches" : selectedBranch.name)}
           hideBranchSelector={hideBranchSelector}
+          onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
         />
         <main className="flex-1 overflow-y-auto bg-pawn-content p-8 transition-colors duration-300">
           {children}

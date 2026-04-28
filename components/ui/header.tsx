@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ClockIcon, BellIcon } from "@/lib/icons";
+import { ClockIcon, BellIcon, MenuIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api } from "@/lib/api";
@@ -115,6 +115,7 @@ interface HeaderProps {
   notificationCount?: number;
   branchName?: string;
   hideBranchSelector?: boolean;
+  onMenuToggle?: () => void;
 }
 
 function formatDateTime(): string {
@@ -213,6 +214,7 @@ export function Header({
   notificationCount = 0,
   branchName,
   hideBranchSelector = false,
+  onMenuToggle,
 }: HeaderProps) {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
@@ -530,6 +532,16 @@ export function Header({
     <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border-main bg-header-bg px-6 py-4 transition-colors duration-300">
       <div className="flex min-w-0 flex-col gap-2 justify-self-start">
         <div className="flex min-w-0 items-center gap-4">
+          {onMenuToggle && (
+            <button
+              type="button"
+              onClick={onMenuToggle}
+              aria-label="Open sidebar"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-main text-text-tertiary transition hover:bg-surface-hover hover:text-text-primary lg:hidden"
+            >
+              <MenuIcon />
+            </button>
+          )}
           <h1 className="text-3xl font-bold text-text-primary leading-none">{title}</h1>
           {branchName && (
             <div className="flex items-center gap-4">
