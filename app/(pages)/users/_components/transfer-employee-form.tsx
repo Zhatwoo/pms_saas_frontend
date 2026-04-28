@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type { UserRecord, BranchOption } from "../page";
 
 interface UserApiRecord {
@@ -187,7 +188,7 @@ export function TransferEmployeeForm({
 
       {isLoading ? (
         <div className="rounded-lg border border-border-main bg-surface px-4 py-8 text-center text-sm text-text-tertiary">
-          Loading transfer options...
+          <LoadingSpinnerLabel text="Loading transfer options..." className="justify-center text-sm text-text-tertiary" />
         </div>
       ) : (
         <div className="space-y-3">

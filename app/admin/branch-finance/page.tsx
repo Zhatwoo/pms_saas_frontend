@@ -19,6 +19,7 @@ import {
   FinanceSummaryCards,
   LedgerTypeFilter,
 } from "@/components/shared/finance-ledger-table";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
@@ -396,7 +397,7 @@ export default function AdminBranchFinancePage() {
 
       {!dashboard && isLoading ? (
         <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
-          Loading branch finance data...
+          <LoadingSpinnerLabel text="Loading branch finance data..." className="text-sm text-text-tertiary" />
         </div>
       ) : dashboard ? (
         <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>

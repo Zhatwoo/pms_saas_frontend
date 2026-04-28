@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 import { toast } from "sonner";
 import { BranchStats } from "./_components/branch-stats";
@@ -268,7 +269,7 @@ export default function BranchesPage() {
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border-main bg-surface px-4 py-8 text-center text-sm text-text-secondary">
-        Loading branches...
+        <LoadingSpinnerLabel text="Loading branches..." className="justify-center text-sm text-text-secondary" />
       </div>
     );
   }

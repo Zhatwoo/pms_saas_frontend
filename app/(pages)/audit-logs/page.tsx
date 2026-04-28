@@ -5,6 +5,7 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 
 interface ActivityLog {
@@ -878,7 +879,13 @@ export default function AuditLogsPage() {
             </thead>
             <tbody className="divide-y divide-border-subtle">
               {isLoading && enrichedLogs.length === 0 ? (
-                <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">Loading audit trail...</td></tr>
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinnerLabel text="Loading audit trail..." className="text-base font-medium text-text-tertiary" />
+                    </div>
+                  </td>
+                </tr>
               ) : paginatedLogs.length === 0 ? (
                 <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>
               ) : (

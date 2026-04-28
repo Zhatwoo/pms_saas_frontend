@@ -11,6 +11,7 @@ import { FilterSelect } from "@/components/shared/filter-select";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -277,7 +278,13 @@ export default function PawnedItemsPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">Loading...</td></tr>
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
+                      </div>
+                    </td>
+                  </tr>
                 ) : pawnedItems.length === 0 ? (
                   <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found</td></tr>
                 ) : (

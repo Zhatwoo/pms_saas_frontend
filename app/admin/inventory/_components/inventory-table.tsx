@@ -8,6 +8,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 interface InventoryItem {
   id: string;
@@ -71,7 +72,13 @@ export function InventoryTable() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="py-8 text-center text-sm text-text-tertiary">Loading...</td></tr>
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-sm text-text-tertiary">
+                  <div className="flex items-center justify-center">
+                    <LoadingSpinnerLabel text="Loading..." className="text-sm text-text-tertiary" />
+                  </div>
+                </td>
+              </tr>
               ) : items.length === 0 ? (
                 <tr><td colSpan={7} className="py-8 text-center text-sm text-text-tertiary">No items found</td></tr>
               ) : (

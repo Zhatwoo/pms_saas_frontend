@@ -9,6 +9,7 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { toast } from "sonner";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type SaleViewMode = "current" | "history";
 
@@ -159,7 +160,9 @@ export default function ItemsForSalePage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
-                    Loading...
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
+                      </div>
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (

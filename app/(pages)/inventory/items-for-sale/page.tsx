@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { useBranch } from "@/contexts/branch-context";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type ViewMode = "list" | "calendar";
 
@@ -481,7 +482,9 @@ export default function ItemsForSalePage() {
               {isLoading && saleItems.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
-                    Loading...
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinnerLabel text="Loading..." className="text-base text-zinc-400" />
+                    </div>
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (
@@ -577,7 +580,13 @@ export default function ItemsForSalePage() {
                   </thead>
                   <tbody>
                     {isLoading && saleItems.length === 0 ? (
-                      <tr><td colSpan={6} className="py-6 text-center text-sm text-zinc-400">Loading...</td></tr>
+                        <tr>
+                          <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
+                            <div className="flex items-center justify-center">
+                              <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
+                            </div>
+                          </td>
+                        </tr>
                     ) : saleItems.length === 0 ? (
                       <tr><td colSpan={6} className="py-6 text-center text-sm text-zinc-400">No items on this day</td></tr>
                     ) : (

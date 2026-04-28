@@ -10,6 +10,7 @@ import type { Column } from "@/components/shared/data-table";
 import { ActionButton } from "@/components/shared/action-button";
 import { AddCustomerModal } from "./add-customer-modal";
 import type { CustomerFormInput } from "./add-customer-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const plusIcon = (
   <svg
@@ -175,7 +176,9 @@ export function CustomerTable() {
         </div>
 
         {isLoading && (
-          <p className="px-5 pb-2 text-xs text-text-tertiary">Loading customers...</p>
+          <div className="px-5 pb-2 text-xs text-text-tertiary">
+            <LoadingSpinnerLabel text="Loading customers..." className="text-xs text-text-tertiary" />
+          </div>
         )}
         {error && (
           <p className="px-5 pb-2 text-xs text-red-500">{error}</p>

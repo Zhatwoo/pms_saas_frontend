@@ -57,14 +57,6 @@ export default function EmployeeLayout({
       : user.email.charAt(0).toUpperCase();
   }, [user]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-pawn-content text-emerald-900 font-medium">
-        Loading Employee Portal...
-      </div>
-    );
-  }
-
   if (!user) {
     return null;
   }
