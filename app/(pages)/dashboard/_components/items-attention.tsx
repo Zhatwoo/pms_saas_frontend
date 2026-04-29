@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PaginationFooter } from "@/components/shared/pagination";
+import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 export interface AttentionItem {
@@ -19,18 +19,17 @@ interface ItemsAttentionProps {
   items?: AttentionItem[];
 }
 
-const ITEMS_PER_PAGE = 5;
+const MAX_VISIBLE_ITEMS = 5;
 
 export function ItemsAttention({ items = [] }: ItemsAttentionProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [items]);
-
-  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const visibleItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const { user } = useAuth();
+  const visibleItems = items.slice(0, MAX_VISIBLE_ITEMS);
+  const expirationMonitoringHref =
+    user?.role === "admin"
+      ? "/admin/expiration-monitoring"
+      : user?.role === "employee"
+        ? "/employee/expiration-monitoring"
+        : "/expiration-monitoring";
 
   return (
     <div className="flex h-auto flex-col overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300 lg:h-[34rem]">
@@ -80,16 +79,14 @@ export function ItemsAttention({ items = [] }: ItemsAttentionProps) {
           </div>
         </div>
 
-      {items.length > ITEMS_PER_PAGE && (
-        <PaginationFooter
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={items.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          onPageChange={setCurrentPage}
-          className="mt-4 -mx-5"
-        />
-      )}
+        <div className="mt-4 flex justify-end border-t border-border-subtle pt-3">
+          <Link
+            href={expirationMonitoringHref}
+            className="text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-500"
+          >
+            View all
+          </Link>
+        </div>
       </div>
     </div>
   );

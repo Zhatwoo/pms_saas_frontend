@@ -1,7 +1,7 @@
 import { DataTable } from "@/components/shared/data-table";
 import type { Column } from "@/components/shared/data-table";
 import { useEffect, useState } from "react";
-import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+
 
 const columns: Column[] = [
   { key: "ticketNo", label: "Ticket No." },
@@ -105,26 +105,11 @@ export function ExpirationTable({
     }
   }, [highlightTicketNo]);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
-        <div className="flex items-center justify-center gap-3 text-text-tertiary">
-          <LoadingSpinnerLabel text="Loading expiration data..." className="text-sm font-medium text-text-tertiary" />
-        </div>
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="rounded-lg border border-border-main bg-surface p-8 text-center">
-        <p className="text-sm text-text-tertiary">No items found in this category</p>
-      </div>
-    );
-  }
-
   return (
     <DataTable
+      isLoading={isLoading}
+      loadingMessage="Loading expiration data..."
+      emptyMessage="No items found in this category"
       columns={columns}
       data={data}
       rowClassName={(row) => 

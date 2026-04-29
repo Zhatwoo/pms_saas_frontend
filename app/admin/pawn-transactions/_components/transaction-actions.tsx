@@ -79,7 +79,7 @@ export function TransactionActions({ activeFilter = "All", onFilterChange, onExp
             Export CSV
           </span>
         </ActionButton>
-        <ActionButton variant="primary" className="bg-emerald-700 border-pawn-gold text-pawn-gold" onClick={onPrintReport}>
+        <ActionButton variant="primary" className="bg-emerald-700 border-emerald-700 text-amber-400" onClick={onPrintReport}>
           <span className="flex items-center gap-1.5">
             {printerIcon}
             Print Report

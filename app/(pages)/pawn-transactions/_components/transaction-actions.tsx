@@ -70,10 +70,9 @@ interface TransactionActionsProps {
 export function TransactionActions({
   search,
   purposeFilter,
-  selectedBranchLabel,
   onSearchChange,
   onPurposeFilterChange,
-  dateFilter = "",
+  dateFilter,
   onDateFilterChange,
   onAddTransaction,
   onExportCSV,
@@ -142,7 +141,7 @@ export function TransactionActions({
           <ActionButton
             variant="primary"
             onClick={onPrintReport}
-            className="border-pawn-gold bg-emerald-700 text-pawn-gold"
+            className="border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400"
           >
             <span className="flex items-center gap-1.5">
               {printerIcon}

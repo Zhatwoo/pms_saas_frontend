@@ -19,9 +19,10 @@ import { RejectRequestModal } from "./_components/reject-request-modal";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
 import type { FinanceTransaction } from "./_components/transaction-table";
+import { AddSystemExpenseModal } from "./_components/add-system-expense-modal";
+import type { AddSystemExpenseData } from "./_components/add-system-expense-modal";
 import { FinanceQueueSection } from "@/components/shared/finance-queue-section";
 import {
-  FinanceLedgerTable,
   FinanceSummaryCards,
   LedgerTypeFilter,
 } from "@/components/shared/finance-ledger-table";
@@ -54,6 +55,7 @@ interface DashboardSummary {
       totalApproved: number;
       totalTransferred: number;
     };
+    systemExpenses?: number;
   };
   branchBalances: Array<{
     branchId: string;
@@ -106,6 +108,15 @@ function fmtCurrency(value: number) {
   })}`;
 }
 
+function fmtDate(value: string | null | undefined) {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 interface UserRecord {
   id?: string;
   authId?: string;
@@ -137,6 +148,7 @@ export default function BranchFinancePage() {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [selectedTransferRequest, setSelectedTransferRequest] = useState<FundRequestRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [systemExpenseModalOpen, setSystemExpenseModalOpen] = useState(false);
 
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [financeSummaries, setFinanceSummaries] = useState<BranchFinanceSummaryItem[]>([]);
@@ -162,6 +174,9 @@ export default function BranchFinancePage() {
     setError(null);
 
     const branchQuery = isAllBranches ? "" : `?branch=${selectedBranch.id}`;
+    const today = new Date().toISOString().split("T")[0];
+    const ledgerDateFromQuery = ledgerDateFrom || today;
+    const ledgerDateToQuery = ledgerDateTo || today;
 
     try {
       const [dashboardData, requestData, transactionResponse, summaryData, ledgerData, usersData] = await Promise.all([
@@ -169,7 +184,11 @@ export default function BranchFinancePage() {
         api.get<FundRequestRecord[]>(`/fund-requests${branchQuery}`),
         api.get<ApiTransaction[] | TransactionsResponse>(`/transactions${branchQuery ? branchQuery + "&" : "?"}range=all`),
         api.get<BranchFinanceSummaryItem[]>(`/branch-finance/summary${branchQuery}`),
-        api.get<{ entries: LedgerEntry[]; total: number }>(`/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=100`),
+        api.get<{ entries: LedgerEntry[]; total: number }>(
+          `/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=500&dateFrom=${encodeURIComponent(
+            ledgerDateFromQuery,
+          )}&dateTo=${encodeURIComponent(ledgerDateToQuery)}`,
+        ),
         api.get<UserRecord[]>("/users").catch(() => [] as UserRecord[]),
       ]);
 
@@ -257,7 +276,7 @@ export default function BranchFinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAllBranches, selectedBranch.id]);
+  }, [isAllBranches, ledgerDateFrom, ledgerDateTo, selectedBranch.id]);
 
   useEffect(() => {
     void loadFinanceData();
@@ -375,8 +394,59 @@ export default function BranchFinancePage() {
       cashIn += s.todayCashIn;
       cashOut += s.todayCashOut;
     }
+
+    // Include system-level expenses in the "Today" summary if viewing All Branches
+    if (isAllBranches) {
+      const today = new Date().toISOString().split("T")[0];
+      const systemEntriesToday = ledgerEntries.filter(
+        (e) => (!e.branchId || e.branchId === "null" || e.branchName?.includes("System")) && e.date === today
+      );
+      for (const e of systemEntriesToday) {
+        cashIn += e.cashIn || 0;
+        cashOut += e.cashOut || 0;
+      }
+    }
+
     return { cashIn, cashOut };
-  }, [financeSummaries, isAllBranches, selectedBranch.id]);
+  }, [financeSummaries, isAllBranches, selectedBranch.id, ledgerEntries]);
+
+  const printLedgerRows = useMemo(() => {
+    const rows = ledgerEntries
+      .filter((entry) => {
+        if (!isAllBranches && entry.branchId !== selectedBranch.id) return false;
+        if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) return false;
+        if (ledgerDateFrom && entry.date < ledgerDateFrom) return false;
+        if (ledgerDateTo && entry.date > ledgerDateTo) return false;
+        if (ledgerSearch) {
+          const q = ledgerSearch.toLowerCase();
+          const haystack = [
+            entry.description ?? "",
+            entry.itemName ?? "",
+            entry.reference ?? "",
+            entry.branchName ?? "",
+          ]
+            .join(" ")
+            .toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        const aKey = `${a.date}T${a.time ?? "00:00:00"}`;
+        const bKey = `${b.date}T${b.time ?? "00:00:00"}`;
+        return bKey.localeCompare(aKey);
+      });
+
+    return rows;
+  }, [
+    isAllBranches,
+    ledgerDateFrom,
+    ledgerDateTo,
+    ledgerEntries,
+    ledgerSearch,
+    ledgerTypeFilter,
+    selectedBranch.id,
+  ]);
 
   const handleRejectRequestClick = useCallback((id: string) => {
     const target = queues.pendingReview.find((request) => request.id === id) ?? null;
@@ -459,6 +529,28 @@ export default function BranchFinancePage() {
     [isSubmitting, loadFinanceData, selectedTransferRequest, showToast],
   );
 
+  const handleSystemExpenseSubmit = useCallback(
+    async (data: AddSystemExpenseData) => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        await api.post("/transactions", {
+          purpose: "Expense",
+          cash_out: data.amount,
+          details: `System Expense: ${data.category}${data.notes ? ` - ${data.notes}` : ""}`,
+        });
+        showToast("System expense recorded successfully.");
+        setSystemExpenseModalOpen(false);
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to record system expense.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isSubmitting, loadFinanceData, showToast],
+  );
+
   const handleHeaderTransfer = useCallback(() => {
     void loadFinanceData().finally(() => {
       setSelectedTransferRequest(null);
@@ -511,7 +603,9 @@ export default function BranchFinancePage() {
             selectedBranchId={selectedBranch.id}
             selectedBranchName={selectedBranch.name}
             balances={scopedBalances}
+            systemExpenses={dashboard?.summary?.systemExpenses ?? 0}
             onAddFunds={handleHeaderTransfer}
+            onAddSystemExpense={isAllBranches ? () => setSystemExpenseModalOpen(true) : undefined}
           />
 
           <div>
@@ -769,17 +863,159 @@ export default function BranchFinancePage() {
               )}
             </div>
 
-            <FinanceLedgerTable
-              entries={ledgerEntries}
-              isLoading={isLoading}
-              showBranchColumn={isAllBranches}
-              searchQuery={ledgerSearch}
-              typeFilter={ledgerTypeFilter}
-              dateFrom={ledgerDateFrom}
-              dateTo={ledgerDateTo}
-              branchName={isAllBranches ? null : selectedBranch.name}
-              branchCode={isAllBranches ? null : (financeSummaries[0]?.branchCode ?? selectedBranch.code ?? null)}
-            />
+            <div className="flex justify-end print:hidden mb-2">
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9" />
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                  <rect width="12" height="8" x="6" y="14" />
+                </svg>
+                Print Ledger
+              </button>
+            </div>
+
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                body * { visibility: hidden; }
+                #print-ledger-section, #print-ledger-section * { visibility: visible; }
+                #print-ledger-section { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+              }
+            `}} />
+
+            <div id="print-ledger-section" className="hidden print:block mb-8">
+              <h1 className="text-xl font-bold text-black border-b border-black pb-2 mb-4">
+                Branch Financial Ledger
+              </h1>
+              <div className="text-sm text-black space-y-1 mb-4">
+                {isAllBranches ? (
+                  <p><strong>Scope:</strong> All Branches</p>
+                ) : (
+                  <>
+                    <p><strong>Branch:</strong> {selectedBranch.name}</p>
+                    <p><strong>Branch Code:</strong> {financeSummaries[0]?.branchCode || selectedBranch.code || "N/A"}</p>
+                  </>
+                )}
+                <p><strong>Date Generated:</strong> {new Date().toLocaleString()}</p>
+                {ledgerDateFrom && <p><strong>From:</strong> {ledgerDateFrom}</p>}
+                {ledgerDateTo && <p><strong>To:</strong> {ledgerDateTo}</p>}
+              </div>
+
+              <table className="w-full text-left text-sm border-collapse text-black print:text-[11px]">
+                <thead>
+                  <tr className="bg-gray-100 border-y border-black">
+                    <th className="p-2 font-bold whitespace-nowrap">Date</th>
+                    <th className="p-2 font-bold whitespace-nowrap">Source</th>
+                    <th className="p-2 font-bold">Item Name</th>
+                    <th className="p-2 font-bold">Description</th>
+                    <th className="p-2 font-bold text-right whitespace-nowrap">Cash In</th>
+                    <th className="p-2 font-bold text-right whitespace-nowrap">Cash Out</th>
+                    <th className="p-2 font-bold">Ref No.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printLedgerRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                        No records found for the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    printLedgerRows.map((row) => (
+                      <tr key={row.id} className="border-b border-gray-300">
+                        <td className="p-2 whitespace-nowrap">{fmtDate(row.date)} {row.time || ""}</td>
+                        <td className="p-2 whitespace-nowrap">TXN</td>
+                        <td className="p-2 truncate max-w-[200px]">{row.itemName || "—"}</td>
+                        <td className="p-2 truncate max-w-[250px]">{row.description || "—"}</td>
+                        <td className="p-2 text-right font-mono">{row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
+                        <td className="p-2 text-right font-mono text-red-600">{row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
+                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{row.reference || "—"}</td>
+                      </tr>
+                    ))
+                  )}
+                  {printLedgerRows.length > 0 && (
+                    <tr className="border-b-2 border-black bg-gray-50 uppercase">
+                      <td colSpan={4} className="p-2 font-bold text-right">Total:</td>
+                      <td className="p-2 text-right font-bold font-mono">
+                        ₱{printLedgerRows.reduce((acc, r) => acc + (r.cashIn || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="p-2 text-right font-bold font-mono text-red-600">
+                        ₱{printLedgerRows.reduce((acc, r) => acc + (r.cashOut || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td></td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="print:hidden overflow-x-auto rounded-xl border border-border-main bg-surface">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead>
+                  <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
+                    <th className="px-3 py-3">Date</th>
+                    <th className="px-3 py-3">Source</th>
+                    <th className="px-3 py-3">Type / Status</th>
+                    <th className="px-3 py-3">Item Name</th>
+                    <th className="px-3 py-3">Description</th>
+                    <th className="px-3 py-3 text-right">Cash In</th>
+                    <th className="px-3 py-3 text-right">Cash Out</th>
+                    <th className="px-3 py-3">Reference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printLedgerRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-3 py-10 text-center text-text-tertiary">
+                        No records found for the selected filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    printLedgerRows.map((row) => (
+                      <tr key={row.id} className="border-b border-border-subtle transition-colors hover:bg-surface-secondary/50">
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-sm text-text-secondary">{fmtDate(row.date)}</span>
+                          {row.time ? <span className="ml-1.5 text-xs text-text-muted">{row.time}</span> : null}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-indigo-100 text-indigo-700">
+                            TXN
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-xs font-semibold text-text-secondary uppercase">{row.type.replaceAll("_", " ")}</span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="block max-w-[160px] truncate text-sm font-medium text-text-primary" title={row.itemName ?? ""}>
+                            {row.itemName || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="block max-w-[240px] truncate text-sm text-text-secondary" title={row.description}>
+                            {row.description || "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top text-right">
+                          <span className={`text-sm font-bold ${row.cashIn > 0 ? "text-emerald-600" : "text-text-muted"}`}>
+                            {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top text-right">
+                          <span className={`text-sm font-bold ${row.cashOut > 0 ? "text-red-600" : "text-text-muted"}`}>
+                            {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className="text-xs font-mono text-text-muted">{row.reference || "—"}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
           </div>
       ) : null}
@@ -813,6 +1049,13 @@ export default function BranchFinancePage() {
         submitLabel="Confirm and Send"
         lockedTargetBranchId={selectedTransferRequest?.branch?.id ?? undefined}
         lockedTargetBranchName={selectedTransferRequest?.branch?.name ?? undefined}
+      />
+
+      <AddSystemExpenseModal
+        isOpen={systemExpenseModalOpen}
+        onClose={() => setSystemExpenseModalOpen(false)}
+        onSubmit={handleSystemExpenseSubmit}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

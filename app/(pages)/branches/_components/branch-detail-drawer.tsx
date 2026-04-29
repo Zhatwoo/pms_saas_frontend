@@ -257,7 +257,7 @@ export function BranchDetailDrawer({
                         onClose();
                         router.push(`/branch-overview`);
                       }}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-3 py-2.5 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
+                      className="flex items-center justify-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-3 py-2.5 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />

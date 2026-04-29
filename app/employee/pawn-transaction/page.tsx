@@ -11,7 +11,8 @@ import { RenewModal } from "./_components/renew-modal";
 import { NewPawnModal } from "./_components/new-pawn-modal";
 import { RedeemModal } from "./_components/redeem-modal";
 import { BuyBackModal } from "./_components/buy-back-modal";
-import { SalesTransferModal } from "./_components/sales-transfer-modal";
+import { SellsTransferModal } from "./_components/sells-transfer-modal";
+import { ReserveLayawayModal } from "./_components/reserve-layaway-modal";
 import { MoaModal } from "./_components/moa-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
@@ -19,30 +20,22 @@ import { TransactionDetailsModal } from "@/components/shared/transaction-details
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
+import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
+import { formatDateToYMD } from "@/lib/time";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-type PurposeType =
-  | "Start"
-  | "End"
-  | "Buy Back"
-  | "Renew"
-  | "Reappraise"
-  | "Redeem"
-  | "Sold Item"
-  | "Pawn"
-  | "Fund Transfer"
-  | "Cash Transfer";
-
-type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back";
+// Use shared `PurposeType` and `FilterType` imported from components
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
-  "Sales / Transfer": "Sold Item",
+  "Sells / Transfer": "Sold Item",
   "Redeem": "Redeem",
   "Buy Back": "Buy Back",
+  "Reserve / Layaway": "Reserve / Layaway",
   "Pawn": "Pawn",
   "Start": "Start",
   "Buy Out": "Buy Out",
@@ -135,6 +128,9 @@ interface PawnedItemJoin {
   customer?: {
     full_name?: string | null;
     address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
     contact_number?: string | null;
     middle_name?: string | null;
   } | null;
@@ -154,7 +150,9 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const isPawnAction = transaction.purpose === "Pawn";
 
   const item = resolvePawnedItem(transaction.pawned_item);
-  const customer = item?.customer;
+  // Support both object and array response for customer
+  const customerRaw = item?.customer;
+  const customer = Array.isArray(customerRaw) ? customerRaw[0] : customerRaw;
 
   return {
     transactionNo: transaction.transaction_no,
@@ -178,6 +176,9 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     storage: String(transaction.storage_fee ?? 0),
     customerName: customer?.full_name ?? undefined,
     customerAddress: customer?.address ?? undefined,
+    customerBarangay: customer?.barangay ?? undefined,
+    customerCity: customer?.city ?? undefined,
+    customerRegion: customer?.region ?? undefined,
     customerPhone: customer?.contact_number ?? undefined,
     customerMiddleName: customer?.middle_name ?? undefined,
     idPresented: item?.id_presented ?? undefined,
@@ -204,6 +205,7 @@ export default function EmployeePawnTransactionsPage() {
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
+  const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
   const [reprintData, setReprintData] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
@@ -232,6 +234,7 @@ export default function EmployeePawnTransactionsPage() {
     open: false,
     onConfirm: () => { },
   });
+  const [isMainScannerOpen, setIsMainScannerOpen] = useState(false);
   const [viewRange, setViewRange] = useState<"daily" | "weekly" | "monthly" | "all">("daily");
   const [currentPage, setCurrentPage] = useState(1);
   const highlightedTransactionRef = useRef<string | null>(null);
@@ -456,11 +459,19 @@ export default function EmployeePawnTransactionsPage() {
     const middleName = tx.customerMiddleName || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
     const lastName = names.length > 1 ? names[names.length - 1] : "";
 
+    // Join address components for the MOA
+    const fullAddress = [
+      tx.customerAddress,
+      tx.customerBarangay,
+      tx.customerCity,
+      tx.customerRegion
+    ].filter(Boolean).join(", ");
+
     setReprintData({
       firstName,
       middleName,
       lastName,
-      address: tx.customerAddress || "",
+      address: fullAddress,
       contactNo: tx.customerPhone || "",
       unitCode: tx.unitCode,
       unitName: tx.unit,
@@ -490,7 +501,6 @@ export default function EmployeePawnTransactionsPage() {
   return (
     <div className="space-y-3 pb-4">
       <div>
-        <h1 className="text-2xl font-bold text-emerald-950 dark:text-white">Pawn Transactions</h1>
         <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
           Live transaction records across all branches with employee-style QR and print access.
         </p>
@@ -502,6 +512,10 @@ export default function EmployeePawnTransactionsPage() {
         onRenewClick={() => handleActionWithPassword(() => setIsRenewModalOpen(true))}
         onRedeem={() => handleActionWithPassword(() => setIsRedeemModalOpen(true))}
         onBuyBack={() => handleActionWithPassword(() => setIsBuyBackModalOpen(true))}
+        onReserveLayaway={() => handleActionWithPassword(() => {
+          setActiveFilter("Reserve / Layaway");
+          setIsReserveLayawayModalOpen(true);
+        })}
         onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
         onStartDay={async () => {
@@ -519,6 +533,7 @@ export default function EmployeePawnTransactionsPage() {
           setExpectedCash(String(currentStats.endingBalance || 0));
           setBalanceModal({ open: true, type: "ending" });
         }}
+        onQrScan={() => setIsMainScannerOpen(true)}
       />
 
       <TransactionStats data={currentStats} />
@@ -551,9 +566,10 @@ export default function EmployeePawnTransactionsPage() {
           >
             <option value="All">All Purposes</option>
             <option value="Renew">Renew</option>
-            <option value="Sales / Transfer">Sales / Transfer</option>
+            <option value="Sells / Transfer">Sells / Transfer</option>
             <option value="Redeem">Redeem</option>
             <option value="Buy Back">Buy Back</option>
+            <option value="Reserve / Layaway">Reserve / Layaway</option>
             <option value="Pawn">Pawn</option>
             <option value="Start">Start</option>
             <option value="Buy Out">Buy Out</option>
@@ -585,7 +601,7 @@ export default function EmployeePawnTransactionsPage() {
           </ActionButton>
           <ActionButton
             variant="primary"
-            className="border-pawn-gold bg-emerald-700 text-pawn-gold"
+            className="border-emerald-700 bg-emerald-700 text-amber-400"
             onClick={handlePrintReport}
           >
             <span className="flex items-center gap-1.5">
@@ -597,6 +613,7 @@ export default function EmployeePawnTransactionsPage() {
       </div>
 
       <TransactionTable
+        isLoading={isLoading}
         data={paginatedTransactions}
         onReprint={handleReprint}
         onViewDetails={setSelectedTransaction}
@@ -605,13 +622,15 @@ export default function EmployeePawnTransactionsPage() {
         onRangeChange={setViewRange}
       />
 
-      <PaginationFooter
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredTransactions.length}
-        itemsPerPage={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      <div className="mt-4">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </div>
 
       <TransactionDetailsModal
         isOpen={Boolean(selectedTransaction)}
@@ -689,10 +708,18 @@ export default function EmployeePawnTransactionsPage() {
         branchName={selectedBranch.name}
       />
 
-      <SalesTransferModal
+      <SellsTransferModal
         isOpen={isSalesTransferModalOpen}
         onClose={() => setIsSalesTransferModalOpen(false)}
         onSuccess={handleTransactionSuccess}
+        branchName={selectedBranch.name}
+      />
+
+      <ReserveLayawayModal
+        isOpen={isReserveLayawayModalOpen}
+        onClose={() => setIsReserveLayawayModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
+        branchId={selectedBranch.id}
         branchName={selectedBranch.name}
       />
 
@@ -703,8 +730,37 @@ export default function EmployeePawnTransactionsPage() {
           onConfirm={() => setIsMoaReprintOpen(false)}
           data={reprintData}
           isLoading={false}
+          autoPrint={true}
         />
       )}
+
+      <QrScanner
+        isOpen={isMainScannerOpen}
+        onClose={() => setIsMainScannerOpen(false)}
+        onScan={(text) => {
+          // 1. Try to extract from "Code: ID | ..." format
+          const codeMatch = text.match(/Code:\s*([^|]+)/i);
+          if (codeMatch) {
+            const id = codeMatch[1].trim();
+            setSearchQuery(id);
+            setCurrentPage(1);
+            return;
+          }
+
+          // 2. Try to extract from URL format: .../view-ticket/UNITCODE
+          const urlMatch = text.match(/\/view-ticket\/([^/?#\s]+)/i);
+          if (urlMatch) {
+            const id = urlMatch[1].trim();
+            setSearchQuery(id);
+            setCurrentPage(1);
+            return;
+          }
+
+          // 3. Fallback to whole text
+          setSearchQuery(text.trim());
+          setCurrentPage(1);
+        }}
+      />
     </div>
   );
 }

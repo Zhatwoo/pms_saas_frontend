@@ -7,11 +7,13 @@ import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
+import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { toast } from "sonner";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { AddItemModal } from "@/app/(pages)/inventory/items-for-sale/_components/add-item-modal";
 
-type SaleViewMode = "current" | "history";
+type SaleViewMode = "current" | "calendar" | "history";
 
 interface SaleItem {
   id: string;
@@ -21,7 +23,7 @@ interface SaleItem {
   branch: string;
   availableDate: string;
   price: number;
-  status: "Available" | "Sold";
+  status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
 }
 
@@ -36,23 +38,25 @@ const categoryOptions = [
 const saleStatusOptions = [
   { value: "all", label: "All" },
   { value: "Available", label: "Available" },
+  { value: "Reserved", label: "Reserved" },
   { value: "Sold", label: "Sold" },
 ];
 
-const statusVariant: Record<string, "green" | "orange"> = {
+const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
+  Reserved: "blue",
   Sold: "orange",
 };
 
 // ===============================================================
 // ITEMS FOR SALE PAGE (Under Inventory)
 // ===============================================================
-export default function ItemsForSalePage() {
+export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: boolean } = {}) {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
   const userRole = user?.role || "employee";
   const isSuperAdmin = userRole === "super_admin";
-  const canEdit = userRole === "super_admin" || userRole === "admin";
+  const canEdit = !viewOnly && (userRole === "super_admin" || userRole === "admin");
 
   const [saleViewMode, setSaleViewMode] = useState<SaleViewMode>("current");
   const [category, setCategory] = useState("all");
@@ -67,6 +71,8 @@ export default function ItemsForSalePage() {
   const [viewingItem, setViewingItem] = useState<SaleItem | null>(null);
   const [editingItem, setEditingItem] = useState<SaleItem | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -95,61 +101,64 @@ export default function ItemsForSalePage() {
       }
     }
     fetchData();
-  }, [category, status, searchQuery, saleViewMode, currentPage, selectedBranch.id, isAllBranches]);
+  }, [category, status, searchQuery, saleViewMode, currentPage, selectedBranch.id, isAllBranches, refreshTick]);
 
   return (
-    <div className="space-y-3 pb-4">
+    <div className={viewOnly ? "space-y-5 pb-4 text-text-primary" : "space-y-4 pb-4 text-text-primary"}>
       {/* ── Filter Bar ─────────────────────────────────────── */}
-      <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main transition-colors duration-300">
+      <div className={viewOnly ? "flex flex-wrap items-end justify-between gap-4 rounded-3xl border border-border-main bg-surface-secondary/85 p-5 shadow-lg shadow-black/20 backdrop-blur-sm" : "flex flex-wrap items-end justify-between gap-3 rounded-3xl border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm"}>
         <div className="flex flex-wrap items-end gap-3">
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Search</label>
+            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500"}>Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none focus:border-emerald-500 w-44"
+              className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500" : "h-9 w-44 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500"}
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-md border border-border-main overflow-hidden">
+          {canEdit && (
             <button
-              onClick={() => setSaleViewMode("current")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
-              }`}
+              onClick={() => setAddModalOpen(true)}
+              className={viewOnly
+                ? "h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
+                : "h-9 rounded-md bg-emerald-700 px-3 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-800"}
             >
-              Current Month
+              Add Item
             </button>
-            <button
-              onClick={() => setSaleViewMode("history")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"
-              }`}
-            >
-              History
-            </button>
+          )}
+          <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
+          <button onClick={() => setSaleViewMode("current")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+            Current
+          </button>
+          <button onClick={() => setSaleViewMode("calendar")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+            Calendar
+          </button>
+          <button onClick={() => setSaleViewMode("history")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+            History
+          </button>
           </div>
         </div>
       </div>
 
-      {/* ── Items For Sale Table ────────────────────────────── */}
-      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+      {saleViewMode === "calendar" ? (
+        <InventoryCalendar items={saleItems} />
+      ) : (
+      <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm"}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className={viewOnly ? "min-w-[1220px] w-full text-sm" : "w-full text-sm"}>
             <thead>
-              <tr className="bg-emerald-900 text-amber-400">
+              <tr className={viewOnly ? "bg-emerald-900 text-amber-400" : "bg-gradient-to-r from-emerald-950 to-emerald-900 text-white"}>
                 {["ID", "Item Name", "Category", "Branch", "Available Date", "Price", "Status", "Actions"].map((h) => (
                   <th
                     key={h}
-                    className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
-                      h === "Price" ? "text-right" : "text-left"
-                    }`}
+                    className={`whitespace-nowrap px-5 py-4 ${viewOnly ? "text-xs font-bold uppercase tracking-[0.16em]" : "text-[10px] font-bold uppercase tracking-wide"} ${h === "Price" ? "text-right" : h === "Actions" ? "text-center" : "text-left"}`}
                   >
                     {h}
                   </th>
@@ -160,9 +169,9 @@ export default function ItemsForSalePage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
-                      <div className="flex items-center justify-center">
-                        <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
-                      </div>
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                    </div>
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (
@@ -175,32 +184,33 @@ export default function ItemsForSalePage() {
                 saleItems.map((item, idx) => (
                   <tr
                     key={item.id || item.itemId}
-                    className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}
+                    onClick={viewOnly ? () => setViewingItem(item) : undefined}
+                    className={`border-t border-border-subtle transition-colors ${viewOnly ? "cursor-pointer bg-surface-secondary hover:bg-emerald-surface/60" : `${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} hover:bg-surface-hover`}`}
                   >
-                    <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.availableDate}</td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-text-primary">
+                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm font-bold text-emerald-700" : "whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800"}>{item.itemId}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-secondary" : "whitespace-nowrap px-3 py-2 text-xs text-text-secondary"}>{item.itemName}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.category}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.branch}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.availableDate}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-right font-semibold text-text-primary" : "whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-text-primary"}>
                       &#8369;{item.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2">
                       <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => setViewingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={(event) => { event.stopPropagation(); setViewingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100" : "rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100"}>
                           View
                         </button>
                         {canEdit && (
                           <>
-                            <button onClick={() => setEditingItem(item)} className="rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100">
+                            <button onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100" : "rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100"}>
                               Edit
                             </button>
                             <button
-                              onClick={() => setDeleteConfirmId(item.id)}
-                              className="rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"
+                              onClick={(event) => { event.stopPropagation(); setDeleteConfirmId(item.id); }}
+                              className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100" : "rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"}
                             >
                               Delete
                             </button>
@@ -215,15 +225,29 @@ export default function ItemsForSalePage() {
           </table>
         </div>
       </div>
+      )}
 
       {/* ── Pagination ─────────────────────────────────────── */}
-      <PaginationFooter
-        currentPage={currentPage}
-        totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-      />
+      {viewOnly ? (
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+        />
+      ) : (
+        <div className={viewOnly ? "mt-4 overflow-hidden rounded-2xl border border-border-main bg-surface-secondary/50 shadow-sm" : "mt-4 overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20"}>
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
+
 
       {/* ── View Modal ──────────────────────────────────────── */}
       {viewingItem && (
@@ -254,7 +278,7 @@ export default function ItemsForSalePage() {
       )}
 
       {/* ── Edit Modal ──────────────────────────────────────── */}
-      {editingItem && (
+      {!viewOnly && editingItem && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setEditingItem(null)}>
           <EditSaleItemForm item={editingItem} onClose={() => setEditingItem(null)} onSaved={(updated) => {
             setSaleItems((prev) => prev.map((i) => (i.id === updated.id ? { ...i, ...updated } : i)));
@@ -263,25 +287,38 @@ export default function ItemsForSalePage() {
         </div>
       )}
 
-      <ConfirmActionModal
-        isOpen={deleteConfirmId !== null}
-        title="Delete sale item?"
-        message="This cannot be undone. The item will be removed from inventory for sale."
-        confirmLabel="Yes, delete"
-        variant="danger"
-        onClose={() => setDeleteConfirmId(null)}
-        onConfirm={async () => {
-          if (!deleteConfirmId) return;
-          try {
-            await api.delete(`/inventory/for-sale/${deleteConfirmId}`);
-            setSaleItems((prev) => prev.filter((i) => i.id !== deleteConfirmId));
-            toast.success("Item deleted successfully.");
-          } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to delete item.");
-            throw err;
-          }
-        }}
-      />
+      {!viewOnly && (
+        <ConfirmActionModal
+          isOpen={deleteConfirmId !== null}
+          title="Delete sale item?"
+          message="This cannot be undone. The item will be removed from inventory for sale."
+          confirmLabel="Yes, delete"
+          variant="danger"
+          onClose={() => setDeleteConfirmId(null)}
+          onConfirm={async () => {
+            if (!deleteConfirmId) return;
+            try {
+              await api.delete(`/inventory/for-sale/${deleteConfirmId}`);
+              setSaleItems((prev) => prev.filter((i) => i.id !== deleteConfirmId));
+              toast.success("Item deleted successfully.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Failed to delete item.");
+              throw err;
+            }
+          }}
+        />
+      )}
+
+      {!viewOnly && (
+        <AddItemModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onSuccess={() => {
+            setCurrentPage(1);
+            setRefreshTick((tick) => tick + 1);
+          }}
+        />
+      )}
     </div>
   );
 }

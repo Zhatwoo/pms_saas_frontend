@@ -2,12 +2,17 @@ import { useEffect, useRef } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 export type PurposeType =
   | "Start"
+  | "End"
   | "Buy Back"
   | "Renew"
+  | "Reappraise"
+  | "Redeem"
   | "Sold Item"
+  | "Reserve / Layaway"
   | "Pawn"
   | "Fund Transfer"
   | "Cash Transfer"
@@ -31,6 +36,9 @@ export interface TransactionRow {
   storage: string;
   customerName?: string;
   customerAddress?: string;
+  customerBarangay?: string;
+  customerCity?: string;
+  customerRegion?: string;
   customerPhone?: string;
   customerMiddleName?: string;
   idPresented?: string;
@@ -71,13 +79,17 @@ const purposeVariant: Record<
   "blue" | "green" | "orange" | "purple" | "black"
 > = {
   Start: "black",
+  End: "black",
   "Buy Back": "blue",
   Renew: "green",
   "Sold Item": "orange",
+  "Reserve / Layaway": "orange",
   Pawn: "purple",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
   "Buy Out": "purple",
+  "Reappraise": "blue",
+  "Redeem": "green",
 };
 
 function isHighlightedPawn(value: string): boolean {
@@ -96,6 +108,7 @@ function formatMoney(value: string) {
 
 interface TransactionTableProps {
   data?: TransactionRow[];
+  isLoading?: boolean;
   onReprint?: (transactionNo: string) => void;
   onViewDetails?: (transaction: TransactionRow) => void;
   highlightedTransactionNo?: string | null;
@@ -105,6 +118,7 @@ interface TransactionTableProps {
 
 export function TransactionTable({
   data = [],
+  isLoading = false,
   onReprint,
   onViewDetails,
   highlightedTransactionNo,
@@ -171,13 +185,12 @@ export function TransactionTable({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
-                    col.align === "right"
+                  className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${col.align === "right"
                       ? "text-right"
                       : col.align === "center"
                         ? "text-center"
                         : "text-left"
-                  }`}
+                    }`}
                 >
                   {col.label}
                 </th>
@@ -185,11 +198,25 @@ export function TransactionTable({
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {isLoading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-4 text-center text-sm text-text-tertiary"
+                  className="py-12 text-center text-base font-medium text-text-tertiary"
+                >
+                  <div className="flex items-center justify-center">
+                    <LoadingSpinnerLabel
+                      text="Loading transactions..."
+                      className="text-base font-medium text-text-tertiary"
+                    />
+                  </div>
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="py-8 text-center text-sm text-text-tertiary"
                 >
                   No transactions found
                 </td>
@@ -203,16 +230,17 @@ export function TransactionTable({
                   <tr
                     key={row.transactionNo}
                     ref={isHighlightedRow ? highlightedRowRef : null}
-                    onClick={() => onViewDetails?.(row)}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button')) return;
+                      onViewDetails?.(row);
+                    }}
                     role="button"
                     tabIndex={0}
-                    className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${
-                      isHighlightedRow ? "transaction-highlight-active border-l-4 border-l-amber-500 bg-amber-50/80" : ""
-                    } ${
-                      isStartRow
+                    className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${isHighlightedRow ? "transaction-highlight-active border-l-4 border-l-amber-500 bg-amber-50/80" : ""
+                      } ${isStartRow
                         ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
                         : "bg-surface-secondary"
-                    }`}
+                      }`}
                   >
                     <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-secondary">
                       {row.transactionNo}
@@ -293,7 +321,7 @@ export function TransactionTable({
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        {row.purpose === "Pawn" ? (
+                        {row.purpose === "Pawn" || row.purpose === "Renew" ? (
                           <button
                             onClick={(event) => {
                               event.stopPropagation();

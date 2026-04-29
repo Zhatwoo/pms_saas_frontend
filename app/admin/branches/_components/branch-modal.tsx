@@ -246,7 +246,7 @@ export function BranchModal({
             </button>
             <button
               type="submit"
-              className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
+              className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
             >
               {mode === "create" ? "Create Branch" : "Save Changes"}
             </button>

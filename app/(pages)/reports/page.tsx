@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
-import { useAuth } from "@/contexts/auth-context";
-import { PeriodTabs } from "@/components/shared/period-tabs";
+import { DateFilterSelector } from "@/components/shared/date-filter-selector";
 import { ReportStats } from "./_components/report-stats";
 import { BranchSalesTable } from "./_components/branch-sales-table";
 import { SalesTrendChart } from "./_components/sales-trend-chart";
 import { DailyReportSection } from "./_components/daily-report-section";
-
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 const periods = ["Daily", "Weekly", "Monthly", "Yearly"];
 
 const downloadIcon = (
   <svg
-    width="14"
-    height="14"
+    width="16"
+    height="16"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -110,13 +109,13 @@ interface ReportData {
 
 export default function ReportsPage() {
   const [activePeriod, setActivePeriod] = useState("Daily");
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const { selectedBranch, isAllBranches } = useBranch();
-  const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
 
   useEffect(() => {
     async function fetchReport() {
@@ -126,6 +125,8 @@ export default function ReportsPage() {
         const params = new URLSearchParams();
         if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("period", activePeriod.toLowerCase());
+        if (startDate) params.set("startDate", startDate);
+        if (endDate) params.set("endDate", endDate);
         const data = await api.get<ReportData>(`/reports/system?${params}`);
         setReportData(data);
       } catch (err) {
@@ -138,13 +139,40 @@ export default function ReportsPage() {
       }
     }
     fetchReport();
-  }, [selectedBranch.id, isAllBranches, activePeriod]);
+  }, [selectedBranch.id, isAllBranches, activePeriod, startDate, endDate]);
 
-  const todayFormatted = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const getSelectionLabel = () => {
+    if (activePeriod.toLowerCase() === "daily" && startDate) {
+      return new Date(startDate).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+    if (startDate && endDate) {
+      const formatDateStr = (dateStr: string) => {
+        const [year, month, day] = dateStr.split("-");
+        const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      };
+
+      const startLabel = formatDateStr(startDate);
+      const endLabel = formatDateStr(endDate);
+      const endYear = endDate.split("-")[0];
+
+      // Check if it's a full month
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start.getDate() === 1 && end.getDate() >= 28 && start.getMonth() === end.getMonth()) {
+         return start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      }
+
+      return `${startLabel} - ${endLabel}, ${endYear}`;
+    }
+    return activePeriod;
+  };
+
+  const selectionLabel = getSelectionLabel();
 
   const handleDownloadPDF = async () => {
     if (!reportData) return;
@@ -216,7 +244,7 @@ export default function ReportsPage() {
             <div class="meta">
               <p><strong>Generated for:</strong> ${escapeHtml(branchLabel)}</p>
               <p><strong>Period:</strong> ${escapeHtml(activePeriod)}</p>
-              <p><strong>Date:</strong> ${escapeHtml(todayFormatted)}</p>
+              <p><strong>Date:</strong> ${escapeHtml(selectionLabel)}</p>
               <p><strong>Generated:</strong> ${escapeHtml(
                 new Date().toLocaleString("en-US", {
                   month: "long",
@@ -285,34 +313,31 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-5">
+    <div className="space-y-5">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <PeriodTabs
-            tabs={periods}
-            activeTab={activePeriod}
-            onTabChange={setActivePeriod}
+        <div className="flex items-center gap-3">
+          <DateFilterSelector
+            periods={periods}
+            activePeriod={activePeriod}
+            onPeriodChange={setActivePeriod}
+            onDateRangeChange={useCallback((start: string | null, end: string | null) => {
+              setStartDate(start);
+              setEndDate(end);
+            }, [])}
           />
-          <span className="text-sm text-zinc-500">{todayFormatted}</span>
         </div>
         <button 
           onClick={handleDownloadPDF}
-          className="flex items-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90">
+          className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90">
           {downloadIcon}
           Download PDF
         </button>
       </div>
 
       {isLoading && !hasLoadedData ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3 text-text-tertiary">
-            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <span className="text-sm font-medium">Loading reports...</span>
-          </div>
+        <div className="flex items-center justify-center rounded-xl border border-border-main bg-surface px-5 py-16 text-sm text-text-tertiary">
+          <LoadingSpinnerLabel text="Loading reports..." className="text-base font-medium text-text-tertiary" />
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -323,22 +348,23 @@ export default function ReportsPage() {
         </div>
       ) : (
         <>
-          <ReportStats data={reportData?.stats} showBranchStats={isSuperAdmin} />
+          <ReportStats data={reportData?.stats} showBranchStats={isAllBranches} />
 
           {/* Side by side: branch table + chart */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <BranchSalesTable data={reportData?.branchSales} date={todayFormatted} />
+            <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} />
             <div id="sales-trend-chart">
               <SalesTrendChart
                 data={reportData?.salesTrend}
                 summary={reportData?.trendSummary}
                 todaySales={reportData?.stats?.totalSalesToday ?? 0}
                 activePeriod={activePeriod}
+                selectionLabel={selectionLabel}
               />
             </div>
           </div>
 
-          <DailyReportSection data={reportData?.dailyReport} date={todayFormatted} />
+          <DailyReportSection data={reportData?.dailyReport} date={selectionLabel} />
         </>
       )}
     </div>

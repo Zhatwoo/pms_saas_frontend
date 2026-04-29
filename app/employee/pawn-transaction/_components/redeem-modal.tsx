@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo, useEffect, type ChangeEvent } from "react";
+import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
+import { formatDateToYMD } from "@/lib/time";
+import { QrScanner } from "@/components/shared/qr-scanner";
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
@@ -25,6 +27,9 @@ function Smartphone({ className }: { className?: string }) {
 }
 function Undo2({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 015.5 5.5v0a5.5 5.5 0 01-5.5 5.5H11"/></svg>);
+}
+function QrCode({ className }: { className?: string }) {
+  return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/></svg>);
 }
 
 interface RedeemModalProps {
@@ -60,7 +65,9 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
     processedBy: "",
     password: "",
   });
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+  const isProcessingRef = useRef(false);
   const [pawnedItems, setPawnedItems] = useState<PawnedSearchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -110,12 +117,32 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
     return () => clearTimeout(timeout);
   }, [isOpen, searchQuery]);
 
+  const handleQrScan = (text: string) => {
+    // 1. Try to extract from "Code: ID | ..." format
+    const codeMatch = text.match(/Code:\s*([^|]+)/i);
+    if (codeMatch) {
+      setSearchQuery(codeMatch[1].trim());
+      return;
+    }
+
+    // 2. Try to extract from URL format: .../view-ticket/UNITCODE
+    const urlMatch = text.match(/\/view-ticket\/([^/?#\s]+)/i);
+    if (urlMatch) {
+      setSearchQuery(urlMatch[1].trim());
+      return;
+    }
+
+    // 3. Fallback to whole text
+    setSearchQuery(text.trim());
+  };
+
   const interestCalc = useMemo(() => {
     if (!selectedItem) return { percentage: 0, interestAmount: 0, totalAmount: 0, daysPassed: 0 };
     return calculateGadgetInterest(Number(selectedItem.amount), selectedItem.purchasedDate);
   }, [selectedItem]);
 
   const handleConfirmRedeem = async () => {
+    if (isProcessingRef.current) return;
     if (!selectedItem) return;
     setError(null);
 
@@ -124,6 +151,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
       return;
     }
 
+    isProcessingRef.current = true;
     setIsConfirming(true);
     try {
       // 1. Verify Password
@@ -132,7 +160,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
       // 2. Process Redemption (Transaction)
       await api.post("/transactions", {
         purpose: "Redeem",
-        transaction_date: new Date().toISOString().split('T')[0],
+        transaction_date: formatDateToYMD(),
         branch_id: branchId,
         branch: branchName,
         cash_in: interestCalc.totalAmount,
@@ -158,6 +186,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
       toast.error(msg);
     } finally {
       setIsConfirming(false);
+      isProcessingRef.current = false;
     }
   };
 
@@ -215,6 +244,13 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-200 group-focus-within:text-emerald-500 transition-colors" />
+                <button
+                  onClick={() => setIsScannerOpen(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all active:scale-95 border border-emerald-100"
+                  title="Scan QR Code"
+                >
+                  <QrCode className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -432,6 +468,11 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
           </div>
         </div>
       </div>
+      <QrScanner 
+        isOpen={isScannerOpen} 
+        onScan={handleQrScan} 
+        onClose={() => setIsScannerOpen(false)} 
+      />
     </div>
   );
 }

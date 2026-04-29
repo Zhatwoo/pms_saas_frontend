@@ -42,11 +42,16 @@ function NavItemComponent({
   onToggle: () => void;
 }) {
   const hasSubItems = item.subItems && item.subItems.length > 0;
+  const isAllowedDuringRestriction = (href?: string) =>
+    Boolean(href && href.startsWith("/employee/inventory/pawned-items"));
 
   // Active state logic
   const isSelfActive =
     pathname === item.href || pathname.startsWith((item.href ?? "") + "/");
-  const effectivelyDisabled = disabled && item.href !== "/employee/dashboard";
+  const effectivelyDisabled =
+    Boolean(disabled) &&
+    !isAllowedDuringRestriction(item.href) &&
+    !(item.subItems?.some((sub) => isAllowedDuringRestriction(sub.href)) ?? false);
 
   const router = useRouter();
 
@@ -55,6 +60,9 @@ function NavItemComponent({
       <div className="space-y-1">
         <button
           onClick={() => {
+            if (effectivelyDisabled) {
+              return;
+            }
             if (!collapsed) {
               // If we're about to expand (isExpanded is currently false), navigate to first sub-item
               if (!isExpanded && item.subItems && item.subItems.length > 0) {
@@ -65,7 +73,7 @@ function NavItemComponent({
             }
           }}
           title={collapsed ? item.label : undefined}
-          disabled={disabled}
+          disabled={effectivelyDisabled}
           className={`flex w-full items-center justify-between overflow-hidden whitespace-nowrap rounded-lg px-4 py-3 text-base transition-colors ${
             collapsed ? "justify-center px-2" : ""
           } ${
@@ -116,19 +124,31 @@ function NavItemComponent({
                 const isSubActive =
                   pathname === sub.href ||
                   pathname.startsWith((sub.href ?? "") + "/");
+                const isSubDisabled = Boolean(disabled) && !isAllowedDuringRestriction(sub.href);
+
+                if (isSubDisabled) {
+                  return (
+                    <span
+                      key={`${item.href ?? item.label}-sub-${subIdx}-${sub.href ?? sub.label}`}
+                      aria-disabled="true"
+                      className="block rounded-lg px-4 py-2.5 text-sm font-medium text-white/20 cursor-not-allowed"
+                    >
+                      {sub.label}
+                    </span>
+                  );
+                }
+
                 return (
                   <Link
                     key={`${item.href ?? item.label}-sub-${subIdx}-${
                       sub.href ?? sub.label
                     }`}
-                    href={effectivelyDisabled ? "#" : (sub.href ?? "#")}
+                    href={sub.href ?? "#"}
                     onClick={() => onNavigate?.()}
                     className={`block rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                       isSubActive
                         ? "bg-pawn-gold text-zinc-900 shadow-sm"
-                        : effectivelyDisabled
-                          ? "text-white/20 cursor-not-allowed"
-                          : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
+                        : "text-white/60 hover:bg-pawn-sidebar-light hover:text-white"
                     }`}
                   >
                     {sub.label}
@@ -161,7 +181,13 @@ function NavItemComponent({
     </div>
   );
 
-  if (effectivelyDisabled) return content;
+  if (effectivelyDisabled) {
+    return (
+      <div aria-disabled="true" className="cursor-not-allowed">
+        {content}
+      </div>
+    );
+  }
 
   return (
     <Link href={item.href ?? "#"} onClick={() => onNavigate?.()}>
@@ -464,15 +490,16 @@ export function Sidebar({
         </button>
       </div>
 
-      <LogoutModal
-        isOpen={showLogoutConfirm}
-        onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={() => {
-          setShowLogoutConfirm(false);
-          onLogout?.();
-        }}
-      />
+
     </aside>
+    <LogoutModal
+      isOpen={showLogoutConfirm}
+      onClose={() => setShowLogoutConfirm(false)}
+      onConfirm={() => {
+        setShowLogoutConfirm(false);
+        onLogout?.();
+      }}
+    />
     </>
   );
 }

@@ -17,23 +17,44 @@ export function DailyBalanceConfirmation({
   onConfirm,
   onClose,
 }: DailyBalanceConfirmationProps) {
-  const [confirmedAmount, setConfirmedAmount] = useState(currentCash);
+  const [confirmedAmount, setConfirmedAmount] = useState("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setConfirmedAmount(currentCash);
+      setConfirmedAmount("0.00");
       setIsSubmitting(false);
     }
-  }, [isOpen, currentCash]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const formatCurrencyInput = (value: string) => {
+    // Remove all non-numeric characters
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "0.00";
+
+    // Convert to number and back to string with 2 decimal places
+    const amount = parseInt(digits, 10) / 100;
+    return amount.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setConfirmedAmount(formatted);
+  };
+
   const handleConfirm = async () => {
     if (isSubmitting) return;
+    const rawValue = confirmedAmount.replace(/,/g, "");
+    if (isNaN(parseFloat(rawValue))) return;
+
     setIsSubmitting(true);
     try {
-      await onConfirm(confirmedAmount);
+      await onConfirm(rawValue);
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +64,7 @@ export function DailyBalanceConfirmation({
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
       <div className="w-full max-w-md scale-in-center rounded-2xl bg-surface p-6 shadow-2xl border border-border-main">
         <div className="flex items-center gap-4 mb-6">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-full ${type === "starting" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-700 text-amber-400">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
@@ -57,7 +78,7 @@ export function DailyBalanceConfirmation({
         <div className="space-y-4">
           <div className="rounded-xl bg-surface-secondary p-4 border border-border-subtle">
             <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 block">Expected Amount</label>
-            <p className="text-2xl font-black text-text-primary">₱{parseFloat(currentCash).toLocaleString()}</p>
+            <p className="text-2xl font-black text-amber-400">₱{parseFloat(currentCash).toLocaleString()}</p>
           </div>
 
           <div className="space-y-2">
@@ -67,9 +88,9 @@ export function DailyBalanceConfirmation({
               <input
                 type="text"
                 value={confirmedAmount}
-                onChange={(e) => setConfirmedAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={handleInputChange}
                 disabled={isSubmitting}
-                className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
+                className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-amber-400 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
               />
             </div>
           </div>
@@ -91,7 +112,7 @@ export function DailyBalanceConfirmation({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !confirmedAmount}
             className={`flex-1 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
               type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
             }`}

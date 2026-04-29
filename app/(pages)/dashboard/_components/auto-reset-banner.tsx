@@ -59,7 +59,7 @@ export function AutoResetBanner() {
         </span>
       }
       rightContent={
-        <span className="font-mono text-sm font-bold text-orange-400">
+        <span className="font-mono text-base font-black text-amber-400">
           {formatCountdown(secondsLeft)}
         </span>
       }

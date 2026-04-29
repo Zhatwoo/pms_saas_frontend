@@ -89,6 +89,7 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
         value={allBranchSales != null ? formatPeso(allBranchSales) : data?.totalOverallSales || "₱ 0"}
         subtitle={hasBranchComparison ? `Branch total: ${formatPeso(branchSales)}` : undefined}
         icon={<div className="text-emerald-600">{salesIcon}</div>}
+        valueClassName="text-amber-400"
       />
     </div>
   );

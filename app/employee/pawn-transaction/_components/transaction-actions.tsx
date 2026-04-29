@@ -85,6 +85,23 @@ const cartIcon = (
   </svg>
 );
 
+const reserveIcon = (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 7h16" />
+    <path d="M6 7l1 14h10l1-14" />
+    <path d="M9 11h6" />
+  </svg>
+);
+
 const redeemIcon = (
   <svg
     width="13"
@@ -112,12 +129,41 @@ const plusIcon = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <line x1="12" y1="5" x2="12" y2="19" />
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
 
-export type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back" | "Pawn" | "Start" | "Buy Out" | "Sold Item";
+const qrIcon = (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 3h7v7H3z" />
+    <path d="M14 3h7v7h-7z" />
+    <path d="M3 14h7v7H3z" />
+    <path d="M14 14h3v3h-3z" />
+    <path d="M21 14v3h-3" />
+    <path d="M21 21h-3v-3" />
+  </svg>
+);
+
+export type FilterType =
+  | "All"
+  | "Renew"
+  | "Sells / Transfer"
+  | "Redeem"
+  | "Buy Back"
+  | "Reserve / Layaway"
+  | "Pawn"
+  | "Start"
+  | "Buy Out"
+  | "Sold Item";
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
@@ -127,9 +173,11 @@ interface TransactionActionsProps {
   onNewPawn?: () => void;
   onRedeem?: () => void;
   onBuyBack?: () => void;
+  onReserveLayaway?: () => void;
   onSalesTransfer?: () => void;
   onStartDay?: () => void;
   onEndDay?: () => void;
+  onQrScan?: () => void;
 }
 
 export function TransactionActions({
@@ -140,9 +188,11 @@ export function TransactionActions({
   onNewPawn,
   onRedeem,
   onBuyBack,
+  onReserveLayaway,
   onSalesTransfer,
   onStartDay,
   onEndDay,
+  onQrScan,
 }: TransactionActionsProps) {
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
@@ -153,11 +203,10 @@ export function TransactionActions({
               onFilterChange?.("Renew");
               onRenewClick?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 ${
-              activeFilter === "Renew"
+            className={`flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 ${activeFilter === "Renew"
                 ? "ring-2 ring-orange-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
-            }`}
+              }`}
           >
             {renewIcon}
             Renew
@@ -165,17 +214,16 @@ export function TransactionActions({
 
           <button
             onClick={() => {
-              onFilterChange?.("Sales / Transfer");
+              onFilterChange?.("Sells / Transfer");
               onSalesTransfer?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-purple-700 ${
-              activeFilter === "Sales / Transfer"
+            className={`flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-purple-700 ${activeFilter === "Sells / Transfer"
                 ? "ring-2 ring-purple-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
-            }`}
+              }`}
           >
             {salesIcon}
-            Sales / Transfer
+            Sells / Transfer
           </button>
 
           <button
@@ -183,11 +231,10 @@ export function TransactionActions({
               onFilterChange?.("Redeem");
               onRedeem?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 ${
-              activeFilter === "Redeem"
+            className={`flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 ${activeFilter === "Redeem"
                 ? "ring-2 ring-sky-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
-            }`}
+              }`}
           >
             {redeemIcon}
             Redeem
@@ -198,14 +245,27 @@ export function TransactionActions({
               onFilterChange?.("Buy Back");
               onBuyBack?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 ${
-              activeFilter === "Buy Back"
+            className={`flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 ${activeFilter === "Buy Back"
                 ? "ring-2 ring-indigo-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
-            }`}
+              }`}
           >
             {cartIcon}
             Buy Back
+          </button>
+
+          <button
+            onClick={() => {
+              onFilterChange?.("Reserve / Layaway");
+              onReserveLayaway?.();
+            }}
+            className={`flex items-center gap-1.5 rounded-lg bg-pawn-gold px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm transition hover:opacity-90 ${activeFilter === "Reserve / Layaway"
+                ? "ring-2 ring-pawn-gold/40 ring-offset-1 ring-offset-surface"
+                : "opacity-90 hover:opacity-100"
+              }`}
+          >
+            {reserveIcon}
+            Reserve / Layaway
           </button>
         </div>
 
@@ -229,6 +289,14 @@ export function TransactionActions({
               className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
             >
               End Day
+            </button>
+            <button
+              onClick={onQrScan}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-950 px-4 py-2 text-xs font-bold text-emerald-400 shadow-sm border border-emerald-400/20 transition hover:bg-emerald-900"
+              title="Scan QR Code"
+            >
+              {qrIcon}
+              Scan QR
             </button>
           </div>
 

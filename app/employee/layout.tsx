@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
@@ -19,6 +19,7 @@ export default function EmployeeLayout({
   const { selectedBranch } = useBranch();
   const { isComplete: isWorkflowComplete } = useOpeningChecklist();
   const router = useRouter();
+  const pathname = usePathname();
 
   const isLoading = isAuthLoading;
 
@@ -42,6 +43,20 @@ export default function EmployeeLayout({
       router.replace(getDefaultRouteForRole(user.role));
     }
   }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
+
+  useEffect(() => {
+    if (isLoading || !user || user.role !== "employee") {
+      return;
+    }
+
+    if (
+      !isWorkflowComplete &&
+      pathname &&
+      !pathname.startsWith("/employee/inventory/pawned-items")
+    ) {
+      router.replace("/employee/inventory/pawned-items");
+    }
+  }, [isLoading, isWorkflowComplete, pathname, router, user]);
 
   const navGroups = useMemo(() => getNavForRole("employee"), []);
 

@@ -148,12 +148,19 @@ export default function AdminBranchFinancePage() {
   const loadFinanceData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const today = new Date().toISOString().split("T")[0];
+    const ledgerDateFromQuery = ledgerDateFrom || today;
+    const ledgerDateToQuery = ledgerDateTo || today;
     try {
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
         api.get<AdminDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
         api.get<BranchFinanceSummaryApi[]>("/branch-finance/summary"),
-        api.get<{ entries: LedgerEntry[]; total: number }>("/branch-finance/ledger?limit=100"),
+        api.get<{ entries: LedgerEntry[]; total: number }>(
+          `/branch-finance/ledger?limit=500&dateFrom=${encodeURIComponent(
+            ledgerDateFromQuery,
+          )}&dateTo=${encodeURIComponent(ledgerDateToQuery)}`,
+        ),
       ]);
       setDashboard(dashboardData);
       setRequests(requestData);
@@ -164,7 +171,7 @@ export default function AdminBranchFinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [ledgerDateFrom, ledgerDateTo]);
 
   useEffect(() => {
     void loadFinanceData();
@@ -347,17 +354,9 @@ export default function AdminBranchFinancePage() {
 
   const finance = dashboard?.branchFinance;
   const resolvedCurrentBalance = useMemo(() => {
-    const current = finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
-    if (current !== 0) {
-      return current;
-    }
-
-    if (!finance) {
-      return current;
-    }
-
-    return Number((finance.startingBalance + finance.totalAdded - finance.totalTransferred).toFixed(2));
-  }, [dashboard?.currentBalance, finance]);
+    if (branchSummary) return branchSummary.currentBalance;
+    return finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
+  }, [branchSummary, dashboard?.currentBalance, finance?.currentBalance]);
 
   return (
     <div className="space-y-6">
@@ -396,11 +395,11 @@ export default function AdminBranchFinancePage() {
       ) : null}
 
       {!dashboard && isLoading ? (
-        <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
+        <div className="flex items-center justify-center rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
           <LoadingSpinnerLabel text="Loading branch finance data..." className="text-sm text-text-tertiary" />
         </div>
       ) : dashboard ? (
-        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
+        <div className="space-y-6 transition-opacity duration-200">
           <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
               <div>
@@ -590,7 +589,7 @@ export default function AdminBranchFinancePage() {
             <div className="flex justify-end print:hidden mb-2">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-lg border border-emerald-600 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50"
+                className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800 dark:hover:bg-emerald-800"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />

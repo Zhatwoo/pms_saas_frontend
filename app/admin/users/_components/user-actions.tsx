@@ -128,14 +128,14 @@ export function UserActions({
 				</div>
 
 				<div className="flex items-center gap-2 border-t border-border-main pt-4 xl:border-none xl:pt-0">
-					<ActionButton variant="outline" className="flex-1 xl:flex-none" onClick={onExportUsers}>
+					<ActionButton variant="outline" className="flex-1 xl:flex-none border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-white" onClick={onExportUsers}>
 						<span className="flex items-center justify-center gap-1.5">
 							{exportIcon}
 							Export Users
 						</span>
 					</ActionButton>
 					{canCreateUser && (
-						<ActionButton variant="primary" onClick={onCreateUser} className="flex-1 xl:flex-none">
+							<ActionButton variant="primary" onClick={onCreateUser} className="flex-1 xl:flex-none">
 							<span className="flex items-center justify-center gap-1.5">
 								{plusIcon}
 								Create User

@@ -54,7 +54,7 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
                 border: "1px solid #e4e4e7",
                 fontSize: "12px",
               }}
-              formatter={(value) => [formatPeso(value), "Revenue"]}
+              formatter={(value: any) => [formatPeso(value), "Revenue"]}
             />
             <Line
               type="monotone"

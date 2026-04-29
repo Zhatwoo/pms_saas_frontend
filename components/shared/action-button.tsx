@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 const variants = {
-  primary: "bg-pawn-sidebar text-pawn-gold border-emerald-700",
+  primary: "bg-pawn-sidebar text-amber-400 border-transparent",
   outline: "bg-surface text-text-primary border-border-main",
   danger: "bg-red-50 text-red-600 border-red-300",
   renew: "bg-yellow-100 text-orange-600 border-orange-600",

@@ -10,7 +10,6 @@ import { UserStats } from "./_components/user-stats";
 import { UserTable } from "./_components/user-table";
 import { UserDetailDrawer } from "./_components/user-detail-drawer";
 import { UpdateUserModal } from "./_components/update-user-modal";
-import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
@@ -322,12 +321,8 @@ export default function AdminUserManagementPage() {
         showSuperAdminRoleTab={false}
       />
 
-      {isLoading ? (
-        <div className="rounded-lg border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary">
-          <LoadingSpinnerLabel text="Loading users..." className="justify-center text-sm text-text-tertiary" />
-        </div>
-      ) : (
         <UserTable
+          isLoading={isLoading}
           users={filteredUsers}
           totalUsers={users.length}
           canDeleteUser={false}
@@ -346,7 +341,6 @@ export default function AdminUserManagementPage() {
             toast.error("Admin cannot reject user accounts.");
           }}
         />
-      )}
 
       <UserDetailDrawer
         user={selectedUser}

@@ -267,7 +267,7 @@ export function BranchModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
+              className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
             >
               {isSubmitting
                 ? "Saving..."

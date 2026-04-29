@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, type ChangeEvent } from "react";
+import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 
-interface SalesTransferModalProps {
+interface SellsTransferModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
@@ -25,17 +26,21 @@ interface InventoryItem {
   srp: string;
 }
 
-export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: SalesTransferModalProps) {
+export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: SellsTransferModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [branches, setBranches] = useState<{ id: string; branch_name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
     middleName: "",
     lastName: "",
-    address1: "",
-    address2: "",
+    address: "",
+    barangay: "",
+    city: "",
+    region: "",
+    targetBranchId: "",
     contactNo: "",
     priceSold: "",
     sellTransfer: "Sales",
@@ -47,6 +52,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
   const { user } = useAuth();
   const { selectedBranch } = useBranch();
   const [isConfirming, setIsConfirming] = useState(false);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -75,7 +81,17 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
       }
     };
 
+    const fetchBranches = async () => {
+      try {
+        const response = await api.get<{ id: string; branch_name: string }[]>("/branches");
+        setBranches(Array.isArray(response) ? response : []);
+      } catch (err) {
+        console.error("Failed to fetch branches:", err);
+      }
+    };
+
     const timeout = setTimeout(fetchItems, 300);
+    fetchBranches();
     return () => clearTimeout(timeout);
   }, [isOpen, searchQuery, selectedBranch]);
 
@@ -87,36 +103,66 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
 
   const isFormValid = Boolean(
     selectedItem &&
-    form.firstName &&
-    form.lastName &&
-    form.address1 &&
-    form.address2 &&
-    form.contactNo &&
-    form.priceSold &&
-    form.password
+    form.password &&
+    (form.sellTransfer === "Sales" 
+      ? (form.firstName && form.lastName && form.address && form.barangay && form.city && form.region && form.contactNo && form.priceSold)
+      : (form.targetBranchId)
+    )
   );
 
   const handleConfirmAction = async () => {
+    if (isProcessingRef.current) return;
     if (!selectedItem || !isFormValid) return;
     try {
+      isProcessingRef.current = true;
       setIsConfirming(true);
       
       // Verify Password
       await api.post("/auth/verify-password", { password: form.password });
+ 
+      if (form.sellTransfer === "Sales") {
+        // 1. Create/Ensure Customer in Customer Management
+        console.log("Creating customer record for buyer...");
+        await api.post("/customers", {
+          full_name: `${form.firstName} ${form.middleName ? form.middleName + ' ' : ''}${form.lastName}`,
+          address: form.address,
+          barangay: form.barangay,
+          city: form.city,
+          region: form.region,
+          contact_number: form.contactNo,
+          branch_id: selectedBranch?.id !== "__all__" ? selectedBranch?.id : undefined
+        });
 
-      // Create Transaction
-      const purpose = form.sellTransfer === "Sales" ? "Sold Item" : "Sales / Transfer";
-      const detailsStr = `Customer: ${form.firstName} ${form.lastName} | Address: ${form.address1}, ${form.address2} | Contact: ${form.contactNo} | Included: ${form.itemIncluded} | Processed by: ${user?.fullName || 'Admin'}`;
-      
-      await api.post("/transactions", {
-        purpose: purpose,
-        cash_in: Number(form.priceSold || 0),
-        cash_out: 0,
-        unit: selectedItem.unit,
-        unit_code: selectedItem.unitId,
-        details: detailsStr,
-        branch: branchName
-      });
+        // 2. Mark as Sold (Backend handles transaction creation for Sold Item)
+        await api.post(`/inventory/for-sale/${selectedItem.id}/mark-sold`, {
+          sold_price: Number(form.priceSold || 0),
+          branch_id: selectedBranch?.id
+        });
+
+        toast.success("Item marked as sold successfully!");
+      } else {
+        // TRANSFER LOGIC
+        const targetBranch = branches.find(b => b.id === form.targetBranchId);
+        
+        // 1. Update Branch in Inventory
+        await api.put(`/inventory/for-sale/${selectedItem.id}`, {
+          branch_id: form.targetBranchId,
+          branch: targetBranch?.branch_name
+        });
+
+        // 2. Create Transaction Log for Transfer
+        await api.post("/transactions", {
+          purpose: "Transfer Item",
+          cash_in: 0,
+          cash_out: 0,
+          unit: selectedItem.unit,
+          unit_code: selectedItem.unitId,
+          details: `Item transferred from ${branchName} to ${targetBranch?.branch_name || 'Other Branch'} | Included: ${form.itemIncluded} | Processed by: ${user?.fullName || 'Admin'}`,
+          branch: branchName
+        });
+
+        toast.success(`Item transferred to ${targetBranch?.branch_name || 'target branch'} successfully!`);
+      }
 
       if (onSuccess) onSuccess();
       onClose();
@@ -126,6 +172,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
       toast.error(error?.message || "Failed to process Sales/Transfer transaction.");
     } finally {
       setIsConfirming(false);
+      isProcessingRef.current = false;
     }
   };
 
@@ -152,7 +199,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                   {branchName}
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
-                  Sales / Transfer
+                  Sells / Transfer
                 </h1>
               </div>
             </div>
@@ -160,7 +207,7 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
             <button 
               onClick={onClose} 
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
-              aria-label="Close Sales Transfer modal"
+              aria-label="Close Sells Transfer modal"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
@@ -280,7 +327,33 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                        <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">SRP:</span>
                        <span className="text-lg font-black text-emerald-950 dark:text-white">₱ {Number(selectedItem?.srp || 0).toLocaleString()}</span>
                     </div>
-                    <DetailInput label="Price Sold" name="priceSold" value={form.priceSold} onChange={handleChange} type="number" prefix="₱" highlight />
+                    {form.sellTransfer === "Sales" ? (
+                      <DetailInput label="Price Sold" name="priceSold" value={form.priceSold} onChange={handleChange} type="number" prefix="₱" highlight />
+                    ) : (
+                      <div className="flex items-center justify-between gap-4 group">
+                        <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">To Branch:</span>
+                        <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle" />
+                        <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
+                          <select 
+                            name="targetBranchId"
+                            value={form.targetBranchId}
+                            onChange={handleChange}
+                            className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
+                          >
+                            <option value="">— Select Branch —</option>
+                            {branches
+                              .filter(b => b.id !== selectedBranch?.id)
+                              .map(b => (
+                                <option key={b.id} value={b.id}>{b.branch_name}</option>
+                              ))
+                            }
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                </div>
 
@@ -291,46 +364,80 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                      <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{selectedItem?.unitId || "---"}</p>
                   </div>
                   <div className="pt-8 text-right border-t border-white/10 mt-8">
-                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Total Transaction Value</p>
-                     <p className="text-4xl font-black tracking-tighter">₱ {Number(form.priceSold || 0).toLocaleString()}</p>
+                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">
+                       {form.sellTransfer === "Sales" ? "Total Transaction Value" : "Transfer Value (Market)"}
+                     </p>
+                     <p className="text-4xl font-black tracking-tighter">
+                       ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
+                     </p>
                   </div>
                </div>
             </div>
           </div>
 
-          {/* Right Side: Buyer's Information */}
+           {/* Right Side: Information Panel */}
           <div className="flex-1 p-8 overflow-y-auto">
-            <div className="space-y-8">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            {form.sellTransfer === "Sales" ? (
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-emerald-950 dark:text-white uppercase tracking-tight">Buyer's Information</h3>
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Please fill in current details</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-black text-emerald-950 dark:text-white uppercase tracking-tight">Buyer's Information</h3>
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Please fill in current details</p>
+                </div>
+
+                <div className="grid gap-6">
+                  <div className="grid grid-cols-3 gap-3">
+                    <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
+                    <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
+                    <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
                   </div>
+
+                  <PhilippineAddressFields
+                    value={{
+                      address: form.address,
+                      barangay: form.barangay,
+                      city: form.city,
+                      region: form.region,
+                    }}
+                    onFieldChange={(field, val) => setForm(prev => ({ ...prev, [field]: val }))}
+                  />
+
+                  <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
                 </div>
               </div>
-
-              <div className="grid gap-6">
-                <div className="grid grid-cols-3 gap-3">
-                  <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
-                  <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
-                  <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
                 </div>
-
-                <div className="space-y-3">
-                   <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Current Address</p>
-                   <div className="grid gap-3">
-                      <Input label="" placeholder="Block / Lot / Street / Brgy" name="address1" value={form.address1} onChange={handleChange} />
-                      <Input label="" placeholder="Municipality / Province / City" name="address2" value={form.address2} onChange={handleChange} />
+                <div className="space-y-2 max-w-sm">
+                   <h3 className="text-2xl font-black text-emerald-950 dark:text-white uppercase tracking-tight">Internal Transfer</h3>
+                   <p className="text-sm font-medium text-zinc-500 leading-relaxed">
+                     Moving an item between branches does not record any cash movement. 
+                     The item will be deducted from <strong>{branchName}</strong> and added to the target branch inventory.
+                   </p>
+                </div>
+                <div className="w-full p-6 rounded-2xl border-2 border-dashed border-emerald-100 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary text-left space-y-4">
+                   <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Movement Summary</p>
+                   <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-zinc-400 uppercase">From:</span>
+                      <span className="text-xs font-black text-emerald-950 dark:text-white">{branchName}</span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-zinc-400 uppercase">To:</span>
+                      <span className="text-xs font-black text-emerald-600">
+                        {branches.find(b => b.id === form.targetBranchId)?.branch_name || "Select Destination..."}
+                      </span>
                    </div>
                 </div>
-
-                <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -353,8 +460,12 @@ export function SalesTransferModal({ isOpen, onClose, branchName, onSuccess }: S
 
           <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
              <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">Final Amount</p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">₱ {Number(form.priceSold || 0).toLocaleString()}</p>
+                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+                  {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
+                </p>
+                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">
+                  ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
+                </p>
              </div>
               <button 
               disabled={!isFormValid || isConfirming}

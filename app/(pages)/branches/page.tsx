@@ -4,8 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
-import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
-import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
+import { getTokenFromCookie, getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { toast } from "sonner";
 import { BranchStats } from "./_components/branch-stats";
 import { BranchFilters } from "./_components/branch-filters";
@@ -271,17 +270,8 @@ export default function BranchesPage() {
 
   const nextBranchCode = useMemo(() => getNextBranchCode(branches), [branches]);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border border-border-main bg-surface px-4 py-8 text-center text-sm text-text-secondary">
-        <LoadingSpinnerLabel text="Loading branches..." className="justify-center text-sm text-text-secondary" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-5">
-
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -293,7 +283,7 @@ export default function BranchesPage() {
         {canCreateBranch && (
           <button
             onClick={handleCreateBranch}
-            className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
           >
             <svg
               width="14"
@@ -364,6 +354,7 @@ export default function BranchesPage() {
 
       {/* Table */}
       <BranchTable
+        isLoading={isLoading}
         branches={branchScopedData}
         searchQuery={searchQuery}
         statusFilter={statusFilter}

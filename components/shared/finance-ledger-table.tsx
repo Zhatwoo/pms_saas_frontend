@@ -26,7 +26,7 @@ export interface LedgerEntry {
   itemName: string | null;
   cashIn: number;
   cashOut: number;
-  branchId: string;
+  branchId: string | null;
   branchName: string | null;
   reference: string | null;
 }
@@ -153,30 +153,124 @@ export function FinanceLedgerTable({
     );
   }
 
-  return (
-    <div className="space-y-3 relative">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #print-ledger-section, #print-ledger-section * {
-            visibility: visible;
-          }
-          #print-ledger-section {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            display: block !important;
-          }
-        }
-      `}} />
+  const handlePrint = () => {
+    const operationalEntries = filtered.filter(e => e.type !== "start" && e.type !== "end");
+    const rawCashIn = operationalEntries.reduce((sum, e) => sum + (e.cashIn || 0), 0);
+    const rawCashOut = operationalEntries.reduce((sum, e) => sum + (e.cashOut || 0), 0);
+    const netBalance = rawCashIn - rawCashOut;
 
-      <div className="flex justify-end print:hidden">
+    const totalCashIn = fmt(filtered.reduce((sum, e) => sum + (e.cashIn || 0), 0));
+    const totalCashOut = fmt(filtered.reduce((sum, e) => sum + (e.cashOut || 0), 0));
+    const formattedNet = fmt(Math.abs(netBalance));
+    const netLabel = netBalance >= 0 ? "TOTAL INCOME / NET PROFIT " : "TOTAL LOSS ";
+    const netColor = netBalance >= 0 ? "#059669" : "#b91c1c";
+
+    const colCount = showBranchColumn ? 8 : 7;
+
+    const rows = filtered.map((e) => `
+      <tr>
+        <td>${fmtDate(e.date)} ${e.time || ""}</td>
+        ${showBranchColumn ? `<td>${e.branchName || "—"}</td>` : ""}
+        <td>${(TYPE_CONFIG[e.type] || TYPE_CONFIG.other).label}</td>
+        <td>${e.itemName || "—"}</td>
+        <td>${e.description || "—"}</td>
+        <td style="text-align:right">${e.cashIn > 0 ? fmt(e.cashIn) : "—"}</td>
+        <td style="text-align:right; color:#b91c1c">${e.cashOut > 0 ? fmt(e.cashOut) : "—"}</td>
+        <td style="font-size:10px">${e.reference || "—"}</td>
+      </tr>
+    `).join("");
+
+    const branchMeta = showBranchColumn
+      ? `<p><strong>Scope:</strong> All Branches</p>`
+      : `<p><strong>Branch:</strong> ${branchName || entries[0]?.branchName || "Unknown"}</p>
+         <p><strong>Branch Code:</strong> ${branchCode || "N/A"}</p>`;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Financial Ledger Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 20px; }
+    h1 { font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+    .meta { margin-bottom: 16px; font-size: 12px; line-height: 1.8; }
+    .meta p { margin: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { background: #f3f4f6; font-weight: bold; padding: 6px 8px; border: 1px solid #ccc; text-align: left; white-space: nowrap; }
+    td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
+    tr:nth-child(even) { background: #f9fafb; }
+    .total-row { background: #f3f4f6 !important; font-weight: bold; border-top: 2px solid #000; }
+    .net-row { font-size: 13px; font-weight: bold; border-top: 2px solid #000; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 16px; align-items: flex-start; }
+    .logo { font-size: 16px; font-weight: bold; }
+    .subtitle { font-size: 11px; color: #555; }
+    @media print { @page { margin: 10mm; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="logo">Pawnshop Management System</div>
+      <div class="subtitle">Financial Ledger Report</div>
+    </div>
+    <div style="text-align:right; font-size:11px; color:#555">
+      <div>Printed: ${new Date().toLocaleString()}</div>
+      ${dateFrom ? `<div>From: ${dateFrom}</div>` : ""}
+      ${dateTo ? `<div>To: ${dateTo}</div>` : ""}
+    </div>
+  </div>
+  <div class="meta">
+    ${branchMeta}
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        ${showBranchColumn ? "<th>Branch</th>" : ""}
+        <th>Type</th>
+        <th>Item Name</th>
+        <th>Description</th>
+        <th style="text-align:right">Cash In</th>
+        <th style="text-align:right">Cash Out</th>
+        <th>Ref No.</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows || `<tr><td colspan="${colCount}" style="text-align:center;padding:12px;font-style:italic">No transactions found.</td></tr>`}
+      ${filtered.length > 0 ? `
+      <tr class="total-row">
+        <td colspan="${colCount - 2}" style="text-align:right">TOTAL</td>
+        <td style="text-align:right">${totalCashIn}</td>
+        <td style="text-align:right; color:#b91c1c">${totalCashOut}</td>
+        <td></td>
+      </tr>
+      <tr class="net-row" style="color: ${netColor}">
+        <td colspan="${colCount - 2}" style="text-align:right; padding: 10px 8px;">${netLabel}</td>
+        <td colspan="2" style="text-align:right; padding: 10px 8px;">${formattedNet}</td>
+        <td></td>
+      </tr>` : ""}
+    </tbody>
+  </table>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => {
+      win.print();
+      win.close();
+    }, 500);
+  };
+
+  return (
+    <div id="print-ledger-root" className="space-y-3 relative">
+      <div className="flex justify-end">
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20"
+          className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800 dark:hover:bg-emerald-800"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 6 2 18 2 18 9" />
@@ -185,72 +279,6 @@ export function FinanceLedgerTable({
           </svg>
           Print Ledger
         </button>
-      </div>
-
-      <div id="print-ledger-section" className="hidden print:block mb-8">
-        <h1 className="text-xl font-bold text-black border-b border-black pb-2 mb-4">
-          Financial Ledger Report
-        </h1>
-        <div className="mb-4 text-sm text-black space-y-1">
-          {showBranchColumn ? (
-            <p><strong>Scope:</strong> All Branches</p>
-          ) : (
-            <>
-              <p><strong>Branch:</strong> {branchName || entries[0]?.branchName || "Unknown"}</p>
-              <p><strong>Branch Code:</strong> {branchCode || "N/A"}</p>
-            </>
-          )}
-          <p><strong>Date Generated:</strong> {new Date().toLocaleString()}</p>
-          {dateFrom && <p><strong>From:</strong> {dateFrom}</p>}
-          {dateTo && <p><strong>To:</strong> {dateTo}</p>}
-        </div>
-        <table className="w-full text-left text-sm border-collapse text-black print:text-[11px]">
-          <thead>
-            <tr className="bg-gray-100 border-y border-black">
-              <th className="p-2 font-bold whitespace-nowrap">Date</th>
-              {showBranchColumn && <th className="p-2 font-bold">Branch</th>}
-              <th className="p-2 font-bold whitespace-nowrap">Type</th>
-              <th className="p-2 font-bold">Item Name</th>
-              <th className="p-2 font-bold">Description</th>
-              <th className="p-2 font-bold text-right whitespace-nowrap">Cash In</th>
-              <th className="p-2 font-bold text-right whitespace-nowrap">Cash Out</th>
-              <th className="p-2 font-bold">Ref No.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((e, idx) => (
-              <tr key={idx} className="border-b border-gray-300">
-                <td className="p-2 whitespace-nowrap">{fmtDate(e.date)} {e.time || ""}</td>
-                {showBranchColumn && <td className="p-2 truncate max-w-[150px]">{e.branchName || "—"}</td>}
-                <td className="p-2 whitespace-nowrap">{(TYPE_CONFIG[e.type] || TYPE_CONFIG.other).label}</td>
-                <td className="p-2 truncate max-w-[200px]">{e.itemName || "—"}</td>
-                <td className="p-2 truncate max-w-[250px]">{e.description || "—"}</td>
-                <td className="p-2 text-right font-mono">{e.cashIn > 0 ? fmt(e.cashIn) : ""}</td>
-                <td className="p-2 text-right font-mono text-red-600">{e.cashOut > 0 ? fmt(e.cashOut) : ""}</td>
-                <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{e.reference || "—"}</td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={showBranchColumn ? 8 : 7} className="p-4 text-center italic text-gray-500 border-b border-black">
-                  No financial activity found for the selected view.
-                </td>
-              </tr>
-            )}
-            {filtered.length > 0 && (
-              <tr className="border-b-2 border-black bg-gray-50 uppercase">
-                <td colSpan={showBranchColumn ? 5 : 4} className="p-2 font-bold text-right">Total:</td>
-                <td className="p-2 text-right font-bold font-mono">
-                  {fmt(filtered.reduce((sum, e) => sum + (e.cashIn || 0), 0))}
-                </td>
-                <td className="p-2 text-right font-bold font-mono text-red-600">
-                  {fmt(filtered.reduce((sum, e) => sum + (e.cashOut || 0), 0))}
-                </td>
-                <td></td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
 
       <div className="print:hidden">
@@ -361,39 +389,62 @@ const BREAKDOWN_ITEMS: {
   color: string;
   direction: "in" | "out" | "neutral";
 }[] = [
-  { key: "pawnOut", label: "Pawn Out", color: "text-orange-300", direction: "out" },
-  { key: "redeemIn", label: "Redeem", color: "text-cyan-300", direction: "in" },
-  { key: "buyBackIn", label: "Buy Back", color: "text-blue-300", direction: "in" },
-  { key: "renewalIn", label: "Renewals", color: "text-teal-300", direction: "in" },
-  { key: "saleIn", label: "Sales", color: "text-purple-300", direction: "in" },
-  { key: "fundTransferIn", label: "Fund In", color: "text-emerald-300", direction: "in" },
-  { key: "fundTransferOut", label: "Fund Out", color: "text-red-300", direction: "out" },
-];
+    { key: "pawnOut", label: "Pawn Out", color: "text-orange-300", direction: "out" },
+    { key: "redeemIn", label: "Redeem", color: "text-cyan-300", direction: "in" },
+    { key: "buyBackIn", label: "Buy Back", color: "text-blue-300", direction: "in" },
+    { key: "renewalIn", label: "Renewals", color: "text-teal-300", direction: "in" },
+    { key: "saleIn", label: "Sales", color: "text-purple-300", direction: "in" },
+    { key: "fundTransferIn", label: "Fund In", color: "text-emerald-300", direction: "in" },
+    { key: "fundTransferOut", label: "Fund Out", color: "text-red-300", direction: "out" },
+  ];
 
 export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: FinanceSummaryCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
       {todayCashIn != null && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Today In</p>
-          <p className="mt-0.5 text-sm font-extrabold text-emerald-200">{fmt(todayCashIn)}</p>
+        <div className="group relative overflow-hidden rounded-xl border border-emerald-500/30 bg-emerald-50/50 p-4 transition-all hover:shadow-md dark:bg-emerald-900/10">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Today In</p>
+            <div className="rounded-full bg-emerald-100 p-1 dark:bg-emerald-900/40">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-600 dark:text-emerald-400">
+                <path d="M7 13l5 5 5-5M12 18V6" />
+              </svg>
+            </div>
+          </div>
+          <p className="mt-2 text-lg font-black text-emerald-700 dark:text-emerald-300">{fmt(todayCashIn)}</p>
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-emerald-500/20" />
         </div>
       )}
       {todayCashOut != null && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-red-300">Today Out</p>
-          <p className="mt-0.5 text-sm font-extrabold text-red-200">{fmt(todayCashOut)}</p>
+        <div className="group relative overflow-hidden rounded-xl border border-red-500/30 bg-red-50/50 p-4 transition-all hover:shadow-md dark:bg-red-900/10">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Today Out</p>
+            <div className="rounded-full bg-red-100 p-1 dark:bg-red-900/40">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-red-600 dark:text-red-400">
+                <path d="M7 11l5-5 5 5M12 6v12" />
+              </svg>
+            </div>
+          </div>
+          <p className="mt-2 text-lg font-black text-red-700 dark:text-red-300">{fmt(todayCashOut)}</p>
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-red-500/20" />
         </div>
       )}
       {BREAKDOWN_ITEMS.map((item) => {
         const val = breakdown[item.key];
         if (val === 0) return null;
+
+        // Map colors to more vibrant versions for the premium look
+        const colorClass = item.color.replace('text-', 'text-').replace('-300', '-600 dark:text-').replace('-300', '-400');
+        const borderClass = item.color.replace('text-', 'border-').replace('-300', '-500/20');
+        const bgClass = item.color.replace('text-', 'bg-').replace('-300', '-50/50 dark:bg-').replace('-300', '-900/10');
+
         return (
-          <div key={item.key} className="rounded-lg border border-border-main bg-surface px-3 py-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{item.label}</p>
-            <p className={`mt-0.5 text-sm font-extrabold ${item.color}`}>
+          <div key={item.key} className={`group relative overflow-hidden rounded-xl border ${borderClass} ${bgClass} p-4 transition-all hover:shadow-md`}>
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{item.label}</p>
+            <p className={`mt-2 text-lg font-black ${colorClass}`}>
               {item.direction === "out" ? "-" : "+"}{fmt(val)}
             </p>
+            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-20 ${item.color.replace('text-', 'bg-')}`} />
           </div>
         );
       })}
@@ -424,16 +475,23 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
 
 export function LedgerTypeFilter({ value, onChange }: LedgerTypeFilterProps) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-    >
-      {TYPE_OPTIONS.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none rounded-lg border border-border-main bg-surface pl-3 pr-8 py-2 text-sm font-medium text-text-primary focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all cursor-pointer"
+      >
+        {TYPE_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-text-tertiary">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </div>
+    </div>
   );
 }

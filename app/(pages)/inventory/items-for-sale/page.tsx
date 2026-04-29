@@ -6,7 +6,9 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { AddItemModal } from "./_components/add-item-modal";
 
 type ViewMode = "list" | "calendar";
 
@@ -18,7 +20,7 @@ interface SaleItem {
   branch: string;
   availableDate: string;
   price: number;
-  status: "Available" | "Sold";
+  status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
 }
 
@@ -43,13 +45,21 @@ interface CalendarDayData {
 const saleStatusOptions = [
   { value: "all", label: "All" },
   { value: "Available", label: "Available" },
+  { value: "Reserved", label: "Reserved" },
   { value: "Sold", label: "Sold" },
 ];
 
-const statusVariant: Record<string, "green" | "orange"> = {
+const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
+  Reserved: "blue",
   Sold: "orange",
 };
+
+function saleStatusLabel(status: SaleItem["status"]) {
+  if (status === "Available") return "Active";
+  if (status === "Reserved") return "Reserved";
+  return "Sold";
+}
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -226,8 +236,11 @@ function SaleCalendar({ calendarData, selectedDate, onSelectDate, calendarYear, 
 // ITEMS FOR SALE PAGE
 // ═══════════════════════════════════════════════════════════════
 export default function ItemsForSalePage() {
+  const { user } = useAuth();
   const { selectedBranch, branches, setSelectedBranch, isAllBranches } = useBranch();
   const today = new Date();
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -445,19 +458,29 @@ export default function ItemsForSalePage() {
             </>
           )}
         </div>
-        <div className="flex rounded-md border border-border-main overflow-hidden">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
-          >
-            List
-          </button>
-          <button
-            onClick={() => setViewMode("calendar")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
-          >
-            Calendar
-          </button>
+        <div className="flex items-center gap-3">
+          {user?.role === "super_admin" && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-bold shadow-sm hover:bg-emerald-700 transition-colors"
+            >
+              + Add Item For Sale
+            </button>
+          )}
+          <div className="flex rounded-md border border-border-main overflow-hidden">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+            >
+              Calendar
+            </button>
+          </div>
         </div>
       </div>
 
@@ -479,7 +502,7 @@ export default function ItemsForSalePage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && saleItems.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                     <div className="flex items-center justify-center">
@@ -500,7 +523,6 @@ export default function ItemsForSalePage() {
                   <tr
                     key={item.id || item.itemId}
                     className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
-                    onClick={() => setSelectedItem(item)}
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
@@ -511,7 +533,7 @@ export default function ItemsForSalePage() {
                       &#8369;{item.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
+                      <StatusBadge label={saleStatusLabel(item.status)} variant={statusVariant[item.status] || "green"} />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -579,14 +601,14 @@ export default function ItemsForSalePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isLoading && saleItems.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
-                            <div className="flex items-center justify-center">
-                              <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
-                            </div>
-                          </td>
-                        </tr>
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
+                          <div className="flex items-center justify-center">
+                            <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
+                          </div>
+                        </td>
+                      </tr>
                     ) : saleItems.length === 0 ? (
                       <tr><td colSpan={6} className="py-6 text-center text-sm text-zinc-400">No items on this day</td></tr>
                     ) : (
@@ -609,7 +631,7 @@ export default function ItemsForSalePage() {
                             {item.price === 0 ? <span className="text-orange-500">—</span> : <span className="text-emerald-700">₱{item.price.toLocaleString()}</span>}
                           </td>
                           <td className="whitespace-nowrap px-4 py-2.5">
-                            <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
+                            <StatusBadge label={saleStatusLabel(item.status)} variant={statusVariant[item.status] || "green"} />
                           </td>
                         </tr>
                       ))
@@ -633,6 +655,16 @@ export default function ItemsForSalePage() {
           className="border-t-0"
         />
       </div>
+
+      <AddItemModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          // Trigger a re-fetch by toggling the selected branch (or you can manage a refresh state)
+          // For simplicity, we can do a hard reload or add a refresh state
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const statusVariantMap: Record<string, "green" | "black" | "red" | "orange"> = {
   Active: "green",
@@ -31,6 +32,7 @@ interface BranchTableProps {
   onBranchClick: (branch: BranchRow) => void;
   onEditBranch: (branch: BranchRow) => void;
   onTerminateBranch: (branch: BranchRow) => void;
+  isLoading?: boolean;
 }
 
 function ActionsButtons({
@@ -139,6 +141,7 @@ export function BranchTable({
   onBranchClick,
   onEditBranch,
   onTerminateBranch,
+  isLoading = false,
 }: BranchTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -169,9 +172,7 @@ export function BranchTable({
     currentPage * ITEMS_PER_PAGE
   );
 
-  if (filtered.length === 0) {
-    return <EmptyState />;
-  }
+  // Remove early return, handle inside table
 
   return (
     <div className="space-y-4">
@@ -204,8 +205,23 @@ export function BranchTable({
               </tr>
             </thead>
             <tbody>
-              {paginated.map((branch, index) => (
-                <tr
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-base font-medium text-text-tertiary">
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinnerLabel text="Loading branches..." className="text-base font-medium text-text-tertiary" />
+                    </div>
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-base font-medium text-text-tertiary">
+                    No branches found.
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((branch, index) => (
+                  <tr
                   key={`${branch.id}-${branch.branchId}`}
                   onClick={() => onBranchClick(branch)}
                   className="group cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
@@ -246,23 +262,25 @@ export function BranchTable({
                     />
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
       </div>
 
       {/* Pagination */}
-      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <PaginationFooter
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filtered.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          onPageChange={setCurrentPage}
-          className="border-t-0"
-        />
-      </div>
+      {filtered.length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+            className="border-t-0"
+          />
+        </div>
+      )}
     </div>
   );
 }
