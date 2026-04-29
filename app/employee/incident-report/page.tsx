@@ -12,7 +12,6 @@ import { IncidentHistoryModal } from "@/app/(pages)/incident-report/_components/
 import type {
   IncidentCategory,
   IncidentPriority,
-  IncidentSource,
   IncidentStatus,
   IncidentTicketRow,
   ManualTicketFormState,
@@ -246,19 +245,6 @@ export default function EmployeeIncidentReportPage() {
     });
   }, [employeeTickets, userById, searchQuery, statusFilter, selectedBranch.name]);
 
-  const summary = useMemo(() => {
-    const openCount = filteredTickets.filter((ticket) => ticket.status !== "resolved").length;
-    const escalatedCount = filteredTickets.filter(
-      (ticket) => ticket.status === "escalated" || ticket.requires_manager_escalation,
-    ).length;
-    const moneyCount = filteredTickets.filter((ticket) => ticket.amount_impact != null).length;
-    const missingCount = filteredTickets.filter(
-      (ticket) => ticket.category === "missing_inventory",
-    ).length;
-
-    return { openCount, escalatedCount, moneyCount, missingCount };
-  }, [filteredTickets]);
-
   const openCreateModal = () => {
     setFormState(buildInitialFormState(selectedBranch.id));
     setIsCreateModalOpen(true);
@@ -326,7 +312,7 @@ export default function EmployeeIncidentReportPage() {
             You can only view incident tickets you have submitted. Submit a new ticket to report any issues or concerns.
           </p>
         </div>
-        <ActionButton variant="primary" onClick={openCreateModal}>
+        <ActionButton variant="primary" onClick={openCreateModal} className="w-full sm:w-auto">
           <span className="flex items-center justify-center gap-1.5">
             <svg
               width="14"
@@ -352,7 +338,134 @@ export default function EmployeeIncidentReportPage() {
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-border-main bg-surface shadow-sm">
+      <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(150px,auto)_auto] sm:items-center">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search ticket, branch, or transaction reference..."
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+          />
+
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+          >
+            <option value="all">All Status</option>
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+
+          {searchQuery || statusFilter !== "all" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+              }}
+              className="rounded-lg border border-red-200 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50"
+            >
+              Clear Filters
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {isLoading ? (
+          <div className="rounded-xl border border-border-main bg-surface px-4 py-10 text-center text-text-tertiary shadow-sm">
+            <LoadingSpinnerLabel
+              text="Loading your incident tickets..."
+              className="justify-center text-sm text-text-tertiary"
+            />
+          </div>
+        ) : filteredTickets.length === 0 ? (
+          <div className="rounded-xl border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary shadow-sm">
+            No incident tickets found. Start by adding one!
+          </div>
+        ) : (
+          filteredTickets.map((ticket) => (
+            <article
+              key={ticket.id}
+              className="rounded-xl border border-border-main bg-surface p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-bold text-text-primary">
+                    {ticket.ticket_no}
+                  </p>
+                  <h3 className="mt-2 break-words text-base font-bold text-text-primary">
+                    {ticket.title}
+                  </h3>
+                </div>
+                <span
+                  className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadgeClasses(ticket.status)}`}
+                >
+                  {ticket.status.replaceAll("_", " ")}
+                </span>
+              </div>
+
+              <p className="mt-3 text-sm leading-6 text-text-secondary">{ticket.summary}</p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="rounded-full border border-border-main bg-surface-secondary px-2.5 py-1 text-[11px] font-semibold text-text-secondary">
+                  {getCategoryLabel(ticket.category)}
+                </span>
+                <span
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${getPriorityBadgeClasses(ticket.priority)}`}
+                >
+                  {ticket.priority}
+                </span>
+              </div>
+
+              <dl className="mt-4 grid grid-cols-1 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                    Branch
+                  </dt>
+                  <dd className="mt-1 text-text-primary">{selectedBranch.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                    Reported
+                  </dt>
+                  <dd className="mt-1 text-text-primary">{formatDateTime(ticket.reported_at)}</dd>
+                  <dd className="mt-1 text-xs text-text-muted">
+                    Updated {formatDateTime(ticket.updated_at)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                    Transaction
+                  </dt>
+                  <dd className="mt-1 break-words text-text-primary">
+                    {ticket.transaction_ref ?? "-"}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-4 flex justify-end border-t border-border-subtle pt-4">
+                <button
+                  type="button"
+                  onClick={() => setTicketToView(ticket)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
+                  aria-label={`View history for ${ticket.ticket_no}`}
+                  title="History"
+                >
+                  <History size={15} />
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-xl border border-border-main bg-surface shadow-sm md:block">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
@@ -381,10 +494,6 @@ export default function EmployeeIncidentReportPage() {
               </tr>
             ) : (
               filteredTickets.map((ticket) => {
-                const reportedByUser = ticket.reported_by_user_id
-                  ? userById.get(ticket.reported_by_user_id)
-                  : null;
-
                 return (
                   <tr
                     key={ticket.id}

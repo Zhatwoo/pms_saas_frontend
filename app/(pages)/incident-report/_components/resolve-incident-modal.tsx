@@ -24,9 +24,9 @@ export function ResolveIncidentModal({
   const canSubmit = notes.trim().length > 0 && !isSubmitting;
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/45 p-4">
+    <div className="fixed inset-0 z-[85] flex items-center justify-center overflow-y-auto bg-black/45 p-3 sm:p-4">
       <div className="w-full max-w-xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-wide text-text-muted">{ticketNo}</p>
             <h2 className="mt-1 text-lg font-bold text-text-primary">Resolve Incident</h2>
@@ -42,7 +42,7 @@ export function ResolveIncidentModal({
           </button>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="px-4 py-5 sm:px-6">
           <label className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wide text-text-muted">
               Resolution Notes
@@ -57,7 +57,7 @@ export function ResolveIncidentModal({
           </label>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-border-subtle px-6 py-4">
+        <div className="flex flex-col-reverse gap-3 border-t border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
           <button
             type="button"
             onClick={onClose}
