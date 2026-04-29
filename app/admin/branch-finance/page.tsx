@@ -148,12 +148,19 @@ export default function AdminBranchFinancePage() {
   const loadFinanceData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const today = new Date().toISOString().split("T")[0];
+    const ledgerDateFromQuery = ledgerDateFrom || today;
+    const ledgerDateToQuery = ledgerDateTo || today;
     try {
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
         api.get<AdminDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
         api.get<BranchFinanceSummaryApi[]>("/branch-finance/summary"),
-        api.get<{ entries: LedgerEntry[]; total: number }>("/branch-finance/ledger?limit=100"),
+        api.get<{ entries: LedgerEntry[]; total: number }>(
+          `/branch-finance/ledger?limit=500&dateFrom=${encodeURIComponent(
+            ledgerDateFromQuery,
+          )}&dateTo=${encodeURIComponent(ledgerDateToQuery)}`,
+        ),
       ]);
       setDashboard(dashboardData);
       setRequests(requestData);
@@ -164,7 +171,7 @@ export default function AdminBranchFinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [ledgerDateFrom, ledgerDateTo]);
 
   useEffect(() => {
     void loadFinanceData();
@@ -347,17 +354,9 @@ export default function AdminBranchFinancePage() {
 
   const finance = dashboard?.branchFinance;
   const resolvedCurrentBalance = useMemo(() => {
-    const current = finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
-    if (current !== 0) {
-      return current;
-    }
-
-    if (!finance) {
-      return current;
-    }
-
-    return Number((finance.startingBalance + finance.totalAdded - finance.totalTransferred).toFixed(2));
-  }, [dashboard?.currentBalance, finance]);
+    if (branchSummary) return branchSummary.currentBalance;
+    return finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
+  }, [branchSummary, dashboard?.currentBalance, finance?.currentBalance]);
 
   return (
     <div className="space-y-6">
