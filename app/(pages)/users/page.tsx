@@ -16,7 +16,7 @@ import { UserDetailDrawer } from "./_components/user-detail-drawer";
 import { DeleteUserModal } from "./_components/delete-user-modal";
 import { UpdateUserModal } from "./_components/update-user-modal";
 import { AccountStatusModal } from "./_components/account-status-modal";
-import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 
 export type UserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
 export type CreateableUserRole = "SUPER_ADMIN" | "ADMIN" | "EMPLOYEE";
@@ -161,6 +161,7 @@ export default function UserManagementPage() {
   const [statusModalMode, setStatusModalMode] = useState<"approve" | "reject" | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeletePasswordModalOpen, setIsDeletePasswordModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingUserId, setIsDeletingUserId] = useState<string | null>(null);
@@ -262,7 +263,7 @@ export default function UserManagementPage() {
 
   async function handleDeleteUser(userToDelete: UserRecord) {
     if (!canManageUsers) {
-      return;
+      return false;
     }
 
     setIsDeletingUserId(userToDelete.id);
@@ -278,10 +279,12 @@ export default function UserManagementPage() {
         setIsDrawerOpen(false);
       }
       toast.success("User deleted successfully!");
+      return true;
     } catch (deleteError) {
       const msg = deleteError instanceof Error ? deleteError.message : "Failed to delete user.";
       setError(msg);
       toast.error(msg);
+      return false;
     } finally {
       setIsDeletingUserId(null);
     }
@@ -293,8 +296,8 @@ export default function UserManagementPage() {
     }
 
     if (statusModalMode === "reject") {
-      await handleDeleteUser(selectedUser);
       setIsStatusModalOpen(false);
+      setIsDeletePasswordModalOpen(true);
       return;
     }
 
@@ -593,8 +596,26 @@ export default function UserManagementPage() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={async () => {
           if (selectedUser) {
-            await handleDeleteUser(selectedUser);
+            setIsDeleteModalOpen(false);
+            setIsDeletePasswordModalOpen(true);
           }
+        }}
+      />
+
+      <ConfirmPasswordModal
+        isOpen={isDeletePasswordModalOpen}
+        onClose={() => setIsDeletePasswordModalOpen(false)}
+        title="Confirm User Deletion"
+        description={
+          selectedUser
+            ? `Enter your password to permanently delete ${selectedUser.fullName || selectedUser.email}.`
+            : "Enter your password to permanently delete this user."
+        }
+        onConfirm={async (password) => {
+          if (!selectedUser) return false;
+
+          await api.post("/auth/verify-password", { password });
+          return handleDeleteUser(selectedUser);
         }}
       />
 
