@@ -11,6 +11,7 @@ import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { toast } from "sonner";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { AddItemModal } from "@/app/(pages)/inventory/items-for-sale/_components/add-item-modal";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -68,6 +69,8 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   const [viewingItem, setViewingItem] = useState<SaleItem | null>(null);
   const [editingItem, setEditingItem] = useState<SaleItem | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -96,7 +99,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
       }
     }
     fetchData();
-  }, [category, status, searchQuery, saleViewMode, currentPage, selectedBranch.id, isAllBranches]);
+  }, [category, status, searchQuery, saleViewMode, currentPage, selectedBranch.id, isAllBranches, refreshTick]);
 
   return (
     <div className={viewOnly ? "space-y-5 pb-4 text-text-primary" : "space-y-4 pb-4 text-text-primary"}>
@@ -117,7 +120,18 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
           </div>
         </div>
 
-        <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <button
+              onClick={() => setAddModalOpen(true)}
+              className={viewOnly
+                ? "h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
+                : "h-9 rounded-md bg-emerald-700 px-3 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-800"}
+            >
+              Add Item
+            </button>
+          )}
+          <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
           <button onClick={() => setSaleViewMode("current")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
             Current
           </button>
@@ -127,6 +141,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
           <button onClick={() => setSaleViewMode("history")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
             History
           </button>
+          </div>
         </div>
       </div>
 
@@ -288,6 +303,17 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
               toast.error(err instanceof Error ? err.message : "Failed to delete item.");
               throw err;
             }
+          }}
+        />
+      )}
+
+      {!viewOnly && (
+        <AddItemModal
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onSuccess={() => {
+            setCurrentPage(1);
+            setRefreshTick((tick) => tick + 1);
           }}
         />
       )}
