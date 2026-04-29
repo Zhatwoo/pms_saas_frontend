@@ -443,7 +443,7 @@ export default function AdminIncidentReportPage() {
       ) : null}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <ActionButton variant="primary" onClick={openCreateModal} className="ml-auto">
+        <ActionButton variant="primary" onClick={openCreateModal} className="w-full sm:w-auto lg:ml-auto">
           <span className="flex items-center justify-center gap-1.5">
             <svg
               width="14"
@@ -501,19 +501,19 @@ export default function AdminIncidentReportPage() {
       </div>
 
       <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
-        <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_repeat(4,minmax(150px,auto))_auto] xl:items-center">
           <input
             type="text"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search ticket, branch, user, or transaction reference..."
-            className="min-w-[220px] flex-1 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none sm:col-span-2 xl:col-span-1"
           />
 
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Status</option>
             {statusOptions.map((option) => (
@@ -526,7 +526,7 @@ export default function AdminIncidentReportPage() {
           <select
             value={priorityFilter}
             onChange={(event) => setPriorityFilter(event.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Priority</option>
             {priorityOptions.map((option) => (
@@ -539,7 +539,7 @@ export default function AdminIncidentReportPage() {
           <select
             value={sourceFilter}
             onChange={(event) => setSourceFilter(event.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Source</option>
             <option value="auto">Auto</option>
@@ -549,7 +549,7 @@ export default function AdminIncidentReportPage() {
           <select
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Categories</option>
             {categoryOptions.map((option) => (
@@ -573,7 +573,7 @@ export default function AdminIncidentReportPage() {
                 setSourceFilter("all");
                 setCategoryFilter("all");
               }}
-              className="text-xs font-bold text-red-600 hover:underline"
+              className="rounded-lg border border-red-200 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 xl:border-0 xl:px-0"
             >
               Clear Filters
             </button>
@@ -581,7 +581,194 @@ export default function AdminIncidentReportPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border-main bg-surface shadow-sm">
+      <div className="space-y-3 xl:hidden">
+        {isLoading ? (
+          <div className="rounded-xl border border-border-main bg-surface px-4 py-10 text-center text-text-tertiary shadow-sm">
+            <LoadingSpinnerLabel
+              text="Loading incident tickets from your branch..."
+              className="justify-center text-sm text-text-tertiary"
+            />
+          </div>
+        ) : filteredTickets.length === 0 ? (
+          <div className="rounded-xl border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary shadow-sm">
+            No incident tickets found in your branch.
+          </div>
+        ) : (
+          filteredTickets.map((ticket) => {
+            const incidentUser = ticket.user_id ? userById.get(ticket.user_id) : null;
+            const reportedByUser = ticket.reported_by_user_id
+              ? userById.get(ticket.reported_by_user_id)
+              : null;
+            const assignableUsers = users.filter((record) => {
+              if (!record.id) return false;
+              return record.role === "admin" && getUserBranchId(record) === ticket.branch_id;
+            });
+
+            return (
+              <article
+                key={ticket.id}
+                className="rounded-xl border border-border-main bg-surface p-4 shadow-sm"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-bold text-text-primary">
+                      {ticket.ticket_no}
+                    </p>
+                    <h3 className="mt-2 break-words text-base font-bold text-text-primary">
+                      {ticket.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-text-secondary">{ticket.summary}</p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadgeClasses(ticket.status)}`}
+                    >
+                      {ticket.status.replaceAll("_", " ")}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${getSourceBadgeClasses(ticket.source)}`}
+                    >
+                      {ticket.source}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-border-main bg-surface-secondary px-2.5 py-1 text-[11px] font-semibold text-text-secondary">
+                    {getCategoryLabel(ticket.category)}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${getPriorityBadgeClasses(ticket.priority)}`}
+                  >
+                    {ticket.priority}
+                  </span>
+                </div>
+
+                <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                      User Involved
+                    </dt>
+                    <dd className="mt-1 text-text-primary">
+                      {getPrivateIncidentUserName(incidentUser, user)}
+                    </dd>
+                    <dd className="mt-1 text-xs text-text-muted">
+                      Reported by {getPrivateIncidentUserName(reportedByUser, user)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                      Branch
+                    </dt>
+                    <dd className="mt-1 text-text-primary">{selectedBranch.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                      Money Impact
+                    </dt>
+                    <dd className="mt-1 font-semibold text-text-primary">
+                      {formatCurrency(ticket.amount_impact)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                      Reported
+                    </dt>
+                    <dd className="mt-1 text-text-primary">{formatDateTime(ticket.reported_at)}</dd>
+                    <dd className="mt-1 text-xs text-text-muted">
+                      Updated {formatDateTime(ticket.updated_at)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                      Transaction
+                    </dt>
+                    <dd className="mt-1 break-words text-text-primary">
+                      {ticket.transaction_ref ?? "-"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                      Assigned To
+                    </dt>
+                    <dd className="mt-1">
+                      <select
+                        value={ticket.escalation_owner_user_id ?? ""}
+                        onChange={(event) =>
+                          void updateTicket(ticket.id, {
+                            escalation_owner_user_id: event.target.value || null,
+                            requires_manager_escalation: Boolean(event.target.value),
+                          })
+                        }
+                        disabled={ticket.status === "resolved"}
+                        className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-xs font-semibold text-text-primary focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <option value="">Unassigned</option>
+                        {assignableUsers.map((record) => (
+                          <option key={record.id ?? record.email} value={record.id}>
+                            {getUserName(record)}
+                          </option>
+                        ))}
+                      </select>
+                    </dd>
+                    <dd className="mt-1 text-xs text-text-muted">
+                      {ticket.requires_manager_escalation
+                        ? "Manager action required"
+                        : "Branch handling"}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border-subtle pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setTicketToView(ticket)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
+                    aria-label={`View history for ${ticket.ticket_no}`}
+                    title="History"
+                  >
+                    <History size={15} />
+                  </button>
+                  {ticket.status !== "escalated" && ticket.status !== "resolved" ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void updateTicket(ticket.id, {
+                          status: "escalated",
+                          escalation_owner_user_id: getManagerIdForBranch(ticket.branch_id),
+                          requires_manager_escalation: true,
+                        })
+                      }
+                      className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 transition-colors hover:bg-violet-100"
+                    >
+                      Escalate
+                    </button>
+                  ) : null}
+                  {ticket.status !== "resolved" ? (
+                    <button
+                      type="button"
+                      onClick={() => openResolveModal(ticket)}
+                      className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
+                    >
+                      Resolve
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleReopenTicket(ticket.id)}
+                      className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 transition-colors hover:bg-amber-100"
+                    >
+                      Reopen
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-xl border border-border-main bg-surface shadow-sm xl:block">
         <table className="w-full min-w-[1180px] text-sm">
           <thead>
             <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
@@ -618,9 +805,6 @@ export default function AdminIncidentReportPage() {
                 const incidentUser = ticket.user_id ? userById.get(ticket.user_id) : null;
                 const reportedByUser = ticket.reported_by_user_id
                   ? userById.get(ticket.reported_by_user_id)
-                  : null;
-                const escalationOwnerUser = ticket.escalation_owner_user_id
-                  ? userById.get(ticket.escalation_owner_user_id)
                   : null;
                 const assignableUsers = users.filter((record) => {
                   if (!record.id) return false;

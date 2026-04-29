@@ -112,9 +112,9 @@ export function IncidentHistoryModal({
       : fallbackTimeline;
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/50 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
+    <div className="fixed inset-0 z-[85] flex items-center justify-center overflow-y-auto bg-black/50 p-3 sm:p-4">
+      <div className="my-auto flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-bold uppercase tracking-wide text-text-muted">
@@ -139,7 +139,7 @@ export function IncidentHistoryModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto px-6 py-6">
+        <div className="overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
             <section className="space-y-4">
               <div className="rounded-xl border border-border-main bg-surface-secondary/40 p-4">
@@ -190,7 +190,7 @@ export function IncidentHistoryModal({
               </div>
             </section>
 
-            <section className="flex min-h-0 max-h-[560px] flex-col rounded-xl border border-border-main bg-surface-secondary/40">
+            <section className="flex min-h-0 max-h-[60vh] flex-col rounded-xl border border-border-main bg-surface-secondary/40 lg:max-h-[560px]">
               <div className="flex shrink-0 items-center gap-2 border-b border-border-subtle px-5 py-4">
                 <Clock size={16} className="text-text-muted" />
                 <div>

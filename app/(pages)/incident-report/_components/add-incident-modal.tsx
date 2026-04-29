@@ -47,12 +47,12 @@ export function AddIncidentModal({
   getUserName,
 }: AddIncidentModalProps) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/45 p-3 sm:p-4">
       <div
-        className="w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-border-main bg-surface shadow-2xl"
+        className="my-auto flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl sm:rounded-[1.75rem]"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-6 py-5">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border-subtle px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <h2 className="text-lg font-bold text-text-primary">Create Incident Ticket</h2>
             <p className="mt-1 text-sm text-text-tertiary">
@@ -69,7 +69,7 @@ export function AddIncidentModal({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 px-6 py-6 md:grid-cols-2">
+        <div className="grid min-h-0 grid-cols-1 gap-4 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wide text-text-muted">Title</span>
             <input
@@ -232,13 +232,13 @@ export function AddIncidentModal({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border-subtle px-6 py-4">
+        <div className="flex shrink-0 flex-col gap-3 border-t border-border-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-xs text-text-muted">
             {isLoadingUsers
               ? "Loading branch users..."
               : "This form writes directly to the Supabase table."}
           </p>
-          <div className="flex gap-3">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row">
             <button
               type="button"
               onClick={onClose}
