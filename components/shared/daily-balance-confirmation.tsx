@@ -17,30 +17,40 @@ export function DailyBalanceConfirmation({
   onConfirm,
   onClose,
 }: DailyBalanceConfirmationProps) {
-  const [confirmedAmount, setConfirmedAmount] = useState("");
+  const [confirmedAmount, setConfirmedAmount] = useState("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setConfirmedAmount("");
+      setConfirmedAmount("0.00");
       setIsSubmitting(false);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const formatWithCommas = (value: string) => {
-    const cleanValue = value.replace(/[^0-9.]/g, "");
-    if (!cleanValue) return "";
-    const parts = cleanValue.split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
+  const formatCurrencyInput = (value: string) => {
+    // Remove all non-numeric characters
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "0.00";
+
+    // Convert to number and back to string with 2 decimal places
+    const amount = parseInt(digits, 10) / 100;
+    return amount.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setConfirmedAmount(formatted);
   };
 
   const handleConfirm = async () => {
     if (isSubmitting) return;
     const rawValue = confirmedAmount.replace(/,/g, "");
-    if (!rawValue || isNaN(parseFloat(rawValue))) return;
+    if (isNaN(parseFloat(rawValue))) return;
 
     setIsSubmitting(true);
     try {
@@ -77,9 +87,8 @@ export function DailyBalanceConfirmation({
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-text-muted">₱</span>
               <input
                 type="text"
-                placeholder="0.00"
                 value={confirmedAmount}
-                onChange={(e) => setConfirmedAmount(formatWithCommas(e.target.value))}
+                onChange={handleInputChange}
                 disabled={isSubmitting}
                 className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
               />
