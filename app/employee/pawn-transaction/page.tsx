@@ -26,6 +26,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { QrScanner } from "@/components/shared/qr-scanner";
 
 
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
@@ -604,6 +605,7 @@ export default function EmployeePawnTransactionsPage() {
       </div>
 
       <TransactionTable
+        isLoading={isLoading}
         data={paginatedTransactions}
         onReprint={handleReprint}
         onViewDetails={setSelectedTransaction}
@@ -612,13 +614,15 @@ export default function EmployeePawnTransactionsPage() {
         onRangeChange={setViewRange}
       />
 
-      <PaginationFooter
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredTransactions.length}
-        itemsPerPage={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      <div className="mt-4">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </div>
 
       <TransactionDetailsModal
         isOpen={Boolean(selectedTransaction)}

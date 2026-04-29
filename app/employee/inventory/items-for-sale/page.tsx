@@ -7,6 +7,7 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { useBranch } from "@/contexts/branch-context";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -117,6 +118,7 @@ export default function EmployeeItemsForSalePage() {
         </div>
       </div>
 
+
       {saleViewMode === "calendar" ? (
         <InventoryCalendar items={saleItems} />
       ) : (
@@ -132,12 +134,13 @@ export default function EmployeeItemsForSalePage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="py-16 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="anim-loading h-6 w-6 border-emerald-500/50 border-t-emerald-600 rounded-full" />
-                      <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-widest">Loading branch items...</span>
-                    </div>
-                  </td></tr>
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                      </div>
+                    </td>
+                  </tr>
                 ) : saleItems.length === 0 ? (
                   <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">No items for sale found</td></tr>
                 ) : (
@@ -183,6 +186,7 @@ export default function EmployeeItemsForSalePage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
 
       {viewingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md px-4" onClick={() => setViewingItem(null)}>

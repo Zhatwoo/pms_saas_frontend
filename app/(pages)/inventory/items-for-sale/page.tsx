@@ -6,7 +6,9 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { AddItemModal } from "./_components/add-item-modal";
 
 type ViewMode = "list" | "calendar";
 
@@ -226,8 +228,11 @@ function SaleCalendar({ calendarData, selectedDate, onSelectDate, calendarYear, 
 // ITEMS FOR SALE PAGE
 // ═══════════════════════════════════════════════════════════════
 export default function ItemsForSalePage() {
+  const { user } = useAuth();
   const { selectedBranch, branches, setSelectedBranch, isAllBranches } = useBranch();
   const today = new Date();
+  
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -445,8 +450,17 @@ export default function ItemsForSalePage() {
             </>
           )}
         </div>
-        <div className="flex rounded-md border border-border-main overflow-hidden">
-          <button
+        <div className="flex items-center gap-3">
+          {(user?.role === "super_admin" || user?.role === "SUPER_ADMIN") && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-bold shadow-sm hover:bg-emerald-700 transition-colors"
+            >
+              + Add Item For Sale
+            </button>
+          )}
+          <div className="flex rounded-md border border-border-main overflow-hidden">
+            <button
             onClick={() => setViewMode("list")}
             className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
           >
@@ -458,6 +472,7 @@ export default function ItemsForSalePage() {
           >
             Calendar
           </button>
+        </div>
         </div>
       </div>
 
@@ -479,7 +494,7 @@ export default function ItemsForSalePage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && saleItems.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                     <div className="flex items-center justify-center">
@@ -500,7 +515,6 @@ export default function ItemsForSalePage() {
                   <tr
                     key={item.id || item.itemId}
                     className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
-                    onClick={() => setSelectedItem(item)}
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
@@ -579,7 +593,7 @@ export default function ItemsForSalePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isLoading && saleItems.length === 0 ? (
+                    {isLoading ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
                             <div className="flex items-center justify-center">
@@ -633,6 +647,16 @@ export default function ItemsForSalePage() {
           className="border-t-0"
         />
       </div>
+
+      <AddItemModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={() => {
+          // Trigger a re-fetch by toggling the selected branch (or you can manage a refresh state)
+          // For simplicity, we can do a hard reload or add a refresh state
+          window.location.reload();
+        }} 
+      />
     </div>
   );
 }

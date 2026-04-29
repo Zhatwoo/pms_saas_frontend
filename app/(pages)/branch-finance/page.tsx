@@ -19,6 +19,8 @@ import { RejectRequestModal } from "./_components/reject-request-modal";
 import { TransactionFilters } from "./_components/transaction-filters";
 import { TransactionTable } from "./_components/transaction-table";
 import type { FinanceTransaction } from "./_components/transaction-table";
+import { AddSystemExpenseModal } from "./_components/add-system-expense-modal";
+import type { AddSystemExpenseData } from "./_components/add-system-expense-modal";
 import { FinanceQueueSection } from "@/components/shared/finance-queue-section";
 import {
   FinanceLedgerTable,
@@ -54,6 +56,7 @@ interface DashboardSummary {
       totalApproved: number;
       totalTransferred: number;
     };
+    systemExpenses?: number;
   };
   branchBalances: Array<{
     branchId: string;
@@ -137,6 +140,7 @@ export default function BranchFinancePage() {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [selectedTransferRequest, setSelectedTransferRequest] = useState<FundRequestRecord | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [systemExpenseModalOpen, setSystemExpenseModalOpen] = useState(false);
 
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
   const [financeSummaries, setFinanceSummaries] = useState<BranchFinanceSummaryItem[]>([]);
@@ -162,6 +166,9 @@ export default function BranchFinancePage() {
     setError(null);
 
     const branchQuery = isAllBranches ? "" : `?branch=${selectedBranch.id}`;
+    const today = new Date().toISOString().split("T")[0];
+    const ledgerDateFromQuery = ledgerDateFrom || today;
+    const ledgerDateToQuery = ledgerDateTo || today;
 
     try {
       const [dashboardData, requestData, transactionResponse, summaryData, ledgerData, usersData] = await Promise.all([
@@ -169,7 +176,11 @@ export default function BranchFinancePage() {
         api.get<FundRequestRecord[]>(`/fund-requests${branchQuery}`),
         api.get<ApiTransaction[] | TransactionsResponse>(`/transactions${branchQuery ? branchQuery + "&" : "?"}range=all`),
         api.get<BranchFinanceSummaryItem[]>(`/branch-finance/summary${branchQuery}`),
-        api.get<{ entries: LedgerEntry[]; total: number }>(`/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=100`),
+        api.get<{ entries: LedgerEntry[]; total: number }>(
+          `/branch-finance/ledger${branchQuery ? branchQuery + "&" : "?"}limit=500&dateFrom=${encodeURIComponent(
+            ledgerDateFromQuery,
+          )}&dateTo=${encodeURIComponent(ledgerDateToQuery)}`,
+        ),
         api.get<UserRecord[]>("/users").catch(() => [] as UserRecord[]),
       ]);
 
@@ -257,7 +268,7 @@ export default function BranchFinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAllBranches, selectedBranch.id]);
+  }, [isAllBranches, ledgerDateFrom, ledgerDateTo, selectedBranch.id]);
 
   useEffect(() => {
     void loadFinanceData();
@@ -375,8 +386,21 @@ export default function BranchFinancePage() {
       cashIn += s.todayCashIn;
       cashOut += s.todayCashOut;
     }
+
+    // Include system-level expenses in the "Today" summary if viewing All Branches
+    if (isAllBranches) {
+      const today = new Date().toISOString().split("T")[0];
+      const systemEntriesToday = ledgerEntries.filter(
+        (e) => (!e.branchId || e.branchId === "null" || e.branchName?.includes("System")) && e.date === today
+      );
+      for (const e of systemEntriesToday) {
+        cashIn += e.cashIn || 0;
+        cashOut += e.cashOut || 0;
+      }
+    }
+
     return { cashIn, cashOut };
-  }, [financeSummaries, isAllBranches, selectedBranch.id]);
+  }, [financeSummaries, isAllBranches, selectedBranch.id, ledgerEntries]);
 
   const handleRejectRequestClick = useCallback((id: string) => {
     const target = queues.pendingReview.find((request) => request.id === id) ?? null;
@@ -459,6 +483,28 @@ export default function BranchFinancePage() {
     [isSubmitting, loadFinanceData, selectedTransferRequest, showToast],
   );
 
+  const handleSystemExpenseSubmit = useCallback(
+    async (data: AddSystemExpenseData) => {
+      if (isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        await api.post("/transactions", {
+          purpose: "Expense",
+          cash_out: data.amount,
+          details: `System Expense: ${data.category}${data.notes ? ` - ${data.notes}` : ""}`,
+        });
+        showToast("System expense recorded successfully.");
+        setSystemExpenseModalOpen(false);
+        await loadFinanceData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to record system expense.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isSubmitting, loadFinanceData, showToast],
+  );
+
   const handleHeaderTransfer = useCallback(() => {
     void loadFinanceData().finally(() => {
       setSelectedTransferRequest(null);
@@ -511,7 +557,9 @@ export default function BranchFinancePage() {
             selectedBranchId={selectedBranch.id}
             selectedBranchName={selectedBranch.name}
             balances={scopedBalances}
+            systemExpenses={dashboard?.summary?.systemExpenses ?? 0}
             onAddFunds={handleHeaderTransfer}
+            onAddSystemExpense={isAllBranches ? () => setSystemExpenseModalOpen(true) : undefined}
           />
 
           <div>
@@ -813,6 +861,13 @@ export default function BranchFinancePage() {
         submitLabel="Confirm and Send"
         lockedTargetBranchId={selectedTransferRequest?.branch?.id ?? undefined}
         lockedTargetBranchName={selectedTransferRequest?.branch?.name ?? undefined}
+      />
+
+      <AddSystemExpenseModal
+        isOpen={systemExpenseModalOpen}
+        onClose={() => setSystemExpenseModalOpen(false)}
+        onSubmit={handleSystemExpenseSubmit}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

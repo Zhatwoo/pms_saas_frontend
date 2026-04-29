@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type { AccountStatusUi, UserRecord, UserRole } from "../page";
 
 interface UserTableProps {
@@ -15,6 +16,7 @@ interface UserTableProps {
   onDeleteUser: (user: UserRecord) => void;
   onApproveUser: (user: UserRecord) => void;
   onRejectUser: (user: UserRecord) => void;
+  isLoading?: boolean;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -120,6 +122,7 @@ export function UserTable({
   onDeleteUser,
   onApproveUser,
   onRejectUser,
+  isLoading = false,
 }: UserTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -166,8 +169,23 @@ export function UserTable({
               </tr>
             </thead>
             <tbody>
-              {paginatedUsers.map((user, index) => (
-                <tr
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-base font-medium text-text-tertiary">
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinnerLabel text="Loading users..." className="text-base font-medium text-text-tertiary" />
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-base font-medium text-text-tertiary">
+                    No users found.
+                  </td>
+                </tr>
+              ) : (
+                paginatedUsers.map((user, index) => (
+                  <tr
                   key={`${user.id}-${user.email}`}
                   onClick={() => onUserClick(user)}
                   className="group cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
@@ -234,7 +252,7 @@ export function UserTable({
                     </div>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

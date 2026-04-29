@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 export type PurposeType = "Start" | "End" | "Buy Back" | "Renew" | "Reappraise" | "Redeem" | "Sold Item" | "Pawn" | "Fund Transfer" | "Cash Transfer" | "Buy Out";
 
@@ -66,6 +67,7 @@ const purposeVariant: Record<
   "blue" | "green" | "orange" | "purple" | "black"
 > = {
   Start: "black",
+  End: "black",
   "Buy Back": "blue",
   Renew: "green",
   "Sold Item": "orange",
@@ -75,7 +77,6 @@ const purposeVariant: Record<
   "Buy Out": "purple",
   "Reappraise": "blue",
   "Redeem": "green",
-  "End": "black",
 };
 
 function isHighlightedPawn(value: string): boolean {
@@ -94,6 +95,7 @@ function formatMoney(value: string) {
 
 interface TransactionTableProps {
   data?: TransactionRow[];
+  isLoading?: boolean;
   onReprint?: (transactionNo: string) => void;
   onViewDetails?: (transaction: TransactionRow) => void;
   highlightedTransactionNo?: string | null;
@@ -103,6 +105,7 @@ interface TransactionTableProps {
 
 export function TransactionTable({
   data = [],
+  isLoading = false,
   onReprint,
   onViewDetails,
   highlightedTransactionNo,
@@ -183,11 +186,25 @@ export function TransactionTable({
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {isLoading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-4 text-center text-sm text-text-tertiary"
+                  className="py-12 text-center text-base font-medium text-text-tertiary"
+                >
+                  <div className="flex items-center justify-center">
+                    <LoadingSpinnerLabel 
+                      text="Loading transactions..." 
+                      className="text-base font-medium text-text-tertiary" 
+                    />
+                  </div>
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="py-8 text-center text-sm text-text-tertiary"
                 >
                   No transactions found
                 </td>

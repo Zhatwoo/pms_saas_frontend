@@ -9,6 +9,7 @@ import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { useBranch } from "@/contexts/branch-context";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -198,6 +199,7 @@ export default function EmployeePawnedItemsPage() {
         </div>
       </div>
 
+
       {hasHighlightedItem && (
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 shadow-sm shadow-black/10">
           Highlighted item from customer transaction history. The full list remains visible.
@@ -217,14 +219,15 @@ export default function EmployeePawnedItemsPage() {
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={8} className="py-16 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="anim-loading h-6 w-6 border-emerald-500/50 border-t-emerald-600 rounded-full" />
-                      <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-widest">Loading branch inventory...</span>
-                    </div>
-                  </td></tr>
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinnerLabel text="Loading pawned items..." className="text-base font-medium text-text-tertiary" />
+                      </div>
+                    </td>
+                  </tr>
                 ) : pawnedItems.length === 0 ? (
-                  <tr><td colSpan={8} className="py-8 text-center text-sm text-zinc-400">No pawned items found for this branch</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found for this branch</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
@@ -282,7 +285,7 @@ export default function EmployeePawnedItemsPage() {
         <InventoryCalendar items={pawnedItems} />
       )}
 
-      <div className="overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20">
+      <div className="overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20 mt-4">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
@@ -291,6 +294,7 @@ export default function EmployeePawnedItemsPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
 
       <PawnedItemDetailsModal 
         isOpen={Boolean(selectedItemId)} 

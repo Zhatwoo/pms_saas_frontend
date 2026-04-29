@@ -23,6 +23,7 @@ import type {
 } from "@/components/shared/finance-ledger-table";
 import { RequestFundsModal } from "@/app/admin/branch-finance/_components/request-funds-modal";
 import type { RequestFundsData } from "@/app/admin/branch-finance/_components/request-funds-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
@@ -128,12 +129,19 @@ export default function EmployeeBranchFinancePage() {
   const loadFinanceData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const today = new Date().toISOString().split("T")[0];
+    const ledgerDateFromQuery = ledgerDateFrom || today;
+    const ledgerDateToQuery = ledgerDateTo || today;
     try {
       const [dashboardData, requestData, summaryData, ledgerData] = await Promise.all([
         api.get<EmployeeDashboardResponse>("/dashboard"),
         api.get<FundRequestRecord[]>("/fund-requests"),
         api.get<BranchFinanceSummaryApi[]>("/branch-finance/summary"),
-        api.get<{ entries: LedgerEntry[]; total: number }>("/branch-finance/ledger?limit=100"),
+        api.get<{ entries: LedgerEntry[]; total: number }>(
+          `/branch-finance/ledger?limit=500&dateFrom=${encodeURIComponent(
+            ledgerDateFromQuery,
+          )}&dateTo=${encodeURIComponent(ledgerDateToQuery)}`,
+        ),
       ]);
       setDashboard(dashboardData);
       setRequests(requestData);
@@ -144,7 +152,7 @@ export default function EmployeeBranchFinancePage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [ledgerDateFrom, ledgerDateTo]);
 
   useEffect(() => {
     void loadFinanceData();
@@ -277,19 +285,9 @@ export default function EmployeeBranchFinancePage() {
 
   const finance = dashboard?.branchFinance;
   const resolvedCurrentBalance = useMemo(() => {
-    const current = finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
-    if (current !== 0) {
-      return current;
-    }
-
-    if (!finance) {
-      return current;
-    }
-
-    return Number(
-      (finance.startingBalance + finance.totalAdded - finance.totalTransferred).toFixed(2),
-    );
-  }, [dashboard?.currentBalance, finance]);
+    if (branchSummary) return branchSummary.currentBalance;
+    return finance?.currentBalance ?? dashboard?.currentBalance ?? 0;
+  }, [branchSummary, dashboard?.currentBalance, finance?.currentBalance]);
 
   return (
     <div className="space-y-6">
@@ -309,9 +307,13 @@ export default function EmployeeBranchFinancePage() {
         </div>
         <button
           onClick={() => setRequestModalOpen(true)}
-          className="rounded-lg border border-blue-500/20 bg-blue-500/15 px-4 py-2 text-sm font-bold text-blue-300 transition-colors hover:bg-blue-500/25"
+          className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-blue-900/20 transition-all hover:bg-blue-700 hover:shadow-blue-900/40 active:scale-95"
         >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
           Request Funds
+          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
         </button>
       </div>
 
@@ -322,21 +324,48 @@ export default function EmployeeBranchFinancePage() {
       ) : null}
 
       {!dashboard && isLoading ? (
-        <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
-          Loading branch finance data...
+        <div className="flex items-center justify-center rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
+          <LoadingSpinnerLabel text="Loading branch finance data..." className="text-sm text-text-tertiary" />
         </div>
       ) : dashboard ? (
-        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
-          <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-text-primary">
-              {finance?.name ?? dashboard?.branch?.name ?? "Branch Finance"}
-            </h2>
-            <p className="mt-2 text-3xl font-black text-emerald-300">
-              {formatCurrency(resolvedCurrentBalance)}
-            </p>
-            <p className="mt-1 text-xs text-text-muted">
-              Last updated: {formatFinanceDate(finance?.lastUpdated)}
-            </p>
+        <div className="space-y-6 transition-opacity duration-200">
+          <div className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 p-6 shadow-2xl transition-all hover:shadow-emerald-900/20">
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5 blur-3xl transition-all group-hover:bg-white/10" />
+            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-emerald-400/5 blur-3xl" />
+            
+            <div className="relative flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <h2 className="text-sm font-black uppercase tracking-widest text-emerald-400/80">
+                    {finance?.name ?? dashboard?.branch?.name ?? "Branch Balance"}
+                  </h2>
+                </div>
+                <p className="mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl">
+                  {formatCurrency(resolvedCurrentBalance)}
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-emerald-400">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                    </svg>
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
+                    Last sync: {formatFinanceDate(finance?.lastUpdated)}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="hidden sm:block">
+                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/10">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400 opacity-50">
+                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
+                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
+                    <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -353,18 +382,36 @@ export default function EmployeeBranchFinancePage() {
             >
               {queues.pendingReview.length > 0 ? (
                 queues.pendingReview.map((request) => (
-                  <div key={request.id} className="rounded-xl border border-blue-500/20 bg-surface px-4 py-4 shadow-sm shadow-black/10">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-bold text-text-primary">
-                          {request.requestNo} - {formatCurrency(request.amountRequested)}
+                  <div key={request.id} className="group relative overflow-hidden rounded-xl border border-blue-500/20 bg-surface p-4 shadow-sm transition-all hover:border-blue-500/40 hover:shadow-md">
+                    <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-blue-500/5 transition-all group-hover:bg-blue-500/10" />
+                    <div className="relative flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-text-primary">
+                            {request.requestNo}
+                          </span>
+                          <span className="h-1 w-1 rounded-full bg-text-tertiary" />
+                          <span className="text-sm font-black text-blue-500">
+                            {formatCurrency(request.amountRequested)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs font-bold text-text-secondary">
+                          <span className="text-text-tertiary font-medium">Purpose:</span> {request.purpose}
                         </p>
-                        <p className="mt-1 text-xs text-text-secondary">Purpose: {request.purpose}</p>
-                        {request.notes ? <p className="mt-1 text-xs text-text-muted">{request.notes}</p> : null}
-                        <p className="mt-1 text-xs text-text-muted">Requested: {formatFinanceDate(request.createdAt)}</p>
+                        {request.notes ? (
+                          <div className="mt-2 rounded-lg bg-surface-secondary/50 p-2 border border-border-subtle/50">
+                            <p className="text-[11px] italic text-text-muted leading-relaxed">"{request.notes}"</p>
+                          </div>
+                        ) : null}
+                        <div className="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          Requested {formatFinanceDate(request.createdAt)}
+                        </div>
                       </div>
-                      <span className="rounded-full bg-blue-500/15 px-2.5 py-1 text-[11px] font-bold text-blue-300">
-                        Pending
+                      <span className="shrink-0 rounded-full bg-blue-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-400 border border-blue-500/20">
+                        Reviewing
                       </span>
                     </div>
                   </div>
@@ -391,37 +438,45 @@ export default function EmployeeBranchFinancePage() {
                 confirmationRequests.map((request) => {
                   const isSourceConfirmation = request.status === "pending_source_confirmation";
                   return (
-                    <div key={request.id} className="rounded-xl border border-orange-500/20 bg-surface px-4 py-4 shadow-sm shadow-black/10">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-bold text-text-primary">
-                            {request.requestNo} - {formatCurrency(getRequestAmount(request))}
+                    <div key={request.id} className="group relative overflow-hidden rounded-xl border border-orange-500/20 bg-surface p-4 shadow-sm transition-all hover:border-orange-500/40 hover:shadow-md">
+                      <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-orange-500/5 transition-all group-hover:bg-orange-500/10" />
+                      <div className="relative flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-text-primary">
+                              {request.requestNo}
+                            </span>
+                            <span className="h-1 w-1 rounded-full bg-text-tertiary" />
+                            <span className="text-sm font-black text-orange-500">
+                              {formatCurrency(getRequestAmount(request))}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xs font-bold text-text-secondary">
+                            <span className="text-text-tertiary font-medium">{isSourceConfirmation ? "To:" : "From:"}</span> {isSourceConfirmation ? (request.branch?.name ?? "Unknown") : (request.sourceBranch?.name ?? "Management")}
                           </p>
-                          <p className="mt-1 text-xs text-text-secondary">
-                            {isSourceConfirmation
-                              ? `Sending branch: ${request.sourceBranch?.name ?? request.sourceBranchId ?? "Unknown Branch"}`
-                              : `Receiving branch: ${request.branch?.name ?? "Unknown Branch"}`}
-                          </p>
-                          <p className="mt-1 text-xs text-text-muted">
-                            Transfer mode: {request.transferMode?.replaceAll("_", " ") ?? "Cash"}
-                          </p>
-                          <p className="mt-1 text-xs text-text-muted">
-                            {isSourceConfirmation
-                              ? `Outgoing deduction pending since ${formatFinanceDate(request.transferredAt ?? request.createdAt)}`
-                              : `Sent for receipt confirmation: ${formatFinanceDate(request.transferredAt ?? request.createdAt)}`}
-                          </p>
-                          {request.transferNotes ? (
-                            <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
-                          ) : null}
-                          {request.sourceConfirmationNotes ? (
-                            <p className="mt-1 text-xs text-text-muted">Source notes: {request.sourceConfirmationNotes}</p>
-                          ) : null}
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-text-tertiary">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/50" />
+                              {request.transferMode?.replaceAll("_", " ") ?? "Cash"}
+                            </div>
+                            <div className="text-[10px] font-bold text-text-tertiary/40">|</div>
+                            <div className="text-[10px] font-bold text-text-tertiary">
+                              {formatFinanceDate(request.transferredAt ?? request.createdAt)}
+                            </div>
+                          </div>
+                          
+                          {(request.transferNotes || request.sourceConfirmationNotes) && (
+                            <div className="mt-3 rounded-lg bg-orange-500/[0.03] p-2 border border-orange-500/10">
+                              {request.transferNotes && <p className="text-[10px] text-text-secondary leading-tight"><span className="font-black text-orange-500/70">Note:</span> {request.transferNotes}</p>}
+                              {request.sourceConfirmationNotes && <p className="mt-1 text-[10px] text-text-secondary leading-tight"><span className="font-black text-orange-500/70">Src:</span> {request.sourceConfirmationNotes}</p>}
+                            </div>
+                          )}
                         </div>
                         <button
                           type="button"
                           onClick={() => handleConfirmRequestClick(request)}
                           disabled={isSubmitting}
-                          className="rounded-lg border border-emerald-500/20 bg-emerald-500/15 px-4 py-2 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700 hover:shadow-emerald-900/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {getConfirmationLabel(request)}
                         </button>
@@ -439,15 +494,25 @@ export default function EmployeeBranchFinancePage() {
 
           {/* ── Unified Branch Finance Ledger ── */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                  <line x1="1" y1="10" x2="23" y2="10" />
-                </svg>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 shadow-inner">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-black tracking-tight text-text-primary">Branch Finance Ledger</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                      Transaction History
+                    </span>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-sm font-bold text-text-primary">Branch Finance Ledger</h2>
-              <span className="rounded-full bg-surface-secondary px-2 py-0.5 text-[10px] font-bold text-text-secondary">
+              <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-tighter text-indigo-400">
                 View Only
               </span>
             </div>
@@ -460,27 +525,47 @@ export default function EmployeeBranchFinancePage() {
               />
             )}
 
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={ledgerSearch}
-                onChange={(e) => setLedgerSearch(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
-              />
+            <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border-main bg-surface/50 p-4 backdrop-blur-sm shadow-sm">
+              <div className="relative flex-1 min-w-[240px]">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search ledger..."
+                  value={ledgerSearch}
+                  onChange={(e) => setLedgerSearch(e.target.value)}
+                  className="w-full rounded-xl border border-border-main bg-surface pl-10 pr-4 py-2.5 text-sm font-medium text-text-primary placeholder:text-text-tertiary focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all"
+                />
+              </div>
+              
               <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
-              <input
-                type="date"
-                value={ledgerDateFrom}
-                onChange={(e) => setLedgerDateFrom(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={ledgerDateTo}
-                onChange={(e) => setLedgerDateTo(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-              />
+              
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={ledgerDateFrom}
+                    onChange={(e) => setLedgerDateFrom(e.target.value)}
+                    className="rounded-xl border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all"
+                  />
+                  <div className="absolute -top-2 left-3 bg-surface px-1 text-[9px] font-black uppercase text-text-tertiary">From</div>
+                </div>
+                <div className="text-text-tertiary">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/></svg>
+                </div>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={ledgerDateTo}
+                    onChange={(e) => setLedgerDateTo(e.target.value)}
+                    className="rounded-xl border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all"
+                  />
+                  <div className="absolute -top-2 left-3 bg-surface px-1 text-[9px] font-black uppercase text-text-tertiary">To</div>
+                </div>
+              </div>
               {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) && (
                 <button
                   onClick={() => {
@@ -499,9 +584,9 @@ export default function EmployeeBranchFinancePage() {
             <div className="flex justify-end print:hidden mb-2">
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-bold text-emerald-300 transition-colors hover:bg-emerald-500/20"
+                className="group flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700 hover:shadow-emerald-900/40 active:scale-95"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                   <rect width="12" height="8" x="6" y="14" />
@@ -585,72 +670,81 @@ export default function EmployeeBranchFinancePage() {
             </div>
 
             {/* Unified table */}
-            <div className="print:hidden overflow-x-auto rounded-xl border border-border-main bg-surface">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
-                    <th className="px-3 py-3">Date</th>
-                    <th className="px-3 py-3">Source</th>
-                    <th className="px-3 py-3">Type / Status</th>
-                    <th className="px-3 py-3">Item Name</th>
-                    <th className="px-3 py-3">Description</th>
-                    <th className="px-3 py-3 text-right">Cash In</th>
-                    <th className="px-3 py-3 text-right">Cash Out</th>
-                    <th className="px-3 py-3">Reference</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {unifiedRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-3 py-10 text-center text-text-tertiary">
-                        No records found for the selected filters.
-                      </td>
+            <div className="print:hidden overflow-hidden rounded-2xl border border-border-main bg-surface shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[900px] text-sm">
+                  <thead>
+                    <tr className="bg-surface-secondary/50 border-b border-border-subtle text-left text-[10px] font-black uppercase tracking-widest text-text-tertiary">
+                      <th className="px-4 py-4">Date & Time</th>
+                      <th className="px-4 py-4">Src</th>
+                      <th className="px-4 py-4">Transaction Type</th>
+                      <th className="px-4 py-4">Item Name</th>
+                      <th className="px-4 py-4">Details / Description</th>
+                      <th className="px-4 py-4 text-right">Cash In</th>
+                      <th className="px-4 py-4 text-right">Cash Out</th>
+                      <th className="px-4 py-4">Reference</th>
                     </tr>
-                  ) : (
-                    unifiedRows.map((row) => (
-                      <tr key={row.id} className="border-b border-border-subtle transition-colors hover:bg-surface-secondary/50">
-                        <td className="px-3 py-3 align-top">
-                          <span className="text-sm text-text-secondary">{row.displayDate}</span>
-                          {row.displayTime ? (
-                            <span className="ml-1.5 text-xs text-text-muted">{row.displayTime}</span>
-                          ) : null}
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold bg-indigo-500/15 text-indigo-300">
-                            TXN
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          {row.typeBadge}
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className="block max-w-[160px] truncate text-sm font-medium text-text-primary" title={row.itemName ?? ""}>
-                            {row.itemName || "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className="block max-w-[240px] truncate text-sm text-text-secondary" title={row.description}>
-                            {row.description || "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top text-right">
-                          <span className={`text-sm font-bold ${row.cashIn > 0 ? "text-emerald-600" : "text-text-muted"}`}>
-                            {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top text-right">
-                          <span className={`text-sm font-bold ${row.cashOut > 0 ? "text-red-600" : "text-text-muted"}`}>
-                            {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
-                          </span>
-                        </td>
-                        <td className="px-3 py-3 align-top">
-                          <span className="text-xs font-mono text-text-muted">{row.reference || "—"}</span>
+                  </thead>
+                  <tbody className="divide-y divide-border-subtle/50">
+                    {unifiedRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-12 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="rounded-full bg-surface-secondary p-3">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-tertiary">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                              </svg>
+                            </div>
+                            <span className="text-sm font-medium text-text-tertiary">No financial records found</span>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      unifiedRows.map((row) => (
+                        <tr key={row.id} className="group transition-colors hover:bg-emerald-500/[0.02]">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-text-primary">{row.displayDate}</span>
+                              <span className="text-[10px] font-medium text-text-tertiary uppercase tracking-tighter">{row.displayTime || "12:00 AM"}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                              <span className="inline-flex items-center justify-center rounded-lg bg-indigo-500/10 px-2 py-1 text-[9px] font-black text-indigo-500 border border-indigo-500/20">
+                              TXN
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            {row.typeBadge}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="block max-w-[160px] truncate text-sm font-bold text-text-primary" title={row.itemName ?? ""}>
+                              {row.itemName || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="block max-w-[240px] truncate text-sm text-text-secondary leading-tight" title={row.description}>
+                              {row.description || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <span className={`text-sm font-black ${row.cashIn > 0 ? "text-emerald-600" : "text-text-tertiary/40"}`}>
+                              {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <span className={`text-sm font-black ${row.cashOut > 0 ? "text-red-600" : "text-text-tertiary/40"}`}>
+                              {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="text-[11px] font-black font-mono text-text-tertiary bg-surface-secondary/80 px-2 py-0.5 rounded border border-border-subtle">{row.reference || "—"}</span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           </div>

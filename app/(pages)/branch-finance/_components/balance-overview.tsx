@@ -183,13 +183,18 @@ function SingleBranchCard({
 function AggregateBranchCard({
   totalBranches,
   branchRows,
+  systemExpenses = 0,
   onAddFunds,
+  onAddSystemExpense,
 }: {
   totalBranches: number;
   branchRows: BranchBalanceRow[];
+  systemExpenses?: number;
   onAddFunds?: () => void;
+  onAddSystemExpense?: () => void;
 }) {
-  const totalCurrent = branchRows.reduce((sum, b) => sum + b.currentBalance, 0);
+  const branchTotal = branchRows.reduce((sum, b) => sum + b.currentBalance, 0);
+  const totalCurrent = branchTotal - systemExpenses;
 
   return (
     <div className="space-y-4">
@@ -217,20 +222,25 @@ function AggregateBranchCard({
         <div className="flex items-center justify-between px-6 py-4">
           <div>
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
-              Total Current Balance
+              Total Overall Sales / Balance
             </p>
             <div className="flex items-end gap-3">
               <span className="text-4xl font-extrabold tracking-tight text-white">
                 {fmt(totalCurrent)}
               </span>
             </div>
+            {systemExpenses > 0 && (
+              <p className="mt-1 text-xs font-medium text-emerald-300/80">
+                (Branch Total: {fmt(branchTotal)} - System Expenses: {fmt(systemExpenses)})
+              </p>
+            )}
           </div>
 
-          {onAddFunds && (
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-end gap-2">
+            {onAddFunds && (
               <button
                 onClick={onAddFunds}
-                className="flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-5 py-2.5 text-base font-bold text-white transition-colors hover:bg-emerald-500/30"
+                className="flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -238,8 +248,20 @@ function AggregateBranchCard({
                 </svg>
                 Manual Cash Transfer
               </button>
-            </div>
-          )}
+            )}
+            {onAddSystemExpense && (
+              <button
+                onClick={onAddSystemExpense}
+                className="flex items-center gap-2 rounded-lg border border-red-500/50 bg-red-500/20 px-5 py-2 text-sm font-bold text-red-100 transition-colors hover:bg-red-500/30"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                Add System Expense
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -300,7 +322,9 @@ interface BalanceOverviewProps {
   selectedBranchId: string;
   selectedBranchName: string;
   balances: BranchBalance[];
+  systemExpenses?: number;
   onAddFunds: () => void;
+  onAddSystemExpense?: () => void;
 }
 
 export function BalanceOverview({
@@ -308,13 +332,17 @@ export function BalanceOverview({
   selectedBranchId,
   selectedBranchName,
   balances,
+  systemExpenses = 0,
   onAddFunds,
+  onAddSystemExpense,
 }: BalanceOverviewProps) {
   if (isAllBranches) {
     return (
       <AggregateBranchCard
         totalBranches={balances.length}
+        systemExpenses={systemExpenses}
         onAddFunds={onAddFunds}
+        onAddSystemExpense={onAddSystemExpense}
         branchRows={balances.map((b) => ({
           branchId: b.branchId,
           name: b.name,

@@ -120,14 +120,17 @@ export function TransactionTable({
             </tr>
           </thead>
           <tbody>
-            {isLoading && data.length === 0 ? (
+            {isLoading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="py-8 text-center text-base text-text-tertiary"
+                  className="py-12 text-center text-base font-medium text-text-tertiary"
                 >
                   <div className="flex items-center justify-center">
-                    <LoadingSpinnerLabel text="Loading transactions..." className="text-base text-text-tertiary" />
+                    <LoadingSpinnerLabel 
+                      text="Loading pawn transactions..." 
+                      className="text-base font-medium text-text-tertiary" 
+                    />
                   </div>
                 </td>
               </tr>

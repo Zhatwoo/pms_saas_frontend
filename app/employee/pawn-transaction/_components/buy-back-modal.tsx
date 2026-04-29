@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, type ChangeEvent } from "react";
+import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { formatDateToYMD } from "@/lib/time";
@@ -91,6 +91,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
   });
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
+  const isProcessingRef = useRef(false);
   const [items, setItems] = useState<ForSaleItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -149,6 +150,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
   };
 
   const handleConfirmBuyBack = async () => {
+    if (isProcessingRef.current) return;
     if (!selectedItem) return;
     setError(null);
 
@@ -163,6 +165,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
       return;
     }
 
+    isProcessingRef.current = true;
     setIsConfirming(true);
     try {
       // 1. Verify Password
@@ -196,6 +199,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
       toast.error(msg);
     } finally {
       setIsConfirming(false);
+      isProcessingRef.current = false;
     }
   };
 
