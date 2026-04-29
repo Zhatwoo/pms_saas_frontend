@@ -372,28 +372,51 @@ const BREAKDOWN_ITEMS: {
 
 export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: FinanceSummaryCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
       {todayCashIn != null && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Today In</p>
-          <p className="mt-0.5 text-sm font-extrabold text-emerald-200">{fmt(todayCashIn)}</p>
+        <div className="group relative overflow-hidden rounded-xl border border-emerald-500/30 bg-emerald-50/50 p-4 transition-all hover:shadow-md dark:bg-emerald-900/10">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Today In</p>
+            <div className="rounded-full bg-emerald-100 p-1 dark:bg-emerald-900/40">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-600 dark:text-emerald-400">
+                <path d="M7 13l5 5 5-5M12 18V6" />
+              </svg>
+            </div>
+          </div>
+          <p className="mt-2 text-lg font-black text-emerald-700 dark:text-emerald-300">{fmt(todayCashIn)}</p>
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-emerald-500/20" />
         </div>
       )}
       {todayCashOut != null && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-red-300">Today Out</p>
-          <p className="mt-0.5 text-sm font-extrabold text-red-200">{fmt(todayCashOut)}</p>
+        <div className="group relative overflow-hidden rounded-xl border border-red-500/30 bg-red-50/50 p-4 transition-all hover:shadow-md dark:bg-red-900/10">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Today Out</p>
+            <div className="rounded-full bg-red-100 p-1 dark:bg-red-900/40">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-red-600 dark:text-red-400">
+                <path d="M7 11l5-5 5 5M12 6v12" />
+              </svg>
+            </div>
+          </div>
+          <p className="mt-2 text-lg font-black text-red-700 dark:text-red-300">{fmt(todayCashOut)}</p>
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-red-500/20" />
         </div>
       )}
       {BREAKDOWN_ITEMS.map((item) => {
         const val = breakdown[item.key];
         if (val === 0) return null;
+        
+        // Map colors to more vibrant versions for the premium look
+        const colorClass = item.color.replace('text-', 'text-').replace('-300', '-600 dark:text-').replace('-300', '-400');
+        const borderClass = item.color.replace('text-', 'border-').replace('-300', '-500/20');
+        const bgClass = item.color.replace('text-', 'bg-').replace('-300', '-50/50 dark:bg-').replace('-300', '-900/10');
+
         return (
-          <div key={item.key} className="rounded-lg border border-border-main bg-surface px-3 py-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-muted">{item.label}</p>
-            <p className={`mt-0.5 text-sm font-extrabold ${item.color}`}>
+          <div key={item.key} className={`group relative overflow-hidden rounded-xl border ${borderClass} ${bgClass} p-4 transition-all hover:shadow-md`}>
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{item.label}</p>
+            <p className={`mt-2 text-lg font-black ${colorClass}`}>
               {item.direction === "out" ? "-" : "+"}{fmt(val)}
             </p>
+            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-20 ${item.color.replace('text-', 'bg-')}`} />
           </div>
         );
       })}
@@ -424,16 +447,23 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
 
 export function LedgerTypeFilter({ value, onChange }: LedgerTypeFilterProps) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-    >
-      {TYPE_OPTIONS.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none rounded-lg border border-border-main bg-surface pl-3 pr-8 py-2 text-sm font-medium text-text-primary focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all cursor-pointer"
+      >
+        {TYPE_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-text-tertiary">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </div>
+    </div>
   );
 }
