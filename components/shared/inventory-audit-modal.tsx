@@ -3,12 +3,10 @@ import Image from "next/image";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
-import { useTheme } from "@/contexts/theme-context";
 import { StatusBadge } from "./status-badge";
 
 interface InventoryAuditModalProps {
   isOpen: boolean;
-  displayMode?: "modal" | "page" | "embedded";
   onConfirm: () => void;
   onClose: () => void;
 }
@@ -89,50 +87,13 @@ function decodeScanPayload(value: string) {
   }
 }
 
-function extractItemIdFromPayload(value: string) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return "";
-  }
-
-  const extractFromUrl = (urlValue: URL) => {
-    const queryItemId =
-      urlValue.searchParams.get("itemId") ??
-      urlValue.searchParams.get("unitCode") ??
-      urlValue.searchParams.get("code") ??
-      "";
-
-    if (queryItemId.trim()) {
-      return queryItemId.trim();
-    }
-
-    const pathSegments = urlValue.pathname.split("/").filter(Boolean);
-    if (pathSegments.length > 0) {
-      return pathSegments[pathSegments.length - 1].trim();
-    }
-
-    return "";
-  };
-
-  try {
-    return extractFromUrl(new URL(trimmedValue));
-  } catch {
-    try {
-      return extractFromUrl(new URL(trimmedValue, "https://placeholder.invalid"));
-    } catch {
-      return trimmedValue;
-    }
-  }
-}
-
 function parseScanPayload(value: string): ParsedScan {
   const rawValue = decodeScanPayload(value).trim();
   const codeMatch = rawValue.match(/(?:^|\|)\s*Code:\s*([^|]+)/i);
   const itemMatch = rawValue.match(/(?:^|\|)\s*Item:\s*([^|]+)/i);
   const serialMatch = rawValue.match(/(?:^|\|)\s*(?:SN|Serial(?:\s*No\.?|\s*Number)?|Serial #):\s*([^|]+)/i);
 
-  const itemId = (codeMatch?.[1] ?? extractItemIdFromPayload(rawValue) ?? rawValue).trim();
+  const itemId = (codeMatch?.[1] ?? rawValue).trim();
 
   return {
     rawValue,
@@ -169,9 +130,8 @@ interface InventoryAuditStorageState {
   currentScan: string;
 }
 
-export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, onClose }: InventoryAuditModalProps) {
+export function InventoryAuditModal({ isOpen, onConfirm, onClose }: InventoryAuditModalProps) {
   const { selectedBranch } = useBranch();
-  const { isDark, toggleTheme } = useTheme();
   const [scannedItems, setScannedItems] = useState<ScannedItemDetails[]>([]);
   const [currentScan, setCurrentScan] = useState("");
   const [detectedScan, setDetectedScan] = useState<ParsedScan | null>(null);
@@ -652,10 +612,6 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
 
   const activeItem = pendingItem ?? null;
   const ownerPhoto = activeItem?.ownerIdPhoto || activeItem?.originalPhoto || "";
-  const isEmbeddedMode = displayMode === "embedded";
-  const isPageMode = displayMode === "page";
-  const isImmersiveMode = isPageMode || isEmbeddedMode;
-  const immersiveLightMode = isImmersiveMode && !isDark;
   const cameraFields = [
     { label: "Item ID", value: activeItem?.itemId || detectedScan?.itemId || "N/A" },
     { label: "Item Name", value: activeItem?.itemName || detectedScan?.itemName || "N/A" },
@@ -670,78 +626,49 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
   const resolvedScanSerial = activeItem?.serialNumber || activeItem?.scanSerialNumber || detectedScan?.serialNumber || "N/A";
 
   return (
-    <div className={isPageMode ? (isDark ? "relative flex min-h-[100svh] w-full items-stretch justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.16),_transparent_40%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)] px-3 py-3 text-white lg:px-6 lg:py-6" : "relative flex min-h-[100svh] w-full items-stretch justify-center overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.08),_transparent_40%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_100%)] px-3 py-3 text-slate-900 lg:px-6 lg:py-6") : isEmbeddedMode ? (isDark ? "relative flex h-full min-h-0 w-full items-stretch justify-center overflow-hidden bg-slate-950 text-white" : "relative flex h-full min-h-0 w-full items-stretch justify-center overflow-hidden bg-stone-50 text-slate-900") : "fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-3 py-3 backdrop-blur-xl lg:px-6 lg:py-6"}>
-      <div className={isPageMode || isEmbeddedMode ? (isDark ? "relative flex h-full min-h-0 w-full max-w-none overflow-hidden rounded-none border-0 bg-slate-950 shadow-none" : "relative flex h-full min-h-0 w-full max-w-none overflow-hidden rounded-none border-0 bg-white shadow-none") : "relative h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl"}>
-        {!isImmersiveMode && (
-          <button
-            type="button"
-            onClick={onClose}
-            className={isDark ? "absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/55" : "absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition-colors hover:bg-zinc-50"}
-            aria-label="Close inventory audit modal"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
-        )}
-        <div className={isImmersiveMode ? "mx-auto grid h-full min-h-0 w-full max-w-[1280px] lg:grid-cols-[minmax(0,1.08fr)_minmax(19rem,.92fr)]" : "grid h-full min-h-0 lg:grid-cols-[1.25fr_.88fr]"}>
-          <section className={isImmersiveMode ? (isDark ? "relative flex min-h-0 flex-col overflow-hidden border-b border-white/10 bg-slate-950 p-4 text-white lg:border-b-0 lg:border-r lg:p-5" : "relative flex min-h-0 flex-col overflow-hidden border-b border-slate-200 bg-white p-4 text-slate-900 lg:border-b-0 lg:border-r lg:p-5") : "relative flex min-h-0 flex-col overflow-hidden bg-white p-4 text-zinc-900 lg:p-6"}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-3 py-3 backdrop-blur-xl lg:px-6 lg:py-6">
+      <div className="relative h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white transition-colors hover:bg-black/55"
+          aria-label="Close inventory audit modal"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+        <div className="grid h-full min-h-0 lg:grid-cols-[1.25fr_.88fr]">
+          <section className="relative flex min-h-0 flex-col overflow-hidden bg-white p-4 text-zinc-900 lg:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className={isImmersiveMode ? (isDark ? "text-[10px] font-black uppercase tracking-[0.4em] text-emerald-300/70" : "text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70") : "text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70"}>Opening Workflow</p>
-                <h2 className={isImmersiveMode ? (isDark ? "mt-2 text-2xl font-black leading-tight text-white lg:text-[1.9rem]" : "mt-2 text-2xl font-black leading-tight text-slate-950 lg:text-[1.9rem]") : "mt-2 text-2xl font-black leading-tight lg:text-3xl"}>Inventory QR Scan</h2>
-                <p className={isImmersiveMode ? (isDark ? "mt-2 max-w-xl text-xs leading-5 text-slate-300/80 lg:text-sm" : "mt-2 max-w-xl text-xs leading-5 text-slate-500 lg:text-sm") : "mt-2 max-w-xl text-xs leading-5 text-zinc-600 lg:text-sm"}>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
+                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Inventory QR Scan</h2>
+                <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 lg:text-sm">
                   The camera opens automatically so you can scan each pawned item QR code before starting the day.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 flex-nowrap">
-                <div className={isImmersiveMode ? (isDark ? "rounded-full border border-emerald-200/30 bg-white/10 px-3 py-2 text-[10px] font-bold text-emerald-100 shadow-sm lg:px-4 lg:text-xs whitespace-nowrap" : "rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm lg:px-4 lg:text-xs whitespace-nowrap") : "rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm lg:px-4 lg:text-xs whitespace-nowrap"}>
-                  {scannedItems.length} Verified
-                </div>
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className={isImmersiveMode ? (isDark ? "h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10" : "h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50") : "h-9 w-9 flex-shrink-0 flex items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition-colors hover:bg-zinc-50"}
-                  aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-                >
-                  {isDark ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <circle cx="12" cy="12" r="4" />
-                      <path d="M12 2v2" />
-                      <path d="M12 20v2" />
-                      <path d="M4.93 4.93l1.41 1.41" />
-                      <path d="M17.66 17.66l1.41 1.41" />
-                      <path d="M2 12h2" />
-                      <path d="M20 12h2" />
-                      <path d="M4.93 19.07l1.41-1.41" />
-                      <path d="M17.66 6.34l1.41-1.41" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                    </svg>
-                  )}
-                  <span className="sr-only">{isDark ? "Switch to light mode" : "Switch to dark mode"}</span>
-                </button>
+              <div className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm lg:px-4 lg:text-xs">
+                {scannedItems.length} Verified
               </div>
             </div>
 
-            <div className={isImmersiveMode ? (isDark ? "mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-300 lg:mt-5 lg:text-xs" : "mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500 lg:mt-5 lg:text-xs") : "mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 lg:mt-5 lg:text-xs"}>
+            <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 lg:mt-5 lg:text-xs">
               <span
                 className={`h-2.5 w-2.5 rounded-full ${cameraState === "ready" ? "bg-emerald-500 animate-pulse" : cameraState === "loading" ? "bg-amber-400 animate-pulse" : cameraState === "unsupported" ? "bg-sky-400" : "bg-rose-400"}`}
               />
               <span>{cameraStatusLabel}</span>
             </div>
 
-            <div className={isImmersiveMode ? (isDark ? "relative mt-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/90 shadow-[0_24px_70px_rgba(2,6,23,0.35)] lg:mt-5" : "relative mt-4 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)] lg:mt-5") : "relative mt-4 overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] lg:mt-5"}>
-              <div className={isImmersiveMode ? "relative aspect-[15/10] w-full lg:aspect-[16/9]" : "relative aspect-[16/10] w-full lg:aspect-[16/9]"}>
+            <div className="relative mt-4 overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] lg:mt-5">
+              <div className="relative aspect-[16/10] w-full lg:aspect-[16/9]">
                 <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" autoPlay playsInline muted />
-                <div className={isImmersiveMode ? (isDark ? "absolute inset-0 bg-slate-950/25" : "absolute inset-0 bg-white/30") : "absolute inset-0 bg-black/8"} />
+                <div className="absolute inset-0 bg-black/8" />
 
                 <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className={`animate-scan-glow relative aspect-square w-[min(74%,22rem)] rounded-[1.5rem] border bg-transparent shadow-[0_0_0_9999px_${isImmersiveMode ? (isDark ? "rgba(2,6,23,0.42)" : "rgba(255,255,255,0.56)") : "rgba(255,255,255,0.08)"}] ${scanStage === "failed" ? isImmersiveMode ? "border-rose-400/90" : "border-rose-300/80" : scanStage === "duplicate" ? isImmersiveMode ? "border-amber-300/90" : "border-amber-300/80" : "border-emerald-300/90"}`}>
+                  <div className={`animate-scan-glow relative h-[68%] w-[78%] rounded-[1.75rem] border bg-transparent shadow-[0_0_0_9999px_rgba(255,255,255,0.08)] ${scanStage === "failed" ? "border-rose-300/80" : scanStage === "duplicate" ? "border-amber-300/80" : "border-emerald-300/90"}`}>
                     <span className={`absolute left-0 top-0 h-8 w-8 -translate-x-1 -translate-y-1 rounded-tl-[1.5rem] border-l-2 border-t-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
                     <span className={`absolute right-0 top-0 h-8 w-8 translate-x-1 -translate-y-1 rounded-tr-[1.5rem] border-r-2 border-t-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
                     <span className={`absolute bottom-0 left-0 h-8 w-8 -translate-x-1 translate-y-1 rounded-bl-[1.5rem] border-b-2 border-l-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
@@ -753,7 +680,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
                       />
                     )}
 
-                    <div className={isImmersiveMode ? (isDark ? "absolute inset-x-6 top-6 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.28em] text-white/65" : "absolute inset-x-6 top-6 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.28em] text-slate-500") : "absolute inset-x-6 top-6 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-950/55"}>
+                    <div className="absolute inset-x-6 top-6 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-950/55">
                       <span>QR Scan Window</span>
                       <span>{scanStageLabel}</span>
                     </div>
@@ -766,8 +693,8 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
                             <polyline points="22 4 12 14.01 9 11.01" />
                           </svg>
                         </div>
-                        <h4 className={isImmersiveMode ? (isDark ? "text-lg font-black tracking-tight text-slate-950 uppercase" : "text-lg font-black tracking-tight text-slate-900 uppercase") : "text-lg font-black tracking-tight text-zinc-900 uppercase"}>Empty Inventory</h4>
-                        <p className={isImmersiveMode ? (isDark ? "mt-2 max-w-xs text-xs font-semibold leading-relaxed text-slate-600" : "mt-2 max-w-xs text-xs font-semibold leading-relaxed text-slate-500") : "mt-2 max-w-xs text-xs font-semibold leading-relaxed text-zinc-600"}>
+                        <h4 className="text-lg font-black tracking-tight text-zinc-900 uppercase">Empty Inventory</h4>
+                        <p className="mt-2 max-w-xs text-xs font-semibold leading-relaxed text-zinc-600">
                           No active pawned items found for this branch. You can complete the audit immediately.
                         </p>
                       </div>
@@ -775,10 +702,10 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
                   </div>
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 p-3 lg:p-4">
-                  <div className={isImmersiveMode ? (isDark ? "mx-auto max-w-lg px-1 text-center text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]" : "mx-auto max-w-lg px-1 text-center text-slate-800 drop-shadow-[0_1px_2px_rgba(255,255,255,0.55)]") : "mx-auto max-w-lg px-1 text-center text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]"}>
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <div className="mx-auto max-w-lg px-1 text-center text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
                     <p className="text-sm font-bold">{cameraMessage}</p>
-                    <p className={isImmersiveMode ? (isDark ? "mt-1 text-[10px] uppercase tracking-[0.28em] text-white/60" : "mt-1 text-[10px] uppercase tracking-[0.28em] text-slate-500") : "mt-1 text-[10px] uppercase tracking-[0.28em] text-white/60"}>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/60">
                       Keep the QR code inside the frame until the item card appears.
                     </p>
                   </div>
@@ -786,7 +713,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
               </div>
             </div>
 
-            <div className={isImmersiveMode ? (isDark ? "mt-3 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-white/10 bg-slate-900/80 p-3 shadow-sm scrollbar-hide lg:p-4" : "mt-3 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-slate-200 bg-white p-3 shadow-sm scrollbar-hide lg:p-4") : "mt-4 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-zinc-100 bg-zinc-50 p-4 shadow-sm scrollbar-hide"}>
+            <div className="mt-4 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-zinc-100 bg-zinc-50 p-4 shadow-sm scrollbar-hide">
               {(pendingItem || detectedScan) && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3 border-b border-zinc-200 pb-3">
@@ -826,8 +753,8 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
             </div>
           </section>
 
-          <aside className={isImmersiveMode ? (isDark ? "flex h-full min-h-0 flex-col overflow-y-auto bg-gradient-to-b from-slate-950 to-slate-900 p-4 scrollbar-hide lg:p-6" : "flex h-full min-h-0 flex-col overflow-y-auto bg-gradient-to-b from-white to-zinc-50 p-4 scrollbar-hide lg:p-6") : "flex h-full min-h-0 flex-col overflow-y-auto bg-gradient-to-b from-white to-zinc-50 p-4 scrollbar-hide lg:p-6"}>
-            <div className={isImmersiveMode ? (isDark ? "rounded-3xl border border-white/10 bg-slate-900/85 p-4 shadow-sm lg:p-5" : "rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm lg:p-5") : "rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm lg:p-5"}>
+          <aside className="flex h-full min-h-0 flex-col overflow-y-auto bg-gradient-to-b from-white to-zinc-50 p-4 scrollbar-hide lg:p-6">
+            <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm lg:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Manual fallback</p>
@@ -836,7 +763,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
                     The QR payload is parsed automatically. If needed, paste the code value from the QR data string.
                   </p>
                 </div>
-                <div className="rounded-full bg-emerald-100 inline-flex items-center justify-center px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 whitespace-nowrap">
+                <div className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">
                   Auto scan first
                 </div>
               </div>
@@ -864,7 +791,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
                   <button
                     type="submit"
                     disabled={isLoading || !currentScan.trim()}
-                    className={isDark ? "absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-black disabled:opacity-50" : "absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-emerald-800 disabled:opacity-50"}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-black disabled:opacity-50"
                   >
                     {isLoading ? "Scanning..." : "Scan Item"}
                   </button>
@@ -1026,7 +953,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
               )}
             </div>
 
-            <div className={isImmersiveMode ? "mt-4 flex min-h-[20rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm" : "mt-5 flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm"}>
+            <div className="mt-5 flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
               <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Verified items</p>
@@ -1080,7 +1007,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
               </div>
             </div>
 
-            <div className={isImmersiveMode ? "mt-4 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-4" : "mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5"}>
+            <div className="mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5">
               <div className="flex items-start gap-3 text-amber-600">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -1099,7 +1026,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
                   }
                 }}
                 disabled={activeCompletionBlocked}
-                className={isDark ? "mt-4 w-full rounded-2xl bg-zinc-900 py-4 text-sm font-black text-white shadow-2xl transition-all hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-50" : "mt-4 w-full rounded-2xl bg-emerald-700 py-4 text-sm font-black text-white shadow-2xl transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"}
+                className="mt-4 w-full rounded-2xl bg-zinc-900 py-4 text-sm font-black text-white shadow-2xl transition-all hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Complete Inventory Count
               </button>
@@ -1322,7 +1249,7 @@ export function InventoryAuditModal({ isOpen, displayMode = "modal", onConfirm, 
               <button
                 type="button"
                 onClick={closeRejectedScan}
-                className={isDark ? "mt-6 w-full rounded-2xl bg-zinc-900 py-3.5 text-sm font-black text-white transition-all hover:bg-black active:scale-95" : "mt-6 w-full rounded-2xl bg-emerald-700 py-3.5 text-sm font-black text-white transition-all hover:bg-emerald-800 active:scale-95"}
+                className="mt-6 w-full rounded-2xl bg-zinc-900 py-3.5 text-sm font-black text-white transition-all hover:bg-black active:scale-95"
               >
                 Close and Rescan
               </button>
