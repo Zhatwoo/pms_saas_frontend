@@ -40,6 +40,7 @@ const purposeVariant: Record<
   "Buy Back": "blue",
   "Buy Out": "orange",
   "Sold Item": "orange",
+  "Reserve / Layaway": "orange",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
 };

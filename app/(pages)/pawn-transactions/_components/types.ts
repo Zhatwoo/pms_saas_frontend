@@ -8,6 +8,7 @@ export type PurposeType =
   | "Buy Back"
   | "Buy Out"
   | "Sold Item"
+  | "Reserve / Layaway"
   | "Fund Transfer"
   | "Cash Transfer";
 
@@ -68,6 +69,7 @@ export const PURPOSE_OPTIONS: PurposeType[] = [
   "Buy Back",
   "Buy Out",
   "Sold Item",
+  "Reserve / Layaway",
   "Fund Transfer",
   "Cash Transfer",
 ];

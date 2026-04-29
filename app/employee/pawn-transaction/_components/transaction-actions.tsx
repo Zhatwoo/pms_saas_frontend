@@ -85,6 +85,23 @@ const cartIcon = (
   </svg>
 );
 
+const reserveIcon = (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 7h16" />
+    <path d="M6 7l1 14h10l1-14" />
+    <path d="M9 11h6" />
+  </svg>
+);
+
 const redeemIcon = (
   <svg
     width="13"
@@ -117,7 +134,17 @@ const plusIcon = (
   </svg>
 );
 
-export type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back" | "Pawn" | "Start" | "Buy Out" | "Sold Item";
+export type FilterType =
+  | "All"
+  | "Renew"
+  | "Sales / Transfer"
+  | "Redeem"
+  | "Buy Back"
+  | "Reserve / Layaway"
+  | "Pawn"
+  | "Start"
+  | "Buy Out"
+  | "Sold Item";
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
@@ -127,6 +154,7 @@ interface TransactionActionsProps {
   onNewPawn?: () => void;
   onRedeem?: () => void;
   onBuyBack?: () => void;
+  onReserveLayaway?: () => void;
   onSalesTransfer?: () => void;
   onStartDay?: () => void;
   onEndDay?: () => void;
@@ -140,6 +168,7 @@ export function TransactionActions({
   onNewPawn,
   onRedeem,
   onBuyBack,
+  onReserveLayaway,
   onSalesTransfer,
   onStartDay,
   onEndDay,
@@ -206,6 +235,21 @@ export function TransactionActions({
           >
             {cartIcon}
             Buy Back
+          </button>
+
+          <button
+            onClick={() => {
+              onFilterChange?.("Reserve / Layaway");
+              onReserveLayaway?.();
+            }}
+            className={`flex items-center gap-1.5 rounded-lg bg-pawn-gold px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm transition hover:opacity-90 ${
+              activeFilter === "Reserve / Layaway"
+                ? "ring-2 ring-pawn-gold/40 ring-offset-1 ring-offset-surface"
+                : "opacity-90 hover:opacity-100"
+            }`}
+          >
+            {reserveIcon}
+            Reserve / Layaway
           </button>
         </div>
 

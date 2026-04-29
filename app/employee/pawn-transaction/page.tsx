@@ -12,6 +12,7 @@ import { NewPawnModal } from "./_components/new-pawn-modal";
 import { RedeemModal } from "./_components/redeem-modal";
 import { BuyBackModal } from "./_components/buy-back-modal";
 import { SalesTransferModal } from "./_components/sales-transfer-modal";
+import { ReserveLayawayModal } from "./_components/reserve-layaway-modal";
 import { MoaModal } from "./_components/moa-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
@@ -22,6 +23,8 @@ import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+
+// Use shared `PurposeType` and `FilterType` imported from components
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -30,6 +33,7 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "Sales / Transfer": "Sold Item",
   "Redeem": "Redeem",
   "Buy Back": "Buy Back",
+  "Reserve / Layaway": "Reserve / Layaway",
   "Pawn": "Pawn",
   "Start": "Start",
   "Buy Out": "Buy Out",
@@ -199,6 +203,7 @@ export default function EmployeePawnTransactionsPage() {
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
+  const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
   const [reprintData, setReprintData] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
@@ -505,6 +510,10 @@ export default function EmployeePawnTransactionsPage() {
         onRenewClick={() => handleActionWithPassword(() => setIsRenewModalOpen(true))}
         onRedeem={() => handleActionWithPassword(() => setIsRedeemModalOpen(true))}
         onBuyBack={() => handleActionWithPassword(() => setIsBuyBackModalOpen(true))}
+        onReserveLayaway={() => handleActionWithPassword(() => {
+          setActiveFilter("Reserve / Layaway");
+          setIsReserveLayawayModalOpen(true);
+        })}
         onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
         onStartDay={async () => {
@@ -557,6 +566,7 @@ export default function EmployeePawnTransactionsPage() {
             <option value="Sales / Transfer">Sales / Transfer</option>
             <option value="Redeem">Redeem</option>
             <option value="Buy Back">Buy Back</option>
+            <option value="Reserve / Layaway">Reserve / Layaway</option>
             <option value="Pawn">Pawn</option>
             <option value="Start">Start</option>
             <option value="Buy Out">Buy Out</option>
@@ -699,6 +709,14 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={isSalesTransferModalOpen}
         onClose={() => setIsSalesTransferModalOpen(false)}
         onSuccess={handleTransactionSuccess}
+        branchName={selectedBranch.name}
+      />
+
+      <ReserveLayawayModal
+        isOpen={isReserveLayawayModalOpen}
+        onClose={() => setIsReserveLayawayModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
+        branchId={selectedBranch.id}
         branchName={selectedBranch.name}
       />
 

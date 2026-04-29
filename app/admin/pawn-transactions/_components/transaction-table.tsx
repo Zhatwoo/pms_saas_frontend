@@ -1,6 +1,6 @@
 import { StatusBadge } from "@/components/shared/status-badge";
 
-type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Pawn";
+type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Reserve / Layaway" | "Pawn";
 
 interface TransactionRow {
   transactionNo: string;
@@ -45,6 +45,7 @@ const purposeVariant: Record<PurposeType, "blue" | "green" | "orange" | "purple"
   "Buy Back": "blue",
   Renew: "green",
   "Sold Item": "orange",
+  "Reserve / Layaway": "orange",
   Pawn: "purple",
 };
 

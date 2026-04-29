@@ -12,6 +12,7 @@ export type PurposeType =
   | "Reappraise"
   | "Redeem"
   | "Sold Item"
+  | "Reserve / Layaway"
   | "Pawn"
   | "Fund Transfer"
   | "Cash Transfer"
@@ -84,6 +85,7 @@ const purposeVariant: Record<
   Reappraise: "blue",
   Redeem: "green",
   "Sold Item": "orange",
+  "Reserve / Layaway": "orange",
   Pawn: "purple",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",

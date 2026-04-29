@@ -52,7 +52,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
     }
 
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const publicViewUrl = `${baseUrl}/view-item/${encodeURIComponent(generatedItemId)}`;
+    const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(generatedItemId)}`;
     const encoded = encodeURIComponent(publicViewUrl);
     const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
     setQrUrl(url);

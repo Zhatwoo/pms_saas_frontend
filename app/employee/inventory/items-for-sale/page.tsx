@@ -20,7 +20,7 @@ interface SaleItem {
   branch: string;
   availableDate: string; // Date Expired
   price: number;
-  status: "Available" | "Sold";
+  status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
 }
 
@@ -37,11 +37,13 @@ const categoryOptions = [
 const saleStatusOptions = [
   { value: "all", label: "All" },
   { value: "Available", label: "Available" },
+  { value: "Reserved", label: "Reserved" },
   { value: "Sold", label: "Sold" },
 ];
 
-const statusVariant: Record<string, "green" | "orange"> = {
+const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
+  Reserved: "blue",
   Sold: "orange",
 };
 
@@ -164,6 +166,8 @@ export default function EmployeeItemsForSalePage() {
                           <button className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95">
                             Sell Item
                           </button>
+                        ) : item.status === "Reserved" ? (
+                          <span className="text-[10px] font-bold text-sky-500 italic">Reserved for Layaway</span>
                         ) : (
                           <span className="text-[10px] font-bold text-zinc-400 italic">Sold to Customer</span>
                         )}

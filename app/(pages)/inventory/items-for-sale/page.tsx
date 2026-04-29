@@ -20,7 +20,7 @@ interface SaleItem {
   branch: string;
   availableDate: string;
   price: number;
-  status: "Available" | "Sold";
+  status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
 }
 
@@ -45,13 +45,21 @@ interface CalendarDayData {
 const saleStatusOptions = [
   { value: "all", label: "All" },
   { value: "Available", label: "Available" },
+  { value: "Reserved", label: "Reserved" },
   { value: "Sold", label: "Sold" },
 ];
 
-const statusVariant: Record<string, "green" | "orange"> = {
+const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
+  Reserved: "blue",
   Sold: "orange",
 };
+
+function saleStatusLabel(status: SaleItem["status"]) {
+  if (status === "Available") return "Active";
+  if (status === "Reserved") return "Reserved";
+  return "Sold";
+}
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -451,7 +459,7 @@ export default function ItemsForSalePage() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          {(user?.role === "super_admin" || user?.role === "SUPER_ADMIN") && (
+          {user?.role === "super_admin" && (
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-bold shadow-sm hover:bg-emerald-700 transition-colors"
@@ -525,7 +533,7 @@ export default function ItemsForSalePage() {
                       &#8369;{item.price.toLocaleString()}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
+                      <StatusBadge label={saleStatusLabel(item.status)} variant={statusVariant[item.status] || "green"} />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -623,7 +631,7 @@ export default function ItemsForSalePage() {
                             {item.price === 0 ? <span className="text-orange-500">—</span> : <span className="text-emerald-700">₱{item.price.toLocaleString()}</span>}
                           </td>
                           <td className="whitespace-nowrap px-4 py-2.5">
-                            <StatusBadge label={item.status === "Available" ? "Active" : "Sold"} variant={statusVariant[item.status] || "green"} />
+                            <StatusBadge label={saleStatusLabel(item.status)} variant={statusVariant[item.status] || "green"} />
                           </td>
                         </tr>
                       ))
