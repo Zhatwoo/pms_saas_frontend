@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type { AccountStatusUi, UserRecord, UserRole } from "../page";
 
 interface UserTableProps {
 	users: UserRecord[];
+	isLoading?: boolean;
 	totalUsers: number;
 	canDeleteUser: boolean;
 	canApproveUser: boolean;
@@ -107,6 +109,7 @@ function InlineActions({
 
 export function UserTable({
 	users,
+	isLoading = false,
 	totalUsers,
 	canDeleteUser,
 	canApproveUser,
@@ -161,7 +164,22 @@ export function UserTable({
 							</tr>
 						</thead>
 						<tbody>
-							{paginatedUsers.map((user) => (
+							{isLoading ? (
+								<tr>
+									<td colSpan={7} className="py-12 text-center text-base font-medium text-text-tertiary">
+										<div className="flex items-center justify-center">
+											<LoadingSpinnerLabel text="Loading users..." className="text-base font-medium text-text-tertiary" />
+										</div>
+									</td>
+								</tr>
+							) : users.length === 0 ? (
+								<tr>
+									<td colSpan={7} className="py-12 text-center text-base font-medium text-text-tertiary">
+										No users found.
+									</td>
+								</tr>
+							) : (
+								paginatedUsers.map((user) => (
 								<tr
 									key={`${user.id}-${user.email}`}
 									onClick={() => onUserClick(user)}
@@ -229,7 +247,7 @@ export function UserTable({
 										</div>
 									</td>
 								</tr>
-							))}
+							)))}
 						</tbody>
 					</table>
 				</div>

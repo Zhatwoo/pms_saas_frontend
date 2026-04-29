@@ -878,7 +878,7 @@ export default function AuditLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
-              {isLoading && enrichedLogs.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">
                     <div className="flex items-center justify-center">

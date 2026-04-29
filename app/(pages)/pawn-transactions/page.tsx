@@ -16,6 +16,7 @@ import type {
   TransactionRow,
   TransactionStatsData,
 } from "./_components/types";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 function csvCell(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
@@ -443,8 +444,8 @@ export default function PawnTransactionsPage() {
       />
 
       <TransactionTable
-        data={paginatedTransactions}
         isLoading={isLoading}
+        data={paginatedTransactions}
         onViewDetails={setViewingTransaction}
         onPrint={handlePrintSlip}
         highlightTransactionNo={shouldHighlight ? highlightTransactionNo : null}

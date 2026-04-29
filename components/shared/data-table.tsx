@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Rows are heterogeneous per screen; columns are dynamic string keys. */
 import type { ReactNode } from "react";
+import { LoadingSpinnerLabel } from "./loading-spinner-label";
 
 export interface Column {
   key: string;
@@ -21,6 +21,8 @@ interface DataTableProps {
   emptyMessage?: ReactNode;
   rowClassName?: (row: Record<string, any>, rowIndex: number) => string;
   onRowClick?: (row: Record<string, any>, rowIndex: number) => void;
+  isLoading?: boolean;
+  loadingMessage?: string;
 }
 
 export function DataTable({
@@ -32,6 +34,8 @@ export function DataTable({
   emptyMessage = "No records found.",
   rowClassName,
   onRowClick,
+  isLoading = false,
+  loadingMessage = "Loading data...",
 }: DataTableProps) {
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
@@ -56,11 +60,22 @@ export function DataTable({
             </tr>
           </thead>
           <tbody>
-            {data.length === 0 ? (
+            {isLoading ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-10 text-center text-base text-text-tertiary"
+                  className="px-4 py-12 text-center text-base text-text-tertiary"
+                >
+                  <div className="flex items-center justify-center">
+                    <LoadingSpinnerLabel text={loadingMessage} className="text-base font-medium text-text-tertiary" />
+                  </div>
+                </td>
+              </tr>
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-12 text-center text-base text-text-tertiary"
                 >
                   {emptyMessage}
                 </td>

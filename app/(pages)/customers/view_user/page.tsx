@@ -627,7 +627,7 @@ function EmployeeCustomerDetailContent() {
   const [activityLogs, setActivityLogs] = useState<BackendActivityLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [activeHighlightLogId, setActiveHighlightLogId] = useState("");
-  const highlightTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const highlightTimeoutRef = useRef<any>(null);
 
   const [reviewContext, setReviewContext] = useState<ReviewContext | null>(null);
 

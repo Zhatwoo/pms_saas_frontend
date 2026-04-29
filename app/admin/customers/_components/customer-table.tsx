@@ -175,11 +175,7 @@ export function CustomerTable() {
           </ActionButton>
         </div>
 
-        {isLoading && (
-          <div className="px-5 pb-2 text-xs text-text-tertiary">
-            <LoadingSpinnerLabel text="Loading customers..." className="text-xs text-text-tertiary" />
-          </div>
-        )}
+
         {error && (
           <p className="px-5 pb-2 text-xs text-red-500">{error}</p>
         )}
@@ -188,6 +184,8 @@ export function CustomerTable() {
         <DataTable
           columns={columns}
           data={paginatedCustomers}
+          isLoading={isLoading}
+          loadingMessage="Loading customers..."
           onRowClick={(row) => router.push(`/admin/customers/view_user?id=${row.id}`)}
           renderCell={(key, value, row) => {
             if (key === "actions") {

@@ -23,6 +23,7 @@ import type {
 } from "@/components/shared/finance-ledger-table";
 import { RequestFundsModal } from "@/app/admin/branch-finance/_components/request-funds-modal";
 import type { RequestFundsData } from "@/app/admin/branch-finance/_components/request-funds-modal";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
@@ -322,11 +323,11 @@ export default function EmployeeBranchFinancePage() {
       ) : null}
 
       {!dashboard && isLoading ? (
-        <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
-          Loading branch finance data...
+        <div className="flex items-center justify-center rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
+          <LoadingSpinnerLabel text="Loading branch finance data..." className="text-sm text-text-tertiary" />
         </div>
       ) : dashboard ? (
-        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
+        <div className="space-y-6 transition-opacity duration-200">
           <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm">
             <h2 className="text-lg font-bold text-text-primary">
               {finance?.name ?? dashboard?.branch?.name ?? "Branch Finance"}

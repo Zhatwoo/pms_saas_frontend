@@ -479,7 +479,7 @@ export default function ItemsForSalePage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && saleItems.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                     <div className="flex items-center justify-center">
@@ -499,8 +499,7 @@ export default function ItemsForSalePage() {
                 saleItems.map((item, idx) => (
                   <tr
                     key={item.id || item.itemId}
-                    className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
-                    onClick={() => setSelectedItem(item)}
+                    className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
@@ -579,7 +578,7 @@ export default function ItemsForSalePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isLoading && saleItems.length === 0 ? (
+                    {isLoading ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
                             <div className="flex items-center justify-center">

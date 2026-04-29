@@ -523,13 +523,9 @@ export default function UserManagementPage() {
         onCreateUser={() => setIsCreateModalOpen(true)}
         showSuperAdminRoleTab={canManageUsers}
       />
-      {isLoading ? (
-        <div className="rounded-lg border border-border-main bg-surface px-4 py-10 text-center text-sm text-text-tertiary">
-          <LoadingSpinnerLabel text="Loading users..." className="justify-center text-sm text-text-tertiary" />
-        </div>
-      ) : (
-        <UserTable
-          users={filteredUsers}
+      <UserTable
+        isLoading={isLoading}
+        users={filteredUsers}
           totalUsers={users.length}
           canDeleteUser={canManageUsers}
           canApproveUser={canManageUsers}
@@ -555,7 +551,6 @@ export default function UserManagementPage() {
             setIsStatusModalOpen(true);
           }}
         />
-      )}
 
       {isCreateModalOpen && canManageUsers && (
         <CreateUserModal

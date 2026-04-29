@@ -396,11 +396,11 @@ export default function AdminBranchFinancePage() {
       ) : null}
 
       {!dashboard && isLoading ? (
-        <div className="rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
+        <div className="flex items-center justify-center rounded-xl border border-border-main bg-surface px-5 py-10 text-sm text-text-tertiary">
           <LoadingSpinnerLabel text="Loading branch finance data..." className="text-sm text-text-tertiary" />
         </div>
       ) : dashboard ? (
-        <div className={`space-y-6 transition-opacity duration-200 ${isLoading ? "pointer-events-none opacity-60" : ""}`}>
+        <div className="space-y-6 transition-opacity duration-200">
           <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
               <div>

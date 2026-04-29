@@ -109,58 +109,58 @@ export function CustomerTable() {
         </h3>
       </div>
 
-      {isLoading && (
-        <p className="px-5 pb-2 text-xs text-text-tertiary">Loading customers...</p>
-      )}
       {error && (
         <p className="px-5 pb-2 text-xs text-red-500">{error}</p>
       )}
 
-      {/* Table */}
-      <DataTable
-        columns={columns}
-        data={paginatedCustomers}
-        onRowClick={(row) => router.push(`/employee/customers/view_user?id=${row.id}`)}
-        renderCell={(key, value, row) => {
-          if (key === "actions") {
-            return (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  router.push(`/employee/customers/view_user?id=${row.id}`);
-                }}
-                className="mx-auto inline-flex items-center justify-center rounded-md border border-border-main bg-surface p-1.5 text-text-tertiary transition-colors hover:bg-emerald-surface/50 hover:text-emerald-text"
-                title={`View ${row.name}`}
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+        <DataTable
+          columns={columns}
+          data={paginatedCustomers}
+          isLoading={isLoading}
+          loadingMessage="Loading customers..."
+          onRowClick={(row) => router.push(`/employee/customers/view_user?id=${row.id}`)}
+          renderCell={(key, value, row) => {
+            if (key === "actions") {
+              return (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    router.push(`/employee/customers/view_user?id=${row.id}`);
+                  }}
+                  className="mx-auto inline-flex items-center justify-center rounded-md border border-border-main bg-surface p-1.5 text-text-tertiary transition-colors hover:bg-emerald-surface/50 hover:text-emerald-text"
+                  title={`View ${row.name}`}
                 >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-            );
-          }
-          return value;
-        }}
-      />
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              );
+            }
+            return value;
+          }}
+        />
 
-      {/* Pagination */}
-      <PaginationFooter
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={customers.length}
-        itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
-      />
+        {/* Pagination */}
+        {customers.length > 0 && !isLoading && (
+          <PaginationFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={customers.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
+        )}
     </div>
   );
 }

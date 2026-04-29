@@ -22,20 +22,7 @@ import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-
-type PurposeType =
-  | "Start"
-  | "End"
-  | "Buy Back"
-  | "Renew"
-  | "Reappraise"
-  | "Redeem"
-  | "Sold Item"
-  | "Pawn"
-  | "Fund Transfer"
-  | "Cash Transfer";
-
-type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
@@ -613,6 +600,7 @@ export default function EmployeePawnTransactionsPage() {
       </div>
 
       <TransactionTable
+        isLoading={isLoading}
         data={paginatedTransactions}
         onReprint={handleReprint}
         onViewDetails={setSelectedTransaction}
@@ -621,13 +609,15 @@ export default function EmployeePawnTransactionsPage() {
         onRangeChange={setViewRange}
       />
 
-      <PaginationFooter
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={filteredTransactions.length}
-        itemsPerPage={ITEMS_PER_PAGE}
-        onPageChange={setCurrentPage}
-      />
+      <div className="mt-4">
+        <PaginationFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredTransactions.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </div>
 
       <TransactionDetailsModal
         isOpen={Boolean(selectedTransaction)}
