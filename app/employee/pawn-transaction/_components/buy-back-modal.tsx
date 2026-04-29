@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { formatDateToYMD } from "@/lib/time";
+import { QrScanner } from "@/components/shared/qr-scanner";
 
 /* ── Inline SVG Icons ── */
 
@@ -53,6 +54,9 @@ const dollarIcon = (
     <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
   </svg>
 );
+const qrCodeIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/></svg>
+);
 
 interface BuyBackModalProps {
   isOpen: boolean;
@@ -85,6 +89,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
     processedBy: "",
     password: "",
   });
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const isProcessingRef = useRef(false);
   const [items, setItems] = useState<ForSaleItem[]>([]);
@@ -124,6 +129,25 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
     const timeout = setTimeout(fetchItems, 300);
     return () => clearTimeout(timeout);
   }, [isOpen, searchQuery]);
+
+  const handleQrScan = (text: string) => {
+    // 1. Try to extract from "Code: ID | ..." format
+    const codeMatch = text.match(/Code:\s*([^|]+)/i);
+    if (codeMatch) {
+      setSearchQuery(codeMatch[1].trim());
+      return;
+    }
+
+    // 2. Try to extract from URL format: .../view-ticket/UNITCODE
+    const urlMatch = text.match(/\/view-ticket\/([^/?#\s]+)/i);
+    if (urlMatch) {
+      setSearchQuery(urlMatch[1].trim());
+      return;
+    }
+
+    // 3. Fallback to whole text
+    setSearchQuery(text.trim());
+  };
 
   const handleConfirmBuyBack = async () => {
     if (isProcessingRef.current) return;
@@ -237,6 +261,13 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200 group-focus-within:text-emerald-500 transition-colors">
                   {searchIcon}
                 </span>
+                <button
+                  onClick={() => setIsScannerOpen(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all active:scale-95 border border-emerald-100"
+                  title="Scan QR Code"
+                >
+                  {qrCodeIcon}
+                </button>
               </div>
             </div>
 
@@ -421,6 +452,11 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
           </div>
         </div>
       </div>
+      <QrScanner 
+        isOpen={isScannerOpen} 
+        onScan={handleQrScan} 
+        onClose={() => setIsScannerOpen(false)} 
+      />
     </div>
   );
 }

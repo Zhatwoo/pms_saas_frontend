@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
+import { QrScanner } from "@/components/shared/qr-scanner";
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
@@ -14,6 +15,9 @@ function Search({ className }: { className?: string }) {
 }
 function ArrowRight({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>);
+}
+function QrCode({ className }: { className?: string }) {
+  return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/></svg>);
 }
 function RotateCcw({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>);
@@ -51,6 +55,9 @@ function AlertCircle({ className }: { className?: string }) {
 function TrendingUp({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>);
 }
+function Package({ className }: { className?: string }) {
+  return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>);
+}
 
 interface RenewModalProps {
   isOpen: boolean;
@@ -70,7 +77,6 @@ interface PawnItemDetails {
   condition: string;
   memory: string;
   category: string;
-  barcodeId: string;
   contactNumber: string;
   remarks: string;
   storageFee: string;
@@ -91,8 +97,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
     approvedBy: "",
     password: "",
   });
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [pawnedItems, setPawnedItems] = useState<PawnItemDetails[]>([]);
+  const [isSidebarLoading, setIsSidebarLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isProcessingRef = useRef(false);
 
@@ -102,14 +112,20 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
     return calculateGadgetInterest(selectedItem.amount, selectedItem.purchasedDate);
   }, [selectedItem]);
 
-  const handleSearch = async () => {
-    if (!searchCode) return;
+  const triggerSearch = async (code: string, preFetchedItem?: any) => {
+    if (!code && !preFetchedItem) return;
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active&search=${searchCode}`);
-      if (response.items && response.items.length > 0) {
-        const item = response.items[0];
+      let item = preFetchedItem;
+      if (!item) {
+        const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active&search=${code}`);
+        if (response.items && response.items.length > 0) {
+          item = response.items[0];
+        }
+      }
+
+      if (item) {
         const customer = Array.isArray(item.customers) ? item.customers[0] : item.customers;
         
         const details = {
@@ -122,7 +138,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
           condition: item.condition || "---",
           memory: item.memoryStorage || "---",
           category: item.category || "---",
-          barcodeId: item.id.substring(0, 8).toUpperCase(),
           contactNumber: customer?.contact_number || "---",
           remarks: item.remarks || "---",
           storageFee: "0.00",
@@ -142,6 +157,35 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = async () => {
+    await triggerSearch(searchCode);
+  };
+
+  const handleQrScan = (text: string) => {
+    // 1. Try to extract from "Code: ID | ..." format
+    const codeMatch = text.match(/Code:\s*([^|]+)/i);
+    if (codeMatch) {
+      const id = codeMatch[1].trim();
+      setSearchCode(id);
+      void triggerSearch(id);
+      return;
+    }
+
+    // 2. Try to extract from URL format: .../view-ticket/UNITCODE
+    const urlMatch = text.match(/\/view-ticket\/([^/?#\s]+)/i);
+    if (urlMatch) {
+      const id = urlMatch[1].trim();
+      setSearchCode(id);
+      void triggerSearch(id);
+      return;
+    }
+
+    // 3. Fallback to whole text
+    const id = text.trim();
+    setSearchCode(id);
+    void triggerSearch(id);
   };
 
   const handleProceed = async () => {
@@ -180,8 +224,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
       });
 
       // 4. Update Inventory if needed (New principal)
-      if (isReappraiseActive) {
-        await api.patch(`/inventory/pawned/${selectedItem.id}`, { amount: newPrincipal });
+      if (isReappraiseActive && selectedItem.id) {
+        console.log(`Updating inventory item ${selectedItem.id} to new amount: ${newPrincipal}`);
+        await api.put(`/inventory/pawned/${selectedItem.id}`, { amount: newPrincipal });
       }
 
       if (onSuccess) {
@@ -199,6 +244,47 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchItems = async () => {
+      setIsSidebarLoading(true);
+      try {
+        const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active&search=${sidebarSearch}`);
+        const mapped = (response.items || []).map(item => {
+          const customer = Array.isArray(item.customers) ? item.customers[0] : item.customers;
+          return {
+            id: item.id,
+            name: customer?.full_name || "---",
+            unitCode: item.itemId || "---",
+            unit: item.itemName || "---",
+            serialNumber: item.serialNumber || "---",
+            itemsIncluded: item.itemsIncluded || "---",
+            condition: item.condition || "---",
+            memory: item.memoryStorage || "---",
+            category: item.category || "---",
+            contactNumber: customer?.contact_number || "---",
+            remarks: item.remarks || "---",
+            storageFee: "0.00",
+            parkingFee: "0.00",
+            purchasedDate: item.pawnDate || item.created_at || "---",
+            expirationDate: "---",
+            amount: Number(item.amount || 0),
+            _raw: item 
+          };
+        });
+        setPawnedItems(mapped);
+      } catch (err) {
+        console.error("Failed to fetch pawned items:", err);
+      } finally {
+        setIsSidebarLoading(false);
+      }
+    };
+
+    const timeout = setTimeout(fetchItems, 300);
+    return () => clearTimeout(timeout);
+  }, [isOpen, sidebarSearch]);
+
   if (!isOpen) return null;
 
   return (
@@ -215,7 +301,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
-                  {branchName} Branch
+                  {branchName}
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
                   Renew Transaction
@@ -235,6 +321,13 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                     onChange={(e) => setSearchCode(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   />
+                  <button 
+                    onClick={() => setIsScannerOpen(true)}
+                    className="h-10 bg-emerald-800 hover:bg-emerald-700 text-emerald-400 px-3 border-y border-white/20 transition-all flex items-center justify-center group"
+                    title="Scan QR Code"
+                  >
+                    <QrCode className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </button>
                   <button 
                     onClick={handleSearch}
                     className="h-10 bg-emerald-600 hover:bg-emerald-500 text-white px-4 rounded-r-xl font-black uppercase text-[9px] tracking-widest transition-all shadow-lg flex items-center gap-2"
@@ -256,8 +349,70 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
         </div>
 
         <div className="flex-1 flex overflow-hidden">
+          {/* Left Sidebar: Active Items */}
+          <div className="w-full lg:w-[350px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <Search className="w-5 h-5 text-emerald-600/40" />
+                <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Active Inventory</h3>
+              </div>
+              
+              <div className="relative group">
+                <input 
+                  type="text"
+                  placeholder="Search Active Pawn..."
+                  className="w-full h-11 pl-11 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-50 transition-all text-sm font-medium shadow-sm"
+                  value={sidebarSearch}
+                  onChange={(e) => setSidebarSearch(e.target.value)}
+                />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-200 group-focus-within:text-emerald-500 transition-colors" />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+              {isSidebarLoading ? (
+                <div className="flex flex-col items-center justify-center h-40 gap-3">
+                  <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase">Fetching Records...</p>
+                </div>
+              ) : pawnedItems.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white dark:bg-surface rounded-2xl border-2 border-dashed border-emerald-100 dark:border-border-subtle shadow-sm">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
+                    <Package className="w-6 h-6 text-emerald-200" />
+                  </div>
+                  <p className="text-sm font-bold text-emerald-900/60">No active items</p>
+                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter italic">Only active items can be renewed</p>
+                </div>
+              ) : (
+                pawnedItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setSearchCode(item.unitCode);
+                      void triggerSearch(item.unitCode, (item as any)._raw);
+                    }}
+                    className={`w-full p-4 mb-3 rounded-2xl border-2 transition-all flex flex-col gap-2 text-left relative group ${
+                      selectedItem?.id === item.id 
+                        ? 'bg-emerald-50 dark:bg-emerald-600/20 border-emerald-400 shadow-xl ring-4 ring-emerald-500/5' 
+                        : 'bg-white dark:bg-surface/5 border-transparent hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-600/10 hover:shadow-lg'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.unitCode}</p>
+                    </div>
+                    <h4 className="font-black text-emerald-950 dark:text-white leading-tight pr-8">{item.unit}</h4>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-50 dark:border-border">
+                      <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 capitalize">{item.name}</p>
+                      <p className="font-black text-emerald-600 dark:text-emerald-400 text-xs">₱ {item.amount.toLocaleString()}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Main Info Area */}
-          <div className="flex-1 p-8 flex gap-8 bg-emerald-50/20 dark:bg-surface-secondary overflow-hidden">
+          <div className="flex-1 p-8 flex flex-col lg:flex-row gap-8 bg-emerald-50/20 dark:bg-surface-secondary overflow-y-auto scrollbar-hide">
             {/* Left Column: Specs */}
             <div className="flex-1 space-y-5 flex flex-col">
               <SectionHeader title="Loan & Item Identity" icon={Info} />
@@ -270,7 +425,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                 <StaticDetailRow label="Items Included" value={selectedItem?.itemsIncluded} />
                 <StaticDetailRow label="Condition" value={selectedItem?.condition} />
                 <StaticDetailRow label="Memory" value={selectedItem?.memory} />
-                <StaticDetailRow label="Barcode ID" value={selectedItem?.barcodeId} />
                 <StaticDetailRow label="Category" value={selectedItem?.category} />
               </div>
             </div>
@@ -363,8 +517,11 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                       <input 
                         type="number"
                         className="w-full h-9 pl-8 pr-3 bg-white/10 border-2 border-emerald-500/30 rounded-lg text-white font-black text-lg outline-none focus:border-emerald-500 transition-all"
-                        value={newPrincipal}
-                        onChange={(e) => setNewPrincipal(Number(e.target.value))}
+                        value={newPrincipal || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewPrincipal(val === "" ? 0 : Number(val));
+                        }}
                       />
                     </div>
                  </div>
@@ -428,7 +585,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                       </div>
                    ) : (
                       <>
-                        Process Renewal
+                        {isReappraiseActive ? "Process Reappraisal" : "Process Renewal"}
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </>
                    )}
@@ -436,7 +593,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
              </div>
           </div>
         </div>
-      </div>
+    </div>
+      <QrScanner 
+        isOpen={isScannerOpen} 
+        onScan={handleQrScan} 
+        onClose={() => setIsScannerOpen(false)} 
+      />
     </div>
   );
 }

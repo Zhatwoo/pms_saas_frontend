@@ -4,18 +4,7 @@ import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
-export type PurposeType =
-  | "Start"
-  | "End"
-  | "Buy Back"
-  | "Renew"
-  | "Reappraise"
-  | "Redeem"
-  | "Sold Item"
-  | "Pawn"
-  | "Fund Transfer"
-  | "Cash Transfer"
-  | "Buy Out";
+export type PurposeType = "Start" | "End" | "Buy Back" | "Renew" | "Reappraise" | "Redeem" | "Sold Item" | "Pawn" | "Fund Transfer" | "Cash Transfer" | "Buy Out";
 
 export interface TransactionRow {
   transactionNo: string;
@@ -81,13 +70,13 @@ const purposeVariant: Record<
   End: "black",
   "Buy Back": "blue",
   Renew: "green",
-  Reappraise: "blue",
-  Redeem: "green",
   "Sold Item": "orange",
   Pawn: "purple",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
   "Buy Out": "purple",
+  "Reappraise": "blue",
+  "Redeem": "green",
 };
 
 function isHighlightedPawn(value: string): boolean {

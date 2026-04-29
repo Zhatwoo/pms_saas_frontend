@@ -112,12 +112,30 @@ const plusIcon = (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <line x1="12" y1="5" x2="12" y2="19" />
     <line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
 
-export type FilterType = "All" | "Renew" | "Sales / Transfer" | "Redeem" | "Buy Back" | "Pawn" | "Start" | "Buy Out" | "Sold Item";
+const qrIcon = (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <rect x="7" y="7" width="3" height="3" />
+    <rect x="14" y="7" width="3" height="3" />
+    <rect x="7" y="14" width="3" height="3" />
+    <path d="M14 14h3v3h-3z" />
+  </svg>
+);
+
+export type FilterType = "All" | "Renew" | "Sells / Transfer" | "Redeem" | "Buy Back" | "Pawn" | "Start" | "Buy Out" | "Sold Item";
 
 interface TransactionActionsProps {
   activeFilter?: FilterType;
@@ -130,6 +148,7 @@ interface TransactionActionsProps {
   onSalesTransfer?: () => void;
   onStartDay?: () => void;
   onEndDay?: () => void;
+  onQrScan?: () => void;
 }
 
 export function TransactionActions({
@@ -143,6 +162,7 @@ export function TransactionActions({
   onSalesTransfer,
   onStartDay,
   onEndDay,
+  onQrScan,
 }: TransactionActionsProps) {
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
@@ -165,17 +185,17 @@ export function TransactionActions({
 
           <button
             onClick={() => {
-              onFilterChange?.("Sales / Transfer");
+              onFilterChange?.("Sells / Transfer");
               onSalesTransfer?.();
             }}
             className={`flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-purple-700 ${
-              activeFilter === "Sales / Transfer"
+              activeFilter === "Sells / Transfer"
                 ? "ring-2 ring-purple-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
             }`}
           >
             {salesIcon}
-            Sales / Transfer
+            Sells / Transfer
           </button>
 
           <button
@@ -229,6 +249,14 @@ export function TransactionActions({
               className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
             >
               End Day
+            </button>
+            <button
+              onClick={onQrScan}
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-950 px-4 py-2 text-xs font-bold text-emerald-400 shadow-sm border border-emerald-400/20 transition hover:bg-emerald-900"
+              title="Scan QR Code"
+            >
+              {qrIcon}
+              Scan QR
             </button>
           </div>
 
