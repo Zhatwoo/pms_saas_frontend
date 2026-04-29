@@ -1,10 +1,63 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+
+// ─── ResizableLine ───────────────────────────────────────────────────────────
+// Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
+function ResizableLine({
+  value,
+  onChange,
+  fieldKey,
+  storedWidth,
+  onWidthChange,
+  canEdit,
+  defaultWidth = 120,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  fieldKey: string;
+  storedWidth?: number;
+  onWidthChange: (key: string, width: number) => void;
+  canEdit: boolean;
+  defaultWidth?: number;
+}) {
+  const spanRef = useRef<HTMLSpanElement>(null);
+  const width = storedWidth ?? defaultWidth;
+
+  // Capture actual DOM width when user finishes dragging the resize handle
+  const handlePointerUp = () => {
+    if (canEdit && spanRef.current) {
+      const newWidth = spanRef.current.offsetWidth;
+      if (newWidth !== width) onWidthChange(fieldKey, newWidth);
+    }
+  };
+
+  return (
+    <span
+      ref={spanRef}
+      onPointerUp={handlePointerUp}
+      className="inline-block overflow-hidden border-b border-zinc-400 align-bottom"
+      style={{
+        resize: canEdit ? "horizontal" : "none",
+        minWidth: 48,
+        maxWidth: 400,
+        width,
+      }}
+      title={canEdit ? "Drag right edge to resize" : undefined}
+    >
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={!canEdit}
+        className="block w-full h-4 bg-transparent text-[10px] outline-none disabled:pointer-events-none px-0.5 focus:outline-none"
+      />
+    </span>
+  );
+}
 
 type ExtensionRow = {
   date: string;
@@ -134,10 +187,23 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchMoaTemplate() {
       try {
-        const data = await api.get<{ terms_text: string; labels: typeof topLabels }>(`/settings/moa_template`);
+        const data = await api.get<{ 
+          terms_text: string; 
+          labels: Partial<typeof topLabels> | null; 
+          lineWidths?: Record<string, number>;
+          extensionRows?: ExtensionRow[];
+        }>(`/settings/moa_template`);
         if (data) {
-          setTermsText(data.terms_text);
-          setTopLabels(data.labels);
+          if (data.terms_text) setTermsText(data.terms_text);
+          if (data.labels && typeof data.labels === "object") {
+            setTopLabels((prev) => ({ ...prev, ...data.labels }));
+          }
+          if (data.lineWidths && typeof data.lineWidths === "object") {
+            setLineWidths(data.lineWidths);
+          }
+          if (data.extensionRows && Array.isArray(data.extensionRows)) {
+            setExtensionRows(data.extensionRows);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch MOA template:", error);
@@ -160,8 +226,35 @@ export default function SettingsPage() {
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
 
-  const lineInputClass =
-    "h-5 w-full border-b border-zinc-500 bg-transparent px-1 text-[10px] outline-none disabled:cursor-not-allowed";
+  // Uncontrolled ref for the Terms editor — avoids cursor-jump on every keystroke
+  const termsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (termsRef.current && termsText) {
+      if (termsRef.current.innerText !== termsText) {
+        termsRef.current.innerText = termsText;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [termsText]);
+
+  // Line widths state — keyed by fieldKey, persisted with MOA template save
+  const [lineWidths, setLineWidths] = useState<Record<string, number>>({});
+  const handleWidthChange = (key: string, width: number) => {
+    setLineWidths((prev) => ({ ...prev, [key]: width }));
+  };
+
+  // Helper to render a ResizableLine with tracked width
+  const RL = (fieldKey: string, value: string, onChange: (v: string) => void, defaultWidth = 120) => (
+    <ResizableLine
+      fieldKey={fieldKey}
+      value={value}
+      onChange={onChange}
+      storedWidth={lineWidths[fieldKey]}
+      onWidthChange={handleWidthChange}
+      canEdit={canEditMoa}
+      defaultWidth={defaultWidth}
+    />
+  );
 
   const updateMoaField = (field: keyof typeof moaFields, value: string) => {
     setMoaFields((prev) => ({ ...prev, [field]: value }));
@@ -214,6 +307,8 @@ export default function SettingsPage() {
       await api.post(`/settings/moa_template`, {
         terms_text: termsText,
         labels: topLabels,
+        lineWidths,
+        extensionRows,
       });
       setMoaSavedAt(new Date().toLocaleString());
     } catch (error) {
@@ -225,15 +320,24 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     setSendStatus("sending");
     try {
-      // The template is centrally stored in shop_settings, so it's already distributed globally.
-      // We simulate a network request for user feedback.
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // First, ensure the current changes are saved to the central template
+      await api.post(`/settings/moa_template`, {
+        terms_text: termsText,
+        labels: topLabels,
+        lineWidths,
+        extensionRows,
+      });
+      
+      // Simulate the broadcast process to other branches
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      setMoaSavedAt(new Date().toLocaleString());
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);
     } catch (error) {
       console.error("Failed to send to all branches:", error);
       setSendStatus("idle");
-      alert("Failed to send to all branches.");
+      alert("Failed to send to all branches. Your changes might not have been saved.");
     }
   };
 
@@ -260,6 +364,7 @@ export default function SettingsPage() {
     className: string,
   ) => {
     const isInline = className.split(" ").includes("inline");
+    const hasExplicitWidth = className.split(" ").some((c) => /^w-/.test(c));
     const sanitizedClassName = className
       .split(" ")
       .filter((part) => part !== "inline")
@@ -272,7 +377,7 @@ export default function SettingsPage() {
         readOnly={!canEditMoa}
         tabIndex={canEditMoa ? 0 : -1}
         spellCheck={false}
-        className={`${sanitizedClassName} ${isInline ? "inline-block" : "block"} min-w-0 border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+        className={`${sanitizedClassName} ${isInline ? "inline-block" : hasExplicitWidth ? "block shrink-0" : "block w-full"} border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
         style={isInline ? { width: `${Math.max(topLabels[field].length + 1, 6)}ch` } : undefined}
       />
     );
@@ -446,18 +551,34 @@ export default function SettingsPage() {
               </div>
 
               <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6">
-                <div className="space-y-5 border border-emerald-800/70 p-5 text-[10px] text-zinc-800">
-                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] items-center gap-3">
+                <div className="space-y-2 border border-emerald-800/70 p-5 text-[10px] text-zinc-800">
+                  {/* Row 1: Title + Branch Info (centered) */}
+                  <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
+                    <input
+                      value={topLabels.moaTitle}
+                      onChange={(e) => updateTopLabel("moaTitle", e.target.value)}
+                      readOnly={!canEditMoa}
+                      tabIndex={canEditMoa ? 0 : -1}
+                      spellCheck={false}
+                      className={`block w-full text-center text-sm font-black uppercase underline tracking-widest border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                    />
+                    <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                      {shopSettings.shopName}
+                    </p>
+                    {shopSettings.shopAddress && (
+                      <p className="text-[8px] text-zinc-400">{shopSettings.shopAddress}</p>
+                    )}
+                    {shopSettings.phoneNumber && (
+                      <p className="text-[8px] text-zinc-400">{shopSettings.phoneNumber}</p>
+                    )}
+                  </div>
+
+                  {/* Row 2: Original Copy | Unit Code */}
+                  <div className="flex items-center justify-between gap-3 pt-1">
                     {renderEditableLabel("originalCopy", "font-semibold")}
-                    {renderEditableLabel("moaTitle", "text-center text-xs font-bold uppercase underline")}
                     <div className="min-w-0 flex items-center gap-2 text-[10px]">
-                      {renderEditableLabel("unitCode", "font-semibold uppercase")}
-                      <input
-                        value={moaFields.unitCode}
-                        onChange={(e) => updateMoaField("unitCode", e.target.value)}
-                        disabled={!canEditMoa}
-                        className={lineInputClass}
-                      />
+                      {renderEditableLabel("unitCode", "font-semibold uppercase whitespace-nowrap")}
+                      {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v))}
                     </div>
                   </div>
 
@@ -465,256 +586,116 @@ export default function SettingsPage() {
                     {isTopHeaderSwapped ? (
                       <>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("maturityDate", "w-32")}
                             <span>1st</span>
-                            <input
-                              value={moaFields.maturityDate1st}
-                              onChange={(e) => updateMoaField("maturityDate1st", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 80)}
                             <span>2nd</span>
-                            <input
-                              value={moaFields.maturityDate2nd}
-                              onChange={(e) => updateMoaField("maturityDate2nd", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 80)}
                             <span>3rd</span>
-                            <input
-                              value={moaFields.maturityDate3rd}
-                              onChange={(e) => updateMoaField("maturityDate3rd", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 80)}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("expiryDate", "w-32")}
-                            <input
-                              value={moaFields.expiryDate}
-                              onChange={(e) => updateMoaField("expiryDate", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v))}
                           </div>
                         </div>
 
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("purchasedDate", "w-28")}
-                            <input
-                              value={moaFields.purchasedDate}
-                              onChange={(e) => updateMoaField("purchasedDate", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v))}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("idsPresented", "w-28")}
-                            <input
-                              value={moaFields.idsPresented}
-                              onChange={(e) => updateMoaField("idsPresented", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v))}
                           </div>
                         </div>
                       </>
                     ) : (
                       <>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("purchasedDate", "w-28")}
-                            <input
-                              value={moaFields.purchasedDate}
-                              onChange={(e) => updateMoaField("purchasedDate", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v))}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("idsPresented", "w-28")}
-                            <input
-                              value={moaFields.idsPresented}
-                              onChange={(e) => updateMoaField("idsPresented", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v))}
                           </div>
                         </div>
 
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("maturityDate", "w-32")}
                             <span>1st</span>
-                            <input
-                              value={moaFields.maturityDate1st}
-                              onChange={(e) => updateMoaField("maturityDate1st", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 80)}
                             <span>2nd</span>
-                            <input
-                              value={moaFields.maturityDate2nd}
-                              onChange={(e) => updateMoaField("maturityDate2nd", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 80)}
                             <span>3rd</span>
-                            <input
-                              value={moaFields.maturityDate3rd}
-                              onChange={(e) => updateMoaField("maturityDate3rd", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 80)}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {renderEditableLabel("expiryDate", "w-32")}
-                            <input
-                              value={moaFields.expiryDate}
-                              onChange={(e) => updateMoaField("expiryDate", e.target.value)}
-                              disabled={!canEditMoa}
-                              className={lineInputClass}
-                            />
+                            {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v))}
                           </div>
                         </div>
                       </>
                     )}
                   </div>
 
-                  <div className="space-y-3 leading-6">
-                    <p>
+                  <div className="space-y-1 leading-6">
+                    <p className="flex items-baseline gap-1 flex-wrap">
                       {renderEditableLabel("customerIntro", "inline")}
-                      <span className="inline-block w-80 align-middle">
-                        <input
-                          value={moaFields.customerName}
-                          onChange={(e) => updateMoaField("customerName", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                      </span>
+                      {RL("customerName", moaFields.customerName, (v) => updateMoaField("customerName", v), 200)}
                       {renderEditableLabel("legalAgeResident", "inline")}
-                      <span className="inline-block w-[500px] align-middle">
-                        <input
-                          value={moaFields.customerAddress}
-                          onChange={(e) => updateMoaField("customerAddress", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                      </span>
-                      , {renderEditableLabel("agreementText", "inline")}
+                      {RL("customerAddress", moaFields.customerAddress, (v) => updateMoaField("customerAddress", v), 280)}
+                      {renderEditableLabel("agreementText", "inline")}
                     </p>
-                    <p>
+                    <p className="flex items-baseline gap-1 flex-wrap">
                       {renderEditableLabel("repayIntro", "inline")}
-                      <span className="inline-block w-36 align-middle">
-                        <input
-                          value={moaFields.principalAmount}
-                          onChange={(e) => updateMoaField("principalAmount", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                      </span>
+                      {RL("principalAmount", moaFields.principalAmount, (v) => updateMoaField("principalAmount", v), 100)}
                       {renderEditableLabel("plusText", "inline")}
-                      <span className="inline-block w-32 align-middle">
-                        <input
-                          value={moaFields.interestAmount}
-                          onChange={(e) => updateMoaField("interestAmount", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                      </span>
+                      {RL("interestAmount", moaFields.interestAmount, (v) => updateMoaField("interestAmount", v), 100)}
                       {renderEditableLabel("storageFeeText", "inline")}
-                      <span className="inline-block w-32 align-middle">
-                        <input
-                          value={moaFields.penaltyAmount}
-                          onChange={(e) => updateMoaField("penaltyAmount", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                      </span>
+                      {RL("penaltyAmount", moaFields.penaltyAmount, (v) => updateMoaField("penaltyAmount", v), 100)}
                       {renderEditableLabel("overdueText", "inline")}
                     </p>
                   </div>
 
                   <div className="grid gap-5 border-y border-emerald-900/50 py-4 md:grid-cols-2">
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("financialDetails", "inline")}</p>
                       <div className="grid grid-cols-[74px_1fr] items-center gap-2">
                         {renderEditableLabel("amount", "inline")}
-                        <input
-                          value={moaFields.amount}
-                          onChange={(e) => updateMoaField("amount", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("amount", moaFields.amount, (v) => updateMoaField("amount", v))}
                         {renderEditableLabel("storageFee", "inline")}
-                        <input
-                          value={moaFields.storageFee}
-                          onChange={(e) => updateMoaField("storageFee", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("storageFee", moaFields.storageFee, (v) => updateMoaField("storageFee", v))}
                         {renderEditableLabel("parkingFee", "inline")}
-                        <input
-                          value={moaFields.parkingFee}
-                          onChange={(e) => updateMoaField("parkingFee", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("parkingFee", moaFields.parkingFee, (v) => updateMoaField("parkingFee", v))}
                         {renderEditableLabel("netProceeds", "inline")}
-                        <input
-                          value={moaFields.netProceeds}
-                          onChange={(e) => updateMoaField("netProceeds", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("netProceeds", moaFields.netProceeds, (v) => updateMoaField("netProceeds", v))}
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("unitDescription", "inline")}</p>
                       <div className="grid grid-cols-[92px_1fr] items-center gap-2">
                         {renderEditableLabel("brandModel", "inline")}
-                        <input
-                          value={moaFields.brandModel}
-                          onChange={(e) => updateMoaField("brandModel", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("brandModel", moaFields.brandModel, (v) => updateMoaField("brandModel", v))}
                         {renderEditableLabel("itemsIncluded", "inline")}
-                        <input
-                          value={moaFields.itemsIncluded}
-                          onChange={(e) => updateMoaField("itemsIncluded", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("itemsIncluded", moaFields.itemsIncluded, (v) => updateMoaField("itemsIncluded", v))}
                         {renderEditableLabel("condition", "inline")}
-                        <input
-                          value={moaFields.condition}
-                          onChange={(e) => updateMoaField("condition", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("condition", moaFields.condition, (v) => updateMoaField("condition", v))}
                         {renderEditableLabel("serialNo", "inline")}
-                        <input
-                          value={moaFields.serialNo}
-                          onChange={(e) => updateMoaField("serialNo", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("serialNo", moaFields.serialNo, (v) => updateMoaField("serialNo", v))}
                         {renderEditableLabel("memory", "inline")}
-                        <input
-                          value={moaFields.memory}
-                          onChange={(e) => updateMoaField("memory", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                        {RL("memory", moaFields.memory, (v) => updateMoaField("memory", v))}
                       </div>
                     </div>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-1">
                     <div className="grid grid-cols-5 gap-2 font-bold">
                       {renderEditableLabel("dateHeader", "inline")}
                       {renderEditableLabel("storageHeader", "inline")}
@@ -723,43 +704,12 @@ export default function SettingsPage() {
                       {renderEditableLabel("signHeader", "inline")}
                     </div>
                     {extensionRows.map((row, index) => (
-                      <div key={index} className="grid grid-cols-5 gap-2">
-                        <input
-                          value={row.date}
-                          onChange={(e) => updateExtensionRow(index, "date", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                        <input
-                          value={row.storage}
-                          onChange={(e) =>
-                            updateExtensionRow(index, "storage", e.target.value)
-                          }
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                        <input
-                          value={row.period}
-                          onChange={(e) =>
-                            updateExtensionRow(index, "period", e.target.value)
-                          }
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                        <input
-                          value={row.extend}
-                          onChange={(e) =>
-                            updateExtensionRow(index, "extend", e.target.value)
-                          }
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
-                        <input
-                          value={row.sign}
-                          onChange={(e) => updateExtensionRow(index, "sign", e.target.value)}
-                          disabled={!canEditMoa}
-                          className={lineInputClass}
-                        />
+                      <div key={index} className="grid grid-cols-5 gap-1">
+                        {RL(`extRow_${index}_date`, row.date, (v) => updateExtensionRow(index, "date", v))}
+                        {RL(`extRow_${index}_storage`, row.storage, (v) => updateExtensionRow(index, "storage", v))}
+                        {RL(`extRow_${index}_period`, row.period, (v) => updateExtensionRow(index, "period", v))}
+                        {RL(`extRow_${index}_extend`, row.extend, (v) => updateExtensionRow(index, "extend", v))}
+                        {RL(`extRow_${index}_sign`, row.sign, (v) => updateExtensionRow(index, "sign", v))}
                       </div>
                     ))}
                   </div>
@@ -787,36 +737,27 @@ export default function SettingsPage() {
                       />
                     </p>
                     <div
+                      ref={termsRef}
                       contentEditable={canEditMoa}
                       suppressContentEditableWarning
-                      onInput={(e) => setTermsText(e.currentTarget.textContent ?? "")}
+                      onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
                       className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none"
-                    >
-                      {termsText}
-                    </div>
+                    />
                   </div>
 
-                  <div className="grid gap-8 pt-4 md:grid-cols-2">
-                    <div className="space-y-2 text-center">
-                      <input
-                        value={moaFields.sellerName}
-                        onChange={(e) => updateMoaField("sellerName", e.target.value)}
-                        disabled={!canEditMoa}
-                        className={lineInputClass}
-                      />
-                      <p className="text-[9px]">{renderEditableLabel("sellerSignature", "inline")}</p>
+                  <div className="grid gap-8 pt-4 md:grid-cols-2 items-end">
+                    <div className="flex flex-col text-center">
+                      {/* Invisible spacer — same height as "I HEREBY AUTHORIZED" on the other column */}
+                      <span className="block text-[11px] font-bold uppercase text-emerald-900 invisible select-none" aria-hidden="true">
+                        I HEREBY AUTHORIZED
+                      </span>
+                      {RL("sellerName", moaFields.sellerName, (v) => updateMoaField("sellerName", v))}
+                      <p className="mt-1 text-[9px]">{renderEditableLabel("sellerSignature", "inline")}</p>
                     </div>
-                    <div className="space-y-2 text-center">
+                    <div className="flex flex-col text-center">
                       <p className="text-[11px] font-bold uppercase text-emerald-900">{renderEditableLabel("authorizedText", "inline")}</p>
-                      <input
-                        value={moaFields.representativeName}
-                        onChange={(e) =>
-                          updateMoaField("representativeName", e.target.value)
-                        }
-                        disabled={!canEditMoa}
-                        className={lineInputClass}
-                      />
-                      <p className="text-[9px]">{renderEditableLabel("representativeSignature", "inline")}</p>
+                      {RL("representativeName", moaFields.representativeName, (v) => updateMoaField("representativeName", v))}
+                      <p className="mt-1 text-[9px]">{renderEditableLabel("representativeSignature", "inline")}</p>
                     </div>
                   </div>
                 </div>

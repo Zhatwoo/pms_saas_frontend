@@ -476,6 +476,7 @@ export default function PawnTransactionsPage() {
           onConfirm={() => setIsMoaReprintOpen(false)}
           data={reprintData}
           isLoading={false}
+          autoPrint={true}
         />
       ) : null}
     </div>

@@ -20,17 +20,10 @@ interface SaleItem {
   availableDate: string; // Date Expired
   price: number;
   status: "Available" | "Sold";
-  stockLevel: number;
   originalPawnId?: string;
 }
 
-function StockBadge({ stock }: { stock: number }) {
-  if (stock === 0)
-    return <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-300">Out of Stock</span>;
-  if (stock <= 3)
-    return <span className="inline-flex items-center rounded-full border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-300">Low Stock: {stock}</span>;
-  return <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">In Stock: {stock}</span>;
-}
+
 
 const categoryOptions = [
   { value: "all", label: "All" },
@@ -132,7 +125,7 @@ export default function EmployeeItemsForSalePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-white">
-                  {["ID", "Item Name", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
+                  {["ID", "Item Name", "Category", "Date Expired", "Price", "Status", "Actions"].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
                 </tr>

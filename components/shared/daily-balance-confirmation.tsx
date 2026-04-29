@@ -17,23 +17,34 @@ export function DailyBalanceConfirmation({
   onConfirm,
   onClose,
 }: DailyBalanceConfirmationProps) {
-  const [confirmedAmount, setConfirmedAmount] = useState(currentCash);
+  const [confirmedAmount, setConfirmedAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setConfirmedAmount(currentCash);
+      setConfirmedAmount("");
       setIsSubmitting(false);
     }
-  }, [isOpen, currentCash]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const formatWithCommas = (value: string) => {
+    const cleanValue = value.replace(/[^0-9.]/g, "");
+    if (!cleanValue) return "";
+    const parts = cleanValue.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  };
+
   const handleConfirm = async () => {
     if (isSubmitting) return;
+    const rawValue = confirmedAmount.replace(/,/g, "");
+    if (!rawValue || isNaN(parseFloat(rawValue))) return;
+
     setIsSubmitting(true);
     try {
-      await onConfirm(confirmedAmount);
+      await onConfirm(rawValue);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,8 +77,9 @@ export function DailyBalanceConfirmation({
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-text-muted">₱</span>
               <input
                 type="text"
+                placeholder="0.00"
                 value={confirmedAmount}
-                onChange={(e) => setConfirmedAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(e) => setConfirmedAmount(formatWithCommas(e.target.value))}
                 disabled={isSubmitting}
                 className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-emerald-700 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
               />
@@ -91,7 +103,7 @@ export function DailyBalanceConfirmation({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !confirmedAmount}
             className={`flex-1 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
               type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
             }`}

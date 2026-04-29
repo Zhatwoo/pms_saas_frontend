@@ -31,6 +31,9 @@ export interface TransactionRow {
   storage: string;
   customerName?: string;
   customerAddress?: string;
+  customerBarangay?: string;
+  customerCity?: string;
+  customerRegion?: string;
   customerPhone?: string;
   customerMiddleName?: string;
   idPresented?: string;
@@ -203,7 +206,10 @@ export function TransactionTable({
                   <tr
                     key={row.transactionNo}
                     ref={isHighlightedRow ? highlightedRowRef : null}
-                    onClick={() => onViewDetails?.(row)}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('button')) return;
+                      onViewDetails?.(row);
+                    }}
                     role="button"
                     tabIndex={0}
                     className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${
@@ -293,7 +299,7 @@ export function TransactionTable({
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-1.5">
-                        {row.purpose === "Pawn" ? (
+                        {row.purpose === "Pawn" || row.purpose === "Renew" ? (
                           <button
                             onClick={(event) => {
                               event.stopPropagation();

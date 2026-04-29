@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
+import { formatDateToYMD } from "@/lib/time";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -73,6 +74,10 @@ function normalizeCustomerName(value: string) {
   return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function getTodayDate() {
+  return formatDateToYMD();
+}
+
 function createEmptyForm() {
   return {
     firstName: "",
@@ -95,7 +100,7 @@ function createEmptyForm() {
     memory: "",
     remarks: "",
     amount: "",
-    purchasedDate: "",
+    purchasedDate: getTodayDate(),
     storageFee: false,
     storageFeeAmount: "",
     profilePhoto: null as string | null,
@@ -145,6 +150,7 @@ export function NewPawnModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [isMoaOpen, setIsMoaOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
   const [customerMode, setCustomerMode] = useState<CustomerMode>("new");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
@@ -322,6 +328,7 @@ export function NewPawnModal({
       ...createEmptyForm(),
       unitCode: prev.unitCode,
       serialNumber: prev.serialNumber,
+      purchasedDate: getTodayDate(),
     }));
     setQrUrl(null);
     setPassword("");
@@ -445,6 +452,26 @@ export function NewPawnModal({
       return;
     }
 
+    // 1.5. Check Required Photos before QR
+    const verificationMode = getVerificationMode(form.idPresented);
+    if (verificationMode === "no-id" && !form.profilePhoto) {
+      setErrorMessage("Customer photo is required when No ID / None is selected.");
+      return;
+    }
+    if (verificationMode === "single-document" && !form.idPhoto) {
+      setErrorMessage("Document image is required for clearance verification.");
+      return;
+    }
+    if (verificationMode === "front-back" && (!form.idPhoto || !form.idBackPhoto)) {
+      setErrorMessage("Front and back ID photos are required for this ID type.");
+      return;
+    }
+
+    if (form.itemPhotos.length === 0) {
+      setErrorMessage("At least one Item Photo is required before generating QR.");
+      return;
+    }
+
     if (!unitCodeReady) {
       setErrorMessage("Unit code is still generating. Please wait and try again.");
       return;
@@ -523,8 +550,22 @@ export function NewPawnModal({
       return;
     }
 
-      if (form.itemPhotos.length === 0) {
-      setErrorMessage("Item photo is required before generating the ticket.");
+    const verificationMode = getVerificationMode(form.idPresented);
+    if (verificationMode === "no-id" && !form.profilePhoto) {
+      setErrorMessage("Customer photo is required when No ID / None is selected.");
+      return;
+    }
+    if (verificationMode === "single-document" && !form.idPhoto) {
+      setErrorMessage("Document image is required for clearance verification.");
+      return;
+    }
+    if (verificationMode === "front-back" && (!form.idPhoto || !form.idBackPhoto)) {
+      setErrorMessage("Front and back ID photos are required for this ID type.");
+      return;
+    }
+
+    if (form.itemPhotos.length === 0) {
+      setErrorMessage("At least one Item Photo is required for pawned items.");
       return;
     }
 
@@ -637,6 +678,8 @@ export function NewPawnModal({
           pawnAmount: amountValue,
           storageFee: storageAmount,
           returnAmount: 0,
+          transactionDate: formatDateToYMD(),
+          transactionTime: new Date().toTimeString().slice(0, 8),
           details: [form.itemsIncluded.trim(), form.idPresented, `Processed by: ${loggedInUserName || 'Employee'}`].filter(Boolean).join(' | '),
         },
       });
@@ -948,6 +991,8 @@ export function NewPawnModal({
                           <PhotoUpload 
                             label="Take Customer Facing Photo" 
                             onCapture={(data) => setForm(prev => ({ ...prev, profilePhoto: data }))}
+                            onPreview={(src) => setPreviewImage({ src, title: "Customer Photo" })}
+                            currentPhoto={form.profilePhoto}
                           />
                         </div>
                       ) : getVerificationMode(form.idPresented) === "single-document" ? (
@@ -955,6 +1000,8 @@ export function NewPawnModal({
                           <PhotoUpload 
                             label="Upload Image" 
                             onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                            onPreview={(src) => setPreviewImage({ src, title: "ID Document" })}
+                            currentPhoto={form.idPhoto}
                           />
                         </div>
                       ) : (
@@ -962,10 +1009,14 @@ export function NewPawnModal({
                           <PhotoUpload 
                             label="Front of ID" 
                             onCapture={(data) => setForm(prev => ({ ...prev, idPhoto: data }))}
+                            onPreview={(src) => setPreviewImage({ src, title: "ID Front" })}
+                            currentPhoto={form.idPhoto}
                           />
                           <PhotoUpload 
                             label="Back of ID" 
                             onCapture={(data) => setForm(prev => ({ ...prev, idBackPhoto: data }))}
+                            onPreview={(src) => setPreviewImage({ src, title: "ID Back" })}
+                            currentPhoto={form.idBackPhoto}
                           />
                         </div>
                       )}
@@ -976,78 +1027,70 @@ export function NewPawnModal({
 
               {/* Unit Information */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-3 mb-1">
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                   </div>
                   <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Unit Information</h3>
                 </div>
 
                 <div className="grid gap-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <Input 
-                      label="Unit Code" 
-                      name="unitCode" 
-                      value={form.unitCode} 
-                      onChange={handleChange} 
-                      bg="bg-zinc-200" 
-                      readOnly={true}
-                    />
-                    <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
+                    <Input label="Unit Code" name="unitCode" value={form.unitCode} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
+                    <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
                   </div>
 
-                  <div className="rounded-2xl border border-zinc-100 bg-zinc-50 dark:bg-surface-secondary p-4 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Item Photo</p>
-                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Capture every angle of the pawned item for inventory review.</p>
-                      </div>
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">
-                        {form.itemPhotos.length} photo{form.itemPhotos.length === 1 ? "" : "s"}
-                      </span>
+                  {/* Item Photos Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Item Photos</label>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{form.itemPhotos.length} / 4 Captured</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="sm:col-span-1 h-full">
-                        <PhotoUpload
-                          label="Capture Item Photo"
-                          frameClassName="h-32 sm:h-full min-h-[8rem] w-full"
-                          allowMultipleCapture
-                          onCapture={handleAddItemPhoto}
-                        />
-                      </div>
 
-                      <div className="sm:col-span-2 rounded-2xl border border-dashed border-zinc-200 dark:border-border bg-white dark:bg-surface p-3 flex flex-col">
-                        {form.itemPhotos.length > 0 ? (
-                          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
-                            {form.itemPhotos.map((photo, index) => (
-                              <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover shadow-sm">
-                                <Image
-                                  src={photo}
-                                  alt={`Item photo ${index + 1}`}
-                                  width={320}
-                                  height={240}
-                                  unoptimized
-                                  className="h-full w-full object-cover"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveItemPhoto(index)}
-                                  className="absolute right-2 top-2 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white opacity-0 transition group-hover:opacity-100"
-                                >
-                                  Remove
-                                </button>
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                                  {index + 1}
-                                </div>
-                              </div>
-                            ))}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                      {form.itemPhotos.map((photo, index) => (
+                        <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover shadow-sm">
+                          <Image
+                            src={photo}
+                            alt={`Item photo ${index + 1}`}
+                            width={320}
+                            height={240}
+                            unoptimized
+                            className="h-full w-full object-cover transition-transform group-hover:scale-105 cursor-pointer"
+                            onClick={() => setPreviewImage({ src: photo, title: `Item Photo ${index + 1}` })}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItemPhoto(index)}
+                            className="absolute right-2 top-2 rounded-full bg-black/70 p-1.5 text-white opacity-0 transition group-hover:opacity-100 hover:bg-red-500"
+                            title="Remove photo"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          </button>
+                          
+                          <button 
+                            type="button"
+                            onClick={() => setPreviewImage({ src: photo, title: `Item Photo ${index + 1}` })}
+                            className="absolute left-2 top-2 rounded-full bg-emerald-600/90 p-1.5 text-white opacity-0 transition group-hover:opacity-100 hover:bg-emerald-500"
+                            title="Preview photo"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                          </button>
+
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-white pointer-events-none">
+                            Photo {index + 1}
                           </div>
-                        ) : (
-                          <div className="flex flex-1 h-full min-h-[8rem] items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary px-4 text-center text-xs font-medium text-zinc-400">
-                            No item photos captured yet.
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      ))}
+
+                      {form.itemPhotos.length < 4 && (
+                        <PhotoUpload 
+                          label="Add Item Photo" 
+                          onCapture={handleAddItemPhoto}
+                          allowMultipleCapture={true}
+                          frameClassName="aspect-square"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -1097,13 +1140,39 @@ export function NewPawnModal({
                         className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                       >
                         <option value="">Select Condition</option>
-                        <option value="New">New</option>
-                        <option value="Good">Good</option>
-                        <option value="Fair">Fair</option>
-                        <option value="Poor">Poor</option>
+                        <optgroup label="Working">
+                          <option value="Brand New">Brand New (Sealed)</option>
+                          <option value="Like New">Like New (No scratches)</option>
+                          <option value="Good">Good (Minor wear)</option>
+                          <option value="Fair">Fair (Visible scratches)</option>
+                          <option value="Poor">Poor (Heavy wear/dents)</option>
+                        </optgroup>
+                        <optgroup label="Issues">
+                          <option value="For Repair">For Repair</option>
+                          <option value="Incomplete">Incomplete (Missing parts)</option>
+                          <option value="Defective">Defective / Not working</option>
+                        </optgroup>
                       </select>
                     </div>
-                    <Input label="Memory" name="memory" value={form.memory} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">Memory / Storage (GB)</label>
+                      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all`}>
+                        <input
+                          name="memory"
+                          value={form.memory}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/[^0-9]/g, "");
+                            setForm(prev => ({ ...prev, memory: raw }));
+                          }}
+                          placeholder="e.g. 128"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          className="w-full bg-transparent px-4 py-3 text-xs font-black text-emerald-950 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
+                        />
+                        <span className="pr-4 text-zinc-400 font-bold text-xs">GB</span>
+                      </div>
+                    </div>
                   </div>
 
                   <Input label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
@@ -1240,6 +1309,15 @@ export function NewPawnModal({
             </div>
           )}
         </div>
+        
+        {/* Preview Modal Portal */}
+        {previewImage && (
+          <PreviewModal 
+            src={previewImage.src} 
+            title={previewImage.title} 
+            onClose={() => setPreviewImage(null)} 
+          />
+        )}
       </div>
 
       <MoaModal 
@@ -1248,6 +1326,13 @@ export function NewPawnModal({
         onConfirm={handleConfirmMoa}
         data={{
           ...form,
+          // Build full address: street + barangay + city + region
+          address: [
+            form.address,
+            form.barangay,
+            form.city,
+            form.region,
+          ].filter(Boolean).join(", "),
           storageFee: form.storageFeeAmount,
           idPresented: form.idPresented || "",
           branchName: branchName || "Pasig branch",
@@ -1303,18 +1388,43 @@ function Input({
   );
 }
 
+function PreviewModal({ src, title, onClose }: { src: string; title: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center bg-black/90 px-4 py-8 backdrop-blur-md" onClick={onClose}>
+      <div className="anim-modal-enter relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4 bg-zinc-900">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-400">Media Preview</p>
+            <h3 className="mt-1 text-lg font-black text-white">{title}</h3>
+          </div>
+          <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white" aria-label="Close image preview">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+          </button>
+        </div>
+        <div className="flex h-[calc(90vh-76px)] items-center justify-center bg-black p-4">
+          <Image src={src} alt={title} width={1200} height={900} unoptimized className="max-h-full w-full object-contain" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PhotoUpload({
   label,
   onCapture,
+  onPreview,
+  currentPhoto,
   frameClassName = "aspect-[4/3]",
   allowMultipleCapture = false,
 }: {
   label: string;
   onCapture?: (dataUrl: string | null) => void;
+  onPreview?: (dataUrl: string) => void;
+  currentPhoto?: string | null;
   frameClassName?: string;
   allowMultipleCapture?: boolean;
 }) {
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<string | null>(currentPhoto || null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -1322,6 +1432,13 @@ function PhotoUpload({
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Sync with prop
+  useEffect(() => {
+    if (currentPhoto !== undefined) {
+      setPhoto(currentPhoto);
+    }
+  }, [currentPhoto]);
 
   const openCamera = useCallback(async () => {
     setCameraError("");
@@ -1374,7 +1491,8 @@ function PhotoUpload({
     });
   }, [allowMultipleCapture, stopCamera, onCapture]);
 
-  const retake = () => {
+  const retake = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!allowMultipleCapture) {
       setPhoto(null);
       if (onCapture) onCapture(null);
@@ -1382,11 +1500,19 @@ function PhotoUpload({
     openCamera();
   };
 
+  const handleThumbnailClick = () => {
+    if (photo && onPreview) {
+      onPreview(photo);
+    } else {
+      openCamera();
+    }
+  };
+
   return (
     <>
       {/* Thumbnail / Placeholder */}
       <div
-        onClick={allowMultipleCapture || !photo ? openCamera : undefined}
+        onClick={handleThumbnailClick}
         className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white dark:bg-surface flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
           ${ photo ? "border-emerald-400 cursor-pointer" : "border-zinc-200 dark:border-border hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer" }`}
       >
@@ -1397,15 +1523,25 @@ function PhotoUpload({
               alt={label}
               fill
               unoptimized
-              className="rounded-2xl object-cover"
+              className="rounded-2xl object-cover transition-transform group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-2xl">
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onPreview) onPreview(photo);
+                }}
+                className="bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-emerald-500 transition"
+              >
+                View Full
+              </button>
               <button
                 type="button"
                 onClick={retake}
                 className="bg-white dark:bg-surface text-emerald-700 font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-emerald-50 transition"
               >
-                {allowMultipleCapture ? "Capture Again" : "Retake"}
+                Retake
               </button>
             </div>
           </>
