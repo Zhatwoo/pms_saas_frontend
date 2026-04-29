@@ -494,7 +494,7 @@ export default function ItemsForSalePage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading && saleItems.length === 0 ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                     <div className="flex items-center justify-center">
@@ -593,7 +593,7 @@ export default function ItemsForSalePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isLoading && saleItems.length === 0 ? (
+                    {isLoading ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-sm text-zinc-400">
                             <div className="flex items-center justify-center">

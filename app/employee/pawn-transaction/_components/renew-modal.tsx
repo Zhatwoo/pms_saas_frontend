@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
+import { formatDateToYMD } from "@/lib/time";
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
@@ -165,7 +166,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
       // 3. Create Renew Transaction
       await api.post("/transactions", {
         purpose: isReappraiseActive ? "Reappraise" : "Renew",
-        transaction_date: new Date().toISOString().split('T')[0],
+        transaction_date: formatDateToYMD(),
         branch_id: branchId,
         branch: branchName,
         cash_in: cashIn,

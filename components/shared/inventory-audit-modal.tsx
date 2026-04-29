@@ -485,9 +485,17 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose }: InventoryAud
       setTallyError("");
 
       try {
+        const normalizedScannedIds = Array.from(
+          new Set(
+            scannedItems
+              .map((item) => String(item.itemId || "").trim().toUpperCase())
+              .filter((v) => v.length > 0),
+          ),
+        );
+
         const data = await api.post<InventoryTally>("/inventory/pawned/qr-tally", {
           branch_id: branchId,
-          scanned_item_ids: scannedItems.map((item) => item.itemId),
+          scanned_item_ids: normalizedScannedIds,
         });
 
         if (!cancelled) {

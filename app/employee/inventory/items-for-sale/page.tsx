@@ -7,6 +7,7 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { useBranch } from "@/contexts/branch-context";
+import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -20,17 +21,10 @@ interface SaleItem {
   availableDate: string; // Date Expired
   price: number;
   status: "Available" | "Sold";
-  stockLevel: number;
   originalPawnId?: string;
 }
 
-function StockBadge({ stock }: { stock: number }) {
-  if (stock === 0)
-    return <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-300">Out of Stock</span>;
-  if (stock <= 3)
-    return <span className="inline-flex items-center rounded-full border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-[10px] font-bold text-orange-300">Low Stock: {stock}</span>;
-  return <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">In Stock: {stock}</span>;
-}
+
 
 const categoryOptions = [
   { value: "all", label: "All" },
@@ -124,6 +118,7 @@ export default function EmployeeItemsForSalePage() {
         </div>
       </div>
 
+
       {saleViewMode === "calendar" ? (
         <InventoryCalendar items={saleItems} />
       ) : (
@@ -132,19 +127,20 @@ export default function EmployeeItemsForSalePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-emerald-950 to-emerald-900 text-white">
-                  {["ID", "Item Name", "Category", "Price", "Stock", "Status", "Actions"].map((h) => (
+                  {["ID", "Item Name", "Category", "Date Expired", "Price", "Status", "Actions"].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={7} className="py-16 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <span className="anim-loading h-6 w-6 border-emerald-500/50 border-t-emerald-600 rounded-full" />
-                      <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-widest">Loading branch items...</span>
-                    </div>
-                  </td></tr>
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
+                      <div className="flex items-center justify-center">
+                        <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                      </div>
+                    </td>
+                  </tr>
                 ) : saleItems.length === 0 ? (
                   <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">No items for sale found</td></tr>
                 ) : (
@@ -190,6 +186,7 @@ export default function EmployeeItemsForSalePage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
 
       {viewingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md px-4" onClick={() => setViewingItem(null)}>

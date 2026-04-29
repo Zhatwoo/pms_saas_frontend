@@ -155,33 +155,79 @@ export default function PublicTicketView() {
             <div className="space-y-6">
                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 text-center">Visual Verification Evidence</h3>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Primary Item Photo */}
+                  {/* Primary Item Photo Carousel */}
                   <div className="relative h-[300px] rounded-3xl overflow-hidden border border-zinc-200 bg-zinc-100 shadow-inner group">
                     {data.item_photos.length > 0 ? (
-                      <>
-                        <Image 
-                          src={data.item_photos[photoIndex]} 
-                          alt="Pawned Item" 
-                          fill 
-                          unoptimized 
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        {data.item_photos.length > 1 && (
-                          <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
-                            {data.item_photos.map((_, i) => (
-                              <button 
-                                key={i} 
-                                onClick={() => setPhotoIndex(i)}
-                                className={`h-1.5 rounded-full transition-all ${i === photoIndex ? 'w-6 bg-white shadow-md' : 'w-1.5 bg-white/40'}`}
+                      <div 
+                        className="relative h-full w-full touch-pan-y"
+                        onTouchStart={(e) => {
+                          const touch = e.touches[0];
+                          (window as any).swipeStart = touch.clientX;
+                        }}
+                        onTouchEnd={(e) => {
+                          const touch = e.changedTouches[0];
+                          const swipeEnd = touch.clientX;
+                          const swipeStart = (window as any).swipeStart;
+                          if (swipeStart - swipeEnd > 50) {
+                            setPhotoIndex((prev) => (prev + 1) % data.item_photos.length);
+                          } else if (swipeStart - swipeEnd < -50) {
+                            setPhotoIndex((prev) => (prev - 1 + data.item_photos.length) % data.item_photos.length);
+                          }
+                        }}
+                      >
+                        <div className="relative h-full w-full overflow-hidden">
+                          {data.item_photos.map((photo, i) => (
+                            <div 
+                              key={i}
+                              className={`absolute inset-0 transition-all duration-700 ease-out transform ${
+                                i === photoIndex ? "opacity-100 translate-x-0 scale-100" : 
+                                i < photoIndex ? "opacity-0 -translate-x-full scale-95" : "opacity-0 translate-x-full scale-95"
+                              }`}
+                            >
+                              <Image 
+                                src={photo} 
+                                alt={`Item Photo ${i + 1}`} 
+                                fill 
+                                unoptimized 
+                                className="object-cover"
                               />
-                            ))}
-                          </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Navigation Buttons */}
+                        {data.item_photos.length > 1 && (
+                          <>
+                            <button 
+                              onClick={() => setPhotoIndex((prev) => (prev - 1 + data.item_photos.length) % data.item_photos.length)}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-black/40 z-10 no-print"
+                            >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m15 18-6-6 6-6"/></svg>
+                            </button>
+                            <button 
+                              onClick={() => setPhotoIndex((prev) => (prev + 1) % data.item_photos.length)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 backdrop-blur-md text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-black/40 z-10 no-print"
+                            >
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m9 18 6-6-6-6"/></svg>
+                            </button>
+
+                            {/* Pagination Dots */}
+                            <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2 z-10 no-print">
+                              {data.item_photos.map((_, i) => (
+                                <button 
+                                  key={i} 
+                                  onClick={() => setPhotoIndex(i)}
+                                  className={`h-1.5 rounded-full transition-all shadow-sm ${i === photoIndex ? 'w-8 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+                                />
+                              ))}
+                            </div>
+                          </>
                         )}
-                      </>
+                      </div>
                     ) : (
                       <div className="flex items-center justify-center h-full text-zinc-400 italic">No image recorded</div>
                     )}
-                    <div className="absolute top-4 left-4 bg-black/40 backdrop-blur px-3 py-1 rounded-full text-[9px] font-black text-white uppercase">Item Photo</div>
+                    <div className="absolute top-4 left-4 bg-black/40 backdrop-blur px-3 py-1 rounded-full text-[9px] font-black text-white uppercase z-20 pointer-events-none">Item Photo</div>
                   </div>
 
                   {/* Captured Identity Photo */}

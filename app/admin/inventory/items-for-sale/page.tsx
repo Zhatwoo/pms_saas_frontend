@@ -139,6 +139,7 @@ export default function ItemsForSalePage() {
       </div>
 
       {/* ── Items For Sale Table ────────────────────────────── */}
+
       <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -160,9 +161,9 @@ export default function ItemsForSalePage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
-                      <div className="flex items-center justify-center">
-                        <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
-                      </div>
+                    <div className="flex items-center justify-center">
+                      <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                    </div>
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (
@@ -224,6 +225,7 @@ export default function ItemsForSalePage() {
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
       />
+
 
       {/* ── View Modal ──────────────────────────────────────── */}
       {viewingItem && (

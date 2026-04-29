@@ -727,7 +727,7 @@ export default function PawnedItemsPage() {
                 </tr>
               </thead>
               <tbody>
-                {isLoading && pawnedItems.length === 0 ? (
+                {isLoading ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-base text-zinc-400">
                       <div className="flex items-center justify-center">

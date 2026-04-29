@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { formatDateToYMD } from "@/lib/time";
 
 /* ── Inline SVG Icons ── */
 
@@ -149,7 +150,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
       // 2. Create Sale Transaction
       await api.post("/transactions", {
         purpose: "Buy Back",
-        transaction_date: new Date().toISOString().split('T')[0],
+        transaction_date: formatDateToYMD(),
         branch_id: branchId,
         branch: branchName,
         cash_in: price,

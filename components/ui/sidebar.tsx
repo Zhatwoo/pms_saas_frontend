@@ -464,15 +464,16 @@ export function Sidebar({
         </button>
       </div>
 
-      <LogoutModal
-        isOpen={showLogoutConfirm}
-        onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={() => {
-          setShowLogoutConfirm(false);
-          onLogout?.();
-        }}
-      />
+
     </aside>
+    <LogoutModal
+      isOpen={showLogoutConfirm}
+      onClose={() => setShowLogoutConfirm(false)}
+      onConfirm={() => {
+        setShowLogoutConfirm(false);
+        onLogout?.();
+      }}
+    />
     </>
   );
 }

@@ -59,25 +59,26 @@ export function AppLayout({
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
-      <Sidebar
-        navGroups={navGroups}
-        collapsed={collapsed}
+      <div className="no-print">
+        <Sidebar
+          navGroups={navGroups}
+          collapsed={collapsed}
         isMobileOpen={mobileMenuOpen}
-        onToggle={() => setCollapsed((prev) => !prev)}
+          onToggle={() => setCollapsed((prev) => !prev)}
         onMobileClose={() => setMobileMenuOpen(false)}
         onNavigate={() => setMobileMenuOpen(false)}
-        userName={userName}
-        userRole={userRole}
-        onLogout={onLogout}
-        disabled={isRestricted}
-      />
+          userName={userName}
+          userRole={userRole}
+          onLogout={onLogout}
+          disabled={isRestricted}
+        />
+      </div>
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           userInitials={userInitials}
           notificationCount={notificationCount}
           branchName={branchName || (isAllBranches ? "All Branches" : selectedBranch.name)}
           hideBranchSelector={hideBranchSelector}
-          onMenuToggle={() => setMobileMenuOpen((prev) => !prev)}
         />
         <main className="flex-1 overflow-y-auto bg-pawn-content p-8 transition-colors duration-300">
           {children}

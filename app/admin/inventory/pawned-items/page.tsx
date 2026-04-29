@@ -265,6 +265,7 @@ export default function PawnedItemsPage() {
         </div>
       </div>
 
+
       {viewMode === "list" && (
         <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
           <div className="overflow-x-auto">
@@ -281,7 +282,7 @@ export default function PawnedItemsPage() {
                   <tr>
                     <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
                       <div className="flex items-center justify-center">
-                        <LoadingSpinnerLabel text="Loading..." className="text-sm text-zinc-400" />
+                        <LoadingSpinnerLabel text="Loading pawned items..." className="text-base font-medium text-text-tertiary" />
                       </div>
                     </td>
                   </tr>
@@ -368,7 +369,7 @@ export default function PawnedItemsPage() {
         </div>
       )}
 
-      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300">
+      <div className="rounded-lg border border-border-main bg-surface transition-colors duration-300 mt-4">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
@@ -377,6 +378,7 @@ export default function PawnedItemsPage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
 
       <PawnedItemDetailsModal 
         isOpen={Boolean(selectedItemId)} 
