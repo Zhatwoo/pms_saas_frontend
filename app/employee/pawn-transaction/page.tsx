@@ -588,7 +588,7 @@ export default function EmployeePawnTransactionsPage() {
           </ActionButton>
           <ActionButton
             variant="primary"
-            className="border-pawn-gold bg-emerald-700 text-pawn-gold"
+            className="border-emerald-700 bg-emerald-700 text-amber-400"
             onClick={handlePrintReport}
           >
             <span className="flex items-center gap-1.5">

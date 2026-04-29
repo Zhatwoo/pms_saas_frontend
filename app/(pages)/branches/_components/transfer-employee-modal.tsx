@@ -150,7 +150,7 @@ export function TransferEmployeeModal({
               }
             }}
             disabled={!toBranch}
-            className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Confirm Transfer
           </button>

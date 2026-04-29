@@ -50,7 +50,7 @@ export function SessionExpiredModal({
           <p className="mt-2 text-sm leading-relaxed text-text-secondary">
             {message}
           </p>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-amber-700">
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-amber-400">
             Redirecting to login in {Math.max(0, secondsUntilRedirect)}s
           </p>
         </div>

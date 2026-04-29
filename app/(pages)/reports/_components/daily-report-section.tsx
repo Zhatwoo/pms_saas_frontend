@@ -88,16 +88,10 @@ export function DailyReportSection({ data, date }: DailyReportSectionProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-border-main px-5 py-3">
+      <div className="border-t border-border-main px-5 py-3">
         <p className="text-[11px] text-text-muted">
           This report is auto-generated and reflected in the system performance export.
         </p>
-        <button 
-          onClick={() => window.print()}
-          className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-3 py-1.5 text-[10px] font-bold text-white transition-opacity hover:opacity-90">
-          {downloadIcon}
-          Download PDF
-        </button>
       </div>
     </div>
   );

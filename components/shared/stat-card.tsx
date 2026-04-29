@@ -9,6 +9,7 @@ interface StatCardProps {
   icon?: ReactNode;
   borderColor?: string;
   className?: string;
+  valueClassName?: string;
   onClick?: () => void;
 }
 
@@ -21,6 +22,7 @@ export function StatCard({
   icon,
   borderColor = "border-emerald-700",
   className = "",
+  valueClassName = "",
   onClick,
 }: StatCardProps) {
   return (
@@ -36,7 +38,7 @@ export function StatCard({
           <p className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
             {label}
           </p>
-          <p className="mt-1 text-4xl font-bold text-text-primary">{value}</p>
+          <p className={`mt-1 text-4xl font-bold text-text-primary ${valueClassName}`}>{value}</p>
         </div>
         {icon && (
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">

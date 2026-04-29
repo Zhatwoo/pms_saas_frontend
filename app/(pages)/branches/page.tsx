@@ -283,7 +283,7 @@ export default function BranchesPage() {
         {canCreateBranch && (
           <button
             onClick={handleCreateBranch}
-            className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
+            className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
           >
             <svg
               width="14"

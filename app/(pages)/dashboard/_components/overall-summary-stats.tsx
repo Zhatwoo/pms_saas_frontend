@@ -93,7 +93,7 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
           <p className="text-xs font-bold uppercase tracking-wide text-[#a7f3d0]">
             Total Overall Sales
           </p>
-          <p className="mt-0.5 text-2xl sm:text-3xl font-bold text-white">
+          <p className="mt-0.5 text-2xl sm:text-3xl font-bold text-amber-400">
             {allBranchSales != null ? formatPeso(allBranchSales) : data?.totalOverallSales || "₱ 0"}
           </p>
           {hasBranchComparison && (

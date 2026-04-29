@@ -124,7 +124,7 @@ function SingleBranchCard({
             Current Balance
           </p>
           <div className="flex items-end gap-3">
-            <span className="text-4xl font-extrabold tracking-tight text-white">
+            <span className="text-4xl font-extrabold tracking-tight text-amber-400">
               {fmt(currentBalance)}
             </span>
             <span
@@ -220,7 +220,7 @@ function AggregateBranchCard({
               Total Current Balance
             </p>
             <div className="flex items-end gap-3">
-              <span className="text-4xl font-extrabold tracking-tight text-white">
+              <span className="text-4xl font-extrabold tracking-tight text-amber-400">
                 {fmt(totalCurrent)}
               </span>
             </div>

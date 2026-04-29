@@ -587,7 +587,7 @@ export default function EmployeeBranchFinancePage() {
             <div className="flex justify-end print:hidden mb-2">
               <button
                 onClick={() => window.print()}
-                className="group flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700 hover:shadow-emerald-900/40 active:scale-95"
+                className="group flex items-center gap-2 rounded-xl border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-5 py-2.5 text-sm font-bold text-amber-400 transition-all hover:bg-emerald-800 dark:hover:bg-emerald-800 active:scale-95"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
