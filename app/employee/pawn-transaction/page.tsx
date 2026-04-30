@@ -19,6 +19,7 @@ import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-conf
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
@@ -198,6 +199,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
 export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
+  const { refreshOpeningChecklistFromServer } = useOpeningChecklist();
   const searchParams = useSearchParams();
   const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
@@ -644,13 +646,17 @@ export default function EmployeePawnTransactionsPage() {
         currentCash={expectedCash}
         onClose={() => setBalanceModal((p) => ({ ...p, open: false }))}
         onConfirm={async (amt) => {
+          const modalType = balanceModal.type;
           try {
             await api.post("/branch-finance/daily-balance", {
-              type: balanceModal.type,
+              type: modalType,
               amount: parseFloat(amt) || 0,
             });
             setBalanceModal((p) => ({ ...p, open: false }));
             fetchTransactionsRef.current();
+            if (modalType === "ending") {
+              await refreshOpeningChecklistFromServer();
+            }
           } catch (err) {
             console.error("Failed to confirm daily balance:", err);
           }

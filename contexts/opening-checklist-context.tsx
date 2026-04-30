@@ -33,6 +33,8 @@ interface OpeningChecklistContextValue {
   completeCashOnHand: (amount: string) => Promise<void>;
   completeInventoryAudit: () => Promise<void>;
   resetChecklist: () => void;
+  /** Re-fetch daily opening from server (e.g. after end-of-day balance closes the session). */
+  refreshOpeningChecklistFromServer: () => Promise<void>;
 }
 
 const OpeningChecklistContext = createContext<OpeningChecklistContextValue | null>(null);
@@ -154,6 +156,14 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     lastSyncedOpeningDateRef.current = null;
   }, []);
 
+  const refreshOpeningChecklistFromServer = useCallback(async () => {
+    if (!user || user.role !== "employee" || !user.branchId) {
+      return;
+    }
+    hasLoadedForUserRef.current = null;
+    await loadDailyOpeningForEmployee();
+  }, [user, loadDailyOpeningForEmployee]);
+
   return (
     <OpeningChecklistContext.Provider
       value={{
@@ -163,6 +173,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         completeCashOnHand,
         completeInventoryAudit,
         resetChecklist,
+        refreshOpeningChecklistFromServer,
       }}
     >
       {children}
