@@ -236,7 +236,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`text-sm font-bold tracking-wider transition-colors ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
+                    className={`whitespace-nowrap text-sm font-bold tracking-wider transition-colors ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
                     {item}
                   </a>
                 );
@@ -244,15 +244,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <span className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
             </div>
 
-            {/* Right side: Login button + hamburger */}
+            {/* Right side: hamburger */}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onLoginClick}
-                className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-black text-emerald-900 transition-colors hover:bg-amber-300"
-              >
-                Login
-              </button>
               {/* Hamburger — mobile only */}
               <button
                 type="button"
