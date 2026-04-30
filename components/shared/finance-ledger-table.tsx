@@ -411,7 +411,7 @@ export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: Fi
               </svg>
             </div>
           </div>
-          <p className="mt-2 text-lg font-black text-emerald-700 dark:text-emerald-300">{fmt(todayCashIn)}</p>
+          <p className="mt-2 text-lg font-black text-emerald-700 dark:text-emerald-300 truncate">{fmt(todayCashIn)}</p>
           <div className="absolute bottom-0 left-0 h-1 w-full bg-emerald-500/20" />
         </div>
       )}
@@ -425,7 +425,7 @@ export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: Fi
               </svg>
             </div>
           </div>
-          <p className="mt-2 text-lg font-black text-red-700 dark:text-red-300">{fmt(todayCashOut)}</p>
+          <p className="mt-2 text-lg font-black text-red-700 dark:text-red-300 truncate">{fmt(todayCashOut)}</p>
           <div className="absolute bottom-0 left-0 h-1 w-full bg-red-500/20" />
         </div>
       )}
@@ -441,7 +441,7 @@ export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: Fi
         return (
           <div key={item.key} className={`group relative overflow-hidden rounded-xl border ${borderClass} ${bgClass} p-4 transition-all hover:shadow-md`}>
             <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{item.label}</p>
-            <p className={`mt-2 text-lg font-black ${colorClass}`}>
+            <p className={`mt-2 text-lg font-black truncate ${colorClass}`}>
               {item.direction === "out" ? "-" : "+"}{fmt(val)}
             </p>
             <div className={`absolute bottom-0 left-0 h-1 w-full opacity-20 ${item.color.replace('text-', 'bg-')}`} />

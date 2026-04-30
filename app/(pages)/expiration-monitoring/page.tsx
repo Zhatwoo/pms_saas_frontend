@@ -217,7 +217,7 @@ function ExpirationMonitoringPageContent() {
           type="button"
           onClick={handleBlastEmail}
           disabled={isBlastSending}
-          className="flex flex-none items-center justify-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90"
+          className="flex h-11 flex-none items-center justify-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90"
           title="Send mass email to all customers with nearing expirations"
         >
           <span className="text-amber-400">{sendIcon}</span>

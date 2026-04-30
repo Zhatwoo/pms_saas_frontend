@@ -58,7 +58,7 @@ export function TransactionDetailsModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-xl">
-      <div className="max-h-[92vh] w-full max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border border-emerald-950/10 bg-gradient-to-b from-surface to-surface-secondary shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors dark:border-white/10 dark:from-zinc-950 dark:to-zinc-900">
+      <div className="max-h-[92vh] w-[95vw] max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border border-emerald-950/10 bg-gradient-to-b from-surface to-surface-secondary shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors dark:border-white/10 dark:from-zinc-950 dark:to-zinc-900 md:w-[90vw]">
         <div className="relative overflow-hidden border-b border-emerald-950/10 px-6 py-6 dark:border-white/10">
           <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800" />
           <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-400/15 blur-3xl" />

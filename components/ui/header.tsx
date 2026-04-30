@@ -118,6 +118,16 @@ interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
+function formatTimeOnly(): string {
+  const now = new Date();
+  return now.toLocaleString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+}
+
 function formatDateTime(): string {
   const now = new Date();
   return now.toLocaleString("en-US", {
@@ -158,7 +168,7 @@ function ThemeToggleButton() {
       onClick={toggleTheme}
       id="theme-toggle"
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="relative flex h-10 w-10 items-center justify-center rounded-full text-text-tertiary transition-all duration-300 hover:bg-surface-hover hover:text-pawn-gold"
+      className="relative flex h-11 w-11 items-center justify-center rounded-full text-text-tertiary transition-all duration-300 hover:bg-surface-hover hover:text-pawn-gold"
     >
       {/* Sun icon */}
       <svg
@@ -222,6 +232,7 @@ export function Header({
   const pathname = usePathname();
   const router = useRouter();
   const [time, setTime] = useState("");
+  const [timeOnly, setTimeOnly] = useState("");
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<NotificationTab>("All");
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
@@ -275,7 +286,11 @@ export function Header({
 
   useEffect(() => {
     setTime(formatDateTime());
-    const clockInterval = setInterval(() => setTime(formatDateTime()), 1000);
+    setTimeOnly(formatTimeOnly());
+    const clockInterval = setInterval(() => {
+      setTime(formatDateTime());
+      setTimeOnly(formatTimeOnly());
+    }, 1000);
 
     void fetchNotifications();
 
@@ -529,40 +544,39 @@ export function Header({
   );
 
   return (
-    <header className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-border-main bg-header-bg px-6 py-4 transition-colors duration-300">
-      <div className="flex min-w-0 flex-col gap-2 justify-self-start">
-        <div className="flex min-w-0 items-center gap-4">
-          {onMenuToggle && (
-            <button
-              type="button"
-              onClick={onMenuToggle}
-              aria-label="Open sidebar"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border-main text-text-tertiary transition hover:bg-surface-hover hover:text-text-primary lg:hidden"
-            >
-              <MenuIcon />
-            </button>
-          )}
-          <h1 className="text-3xl font-bold text-text-primary leading-none">{title}</h1>
-          {branchName && (
-            <div className="flex items-center gap-4">
-              <span className="h-6 w-px bg-border-main" />
-              <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
-                {branchName}
-              </span>
-            </div>
-          )}
-        </div>
+    <header className="flex items-center gap-2 border-b border-border-main bg-header-bg px-4 py-3 md:px-6 md:py-4 transition-colors duration-300">
+      {/* Left section: hamburger + title + branch label */}
+      <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-4">
+        {onMenuToggle && (
+          <button
+            type="button"
+            onClick={onMenuToggle}
+            aria-label="Open sidebar"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border-main text-text-tertiary transition hover:bg-surface-hover hover:text-text-primary lg:hidden"
+          >
+            <MenuIcon />
+          </button>
+        )}
+        <h1 className="truncate text-xl font-bold text-text-primary leading-none md:text-2xl lg:text-3xl">{title}</h1>
+        {branchName && (
+          <div className="hidden lg:flex items-center gap-4">
+            <span className="h-6 w-px bg-border-main" />
+            <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
+              {branchName}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-self-center gap-3">
-        {/* Clock */}
-        <div className="flex items-center gap-2 rounded-full border border-border-main px-4 py-2 text-base text-text-tertiary">
-          <ClockIcon />
-          <span className="min-w-[180px] text-center">{time}</span>
-        </div>
+      {/* Center section: clock — hidden on mobile, time-only on tablet, full on desktop */}
+      <div className="hidden md:flex items-center gap-2 rounded-full border border-border-main px-3 py-2 text-sm text-text-tertiary lg:px-4 lg:text-base">
+        <ClockIcon />
+        <span className="hidden lg:inline min-w-[180px] text-center">{time}</span>
+        <span className="lg:hidden">{timeOnly}</span>
       </div>
 
-      <div className="flex items-center justify-self-end gap-3">
+      {/* Right section: branch selector, notifications, theme toggle, avatar */}
+      <div className="flex shrink-0 items-center gap-1 md:gap-2 lg:gap-3">
         {/* Branch Selector – superadmin only */}
         {!hideBranchSelector && !isCustomerDetailPage && <BranchSelectorDropdown />}
 
@@ -571,7 +585,7 @@ export function Header({
           <button
             type="button"
             onClick={() => setIsNotificationOpen((prev) => !prev)}
-            className="relative rounded-full p-2 text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
             aria-label="Open notifications"
           >
             <BellIcon />
@@ -583,7 +597,7 @@ export function Header({
           </button>
 
           {isNotificationOpen && (
-            <div className="absolute right-0 top-12 z-50 w-[420px] rounded-xl border border-border-main bg-header-bg p-4 shadow-xl">
+            <div className="fixed left-2 right-2 top-[57px] z-50 rounded-xl border border-border-main bg-header-bg p-4 shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[420px] sm:fixed-none">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-base font-bold text-text-primary">Notifications</h3>
               </div>
@@ -659,7 +673,7 @@ export function Header({
           )}
         </div>
 
-        {/* Theme Toggle – beside notifications */}
+        {/* Theme Toggle */}
         <ThemeToggleButton />
 
         {/* User Avatar */}

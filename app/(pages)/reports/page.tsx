@@ -334,7 +334,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-5">
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <DateFilterSelector
             periods={periods}
@@ -348,7 +348,7 @@ export default function ReportsPage() {
         </div>
         <button 
           onClick={handleDownloadPDF}
-          className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90">
+          className="flex h-11 items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90">
           {downloadIcon}
           Download PDF
         </button>

@@ -74,7 +74,7 @@ function NavItemComponent({
           }}
           title={collapsed ? item.label : undefined}
           disabled={effectivelyDisabled}
-          className={`flex w-full items-center justify-between overflow-hidden whitespace-nowrap rounded-lg px-4 py-3 text-base transition-colors ${
+          className={`flex w-full min-h-[48px] items-center justify-between overflow-hidden whitespace-nowrap rounded-lg px-4 py-3 text-base transition-colors ${
             collapsed ? "justify-center px-2" : ""
           } ${
             effectivelyDisabled
@@ -166,7 +166,7 @@ function NavItemComponent({
   const content = (
     <div
       title={collapsed ? item.label : undefined}
-      className={`flex items-center gap-3 overflow-hidden whitespace-nowrap rounded-lg px-4 py-3 text-base transition-colors ${
+      className={`flex min-h-[48px] items-center gap-3 overflow-hidden whitespace-nowrap rounded-lg px-4 py-3 text-base transition-colors ${
         collapsed ? "justify-center px-2" : ""
       } ${
         isSelfActive

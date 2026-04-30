@@ -773,7 +773,7 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "ALL ACTIVITY", count: totalLogs, sub: "All log types", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
           { label: "TRANSACTIONS", count: totalTransactions, sub: "Pawn, redeem, renew", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
@@ -826,9 +826,9 @@ export default function AuditLogsPage() {
         </div>
 
         {/* Filters Row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-surface border-b border-border-subtle">
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto flex-1">
-            <div className="relative max-w-sm w-full">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface border-b border-border-subtle">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto flex-1">
+            <div className="relative w-full sm:max-w-sm">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               <input
                 type="text"
@@ -843,7 +843,7 @@ export default function AuditLogsPage() {
               <select
                 value={selectedBranchValue}
                 onChange={(e) => handleBranchChange(e.target.value)}
-                className="rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500"
+                className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500 sm:w-auto"
               >
                 {pageBranchOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -853,7 +853,7 @@ export default function AuditLogsPage() {
               </select>
             )}
 
-            <button className="rounded-lg border border-input-border bg-input-bg px-5 py-2.5 text-sm font-medium text-text-primary hover:bg-surface-hover transition-colors flex items-center gap-2">
+            <button className="h-11 w-full rounded-lg border border-input-border bg-input-bg px-5 py-2.5 text-sm font-medium text-text-primary hover:bg-surface-hover transition-colors flex items-center justify-center gap-2 sm:w-auto">
               All Actions
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>

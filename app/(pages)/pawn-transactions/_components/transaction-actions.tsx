@@ -86,9 +86,9 @@ export function TransactionActions({
 }: TransactionActionsProps) {
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
-      <div className="flex flex-wrap items-end gap-3">
-        {/* Search — shortened */}
-        <div className="w-48 space-y-1.5">
+      <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+        {/* Search — full width on mobile */}
+        <div className="w-full space-y-1.5 sm:w-48">
           <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
             Search
           </label>
@@ -101,7 +101,7 @@ export function TransactionActions({
         </div>
 
         {/* Transaction Type */}
-        <div className="w-44 space-y-1.5">
+        <div className="w-full space-y-1.5 sm:w-44">
           <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
             Transaction Type
           </label>
@@ -123,7 +123,7 @@ export function TransactionActions({
 
         {/* Date — list mode only */}
         {viewMode === "list" && (
-          <div className="w-40 space-y-1.5">
+          <div className="w-full space-y-1.5 sm:w-40">
             <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
               Date
             </label>
@@ -150,11 +150,11 @@ export function TransactionActions({
         )}
 
         {/* Actions */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <ActionButton
             variant="outline"
             onClick={onExportCSV}
-            className="border-emerald-600 bg-emerald-50 text-emerald-700"
+            className="h-11 border-emerald-600 bg-emerald-50 text-emerald-700"
           >
             <span className="flex items-center gap-1.5">
               {downloadIcon}
@@ -164,7 +164,7 @@ export function TransactionActions({
           <ActionButton
             variant="primary"
             onClick={onPrintReport}
-            className="border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400"
+            className="h-11 border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400"
           >
             <span className="flex items-center gap-1.5">
               {printerIcon}
@@ -175,20 +175,20 @@ export function TransactionActions({
             <button
               type="button"
               onClick={() => onViewModeChange?.("list")}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+              className={`h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
             >
               List
             </button>
             <button
               type="button"
               onClick={() => onViewModeChange?.("calendar")}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+              className={`h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
             >
               Calendar
             </button>
           </div>
           {onAddTransaction ? (
-            <ActionButton variant="primary" onClick={onAddTransaction}>
+            <ActionButton variant="primary" onClick={onAddTransaction} className="h-11">
               <span className="flex items-center gap-1.5">
                 {plusIcon}
                 Add Transaction

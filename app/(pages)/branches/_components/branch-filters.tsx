@@ -26,14 +26,16 @@ export function BranchFilters({
   onCreateBranch,
 }: BranchFiltersProps) {
   return (
-    <div className="flex flex-wrap items-end gap-4">
-      <FilterSelect
-        label="Status"
-        options={statusOptions}
-        value={statusFilter}
-        onChange={onStatusChange}
-      />
-      <div className="flex flex-col gap-1">
+    <div className="flex flex-wrap items-end gap-2 sm:gap-4">
+      <div className="w-full sm:w-auto">
+        <FilterSelect
+          label="Status"
+          options={statusOptions}
+          value={statusFilter}
+          onChange={onStatusChange}
+        />
+      </div>
+      <div className="flex w-full flex-col gap-1 sm:w-auto">
         <label className="text-sm font-medium text-text-tertiary">Search</label>
         <div className="relative">
           <svg
@@ -55,14 +57,14 @@ export function BranchFilters({
             placeholder="Search branches..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-64 rounded-lg border border-input-border bg-input-bg py-2.5 pl-9 pr-3 text-base text-text-primary outline-none placeholder:text-text-muted transition-colors duration-200 focus:border-pawn-sidebar"
+            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-9 pr-3 text-base text-text-primary outline-none placeholder:text-text-muted transition-colors duration-200 focus:border-pawn-sidebar sm:w-64"
           />
         </div>
       </div>
       {onCreateBranch && (
         <button
           onClick={onCreateBranch}
-          className="ml-auto flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-base font-bold text-amber-400 transition-opacity hover:opacity-90"
+          className="ml-auto flex h-11 items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-base font-bold text-amber-400 transition-opacity hover:opacity-90"
         >
           <svg
             width="14"

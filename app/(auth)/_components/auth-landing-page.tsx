@@ -153,6 +153,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [underlineWidth, setUnderlineWidth] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const lastScrollY = useRef(0);
 
@@ -224,52 +225,105 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
       <div className="relative z-10">
         {/* ── NAV ── */}
-        <nav className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between border-b border-white/10 bg-emerald-900/90 px-12 backdrop-blur-sm">
-          <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e as any, "home", "HOME")} />
-          <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
-            {navItems.map((item, index) => {
-              const id = item.toLowerCase().replace(/ /g, "-");
-              return (
-                <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
-                  onClick={(e) => handleScroll(e, id, item)}
-                  className={`text-sm font-bold tracking-wider transition-colors ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
-                  {item}
-                </a>
-              );
-            })}
-            <span className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
+        <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-emerald-900/90 backdrop-blur-sm">
+          <div className="flex h-16 items-center justify-between px-4 md:px-12">
+            <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e as any, "home", "HOME")} />
+
+            {/* Desktop nav links */}
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
+              {navItems.map((item, index) => {
+                const id = item.toLowerCase().replace(/ /g, "-");
+                return (
+                  <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
+                    onClick={(e) => handleScroll(e, id, item)}
+                    className={`text-sm font-bold tracking-wider transition-colors ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
+                    {item}
+                  </a>
+                );
+              })}
+              <span className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
+            </div>
+
+            {/* Right side: Login button + hamburger */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onLoginClick}
+                className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-black text-emerald-900 transition-colors hover:bg-amber-300"
+              >
+                Login
+              </button>
+              {/* Hamburger — mobile only */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((prev) => !prev)}
+                aria-label="Toggle menu"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:bg-white/10 md:hidden"
+              >
+                {mobileMenuOpen ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
-          <div className="w-[96px] shrink-0" aria-hidden="true" />
+
+          {/* Mobile dropdown menu */}
+          {mobileMenuOpen && (
+            <div className="border-t border-white/10 bg-emerald-900 px-4 pb-4 md:hidden">
+              {navItems.map((item) => {
+                const id = item.toLowerCase().replace(/ /g, "-");
+                return (
+                  <a
+                    key={item}
+                    href={`#${id}`}
+                    onClick={(e) => {
+                      handleScroll(e, id, item);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`block py-3 text-sm font-bold tracking-wider transition-colors border-b border-white/10 last:border-0 ${activeNavItem === item ? "text-amber-300" : "text-white/80 hover:text-amber-300"}`}
+                  >
+                    {item}
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </nav>
 
         {/* ── HERO ── */}
-        <section id="home" className="relative overflow-hidden bg-white px-6 pt-24 pb-12 md:px-12 md:pt-28 md:pb-16">
-          <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-12 lg:flex-row lg:items-center lg:justify-between">
+        <section id="home" className="relative overflow-hidden bg-white px-4 pt-24 pb-10 md:px-12 md:pt-28 md:pb-16">
+          <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
             <div className="z-10 flex-1 text-center lg:max-w-xl lg:text-left reveal-on-scroll">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-amber-400">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-xs font-semibold text-amber-400 md:px-5 md:text-sm">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] text-emerald-900">★</span>
                 TRUSTED BUY BACK SHOP FOR FILIPINO FAMILIES
               </div>
-              <h1 className="text-5xl font-black leading-tight text-emerald-900 md:text-6xl lg:text-7xl">
+              <h1 className="text-4xl font-black leading-tight text-emerald-900 sm:text-5xl md:text-6xl lg:text-7xl">
                 <span className="block">Sell Your Items.</span>
                 <span className="block text-emerald-800">Get Paid Today.</span>
               </h1>
-              <p className="mt-6 max-w-lg text-base leading-relaxed text-emerald-900/70 md:text-lg mx-auto lg:mx-0">
+              <p className="mt-4 max-w-lg text-sm leading-relaxed text-emerald-900/70 sm:text-base md:text-lg mx-auto lg:mx-0">
                 JCLB Buy Back Shop provides honest, secure, and compassionate financial solutions that uplift lives and build lasting relationships within our community.
               </p>
-              <div className="mt-8 flex flex-wrap justify-center gap-4 lg:justify-start">
+              <div className="mt-6 flex flex-wrap justify-center gap-3 md:mt-8 md:gap-4 lg:justify-start">
                 <button type="button" onClick={handleContactUsClick}
-                  className="rounded-xl bg-emerald-900 px-8 py-4 font-bold text-white transition-all hover:bg-emerald-800 hover:shadow-lg active:scale-95">
+                  className="rounded-xl bg-emerald-900 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-emerald-800 hover:shadow-lg active:scale-95 md:px-8 md:py-4">
                   CONTACT US
                 </button>
                 <a href="#how-it-works" onClick={(e) => handleScroll(e, "how-it-works", "HOW IT WORKS")}
-                  className="rounded-xl border-2 border-emerald-900 px-8 py-4 font-bold text-emerald-900 transition-all hover:bg-emerald-900 hover:text-white">
+                  className="rounded-xl border-2 border-emerald-900 px-6 py-3 text-sm font-bold text-emerald-900 transition-all hover:bg-emerald-900 hover:text-white md:px-8 md:py-4">
                   HOW IT WORKS
                 </a>
               </div>
 
               {/* Stats */}
-              <div className="mt-12 flex flex-wrap justify-center gap-10 border-t border-emerald-900/20 pt-8 lg:justify-start">
+              <div className="mt-8 flex flex-wrap justify-center gap-6 border-t border-emerald-900/20 pt-6 md:mt-12 md:gap-10 md:pt-8 lg:justify-start">
                 {[
                   { value: "100", unit: "%", label: "TRUSTED & LEGIT" },
                   { value: "24", unit: "hrs", label: "QUICK PAYOUT" },
@@ -277,8 +331,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 ].map((stat) => (
                   <div key={stat.label} className="text-center lg:text-left">
                     <div className="flex items-end justify-center gap-1 lg:justify-start">
-                      <span className="text-4xl font-black text-emerald-900 md:text-5xl">{stat.value}</span>
-                      <span className="mb-1 text-xl font-bold text-emerald-900 md:text-2xl">{stat.unit}</span>
+                      <span className="text-3xl font-black text-emerald-900 sm:text-4xl md:text-5xl">{stat.value}</span>
+                      <span className="mb-1 text-lg font-bold text-emerald-900 sm:text-xl md:text-2xl">{stat.unit}</span>
                     </div>
                     <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">{stat.label}</p>
                   </div>
@@ -286,8 +340,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
             </div>
 
-            {/* Logo with rays + cloud glow */}
-            <div className="relative flex-1 lg:flex-[1.2] flex justify-center lg:justify-end lg:translate-x-16">
+            {/* Logo with rays + cloud glow — hidden on small mobile, visible from sm up */}
+            <div className="relative hidden flex-1 sm:flex lg:flex-[1.2] justify-center lg:justify-end lg:translate-x-16">
               <div className="relative w-full flex justify-center lg:justify-end">
                 {/* Rotating rays */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -307,22 +361,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   <div className="absolute w-[50%] h-[50%] rounded-full bg-white/60 blur-3xl animate-[logoPulse_3s_ease-in-out_infinite]" />
                 </div>
                 <Image src="/logo.png" alt="JCLB" width={1000} height={1000}
-                  className="relative h-auto w-full max-w-[400px] drop-shadow-2xl md:max-w-[600px] lg:max-w-[800px] xl:max-w-[1000px] animate-slow-pulse" priority />
+                  className="relative h-auto w-full max-w-[280px] drop-shadow-2xl sm:max-w-[400px] md:max-w-[500px] lg:max-w-[700px] xl:max-w-[900px] animate-slow-pulse" priority />
               </div>
             </div>
           </div>
         </section>
 
         {/* ── HOW IT WORKS ── */}
-        <section id="how-it-works" className="bg-white px-6 py-48 md:px-12 md:py-64">
+        <section id="how-it-works" className="bg-white px-4 py-20 md:px-12 md:py-32 lg:py-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <h2 className="text-4xl font-black text-emerald-900 md:text-5xl">
+            <h2 className="text-3xl font-black text-emerald-900 md:text-4xl lg:text-5xl">
               <span className="text-amber-400">3</span> Steps to Get Your Cash
             </h2>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
+            <div className="mt-8 grid gap-4 md:mt-12 md:grid-cols-3 md:gap-6">
               {steps.map((item, index) => (
                 <div key={item.step}
-                  className="reveal-on-scroll flex flex-col rounded-2xl bg-emerald-900 p-8 text-white shadow-xl h-full">
+                  className="reveal-on-scroll flex flex-col rounded-2xl bg-emerald-900 p-6 text-white shadow-xl h-full md:p-8">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
                       {item.icon}
@@ -338,23 +392,23 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ── CATEGORIES ── */}
-        <section id="categories" className="bg-emerald-900/90 px-6 pt-28 pb-24 md:px-12 md:pt-32 md:pb-32">
+        <section id="categories" className="bg-emerald-900/90 px-4 py-16 md:px-12 md:py-24 lg:pt-32 lg:pb-32">
           <div className="mx-auto flex max-w-6xl flex-col items-center text-center reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-amber-400">WHAT WE BUY</p>
-            <h2 className="mt-2 text-4xl font-black text-white md:text-5xl">
+            <h2 className="mt-2 text-3xl font-black text-white md:text-4xl lg:text-5xl">
               We Accept a <span className="text-amber-400">WIDE RANGE</span> of items
             </h2>
-            <p className="mt-3 text-lg text-white/70">
+            <p className="mt-3 text-base text-white/70">
               From the latest smartphones to vintage electronics — if it has value, <span className="text-amber-400">we want it.</span>
             </p>
-            <div className="mt-10 grid w-full grid-cols-2 gap-4 md:grid-cols-4 justify-items-center">
+            <div className="mt-8 grid w-full grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 justify-items-center">
               {categories.map((cat) => (
                 <div key={cat.name}
-                  className="flex h-full w-full max-w-[220px] flex-col items-center rounded-2xl bg-emerald-50 p-6 text-center shadow-md transition-transform hover:scale-105 hover:shadow-xl">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-900 text-emerald-100 mb-4">
+                  className="flex h-full w-full max-w-[220px] flex-col items-center rounded-2xl bg-emerald-50 p-4 text-center shadow-md transition-transform hover:scale-105 hover:shadow-xl md:p-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-900 text-emerald-100 mb-3 md:mb-4">
                     {cat.icon}
                   </div>
-                  <h3 className="text-sm font-black text-emerald-900 uppercase tracking-wide">{cat.name}</h3>
+                  <h3 className="text-xs font-black text-emerald-900 uppercase tracking-wide md:text-sm">{cat.name}</h3>
                   <p className="mt-1 text-xs text-zinc-500">{cat.desc}</p>
                 </div>
               ))}
@@ -363,8 +417,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ── WHY US ── */}
-        <section id="why-us" className="bg-white px-6 pt-32 pb-20 md:px-12 md:pt-48 md:pb-28">
-          <div className="mx-auto flex max-w-6xl flex-col gap-12 lg:flex-row reveal-on-scroll">
+        <section id="why-us" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-28">
+          <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:gap-12 reveal-on-scroll">
             <div className="flex-1">
               <p className="text-sm font-bold uppercase tracking-widest text-amber-500">WHY CHOOSE US?</p>
               <h2 className="mt-2 text-4xl font-black leading-tight text-emerald-900 md:text-5xl">
@@ -401,22 +455,45 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ── REVIEWS CAROUSEL ── */}
-        <section id="reviews" className="bg-white px-6 pt-20 pb-48 md:px-12 md:pt-24 md:pb-64">
+        <section id="reviews" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-20 lg:pb-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-amber-500">CUSTOMER REVIEWS</p>
-            <h2 className="mt-2 text-4xl font-black text-emerald-900 md:text-5xl">What Our Sellers Say</h2>
+            <h2 className="mt-2 text-3xl font-black text-emerald-900 md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
 
-            <div className="mt-12 relative flex items-center gap-4">
+            <div className="mt-8 relative flex items-center gap-2 md:mt-12 md:gap-4">
               {/* Left arrow */}
               <button onClick={prevReview}
-                className="shrink-0 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95 md:h-12 md:w-12">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
               </button>
 
-              {/* Carousel Track Container */}
-              <div className="flex-1 overflow-hidden py-10">
+              {/* Mobile: single card */}
+              <div className="flex-1 md:hidden">
+                <div className="rounded-2xl bg-emerald-900 p-5 text-white shadow-2xl">
+                  <div className="flex gap-1 mb-3">
+                    {[...Array(5)].map((_, si) => (
+                      <svg key={si} className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed mb-4 text-white/90">&ldquo;{allReviews[reviewIndex].quote}&rdquo;</p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-emerald-900">
+                      {allReviews[reviewIndex].initials}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-white">{allReviews[reviewIndex].name}</p>
+                      <p className="text-xs text-white/60">{allReviews[reviewIndex].sold}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop: 3-card carousel */}
+              <div className="hidden flex-1 overflow-hidden py-10 md:block">
                 <div 
                   className="flex transition-transform duration-500 ease-out"
                   style={{ transform: `translateX(${(1 - (reviewIndex + 1)) * 33.333}%)` }}
@@ -424,16 +501,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   {extendedReviews.map((review, i) => {
                     const isCenter = i === reviewIndex + 1;
                     return (
-                      <div key={`${review.name}-${i}`} className="w-full md:w-1/3 shrink-0 px-4 transition-all duration-500">
+                      <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-4 transition-all duration-500">
                         <div className={`h-full rounded-2xl p-6 shadow-lg transition-all duration-500 ${
                           isCenter
                             ? "bg-emerald-900 text-white scale-105 shadow-2xl z-10"
                             : "bg-emerald-50/80 text-emerald-900 scale-95 opacity-50"
                         }`}>
-                          {/* Stars */}
                           <div className="flex gap-1 mb-4">
                             {[...Array(5)].map((_, si) => (
-                              <svg key={si} className={`h-4 w-4 text-amber-400`} fill="currentColor" viewBox="0 0 20 20">
+                              <svg key={si} className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                             ))}
@@ -459,15 +535,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
               {/* Right arrow */}
               <button onClick={nextReview}
-                className="shrink-0 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95 md:h-12 md:w-12">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
             </div>
 
             {/* Dots */}
-            <div className="mt-6 flex justify-center gap-2">
+            <div className="mt-4 flex justify-center gap-2 md:mt-6">
               {allReviews.map((_, i) => (
                 <button key={i} onClick={() => goToReview(i)}
                   className={`h-2 rounded-full transition-all ${i === reviewIndex ? "w-6 bg-emerald-900" : "w-2 bg-emerald-900/30"}`} />

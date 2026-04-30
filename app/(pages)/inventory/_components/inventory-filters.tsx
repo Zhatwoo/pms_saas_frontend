@@ -29,25 +29,31 @@ export function InventoryFilters() {
   const [status, setStatus] = useState("all");
 
   return (
-    <div className="flex items-end gap-4">
-      <FilterSelect
-        label="Branch"
-        options={branchOptions}
-        value={branch}
-        onChange={setBranch}
-      />
-      <FilterSelect
-        label="Category"
-        options={categoryOptions}
-        value={category}
-        onChange={setCategory}
-      />
-      <FilterSelect
-        label="Status"
-        options={statusOptions}
-        value={status}
-        onChange={setStatus}
-      />
+    <div className="flex flex-wrap items-end gap-2 sm:gap-4">
+      <div className="w-full sm:w-auto">
+        <FilterSelect
+          label="Branch"
+          options={branchOptions}
+          value={branch}
+          onChange={setBranch}
+        />
+      </div>
+      <div className="w-full sm:w-auto">
+        <FilterSelect
+          label="Category"
+          options={categoryOptions}
+          value={category}
+          onChange={setCategory}
+        />
+      </div>
+      <div className="w-full sm:w-auto">
+        <FilterSelect
+          label="Status"
+          options={statusOptions}
+          value={status}
+          onChange={setStatus}
+        />
+      </div>
     </div>
   );
 }

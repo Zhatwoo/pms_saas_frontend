@@ -827,26 +827,28 @@ export default function BranchFinancePage() {
               todayCashOut={aggregatedTodayCash.cashOut}
             />
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <input
                 type="text"
                 placeholder="Search transactions..."
                 value={ledgerSearch}
                 onChange={(e) => setLedgerSearch(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none sm:w-auto"
               />
-              <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              <div className="w-full sm:w-auto">
+                <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
+              </div>
               <input
                 type="date"
                 value={ledgerDateFrom}
                 onChange={(e) => setLedgerDateFrom(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none sm:w-auto"
               />
               <input
                 type="date"
                 value={ledgerDateTo}
                 onChange={(e) => setLedgerDateTo(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none sm:w-auto"
               />
               {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) && (
                 <button

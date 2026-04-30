@@ -35,7 +35,7 @@ const overlayClass =
   "fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-md";
 
 const modalClass =
-  "w-full max-w-6xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl anim-modal-enter";
+  "w-[95vw] max-w-6xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl anim-modal-enter md:w-[90vw]";
 
 const cardClass =
   "rounded-[1.5rem] border border-border-main bg-surface-secondary/90 p-5 shadow-sm backdrop-blur";

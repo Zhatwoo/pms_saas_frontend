@@ -268,7 +268,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       </div>
 
       <div 
-        className="relative w-full max-w-5xl bg-surface rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row transition-all duration-500 scale-in-center print:hidden"
+        className="relative w-[95vw] max-w-5xl bg-surface rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row transition-all duration-500 scale-in-center print:hidden md:w-[90vw]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}

@@ -38,7 +38,7 @@ export function StatCard({
           <p className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
             {label}
           </p>
-          <p className={`mt-1 text-4xl font-bold text-text-primary ${valueClassName}`}>{value}</p>
+          <p className={`mt-1 text-2xl font-bold text-text-primary sm:text-4xl ${valueClassName}`}>{value}</p>
         </div>
         {icon && (
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">

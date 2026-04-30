@@ -46,7 +46,7 @@ export function DataTable({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${
+                  className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide ${
                     col.align === "center"
                       ? "text-center"
                       : col.align === "right"
@@ -92,7 +92,7 @@ export function DataTable({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`whitespace-nowrap px-4 py-3 text-sm text-text-secondary ${
+                      className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary ${
                         col.align === "center"
                           ? "text-center"
                           : col.align === "right"
