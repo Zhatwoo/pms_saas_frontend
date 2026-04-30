@@ -65,11 +65,22 @@ function fmt(n: number) {
 
 function fmtDate(d: string | null) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const [year, month, day] = d.split("-");
+  if (!year || !month || !day) return d;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
+}
+
+function fmtTime(t: string | null) {
+  if (!t) return null;
+  const parts = t.split(":");
+  if (parts.length < 2) return t;
+  let h = parseInt(parts[0], 10);
+  const m = parts[1];
+  const ampm = h >= 12 ? "PM" : "AM";
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return `${h}:${m} ${ampm}`;
 }
 
 const ITEMS_PER_PAGE = 15;
@@ -169,7 +180,7 @@ export function FinanceLedgerTable({
 
     const rows = filtered.map((e) => `
       <tr>
-        <td>${fmtDate(e.date)} ${e.time || ""}</td>
+        <td>${fmtDate(e.date)} ${fmtTime(e.time) || ""}</td>
         ${showBranchColumn ? `<td>${e.branchName || "—"}</td>` : ""}
         <td>${(TYPE_CONFIG[e.type] || TYPE_CONFIG.other).label}</td>
         <td>${e.itemName || "—"}</td>
@@ -292,7 +303,7 @@ export function FinanceLedgerTable({
                 <div>
                   <span className="text-sm text-text-secondary">{fmtDate(value)}</span>
                   {row.time ? (
-                    <span className="ml-1.5 text-xs text-text-muted">{row.time}</span>
+                    <div className="text-xs text-text-muted">{fmtTime(row.time)}</div>
                   ) : null}
                 </div>
               );
