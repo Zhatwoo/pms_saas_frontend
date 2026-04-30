@@ -109,11 +109,13 @@ export function InventoryCalendar({ items }: CalendarProps) {
                   <p className="text-[10px] font-bold uppercase underline mb-2 tracking-wider">Day Summary</p>
                   <p className="text-xs font-bold">{dayItems.length} Total Items</p>
                   <div className="mt-2 space-y-1">
-                    {Object.entries(
-                      dayItems.reduce((acc, curr) => {
-                        acc[curr.status] = (acc[curr.status] || 0) + 1;
-                        return acc;
-                      }, {} as Record<string, number>)
+                    {(
+                      Object.entries(
+                        dayItems.reduce<Record<string, number>>((acc, curr) => {
+                          acc[curr.status] = (acc[curr.status] || 0) + 1;
+                          return acc;
+                        }, {}),
+                      ) as [string, number][]
                     ).map(([status, count]) => (
                       <p key={status} className="text-[9px] font-bold uppercase">
                         {status}: {count}
