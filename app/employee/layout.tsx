@@ -17,7 +17,7 @@ export default function EmployeeLayout({
 }) {
   const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive, requireReLogin } = useAuth();
   const { selectedBranch } = useBranch();
-  const { isComplete: isWorkflowComplete } = useOpeningChecklist();
+  const { isComplete: isWorkflowComplete, isOpeningChecklistReady } = useOpeningChecklist();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -45,7 +45,7 @@ export default function EmployeeLayout({
   }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
 
   useEffect(() => {
-    if (isLoading || !user || user.role !== "employee") {
+    if (isLoading || !user || user.role !== "employee" || !isOpeningChecklistReady) {
       return;
     }
 
@@ -56,7 +56,7 @@ export default function EmployeeLayout({
     ) {
       router.replace("/employee/inventory/pawned-items");
     }
-  }, [isLoading, isWorkflowComplete, pathname, router, user]);
+  }, [isLoading, isWorkflowComplete, isOpeningChecklistReady, pathname, router, user]);
 
   const navGroups = useMemo(() => getNavForRole("employee"), []);
 
@@ -77,6 +77,10 @@ export default function EmployeeLayout({
   }
 
   if (user.role !== "employee") {
+    return null;
+  }
+
+  if (!isOpeningChecklistReady) {
     return null;
   }
 

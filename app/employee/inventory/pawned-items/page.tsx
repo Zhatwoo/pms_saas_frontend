@@ -8,6 +8,7 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { useBranch } from "@/contexts/branch-context";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 
@@ -93,6 +94,7 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
 export default function EmployeePawnedItemsPage() {
   const searchParams = useSearchParams();
   const { selectedBranch } = useBranch();
+  const { currentStep, isComplete, completeInventoryAudit } = useOpeningChecklist();
   const branchIdent = selectedBranch.id;
   const highlightedItemId = searchParams.get("itemId")?.trim() || "";
   const hasHighlightedItem = Boolean(highlightedItemId);
@@ -174,7 +176,18 @@ export default function EmployeePawnedItemsPage() {
     }
   }, []);
 
+  const [isCompletingOpening, setIsCompletingOpening] = useState(false);
 
+  const handleCompleteOpeningChecklist = useCallback(async () => {
+    setIsCompletingOpening(true);
+    try {
+      await completeInventoryAudit();
+    } catch (e) {
+      console.error("Failed to complete opening checklist:", e);
+    } finally {
+      setIsCompletingOpening(false);
+    }
+  }, [completeInventoryAudit]);
 
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
@@ -183,6 +196,25 @@ export default function EmployeePawnedItemsPage() {
           Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
         </p>
       </div>
+
+      {!isComplete && currentStep === "INVENTORY_AUDIT" && (
+        <div className="flex flex-col gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-4 shadow-md sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-emerald-100">Opening checklist — inventory review</p>
+            <p className="mt-1 text-xs text-zinc-300">
+              After reviewing pawned inventory for your branch, confirm here to finish opening and unlock the rest of the app.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={isCompletingOpening}
+            onClick={() => void handleCompleteOpeningChecklist()}
+            className="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-emerald-950 shadow transition-opacity hover:opacity-95 disabled:opacity-50"
+          >
+            {isCompletingOpening ? "Saving…" : "Confirm inventory review complete"}
+          </button>
+        </div>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="flex flex-wrap items-end gap-3">
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
