@@ -385,13 +385,6 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight text-zinc-900">Settings</h1>
-        <p className="mt-1 text-xs text-zinc-500">
-          Configure pawnshop policies and system preferences.
-        </p>
-      </div>
-
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
         <div className="space-y-4">
           <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">

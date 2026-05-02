@@ -641,16 +641,6 @@ export default function PawnTransactionsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between print-hide">
-        <div>
-          <h1 className="text-xl font-bold leading-tight text-emerald-900 sm:text-2xl dark:text-text-primary">
-            Pawn Transactions
-          </h1>
-          <p className="mt-0.5 text-xs font-medium text-text-tertiary sm:text-sm">
-            Live transaction records across all branches with employee-style QR and print access.
-          </p>
-        </div>
-      </div>
 
       <div className="print-hide">
         <TransactionStats data={stats} />
