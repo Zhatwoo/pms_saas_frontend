@@ -612,11 +612,16 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ── CONTACT CTA ── */}
-        <section id="contact-us" className="bg-red-600 px-6 py-20 md:px-12 md:py-28">
+        <section
+          id="contact-us"
+          className="border-y border-amber-200/70 bg-amber-100 px-6 py-20 md:px-12 md:py-28"
+        >
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-8 text-center reveal-on-scroll">
             <div>
-              <h2 className="text-4xl font-black text-white md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
-              <p className="mt-3 text-xl text-white/60">It only takes a minute to start.</p>
+              <h2 className="text-4xl font-black text-emerald-900 md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
+              <p className="mt-3 text-xl font-medium text-emerald-800/75">
+                It only takes a minute to start.
+              </p>
             </div>
           </div>
         </section>
