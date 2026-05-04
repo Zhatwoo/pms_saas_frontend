@@ -79,7 +79,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
             <div className="rounded-2xl bg-emerald-950/50 p-2">
               <div className="overflow-hidden rounded-xl ring-2 ring-amber-400/60">
                 <Image
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="JCLB Logo"
                   width={96}
                   height={96}
