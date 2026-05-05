@@ -179,19 +179,15 @@ export function TransactionTable({
           </thead>
           <tbody>
             {isLoading ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="py-12 text-center text-base font-medium text-text-tertiary"
-                >
-                  <div className="flex items-center justify-center">
-                    <LoadingSpinnerLabel
-                      text="Loading transactions..."
-                      className="text-base font-medium text-text-tertiary"
-                    />
-                  </div>
-                </td>
-              </tr>
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="animate-pulse border-t border-border-subtle bg-surface-secondary">
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-3 py-4">
+                      <div className="h-4 w-full rounded-md bg-zinc-200/60 dark:bg-zinc-800/60" />
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : data.length === 0 ? (
               <tr>
                 <td
