@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { formatDateToYMD } from "@/lib/time";
+import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
 
 /* ── Inline SVG Icons ── */

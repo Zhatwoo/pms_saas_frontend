@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { formatPeso } from "@/lib/currency";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";

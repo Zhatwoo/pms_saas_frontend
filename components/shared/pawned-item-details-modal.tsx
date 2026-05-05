@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { formatPeso } from "@/lib/currency";
 import { StatusBadge } from "./status-badge";
+import { formatPeso } from "@/lib/currency";
 
 interface Renewal {
   date: string;
