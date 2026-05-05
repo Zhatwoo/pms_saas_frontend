@@ -31,6 +31,7 @@ import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
+import { formatPeso } from "@/lib/currency";
 
 interface DashboardSummary {
   view: "super_admin";

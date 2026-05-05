@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { formatDateToYMD } from "@/lib/time";
+import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
 
 /* ── Inline SVG Icons ── */
@@ -343,7 +344,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                   <DetailSection title="Record Details" icon={smartphoneIcon}>
-                    <DetailRow label="Original Loan" value={{formatPeso(selectedItem.amount.toLocaleString())}} />
+                    <DetailRow label="Original Loan" value={formatPeso(selectedItem.amount)} />
                     <DetailRow label="Unit Code" value={selectedItem.itemId} />
                     <DetailRow label="Pawn Date" value={selectedItem.pawnDate || '---'} />
                     <DetailRow label="Category" value={selectedItem.category} />

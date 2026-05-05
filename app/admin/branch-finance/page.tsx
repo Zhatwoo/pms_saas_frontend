@@ -26,6 +26,7 @@ import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
+import { formatPeso } from "@/lib/currency";
 
 interface BranchFinanceSummary {
   branchId: string;

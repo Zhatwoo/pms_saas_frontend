@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatPeso } from "@/lib/currency";
 
 interface DailyBalanceConfirmationProps {
   isOpen: boolean;

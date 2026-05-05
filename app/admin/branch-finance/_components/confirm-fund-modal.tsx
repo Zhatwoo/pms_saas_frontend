@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatPeso } from "@/lib/currency";
 
 interface ConfirmFundModalProps {
   isOpen: boolean;

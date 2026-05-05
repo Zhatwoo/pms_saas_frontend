@@ -5,6 +5,7 @@ import Image from "next/image";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { StatusBadge } from "./status-badge";
+import { formatPeso } from "@/lib/currency";
 
 interface Renewal {
   date: string;

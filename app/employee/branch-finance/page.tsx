@@ -24,6 +24,7 @@ import type {
 import { RequestFundsModal } from "@/app/admin/branch-finance/_components/request-funds-modal";
 import type { RequestFundsData } from "@/app/admin/branch-finance/_components/request-funds-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { formatPeso } from "@/lib/currency";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
