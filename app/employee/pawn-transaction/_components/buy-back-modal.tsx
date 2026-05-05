@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
-import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { formatDateToYMD } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
