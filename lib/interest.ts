@@ -9,7 +9,8 @@ export function calculateGadgetInterest(amount: number, pawnDate: string | Date 
   now.setHours(0, 0, 0, 0);
   
   const diffTime = now.getTime() - start.getTime();
-  const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include Day 1
+  let daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include Day 1
+  if (daysPassed < 0) daysPassed = 0;
   
   let percentage = 5; 
   

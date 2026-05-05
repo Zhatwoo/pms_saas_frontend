@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
@@ -312,7 +313,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                   <DetailSection title="Loan & Item Details" icon={Smartphone}>
-                    <DetailRow label="Principal Amount" value={{formatPeso(Number(selectedItem.amount).toLocaleString())}} />
+                    <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount).toLocaleString())} />
                     <DetailRow 
                       label="Maturity Interest" 
                       value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
