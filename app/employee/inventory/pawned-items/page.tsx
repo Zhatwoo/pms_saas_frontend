@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { formatPeso } from "@/lib/currency";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
