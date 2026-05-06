@@ -57,7 +57,8 @@ class ApiClient {
       path === "/auth/login" ||
       path === "/auth/register" ||
       path === "/auth/signup/branches" ||
-      path === "/branches/public";
+      path === "/branches/public" ||
+      path === "/inventory/public/for-sale";
 
     if (!token && !isPublicPath) {
       console.warn(
