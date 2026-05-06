@@ -201,9 +201,11 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   };
 
   const qrVisual = item?.qr_code
-    ? item.qr_code.startsWith('data:')
+    ? item.qr_code.startsWith('http') || item.qr_code.startsWith('data:')
       ? item.qr_code
-      : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${item.qr_code}`
+      : `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+          `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
+        )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`
     : null;
 
   if (!isOpen) return null;
@@ -255,11 +257,20 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         <div id="print-label" className="hidden print:flex flex-col items-center justify-center bg-white w-full h-full p-0">
           <p className="text-[5px] font-black leading-none text-emerald-800 uppercase mb-[1px]">JCLB</p>
           {item?.qr_code && (
-            <img 
-              src={item.qr_code.startsWith('data:') ? item.qr_code : `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${item.qr_code}`} 
-              alt="QR" 
-              className="w-[1.45cm] h-[1.45cm] object-contain"
-            />
+            <>
+              <img 
+                src={
+                  item.qr_code.startsWith('http') || item.qr_code.startsWith('data:') 
+                    ? item.qr_code 
+                    : `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+                        `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
+                      )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`
+                } 
+                alt="QR" 
+                className="w-[1.45cm] h-[1.45cm] object-contain"
+              />
+              <p className="text-[6px] font-bold text-zinc-900 mt-[1px]">{item.item_id}</p>
+            </>
           )}
         </div>
       )}
