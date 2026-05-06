@@ -6,6 +6,7 @@ import Image from "next/image";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
+import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 import { formatDateToYMD } from "@/lib/time";
 
@@ -152,6 +153,8 @@ export function NewPawnModal({
   const [password, setPassword] = useState("");
   const [isMoaOpen, setIsMoaOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ src: string; title: string } | null>(null);
+  const [isQRReplacementOpen, setIsQRReplacementOpen] = useState(false);
+  const [qrReplacementPawnItemId, setQrReplacementPawnItemId] = useState<string | null>(null);
   const [customerMode, setCustomerMode] = useState<CustomerMode>("new");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
@@ -1350,6 +1353,19 @@ export function NewPawnModal({
           processedBy: loggedInUserName || branchAdminName || "AUTHORIZED PERSONNEL"
         }}
         isLoading={isSaving}
+      />
+
+      <QRReplacementRequestModal
+        isOpen={isQRReplacementOpen}
+        pawnedItemId={qrReplacementPawnItemId || ""}
+        itemCode={form.unitCode}
+        onClose={() => {
+          setIsQRReplacementOpen(false);
+          setQrReplacementPawnItemId(null);
+        }}
+        onSuccess={() => {
+          toast.success("Replacement request submitted. Awaiting Super Admin approval.");
+        }}
       />
     </div>
   );

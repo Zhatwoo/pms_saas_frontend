@@ -17,6 +17,7 @@ import { MoaModal } from "./_components/moa-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
+import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
@@ -382,6 +383,8 @@ export default function EmployeePawnTransactionsPage() {
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
+  const [isQRReplacementOpen, setIsQRReplacementOpen] = useState(false);
+  const [qrReplacementData, setQrReplacementData] = useState<{ pawnedItemId: string; itemCode: string } | null>(null);
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0,
     buyBack: 0,
@@ -1020,6 +1023,23 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={Boolean(selectedTransaction)}
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
+        onRequestQRReplacement={(pawnedItemId, itemCode) => {
+          setQrReplacementData({ pawnedItemId, itemCode });
+          setIsQRReplacementOpen(true);
+        }}
+      />
+
+      <QRReplacementRequestModal
+        isOpen={isQRReplacementOpen}
+        pawnedItemId={qrReplacementData?.pawnedItemId || ""}
+        itemCode={qrReplacementData?.itemCode}
+        onClose={() => {
+          setIsQRReplacementOpen(false);
+          setQrReplacementData(null);
+        }}
+        onSuccess={() => {
+          setSelectedTransaction(null);
+        }}
       />
 
       <DailyBalanceConfirmation

@@ -3,6 +3,7 @@
 import { StatusBadge } from "./status-badge";
 import { useRef } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useAuth } from "@/contexts/auth-context";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 
@@ -14,15 +15,16 @@ interface TransactionDetailsModalProps {
   isOpen: boolean;
   transaction: TransactionRow | null;
   onClose: () => void;
+  onRequestQRReplacement?: (pawnedItemId: string, itemCode: string) => void;
 }
 
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-emerald-950/10 bg-white/80 p-4 shadow-[0_1px_0_rgba(255,255,255,0.65)_inset] backdrop-blur-sm transition-colors dark:border-white/10 dark:bg-zinc-900/70">
-      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-900/45 dark:text-zinc-400">
+    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors">
+      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
         {label}
       </p>
-      <p className="mt-2 break-words text-sm font-semibold text-emerald-950 dark:text-zinc-100">
+      <p className="mt-2 break-words text-sm font-semibold text-zinc-900">
         {value || "—"}
       </p>
     </div>
@@ -55,10 +57,13 @@ export function TransactionDetailsModal({
   isOpen,
   transaction,
   onClose,
+  onRequestQRReplacement,
 }: TransactionDetailsModalProps) {
   // Ref for focus trap
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
   const modalAriaProps = {
     role: "dialog",
     "aria-modal": "true",
@@ -69,21 +74,21 @@ export function TransactionDetailsModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-xl" {...modalAriaProps} ref={modalRef}>
-      <div className="max-h-[92vh] w-[95vw] max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border bg-gradient-to-b from-surface to-surface-secondary shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors dark:border-white/10 dark:from-zinc-950 dark:to-zinc-900 md:w-[90vw]" style={{ borderColor: 'var(--emerald-border)' }}>
-        <div className="relative overflow-hidden border-b px-6 py-6 dark:border-white/10" style={{ borderColor: 'var(--emerald-border)' }}>
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--emerald-surface), var(--emerald-surface), var(--emerald-surface))' }} />
-          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-400/15 blur-3xl" />
-          <div className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+      <div className="max-h-[92vh] w-[95vw] max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border bg-white shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors border-zinc-200 md:w-[90vw]">
+        <div className="relative overflow-hidden border-b px-6 py-6 border-emerald-700/40" style={{ background: 'linear-gradient(to right, rgb(5, 150, 105), rgb(6, 95, 70), rgb(5, 150, 105))' }}>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1))' }} />
+          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-400/10 blur-3xl" />
+          <div className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-emerald-300/5 blur-2xl" />
 
           <div className="relative flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-amber-300/90">
+              <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-amber-300/95">
                 Transaction Details
               </p>
               <h2 className="mt-2 text-3xl font-black tracking-tight text-white">
                 {transaction.transactionNo}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--emerald-text)', opacity: 0.8 }}>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-100/80">
                 Review transaction details, financial values, and related records in a single view.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -93,12 +98,28 @@ export function TransactionDetailsModal({
                 />
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/20"
-            >
-              Close
-            </button>
+            <div className="flex items-center gap-2">
+              {transaction.relatedPawnedItemId && (
+                <button
+                  onClick={() => {
+                    if (onRequestQRReplacement) {
+                      onRequestQRReplacement(transaction.relatedPawnedItemId!, transaction.unitCode);
+                    }
+                  }}
+                  disabled={!onRequestQRReplacement}
+                  className="rounded-full border border-teal-300/50 bg-teal-500/20 px-4 py-2 text-sm font-bold text-teal-100 transition-all hover:bg-teal-500/35 hover:border-teal-300/70 hover:text-teal-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Request QR Code Replacement"
+                >
+                  🔄 Request QR Change
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="rounded-full border border-emerald-300/40 bg-emerald-500/20 px-4 py-2 text-sm font-bold text-emerald-100 transition-colors hover:bg-emerald-500/30 hover:border-emerald-300/60"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
 
@@ -122,23 +143,37 @@ export function TransactionDetailsModal({
         </div>
 
         <div className="grid gap-4 px-6 pb-6 lg:grid-cols-1">
-          <div className="rounded-3xl border p-5 shadow-sm dark:border-white/10 dark:bg-zinc-900/70" style={{ borderColor: 'var(--emerald-border)', backgroundColor: 'var(--emerald-surface)' }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: 'var(--emerald-text)', opacity: 0.45 }}>
-              Performance QR Code
+          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
+              Security Identity
             </p>
-            {transaction.qrCode ? (
-              <div className="mt-4 flex flex-col items-center">
-                <img
-                  src={transaction.qrCode}
-                  alt="Transaction QR"
-                  className="h-48 w-48 rounded-2xl bg-white p-3 object-contain shadow-lg dark:border-white/10 dark:bg-zinc-950"
-                  style={{ borderColor: 'var(--emerald-border)' }}
-                />
-              </div>
+            {isSuperAdmin ? (
+              transaction.qrCode ? (
+                <div className="mt-4 flex flex-col items-center">
+                  <img
+                    src={transaction.qrCode}
+                    alt="Transaction QR"
+                    className="h-48 w-48 rounded-2xl bg-white p-3 object-contain shadow-lg border border-zinc-200"
+                  />
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-zinc-400">
+                  No QR code security record available.
+                </p>
+              )
             ) : (
-              <p className="mt-3 text-sm text-text-tertiary">
-                No QR code security record available.
-              </p>
+              <div className="mt-6 flex flex-col items-center justify-center py-12">
+                <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-500 bg-cyan-100">
+                  <div className="text-center">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-600">
+                      QR Visible to
+                    </p>
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-600">
+                      Super Admin Only
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
