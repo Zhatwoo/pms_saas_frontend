@@ -215,3 +215,15 @@ export function BellIcon() {
     </svg>
   );
 }
+
+export function RewardsIcon() {
+  return (
+    <svg {...iconProps}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 4.875C12 3.839 11.136 3 10.05 3c-1.086 0-1.95.84-1.95 1.875S8.964 6.75 10.05 6.75H12m0-1.875C12 3.839 12.864 3 13.95 3c1.086 0 1.95.84 1.95 1.875S15.036 6.75 13.95 6.75H12m0-1.875V6.75m0 0v4.5m-8.25 0h16.5"
+      />
+    </svg>
+  );
+}

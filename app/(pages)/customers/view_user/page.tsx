@@ -10,6 +10,7 @@ import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { ViewCustomerModal, resolveCustomerPrimaryVisual } from "@/components/shared/customer-profile-modal";
 import { useAuth } from "@/contexts/auth-context";
 import type { CustomerDetail, ActivityEntry, Transaction } from "./_components/types";
+import { CustomerRewardsSection } from "./_components/customer-rewards-section";
 import { api, cancelCustomerEditRequest } from "@/lib/api";
 
 /* ──────────────────────────── Types ──────────────────────────── */
@@ -902,8 +903,6 @@ function EmployeeCustomerDetailContent() {
     );
   }
 
-  const loyaltyPercent = Math.round((customer.loyaltyPoints / customer.loyaltyMax) * 100);
-  const pointsToReward = customer.loyaltyMax - customer.loyaltyPoints;
   const primaryVisual = resolveCustomerPrimaryVisual(customer);
 
   return (
@@ -1439,37 +1438,8 @@ function EmployeeCustomerDetailContent() {
         {/* ── Right Sidebar ── */}
         <div className="space-y-5">
 
-          {/* Loyalty System */}
-          <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
-            <h3 className="text-sm font-bold text-text-primary">Loyalty System</h3>
-            <p className="mt-2 text-3xl font-bold text-emerald-700">{customer.loyaltyPoints} Points</p>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-secondary">
-              <div
-                className="h-full rounded-full bg-amber-400 transition-all duration-500"
-                style={{ width: `${loyaltyPercent}%` }}
-              />
-            </div>
-            <p className="mt-2 text-[11px] text-text-tertiary">
-              Earn {pointsToReward} more points for reward
-            </p>
-          </div>
-
-          {/* Rewards */}
-          <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
-            <h3 className="text-sm font-bold text-text-primary">Rewards</h3>
-            {customer.rewards.length === 0 ? (
-              <p className="mt-3 text-xs text-text-tertiary">No rewards available yet.</p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                {customer.rewards.map((r, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <span className="text-xs text-text-secondary">{r.label}</span>
-                    <span className="text-xs font-bold text-emerald-700">{r.points} pts</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Customer Rewards System */}
+          <CustomerRewardsSection customerId={customerId} userRole={user?.role} />
 
           {/* Upcoming Deadlines */}
           <div className="rounded-lg border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
