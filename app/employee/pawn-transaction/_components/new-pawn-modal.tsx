@@ -224,7 +224,9 @@ export function NewPawnModal({
 
       try {
         const [customers, transactions] = await Promise.all([
-          api.get<CustomerLookupRecord[]>(`/customers?branchId=${encodeURIComponent(branchId)}`),
+          api.get<CustomerLookupRecord[] | { data?: CustomerLookupRecord[] }>(
+            `/customers?branchId=${encodeURIComponent(branchId)}`,
+          ),
           api.get<TransactionsResponse>(
             `/transactions?branch=${encodeURIComponent(branchId)}&range=all`,
           ),
@@ -242,7 +244,7 @@ export function NewPawnModal({
           }
         }
 
-        setBranchCustomers(Array.isArray(customers) ? customers : []);
+        setBranchCustomers(Array.isArray(customers) ? customers : customers.data ?? []);
         setCustomerBranchTransactions(branchCustomerIds);
       } catch (error) {
         if (!isActive) {

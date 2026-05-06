@@ -18,6 +18,15 @@ interface CustomerData {
   created_at: string;
 }
 
+interface CustomerListResponse {
+  data?: CustomerData[];
+}
+
+type CustomerDetailData = CustomerData & {
+  address?: string | null;
+  branch_name?: string | null;
+};
+
 interface CustomerRow {
   id: string;
   name: string;
@@ -50,15 +59,33 @@ function formatDate(value: string) {
 }
 
 function mapCustomerToRow(customer: CustomerData): CustomerRow {
+  const idPresented = customer.id_presented?.trim() || "";
+
   return {
     id: customer.id,
     name: customer.full_name || "Unnamed Customer",
     phone: customer.contact_number || "-",
-    email: customer.email || "-",
-    idType: customer.id_presented || "-",
-    idNumber: customer.id_number || "-",
+    email: customer.email?.trim() || "-",
+    idType: idPresented || "-",
+    idNumber: customer.id_number?.trim() || idPresented || "-",
     registered: formatDate(customer.created_at),
   };
+}
+
+async function loadCustomerDetails(customers: CustomerData[]) {
+  return Promise.all(
+    customers.map(async (customer) => {
+      try {
+        const details = await api.get<CustomerDetailData | null>(
+          `/customers/${encodeURIComponent(customer.id)}`,
+        );
+
+        return details ? { ...customer, ...details } : customer;
+      } catch {
+        return customer;
+      }
+    }),
+  );
 }
 
 export function CustomerTable() {
@@ -76,8 +103,12 @@ export function CustomerTable() {
       setError(null);
       try {
         const branchParam = isAllBranches ? "" : `?branchId=${encodeURIComponent(selectedBranch.id)}`;
-        const data = await api.get<CustomerData[]>(`/customers${branchParam}`);
-        setCustomers((data || []).map(mapCustomerToRow));
+        const response = await api.get<CustomerData[] | CustomerListResponse>(
+          `/customers${branchParam}`,
+        );
+        const data = Array.isArray(response) ? response : response.data ?? [];
+        const enrichedCustomers = await loadCustomerDetails(data);
+        setCustomers(enrichedCustomers.map(mapCustomerToRow));
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load customers.";
         setError(message);

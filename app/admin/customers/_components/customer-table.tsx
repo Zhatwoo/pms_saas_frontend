@@ -48,6 +48,10 @@ interface CustomerData {
   created_at: string;
 }
 
+interface CustomerListResponse {
+  data?: CustomerData[];
+}
+
 interface CustomerRow {
   id: string;
   name: string;
@@ -111,8 +115,11 @@ export function CustomerTable() {
     setError(null);
     try {
       const branchParam = isAllBranches ? "" : `?branchId=${encodeURIComponent(selectedBranch.id)}`;
-      const data = await api.get<CustomerData[]>(`/customers${branchParam}`);
-      setCustomers((data || []).map(mapCustomerToRow));
+      const response = await api.get<CustomerData[] | CustomerListResponse>(
+        `/customers${branchParam}`,
+      );
+      const data = Array.isArray(response) ? response : response.data ?? [];
+      setCustomers(data.map(mapCustomerToRow));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load customers.";
       setError(message);

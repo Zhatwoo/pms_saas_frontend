@@ -3,6 +3,7 @@ import Image from "next/image";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { StatusBadge } from "./status-badge";
 
 interface InventoryAuditModalProps {
