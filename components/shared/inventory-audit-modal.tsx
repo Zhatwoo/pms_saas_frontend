@@ -3,6 +3,7 @@ import Image from "next/image";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { StatusBadge } from "./status-badge";
 
 interface InventoryAuditModalProps {
@@ -1171,7 +1172,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm">
                   <div className="rounded-2xl bg-zinc-50 p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Amount</p>
-                    <p className="mt-2 text-sm font-black text-zinc-900">{formatCurrency(selectedVerifiedItem.amount)}</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900">{formatPeso(selectedVerifiedItem.amount)}</p>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Serial</p>

@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { useAuth } from "@/contexts/auth-context";
 
 export type PurposeType =
   | "Start"
@@ -124,6 +125,13 @@ export function TransactionTable({
   title = "Daily Transactions",
 }: TransactionTableProps) {
   const highlightedRowRef = useRef<HTMLTableRowElement | null>(null);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+  
+  // Filter columns based on user role - remove QR Code column for non-super admins
+  const visibleColumns = isSuperAdmin 
+    ? columns 
+    : columns.filter(col => col.key !== "qrCode");
 
   useEffect(() => {
     if (highlightedRowRef.current) {
@@ -162,7 +170,7 @@ export function TransactionTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-emerald-900 text-amber-400">
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <th
                   key={col.key}
                   className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${col.align === "right"
@@ -181,7 +189,7 @@ export function TransactionTable({
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={`skeleton-${i}`} className="animate-pulse border-t border-border-subtle bg-surface-secondary">
-                  {columns.map((col) => (
+                  {visibleColumns.map((col) => (
                     <td key={col.key} className="px-3 py-4">
                       <div className="h-4 w-full rounded-md bg-zinc-200/60 dark:bg-zinc-800/60" />
                     </td>
@@ -191,7 +199,7 @@ export function TransactionTable({
             ) : data.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length}
+                  colSpan={visibleColumns.length}
                   className="py-8 text-center text-sm text-text-tertiary"
                 >
                   No transactions found
@@ -282,19 +290,21 @@ export function TransactionTable({
                         </span>
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-center">
-                      {row.qrCode ? (
-                        <div className="flex justify-center">
-                          <img
-                            src={row.qrCode}
-                            alt="QR Code"
-                            className="h-10 w-10 rounded-md border border-border-main bg-white p-0.5 object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-text-muted">-</span>
-                      )}
-                    </td>
+                    {isSuperAdmin && (
+                      <td className="whitespace-nowrap px-3 py-2 text-center">
+                        {row.qrCode ? (
+                          <div className="flex justify-center">
+                            <img
+                              src={row.qrCode}
+                              alt="QR Code"
+                              className="h-10 w-10 rounded-md border border-border-main bg-white p-0.5 object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-text-muted">-</span>
+                        )}
+                      </td>
+                    )}
                     <td className="whitespace-nowrap px-3 py-2 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         {row.purpose === "Pawn" || row.purpose === "Renew" ? (

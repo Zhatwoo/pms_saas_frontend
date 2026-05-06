@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from "react";
 
-export function useFocusTrap(containerRef: React.RefObject<HTMLElement>, active: boolean) {
+export function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, active: boolean) {
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
