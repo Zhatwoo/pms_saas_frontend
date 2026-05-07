@@ -47,7 +47,7 @@ export function getAuthorizedRedirect(
   role: Role,
   requestedRedirect: string | null,
 ): string {
-  if (!requestedRedirect) {
+  if (!requestedRedirect || requestedRedirect === "/" || requestedRedirect.startsWith("/login")) {
     return getDefaultRouteForRole(role);
   }
 

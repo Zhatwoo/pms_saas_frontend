@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("pms_token")?.value;
+  const token = request.cookies.get("pms_access_token")?.value;
   const hadPreviousSession =
     request.cookies.get("pms_was_logged_in")?.value === "1";
   const isPublicPath = publicPaths.some(

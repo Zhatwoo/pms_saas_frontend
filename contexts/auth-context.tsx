@@ -26,10 +26,24 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const SESSION_EXPIRED_REASON = "session-expired";
-const REMEMBERED_SESSION_COOKIE = "pms_was_logged_in=1; path=/; max-age=2592000; samesite=lax; secure;";
-const CLEAR_REMEMBERED_SESSION_COOKIE = "pms_was_logged_in=; path=/; max-age=0; samesite=lax; secure;";
 const SESSION_EXPIRED_MESSAGE = "Your session expired. Please sign in again.";
 const SESSION_REDIRECT_DELAY_MS = 3500;
+
+function cookieSecuritySuffix() {
+  return window.location.protocol === "https:" ? "; secure" : "";
+}
+
+interface RefreshProfileOptions {
+  suppressSessionExpired?: boolean;
+}
+
+function rememberedSessionCookie(maxAge: number) {
+  return `pms_was_logged_in=1; path=/; max-age=${maxAge}; samesite=lax${cookieSecuritySuffix()}`;
+}
+
+function clearRememberedSessionCookie() {
+  return `pms_was_logged_in=; path=/; max-age=0; samesite=lax${cookieSecuritySuffix()}`;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -47,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const clearSession = useCallback((clearRememberedSession = false) => {
     if (clearRememberedSession) {
-      document.cookie = CLEAR_REMEMBERED_SESSION_COOKIE;
+      document.cookie = clearRememberedSessionCookie();
     }
     localStorage.removeItem("pms_user");
     setUser(null);
@@ -87,7 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     isHandlingSessionExpiryRef.current = true;
     clearSessionExpiryTimers();
-    clearSession(false);
+    clearSession(true);
+    void api.post("/auth/logout", {}).catch(() => {});
 
     const nextMessage = message?.trim() || SESSION_EXPIRED_MESSAGE;
     setSessionExpiredMessage(nextMessage);
@@ -108,22 +123,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, SESSION_REDIRECT_DELAY_MS);
   }, [clearSession, clearSessionExpiryTimers, redirectToLogin]);
 
-  const refreshProfile = useCallback(async () => {
+  const refreshProfile = useCallback(async (options?: RefreshProfileOptions) => {
     if (isRefreshingRef.current) return;
     isRefreshingRef.current = true;
     try {
-      const freshUser = await api.get<User>("/auth/me");
+      const freshUser = await api.get<User>("/auth/me", {
+        suppressAuthExpired: options?.suppressSessionExpired,
+      });
       const normalizedUser = normalizeUser(freshUser);
       if (normalizedUser) {
         setUser(normalizedUser);
         localStorage.setItem("pms_user", JSON.stringify(normalizedUser));
+      } else {
+        clearSession(false);
       }
     } catch (err) {
+      clearSession(false);
       console.warn("[AuthContext] Failed to refresh profile:", err);
     } finally {
       isRefreshingRef.current = false;
     }
-  }, []);
+  }, [clearSession]);
 
   useEffect(() => {
     const handleSessionExpired = (event: Event) => {
@@ -154,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    void refreshProfile().finally(() => setIsLoading(false));
+    void refreshProfile({ suppressSessionExpired: true }).finally(() => setIsLoading(false));
   }, [refreshProfile]);
 
   useEffect(() => {
@@ -175,40 +195,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [clearSessionExpiryTimers]);
 
-  // 3. Realtime Listener: Watch for user profile changes (e.g. branch transfers)
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
-    }
-
-    const channel = supabase
-      .channel(`user-profile-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "users",
-          filter: `id=eq.${user.id}`,
-        },
-        () => {
-          console.log("[AuthContext] Profile change detected, refreshing...");
-          void refreshProfile();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [user?.id, refreshProfile]);
-
   const login = useCallback(async (email: string, password: string) => {
     const data = await api.post<{ user: User }>(
       "/auth/login",
@@ -221,10 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("Unauthorized");
     }
 
-    const maxAge = Math.max(1, data.expires_in ?? 3600);
-
-    document.cookie = `pms_token=${encodeURIComponent(data.access_token)}; path=/; max-age=${maxAge}; samesite=lax; secure;`;
-    document.cookie = REMEMBERED_SESSION_COOKIE;
+    document.cookie = rememberedSessionCookie(2_592_000);
 
     // Save to state and cache
     clearSessionExpiryTimers();
@@ -235,8 +218,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(normalizedUser);
     localStorage.setItem("pms_user", JSON.stringify(normalizedUser));
 
+    void refreshProfile({ suppressSessionExpired: true });
+
     return normalizedUser;
-  }, [clearSessionExpiryTimers]);
+  }, [clearSessionExpiryTimers, refreshProfile]);
 
   const logout = useCallback(() => {
     clearSessionExpiryTimers();

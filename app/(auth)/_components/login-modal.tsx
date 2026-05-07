@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { getAuthorizedRedirect } from "@/lib/auth";
+import { getAuthorizedRedirect, getDefaultRouteForRole } from "@/lib/auth";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -30,11 +30,13 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
 
     try {
       const user = await login(email, password);
-      const redirect = getAuthorizedRedirect(
-        user.role,
-        searchParams.get("redirect"),
-      );
-      router.push(redirect);
+      const requestedRedirect =
+        searchParams.get("reason") === "session-expired"
+          ? null
+          : searchParams.get("redirect");
+      const redirect = getAuthorizedRedirect(user.role, requestedRedirect);
+      router.replace(redirect || getDefaultRouteForRole(user.role));
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

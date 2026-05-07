@@ -15,7 +15,7 @@ export default function EmployeeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive, requireReLogin } = useAuth();
+  const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive } = useAuth();
   const { selectedBranch } = useBranch();
   const { isComplete: isWorkflowComplete, isOpeningChecklistReady } = useOpeningChecklist();
   const router = useRouter();
@@ -25,12 +25,7 @@ export default function EmployeeLayout({
 
   useEffect(() => {
     // Only redirect if definitively not logged in
-    const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
     if (!isLoading && !user) {
-      if (hadPreviousSession) {
-        requireReLogin();
-        return;
-      }
       if (isSessionExpiryActive) {
         return;
       }
@@ -41,7 +36,7 @@ export default function EmployeeLayout({
     if (!isLoading && user && user.role !== "employee") {
       router.replace(getDefaultRouteForRole(user.role));
     }
-  }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
+  }, [isLoading, isSessionExpiryActive, router, user]);
 
   useEffect(() => {
     if (isLoading || !user || user.role !== "employee" || !isOpeningChecklistReady) {

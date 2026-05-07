@@ -301,7 +301,6 @@ export function Header({
     const refreshInterval = setInterval(fetchNotifications, 2 * 60 * 1000);
 
     return () => {
-      isActive = false;
       clearInterval(clockInterval);
       clearInterval(refreshInterval);
       window.removeEventListener("transaction_created", handleTransactionCreated);

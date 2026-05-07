@@ -13,17 +13,12 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading, isSessionExpiryActive, requireReLogin } = useAuth();
+  const { user, logout, isLoading, isSessionExpiryActive } = useAuth();
   const { selectedBranch } = useBranch();
   const router = useRouter();
 
   useEffect(() => {
-    const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
     if (!isLoading && !user) {
-      if (hadPreviousSession) {
-        requireReLogin();
-        return;
-      }
       if (isSessionExpiryActive) {
         return;
       }
@@ -34,7 +29,7 @@ export default function ProtectedLayout({
     if (!isLoading && user && user.role !== "admin") {
       router.replace(getDefaultRouteForRole(user.role));
     }
-  }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
+  }, [isLoading, isSessionExpiryActive, router, user]);
 
   if (!user) {
     return null;

@@ -7,7 +7,7 @@ import { getDefaultRouteForRole } from "@/lib/auth";
 
 export default function Home() {
   const router = useRouter();
-  const { user, isLoading, isSessionExpiryActive, requireReLogin } = useAuth();
+  const { user, isLoading, isSessionExpiryActive } = useAuth();
 
   useEffect(() => {
     if (isLoading) {
@@ -15,11 +15,6 @@ export default function Home() {
     }
 
     if (!user) {
-      const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
-      if (hadPreviousSession) {
-        requireReLogin();
-        return;
-      }
       if (isSessionExpiryActive) {
         return;
       }
@@ -28,7 +23,7 @@ export default function Home() {
     }
 
     router.replace(getDefaultRouteForRole(user.role));
-  }, [isLoading, isSessionExpiryActive, requireReLogin, router, user]);
+  }, [isLoading, isSessionExpiryActive, router, user]);
 
   return null;
 }
