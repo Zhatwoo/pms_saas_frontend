@@ -5,6 +5,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 let supabase: SupabaseClient | null = null;
 let supabaseToken: string | null = null;
 
+export type RealtimeOnlySupabaseClient = Pick<
+  SupabaseClient,
+  "channel" | "removeChannel" | "realtime"
+>;
+
 export function getTokenFromCookie(): string | null {
   if (typeof document === "undefined") return null;
 
@@ -21,12 +26,22 @@ export function getTokenFromCookie(): string | null {
   return null;
 }
 
-export function getSupabaseBrowserClient(): SupabaseClient | null {
+function toRealtimeOnlyClient(client: SupabaseClient): RealtimeOnlySupabaseClient {
+  return {
+    channel: client.channel.bind(client),
+    removeChannel: client.removeChannel.bind(client),
+    realtime: client.realtime,
+  };
+}
+
+export function getSupabaseBrowserClient(): RealtimeOnlySupabaseClient | null {
   if (typeof window === "undefined") return null;
 
   const token = getTokenFromCookie();
 
-  if (supabase && supabaseToken === token) return supabase;
+  if (supabase && supabaseToken === token) {
+    return toRealtimeOnlyClient(supabase);
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -53,5 +68,5 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   });
   supabaseToken = token;
 
-  return supabase;
+  return toRealtimeOnlyClient(supabase);
 }
