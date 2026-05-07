@@ -17,6 +17,7 @@ import { MoaModal } from "./_components/moa-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
+import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
@@ -25,7 +26,7 @@ import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { formatPeso } from "@/lib/currency";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
@@ -376,11 +377,13 @@ export default function EmployeePawnTransactionsPage() {
   const [reprintData, setReprintData] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedDate, setSelectedDate] = useState(formatDateToYMD());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
+  const [isQRReplacementOpen, setIsQRReplacementOpen] = useState(false);
+  const [qrReplacementData, setQrReplacementData] = useState<{ pawnedItemId: string; itemCode: string } | null>(null);
   const [currentStats, setCurrentStats] = useState({
     pawnedToday: 0,
     buyBack: 0,
@@ -513,40 +516,14 @@ export default function EmployeePawnTransactionsPage() {
     [selectedDate, smartphoneTransactions],
   );
 
-  // Realtime subscription for transactions table
   useEffect(() => {
     if (selectedBranch.id === "__all__") return;
 
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
-    const channelName = `transactions-live-${selectedBranch.id}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transactions"
-        },
-        (payload) => {
-          console.log("[Transactions] Realtime event received:", payload);
-          const newTx = payload.new as any;
-          if (newTx && newTx.branch_id === selectedBranch.id) {
-            void fetchTransactionsRef.current();
-          } else if (payload.eventType === "DELETE") {
-            void fetchTransactionsRef.current();
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[Transactions] Realtime subscription status:`, status);
-      });
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const interval = window.setInterval(
+      () => void fetchTransactionsRef.current(),
+      60_000,
+    );
+    return () => window.clearInterval(interval);
   }, [selectedBranch.id]);
 
   const filteredTransactions = useMemo(() => {
@@ -743,13 +720,36 @@ export default function EmployeePawnTransactionsPage() {
     <div className="space-y-3 pb-4 printable-area">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
+          @page { size: auto; margin: 15mm; }
+          body { background: white !important; color: black !important; }
           body * { visibility: hidden; }
           .printable-area, .printable-area * { visibility: visible; }
-          .printable-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
-          .header-print { background: #064e3b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important; padding: 40px 20px !important; text-align: center !important; margin-bottom: 30px !important; border-bottom: 8px solid #f59e0b !important; }
-          .header-print h1 { margin: 0 !important; font-size: 32px !important; font-weight: 900 !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: white !important; }
-          .header-print p { margin: 10px 0 0 !important; font-size: 14px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 4px !important; opacity: 0.9 !important; color: white !important; }
+          .printable-area { 
+            position: relative !important; 
+            display: block !important; 
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          .header-print { 
+            background: #064e3b !important; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+            color: white !important; 
+            padding: 20px !important; 
+            text-align: center !important; 
+            margin-bottom: 20px !important; 
+            border-bottom: 4px solid #f59e0b !important;
+            border-radius: 8px;
+          }
+          .header-print h1 { margin: 0 !important; font-size: 24px !important; font-weight: 900 !important; color: white !important; }
+          .header-print p { margin: 5px 0 0 !important; font-size: 12px !important; color: white !important; opacity: 0.8; }
+          table { page-break-inside: auto; width: 100% !important; border-collapse: collapse !important; }
+          tr { page-break-inside: avoid; page-break-after: auto; }
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
           .print-hide { display: none !important; }
+          .no-print { display: none !important; }
         }
       `}} />
 
@@ -791,7 +791,7 @@ export default function EmployeePawnTransactionsPage() {
               <tr className="bg-emerald-50/50">
                 <td className="border border-emerald-800/20 p-2 font-bold text-emerald-900">Live Total Balance</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold text-emerald-900">
-                  ₱{currentStats.endingBalance.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                  {formatPeso(currentStats.endingBalance.toLocaleString("en-PH", { minimumFractionDigits: 2 }))}
                 </td>
               </tr>
             </tbody>
@@ -822,16 +822,16 @@ export default function EmployeePawnTransactionsPage() {
                   <td className="border border-emerald-800/10 p-1 font-bold">{tx.purpose}</td>
                   <td className="border border-emerald-800/10 p-1">{tx.customerName || "Walk-in"}</td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashIn !== "0" ? `₱${Number(tx.cashIn).toLocaleString()}` : "-"}
+                    {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn).toLocaleString()) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashOut !== "0" ? `₱${Number(tx.cashOut).toLocaleString()}` : "-"}
+                    {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut).toLocaleString()) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.pawn !== "0" ? `₱${Number(tx.pawn).toLocaleString()}` : "-"}
+                    {tx.pawn !== "0" ? formatPeso(Number(tx.pawn).toLocaleString()) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.storage !== "0" ? `₱${Number(tx.storage).toLocaleString()}` : "-"}
+                    {tx.storage !== "0" ? formatPeso(Number(tx.storage).toLocaleString()) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1">{tx.unitCode || tx.unit || "-"}</td>
                 </tr>
@@ -996,6 +996,23 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={Boolean(selectedTransaction)}
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
+        onRequestQRReplacement={(pawnedItemId, itemCode) => {
+          setQrReplacementData({ pawnedItemId, itemCode });
+          setIsQRReplacementOpen(true);
+        }}
+      />
+
+      <QRReplacementRequestModal
+        isOpen={isQRReplacementOpen}
+        pawnedItemId={qrReplacementData?.pawnedItemId || ""}
+        itemCode={qrReplacementData?.itemCode}
+        onClose={() => {
+          setIsQRReplacementOpen(false);
+          setQrReplacementData(null);
+        }}
+        onSuccess={() => {
+          setSelectedTransaction(null);
+        }}
       />
 
       <DailyBalanceConfirmation

@@ -40,6 +40,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
         subItems: [
           { label: "Pawned Items", href: "/inventory/pawned-items" },
           { label: "Items For Sale", href: "/inventory/items-for-sale" },
+          { label: "QR Replacements", href: "/inventory/qr-replacements" },
         ],
       },
       { label: "Expiration Monitoring", href: "/expiration-monitoring", icon: <ExpirationIcon /> },

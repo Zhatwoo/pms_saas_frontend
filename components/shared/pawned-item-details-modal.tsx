@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, type TouchEvent } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { formatPeso } from "@/lib/currency";
 import { StatusBadge } from "./status-badge";
+import { QRReplacementRequestModal } from "./qr-replacement-request-modal";
 
 interface Renewal {
   date: string;
@@ -92,9 +94,13 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [isSaving, setIsSaving] = useState(false);
   const [itemPhotoIndex, setItemPhotoIndex] = useState(0);
   const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
+  const [qrRequestStatus, setQrRequestStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
+  const [isRequestingQr, setIsRequestingQr] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
   const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
+  const canViewQr = userRole === "super_admin";
 
   useEffect(() => {
     if (isOpen && itemId) {
@@ -113,10 +119,42 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       const data = await api.get<DetailedPawnedItem>(`/inventory/pawned/${itemId}`);
       setItem(data);
       setRemarks(data.remarks || "");
+      await fetchQrRequestStatus(data.id);
     } catch (err: any) {
       setError(err.message || "Failed to fetch item details.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchQrRequestStatus = async (pawnedItemId: string) => {
+    try {
+      // Activity logs for QR requests
+      const logs = await api.get<any[]>(`/activity-logs?pawnedItemId=${pawnedItemId}&action=QR_REPLACEMENT_REQUEST,QR_REPLACEMENT_APPROVED,QR_REPLACEMENT_REJECTED`);
+      if (logs.length > 0) {
+        // Sort by date desc
+        const latest = logs.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+        const details = JSON.parse(latest.details || "{}");
+        setQrRequestStatus(details.requestStatus || "none");
+      } else {
+        setQrRequestStatus("none");
+      }
+    } catch (err) {
+      console.error("Failed to fetch QR status", err);
+    }
+  };
+
+  const handleRequestQrReplacement = async (reason: "Damaged" | "Lost" | "Torn") => {
+    if (!item) return;
+    setIsRequestingQr(true);
+    try {
+      await api.post(`/inventory/pawned/${item.id}/qr-replacement-request`, { reason });
+      toast.success("QR replacement request submitted.");
+      await fetchQrRequestStatus(item.id);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit request.");
+    } finally {
+      setIsRequestingQr(false);
     }
   };
 
@@ -199,9 +237,11 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   };
 
   const qrVisual = item?.qr_code
-    ? item.qr_code.startsWith('data:')
+    ? item.qr_code.startsWith('http') || item.qr_code.startsWith('data:')
       ? item.qr_code
-      : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${item.qr_code}`
+      : `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+          `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
+        )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`
     : null;
 
   if (!isOpen) return null;
@@ -212,60 +252,64 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md px-4 py-8 overflow-y-auto print:bg-white print:p-0 print:block"
       onClick={onClose}
     >
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
+      {canViewQr && (
+        <style jsx global>{`
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+            html,
+            body {
+              width: 2cm;
+              height: 2cm;
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+            }
+            #print-label, #print-label * {
+              visibility: visible;
+            }
+            #print-label {
+              position: fixed;
+              left: 50%;
+              top: 50%;
+              transform: translate(-50%, -50%);
+              width: 2cm;
+              height: 2cm;
+              display: flex !important;
+              align-items: center;
+              justify-content: center;
+            }
+            @page {
+              size: 2cm 2cm;
+              margin: 0mm;
+            }
           }
-          #print-label, #print-label * {
-            visibility: visible;
-          }
-          #print-label {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            display: flex !important;
-            align-items: center;
-            justify-content: center;
-          }
-          @page {
-            size: auto;
-            margin: 0mm;
-          }
-        }
-      `}</style>
+        `}</style>
+      )}
 
       {/* Neat Print Label Section (Only visible during print) */}
-      <div id="print-label" className="hidden print:flex flex-col items-center justify-center bg-white p-4 text-black border border-zinc-200 rounded-lg w-[300px] h-[180px] mx-auto">
-        <div className="flex w-full items-start gap-3">
-          <div className="shrink-0">
-             {item?.qr_code && (
-               <img 
-                 src={item.qr_code.startsWith('data:') ? item.qr_code : `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${item.qr_code}`} 
-                 alt="QR" 
-                 className="w-24 h-24 object-contain"
-               />
-             )}
-          </div>
-          <div className="flex flex-col justify-center flex-1 min-w-0">
-             <p className="text-[10px] font-black leading-none mb-1 text-emerald-800 uppercase">JCLB PAWNSHOP</p>
-             <p className="text-xs font-black leading-tight uppercase truncate">{item?.item_name || "Unknown Item"}</p>
-             <div className="mt-2 py-1 px-2 bg-zinc-100 rounded border border-zinc-200">
-                <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-tighter">Unit Code</p>
-                <p className="text-sm font-black tracking-tighter uppercase leading-none">{item?.item_id || "N/A"}</p>
-             </div>
-             <div className="mt-2 text-[8px] font-bold text-zinc-400 uppercase leading-none">
-                <p>{item?.branch || "Unknown Branch"}</p>
-                <p className="mt-0.5">{item?.pawn_date || "—"}</p>
-             </div>
-          </div>
+      {canViewQr && (
+        <div id="print-label" className="hidden print:flex flex-col items-center justify-center bg-white w-full h-full p-0">
+          <p className="text-[5px] font-black leading-none text-emerald-800 uppercase mb-[1px]">JCLB</p>
+          {item?.qr_code && (
+            <>
+              <img 
+                src={
+                  item.qr_code.startsWith('http') || item.qr_code.startsWith('data:') 
+                    ? item.qr_code 
+                    : `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+                        `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
+                      )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`
+                } 
+                alt="QR" 
+                className="w-[1.45cm] h-[1.45cm] object-contain"
+              />
+              <p className="text-[6px] font-bold text-zinc-900 mt-[1px]">{item.item_id}</p>
+            </>
+          )}
         </div>
-        <div className="mt-2 w-full border-t border-zinc-100 pt-1 text-center">
-           <p className="text-[7px] font-black text-zinc-300 uppercase tracking-[0.2em]">Inventory Security Label</p>
-        </div>
-      </div>
+      )}
 
       <div 
         className="relative w-[95vw] max-w-5xl bg-surface rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row transition-all duration-500 scale-in-center print:hidden md:w-[90vw]"
@@ -426,16 +470,39 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
             <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Security Identity</span></SectionTitle>
-              <div className="flex w-full items-center justify-center">
-                {qrVisual ? (
-                  <Image
-                    src={qrVisual}
-                    alt="Security QR"
-                    width={180}
-                    height={180}
-                    unoptimized
-                    className="object-contain bg-white p-3 rounded-2xl shadow-xl"
-                  />
+              <div className="flex w-full flex-col items-center justify-center gap-4">
+                {canViewQr && qrVisual ? (
+                  <>
+                    <Image
+                      src={qrVisual}
+                      alt="Security QR"
+                      width={180}
+                      height={180}
+                      unoptimized
+                      className="object-contain bg-white p-3 rounded-2xl shadow-xl"
+                    />
+                    {qrRequestStatus === "pending" && (
+                      <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-2">Pending Replacement Approval</p>
+                    )}
+                  </>
+                ) : !canViewQr ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/60 bg-emerald-100/20 px-4 text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">QR Visible to Super Admin only</p>
+                    </div>
+                    {qrRequestStatus === "pending" ? (
+                      <span className="text-[10px] font-black text-amber-500 uppercase bg-amber-500/10 px-3 py-1 rounded-full">Request Pending</span>
+                    ) : qrRequestStatus === "approved" ? (
+                      <span className="text-[10px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-3 py-1 rounded-full">Request Approved</span>
+                    ) : (
+                      <button 
+                        onClick={() => setIsQrModalOpen(true)}
+                        className="px-6 py-2 bg-zinc-900 text-white text-[10px] font-black rounded-xl hover:bg-black transition-all shadow-lg active:scale-95"
+                      >
+                        REQUEST QR REPLACEMENT
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/70">No QR generated</p>
@@ -477,7 +544,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                 </div>
                 <div className="text-right">
                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Pawn Value</p>
-                   <p className="text-3xl font-black text-emerald-700">₱{item.amount.toLocaleString()}</p>
+                   <p className="text-3xl font-black text-emerald-700">{formatPeso(item.amount.toLocaleString())}</p>
                 </div>
               </div>
 
@@ -557,7 +624,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                                 <p className="text-[10px] font-bold text-text-tertiary">PROCESSED ON {r.date}</p>
                              </div>
                           </div>
-                          <p className="text-sm font-black text-emerald-700">₱{r.amount.toLocaleString()}</p>
+                          <p className="text-sm font-black text-emerald-700">{formatPeso(r.amount.toLocaleString())}</p>
                         </div>
                       ))
                     ) : (
@@ -578,10 +645,20 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     >
                       CLOSE RECORD
                     </button>
-                    {userRole !== "viewer" && (
+                    {canViewQr && (
                       <button 
-                        onClick={() => window.print()}
-                        className="px-8 py-4 rounded-2xl bg-zinc-900 text-white text-xs font-black hover:bg-black active:scale-95 transition-all shadow-xl"
+                        onClick={() => {
+                          if (qrRequestStatus === "approved" || !item?.created_at || (new Date().getTime() - new Date(item.created_at).getTime() < 86400000)) {
+                            window.print();
+                          } else {
+                            toast.error("Replacement must be approved by Super Admin first.");
+                          }
+                        }}
+                        className={`px-8 py-4 rounded-2xl text-xs font-black transition-all shadow-xl active:scale-95 ${
+                          (qrRequestStatus === "approved" || !item?.created_at || (new Date().getTime() - new Date(item.created_at).getTime() < 86400000))
+                            ? "bg-zinc-900 text-white hover:bg-black"
+                            : "bg-zinc-200 text-zinc-400 cursor-not-allowed"
+                        }`}
                       >
                         PRINT LABEL
                       </button>
@@ -601,6 +678,16 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         </button>
       </div>
     </div>
+
+    {item && (
+      <QRReplacementRequestModal 
+        isOpen={isQrModalOpen}
+        pawnedItemId={item.id}
+        itemCode={item.item_id}
+        onClose={() => setIsQrModalOpen(false)}
+        onSuccess={() => fetchQrRequestStatus(item.id)}
+      />
+    )}
 
     {preview && (
       <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-md" onClick={() => setPreview(null)}>

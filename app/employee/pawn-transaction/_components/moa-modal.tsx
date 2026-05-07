@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/currency";
 
 interface MoaModalProps {
   isOpen: boolean;
@@ -224,7 +225,7 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading, autoPrin
               {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[200px] text-center">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block px-2 border-b border-zinc-500 font-medium min-w-[400px] text-center">{data.address.toUpperCase()}</span>, {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."}
             </p>
             <p className="leading-6">
-              {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">₱{amount.toLocaleString()}</span> {labels?.plusText || "plus"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">₱{storageFee.toLocaleString()}</span> {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block px-2 border-b border-zinc-500 min-w-[100px] text-center">₱0.00</span> {labels?.overdueText || "applies when overdue."}
+              {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">{formatPeso(amount.toLocaleString())}</span> {labels?.plusText || "plus"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">{formatPeso(storageFee.toLocaleString())}</span> {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block px-2 border-b border-zinc-500 min-w-[100px] text-center">₱0.00</span> {labels?.overdueText || "applies when overdue."}
             </p>
           </div>
 
@@ -234,19 +235,19 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading, autoPrin
               <div className="space-y-2">
                 <div className="grid grid-cols-2 items-center">
                   <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.amount || "Amount:"}</span>
-                  <span className="font-bold text-zinc-900">₱{amount.toLocaleString()}</span>
+                  <span className="font-bold text-zinc-900">{formatPeso(amount.toLocaleString())}</span>
                 </div>
                 <div className="grid grid-cols-2 items-center">
                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.storageFee || "Storage fee:"}</span>
-                   <span className="font-medium text-zinc-900 text-right pr-4">₱{storageFee.toLocaleString()}</span>
+                   <span className="font-medium text-zinc-900 text-right pr-4">{formatPeso(storageFee.toLocaleString())}</span>
                 </div>
                 <div className="grid grid-cols-2 items-center">
                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.parkingFee || "Parking fee:"}</span>
-                   <span className="font-medium text-zinc-900 text-right pr-4">₱{parkingFee.toLocaleString()}</span>
+                   <span className="font-medium text-zinc-900 text-right pr-4">{formatPeso(parkingFee.toLocaleString())}</span>
                 </div>
                 <div className="grid grid-cols-2 items-center border-t border-zinc-200 pt-2">
                    <span className="font-black uppercase text-emerald-800 text-[9px]">{labels?.totalDue || "Total Due:"}</span>
-                   <span className="font-black text-emerald-800 text-lg">₱{totalDue.toLocaleString()}</span>
+                   <span className="font-black text-emerald-800 text-lg">{formatPeso(totalDue.toLocaleString())}</span>
                 </div>
               </div>
             </div>

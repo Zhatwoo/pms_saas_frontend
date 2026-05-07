@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
+import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -312,7 +313,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                   <DetailSection title="Loan & Item Details" icon={Smartphone}>
-                    <DetailRow label="Principal Amount" value={`₱ ${Number(selectedItem.amount).toLocaleString()}`} />
+                    <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount).toLocaleString())} />
                     <DetailRow 
                       label="Maturity Interest" 
                       value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
@@ -356,12 +357,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                       <div className="flex items-center gap-3">
                         <div className="text-center">
                           <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Principal</p>
-                          <p className="text-xl font-black text-emerald-900 dark:text-white">₱{Number(selectedItem.amount).toLocaleString()}</p>
+                          <p className="text-xl font-black text-emerald-900 dark:text-white">{formatPeso(Number(selectedItem.amount))}</p>
                         </div>
                         <div className="h-8 w-px bg-emerald-200" />
                         <div className="text-center">
                           <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Interest ({interestCalc.percentage}%)</p>
-                          <p className="text-xl font-black text-emerald-900 dark:text-white">₱{interestCalc.interestAmount.toLocaleString()}</p>
+                          <p className="text-xl font-black text-emerald-900 dark:text-white">{formatPeso(interestCalc.interestAmount)}</p>
                         </div>
                       </div>
                     </div>

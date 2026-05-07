@@ -20,7 +20,7 @@ export function StatCard({
   change,
   changeType,
   icon,
-  borderColor = "border-emerald-700",
+  borderColor = "border-[var(--emerald-border)]",
   className = "",
   valueClassName = "",
   onClick,

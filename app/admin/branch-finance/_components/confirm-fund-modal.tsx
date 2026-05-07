@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatPeso } from "@/lib/currency";
 
 interface ConfirmFundModalProps {
   isOpen: boolean;
@@ -117,7 +118,7 @@ export function ConfirmFundModal({
               Receipt Confirmation
             </p>
             <p className="mt-2 text-3xl font-extrabold text-emerald-200">
-              ₱{amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatPeso(amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
             </p>
             <p className="mt-2 text-xs text-emerald-200/80">
               {requestNo ? `${requestNo} ` : ""}{branchName ? `for ${branchName}` : ""}

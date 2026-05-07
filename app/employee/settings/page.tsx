@@ -100,10 +100,6 @@ export default function EmployeeSettingsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary leading-tight">Settings</h1>
-      </div>
-
       <div className="flex gap-1 rounded-lg border border-border-main bg-surface p-1 max-w-fit overflow-hidden">
         {["Profile", "Appearance", "Branch Config"].map((tab) => (
           <button

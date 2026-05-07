@@ -1,3 +1,7 @@
+type ApiRequestInit = RequestInit & {
+  suppressAuthExpired?: boolean;
+};
+
 class ApiClient {
   private notifySessionExpired(message: string, path: string) {
     if (typeof window === "undefined") return;
@@ -38,41 +42,30 @@ class ApiClient {
     return "Request failed. Please try again.";
   }
 
-  private getToken(): string | null {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-
-  async fetch<T>(path: string, options?: RequestInit): Promise<T> {
-    const token = this.getToken();
+  async fetch<T>(path: string, options?: ApiRequestInit): Promise<T> {
     const method = options?.method ?? "GET";
+    const { suppressAuthExpired, ...requestOptions } = options ?? {};
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options?.headers,
+      ...requestOptions.headers,
     };
 
     const isPublicPath =
       path === "/auth/login" ||
+      path === "/auth/logout" ||
       path === "/auth/register" ||
       path === "/auth/signup/branches" ||
-      path === "/branches/public";
-
-    if (!token && !isPublicPath) {
-      console.warn(
-        `[API] Missing auth token for ${path}. Check if login was successful and token is stored in cookies.`,
-      );
-      this.notifySessionExpired("Your session expired. Please sign in again.", path);
-    }
+      path === "/branches/public" ||
+      path === "/inventory/public/for-sale";
 
     let res: Response;
     try {
       res = await fetch(`/api${path}`, {
-        ...options,
+        ...requestOptions,
         method,
         headers,
-        ...(method === "GET" && options?.cache == null ? { cache: "no-store" } : {}),
+        credentials: requestOptions.credentials ?? "include",
+        ...(method === "GET" && requestOptions.cache == null ? { cache: "no-store" } : {}),
       });
     } catch (networkErr) {
       const msg =
@@ -86,12 +79,14 @@ class ApiClient {
     }
 
     if (!res.ok) {
-      const errorMessage = await this.extractErrorMessage(res, path);
+      const errorMessage = await this.extractErrorMessage(
+        res,
+        path,
+        suppressAuthExpired && res.status === 401,
+      );
 
-      if (res.status === 401 && !isPublicPath) {
-        console.warn(
-          `[API] 401 Unauthorized for ${path}. Token present: ${!!token}`,
-        );
+      if (res.status === 401 && !isPublicPath && !suppressAuthExpired) {
+        console.warn(`[API] 401 Unauthorized for ${path}.`);
         this.notifySessionExpired(errorMessage, path);
       }
 
@@ -105,6 +100,7 @@ class ApiClient {
   private async extractErrorMessage(
     res: Response,
     path: string,
+    suppressLogging = false,
   ): Promise<string> {
     const fallback = this.fallbackMessage(res.status, path);
 
@@ -112,21 +108,27 @@ class ApiClient {
     try {
       text = await res.text();
     } catch {
-      this.logApiIssue(res.status, path, "Could not read response body");
+      if (!suppressLogging) {
+        this.logApiIssue(res.status, path, "Could not read response body");
+      }
       return fallback;
     }
 
     if (!text || !text.trim()) {
-      this.logApiIssue(res.status, path, "Empty response body");
+      if (!suppressLogging) {
+        this.logApiIssue(res.status, path, "Empty response body");
+      }
       return fallback;
     }
 
     if (text.trimStart().startsWith("<")) {
-      this.logApiIssue(
-        res.status,
-        path,
-        "Received HTML instead of JSON (proxy or server error)",
-      );
+      if (!suppressLogging) {
+        this.logApiIssue(
+          res.status,
+          path,
+          "Received HTML instead of JSON (proxy or server error)",
+        );
+      }
       return res.status === 502 || res.status === 503
         ? "Server is temporarily unavailable. Please try again."
         : `Server error (HTTP ${res.status}). The backend may be down.`;
@@ -171,24 +173,32 @@ class ApiClient {
           }),
         }).catch(() => { });
         // #endregion
-        this.logApiIssue(
-          res.status,
-          path,
-          "Next.js proxy could not reach Nest (ECONNREFUSED or 5xx from upstream)",
-        );
+        if (!suppressLogging) {
+          this.logApiIssue(
+            res.status,
+            path,
+            "Next.js proxy could not reach Nest (ECONNREFUSED or 5xx from upstream)",
+          );
+        }
         return "Cannot reach the backend API. Start Nest on port 4000 (npm run start:dev in PMS_backend) or run npm run dev from the project root to start both apps.";
       }
 
-      this.logApiIssue(res.status, path, `Non-JSON response: ${text.slice(0, 300)}`);
+      if (!suppressLogging) {
+        this.logApiIssue(res.status, path, `Non-JSON response: ${text.slice(0, 300)}`);
+      }
       return text.length <= 200 ? text : fallback;
     }
 
     if (!errorData || typeof errorData !== "object" || Object.keys(errorData).length === 0) {
-      this.logApiIssue(res.status, path, "Empty JSON object");
+      if (!suppressLogging) {
+        this.logApiIssue(res.status, path, "Empty JSON object");
+      }
       return fallback;
     }
 
-    this.logApiIssue(res.status, path, errorData);
+    if (!suppressLogging) {
+      this.logApiIssue(res.status, path, errorData);
+    }
 
     let msg = "";
 
@@ -239,27 +249,31 @@ class ApiClient {
       msg = fallback;
     }
 
+    if (/missing bearer\s+token/i.test(msg)) {
+      msg = "Session expired. Please sign in again.";
+    }
+
     return msg;
   }
 
-  post<T>(path: string, body: unknown) {
-    return this.fetch<T>(path, { method: "POST", body: JSON.stringify(body) });
+  post<T>(path: string, body: unknown, options?: ApiRequestInit) {
+    return this.fetch<T>(path, { ...options, method: "POST", body: JSON.stringify(body) });
   }
 
-  get<T>(path: string) {
-    return this.fetch<T>(path, { method: "GET" });
+  get<T>(path: string, options?: ApiRequestInit) {
+    return this.fetch<T>(path, { ...options, method: "GET" });
   }
 
-  delete<T>(path: string) {
-    return this.fetch<T>(path, { method: "DELETE" });
+  delete<T>(path: string, options?: ApiRequestInit) {
+    return this.fetch<T>(path, { ...options, method: "DELETE" });
   }
 
-  patch<T>(path: string, body: unknown) {
-    return this.fetch<T>(path, { method: "PATCH", body: JSON.stringify(body) });
+  patch<T>(path: string, body: unknown, options?: ApiRequestInit) {
+    return this.fetch<T>(path, { ...options, method: "PATCH", body: JSON.stringify(body) });
   }
 
-  put<T>(path: string, body: unknown) {
-    return this.fetch<T>(path, { method: "PUT", body: JSON.stringify(body) });
+  put<T>(path: string, body: unknown, options?: ApiRequestInit) {
+    return this.fetch<T>(path, { ...options, method: "PUT", body: JSON.stringify(body) });
   }
 }
 

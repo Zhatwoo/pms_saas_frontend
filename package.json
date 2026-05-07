@@ -9,14 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "0.21.3",
     "clsx": "^2.1.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
-    "jwks-rsa": "^4.0.1",
     "lucide-react": "^1.8.0",
     "modern-screenshot": "^4.7.0",
     "next": "16.2.2",

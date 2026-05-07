@@ -9,7 +9,6 @@ import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
 import { getRoleLabel } from "@/lib/auth";
 import { LogoutIcon, MenuIcon, CloseIcon } from "@/lib/icons";
 import { LogoutModal } from "./logout-modal";
-import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 
 interface SidebarProps {
   navGroups: NavGroup[];
@@ -208,7 +207,6 @@ export function Sidebar({
   onLogout,
   disabled,
 }: SidebarProps) {
-  const { resetChecklist } = useOpeningChecklist();
   const pathname = usePathname();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -454,27 +452,6 @@ export function Sidebar({
           )}
         </div>
       </div>
-
-      {/* Debug: Reset Checklist */}
-      {userRole === "employee" && (
-        <div className="p-2 border-t border-white/5">
-          <button
-            onClick={() => {
-              resetChecklist();
-              window.location.reload();
-            }}
-            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-rose-400 transition-colors hover:bg-rose-500/10 ${
-              isCompact ? "justify-center" : ""
-            }`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M23 4v6h-6M1 20v-6h6" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-            {!isCompact && "Reset Checklist (Debug)"}
-          </button>
-        </div>
-      )}
 
       {/* Logout */}
       <div className="border-t border-white/10 p-2">

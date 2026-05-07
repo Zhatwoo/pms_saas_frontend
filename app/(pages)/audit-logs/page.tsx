@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
-import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
+import { DateFilterSelector } from "@/components/shared/date-filter-selector";
 
 interface ActivityLog {
   id: string;
@@ -527,6 +527,8 @@ function getGuessStatus(action: string, details: string) {
   return "Success";
 }
 
+const PERIODS = ["Daily", "Weekly", "Monthly", "Yearly", "All Time"];
+
 export default function AuditLogsPage() {
   const { user } = useAuth();
   const { branches, selectedBranch, setSelectedBranch, canSwitchBranch, isAllBranches } =
@@ -541,6 +543,17 @@ export default function AuditLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("All Logs");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Date Filtering
+  const [activePeriod, setActivePeriod] = useState("All Time");
+  const [dateRange, setDateRange] = useState<{ start: string | null; end: string | null }>({
+    start: null,
+    end: null,
+  });
+
+  const onDateRangeChange = useCallback((start: string | null, end: string | null) => {
+    setDateRange({ start, end });
+  }, []);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -600,6 +613,12 @@ export default function AuditLogsPage() {
         if (canSwitchBranch && activeBranchId) {
           queryParams.set("branchId", activeBranchId);
         }
+        if (dateRange.start) {
+          queryParams.set("startDate", dateRange.start);
+        }
+        if (dateRange.end) {
+          queryParams.set("endDate", dateRange.end);
+        }
         const queryString = queryParams.toString();
         const data = await api.get<ActivityLog[]>(
           `/activity-logs${queryString ? `?${queryString}` : ""}`,
@@ -614,30 +633,9 @@ export default function AuditLogsPage() {
 
     void fetchLogs();
 
-    // ─── Realtime Subscription ───────────────────────────────────────────
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase || !userId) return;
-
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
-    }
-
-    const channel = supabase
-      .channel("audit-logs-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "activity_logs" },
-        () => {
-          void fetchLogs();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [userId, activeBranchId, canSwitchBranch, canViewAuditLogs]);
+    const interval = window.setInterval(() => void fetchLogs(), 60_000);
+    return () => window.clearInterval(interval);
+  }, [userId, activeBranchId, canSwitchBranch, canViewAuditLogs, dateRange.start, dateRange.end]);
 
   useEffect(() => {
     async function fetchUserDirectory() {
@@ -751,6 +749,39 @@ export default function AuditLogsPage() {
   const totalItems = filteredLogs.length;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const handleExport = () => {
+    if (filteredLogs.length === 0) return;
+
+    const headers = ["Date", "Time", "User", "Role", "Branch", "Log Type", "Action", "Description", "Reference", "Status"];
+    const rows = filteredLogs.map(log => {
+      const dateObj = new Date(log.createdAt);
+      const dString = dateObj.toISOString().split('T')[0];
+      const tString = dateObj.toTimeString().split(' ')[0];
+      return [
+        dString,
+        tString,
+        log.userFullName,
+        log.userRole,
+        log.branchName || "All",
+        log.logType,
+        log.actionBadge,
+        `"${(log.description || "").replace(/"/g, '""')}"`,
+        `"${(log.reference || "").replace(/"/g, '""')}"`,
+        log.statusGuess
+      ];
+    });
+
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!canViewAuditLogs) {
     return (
       <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
@@ -857,10 +888,31 @@ export default function AuditLogsPage() {
               All Actions
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
+
+            <div className="h-11 flex items-center">
+              <DateFilterSelector
+                periods={PERIODS}
+                activePeriod={activePeriod}
+                onPeriodChange={setActivePeriod}
+                onDateRangeChange={onDateRangeChange}
+              />
+            </div>
           </div>
 
-          <div className="text-xs font-bold text-text-tertiary uppercase tracking-widest">
-            {totalItems} RECORDS
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleExport}
+              disabled={filteredLogs.length === 0}
+              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export CSV
+            </button>
+            <div className="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+              {totalItems} RECORDS
+            </div>
           </div>
         </div>
 

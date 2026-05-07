@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface ConfirmPasswordModalProps {
   isOpen: boolean;
@@ -19,6 +20,15 @@ export function ConfirmPasswordModal({
   description = "Please enter your password to authorize this transaction.",
   isLoading: externalLoading = false,
 }: ConfirmPasswordModalProps) {
+  // Ref for focus trap
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
+  const modalAriaProps = {
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "confirm-password-modal-title",
+  } as const;
+
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [internalLoading, setInternalLoading] = useState(false);
@@ -56,7 +66,7 @@ export function ConfirmPasswordModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md" {...modalAriaProps} ref={modalRef}>
       <div className="w-full max-w-sm scale-in-center rounded-2xl bg-surface p-6 shadow-2xl border border-pawn-gold/30">
         <div className="text-center mb-6">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">

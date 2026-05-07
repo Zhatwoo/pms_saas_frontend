@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { formatPeso } from "@/lib/currency";
 import type { BranchBalance } from "./balance-overview";
 
 export interface Manager {
@@ -249,14 +250,14 @@ export function AddFundsModal({
                   <option value="">Select source...</option>
                   {branches.map((b) => (
                     <option key={b.branchId} value={b.branchId}>
-                      {b.name} - ₱{b.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {b.name} - {formatPeso(b.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
                     </option>
                   ))}
                 </select>
                 {errors.from && <span className="text-[10px] text-red-500">{errors.from}</span>}
                 {fromBranchId ? (
                   <p className="text-[10px] text-text-muted">
-                    Live balance: ₱{branches.find((b) => b.branchId === fromBranchId)?.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
+                    Live balance: {formatPeso(branches.find((b) => b.branchId === fromBranchId)?.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })) ?? "0.00"}
                   </p>
                 ) : null}
               </div>
@@ -280,7 +281,7 @@ export function AddFundsModal({
                   .filter((b) => !isTransfer || b.branchId !== fromBranchId)
                   .map((b) => (
                     <option key={b.branchId} value={b.branchId}>
-                      {b.name} - ₱{b.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {b.name} - {formatPeso(b.currentBalance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
                     </option>
                   ))}
               </select>

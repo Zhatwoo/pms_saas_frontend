@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { formatPeso } from '@/lib/currency';
 import { api } from "@/lib/api";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -88,7 +89,7 @@ function StatsBar({ stats }: { stats: SaleStats }) {
       </div>
       <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
         <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">Revenue This Month</p>
-        <p className="text-2xl font-black text-emerald-600 mt-0.5">₱{stats.revenueThisMonth.toLocaleString()}</p>
+        <p className="text-2xl font-black text-emerald-600 mt-0.5">{formatPeso(stats.revenueThisMonth)}</p>
       </div>
     </div>
   );
@@ -628,7 +629,7 @@ export default function ItemsForSalePage() {
                           <td className="whitespace-nowrap px-4 py-2.5 text-sm text-text-tertiary">{item.category}</td>
                           <td className="whitespace-nowrap px-4 py-2.5 text-sm text-text-tertiary">{item.branch}</td>
                           <td className="whitespace-nowrap px-4 py-2.5 text-sm text-right font-medium">
-                            {item.price === 0 ? <span className="text-orange-500">—</span> : <span className="text-emerald-700">₱{item.price.toLocaleString()}</span>}
+                            {item.price === 0 ? <span className="text-orange-500">—</span> : <span className="text-emerald-700">{formatPeso(item.price)}</span>}
                           </td>
                           <td className="whitespace-nowrap px-4 py-2.5">
                             <StatusBadge label={saleStatusLabel(item.status)} variant={statusVariant[item.status] || "green"} />

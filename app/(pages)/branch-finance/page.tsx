@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
-import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 import {
   buildFinanceQueues,
   formatCurrency,
@@ -31,6 +30,7 @@ import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
+import { formatPeso } from "@/lib/currency";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -283,33 +283,8 @@ export default function BranchFinancePage() {
   }, [loadFinanceData]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token).catch(() => {
-        // ignore auth refresh errors for live dashboard updates
-      });
-    }
-
-    const channel = supabase
-      .channel("branch-finance-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "daily_balances" },
-        () => void loadFinanceData(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "transactions" },
-        () => void loadFinanceData(),
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const interval = window.setInterval(() => void loadFinanceData(), 60_000);
+    return () => window.clearInterval(interval);
   }, [loadFinanceData]);
 
 
@@ -941,10 +916,10 @@ export default function BranchFinancePage() {
                     <tr className="border-b-2 border-black bg-gray-50 uppercase">
                       <td colSpan={4} className="p-2 font-bold text-right">Total:</td>
                       <td className="p-2 text-right font-bold font-mono">
-                        ₱{printLedgerRows.reduce((acc, r) => acc + (r.cashIn || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatPeso(printLedgerRows.reduce((acc, r) => acc + (r.cashIn || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}  
                       </td>
                       <td className="p-2 text-right font-bold font-mono text-red-600">
-                        ₱{printLedgerRows.reduce((acc, r) => acc + (r.cashOut || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatPeso(printLedgerRows.reduce((acc, r) => acc + (r.cashOut || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
                       </td>
                       <td></td>
                     </tr>

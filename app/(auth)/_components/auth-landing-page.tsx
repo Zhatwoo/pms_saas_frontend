@@ -3,12 +3,13 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { AnimatedGradient } from "@/components/shared/animated-gradient";
+import { FeaturedSaleItems } from "./featured-sale-items";
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "HOW IT WORKS", "CATEGORIES", "WHY US", "REVIEWS", "BRANCHES", "CONTACT US"];
+const navItems = ["HOME", "HOW IT WORKS", "CATEGORIES", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
 
 const steps = [
   {
@@ -454,8 +455,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           </div>
         </section>
 
+        {/* ── ITEMS FOR SALE ── */}
+        <FeaturedSaleItems />
+
         {/* ── REVIEWS CAROUSEL ── */}
-        <section id="reviews" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-20 lg:pb-48">
+        <section id="reviews" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-amber-500">CUSTOMER REVIEWS</p>
             <h2 className="mt-2 text-3xl font-black text-emerald-900 md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
@@ -612,11 +616,16 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ── CONTACT CTA ── */}
-        <section id="contact-us" className="bg-red-600 px-6 py-20 md:px-12 md:py-28">
+        <section
+          id="contact-us"
+          className="border-y border-amber-200/70 bg-amber-100 px-6 py-20 md:px-12 md:py-28"
+        >
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-8 text-center reveal-on-scroll">
             <div>
-              <h2 className="text-4xl font-black text-white md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
-              <p className="mt-3 text-xl text-white/60">It only takes a minute to start.</p>
+              <h2 className="text-4xl font-black text-emerald-900 md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
+              <p className="mt-3 text-xl font-medium text-emerald-800/75">
+                It only takes a minute to start.
+              </p>
             </div>
           </div>
         </section>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatPeso } from "@/lib/currency";
 
 export interface BranchFundRequest {
   id: string;
@@ -105,7 +106,7 @@ export function IncomingRequestsPanel({
                     </div>
                     <div className="mt-0.5 flex items-center gap-2 text-sm font-medium text-text-secondary">
                       <span className="text-xl font-extrabold text-blue-700 dark:text-blue-400 tracking-tight">
-                        ₱{req.amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {formatPeso(req.amount)}
                       </span>
                       <span className="inline-block rounded-md bg-blue-100 dark:bg-blue-500/20 px-2.5 py-1 text-xs text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wide">
                         {req.category}

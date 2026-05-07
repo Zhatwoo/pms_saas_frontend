@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
+import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
@@ -589,7 +590,7 @@ export default function PawnTransactionsPage() {
               <tr className="bg-emerald-50/50">
                 <td className="border border-emerald-800/20 p-2 font-bold text-emerald-900">Live Total Balance</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold text-emerald-900">
-                  ₱{stats.endingBalance.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
+                  {formatPeso(stats.endingBalance)}
                 </td>
               </tr>
             </tbody>
@@ -622,16 +623,16 @@ export default function PawnTransactionsPage() {
                   <td className="border border-emerald-800/10 p-1 font-bold">{tx.purpose}</td>
                   <td className="border border-emerald-800/10 p-1">{tx.customerName || "Walk-in"}</td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashIn !== "0" ? `₱${Number(tx.cashIn).toLocaleString()}` : "-"}
+                    {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashOut !== "0" ? `₱${Number(tx.cashOut).toLocaleString()}` : "-"}
+                    {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.pawn !== "0" ? `₱${Number(tx.pawn).toLocaleString()}` : "-"}
+                    {tx.pawn !== "0" ? formatPeso(Number(tx.pawn)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.storage !== "0" ? `₱${Number(tx.storage).toLocaleString()}` : "-"}
+                    {tx.storage !== "0" ? formatPeso(Number(tx.storage)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1">{tx.unitCode || tx.unit || "-"}</td>
                 </tr>
@@ -641,16 +642,6 @@ export default function PawnTransactionsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between print-hide">
-        <div>
-          <h1 className="text-xl font-bold leading-tight text-emerald-900 sm:text-2xl dark:text-text-primary">
-            Pawn Transactions
-          </h1>
-          <p className="mt-0.5 text-xs font-medium text-text-tertiary sm:text-sm">
-            Live transaction records across all branches with employee-style QR and print access.
-          </p>
-        </div>
-      </div>
 
       <div className="print-hide">
         <TransactionStats data={stats} />

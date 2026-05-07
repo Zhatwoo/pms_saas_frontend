@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+@import "../styles/design-tokens.css";
 
 /* Align `dark:*` utilities with ThemeProvider (html.light / html.dark), not OS preference */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -37,7 +38,7 @@ html {
   --header-bg: #ffffff;
   --badge-muted-bg: #f4f4f5;
   --badge-muted-text: #3f3f46;
-  --emerald-surface: #ecfdf5;
+  /* Emerald tokens moved to design-tokens.css */
   --emerald-border: #a7f3d0;
   --emerald-text: #047857;
 }
@@ -69,7 +70,7 @@ html {
   --header-bg: #14181f;
   --badge-muted-bg: #252a38;
   --badge-muted-text: #a1a1aa;
-  --emerald-surface: #0b2118;
+  /* Emerald tokens moved to design-tokens.css */
   --emerald-border: #14532d;
   --emerald-text: #34d399;
 

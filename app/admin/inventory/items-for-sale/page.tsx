@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/currency";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -73,6 +74,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [qrSize, setQrSize] = useState<"small" | "large">("small");
 
   useEffect(() => {
     setCurrentPage(1);
@@ -149,6 +151,73 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
             History
           </button>
           </div>
+          {isSuperAdmin && (
+            <div className="flex items-center gap-1.5">
+              <select 
+                value={qrSize} 
+                onChange={(e) => setQrSize(e.target.value as "small" | "large")}
+                className="h-8 rounded border border-emerald-200 bg-white px-2 text-[10px] font-bold uppercase text-emerald-800 outline-none transition-colors focus:border-emerald-500"
+              >
+                <option value="small">Small</option>
+                <option value="large">Large</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  const sizeCm = qrSize === "small" ? "2cm" : "3cm";
+                  const fontSize = qrSize === "small" ? "8px" : "10px";
+                  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+                  
+                  const qrHtml = saleItems.map(item => {
+                    const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(item.itemId)}`;
+                    const encoded = encodeURIComponent(publicViewUrl);
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
+                    
+                    return `
+                      <div style="display:inline-flex; flex-direction:column; align-items:center; margin:3mm; vertical-align:top;">
+                        <img src="${qrUrl}" style="width:${sizeCm}; height:${sizeCm}; display:block;" />
+                        <p style="font-family:sans-serif; font-size:${fontSize}; font-weight:bold; margin-top:1mm; color:#333;">${item.itemId}</p>
+                      </div>
+                    `;
+                  }).join('');
+
+                  const iframe = document.createElement('iframe');
+                  iframe.style.display = 'none';
+                  document.body.appendChild(iframe);
+                  
+                  const html = `<!DOCTYPE html>
+                    <html>
+                    <head>
+                    <meta charset="utf-8">
+                    <style>
+                      * { margin: 0; padding: 0; }
+                      @page { size: A4; margin: 5mm; }
+                      body { display: flex; flex-wrap: wrap; padding: 5mm; }
+                    </style>
+                    </head>
+                    <body>
+                    ${qrHtml}
+                    </body>
+                    </html>`;
+
+                  iframe.contentDocument?.open();
+                  iframe.contentDocument?.write(html);
+                  iframe.contentDocument?.close();
+
+                  iframe.onload = () => {
+                    setTimeout(() => {
+                      iframe.contentWindow?.focus();
+                      iframe.contentWindow?.print();
+                      setTimeout(() => document.body.removeChild(iframe), 1000);
+                    }, 500);
+                  };
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded border border-emerald-700 shadow-md whitespace-nowrap transition-colors"
+              >
+                PRINT QR
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -268,7 +337,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Category</p><p className="text-sm text-text-primary">{viewingItem.category}</p></div>
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-emerald-700">₱{viewingItem.price.toLocaleString()}</p></div>
+                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-emerald-700">{formatPeso(viewingItem.price.toLocaleString())}</p></div>
                 <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Available Date</p><p className="text-sm text-text-primary">{viewingItem.availableDate}</p></div>
                 <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Branch</p><p className="text-sm text-text-primary">{viewingItem.branch}</p></div>
                 <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Origin Pawn ID</p><p className="text-sm text-text-primary">{viewingItem.originalPawnId || "Manual Entry"}</p></div>

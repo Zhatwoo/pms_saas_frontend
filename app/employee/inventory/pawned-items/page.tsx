@@ -8,9 +8,11 @@ import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
 import { InventoryCalendar } from "@/components/shared/inventory-calendar";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { formatPeso } from "@/lib/currency";
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -83,7 +85,7 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
             Renew {i + 1}
           </span>
           <span className="text-[10px] text-zinc-500">{r.date}</span>
-          <span className="text-[10px] font-bold text-zinc-700">₱{r.amount.toLocaleString()}</span>
+          <span className="text-[10px] font-bold text-zinc-700">{formatPeso(r.amount.toLocaleString())}</span>
         </div>
       ))}
     </div>
@@ -94,15 +96,18 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
 export default function EmployeePawnedItemsPage() {
   const searchParams = useSearchParams();
   const { selectedBranch } = useBranch();
+  const { user } = useAuth();
   const { currentStep, isComplete, completeInventoryAudit } = useOpeningChecklist();
   const branchIdent = selectedBranch.id;
   const highlightedItemId = searchParams.get("itemId")?.trim() || "";
+  const isSuperAdmin = user?.role === "super_admin";
   const hasHighlightedItem = Boolean(highlightedItemId);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [qrSize, setQrSize] = useState<"small" | "large">("small");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -217,31 +222,103 @@ export default function EmployeePawnedItemsPage() {
       )}
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="flex flex-wrap items-end gap-3">
-          <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
-          <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Search</label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search items..."
-              className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500 w-44"
-            />
+            <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
+            <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Search</label>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search items..."
+                className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500 w-44"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-md border border-zinc-200 overflow-hidden bg-surface">
-            <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
-              List
-            </button>
-            <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
-              Calendar
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-md border border-zinc-200 bg-surface">
+              <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+                List
+              </button>
+              <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+                Calendar
+              </button>
+            </div>
+            {isSuperAdmin && (
+              <div className="flex items-center gap-1.5">
+                <select 
+                  value={qrSize} 
+                  onChange={(e) => setQrSize(e.target.value as "small" | "large")}
+                  className="h-8 rounded border border-zinc-200 bg-white px-2 text-[10px] font-bold uppercase text-zinc-600 outline-none transition-colors focus:border-emerald-500"
+                >
+                  <option value="small">Small</option>
+                  <option value="large">Large</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sizeCm = qrSize === "small" ? "2cm" : "3cm";
+                    const fontSize = qrSize === "small" ? "8px" : "10px";
+
+                    const qrHtml = pawnedItems.map(item => {
+                      let qrUrl = "";
+                      if (item.qrCode?.startsWith('http') || item.qrCode?.startsWith('data:')) {
+                        qrUrl = item.qrCode;
+                      } else {
+                        const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+                        const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(item.itemId)}`;
+                        const encoded = encodeURIComponent(publicViewUrl);
+                        qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
+                      }
+
+                      return `
+                        <div style="display:inline-flex; flex-direction:column; align-items:center; margin:3mm; vertical-align:top;">
+                          <img src="${qrUrl}" style="width:${sizeCm}; height:${sizeCm}; display:block;" />
+                          <p style="font-family:sans-serif; font-size:${fontSize}; font-weight:bold; margin-top:1mm; color:#333;">${item.itemId}</p>
+                        </div>
+                      `;
+                    }).join('');
+
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    
+                    const html = `<!DOCTYPE html>
+                      <html>
+                      <head>
+                      <meta charset="utf-8">
+                      <style>
+                        * { margin: 0; padding: 0; }
+                        @page { size: A4; margin: 5mm; }
+                        body { display: flex; flex-wrap: wrap; padding: 5mm; }
+                      </style>
+                      </head>
+                      <body>
+                      ${qrHtml}
+                      </body>
+                      </html>`;
+
+                    iframe.contentDocument?.open();
+                    iframe.contentDocument?.write(html);
+                    iframe.contentDocument?.close();
+
+                    iframe.onload = () => {
+                      setTimeout(() => {
+                        iframe.contentWindow?.focus();
+                        iframe.contentWindow?.print();
+                        setTimeout(() => document.body.removeChild(iframe), 1000);
+                      }, 500);
+                    };
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded border border-emerald-700 shadow-md whitespace-nowrap"
+                >
+                  PRINT QR
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
 
       {hasHighlightedItem && (
@@ -291,7 +368,7 @@ export default function EmployeePawnedItemsPage() {
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-primary">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right">₱{(item.amount || 0).toLocaleString()}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right">{formatPeso((item.amount || 0).toLocaleString())}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary">
                           <div className="font-bold">{item.pawnDate}</div>
                           <div className="opacity-50">10:30 AM</div>

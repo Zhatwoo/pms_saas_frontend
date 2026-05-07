@@ -3,6 +3,7 @@ import Image from "next/image";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { StatusBadge } from "./status-badge";
 
 interface InventoryAuditModalProps {
@@ -69,16 +70,8 @@ const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Expired: "red",
 };
 
-function formatCurrency(value?: number | null) {
-  if (value == null || Number.isNaN(value)) {
-    return "N/A";
-  }
-
-  return `₱${Number(value).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
+// Deprecated formatCurrency – use formatPeso instead
+import { formatPeso } from '@/lib/currency';
 
 function decodeScanPayload(value: string) {
   try {
@@ -169,6 +162,17 @@ interface InventoryAuditStorageState {
 }
 
 export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = "overlay" }: InventoryAuditModalProps) {
+  // Ref for modal container to trap focus
+  const modalRef = useRef<HTMLDivElement>(null);
+  // Activate focus trap when modal opens
+  useFocusTrap(modalRef, isOpen);
+  // ARIA attributes for accessibility
+  const modalAriaProps = {
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "inventory-audit-modal-title",
+  } as const;
+
   const embedded = displayMode === "embedded";
   const { selectedBranch } = useBranch();
   const [scannedItems, setScannedItems] = useState<ScannedItemDetails[]>([]);
@@ -583,6 +587,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     : "0 verified";
 
   if (!isOpen) return null;
+  // Apply ARIA attributes to root wrapper
+  const rootWrapperProps = embedded ? {} : modalAriaProps;
+
 
   if (showCompletionConfirm) {
     return (
@@ -653,7 +660,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     { label: "Item Name", value: activeItem?.itemName || detectedScan?.itemName || "N/A" },
     { label: "Serial Number", value: activeItem?.serialNumber || activeItem?.scanSerialNumber || detectedScan?.serialNumber || "N/A" },
     { label: "Category", value: activeItem?.category || "N/A" },
-    { label: "Amount", value: formatCurrency(activeItem?.amount) },
+    { label: "Amount", value: activeItem?.amount != null ? formatPeso(activeItem.amount) : "N/A" },
     { label: "Branch", value: activeItem?.branch || "N/A" },
     { label: "Pawn Date", value: activeItem?.pawnDate || "N/A" },
     { label: "Status", value: activeItem?.status || "N/A" },
@@ -664,13 +671,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const rootWrapperClass = embedded
     ? "relative w-full h-full"
     : "fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-3 py-3 backdrop-blur-xl lg:px-6 lg:py-6";
+  const rootWrapperClassWithAria = embedded ? rootWrapperClass : `${rootWrapperClass} ${modalAriaProps.role ? '' : ''}`;
 
   const innerContainerClass = embedded
     ? "relative h-full w-full overflow-auto rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl"
     : "relative h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl";
 
   return (
-    <div className={rootWrapperClass}>
+    <div className={rootWrapperClass} {...rootWrapperProps} ref={modalRef}>
       <div className={innerContainerClass}>
         {!embedded && (
           <button
@@ -1164,7 +1172,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm">
                   <div className="rounded-2xl bg-zinc-50 p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Amount</p>
-                    <p className="mt-2 text-sm font-black text-zinc-900">{formatCurrency(selectedVerifiedItem.amount)}</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900">{formatPeso(selectedVerifiedItem.amount)}</p>
                   </div>
                   <div className="rounded-2xl bg-zinc-50 p-4">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Serial</p>

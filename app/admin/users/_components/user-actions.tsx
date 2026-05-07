@@ -41,6 +41,23 @@ const searchIcon = (
 	</svg>
 );
 
+const downloadIcon = (
+	<svg
+		width="14"
+		height="14"
+		viewBox="0 0 24 24"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="2"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+	>
+		<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+		<polyline points="7 10 12 15 17 10" />
+		<line x1="12" y1="15" x2="12" y2="3" />
+	</svg>
+);
+
 const exportIcon = (
 	<svg
 		width="14"
@@ -128,10 +145,10 @@ export function UserActions({
 				</div>
 
 				<div className="flex items-center gap-2 border-t border-border-main pt-4 xl:border-none xl:pt-0">
-					<ActionButton variant="outline" className="flex-1 xl:flex-none border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-white" onClick={onExportUsers}>
+					<ActionButton variant="outline" className="!border-emerald-600 !bg-emerald-50 !text-emerald-700 flex-1 xl:flex-none" onClick={onExportUsers}>
 						<span className="flex items-center justify-center gap-1.5">
-							{exportIcon}
-							Export Users
+							{downloadIcon}
+							Export CSV
 						</span>
 					</ActionButton>
 					{canCreateUser && (
