@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatPeso } from "@/lib/currency";
 
 export interface BranchFundRequest {
   id: string;

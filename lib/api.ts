@@ -38,18 +38,10 @@ class ApiClient {
     return "Request failed. Please try again.";
   }
 
-  private getToken(): string | null {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(/(?:^|;\s*)pms_token=([^;]*)/);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-
   async fetch<T>(path: string, options?: RequestInit): Promise<T> {
-    const token = this.getToken();
     const method = options?.method ?? "GET";
     const headers: HeadersInit = {
       "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
       ...options?.headers,
     };
 
@@ -60,19 +52,13 @@ class ApiClient {
       path === "/branches/public" ||
       path === "/inventory/public/for-sale";
 
-    if (!token && !isPublicPath) {
-      console.warn(
-        `[API] Missing auth token for ${path}. Check if login was successful and token is stored in cookies.`,
-      );
-      this.notifySessionExpired("Your session expired. Please sign in again.", path);
-    }
-
     let res: Response;
     try {
       res = await fetch(`/api${path}`, {
         ...options,
         method,
         headers,
+        credentials: "include",
         ...(method === "GET" && options?.cache == null ? { cache: "no-store" } : {}),
       });
     } catch (networkErr) {
@@ -90,9 +76,7 @@ class ApiClient {
       const errorMessage = await this.extractErrorMessage(res, path);
 
       if (res.status === 401 && !isPublicPath) {
-        console.warn(
-          `[API] 401 Unauthorized for ${path}. Token present: ${!!token}`,
-        );
+        console.warn(`[API] 401 Unauthorized for ${path}.`);
         this.notifySessionExpired(errorMessage, path);
       }
 

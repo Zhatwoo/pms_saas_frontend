@@ -15,9 +15,8 @@ export default function Home() {
     }
 
     if (!user) {
-      const hasToken = document.cookie.includes("pms_token");
       const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
-      if (!hasToken && hadPreviousSession) {
+      if (hadPreviousSession) {
         requireReLogin();
         return;
       }

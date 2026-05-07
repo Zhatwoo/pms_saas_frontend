@@ -8,9 +8,6 @@ import { BranchSelectorDropdown } from "@/components/shared/branch-selector-drop
 import { api } from "@/lib/api";
 import { buildPawnTransactionHighlightHref, extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { useBranch } from "@/contexts/branch-context";
-import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
-import { toast } from "sonner";
 
 type NotificationTab = "All" | "Transactions" | "Alerts" | "Requests";
 type NotificationGroup = "Today" | "Earlier";
@@ -228,8 +225,6 @@ export function Header({
   onMenuToggle,
 }: HeaderProps) {
   const { user } = useAuth();
-  const { selectedBranch, isAllBranches } = useBranch();
-  const isSuperAdmin = user?.role === "super_admin";
   const pathname = usePathname();
   const router = useRouter();
   const [time, setTime] = useState("");
@@ -303,79 +298,14 @@ export function Header({
     window.addEventListener("transaction_created", handleTransactionCreated);
 
     // ─── Realtime Subscription ───────────────────────────────────────────
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase || !user) {
-      // Fallback to polling if realtime is unavailable
-      const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
-      return () => {
-        clearInterval(clockInterval);
-        clearInterval(interval);
-      };
-    }
-
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
-    }
-
-    const channel = supabase
-      .channel("header-notifications-live-" + (user.id || ''))
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
-        (payload) => {
-          console.log("[Notifications] Realtime event received:", payload);
-          const newNotif = payload.new as any;
-          if (payload.eventType === "INSERT") {
-             const isPersonalNotification = Boolean(newNotif.user_id);
-             const isMatch = isPersonalNotification
-               ? newNotif.user_id === user?.id
-               : !newNotif.branch_id ||
-                 newNotif.branch_id === user?.branchId ||
-                 newNotif.branch_id === selectedBranch?.id ||
-                 isAllBranches ||
-                 user?.role === "admin" ||
-                 user?.role === "super_admin";
-             if (isMatch) {
-                toast.success(newNotif.title, {
-                  description: newNotif.subtitle,
-                });
-                
-                // Add it instantly to the dropdown UI
-                setNotifications((prev) => {
-                  const itemDate = new Date(newNotif.created_at || new Date()).toISOString().split("T")[0];
-                  const today = new Date().toISOString().split("T")[0];
-                  
-                  const mappedItem: HeaderNotification = {
-                    id: newNotif.id,
-                    title: newNotif.title,
-                    subtitle: newNotif.subtitle ?? "",
-                    category: newNotif.category as any,
-                    unread: !newNotif.is_read,
-                    userId: newNotif.user_id ?? null,
-                    customerId: newNotif.customer_id ?? null,
-                    logId: newNotif.log_id ?? null,
-                    group: itemDate === today ? "Today" : "Earlier",
-                  };
-                  return [mappedItem, ...prev];
-                });
-             }
-          } else {
-            // For updates/deletes, fetch the fresh list
-            void fetchNotificationsRef.current();
-          }
-        },
-      )
-      .subscribe((status) => {
-        console.log("[Notifications] Realtime status:", status);
-      });
+    const refreshInterval = setInterval(fetchNotifications, 2 * 60 * 1000);
 
     return () => {
       clearInterval(clockInterval);
+      clearInterval(refreshInterval);
       window.removeEventListener("transaction_created", handleTransactionCreated);
-      void supabase.removeChannel(channel);
     };
-  }, [user, selectedBranch?.id, isAllBranches]);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {

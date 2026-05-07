@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatPeso } from "@/lib/currency";
 
 interface RejectRequestModalProps {
   isOpen: boolean;

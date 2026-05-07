@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
-import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 import { BranchStats } from "../branches/_components/branch-stats";
 import { BranchFilters } from "../branches/_components/branch-filters";
 import { BranchTable } from "../branches/_components/branch-table";
@@ -113,28 +112,8 @@ export default function BranchOverviewPage() {
   }, [loadBranches]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
-    }
-
-    const channel = supabase
-      .channel("branches-overview-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "branches" },
-        () => {
-          void loadBranches();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const interval = window.setInterval(() => void loadBranches(), 60_000);
+    return () => window.clearInterval(interval);
   }, [loadBranches]);
 
   // Filter branches by global branch selector

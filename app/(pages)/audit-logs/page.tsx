@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
-import { getSupabaseBrowserClient, getTokenFromCookie } from "@/lib/supabase-browser";
 import { DateFilterSelector } from "@/components/shared/date-filter-selector";
 
 interface ActivityLog {
@@ -634,29 +633,8 @@ export default function AuditLogsPage() {
 
     void fetchLogs();
 
-    // ─── Realtime Subscription ───────────────────────────────────────────
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase || !userId) return;
-
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
-    }
-
-    const channel = supabase
-      .channel("audit-logs-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "activity_logs" },
-        () => {
-          void fetchLogs();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const interval = window.setInterval(() => void fetchLogs(), 60_000);
+    return () => window.clearInterval(interval);
   }, [userId, activeBranchId, canSwitchBranch, canViewAuditLogs, dateRange.start, dateRange.end]);
 
   useEffect(() => {

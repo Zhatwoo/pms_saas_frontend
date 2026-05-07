@@ -37,12 +37,12 @@ export function QRReplacementRequestsDashboard() {
   const fetchRequests = async () => {
     setIsLoading(true);
     try {
-      const url = filterStatus === "all" 
-        ? "/api/qr-replacement-requests"
-        : `/api/qr-replacement-requests?status=${filterStatus}`;
+      const url = filterStatus === "all"
+        ? "/qr-replacement-requests"
+        : `/qr-replacement-requests?status=${filterStatus}`;
       
-      const response = await api.get(url);
-      setRequests(response.data || []);
+      const response = await api.get<QRReplacementRequest[] | { data?: QRReplacementRequest[] }>(url);
+      setRequests(Array.isArray(response) ? response : response.data || []);
     } catch (error: any) {
       toast.error("Failed to fetch QR replacement requests");
     } finally {
@@ -53,7 +53,7 @@ export function QRReplacementRequestsDashboard() {
   const handleApprove = async (requestId: string) => {
     setIsProcessing(true);
     try {
-      await api.put(`/api/qr-replacement-requests/${requestId}/approve`, {});
+      await api.put(`/qr-replacement-requests/${requestId}/approve`, {});
       toast.success("Request approved successfully!");
       fetchRequests();
       setSelectedRequest(null);
@@ -72,7 +72,7 @@ export function QRReplacementRequestsDashboard() {
 
     setIsProcessing(true);
     try {
-      await api.put(`/api/qr-replacement-requests/${requestId}/reject`, {
+      await api.put(`/qr-replacement-requests/${requestId}/reject`, {
         rejection_reason: rejectionReason,
       });
       toast.success("Request rejected successfully!");

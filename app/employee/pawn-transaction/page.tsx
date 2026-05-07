@@ -27,7 +27,6 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
@@ -517,40 +516,14 @@ export default function EmployeePawnTransactionsPage() {
     [selectedDate, smartphoneTransactions],
   );
 
-  // Realtime subscription for transactions table
   useEffect(() => {
     if (selectedBranch.id === "__all__") return;
 
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-
-    const channelName = `transactions-live-${selectedBranch.id}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transactions"
-        },
-        (payload) => {
-          console.log("[Transactions] Realtime event received:", payload);
-          const newTx = payload.new as any;
-          if (newTx && newTx.branch_id === selectedBranch.id) {
-            void fetchTransactionsRef.current();
-          } else if (payload.eventType === "DELETE") {
-            void fetchTransactionsRef.current();
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[Transactions] Realtime subscription status:`, status);
-      });
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const interval = window.setInterval(
+      () => void fetchTransactionsRef.current(),
+      60_000,
+    );
+    return () => window.clearInterval(interval);
   }, [selectedBranch.id]);
 
   const filteredTransactions = useMemo(() => {

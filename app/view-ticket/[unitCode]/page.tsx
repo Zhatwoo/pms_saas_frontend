@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { api } from "@/lib/api";
+import { formatPeso } from "@/lib/currency";
 
 interface TransactionDetail {
   id: string;
