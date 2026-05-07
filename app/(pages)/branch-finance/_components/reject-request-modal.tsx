@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatPeso } from "@/lib/currency";
 
 interface RejectRequestModalProps {
   isOpen: boolean;
@@ -55,7 +56,7 @@ export function RejectRequestModal({ isOpen, onClose, onConfirm, amount, branchN
               Request from <span className="uppercase font-bold">{branchName}</span>
             </p>
             <p className="mt-1 text-3xl font-extrabold text-red-800 dark:text-red-300">
-              {formatPeso(amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
+              {formatPeso(amount)}
             </p>
           </div>
 

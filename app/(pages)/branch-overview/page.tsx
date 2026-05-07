@@ -113,27 +113,41 @@ export default function BranchOverviewPage() {
   }, [loadBranches]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    let channel: any = null;
+    let isActive = true;
 
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !isActive) return;
+
+      const token = getTokenFromCookie();
+      if (token) {
+        void supabase.realtime.setAuth(token);
+      }
+
+      channel = supabase
+        .channel("branches-overview-live")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "branches" },
+          () => {
+            void loadBranches();
+          },
+        )
+        .subscribe();
     }
 
-    const channel = supabase
-      .channel("branches-overview-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "branches" },
-        () => {
-          void loadBranches();
-        },
-      )
-      .subscribe();
+    void setupRealtime();
 
     return () => {
-      void supabase.removeChannel(channel);
+      isActive = false;
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) void supabase.removeChannel(channel);
+        }
+        void teardown();
+      }
     };
   }, [loadBranches]);
 

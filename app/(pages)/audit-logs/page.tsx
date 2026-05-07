@@ -635,27 +635,41 @@ export default function AuditLogsPage() {
     void fetchLogs();
 
     // ─── Realtime Subscription ───────────────────────────────────────────
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase || !userId) return;
+    let channel: any = null;
+    let isActive = true;
 
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !userId || !isActive) return;
+
+      const token = getTokenFromCookie();
+      if (token) {
+        void supabase.realtime.setAuth(token);
+      }
+
+      channel = supabase
+        .channel("audit-logs-live")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "activity_logs" },
+          () => {
+            void fetchLogs();
+          },
+        )
+        .subscribe();
     }
 
-    const channel = supabase
-      .channel("audit-logs-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "activity_logs" },
-        () => {
-          void fetchLogs();
-        },
-      )
-      .subscribe();
+    void setupRealtime();
 
     return () => {
-      void supabase.removeChannel(channel);
+      isActive = false;
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) void supabase.removeChannel(channel);
+        }
+        void teardown();
+      }
     };
   }, [userId, activeBranchId, canSwitchBranch, canViewAuditLogs, dateRange.start, dateRange.end]);
 

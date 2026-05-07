@@ -303,77 +303,90 @@ export function Header({
     window.addEventListener("transaction_created", handleTransactionCreated);
 
     // ─── Realtime Subscription ───────────────────────────────────────────
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase || !user) {
-      // Fallback to polling if realtime is unavailable
-      const interval = setInterval(fetchNotifications, 2 * 60 * 1000);
-      return () => {
-        clearInterval(clockInterval);
-        clearInterval(interval);
-      };
-    }
+    let channel: any = null;
+    let isActive = true;
+    let localInterval: any = null;
 
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
-    }
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !user || !isActive) {
+        // Fallback to polling if realtime is unavailable
+        localInterval = setInterval(fetchNotificationsRef.current, 2 * 60 * 1000);
+        return;
+      }
 
-    const channel = supabase
-      .channel("header-notifications-live-" + (user.id || ''))
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications" },
-        (payload) => {
-          console.log("[Notifications] Realtime event received:", payload);
-          const newNotif = payload.new as any;
-          if (payload.eventType === "INSERT") {
-             const isPersonalNotification = Boolean(newNotif.user_id);
-             const isMatch = isPersonalNotification
-               ? newNotif.user_id === user?.id
-               : !newNotif.branch_id ||
-                 newNotif.branch_id === user?.branchId ||
-                 newNotif.branch_id === selectedBranch?.id ||
-                 isAllBranches ||
-                 user?.role === "admin" ||
-                 user?.role === "super_admin";
-             if (isMatch) {
-                toast.success(newNotif.title, {
-                  description: newNotif.subtitle,
-                });
-                
-                // Add it instantly to the dropdown UI
-                setNotifications((prev) => {
-                  const itemDate = new Date(newNotif.created_at || new Date()).toISOString().split("T")[0];
-                  const today = new Date().toISOString().split("T")[0];
+      const token = getTokenFromCookie();
+      if (token) {
+        void supabase.realtime.setAuth(token);
+      }
+
+      channel = supabase
+        .channel("header-notifications-live-" + (user.id || ''))
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "notifications" },
+          (payload) => {
+            console.log("[Notifications] Realtime event received:", payload);
+            const newNotif = payload.new as any;
+            if (payload.eventType === "INSERT") {
+               const isPersonalNotification = Boolean(newNotif.user_id);
+               const isMatch = isPersonalNotification
+                 ? newNotif.user_id === user?.id
+                 : !newNotif.branch_id ||
+                   newNotif.branch_id === user?.branchId ||
+                   newNotif.branch_id === selectedBranch?.id ||
+                   isAllBranches ||
+                   user?.role === "admin" ||
+                   user?.role === "super_admin";
+               if (isMatch) {
+                  toast.success(newNotif.title, {
+                    description: newNotif.subtitle,
+                  });
                   
-                  const mappedItem: HeaderNotification = {
-                    id: newNotif.id,
-                    title: newNotif.title,
-                    subtitle: newNotif.subtitle ?? "",
-                    category: newNotif.category as any,
-                    unread: !newNotif.is_read,
-                    userId: newNotif.user_id ?? null,
-                    customerId: newNotif.customer_id ?? null,
-                    logId: newNotif.log_id ?? null,
-                    group: itemDate === today ? "Today" : "Earlier",
-                  };
-                  return [mappedItem, ...prev];
-                });
-             }
-          } else {
-            // For updates/deletes, fetch the fresh list
-            void fetchNotificationsRef.current();
-          }
-        },
-      )
-      .subscribe((status) => {
-        console.log("[Notifications] Realtime status:", status);
-      });
+                  // Add it instantly to the dropdown UI
+                  setNotifications((prev) => {
+                    const itemDate = new Date(newNotif.created_at || new Date()).toISOString().split("T")[0];
+                    const today = new Date().toISOString().split("T")[0];
+                    
+                    const mappedItem: HeaderNotification = {
+                      id: newNotif.id,
+                      title: newNotif.title,
+                      subtitle: newNotif.subtitle ?? "",
+                      category: newNotif.category as any,
+                      unread: !newNotif.is_read,
+                      userId: newNotif.user_id ?? null,
+                      customerId: newNotif.customer_id ?? null,
+                      logId: newNotif.log_id ?? null,
+                      group: itemDate === today ? "Today" : "Earlier",
+                    };
+                    return [mappedItem, ...prev];
+                  });
+               }
+            } else {
+              // For updates/deletes, fetch the fresh list
+              void fetchNotificationsRef.current();
+            }
+          },
+        )
+        .subscribe((status) => {
+          console.log("[Notifications] Realtime status:", status);
+        });
+    }
+
+    void setupRealtime();
 
     return () => {
+      isActive = false;
       clearInterval(clockInterval);
+      if (localInterval) clearInterval(localInterval);
       window.removeEventListener("transaction_created", handleTransactionCreated);
-      void supabase.removeChannel(channel);
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) void supabase.removeChannel(channel);
+        }
+        void teardown();
+      }
     };
   }, [user, selectedBranch?.id, isAllBranches]);
 

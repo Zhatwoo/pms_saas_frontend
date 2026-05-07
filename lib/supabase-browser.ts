@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { api } from "./api";
 
 let supabase: SupabaseClient | null = null;
 let supabaseToken: string | null = null;
@@ -34,7 +35,7 @@ function toRealtimeOnlyClient(client: SupabaseClient): RealtimeOnlySupabaseClien
   };
 }
 
-export function getSupabaseBrowserClient(): RealtimeOnlySupabaseClient | null {
+export async function getSupabaseBrowserClient(): Promise<RealtimeOnlySupabaseClient | null> {
   if (typeof window === "undefined") return null;
 
   const token = getTokenFromCookie();
@@ -43,30 +44,36 @@ export function getSupabaseBrowserClient(): RealtimeOnlySupabaseClient | null {
     return toRealtimeOnlyClient(supabase);
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  try {
+    const config = await api.get<{ supabaseUrl: string; supabaseAnonKey: string }>("/auth/config/public");
+    const url = config.supabaseUrl;
+    const anonKey = config.supabaseAnonKey;
 
-  if (!url || !anonKey) {
-    console.warn(
-      "[Supabase] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Realtime is disabled.",
-    );
+    if (!url || !anonKey) {
+      console.warn(
+        "[Supabase] Missing config from backend. Realtime is disabled.",
+      );
+      return null;
+    }
+
+    supabase = createClient(url, anonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: token
+        ? {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        : undefined,
+    });
+    supabaseToken = token;
+
+    return toRealtimeOnlyClient(supabase);
+  } catch (error) {
+    console.warn("[Supabase] Failed to fetch config. Realtime disabled.", error);
     return null;
   }
-
-  supabase = createClient(url, anonKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-    global: token
-      ? {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      : undefined,
-  });
-  supabaseToken = token;
-
-  return toRealtimeOnlyClient(supabase);
 }

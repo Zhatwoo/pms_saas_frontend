@@ -41,8 +41,8 @@ export function QRReplacementRequestsDashboard() {
         ? "/api/qr-replacement-requests"
         : `/api/qr-replacement-requests?status=${filterStatus}`;
       
-      const response = await api.get(url);
-      setRequests(response.data || []);
+      const response = await api.get<any>(url);
+      setRequests(response?.data ?? response ?? []);
     } catch (error: any) {
       toast.error("Failed to fetch QR replacement requests");
     } finally {

@@ -83,7 +83,7 @@ export function BranchProvider({ children }: { children: ReactNode }) {
           id: (data as BranchApiItem).id,
           name: (data as BranchApiItem).name,
           location: (data as BranchApiItem).location,
-          phone: (data as BranchApiItem).contact_number || (data as BranchApiItem).contactNumber,
+          phone: (data as BranchApiItem).contact_number,
           code: (data as BranchApiItem).branch_code,
         }];
 
@@ -102,27 +102,43 @@ export function BranchProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    let channel: any = null;
+    let isActive = true;
 
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token);
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !isActive) return;
+
+      const token = getTokenFromCookie();
+      if (token) {
+        void supabase.realtime.setAuth(token);
+      }
+
+      channel = supabase
+        .channel("branch-selector-live")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "branches" },
+          () => {
+            void loadBranches();
+          },
+        )
+        .subscribe();
     }
 
-    const channel = supabase
-      .channel("branch-selector-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "branches" },
-        () => {
-          void loadBranches();
-        },
-      )
-      .subscribe();
+    void setupRealtime();
 
     return () => {
-      void supabase.removeChannel(channel);
+      isActive = false;
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) {
+            void supabase.removeChannel(channel);
+          }
+        }
+        void teardown();
+      }
     };
   }, [loadBranches, user]);
 

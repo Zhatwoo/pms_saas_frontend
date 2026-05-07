@@ -284,32 +284,46 @@ export default function BranchFinancePage() {
   }, [loadFinanceData]);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    let channel: any = null;
+    let isActive = true;
 
-    const token = getTokenFromCookie();
-    if (token) {
-      void supabase.realtime.setAuth(token).catch(() => {
-        // ignore auth refresh errors for live dashboard updates
-      });
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !isActive) return;
+
+      const token = getTokenFromCookie();
+      if (token) {
+        void supabase.realtime.setAuth(token).catch(() => {
+          // ignore auth refresh errors for live dashboard updates
+        });
+      }
+
+      channel = supabase
+        .channel("branch-finance-live")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "daily_balances" },
+          () => void loadFinanceData(),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "transactions" },
+          () => void loadFinanceData(),
+        )
+        .subscribe();
     }
 
-    const channel = supabase
-      .channel("branch-finance-live")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "daily_balances" },
-        () => void loadFinanceData(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "transactions" },
-        () => void loadFinanceData(),
-      )
-      .subscribe();
+    void setupRealtime();
 
     return () => {
-      void supabase.removeChannel(channel);
+      isActive = false;
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) void supabase.removeChannel(channel);
+        }
+        void teardown();
+      }
     };
   }, [loadFinanceData]);
 

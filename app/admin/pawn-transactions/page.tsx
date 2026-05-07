@@ -461,30 +461,44 @@ export default function SuperAdminPawnTransactionsPage() {
 
   // Realtime subscription for transactions table
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    let channel: any = null;
+    let isActive = true;
 
-    const channelName = `transactions-live-admin-${selectedBranch.id}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transactions"
-        },
-        (payload) => {
-          console.log("[Transactions] Realtime event received:", payload);
-          void fetchTransactionsRef.current();
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[Transactions] Realtime subscription status:`, status);
-      });
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !isActive) return;
+
+      const channelName = `transactions-live-admin-${selectedBranch.id}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "transactions"
+          },
+          (payload) => {
+            console.log("[Transactions] Realtime event received:", payload);
+            void fetchTransactionsRef.current();
+          }
+        )
+        .subscribe((status) => {
+          console.log(`[Transactions] Realtime subscription status:`, status);
+        });
+    }
+
+    void setupRealtime();
 
     return () => {
-      void supabase.removeChannel(channel);
+      isActive = false;
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) void supabase.removeChannel(channel);
+        }
+        void teardown();
+      }
     };
   }, [selectedBranch.id]);
 

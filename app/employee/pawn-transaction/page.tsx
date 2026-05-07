@@ -521,35 +521,49 @@ export default function EmployeePawnTransactionsPage() {
   useEffect(() => {
     if (selectedBranch.id === "__all__") return;
 
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    let channel: any = null;
+    let isActive = true;
 
-    const channelName = `transactions-live-${selectedBranch.id}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "transactions"
-        },
-        (payload) => {
-          console.log("[Transactions] Realtime event received:", payload);
-          const newTx = payload.new as any;
-          if (newTx && newTx.branch_id === selectedBranch.id) {
-            void fetchTransactionsRef.current();
-          } else if (payload.eventType === "DELETE") {
-            void fetchTransactionsRef.current();
+    async function setupRealtime() {
+      const supabase = await getSupabaseBrowserClient();
+      if (!supabase || !isActive) return;
+
+      const channelName = `transactions-live-${selectedBranch.id}`;
+      channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "transactions"
+          },
+          (payload) => {
+            console.log("[Transactions] Realtime event received:", payload);
+            const newTx = payload.new as any;
+            if (newTx && newTx.branch_id === selectedBranch.id) {
+              void fetchTransactionsRef.current();
+            } else if (payload.eventType === "DELETE") {
+              void fetchTransactionsRef.current();
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[Transactions] Realtime subscription status:`, status);
-      });
+        )
+        .subscribe((status) => {
+          console.log(`[Transactions] Realtime subscription status:`, status);
+        });
+    }
+
+    void setupRealtime();
 
     return () => {
-      void supabase.removeChannel(channel);
+      isActive = false;
+      if (channel) {
+        async function teardown() {
+          const supabase = await getSupabaseBrowserClient();
+          if (supabase) void supabase.removeChannel(channel);
+        }
+        void teardown();
+      }
     };
   }, [selectedBranch.id]);
 
