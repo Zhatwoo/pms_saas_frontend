@@ -35,6 +35,14 @@ class ApiClient {
       return "Item not found in your branch inventory.";
     }
 
+    if (status === 429) {
+      return "Too many requests. Please try again later.";
+    }
+
+    if (status === 413) {
+      return "Request is too large. Reduce attachments or split the operation.";
+    }
+
     if (status >= 500) {
       return "Server is temporarily unavailable. Please try again.";
     }
@@ -251,6 +259,14 @@ class ApiClient {
 
     if (/missing bearer\s+token/i.test(msg)) {
       msg = "Session expired. Please sign in again.";
+    }
+
+    if (res.status === 429) {
+      const retryAfter = res.headers.get("retry-after");
+      const sec = retryAfter != null && retryAfter.trim() !== "" ? parseInt(retryAfter, 10) : NaN;
+      if (Number.isFinite(sec) && sec > 0) {
+        msg = `${msg} Please try again in about ${sec}s.`;
+      }
     }
 
     return msg;
