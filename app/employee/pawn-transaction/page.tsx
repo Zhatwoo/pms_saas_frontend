@@ -348,7 +348,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     customerPhone: customer?.contact_number ?? undefined,
     customerMiddleName: customer?.middle_name ?? undefined,
     idPresented: item?.id_presented ?? undefined,
-    qrCode: item?.qr_code ?? undefined,
+    qrCode: item?.qr_code || transaction.qr_code || undefined,
     serialNumber: item?.serial_number ?? undefined,
     itemsIncluded: item?.items_included ?? undefined,
     condition: item?.condition ?? undefined,

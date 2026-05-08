@@ -7,6 +7,8 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
 import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
+import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 import { formatDateToYMD } from "@/lib/time";
 
@@ -143,6 +145,7 @@ export function NewPawnModal({
 }: NewPawnModalProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
   const [form, setForm] = useState(() => createEmptyForm());
   const isProcessingRef = useRef(false);
 
@@ -1265,22 +1268,28 @@ export function NewPawnModal({
              
              {qrUrl ? (
                <div className="flex items-center gap-4">
-                 <div className="relative group shrink-0">
-                   <Image 
-                     src={qrUrl} 
-                     alt="QR Preview" 
-                     width={44} 
-                     height={44} 
-                     unoptimized
-                     className="rounded-lg shadow-sm border border-emerald-200 bg-white dark:bg-surface p-0.5" 
-                   />
-                   <button 
-                     onClick={() => setQrUrl(null)} 
-                     className="absolute -top-1.5 -right-1.5 bg-zinc-900 hover:bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-colors"
-                   >
-                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                   </button>
-                 </div>
+                 {(user?.role === "admin" || user?.role === "super_admin") ? (
+                   <div className="relative group shrink-0">
+                     <Image 
+                       src={qrUrl} 
+                       alt="QR Preview" 
+                       width={44} 
+                       height={44} 
+                       unoptimized
+                       className="rounded-lg shadow-sm border border-emerald-200 bg-white dark:bg-surface p-0.5" 
+                     />
+                     <button 
+                       onClick={() => setQrUrl(null)} 
+                       className="absolute -top-1.5 -right-1.5 bg-zinc-900 hover:bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-colors"
+                     >
+                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                     </button>
+                   </div>
+                 ) : (
+                   <div className="relative group shrink-0 flex items-center justify-center w-11 h-11 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
+                   </div>
+                 )}
                  <button
                    type="button"
                    onClick={handleGenerateTicket}

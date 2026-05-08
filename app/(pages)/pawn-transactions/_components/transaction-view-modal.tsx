@@ -4,6 +4,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { formatPeso } from "@/lib/currency";
 import { formatTimeWithAmPm } from "@/lib/time";
 import type { PurposeType, TransactionRow } from "./types";
+import { useAuth } from "@/contexts/auth-context";
 
 interface TransactionViewModalProps {
   isOpen: boolean;
@@ -59,6 +60,9 @@ export function TransactionViewModal({
   onClose,
   onPrint,
 }: TransactionViewModalProps) {
+  const { user } = useAuth();
+  const isAdminOrSuperAdmin = user?.role === "admin" || user?.role === "super_admin";
+
   if (!isOpen || !transaction) {
     return null;
   }
@@ -144,18 +148,33 @@ export function TransactionViewModal({
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-900/45 dark:text-zinc-400">
               QR Code
             </p>
-            {transaction.qrCode ? (
-              <div className="mt-4 flex justify-center">
-                <img
-                  src={transaction.qrCode}
-                  alt={`${transaction.unit || transaction.transactionNo} QR code`}
-                  className="h-48 w-48 rounded-2xl border border-emerald-950/10 bg-white p-3 object-contain shadow-lg"
-                />
-              </div>
+            {isAdminOrSuperAdmin ? (
+              (transaction.qrCode || transaction.qr_code) ? (
+                <div className="mt-4 flex justify-center">
+                  <img
+                    src={transaction.qrCode || transaction.qr_code}
+                    alt={`${transaction.unit || transaction.transactionNo} QR code`}
+                    className="h-48 w-48 rounded-2xl border border-emerald-950/10 bg-white p-3 object-contain shadow-lg"
+                  />
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-text-tertiary">
+                  No QR code available for this transaction.
+                </p>
+              )
             ) : (
-              <p className="mt-3 text-sm text-text-tertiary">
-                No QR code available for this transaction.
-              </p>
+              <div className="mt-4 flex flex-col items-center justify-center py-8">
+                <div className="flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-dashed border-emerald-500/30 bg-emerald-50/50">
+                  <div className="text-center">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-800">
+                      Visible to
+                    </p>
+                    <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-emerald-800">
+                      Admin only
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

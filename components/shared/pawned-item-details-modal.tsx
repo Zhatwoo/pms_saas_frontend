@@ -99,8 +99,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
-  const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
-  const canViewQr = userRole === "super_admin";
+   const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
+   const canViewQr = userRole?.toLowerCase().includes("admin");
 
   useEffect(() => {
     if (isOpen && itemId) {
@@ -236,13 +236,16 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
     });
   };
 
-  const qrVisual = item?.qr_code
-    ? item.qr_code.startsWith('http') || item.qr_code.startsWith('data:')
-      ? item.qr_code
+  const qrData = item?.qrCode || item?.qr_code;
+  const qrVisual = qrData
+    ? qrData.startsWith('http') || qrData.startsWith('data:')
+      ? qrData
       : `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
           `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
         )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`
     : null;
+
+  console.log("Detailed Item QR Data:", { qrCode: item?.qrCode, qr_code: item?.qr_code, qrVisual });
 
   if (!isOpen) return null;
 
@@ -292,12 +295,12 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       {canViewQr && (
         <div id="print-label" className="hidden print:flex flex-col items-center justify-center bg-white w-full h-full p-0">
           <p className="text-[5px] font-black leading-none text-emerald-800 uppercase mb-[1px]">JCLB</p>
-          {item?.qr_code && (
+          {qrData && (
             <>
               <img 
                 src={
-                  item.qr_code.startsWith('http') || item.qr_code.startsWith('data:') 
-                    ? item.qr_code 
+                  qrData.startsWith('http') || qrData.startsWith('data:') 
+                    ? qrData 
                     : `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
                         `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
                       )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`

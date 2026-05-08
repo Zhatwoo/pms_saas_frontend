@@ -7,7 +7,11 @@ const DEFAULT_ROUTE_BY_ROLE: Record<Role, string> = {
 };
 
 export function normalizeRole(role: string | null | undefined): Role | null {
-  switch (role) {
+  if (!role) return null;
+  
+  const normalized = role.toLowerCase().trim().replace(/\s+/g, '_');
+  
+  switch (normalized) {
     case "super_admin":
     case "superadmin":
       return "super_admin";

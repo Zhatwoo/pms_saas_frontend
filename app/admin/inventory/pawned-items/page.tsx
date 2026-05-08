@@ -35,8 +35,13 @@ interface PawnedItem {
   renewals: Renewal[];
   remarks: string;
   qrCode?: string;
+  qr_code?: string; // Snake case fallback
   originalPhoto?: string;
   conditionReport?: string;
+  condition?: string;
+  items_included?: string;
+  serial_number?: string;
+  amount: number;
 }
 
 const categoryOptions = [
@@ -195,7 +200,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
   const userRole = user?.role || "employee";
-  const canEdit = !viewOnly && (userRole === "super_admin" || userRole === "admin");
+  console.log("Current User Role:", userRole);
+  const isAdminOrSuperAdmin = userRole.toLowerCase().includes("admin");
+  const canEdit = !viewOnly && isAdminOrSuperAdmin;
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -230,6 +237,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
         params.set("limit", String(itemsPerPage));
 
         const data = await api.get<{ items: PawnedItem[]; total: number }>(`/inventory/pawned?${params}`);
+        console.log("Pawned Items Data:", data.items);
         setPawnedItems(data.items || []);
         setTotalItems(data.total || 0);
       } catch (err) {
@@ -316,8 +324,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                   
                   const qrHtml = pawnedItems.map(item => {
                     let qrUrl = "";
-                    if (item.qrCode?.startsWith('http') || item.qrCode?.startsWith('data:')) {
-                      qrUrl = item.qrCode;
+                    const itemQr = item.qrCode || item.qr_code;
+                    if (itemQr?.startsWith('http') || itemQr?.startsWith('data:')) {
+                      qrUrl = itemQr;
                     } else {
                       const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
                       const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(item.itemId)}`;
@@ -380,9 +389,11 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
             <table className={viewOnly ? "min-w-[1320px] w-full text-sm" : "w-full text-sm"}>
               <thead>
                 <tr className={viewOnly ? "bg-emerald-900 text-amber-400" : "bg-gradient-to-r from-emerald-950 to-emerald-900 text-white"}>
-                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", "Renewals", "Remarks", "Actions"].map((h) => (
-                    <th key={h} className={viewOnly ? `whitespace-nowrap px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] ${h === "Actions" ? "text-center" : "text-left"}` : `whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Actions" ? "text-center" : "text-left"}`}>{h}</th>
-                  ))}
+                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", "Renewals", "Remarks", isAdminOrSuperAdmin ? "QR" : null, "Actions"]
+                    .filter((h): h is string => h !== null)
+                    .map((h) => (
+                      <th key={h} className={viewOnly ? `whitespace-nowrap px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] ${h === "Actions" || h === "QR" ? "text-center" : "text-left"}` : `whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Actions" || h === "QR" ? "text-center" : "text-left"}`}>{h}</th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
@@ -412,6 +423,21 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                           </button>
                         </td>
                         <td className={viewOnly ? "px-5 py-4 text-sm text-text-tertiary max-w-[180px] truncate" : "px-3 py-2 text-xs text-text-tertiary max-w-[120px] truncate"} title={item.remarks}>{item.remarks || "—"}</td>
+                        {isAdminOrSuperAdmin && (
+                          <td className="px-3 py-2 text-center">
+                            {(item.qrCode || item.qr_code) ? (
+                              <div className="flex justify-center">
+                                <img
+                                  src={item.qrCode || item.qr_code}
+                                  alt={`${item.itemName} QR`}
+                                  className="h-8 w-8 rounded border border-border-main bg-white p-0.5 object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-text-muted">-</span>
+                            )}
+                          </td>
+                        )}
                         <td className="px-3 py-2 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <button 
@@ -461,7 +487,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                       </tr>
                       {expandedRow === item.itemId && (
                         <tr key={`${item.itemId}-exp`} className="bg-amber-50/50">
-                          <td colSpan={9} className="px-6 py-3 border-t border-amber-100">
+                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>

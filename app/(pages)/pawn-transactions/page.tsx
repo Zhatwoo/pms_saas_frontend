@@ -142,7 +142,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     pawn: toAmountString(transaction.pawn_amount),
     storage: toAmountString(transaction.storage_fee),
     notes: transaction.pawned_item?.remarks ?? transaction.details ?? "",
-    qrCode: transaction.pawned_item?.qr_code ?? undefined,
+    qrCode: transaction.pawned_item?.qr_code || transaction.qr_code || undefined,
     serialNumber: transaction.pawned_item?.serial_number ?? undefined,
     itemsIncluded: transaction.pawned_item?.items_included ?? undefined,
     condition: transaction.pawned_item?.condition ?? undefined,

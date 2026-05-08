@@ -1,8 +1,12 @@
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useAuth } from "@/contexts/auth-context";
+import { formatTimeWithAmPm } from "@/lib/time";
+import { formatPeso } from "@/lib/currency";
 
 type PurposeType = "Start" | "Buy Back" | "Renew" | "Sold Item" | "Reserve / Layaway" | "Pawn";
 
 interface TransactionRow {
+  id: string;
   transactionNo: string;
   purpose: PurposeType;
   date: string;
@@ -14,6 +18,8 @@ interface TransactionRow {
   unitCode: string;
   pawn: string;
   storage: string;
+  qrCode?: string;
+  qr_code?: string;
 }
 
 const columns = [
@@ -28,6 +34,7 @@ const columns = [
   { key: "unitCode", label: "Unit Code" },
   { key: "pawn", label: "Pawn", align: "right" as const },
   { key: "storage", label: "Storage", align: "right" as const },
+  { key: "qrCode", label: "QR Code", align: "center" as const },
 ];
 
 function isHighlightedPawn(value: string): boolean {
@@ -56,6 +63,13 @@ interface TransactionTableProps {
 
 
 export function TransactionTable({ data = [] }: TransactionTableProps) {
+  const { user } = useAuth();
+  const isAdminOrSuperAdmin = user?.role === "admin" || user?.role === "super_admin";
+  
+  const visibleColumns = isAdminOrSuperAdmin 
+    ? columns 
+    : columns.filter(col => col.key !== "qrCode");
+
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       <div className="flex items-center justify-between bg-surface px-4 py-3">
@@ -66,11 +80,11 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-emerald-900 text-amber-400">
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <th
                   key={col.key}
                   className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${
-                    col.align === "right" ? "text-right" : "text-left"
+                    col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"
                   }`}
                 >
                   {col.label}
@@ -81,7 +95,7 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
           <tbody>
             {data.length === 0 ? (
               <tr>
-                <td colSpan={11} className="py-4 text-center text-sm text-text-tertiary">
+                <td colSpan={visibleColumns.length} className="py-4 text-center text-sm text-text-tertiary">
                   No transactions found
                 </td>
               </tr>
@@ -100,76 +114,46 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                         : "bg-surface-secondary"
                   }`}
                 >
-                  {/* Transaction # */}
-                  <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-secondary">
-                    {row.transactionNo}
-                  </td>
-
-                  {/* Purpose */}
-                  <td className="whitespace-nowrap px-3 py-2">
-                    <StatusBadge
-                      label={row.purpose}
-                      variant={purposeVariant[row.purpose]}
-                    />
-                  </td>
-
-                  {/* Date */}
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                    {row.date}
-                  </td>
-
-                  {/* Time */}
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                    {row.time}
-                  </td>
-
-                  {/* Cash In */}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-text-secondary">
-                    <input 
-                      type="text" 
-                      defaultValue={row.cashIn}
-                      placeholder="0"
-                      className="w-16 ml-auto block text-right border-b border-border-main outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
-                    />
-                  </td>
-
-                  {/* Cash Out */}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-text-secondary">
-                    {row.cashOut}
-                  </td>
-
-                  {/* Return */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-text-secondary">
-                    {row.returnVal}
-                  </td>
-
-                  {/* Unit */}
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
-                    {row.unit}
-                  </td>
-
-                  {/* Unit Code */}
-                  <td className="whitespace-nowrap px-3 py-1.5 text-xs text-text-tertiary">
-                    {row.unitCode}
-                  </td>
-
-                  {/* Pawn */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
-                    {isHighlightedPawn(row.pawn) ? (
-                      <span className="font-bold text-purple-700">{row.pawn}</span>
-                    ) : (
-                      <span className="text-text-secondary">{row.pawn}</span>
-                    )}
-                  </td>
-
-                  {/* Storage */}
-                  <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
-                    {isHighlightedStorage(row.storage) ? (
-                      <span className="font-bold text-purple-700">{row.storage}</span>
-                    ) : (
-                      <span className="text-text-secondary">{row.storage}</span>
-                    )}
-                  </td>
+                  {visibleColumns.map((col) => {
+                    if (col.key === "transactionNo") return <td key={col.key} className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-secondary">{row.transactionNo}</td>;
+                    if (col.key === "purpose") return <td key={col.key} className="whitespace-nowrap px-3 py-2"><StatusBadge label={row.purpose} variant={purposeVariant[row.purpose]} /></td>;
+                    if (col.key === "date") return <td key={col.key} className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{row.date}</td>;
+                    if (col.key === "time") return <td key={col.key} className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{formatTimeWithAmPm(row.time)}</td>;
+                    if (col.key === "cashIn") return (
+                      <td key={col.key} className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-text-secondary">
+                        <input 
+                          type="text" 
+                          defaultValue={row.cashIn}
+                          placeholder="0"
+                          className="w-16 ml-auto block text-right border-b border-border-main outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
+                        />
+                      </td>
+                    );
+                    if (col.key === "cashOut") return <td key={col.key} className="whitespace-nowrap px-3 py-1.5 text-right text-xs text-text-secondary">{row.cashOut}</td>;
+                    if (col.key === "returnVal") return <td key={col.key} className="whitespace-nowrap px-3 py-2 text-right text-xs text-text-secondary">{row.returnVal}</td>;
+                    if (col.key === "unit") return <td key={col.key} className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{row.unit}</td>;
+                    if (col.key === "unitCode") return <td key={col.key} className="whitespace-nowrap px-3 py-1.5 text-xs text-text-tertiary">{row.unitCode}</td>;
+                    if (col.key === "pawn") return (
+                      <td key={col.key} className="whitespace-nowrap px-3 py-2 text-right text-xs">
+                        {isHighlightedPawn(row.pawn) ? <span className="font-bold text-purple-700">{row.pawn}</span> : <span className="text-text-secondary">{row.pawn}</span>}
+                      </td>
+                    );
+                    if (col.key === "storage") return (
+                      <td key={col.key} className="whitespace-nowrap px-3 py-2 text-right text-xs">
+                        {isHighlightedStorage(row.storage) ? <span className="font-bold text-purple-700">{row.storage}</span> : <span className="text-text-secondary">{row.storage}</span>}
+                      </td>
+                    );
+                    if (col.key === "qrCode") return (
+                      <td key={col.key} className="whitespace-nowrap px-3 py-2 text-center">
+                        {(row.qrCode || row.qr_code) ? (
+                          <div className="flex justify-center">
+                            <img src={row.qrCode || row.qr_code} alt={`${row.unit || row.transactionNo} QR`} className="h-8 w-8 rounded border border-border-main bg-white p-0.5 object-contain" />
+                          </div>
+                        ) : <span className="text-text-muted">-</span>}
+                      </td>
+                    );
+                    return null;
+                  })}
                 </tr>
               );
             })

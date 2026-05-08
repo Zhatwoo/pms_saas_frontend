@@ -63,7 +63,7 @@ export function TransactionDetailsModal({
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
+  const isAdminOrSuperAdmin = user?.role?.toLowerCase().includes("admin");
   const modalAriaProps = {
     role: "dialog",
     "aria-modal": "true",
@@ -147,11 +147,11 @@ export function TransactionDetailsModal({
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
               Security Identity
             </p>
-            {isSuperAdmin ? (
-              transaction.qrCode ? (
+            {isAdminOrSuperAdmin ? (
+              (transaction.qrCode || transaction.qr_code) ? (
                 <div className="mt-4 flex flex-col items-center">
                   <img
-                    src={transaction.qrCode}
+                    src={transaction.qrCode || transaction.qr_code}
                     alt="Transaction QR"
                     className="h-48 w-48 rounded-2xl bg-white p-3 object-contain shadow-lg border border-zinc-200"
                   />
@@ -169,7 +169,7 @@ export function TransactionDetailsModal({
                       QR Visible to
                     </p>
                     <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-600">
-                      Super Admin Only
+                      Admin & Super Admin Only
                     </p>
                   </div>
                 </div>

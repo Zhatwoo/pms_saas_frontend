@@ -4,6 +4,7 @@ import { formatTimeWithAmPm } from "@/lib/time";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type { TransactionRow, PurposeType } from "./types";
 import { useRef, type RefObject } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
@@ -90,6 +91,15 @@ export function TransactionTable({
   highlightRowRef,
   isToday = true,
 }: TransactionTableProps) {
+  const { user } = useAuth();
+  const isAdminOrSuperAdmin = user?.role?.toLowerCase().includes("admin");
+  console.log("TransactionTable Auth:", { role: user?.role, isAdminOrSuperAdmin });
+
+  // Filter columns based on user role - remove QR Code column for non-admins
+  const visibleColumns = isAdminOrSuperAdmin 
+    ? columns 
+    : columns.filter(col => col.key !== "qrCode");
+
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       <div className="flex items-center justify-between border-b border-border-subtle bg-surface px-4 py-3">
@@ -104,7 +114,7 @@ export function TransactionTable({
         <table className="w-full min-w-[1400px] text-sm">
           <thead>
             <tr className="bg-emerald-900 text-amber-400">
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <th
                   key={col.key}
                   className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${
@@ -124,7 +134,7 @@ export function TransactionTable({
             {isLoading ? (
               <tr>
                 <td
-                  colSpan={columns.length}
+                  colSpan={visibleColumns.length}
                   className="py-12 text-center text-base font-medium text-text-tertiary"
                 >
                   <div className="flex items-center justify-center">
@@ -138,7 +148,7 @@ export function TransactionTable({
             ) : data.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length}
+                  colSpan={visibleColumns.length}
                   className="py-8 text-center text-base text-text-tertiary"
                 >
                   {isToday ? "No transactions found for today" : "No transactions found"}
@@ -166,106 +176,186 @@ export function TransactionTable({
                         : "bg-surface-secondary"
                     }`}
                   >
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-text-secondary">
-                      {row.transactionNo}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                      {row.branch}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <StatusBadge
-                        label={row.purpose}
-                        variant={purposeVariant[row.purpose]}
-                      />
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                      {row.customerName || "Walk-in Customer"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                      {row.date}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                      {formatTimeWithAmPm(row.time)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-blue-700">
-                      {formatAmount(row.buyBack)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-text-secondary">
-                      {row.percentage !== "0" ? `${row.percentage}%` : "-"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-orange-700">
-                      {formatAmount(row.buyOut)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-emerald-700">
-                      {formatAmount(row.sold)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-emerald-700">
-                      {formatAmount(row.cashIn)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-red-600">
-                      {formatAmount(row.cashOut)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-text-secondary">
-                      {formatAmount(row.returnVal)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                      {row.unit || "N/A"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">
-                      {row.unitCode || "N/A"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
-                      {isHighlightedValue(row.pawn) ? (
-                        <span className="font-bold text-purple-700">
-                          {formatAmount(row.pawn)}
-                        </span>
-                      ) : (
-                        <span className="text-text-secondary">
-                          {formatAmount(row.pawn)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
-                      {isHighlightedValue(row.storage) ? (
-                        <span className="font-bold text-purple-700">
-                          {formatAmount(row.storage)}
-                        </span>
-                      ) : (
-                        <span className="text-text-secondary">
-                          {formatAmount(row.storage)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center">
-                      {row.qrCode ? (
-                        <div className="flex justify-center">
-                          <img
-                            src={row.qrCode}
-                            alt={`${row.unit || row.transactionNo} QR code`}
-                            className="h-10 w-10 rounded-md border border-border-main bg-white p-0.5 object-contain"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-text-muted">-</span>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-center">
-                      <div
-                        className="flex items-center justify-center gap-2"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        {row.purpose === "Pawn" ? (
-                          <button
-                            type="button"
-                            onClick={() => onPrint?.(row)}
-                            title="Print MOA slip"
-                            className="rounded-lg p-2 text-text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-700"
-                          >
-                            {printerIcon}
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
+                    {visibleColumns.map((col) => {
+                      if (col.key === "transactionNo") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm font-medium text-text-secondary">
+                            {row.transactionNo}
+                          </td>
+                        );
+                      }
+                      if (col.key === "branch") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                            {row.branch}
+                          </td>
+                        );
+                      }
+                      if (col.key === "purpose") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3">
+                            <StatusBadge
+                              label={row.purpose}
+                              variant={purposeVariant[row.purpose]}
+                            />
+                          </td>
+                        );
+                      }
+                      if (col.key === "customerName") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                            {row.customerName || "Walk-in Customer"}
+                          </td>
+                        );
+                      }
+                      if (col.key === "date") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                            {row.date}
+                          </td>
+                        );
+                      }
+                      if (col.key === "time") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                            {formatTimeWithAmPm(row.time)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "buyBack") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-blue-700">
+                            {formatAmount(row.buyBack)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "percentage") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-center text-sm font-semibold text-text-secondary">
+                            {row.percentage !== "0" ? `${row.percentage}%` : "-"}
+                          </td>
+                        );
+                      }
+                      if (col.key === "buyOut") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-orange-700">
+                            {formatAmount(row.buyOut)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "sold") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-emerald-700">
+                            {formatAmount(row.sold)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "cashIn") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm text-emerald-700">
+                            {formatAmount(row.cashIn)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "cashOut") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm text-red-600">
+                            {formatAmount(row.cashOut)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "returnVal") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm text-text-secondary">
+                            {formatAmount(row.returnVal)}
+                          </td>
+                        );
+                      }
+                      if (col.key === "unit") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
+                            {row.unit || "N/A"}
+                          </td>
+                        );
+                      }
+                      if (col.key === "unitCode") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">
+                            {row.unitCode || "N/A"}
+                          </td>
+                        );
+                      }
+                      if (col.key === "pawn") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                            {isHighlightedValue(row.pawn) ? (
+                              <span className="font-bold text-purple-700">
+                                {formatAmount(row.pawn)}
+                              </span>
+                            ) : (
+                              <span className="text-text-secondary">
+                                {formatAmount(row.pawn)}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      }
+                      if (col.key === "storage") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                            {isHighlightedValue(row.storage) ? (
+                              <span className="font-bold text-purple-700">
+                                {formatAmount(row.storage)}
+                              </span>
+                            ) : (
+                              <span className="text-text-secondary">
+                                {formatAmount(row.storage)}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      }
+                      if (col.key === "qrCode") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-center">
+                            {(row.qrCode || row.qr_code) ? (
+                              <div className="flex justify-center">
+                                  <img
+                                    src={row.qrCode || row.qr_code}
+                                    alt={`${row.unit || row.transactionNo} QR code`}
+                                    className="h-10 w-10 rounded-md border border-border-main bg-white p-0.5 object-contain"
+                                    onError={(e) => console.warn("QR Image failed to load:", (row.qrCode || row.qr_code))}
+                                  />
+                              </div>
+                            ) : (
+                              <span className="text-text-muted">-</span>
+                            )}
+                          </td>
+                        );
+                      }
+                      if (col.key === "actions") {
+                        return (
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-center">
+                            <div
+                              className="flex items-center justify-center gap-2"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {row.purpose === "Pawn" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => onPrint?.(row)}
+                                  title="Print MOA slip"
+                                  className="rounded-lg p-2 text-text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+                                >
+                                  {printerIcon}
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        );
+                      }
+                      return null;
+                    })}
                   </tr>
                 );
               })

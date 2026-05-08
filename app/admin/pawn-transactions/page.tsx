@@ -295,6 +295,9 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
       ? transaction.pawned_item[0]
       : transaction.pawned_item;
 
+  // Robustly extract QR code from nested item or root
+  const qrCode = item?.qr_code || transaction.qr_code || undefined;
+
   return {
     transactionNo: transaction.transaction_no,
     purpose: (transaction.purpose ?? "") as PurposeType,
@@ -307,11 +310,11 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     cashIn: String(transaction.cash_in ?? 0),
     cashOut: String(transaction.cash_out ?? 0),
     returnVal: String(transaction.return_amount ?? 0),
-    unit: item?.description ?? "",
+    unit: item?.description ?? transaction.unit ?? "",
     unitCode: transaction.unit_code ?? "",
     pawn: String(transaction.pawn_amount ?? 0),
     storage: String(transaction.storage_fee ?? 0),
-    qrCode: transaction.qr_code ?? undefined,
+    qrCode: qrCode,
     serialNumber: item?.serial_number ?? undefined,
     itemsIncluded: item?.items_included ?? undefined,
     condition: item?.condition ?? undefined,

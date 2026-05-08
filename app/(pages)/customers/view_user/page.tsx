@@ -394,6 +394,8 @@ function TransactionViewModal({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdminOrSuperAdmin = user?.role === "admin" || user?.role === "super_admin";
   const [photoIndex, setPhotoIndex] = useState(0);
 
   useEffect(() => {
@@ -545,21 +547,36 @@ function TransactionViewModal({
             <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
               <div className="mt-3 flex min-h-[320px] items-center justify-center">
-                {transaction.qrCode && transaction.qrCode !== "-" ? (
-                  isImageUrl(transaction.qrCode) ? (
-                    <img
-                      src={transaction.qrCode}
-                      alt={`${transaction.item} QR code`}
-                      className="h-72 w-72 object-contain"
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                      }}
-                    />
+                {isAdminOrSuperAdmin ? (
+                  transaction.qrCode && transaction.qrCode !== "-" ? (
+                    isImageUrl(transaction.qrCode) ? (
+                      <img
+                        src={transaction.qrCode}
+                        alt={`${transaction.item} QR code`}
+                        className="h-72 w-72 object-contain"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-text-primary">QR code unavailable for this record.</p>
+                    )
                   ) : (
-                    <p className="text-sm font-semibold text-text-primary">QR code unavailable for this record.</p>
+                    <p className="text-sm font-semibold text-text-primary">No QR code available.</p>
                   )
                 ) : (
-                  <p className="text-sm font-semibold text-text-primary">No QR code available.</p>
+                  <div className="flex flex-col items-center justify-center gap-4 py-12">
+                    <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-500/30 bg-emerald-50/50">
+                      <div className="text-center">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                          Visible to
+                        </p>
+                        <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                          Admin only
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

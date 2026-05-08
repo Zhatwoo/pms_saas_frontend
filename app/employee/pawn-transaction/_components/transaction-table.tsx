@@ -44,6 +44,7 @@ export interface TransactionRow {
   customerMiddleName?: string;
   idPresented?: string;
   qrCode?: string;
+  qr_code?: string;
   serialNumber?: string;
   itemsIncluded?: string;
   condition?: string;
@@ -126,10 +127,10 @@ export function TransactionTable({
 }: TransactionTableProps) {
   const highlightedRowRef = useRef<HTMLTableRowElement | null>(null);
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
+  const isAdminOrSuperAdmin = user?.role === "admin" || user?.role === "super_admin";
   
-  // Filter columns based on user role - remove QR Code column for non-super admins
-  const visibleColumns = isSuperAdmin 
+  // Filter columns based on user role - remove QR Code column for non-admins
+  const visibleColumns = isAdminOrSuperAdmin 
     ? columns 
     : columns.filter(col => col.key !== "qrCode");
 
@@ -290,12 +291,12 @@ export function TransactionTable({
                         </span>
                       )}
                     </td>
-                    {isSuperAdmin && (
+                    {isAdminOrSuperAdmin && (
                       <td className="whitespace-nowrap px-3 py-2 text-center">
-                        {row.qrCode ? (
+                        {(row.qrCode || row.qr_code) ? (
                           <div className="flex justify-center">
                             <img
-                              src={row.qrCode}
+                              src={row.qrCode || row.qr_code}
                               alt="QR Code"
                               className="h-10 w-10 rounded-md border border-border-main bg-white p-0.5 object-contain"
                             />

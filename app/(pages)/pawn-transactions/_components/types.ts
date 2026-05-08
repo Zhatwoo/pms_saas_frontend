@@ -43,6 +43,7 @@ export interface TransactionRow {
   storage: string;
   notes: string;
   qrCode?: string;
+  qr_code?: string;
   serialNumber?: string;
   itemsIncluded?: string;
   condition?: string;

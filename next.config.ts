@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(), browsing-topics=()" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://sixbaykcrnjjljatbuia.supabase.co; connect-src 'self' ws: wss: http: https:; frame-src 'none'; object-src 'none';" }
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://sixbaykcrnjjljatbuia.supabase.co https://api.qrserver.com; connect-src 'self' ws: wss: http: https:; frame-src 'none'; object-src 'none';" }
         ],
       },
     ];
@@ -35,6 +35,12 @@ const nextConfig: NextConfig = {
         hostname: "sixbaykcrnjjljatbuia.supabase.co",
         port: "",
         pathname: "/storage/v1/object/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.qrserver.com",
+        port: "",
+        pathname: "/**",
       },
     ],
   },

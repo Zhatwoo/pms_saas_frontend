@@ -42,6 +42,7 @@ interface PawnedItem {
   renewals: Renewal[];
   remarks: string;
   qrCode?: string;
+  qr_code?: string;
   originalPhoto?: string;
   conditionReport?: string;
   amount: number;
@@ -100,7 +101,7 @@ export default function EmployeePawnedItemsPage() {
   const { currentStep, isComplete, completeInventoryAudit } = useOpeningChecklist();
   const branchIdent = selectedBranch.id;
   const highlightedItemId = searchParams.get("itemId")?.trim() || "";
-  const isSuperAdmin = user?.role === "super_admin";
+  const isAdminOrSuperAdmin = user?.role === "super_admin" || user?.role === "admin";
   const hasHighlightedItem = Boolean(highlightedItemId);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -245,7 +246,7 @@ export default function EmployeePawnedItemsPage() {
                 Calendar
               </button>
             </div>
-            {isSuperAdmin && (
+            {isAdminOrSuperAdmin && (
               <div className="flex items-center gap-1.5">
                 <select 
                   value={qrSize} 
@@ -333,9 +334,11 @@ export default function EmployeePawnedItemsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-emerald-900 text-amber-400">
-                  {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", ""].map((h) => (
-                    <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : ""}`}>{h}</th>
-                  ))}
+                  {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", isAdminOrSuperAdmin ? "QR" : null, ""]
+                    .filter((h): h is string => h !== null)
+                    .map((h) => (
+                      <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : h === "QR" || h === "" ? "text-center" : ""}`}>{h}</th>
+                    ))}
                 </tr>
               </thead>
               <tbody>
@@ -380,6 +383,21 @@ export default function EmployeePawnedItemsPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2 text-[10px] font-bold text-zinc-600 max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
+                        {isAdminOrSuperAdmin && (
+                          <td className="px-3 py-2 text-center">
+                            {(item.qrCode || item.qr_code) ? (
+                              <div className="flex justify-center">
+                                <img
+                                  src={item.qrCode || item.qr_code}
+                                  alt={`${item.itemName} QR`}
+                                  className="h-8 w-8 rounded border border-border-main bg-white p-0.5 object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-text-muted">-</span>
+                            )}
+                          </td>
+                        )}
                         <td className="px-3 py-2 whitespace-nowrap text-right">
                           <button 
                             onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} 
@@ -426,7 +444,7 @@ export default function EmployeePawnedItemsPage() {
         itemId={selectedItemId} 
         onClose={() => setSelectedItemId(null)} 
         onSaveRemarks={handleSaveRemarks}
-        userRole="employee"
+        userRole={user?.role}
       />
     </div>
   );
