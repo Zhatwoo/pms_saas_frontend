@@ -84,6 +84,7 @@ export function TransactionActions({
   onExportCSV,
   onPrintReport,
 }: TransactionActionsProps) {
+  const todayString = new Date().toISOString().split("T")[0];
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
       <div className="flex flex-wrap items-end gap-2 sm:gap-3">
@@ -131,6 +132,7 @@ export function TransactionActions({
               <input
                 type="date"
                 value={dateFilter}
+                max={todayString}
                 onChange={(e) => onDateFilterChange?.(e.target.value)}
                 className="w-full h-[42px] rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 pr-7"
               />

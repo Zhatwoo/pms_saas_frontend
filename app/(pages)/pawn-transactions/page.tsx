@@ -190,6 +190,10 @@ function TransactionsCalendar({
   onChangeMonth: (year: number, month: number) => void;
 }) {
   const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const isNextDisabled =
+    calendarYear > today.getFullYear() ||
+    (calendarYear === today.getFullYear() && calendarMonth >= today.getMonth());
   const cells = buildCalendarCells(calendarYear, calendarMonth);
 
   return (
@@ -209,8 +213,12 @@ function TransactionsCalendar({
         </div>
         <button
           type="button"
-          onClick={() => calendarMonth === 11 ? onChangeMonth(calendarYear + 1, 0) : onChangeMonth(calendarYear, calendarMonth + 1)}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors hover:bg-white/10"
+          disabled={isNextDisabled}
+          onClick={() => {
+            if (isNextDisabled) return;
+            calendarMonth === 11 ? onChangeMonth(calendarYear + 1, 0) : onChangeMonth(calendarYear, calendarMonth + 1);
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors ${isNextDisabled ? "cursor-not-allowed opacity-40" : "hover:bg-white/10"}`}
           aria-label="Next month"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
@@ -232,13 +240,18 @@ function TransactionsCalendar({
           const count = calendarData[dateStr] ?? 0;
           const isToday = today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === day;
           const isSelected = selectedDate === dateStr;
+          const isFuture = dateStr > todayString;
 
           return (
             <button
               key={day}
               type="button"
-              onClick={() => onSelectDate(dateStr)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              disabled={isFuture}
+              onClick={() => {
+                if (isFuture) return;
+                onSelectDate(dateStr);
+              }}
+              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
@@ -274,13 +287,14 @@ export default function PawnTransactionsPage() {
   const highlightTransactionNo = searchParams.get("transactionNo");
   const shouldHighlight = searchParams.get("highlightTransaction") === "true";
   const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
+  const todayString = new Date().toISOString().split("T")[0];
 
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [listDateFilter, setListDateFilter] = useState(() => new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(() => todayString);
+  const [listDateFilter, setListDateFilter] = useState(() => todayString);
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [currentPage, setCurrentPage] = useState(1);
@@ -385,6 +399,12 @@ export default function PawnTransactionsPage() {
       active = false;
     };
   }, [selectedBranch.id, selectedDate, isAllBranches]);
+
+  useEffect(() => {
+    if (viewMode === "list") {
+      setListDateFilter(selectedDate);
+    }
+  }, [selectedDate, viewMode]);
 
   // When navigating from a notification, reset to today so the transaction is visible
   useEffect(() => {
@@ -661,7 +681,13 @@ export default function PawnTransactionsPage() {
           }}
           dateFilter={listDateFilter}
           onDateFilterChange={(val) => {
+            if (val && val > todayString) {
+              return;
+            }
             setListDateFilter(val);
+            if (val) {
+              setSelectedDate(val);
+            }
             setCurrentPage(1);
           }}
           onExportCSV={handleExportCSV}
