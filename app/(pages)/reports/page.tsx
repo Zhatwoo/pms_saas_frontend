@@ -173,6 +173,7 @@ export default function ReportsPage() {
   };
 
   const selectionLabel = getSelectionLabel();
+  const branchSalesTitle = isAllBranches ? "Per-Branch Sales" : `${selectedBranch.name} Sales`;
 
   const handleDownloadPDF = async () => {
     if (!reportData) return;
@@ -371,7 +372,7 @@ export default function ReportsPage() {
 
           {/* Side by side: branch table + chart */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} />
+            <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} title={branchSalesTitle} />
             <div id="sales-trend-chart">
               <SalesTrendChart
                 data={reportData?.salesTrend}

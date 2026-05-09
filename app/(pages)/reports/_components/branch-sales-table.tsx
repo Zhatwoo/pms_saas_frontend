@@ -22,9 +22,10 @@ interface BranchSale {
 interface BranchSalesTableProps {
   data?: BranchSale[];
   date?: string;
+  title?: string;
 }
 
-export function BranchSalesTable({ data = [], date }: BranchSalesTableProps) {
+export function BranchSalesTable({ data = [], date, title = "Per-Branch Sales" }: BranchSalesTableProps) {
   const totalSales = data.reduce((sum, b) => sum + b.sales, 0);
   const totalTxn = data.reduce((sum, b) => sum + b.txn, 0);
 
@@ -33,7 +34,7 @@ export function BranchSalesTable({ data = [], date }: BranchSalesTableProps) {
       {/* Header */}
       <div className="bg-emerald-900 px-4 py-3">
         <h3 className="text-base font-bold text-pawn-gold">
-          Per-Branch Sales &mdash; {date || "Today"}
+          {title} &mdash; {date || "Today"}
         </h3>
       </div>
 

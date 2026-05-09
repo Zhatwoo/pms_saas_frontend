@@ -14,6 +14,13 @@ function getTodayString() {
   return new Date().toISOString().split("T")[0];
 }
 
+function toLocalYMD(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function getCurrentMonthString() {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -22,28 +29,24 @@ function getCurrentMonthString() {
 function generateRecentWeeks(count = 12) {
   const weeks = [];
   const today = new Date();
-  const currentDay = today.getDay();
-  const diffToMonday = currentDay === 0 ? 6 : currentDay - 1;
-  
-  const currentMonday = new Date(today);
-  currentMonday.setDate(today.getDate() - diffToMonday);
-  currentMonday.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  const currentEnd = new Date(today);
 
   for (let i = 0; i < count; i++) {
-    const monday = new Date(currentMonday);
-    monday.setDate(currentMonday.getDate() - i * 7);
-    
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    
-    const startStr = monday.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-    const endStr = sunday.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const end = new Date(currentEnd);
+    end.setDate(currentEnd.getDate() - i * 7);
+
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+
+    const startStr = start.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+    const endStr = end.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
     
     weeks.push({
-      id: `${monday.toISOString().split("T")[0]}_${sunday.toISOString().split("T")[0]}`,
+      id: `${toLocalYMD(start)}_${toLocalYMD(end)}`,
       label: `${startStr} - ${endStr}`,
-      startDate: monday.toISOString().split("T")[0],
-      endDate: sunday.toISOString().split("T")[0],
+      startDate: toLocalYMD(start),
+      endDate: toLocalYMD(end),
     });
   }
   return weeks;

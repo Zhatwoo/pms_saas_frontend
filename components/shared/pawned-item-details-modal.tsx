@@ -35,6 +35,7 @@ export interface DetailedPawnedItem {
   pawn_date: string;
   status: "Active" | "Redeemed" | "Expired";
   remarks: string;
+  qrCode?: string;
   qr_code?: string;
   profile_photo?: string;
   item_photo?: string;
