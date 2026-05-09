@@ -53,6 +53,7 @@ interface ApiTransaction {
   unit_code: string | null;
   pawn_amount?: number | string | null;
   storage_fee?: number | string | null;
+  qr_code?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: {

@@ -248,6 +248,7 @@ interface ApiTransaction {
 interface PawnedItemJoin {
   id: string;
   description?: string | null;
+  qr_code?: string | null;
   serial_number?: string | null;
   items_included?: string | null;
   condition?: string | null;
