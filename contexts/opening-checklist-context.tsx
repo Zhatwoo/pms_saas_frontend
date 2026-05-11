@@ -55,27 +55,33 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     setIsComplete(data.checklistStep === "COMPLETED");
   }, []);
 
-  const loadDailyOpeningForEmployee = useCallback(async () => {
-    if (!user || user.role !== "employee" || !user.branchId) {
-      return;
-    }
-    const key = `${user.branchId}:${getPhCalendarDateString()}`;
-    setIsOpeningChecklistReady(false);
-    try {
-      const data = await api.get<DailyOpeningApiStatus>(
-        "/branch-finance/daily-opening/status",
-      );
-      applyServerStatus(data);
-      hasLoadedBranchDayRef.current = key;
-    } catch (err) {
-      console.error("[Checklist] Failed to load daily opening status:", err);
-      setCurrentStep("CASH_ON_HAND");
-      setIsComplete(false);
-      hasLoadedBranchDayRef.current = key;
-    } finally {
-      setIsOpeningChecklistReady(true);
-    }
-  }, [user, applyServerStatus]);
+  const loadDailyOpeningForEmployee = useCallback(
+    async (options?: { preserveShell?: boolean }) => {
+      if (!user || user.role !== "employee" || !user.branchId) {
+        return;
+      }
+      const key = `${user.branchId}:${getPhCalendarDateString()}`;
+      /** Avoid unmounting the whole employee shell on tab focus / file-picker blur (would feel like a full page restart). */
+      if (!options?.preserveShell) {
+        setIsOpeningChecklistReady(false);
+      }
+      try {
+        const data = await api.get<DailyOpeningApiStatus>(
+          "/branch-finance/daily-opening/status",
+        );
+        applyServerStatus(data);
+        hasLoadedBranchDayRef.current = key;
+      } catch (err) {
+        console.error("[Checklist] Failed to load daily opening status:", err);
+        setCurrentStep("CASH_ON_HAND");
+        setIsComplete(false);
+        hasLoadedBranchDayRef.current = key;
+      } finally {
+        setIsOpeningChecklistReady(true);
+      }
+    },
+    [user, applyServerStatus],
+  );
 
   useEffect(() => {
     if (!user || user.role !== "employee") {
@@ -116,7 +122,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     /** Branch-wide session: refetch when returning to the tab so another employee's completion is picked up. */
     const syncOpeningFromServer = () => {
       hasLoadedBranchDayRef.current = null;
-      void loadDailyOpeningForEmployee();
+      void loadDailyOpeningForEmployee({ preserveShell: true });
     };
 
     const onVisibilityChange = () => {
@@ -174,7 +180,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       return;
     }
     hasLoadedBranchDayRef.current = null;
-    await loadDailyOpeningForEmployee();
+    await loadDailyOpeningForEmployee({ preserveShell: true });
   }, [user, loadDailyOpeningForEmployee]);
 
   return (

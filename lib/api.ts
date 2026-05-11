@@ -2,6 +2,43 @@ type ApiRequestInit = RequestInit & {
   suppressAuthExpired?: boolean;
 };
 
+/** Structured API failure (4xx/5xx JSON from Nest or proxy). */
+export type ApiErrorPayload = Record<string, unknown> & {
+  error?: string;
+  code?: string;
+  message?: string;
+  available_balance?: number;
+  required_amount?: number;
+  branch_id?: string;
+  business_date?: string;
+};
+
+export class ApiError extends Error {
+  readonly statusCode: number;
+  readonly payload: ApiErrorPayload;
+
+  constructor(message: string, statusCode: number, payload: ApiErrorPayload = {}) {
+    super(message);
+    this.name = "ApiError";
+    this.statusCode = statusCode;
+    this.payload = payload;
+  }
+
+  get insufficientFunds(): boolean {
+    return this.payload.error === "INSUFFICIENT_FUNDS";
+  }
+
+  get availableBalance(): number | undefined {
+    const v = this.payload.available_balance;
+    return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+  }
+
+  get requiredAmount(): number | undefined {
+    const v = this.payload.required_amount;
+    return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+  }
+}
+
 class ApiClient {
   private notifySessionExpired(message: string, path: string) {
     if (typeof window === "undefined") return;
@@ -86,70 +123,101 @@ class ApiClient {
       );
     }
 
-    if (!res.ok) {
-      const errorMessage = await this.extractErrorMessage(
-        res,
-        path,
-        suppressAuthExpired && res.status === 401,
-      );
-
-      if (res.status === 401 && !isPublicPath && !suppressAuthExpired) {
-        console.warn(`[API] 401 Unauthorized for ${path}.`);
-        this.notifySessionExpired(errorMessage, path);
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    const json = await res.json();
-    return json.data ?? json;
-  }
-
-  private async extractErrorMessage(
-    res: Response,
-    path: string,
-    suppressLogging = false,
-  ): Promise<string> {
-    const fallback = this.fallbackMessage(res.status, path);
-
     let text = "";
     try {
       text = await res.text();
     } catch {
-      if (!suppressLogging) {
-        this.logApiIssue(res.status, path, "Could not read response body");
+      if (!res.ok) {
+        const fb = this.fallbackMessage(res.status, path);
+        throw new ApiError(fb, res.status, {});
       }
-      return fallback;
+    }
+
+    if (!res.ok) {
+      const suppressLogging = Boolean(suppressAuthExpired && res.status === 401);
+      const { message, payload } = this.parseErrorFromBody(
+        res.status,
+        text,
+        path,
+        res.headers,
+        suppressLogging,
+      );
+
+      if (res.status === 401 && !isPublicPath && !suppressAuthExpired) {
+        console.warn(`[API] 401 Unauthorized for ${path}.`);
+        this.notifySessionExpired(message, path);
+      }
+
+      if (payload.error === "INSUFFICIENT_FUNDS") {
+        console.warn("[API] Insufficient branch cash", {
+          path,
+          branch_id: payload.branch_id,
+          business_date: payload.business_date,
+          available_balance: payload.available_balance,
+          required_amount: payload.required_amount,
+          ts: new Date().toISOString(),
+        });
+      }
+
+      throw new ApiError(message, res.status, payload);
     }
 
     if (!text || !text.trim()) {
+      return {} as T;
+    }
+
+    if (text.trimStart().startsWith("<")) {
+      return {} as T;
+    }
+
+    try {
+      const json = JSON.parse(text) as { data?: T } & T;
+      return json.data ?? (json as T);
+    } catch {
+      return {} as T;
+    }
+  }
+
+  private parseErrorFromBody(
+    status: number,
+    text: string,
+    path: string,
+    resHeaders: Headers,
+    suppressLogging: boolean,
+  ): { message: string; payload: ApiErrorPayload } {
+    const fallback = this.fallbackMessage(status, path);
+    const emptyPayload = {} as ApiErrorPayload;
+
+    if (!text || !text.trim()) {
       if (!suppressLogging) {
-        this.logApiIssue(res.status, path, "Empty response body");
+        this.logApiIssue(status, path, "Empty response body");
       }
-      return fallback;
+      return { message: fallback, payload: emptyPayload };
     }
 
     if (text.trimStart().startsWith("<")) {
       if (!suppressLogging) {
         this.logApiIssue(
-          res.status,
+          status,
           path,
           "Received HTML instead of JSON (proxy or server error)",
         );
       }
-      return res.status === 502 || res.status === 503
-        ? "Server is temporarily unavailable. Please try again."
-        : `Server error (HTTP ${res.status}). The backend may be down.`;
+      const msg =
+        status === 502 || status === 503
+          ? "Server is temporarily unavailable. Please try again."
+          : `Server error (HTTP ${status}). The backend may be down.`;
+      return { message: msg, payload: emptyPayload };
     }
 
-    let errorData: Record<string, unknown>;
+    let errorData: ApiErrorPayload;
     try {
-      errorData = JSON.parse(text) as Record<string, unknown>;
+      errorData = JSON.parse(text) as ApiErrorPayload;
     } catch {
       const trimmedText = text.trim();
       const lower = trimmedText.toLowerCase();
       const likelyProxyBackendDown =
-        res.status >= 500 &&
+        status >= 500 &&
         text.length < 8000 &&
         !trimmedText.startsWith("{") &&
         (lower.includes("internal server error") ||
@@ -158,7 +226,6 @@ class ApiClient {
           lower.includes("service unavailable"));
 
       if (likelyProxyBackendDown) {
-        // #region agent log
         fetch("http://127.0.0.1:7631/ingest/72ea5a90-3237-42ea-a50b-59d1cc22d712", {
           method: "POST",
           headers: {
@@ -169,43 +236,49 @@ class ApiClient {
             sessionId: "70f8a0",
             runId: "proxy-detect",
             hypothesisId: "H1",
-            location: "PMS_frontend/lib/api.ts:extractErrorMessage",
+            location: "PMS_frontend/lib/api.ts:parseErrorFromBody",
             message: "Non-JSON 5xx from /api (rewrite target unreachable)",
             data: {
               path,
-              resStatus: res.status,
+              resStatus: status,
               bodyLen: trimmedText.length,
               snippet: trimmedText.slice(0, 160),
             },
             timestamp: Date.now(),
           }),
-        }).catch(() => { });
-        // #endregion
+        }).catch(() => {});
         if (!suppressLogging) {
           this.logApiIssue(
-            res.status,
+            status,
             path,
             "Next.js proxy could not reach Nest (ECONNREFUSED or 5xx from upstream)",
           );
         }
-        return "Cannot reach the backend API. Start Nest on port 4000 (npm run start:dev in PMS_backend) or run npm run dev from the project root to start both apps.";
+        return {
+          message:
+            "Cannot reach the backend API. Start Nest on port 4000 (npm run start:dev in PMS_backend) or run npm run dev from the project root to start both apps.",
+          payload: emptyPayload,
+        };
       }
 
       if (!suppressLogging) {
-        this.logApiIssue(res.status, path, `Non-JSON response: ${text.slice(0, 300)}`);
+        this.logApiIssue(status, path, `Non-JSON response: ${text.slice(0, 300)}`);
       }
-      return text.length <= 200 ? text : fallback;
+      return {
+        message: text.length <= 200 ? text : fallback,
+        payload: emptyPayload,
+      };
     }
 
     if (!errorData || typeof errorData !== "object" || Object.keys(errorData).length === 0) {
       if (!suppressLogging) {
-        this.logApiIssue(res.status, path, "Empty JSON object");
+        this.logApiIssue(status, path, "Empty JSON object");
       }
-      return fallback;
+      return { message: fallback, payload: emptyPayload };
     }
 
     if (!suppressLogging) {
-      this.logApiIssue(res.status, path, errorData);
+      this.logApiIssue(status, path, errorData);
     }
 
     let msg = "";
@@ -261,15 +334,15 @@ class ApiClient {
       msg = "Session expired. Please sign in again.";
     }
 
-    if (res.status === 429) {
-      const retryAfter = res.headers.get("retry-after");
+    if (status === 429) {
+      const retryAfter = resHeaders.get("retry-after");
       const sec = retryAfter != null && retryAfter.trim() !== "" ? parseInt(retryAfter, 10) : NaN;
       if (Number.isFinite(sec) && sec > 0) {
         msg = `${msg} Please try again in about ${sec}s.`;
       }
     }
 
-    return msg;
+    return { message: msg, payload: errorData };
   }
 
   post<T>(path: string, body: unknown, options?: ApiRequestInit) {
