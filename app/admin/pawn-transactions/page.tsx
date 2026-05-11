@@ -678,10 +678,17 @@ export default function SuperAdminPawnTransactionsPage() {
             Calendar date{" "}
             <span className="font-semibold">{businessSession.manilaCalendarDate}</span>
             {" · "}Status{" "}
-            <span className="font-semibold">{businessSession.todaySession?.status ?? "—"}</span>
+            <span className="font-semibold">
+              {businessSession.pendingStartingSession
+                ? "PENDING_START_BALANCE"
+                : businessSession.todaySession?.status ?? "—"}
+            </span>
             {businessSession.pendingStartingSession && (
               <span className="ml-2 font-semibold text-amber-700 dark:text-amber-300">
-                Starting balance required ({businessSession.pendingStartingSession.businessDate})
+                {businessSession.pendingStartingSession.businessDate ===
+                businessSession.manilaCalendarDate
+                  ? `Starting balance required to resume today (${businessSession.pendingStartingSession.businessDate})`
+                  : `Starting balance required (${businessSession.pendingStartingSession.businessDate})`}
               </span>
             )}
           </p>
@@ -866,12 +873,18 @@ export default function SuperAdminPawnTransactionsPage() {
         type="starting"
         titleOverride={
           businessSession?.pendingStartingSession
-            ? "Branch starting balance (new business day)"
+            ? businessSession.pendingStartingSession.businessDate ===
+                businessSession.manilaCalendarDate
+              ? "Branch starting balance (resume same day)"
+              : "Branch starting balance (new business day)"
             : undefined
         }
         subtitleOverride={
           businessSession?.pendingStartingSession
-            ? "Starting balance required for the new business day. One entry applies for all employees at this branch."
+            ? businessSession.pendingStartingSession.businessDate ===
+                businessSession.manilaCalendarDate
+              ? "The branch ended the Manila business day earlier. Enter today’s starting cash again to reopen. One entry applies for all employees at this branch."
+              : "Starting balance required for the new business day. One entry applies for all employees at this branch."
             : undefined
         }
         currentCash={expectedCash}

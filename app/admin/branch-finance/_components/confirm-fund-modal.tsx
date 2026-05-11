@@ -10,7 +10,7 @@ interface ConfirmFundModalProps {
     receivedAmount: number;
     notes: string;
     proofFile: File | null;
-  }) => void;
+  }) => void | Promise<void>;
   amount: number;
   requestNo?: string;
   branchName?: string;
@@ -60,8 +60,9 @@ export function ConfirmFundModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  async function runConfirm(): Promise<void> {
+    if (isSubmitting) return;
+
     const parsed = Number(receivedAmount.replace(/,/g, ""));
     if (!Number.isFinite(parsed) || parsed <= 0) {
       setError(formatAmountError());
@@ -76,12 +77,20 @@ export function ConfirmFundModal({
       return;
     }
 
-    onConfirm({
-      receivedAmount: parsed,
-      notes: notes.trim(),
-      proofFile,
-    });
-  };
+    setError(null);
+    try {
+      await Promise.resolve(
+        onConfirm({
+          receivedAmount: parsed,
+          notes: notes.trim(),
+          proofFile,
+        }),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Confirmation failed.";
+      setError(msg);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -102,6 +111,7 @@ export function ConfirmFundModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="rounded-full p-2 text-text-tertiary transition-colors hover:bg-surface-secondary hover:text-text-primary"
           >
@@ -112,7 +122,14 @@ export function ConfirmFundModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void runConfirm();
+          }}
+          className="space-y-5 px-6 py-5"
+        >
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
               Receipt Confirmation
@@ -219,9 +236,10 @@ export function ConfirmFundModal({
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
               disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => void runConfirm()}
+              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />

@@ -8,6 +8,10 @@ interface MoaModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  /** When true, blocks finalizing (e.g. branch cash below loan amount). */
+  confirmDisabled?: boolean;
+  /** Short explanation shown when confirm is disabled. */
+  confirmDisabledReason?: string;
   data: {
     firstName: string;
     middleName: string;
@@ -48,7 +52,16 @@ const DEFAULT_TERMS_TEXT = `TERMS AND CONDITIONS (GADGETS):
 4. Seller must advise the shop of any changes in address or contact information.
 5. In case of loss of this MOA, present a valid ID and a notarized affidavit promptly.`;
 
-export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading, autoPrint }: MoaModalProps) {
+export function MoaModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  data,
+  isLoading,
+  autoPrint,
+  confirmDisabled = false,
+  confirmDisabledReason,
+}: MoaModalProps) {
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
   const [labels, setLabels] = useState<any>(null);
   const [extensionRows, setExtensionRows] = useState<any[]>([]);
@@ -347,10 +360,17 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading, autoPrin
         {/* Footer Actions */}
         {!autoPrint && (
           <div className="sticky bottom-0 bg-white border-t border-zinc-200 px-8 py-4 flex justify-between items-center z-10 no-print">
-             <p className="text-[10px] text-zinc-400 font-medium italic">
-               Review carefully. Finalizing will generate the ticket and store record permanently.
-             </p>
-             <div className="flex gap-4">
+             <div className="min-w-0 pr-4">
+               <p className="text-[10px] text-zinc-400 font-medium italic">
+                 Review carefully. Finalizing will generate the ticket and store record permanently.
+               </p>
+               {confirmDisabled && confirmDisabledReason ? (
+                 <p className="mt-2 text-[11px] font-semibold text-amber-800" role="alert">
+                   {confirmDisabledReason}
+                 </p>
+               ) : null}
+             </div>
+             <div className="flex gap-4 shrink-0">
                <button 
                  onClick={onClose}
                  disabled={isLoading}
@@ -366,9 +386,10 @@ export function MoaModal({ isOpen, onClose, onConfirm, data, isLoading, autoPrin
                   Print / PDF
                 </button>
                <button 
+                 type="button"
                  onClick={onConfirm}
-                 disabled={isLoading}
-                 className="px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center gap-2 disabled:bg-zinc-400"
+                 disabled={isLoading || confirmDisabled}
+                 className="px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed"
                >
                  {isLoading ? (
                    <>

@@ -529,6 +529,16 @@ export default function EmployeePawnTransactionsPage() {
     void fetchSelectedDateStats();
   }, [fetchSelectedDateStats]);
 
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
+      void fetchSelectedDateStats();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [fetchSelectedDateStats, selectedBranch.id, canSwitchBranch]);
+
   const fetchTransactionsRef = useRef(fetchTransactions);
   useEffect(() => {
     fetchTransactionsRef.current = fetchTransactions;
@@ -690,6 +700,28 @@ export default function EmployeePawnTransactionsPage() {
     if (!businessSession) return true;
     return businessSession.todaySession?.status !== "OPEN";
   }, [selectedBranch.id, businessSession]);
+
+  /** YYYY-MM-DD compare: pending row ahead of Manila calendar (legacy end-day) still means “resume for today’s Manila date”. */
+  const sessionStartingBalanceContext = useMemo(() => {
+    if (!businessSession?.pendingStartingSession) {
+      return {
+        hasPending: false as const,
+        resumeForManilaCalendar: false,
+        pendingDate: "",
+        manila: businessSession?.manilaCalendarDate ?? "",
+      };
+    }
+    const pendingDate = businessSession.pendingStartingSession.businessDate;
+    const manila = businessSession.manilaCalendarDate;
+    const resumeForManilaCalendar =
+      pendingDate === manila || pendingDate > manila;
+    return {
+      hasPending: true as const,
+      resumeForManilaCalendar,
+      pendingDate,
+      manila,
+    };
+  }, [businessSession]);
 
   const handleExportCSV = useCallback(() => {
     if (filteredTransactions.length === 0) return;
@@ -926,11 +958,15 @@ export default function EmployeePawnTransactionsPage() {
                   {" · "}
                   Status:{" "}
                   <span className="font-semibold text-text-primary">
-                    {businessSession.todaySession?.status ?? "—"}
+                    {businessSession.pendingStartingSession
+                      ? "PENDING_START_BALANCE"
+                      : businessSession.todaySession?.status ?? "—"}
                   </span>
                   {businessSession.pendingStartingSession && (
                     <span className="ml-2 rounded-md bg-amber-500/15 px-2 py-0.5 font-semibold text-amber-800 dark:text-amber-200">
-                      Starting balance required for new business day ({businessSession.pendingStartingSession.businessDate})
+                      {sessionStartingBalanceContext.resumeForManilaCalendar
+                        ? `Starting balance required — use Start Day for Manila date ${sessionStartingBalanceContext.manila}.`
+                        : `Starting balance required for business date ${sessionStartingBalanceContext.pendingDate}.`}
                     </span>
                   )}
                 </p>
@@ -948,7 +984,10 @@ export default function EmployeePawnTransactionsPage() {
             </div>
             {cashOpsBlocked && (
               <p className="mt-2 border-t border-border-subtle pt-2 text-[11px] text-amber-800 dark:text-amber-200">
-                Cash transactions are paused until the branch business day is OPEN. Submit the branch starting balance for the pending business date if prompted.
+                {sessionStartingBalanceContext.hasPending &&
+                sessionStartingBalanceContext.resumeForManilaCalendar
+                  ? "Cash transactions are paused until the branch business day is OPEN. Submit the branch starting balance on Start Day for today’s Manila date (one entry for the whole branch)."
+                  : "Cash transactions are paused until the branch business day is OPEN. Submit the branch starting balance for the pending business date if prompted."}
               </p>
             )}
           </div>
@@ -1152,12 +1191,16 @@ export default function EmployeePawnTransactionsPage() {
         type="starting"
         titleOverride={
           businessSession?.pendingStartingSession
-            ? "Branch starting balance (new business day)"
+            ? sessionStartingBalanceContext.resumeForManilaCalendar
+              ? "Branch starting balance (resume same day)"
+              : "Branch starting balance (new business day)"
             : undefined
         }
         subtitleOverride={
           businessSession?.pendingStartingSession
-            ? "Starting balance required for the new business day. One entry applies for all employees at this branch."
+            ? sessionStartingBalanceContext.resumeForManilaCalendar
+              ? "The branch ended the Manila business day earlier, or the session row is ahead of the calendar. Enter starting cash again for today’s Manila date on Start Day. One entry applies for all employees at this branch."
+              : "Starting balance required for the new business day. One entry applies for all employees at this branch."
             : undefined
         }
         currentCash={expectedCash}
