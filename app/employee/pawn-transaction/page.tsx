@@ -141,6 +141,10 @@ function TransactionsCalendar({
   onChangeMonth: (year: number, month: number) => void;
 }) {
   const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const isNextDisabled =
+    calendarYear > today.getFullYear() ||
+    (calendarYear === today.getFullYear() && calendarMonth >= today.getMonth());
   const cells = buildCalendarCells(calendarYear, calendarMonth);
 
   return (
@@ -162,8 +166,12 @@ function TransactionsCalendar({
 
         <button
           type="button"
-          onClick={() => (calendarMonth === 11 ? onChangeMonth(calendarYear + 1, 0) : onChangeMonth(calendarYear, calendarMonth + 1))}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors hover:bg-white/10"
+          disabled={isNextDisabled}
+          onClick={() => {
+            if (isNextDisabled) return;
+            calendarMonth === 11 ? onChangeMonth(calendarYear + 1, 0) : onChangeMonth(calendarYear, calendarMonth + 1);
+          }}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors ${isNextDisabled ? "cursor-not-allowed opacity-40" : "hover:bg-white/10"}`}
           aria-label="Next month"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6" /></svg>
@@ -188,13 +196,18 @@ function TransactionsCalendar({
           const count = calendarData[dateString] ?? 0;
           const isToday = today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === day;
           const isSelected = selectedDate === dateString;
+          const isFuture = dateString > todayString;
 
           return (
             <button
               key={day}
               type="button"
-              onClick={() => onSelectDate(dateString)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              disabled={isFuture}
+              onClick={() => {
+                if (isFuture) return;
+                onSelectDate(dateString);
+              }}
+              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
@@ -898,7 +911,7 @@ export default function EmployeePawnTransactionsPage() {
                 <td className="border border-emerald-800/20 p-2">Sold Item</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold">{currentStats.soldItem}</td>
               </tr>
-              <tr className="bg-emerald-50/50">
+              <tr className="bg-amber-500/5 dark:bg-amber-500/10">
                 <td className="border border-emerald-800/20 p-2 font-bold text-emerald-900">Live Total Balance</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold text-emerald-900">
                   {formatPeso(currentStats.endingBalance.toLocaleString("en-PH", { minimumFractionDigits: 2 }))}

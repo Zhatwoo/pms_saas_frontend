@@ -81,6 +81,7 @@ interface ExpirationTableProps {
   sendingItemId?: string | null;
   onRenew?: (id: string) => void;
   renewingItemId?: string | null;
+  canRenew?: boolean;
   highlightTicketNo?: string | null;
 }
 
@@ -91,6 +92,7 @@ export function ExpirationTable({
   sendingItemId,
   onRenew,
   renewingItemId,
+  canRenew = true,
   highlightTicketNo,
 }: ExpirationTableProps) {
   const [pulsing, setPulsing] = useState(true);
@@ -133,14 +135,16 @@ export function ExpirationTable({
         if (key === "actions") {
           return (
             <div className="flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => onRenew?.(row.id)}
-                disabled={renewingItemId === row.id}
-                className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {renewingItemId === row.id ? "Renewing..." : "Renew"}
-              </button>
+              {canRenew ? (
+                <button
+                  type="button"
+                  onClick={() => onRenew?.(row.id)}
+                  disabled={renewingItemId === row.id}
+                  className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {renewingItemId === row.id ? "Renewing..." : "Renew"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => onSendEmail?.(row.id)}

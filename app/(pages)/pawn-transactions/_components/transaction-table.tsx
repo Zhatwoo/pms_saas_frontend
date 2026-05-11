@@ -6,6 +6,22 @@ import type { TransactionRow, PurposeType } from "./types";
 import { useRef, type RefObject } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
+const eyeIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
   { key: "branch", label: "Branch" },
@@ -340,6 +356,16 @@ export function TransactionTable({
                               className="flex items-center justify-center gap-2"
                               onClick={(event) => event.stopPropagation()}
                             >
+                              {onViewDetails ? (
+                                <button
+                                  type="button"
+                                  onClick={() => onViewDetails(row)}
+                                  title="View details"
+                                  className="rounded-lg p-2 text-text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+                                >
+                                  {eyeIcon}
+                                </button>
+                              ) : null}
                               {row.purpose === "Pawn" ? (
                                 <button
                                   type="button"

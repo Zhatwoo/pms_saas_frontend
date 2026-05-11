@@ -178,23 +178,23 @@ export function TransactionStats({ data }: TransactionStatsProps) {
       />
       
       <div className="flex flex-col justify-between rounded-lg border border-border-main bg-surface p-3 shadow-sm transition-colors duration-300">
-        <div className="mb-2 h-1 w-full rounded-full bg-emerald-950" />
+        <div className="mb-2 h-1 w-full rounded-full bg-emerald-900 dark:bg-emerald-500" />
 
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
               Start Day
             </p>
-            <p className="mt-0.5 text-lg font-black text-emerald-950 leading-none">
+            <p className="mt-0.5 text-lg font-black text-text-primary leading-none">
               ₱ {(data?.startingBalance || 0).toLocaleString()}
             </p>
           </div>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-600">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
             {balanceIcon}
           </div>
         </div>
 
-        <div className="my-2 border-t border-dashed border-zinc-100" />
+        <div className="my-2 border-t border-dashed border-border-subtle" />
 
         <div className="flex items-end justify-between">
           <div className="text-right w-full">

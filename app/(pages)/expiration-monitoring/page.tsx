@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
@@ -55,6 +56,7 @@ interface ExpirationMonitoringResponse {
 function ExpirationMonitoringPageContent() {
   const [activeTab, setActiveTab] = useState("30days");
   const { selectedBranch, isAllBranches } = useBranch();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const searchParams = useSearchParams();
@@ -64,6 +66,7 @@ function ExpirationMonitoringPageContent() {
   const [sendingItemId, setSendingItemId] = useState<string | null>(null);
   const [renewingItemId, setRenewingItemId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const canRenew = user?.role === "admin" || user?.role === "employee";
 
   const [stats, setStats] = useState({
     overdue: 0,
@@ -238,6 +241,7 @@ function ExpirationMonitoringPageContent() {
         sendingItemId={sendingItemId}
         onRenew={handleRenew}
         renewingItemId={renewingItemId}
+        canRenew={canRenew}
         highlightTicketNo={highlightTicketNo}
       />
     </div>

@@ -387,51 +387,51 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-7xl space-y-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
         <div className="space-y-4">
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-4 py-3">
-              <h2 className="text-xs font-bold text-zinc-800">Shop Information</h2>
+          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
+            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Shop Information</h2>
             </div>
 
             <div className="space-y-5 px-4 py-4">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Shop Name
                 </label>
                 <input
                   value={shopSettings.shopName}
                   onChange={(e) => handleShopSettingChange("shopName", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Shop Address
                 </label>
                 <input
                   value={shopSettings.shopAddress}
                   onChange={(e) => handleShopSettingChange("shopAddress", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                 />
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                  <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                     Phone Number
                   </label>
                   <input
                     value={shopSettings.phoneNumber}
                     onChange={(e) => handleShopSettingChange("phoneNumber", e.target.value)}
                     disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                  <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                     Email
                   </label>
                   <input
@@ -439,63 +439,63 @@ export default function SettingsPage() {
                     value={shopSettings.email}
                     onChange={(e) => handleShopSettingChange("email", e.target.value)}
                     disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                   />
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-4 py-3">
-              <h2 className="text-xs font-bold text-zinc-800">Pawnshop Policies</h2>
+          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
+            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Pawnshop Policies</h2>
             </div>
 
             <div className="grid gap-3 px-4 py-4 md:grid-cols-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
-                  Default Interest Rate (%)
+                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  test (%)
                 </label>
                 <input
                   value={policies.interestRate}
                   onChange={(e) => handlePolicyChange("interestRate", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                 />
-                <p className="text-[9px] text-zinc-400">per month</p>
+                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">per month</p>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Default Pawn Duration (Days)
                 </label>
                 <input
                   value={policies.pawnDuration}
                   onChange={(e) => handlePolicyChange("pawnDuration", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Grace Period (Days)
                 </label>
                 <input
                   value={policies.gracePeriod}
                   onChange={(e) => handlePolicyChange("gracePeriod", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
                 />
               </div>
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="border-b border-zinc-200 px-4 py-3">
+          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
+            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-xs font-bold text-zinc-800">Memorandum of Agreement Template</h2>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
                   Super Admin Only
                 </span>
               </div>
@@ -517,13 +517,13 @@ export default function SettingsPage() {
                   className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-colors ${
                     isMoaEditMode
                       ? "border border-emerald-700 bg-emerald-700 text-white"
-                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
+                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                 </button>
 
-                <label className={`inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-[11px] font-bold text-zinc-700 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <label className={`inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-[11px] font-bold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <input
                     type="checkbox"
                     checked={isMoaLocked}
@@ -537,14 +537,14 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setIsTopHeaderSwapped((v) => !v)}
                   disabled={!isSuperAdmin}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
               </div>
 
-              <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6">
-                <div className="space-y-2 border border-emerald-800/70 p-5 text-[10px] text-zinc-800">
+              <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6 dark:bg-slate-900 dark:border-zinc-700">
+                <div className="space-y-2 border border-emerald-800/70 p-5 text-[10px] text-zinc-800 dark:text-zinc-100">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -734,7 +734,7 @@ export default function SettingsPage() {
                       contentEditable={canEditMoa}
                       suppressContentEditableWarning
                       onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
-                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none"
+                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600 dark:text-zinc-100"
                     />
                   </div>
 
@@ -757,7 +757,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[10px] text-zinc-500">
+                <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
                   This template matches the printed MOA layout. Enable Edit Mode and unlock template to modify any section.
                 </p>
 
@@ -772,7 +772,7 @@ export default function SettingsPage() {
                   <button
                     onClick={handleSendToAllBranches}
                     disabled={sendStatus === "sending" || !isSuperAdmin}
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
                   >
                     {sendStatus === "sending"
                       ? "Sending to All Branches..."
@@ -782,7 +782,7 @@ export default function SettingsPage() {
               </div>
 
               {(moaSavedAt || sendStatus === "sent") && (
-                <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] text-emerald-800">
+                <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
                   {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
                   {sendStatus === "sent" && <span>MOA template sent to all branches.</span>}
                 </div>
@@ -800,11 +800,11 @@ export default function SettingsPage() {
             <button 
               onClick={() => window.location.reload()}
               disabled={!isSuperAdmin}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed">
+              className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
               Discard
             </button>
             {settingsSavedAt && (
-              <span className="text-[10px] text-emerald-700 font-medium">
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
                 Settings saved: {settingsSavedAt}
               </span>
             )}
@@ -812,8 +812,8 @@ export default function SettingsPage() {
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm">
-            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-pawn-gold">
+          <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm dark:bg-slate-900 dark:border-zinc-700">
+            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-pawn-gold dark:border-zinc-700">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
@@ -826,25 +826,25 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-            <h3 className="text-sm font-bold text-zinc-900">Admin Panel</h3>
-            <p className="mt-1 text-[10px] text-zinc-500">Super Admin Settings</p>
+            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Admin Panel</h3>
+            <p className="mt-1 text-[10px] text-zinc-500 dark:text-zinc-400">Super Admin Settings</p>
             <button
               onClick={() => setIsAvatarModalOpen(true)}
-              className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100"
+              className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
             >
               Change Avatar
             </button>
             {avatarToast && (
-              <p className="mt-2 text-[10px] font-medium text-emerald-700">{avatarToast}</p>
+              <p className="mt-2 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">{avatarToast}</p>
             )}
             <PasswordChangeRequestCard />
           </section>
 
-          <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">
+          <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900 dark:bg-emerald-950">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-200">
               Security Restriction
             </p>
-            <p className="mt-2 text-xs leading-5 text-emerald-950">
+            <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
               System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
             </p>
           </section>

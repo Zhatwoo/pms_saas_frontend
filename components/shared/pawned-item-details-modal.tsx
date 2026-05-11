@@ -74,7 +74,7 @@ function DetailItem({ label, value, highlight = false }: { label: string; value:
   return (
     <div className="space-y-1">
       <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
-      <p className={`text-sm font-bold ${highlight ? "text-emerald-700" : "text-text-primary"}`}>
+      <p className={`text-sm font-bold ${highlight ? "text-emerald-600 dark:text-emerald-400" : "text-text-primary"}`}>
         {value || "—"}
       </p>
     </div>
@@ -483,7 +483,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                       width={180}
                       height={180}
                       unoptimized
-                      className="object-contain bg-white p-3 rounded-2xl shadow-xl"
+                      className="object-contain bg-white p-3 rounded-2xl shadow-xl dark:opacity-90 border border-border-main"
                     />
                     {qrRequestStatus === "pending" && (
                       <p className="text-[10px] font-bold text-amber-500 uppercase tracking-widest mt-2">Pending Replacement Approval</p>
@@ -542,13 +542,13 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                   <h2 className="text-4xl font-black text-text-primary tracking-tighter uppercase">{item.item_name}</h2>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-text-tertiary uppercase tracking-tighter">{item.category}</span>
-                    <span className="h-1 w-1 rounded-full bg-zinc-300" />
-                    <span className="text-xs font-black text-emerald-800 uppercase tracking-tighter">{item.branch}</span>
+                    <span className="h-1 w-1 rounded-full bg-border-main" />
+                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">{item.branch}</span>
                   </div>
                 </div>
                 <div className="text-right">
                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Pawn Value</p>
-                   <p className="text-3xl font-black text-emerald-700">{formatPeso(item.amount.toLocaleString())}</p>
+                   <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{formatPeso(item.amount.toLocaleString())}</p>
                 </div>
               </div>
 
@@ -597,7 +597,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                         <button 
                           onClick={handleSaveRemarks}
                           disabled={isSaving || remarks === item.remarks}
-                          className="rounded-2xl bg-emerald-700 px-8 py-3 text-xs font-black text-white hover:bg-emerald-800 disabled:opacity-30 transition-all flex items-center gap-2"
+                          className="rounded-2xl bg-emerald-600 dark:bg-emerald-500 px-8 py-3 text-xs font-black text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-30 transition-all flex items-center gap-2"
                         >
                           {isSaving && <div className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
                           {isSaving ? "SAVING..." : "UPDATE REMARKS"}
@@ -620,15 +620,15 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                  <div className="space-y-3">
                     {item.renewals.length > 0 ? (
                       item.renewals.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-5 bg-surface-secondary rounded-2xl border border-border-main group hover:border-emerald-200 transition-colors">
+                        <div key={i} className="flex items-center justify-between p-5 bg-surface-secondary rounded-2xl border border-border-main group hover:border-emerald-500/30 transition-colors">
                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-[10px] font-black text-emerald-700">R{i+1}</div>
+                             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-400">R{i+1}</div>
                              <div>
-                                <p className="text-xs font-black uppercase tracking-tight">Renewal Payment Cycle {i+1}</p>
+                                <p className="text-xs font-black uppercase tracking-tight text-text-primary">Renewal Payment Cycle {i+1}</p>
                                 <p className="text-[10px] font-bold text-text-tertiary">PROCESSED ON {r.date}</p>
                              </div>
                           </div>
-                          <p className="text-sm font-black text-emerald-700">{formatPeso(r.amount.toLocaleString())}</p>
+                          <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatPeso(r.amount.toLocaleString())}</p>
                         </div>
                       ))
                     ) : (
@@ -660,8 +660,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                         }}
                         className={`px-8 py-4 rounded-2xl text-xs font-black transition-all shadow-xl active:scale-95 ${
                           (qrRequestStatus === "approved" || !item?.created_at || (new Date().getTime() - new Date(item.created_at).getTime() < 86400000))
-                            ? "bg-zinc-900 text-white hover:bg-black"
-                            : "bg-zinc-200 text-zinc-400 cursor-not-allowed"
+                            ? "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-600"
+                            : "bg-surface-secondary text-text-tertiary cursor-not-allowed"
                         }`}
                       >
                         PRINT LABEL

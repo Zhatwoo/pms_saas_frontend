@@ -11,6 +11,22 @@ import { useAuth } from "@/contexts/auth-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { AddItemModal } from "./_components/add-item-modal";
 
+const eyeIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
 type ViewMode = "list" | "calendar";
 
 interface SaleItem {
@@ -23,6 +39,8 @@ interface SaleItem {
   price: number;
   status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
+  branchLocation?: string;
+  imageUrl?: string;
 }
 
 interface SaleStats {
@@ -242,6 +260,7 @@ export default function ItemsForSalePage() {
   const today = new Date();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedSaleItem, setSelectedSaleItem] = useState<SaleItem | null>(null);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -492,7 +511,7 @@ export default function ItemsForSalePage() {
             <thead>
               <tr className="bg-emerald-900 text-amber-400">
                 {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
-                  <th
+                  {["ID", "Item Name", "Category", "Branch", "Date Added", "Price", "Status", ""].map((h) => (
                     key={h}
                     className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"
                       }`}
@@ -539,7 +558,13 @@ export default function ItemsForSalePage() {
                     <td className="px-4 py-3 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button className="rounded px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
-                          View details
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSaleItem(item)}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+                          >
+                            {eyeIcon}
+                            <span>View</span>
                         </button>
                       </div>
                     </td>
@@ -666,6 +691,72 @@ export default function ItemsForSalePage() {
           window.location.reload();
         }}
       />
+
+      {selectedSaleItem ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={() => setSelectedSaleItem(null)}
+            aria-label="Close item details"
+          />
+          <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-border-main bg-surface text-text-primary shadow-2xl transition-colors dark:border-white/10 dark:bg-zinc-950">
+            <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 px-6 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-300/90">Item Details</p>
+                  <h2 className="mt-1 text-xl font-black text-white">{selectedSaleItem.itemName}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSaleItem(null)}
+                  className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/20"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 p-6 md:grid-cols-[minmax(0,220px)_1fr]">
+              <div className="overflow-hidden rounded-2xl border border-border-main bg-surface-secondary dark:border-white/10 dark:bg-zinc-900">
+                {selectedSaleItem.imageUrl ? (
+                  <img
+                    src={selectedSaleItem.imageUrl}
+                    alt={selectedSaleItem.itemName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-sm font-semibold text-text-tertiary">
+                    No item image available
+                  </div>
+                )}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ["Item ID", selectedSaleItem.itemId],
+                  ["Category", selectedSaleItem.category],
+                  ["Branch", selectedSaleItem.branch],
+                  ["Date Added", selectedSaleItem.availableDate],
+                  ["Price", formatPeso(selectedSaleItem.price)],
+                  ["Status", saleStatusLabel(selectedSaleItem.status)],
+                  ["Branch Location", selectedSaleItem.branchLocation || "N/A"],
+                  ["Original Pawn ID", selectedSaleItem.originalPawnId || "N/A"],
+                ].map(([label, value]) => (
+                  <div key={label as string} className="rounded-2xl border border-border-main bg-surface-secondary px-4 py-3 dark:border-white/10 dark:bg-zinc-900/80">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">{label}</p>
+                    <p className="mt-1 break-words text-sm font-semibold text-text-primary">{value as string}</p>
+                  </div>
+                ))}
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 sm:col-span-2 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Added to sale</p>
+                  <p className="mt-1 text-sm font-semibold text-text-primary">{selectedSaleItem.availableDate}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
