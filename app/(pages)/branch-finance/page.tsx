@@ -603,14 +603,14 @@ export default function BranchFinancePage() {
             >
               {queues.pendingReview.length > 0 ? (
                 queues.pendingReview.map((request) => (
-                  <div key={request.id} className="rounded-xl border border-blue-200 bg-white p-4 shadow-sm">
+                  <div key={request.id} className="rounded-xl border border-border-main bg-surface-secondary p-4 shadow-sm transition-colors dark:border-zinc-700 dark:bg-zinc-900/60">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-bold text-text-primary">
                             {request.requestNo} - {formatCurrency(request.amountRequested)}
                           </p>
-                          <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700">
+                          <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
                             Pending
                           </span>
                         </div>
@@ -673,7 +673,7 @@ export default function BranchFinancePage() {
                         <p className="text-[11px] text-text-muted">The source branch must confirm the outgoing deduction before the destination branch can receive the transfer.</p>
                       </div>
                       {queues.sourceConfirmation.map((request) => (
-                        <div key={request.id} className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm">
+                        <div key={request.id} className="rounded-xl border border-border-main bg-surface-secondary p-4 shadow-sm transition-colors dark:border-zinc-700 dark:bg-zinc-900/60">
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <p className="text-sm font-bold text-text-primary">
@@ -695,7 +695,7 @@ export default function BranchFinancePage() {
                                 <p className="mt-1 text-xs text-text-muted">Release notes: {request.transferNotes}</p>
                               ) : null}
                             </div>
-                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700">
+                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
                               Pending Source Confirmation
                             </span>
                           </div>
@@ -711,7 +711,7 @@ export default function BranchFinancePage() {
                         <p className="text-[11px] text-text-muted">The destination branch can confirm the received amount after proof of receipt is uploaded.</p>
                       </div>
                       {queues.destinationConfirmation.map((request) => (
-                        <div key={request.id} className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm">
+                        <div key={request.id} className="rounded-xl border border-border-main bg-surface-secondary p-4 shadow-sm transition-colors dark:border-zinc-700 dark:bg-zinc-900/60">
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <p className="text-sm font-bold text-text-primary">
@@ -736,7 +736,7 @@ export default function BranchFinancePage() {
                                 <p className="mt-1 text-xs text-text-muted">Source notes: {request.sourceConfirmationNotes}</p>
                               ) : null}
                             </div>
-                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700">
+                            <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
                               Pending Confirmation
                             </span>
                           </div>
