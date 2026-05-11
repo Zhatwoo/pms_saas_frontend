@@ -54,6 +54,7 @@ function printHtmlDocument(html: string) {
   iframe.style.border = "0";
   iframe.setAttribute("aria-hidden", "true");
 
+  let printed = false;
   const cleanup = () => {
     window.setTimeout(() => iframe.remove(), 500);
   };
@@ -65,9 +66,24 @@ function printHtmlDocument(html: string) {
       return;
     }
 
-    frameWindow.onafterprint = cleanup;
-    frameWindow.focus();
-    window.setTimeout(() => frameWindow.print(), 250);
+    // Ensure we only trigger print once even if onload fires multiple times
+    if (printed) return;
+    printed = true;
+
+    if ('onafterprint' in frameWindow) {
+      // @ts-ignore
+      frameWindow.onafterprint = cleanup;
+    } else {
+      // Fallback cleanup
+      cleanup();
+    }
+
+    try {
+      frameWindow.focus();
+      window.setTimeout(() => frameWindow.print(), 250);
+    } catch (e) {
+      cleanup();
+    }
   };
 
   document.body.appendChild(iframe);
@@ -238,8 +254,9 @@ export default function ReportsPage() {
             </tr>`,
         )
         .join("");
-
-      const html = `
+      let html: string;
+      if (isAllBranches) {
+        html = `
         <!doctype html>
         <html>
           <head>
@@ -258,8 +275,6 @@ export default function ReportsPage() {
               .summary-item { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
               .summary-label { font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
               .summary-value { font-size: 18px; font-weight: 900; color: #0f172a; }
-              .summary { margin-bottom: 20px; }
-              .summary p { margin: 0 0 6px; font-size: 12px; }
               .section { margin-top: 22px; }
               table { width: 100%; border-collapse: collapse; margin-top: 12px; }
               th, td { border-bottom: 1px solid #e2e8f0; padding: 12px 8px; font-size: 12px; text-align: left; }
@@ -267,10 +282,7 @@ export default function ReportsPage() {
               .num { text-align: right; font-family: monospace; font-weight: 700; }
               .empty { color: #64748b; font-style: italic; text-align: center; }
               .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-              @media print {
-                body { margin: 0; }
-                .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              }
+              @media print { body { margin: 0; } .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
             </style>
           </head>
           <body>
@@ -283,15 +295,7 @@ export default function ReportsPage() {
               <p><strong>Generated for:</strong> ${escapeHtml(branchLabel)}</p>
               <p><strong>Period:</strong> ${escapeHtml(activePeriod)}</p>
               <p><strong>Date:</strong> ${escapeHtml(selectionLabel)}</p>
-              <p><strong>Generated:</strong> ${escapeHtml(
-                new Date().toLocaleString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                }),
-              )}</p>
+              <p><strong>Generated:</strong> ${escapeHtml(new Date().toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }))}</p>
             </div>
             <div class="divider"></div>
 
@@ -313,13 +317,6 @@ export default function ReportsPage() {
                 <span class="summary-label">Active Branches</span>
                 <span class="summary-value">${stats.activeBranches} / ${stats.totalBranches}</span>
               </div>
-            </div>
-
-            <div class="section summary">
-              <h2>Historical Sales Trend Summary</h2>
-              <p><strong>14-day Average:</strong> ${escapeHtml(formatPeso(reportData.trendSummary.average))}</p>
-              <p><strong>Peak Date:</strong> ${escapeHtml(reportData.trendSummary.peakDate)}</p>
-              <p><strong>Peak Sales:</strong> ${escapeHtml(formatPeso(reportData.trendSummary.peakSales))}</p>
             </div>
 
             <div class="section">
@@ -355,6 +352,77 @@ export default function ReportsPage() {
           </body>
         </html>
       `;
+      } else {
+        // Branch-specific layout: reuse same header/styles as All-Branches
+        const trendRows = reportData.salesTrend
+          .map((t) => `<tr><td>${escapeHtml(t.date)}</td><td class="num">${escapeHtml(formatPeso(t.sales))}</td></tr>`)
+          .join('');
+
+        html = `
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>Branch Performance Report</title>
+            <style>
+              body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111; margin: 0; padding: 0; }
+              .header { background: #064e3b; color: white; padding: 50px 20px; text-align: center; margin-bottom: 30px; border-bottom: 8px solid #f59e0b; }
+              .header h1 { margin: 0; font-size: 38px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; line-height: 1.1; }
+              .header p { margin: 12px 0 0; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 4px; opacity: 0.9; }
+              .content-wrapper { padding: 0 44px 44px; }
+              .meta p { margin: 0 0 8px; font-size: 12px; }
+              .divider { border-top: 2px solid #111; margin: 18px 0 28px; }
+              h2 { margin: 0 0 14px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #064e3b; border-bottom: 1px solid #064e3b; padding-bottom: 4px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+              th, td { border-bottom: 1px solid #e2e8f0; padding: 12px 8px; font-size: 12px; text-align: left; }
+              thead th { background: #f1f5f9; border-top: 2px solid #064e3b; border-bottom: 2px solid #064e3b; font-weight: 700; color: #064e3b; }
+              .num { text-align: right; font-family: monospace; font-weight: 700; }
+              .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+              @media print { body { margin: 0; } .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>JCLB Buy Back Shop</h1>
+              <p>System Performance Report - ${escapeHtml(branchLabel)}</p>
+            </div>
+            <div class="content-wrapper">
+              <div class="meta">
+                <p><strong>Generated for:</strong> ${escapeHtml(branchLabel)}</p>
+                <p><strong>Period:</strong> ${escapeHtml(activePeriod)}</p>
+                <p><strong>Date:</strong> ${escapeHtml(selectionLabel)}</p>
+                <p><strong>Generated:</strong> ${escapeHtml(new Date().toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }))}</p>
+              </div>
+              <div class="divider"></div>
+
+              <div class="section">
+                <h2>Daily Sales Report (DSR)</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th class="num">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>${dailyRows}</tbody>
+                </table>
+              </div>
+
+              <div class="section">
+                <h2>Sales Trend</h2>
+                <table>
+                  <thead>
+                    <tr><th>Date</th><th class="num">Sales</th></tr>
+                  </thead>
+                  <tbody>${trendRows || '<tr><td colspan="2" class="empty">No trend data</td></tr>'}</tbody>
+                </table>
+              </div>
+            </div>
+            <div class="footer">Pawnshop Management System</div>
+          </body>
+        </html>
+        `;
+      }
 
       printHtmlDocument(html);
     } catch (err) {
