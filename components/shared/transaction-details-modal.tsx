@@ -20,11 +20,11 @@ interface TransactionDetailsModalProps {
 
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors">
-      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
+    <div className="rounded-2xl border border-border-main bg-surface p-4 shadow-sm transition-colors">
+      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
         {label}
       </p>
-      <p className="mt-2 break-words text-sm font-semibold text-zinc-900">
+      <p className="mt-2 break-words text-sm font-semibold text-text-primary">
         {value || "—"}
       </p>
     </div>
@@ -74,7 +74,7 @@ export function TransactionDetailsModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-xl" {...modalAriaProps} ref={modalRef}>
-      <div className="max-h-[92vh] w-[95vw] max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border bg-white shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors border-zinc-200 md:w-[90vw]">
+      <div className="max-h-[92vh] w-[95vw] max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border bg-surface shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors border-border-main md:w-[90vw]">
         <div className="relative overflow-hidden border-b px-6 py-6 border-emerald-700/40" style={{ background: 'linear-gradient(to right, rgb(5, 150, 105), rgb(6, 95, 70), rgb(5, 150, 105))' }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1))' }} />
           <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-400/10 blur-3xl" />
@@ -143,8 +143,8 @@ export function TransactionDetailsModal({
         </div>
 
         <div className="grid gap-4 px-6 pb-6 lg:grid-cols-1">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-500">
+          <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
               Security Identity
             </p>
             {isAdminOrSuperAdmin ? (
@@ -153,7 +153,7 @@ export function TransactionDetailsModal({
                   <img
                     src={transaction.qrCode || transaction.qr_code}
                     alt="Transaction QR"
-                    className="h-48 w-48 rounded-2xl bg-white p-3 object-contain shadow-lg border border-zinc-200"
+                    className="h-48 w-48 rounded-2xl bg-white p-3 object-contain shadow-lg border border-border-main dark:opacity-90"
                   />
                 </div>
               ) : (
@@ -163,12 +163,12 @@ export function TransactionDetailsModal({
               )
             ) : (
               <div className="mt-6 flex flex-col items-center justify-center py-12">
-                <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-500 bg-cyan-100">
+                <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-500 bg-emerald-500/10">
                   <div className="text-center">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-600">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
                       QR Visible to
                     </p>
-                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-600">
+                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
                       Admin & Super Admin Only
                     </p>
                   </div>

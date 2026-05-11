@@ -886,7 +886,7 @@ export default function EmployeePawnTransactionsPage() {
                 <td className="border border-emerald-800/20 p-2">Sold Item</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold">{currentStats.soldItem}</td>
               </tr>
-              <tr className="bg-emerald-50/50">
+              <tr className="bg-amber-500/5 dark:bg-amber-500/10">
                 <td className="border border-emerald-800/20 p-2 font-bold text-emerald-900">Live Total Balance</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold text-emerald-900">
                   {formatPeso(currentStats.endingBalance.toLocaleString("en-PH", { minimumFractionDigits: 2 }))}

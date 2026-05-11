@@ -77,7 +77,7 @@ const eyeIcon = (
 );
 
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-[10px] text-zinc-400">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-[10px] text-text-tertiary">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
@@ -85,8 +85,8 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
           <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-zinc-500">{r.date}</span>
-          <span className="text-[10px] font-bold text-zinc-700">{formatPeso(r.amount.toLocaleString())}</span>
+          <span className="text-[10px] text-text-tertiary">{r.date}</span>
+          <span className="text-[10px] font-bold text-text-secondary">{formatPeso(r.amount.toLocaleString())}</span>
         </div>
       ))}
     </div>
@@ -226,23 +226,23 @@ export default function EmployeePawnedItemsPage() {
             <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
             <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">Search</label>
+              <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted">Search</label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search items..."
-                className="h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500 w-44"
+                className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500 w-44"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex rounded-md border border-zinc-200 bg-surface">
-              <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+            <div className="flex rounded-md border border-border-main bg-surface">
+              <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
                 List
               </button>
-              <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+              <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
                 Calendar
               </button>
             </div>
@@ -251,7 +251,7 @@ export default function EmployeePawnedItemsPage() {
                 <select 
                   value={qrSize} 
                   onChange={(e) => setQrSize(e.target.value as "small" | "large")}
-                  className="h-8 rounded border border-zinc-200 bg-white px-2 text-[10px] font-bold uppercase text-zinc-600 outline-none transition-colors focus:border-emerald-500"
+                  className="h-8 rounded border border-border-main bg-surface px-2 text-[10px] font-bold uppercase text-text-secondary outline-none transition-colors focus:border-emerald-500"
                 >
                   <option value="small">Small</option>
                   <option value="large">Large</option>
@@ -378,11 +378,11 @@ export default function EmployeePawnedItemsPage() {
                         </td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${item.renewalCount > 0 ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${item.renewalCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"}`}>
                             {getRenewalLabel(item.renewalCount)}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-[10px] font-bold text-zinc-600 max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
+                        <td className="px-3 py-2 text-[10px] font-bold text-text-tertiary max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         {isAdminOrSuperAdmin && (
                           <td className="px-3 py-2 text-center">
                             {(item.qrCode || item.qr_code) ? (
@@ -409,8 +409,8 @@ export default function EmployeePawnedItemsPage() {
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr className="bg-amber-50/50">
-                          <td colSpan={8} className="px-6 py-3 border-t border-amber-100">
+                        <tr className="bg-amber-500/5">
+                          <td colSpan={8} className="px-6 py-3 border-t border-amber-500/10">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>

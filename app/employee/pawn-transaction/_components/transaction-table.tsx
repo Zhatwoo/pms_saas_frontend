@@ -146,12 +146,12 @@ export function TransactionTable({
         @keyframes transaction-highlight {
           0%,
           100% {
-            background-color: rgba(255, 247, 237, 0.9);
+            background-color: var(--surface-hover);
             border-left-color: rgb(251, 191, 36);
             box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.45);
           }
           50% {
-            background-color: rgba(255, 251, 235, 0.75);
+            background-color: var(--surface-secondary);
             border-left-color: rgba(251, 191, 36, 0.3);
             box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.15);
           }
@@ -221,9 +221,9 @@ export function TransactionTable({
                     }}
                     role="button"
                     tabIndex={0}
-                    className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${isHighlightedRow ? "transaction-highlight-active border-l-4 border-l-amber-500 bg-amber-50/80" : ""
+                    className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${isHighlightedRow ? "transaction-highlight-active border-l-4 border-l-amber-500 bg-amber-500/10" : ""
                       } ${isStartRow
-                        ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
+                        ? "border-l-4 border-l-emerald-700 bg-emerald-surface/40"
                         : "bg-surface-secondary"
                       }`}
                   >
@@ -242,22 +242,22 @@ export function TransactionTable({
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                       {formatTimeWithAmPm(row.time)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-blue-700">
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-blue-600 dark:text-blue-400">
                       {formatMoney(row.buyBack)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-center text-xs font-bold text-text-secondary">
                       {row.percentage !== "0" ? `${row.percentage}%` : "-"}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-orange-700">
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-orange-600 dark:text-orange-400">
                       {formatMoney(row.buyOut)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-emerald-700">
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-emerald-600 dark:text-emerald-400">
                       {formatMoney(row.sold)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-emerald-700">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-emerald-600 dark:text-emerald-400">
                       {formatMoney(row.cashIn)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-red-600">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-red-500 dark:text-red-400">
                       {formatMoney(row.cashOut)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right text-xs text-text-secondary">
@@ -271,7 +271,7 @@ export function TransactionTable({
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
                       {isHighlightedPawn(row.pawn) ? (
-                        <span className="font-bold text-purple-700">
+                        <span className="font-bold text-purple-600 dark:text-purple-400">
                           {formatMoney(row.pawn)}
                         </span>
                       ) : (
@@ -282,7 +282,7 @@ export function TransactionTable({
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right text-xs">
                       {isHighlightedStorage(row.storage) ? (
-                        <span className="font-bold text-purple-700">
+                        <span className="font-bold text-purple-600 dark:text-purple-400">
                           {formatMoney(row.storage)}
                         </span>
                       ) : (
@@ -315,7 +315,7 @@ export function TransactionTable({
                               onReprint?.(row.transactionNo);
                             }}
                             title="Reprint MOA Slip"
-                            className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-emerald-50 hover:text-emerald-700"
+                            className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
                           >
                             <svg
                               width="16"

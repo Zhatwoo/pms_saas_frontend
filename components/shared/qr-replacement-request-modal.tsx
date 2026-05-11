@@ -134,9 +134,9 @@ export function QRReplacementRequestModal({
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md rounded-3xl border border-border-main bg-surface shadow-2xl overflow-hidden transition-colors">
         {/* Header */}
-        <div className="border-b border-zinc-100 bg-white px-6 py-4">
+        <div className="border-b border-border-subtle bg-surface px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-text-primary">
@@ -148,7 +148,7 @@ export function QRReplacementRequestModal({
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-text-muted hover:bg-red-50 hover:text-red-600 transition-all"
+              className="rounded-lg p-1 text-text-muted hover:bg-red-500/10 hover:text-red-500 transition-all"
             >
               <svg
                 width="20"
@@ -203,7 +203,7 @@ export function QRReplacementRequestModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the damage, loss, or issue with the QR code..."
-              className="w-full px-3 py-2 border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm text-text-primary resize-none"
+              className="w-full px-3 py-2 border border-input-border bg-input-bg rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm text-text-primary resize-none transition-colors"
               rows={3}
             />
           </div>
@@ -215,7 +215,7 @@ export function QRReplacementRequestModal({
             </label>
             <div className="flex flex-col gap-3">
               {proofPhoto && !isCameraActive ? (
-                <div className="relative h-48 w-full overflow-hidden rounded-xl border border-zinc-200 shadow-inner">
+                <div className="relative h-48 w-full overflow-hidden rounded-xl border border-border-subtle shadow-inner">
                   <img src={proofPhoto} alt="Proof" className="h-full w-full object-cover" />
                   <button 
                     type="button"
@@ -255,7 +255,7 @@ export function QRReplacementRequestModal({
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="flex h-32 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50 transition-colors hover:bg-emerald-100"
+                    className="flex h-32 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-emerald-500/20 bg-emerald-500/5 transition-colors hover:bg-emerald-500/10"
                   >
                     <div className="flex flex-col items-center justify-center text-emerald-600">
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mb-2">
@@ -266,7 +266,7 @@ export function QRReplacementRequestModal({
                     </div>
                   </button>
                   <p className="text-[10px] text-center text-text-tertiary uppercase font-bold tracking-tighter">OR</p>
-                  <label className="flex py-2 w-full cursor-pointer items-center justify-center rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 transition-all">
+                  <label className="flex py-2 w-full cursor-pointer items-center justify-center rounded-xl border border-input-border bg-input-bg hover:bg-surface-hover transition-all">
                     <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Upload from Files</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                   </label>
@@ -277,7 +277,7 @@ export function QRReplacementRequestModal({
           </div>
 
           {/* Info Box */}
-          <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm text-blue-900">
+          <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-3 text-sm text-blue-600 dark:text-blue-400">
             <p className="font-semibold mb-1">⚠️ Important:</p>
             <p>
               Your request will be reviewed and approved by a Super Admin before a new QR code can be generated. This ensures inventory security.
@@ -290,7 +290,7 @@ export function QRReplacementRequestModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 rounded-lg border border-zinc-200 text-text-primary hover:bg-zinc-50 transition-all disabled:opacity-50"
+              className="flex-1 px-4 py-2 rounded-lg border border-border-main text-text-primary hover:bg-surface-hover transition-all disabled:opacity-50"
             >
               Cancel
             </button>
