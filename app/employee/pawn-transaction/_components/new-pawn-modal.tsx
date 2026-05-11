@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
 import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
@@ -165,6 +166,37 @@ export function NewPawnModal({
   const [customerBranchTransactions, setCustomerBranchTransactions] = useState<Set<string>>(new Set());
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false);
   const [customerLookupError, setCustomerLookupError] = useState<string | null>(null);
+  const [branchCashAvailable, setBranchCashAvailable] = useState<number | null>(null);
+  const [branchCashLoading, setBranchCashLoading] = useState(false);
+
+  const loadBranchCashForMoa = useCallback(async () => {
+    if (!branchId || branchId === "__all__") {
+      setBranchCashAvailable(null);
+      return;
+    }
+    setBranchCashLoading(true);
+    try {
+      const rows = await api.get<
+        Array<{ branchId: string; currentBalance: number }>
+      >("/branch-finance/summary");
+      if (!Array.isArray(rows) || rows.length === 0) {
+        setBranchCashAvailable(null);
+        return;
+      }
+      const row = rows.find((r) => r.branchId === branchId) ?? rows[0];
+      setBranchCashAvailable(Number(row.currentBalance ?? 0));
+    } catch {
+      setBranchCashAvailable(null);
+    } finally {
+      setBranchCashLoading(false);
+    }
+  }, [branchId]);
+
+  useEffect(() => {
+    if (isMoaOpen && branchId && branchId !== "__all__") {
+      void loadBranchCashForMoa();
+    }
+  }, [isMoaOpen, branchId, loadBranchCashForMoa]);
 
   // Auto-generate Unit Code when modal opens
   useEffect(() => {
@@ -658,6 +690,21 @@ export function NewPawnModal({
       return;
     }
 
+    const loanForCashCheck = Number(form.amount || 0);
+    if (
+      branchCashAvailable !== null &&
+      !branchCashLoading &&
+      loanForCashCheck > 0 &&
+      loanForCashCheck > branchCashAvailable
+    ) {
+      const msg = `Insufficient branch cash for this loan. Available ${formatPeso(branchCashAvailable)}; required ${formatPeso(loanForCashCheck)}.`;
+      setIsSaving(false);
+      isProcessingRef.current = false;
+      setErrorMessage(msg);
+      toast.error(msg);
+      return;
+    }
+
     try {
       const response = await api.post<CreatedPawnTicketResponse>('/pawn-tickets', {
         branchId,
@@ -734,9 +781,29 @@ export function NewPawnModal({
       setIsMoaOpen(false);
       onClose();
     } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      setErrorMessage(msg);
-      toast.error(msg);
+      if (error instanceof ApiError && error.insufficientFunds) {
+        const ab = error.availableBalance;
+        const rq = error.requiredAmount;
+        const detail =
+          ab != null && rq != null
+            ? ` Available: ${formatPeso(ab)} · Required: ${formatPeso(rq)}`
+            : "";
+        const msg = `${error.message}${detail}`;
+        console.warn("[Pawn MOA] Insufficient funds from API", {
+          branchId,
+          available_balance: ab,
+          required_amount: rq,
+          loanAmount: amountValue,
+          ts: new Date().toISOString(),
+        });
+        setErrorMessage(msg);
+        toast.error(msg);
+        void loadBranchCashForMoa();
+      } else {
+        const msg = error instanceof Error ? error.message : String(error);
+        setErrorMessage(msg);
+        toast.error(msg);
+      }
     } finally {
       setIsSaving(false);
       isProcessingRef.current = false;
@@ -1347,6 +1414,27 @@ export function NewPawnModal({
         isOpen={isMoaOpen}
         onClose={() => setIsMoaOpen(false)}
         onConfirm={handleConfirmMoa}
+        confirmDisabled={(() => {
+          const loan = Number(form.amount || 0);
+          return (
+            branchCashAvailable !== null &&
+            !branchCashLoading &&
+            loan > 0 &&
+            loan > branchCashAvailable
+          );
+        })()}
+        confirmDisabledReason={(() => {
+          const loan = Number(form.amount || 0);
+          if (
+            branchCashAvailable === null ||
+            branchCashLoading ||
+            loan <= 0 ||
+            loan <= branchCashAvailable
+          ) {
+            return undefined;
+          }
+          return `Recorded branch cash is ${formatPeso(branchCashAvailable)}. This loan needs ${formatPeso(loan)} in vault cash — reduce the loan or add cash before confirming.`;
+        })()}
         data={{
           ...form,
           // Build full address: street + barangay + city + region

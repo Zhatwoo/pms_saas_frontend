@@ -193,7 +193,11 @@ export default function EmployeeBranchFinancePage() {
 
   const handleConfirmReceipt = useCallback(
     async (data: { receivedAmount: number; notes: string; proofFile: File | null }) => {
-      if (!selectedConfirmRequest || !data.proofFile) return;
+      if (!selectedConfirmRequest) return;
+      if (!data.proofFile) {
+        setError("Proof of transaction is required.");
+        return;
+      }
 
       setIsSubmitting(true);
       try {
