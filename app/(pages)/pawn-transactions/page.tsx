@@ -18,6 +18,7 @@ import type {
   TransactionStatsData,
 } from "./_components/types";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 
 function csvCell(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
@@ -665,6 +666,9 @@ export default function PawnTransactionsPage() {
 
 
       <div className="print-hide">
+        <BranchDaySessionToolbar
+          branchId={isAllBranches ? null : selectedBranch.id}
+        />
         <TransactionStats data={stats} />
       </div>
 

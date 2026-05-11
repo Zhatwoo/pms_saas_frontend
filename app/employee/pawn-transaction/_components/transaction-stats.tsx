@@ -183,7 +183,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
-              Start Day
+              Starting balance
             </p>
             <p className="mt-0.5 text-lg font-black text-text-primary leading-none">
               ₱ {(data?.startingBalance || 0).toLocaleString()}
@@ -199,7 +199,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         <div className="flex items-end justify-between">
           <div className="text-right w-full">
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
-              End Day
+              Ending balance
             </p>
             <p className="mt-0.5 text-lg font-black text-emerald-600 leading-none">
               ₱ {(data?.endingBalance || 0).toLocaleString()}

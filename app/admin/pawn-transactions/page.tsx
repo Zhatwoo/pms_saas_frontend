@@ -15,8 +15,6 @@ import { SellsTransferModal } from "@/app/employee/pawn-transaction/_components/
 import { ReserveLayawayModal } from "@/app/employee/pawn-transaction/_components/reserve-layaway-modal";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
 import { ActionButton } from "@/components/shared/action-button";
-import { BranchEndDayModal } from "@/components/shared/branch-end-day-modal";
-import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -26,6 +24,7 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -274,31 +273,6 @@ interface BranchFinanceSummary {
   currentBalance: number;
 }
 
-interface BranchFinanceBusinessSession {
-  manilaCalendarDate: string;
-  operationalCashAllowed: boolean;
-  systemEndingBalanceToday: number | null;
-  todaySession: {
-    status: string;
-    businessDate: string;
-    endedAt: string | null;
-    autoClosed: boolean;
-  } | null;
-  pendingStartingSession: {
-    businessDate: string;
-    suggestedStartingBalance: number;
-  } | null;
-  lastEnd: {
-    endedAt: string;
-    autoClosed: boolean;
-  } | null;
-  latestBalance: {
-    startingBalance: number;
-    endingBalance: number;
-    date: string | null;
-  };
-}
-
 function normalizeStats(stats?: any) {
   return {
     pawnedToday: Number(stats?.pawnedToday ?? 0),
@@ -384,10 +358,6 @@ export default function SuperAdminPawnTransactionsPage() {
   const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedTransactionNo, setHighlightedTransactionNo] = useState<string | null>(null);
-  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
-  const [businessSession, setBusinessSession] = useState<BranchFinanceBusinessSession | null>(null);
-  const [endDayModalOpen, setEndDayModalOpen] = useState(false);
-  const [expectedCash, setExpectedCash] = useState("0");
   const [passwordModal, setPasswordModal] = useState<{ open: boolean; onConfirm: () => void }>({
     open: false,
     onConfirm: () => { },
@@ -421,28 +391,13 @@ export default function SuperAdminPawnTransactionsPage() {
 
       const txUrl = `/transactions?${branchParam}${branchParam ? "&" : ""}date=${selectedDate}`;
       const summaryUrl = `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`;
-      const sessionUrl =
-        selectedBranch.id !== "__all__" && branchParam
-          ? `/branch-finance/business-session?${branchParam}`
-          : null;
 
       const data = await api.get<TransactionsResponse>(txUrl);
       const financeSummary = await api
         .get<BranchFinanceSummary[]>(summaryUrl)
         .catch(() => [] as BranchFinanceSummary[]);
-      const sessionData = sessionUrl
-        ? await api
-            .get<BranchFinanceBusinessSession>(sessionUrl)
-            .catch(() => null)
-        : null;
 
       setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
-
-      if (selectedBranch.id === "__all__") {
-        setBusinessSession(null);
-      } else {
-        setBusinessSession(sessionData ?? null);
-      }
 
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
       let endingBalance = Number(data.stats?.endingBalance ?? 0);
@@ -472,16 +427,6 @@ export default function SuperAdminPawnTransactionsPage() {
       setSelectedDateLedgerRows([]);
     }
   }, [selectedBranch.id, selectedDate]);
-
-  const startDayDisabled = useMemo(() => {
-    if (!businessSession) return true;
-    return !businessSession.pendingStartingSession;
-  }, [businessSession]);
-
-  const endDayDisabled = useMemo(() => {
-    if (!businessSession) return true;
-    return businessSession.todaySession?.status !== "OPEN";
-  }, [businessSession]);
 
   useEffect(() => {
     void fetchTransactions();
@@ -684,55 +629,13 @@ export default function SuperAdminPawnTransactionsPage() {
         </p>
       </div>
 
-      {businessSession && (
-        <div className="rounded-xl border border-border-main bg-surface-secondary px-4 py-3 text-xs shadow-sm">
-          <p className="font-bold text-text-primary">Branch finance session (Manila)</p>
-          <p className="mt-1 text-text-secondary">
-            Calendar date{" "}
-            <span className="font-semibold">{businessSession.manilaCalendarDate}</span>
-            {" · "}Status{" "}
-            <span className="font-semibold">
-              {businessSession.pendingStartingSession
-                ? "PENDING_START_BALANCE"
-                : businessSession.todaySession?.status ?? "—"}
-            </span>
-            {businessSession.pendingStartingSession && (
-              <span className="ml-2 font-semibold text-amber-700 dark:text-amber-300">
-                {businessSession.pendingStartingSession.businessDate ===
-                businessSession.manilaCalendarDate
-                  ? `Starting balance required to resume today (${businessSession.pendingStartingSession.businessDate})`
-                  : `Starting balance required (${businessSession.pendingStartingSession.businessDate})`}
-              </span>
-            )}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <ActionButton
-              variant="outline"
-              disabled={startDayDisabled}
-              onClick={() => {
-                const suggested =
-                  businessSession.pendingStartingSession?.suggestedStartingBalance ??
-                  businessSession.latestBalance?.endingBalance ??
-                  currentStats.endingBalance;
-                setExpectedCash(String(suggested ?? 0));
-                setBalanceModalOpen(true);
-              }}
-            >
-              Branch starting balance
-            </ActionButton>
-            <ActionButton
-              variant="primary"
-              className="border-amber-700 bg-amber-700 text-white"
-              disabled={endDayDisabled}
-              onClick={() => {
-                void fetchSelectedDateStats().finally(() => setEndDayModalOpen(true));
-              }}
-            >
-              End branch day
-            </ActionButton>
-          </div>
-        </div>
-      )}
+      <BranchDaySessionToolbar
+        branchId={selectedBranch.id === "__all__" ? null : selectedBranch.id}
+        onSessionChanged={() => {
+          void fetchSelectedDateStats();
+          void fetchTransactions();
+        }}
+      />
 
       <TransactionStats data={currentStats} />
 
@@ -851,70 +754,6 @@ export default function SuperAdminPawnTransactionsPage() {
         isOpen={Boolean(selectedTransaction)}
         transaction={selectedTransaction}
         onClose={() => setSelectedTransaction(null)}
-      />
-
-      <BranchEndDayModal
-        isOpen={endDayModalOpen}
-        systemEndingBalance={
-          businessSession?.systemEndingBalanceToday ??
-          currentStats.endingBalance ??
-          0
-        }
-        manilaBusinessDate={
-          businessSession?.manilaCalendarDate || formatDateToYMD()
-        }
-        onClose={() => setEndDayModalOpen(false)}
-        onConfirm={async (physicalEndingAmount) => {
-          try {
-            await api.post("/branch-finance/end-day", {
-              confirmed: true,
-              ...(physicalEndingAmount !== undefined
-                ? { physicalEndingAmount }
-                : {}),
-            });
-            setEndDayModalOpen(false);
-            await fetchSelectedDateStats();
-            fetchTransactionsRef.current();
-          } catch (err) {
-            console.error("Failed to end branch day:", err);
-          }
-        }}
-      />
-
-      <DailyBalanceConfirmation
-        isOpen={balanceModalOpen}
-        type="starting"
-        titleOverride={
-          businessSession?.pendingStartingSession
-            ? businessSession.pendingStartingSession.businessDate ===
-                businessSession.manilaCalendarDate
-              ? "Branch starting balance (resume same day)"
-              : "Branch starting balance (new business day)"
-            : undefined
-        }
-        subtitleOverride={
-          businessSession?.pendingStartingSession
-            ? businessSession.pendingStartingSession.businessDate ===
-                businessSession.manilaCalendarDate
-              ? "The branch ended the Manila business day earlier. Enter today’s starting cash again to reopen. One entry applies for all employees at this branch."
-              : "Starting balance required for the new business day. One entry applies for all employees at this branch."
-            : undefined
-        }
-        currentCash={expectedCash}
-        onClose={() => setBalanceModalOpen(false)}
-        onConfirm={async (amt: string) => {
-          try {
-            await api.post("/branch-finance/daily-balance", {
-              type: "starting",
-              amount: parseFloat(amt) || 0,
-            });
-            setBalanceModalOpen(false);
-            void fetchTransactionsRef.current();
-            await fetchSelectedDateStats();
-          } catch (err) {
-            console.error("Failed to confirm daily balance:", err);
-          }
-        }}
       />
 
       <ConfirmPasswordModal

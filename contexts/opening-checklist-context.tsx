@@ -9,7 +9,6 @@ import {
   useRef,
 } from "react";
 import { useAuth } from "./auth-context";
-import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 
@@ -41,8 +40,6 @@ const OpeningChecklistContext = createContext<OpeningChecklistContextValue | nul
 
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
   const [isComplete, setIsComplete] = useState(false);
   const [isOpeningChecklistReady, setIsOpeningChecklistReady] = useState(false);
@@ -153,14 +150,17 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       amount: parseFloat(amount) || 0,
     });
 
-    const nextStep: ChecklistStep = "INVENTORY_AUDIT";
-    setCurrentStep(nextStep);
-    setIsComplete(false);
-
-    if (!pathname?.includes("/pawn-transaction")) {
-      router.push("/employee/inventory/pawned-items");
+    try {
+      const data = await api.get<DailyOpeningApiStatus>(
+        "/branch-finance/daily-opening/status",
+      );
+      applyServerStatus(data);
+    } catch {
+      /** Fallback so UI unlocks if status refetch fails after a successful POST. */
+      setCurrentStep("COMPLETED");
+      setIsComplete(true);
     }
-  }, [router, pathname]);
+  }, [applyServerStatus]);
 
   const completeInventoryAudit = useCallback(async () => {
     await api.post("/branch-finance/daily-opening/complete", {});

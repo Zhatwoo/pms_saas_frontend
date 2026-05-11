@@ -1,41 +1,6 @@
 import React from "react";
-import { ActionButton } from "@/components/shared/action-button";
 
 export type ViewMode = "list" | "calendar";
-
-const downloadIcon = (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="7 10 12 15 17 10" />
-    <line x1="12" y1="15" x2="12" y2="3" />
-  </svg>
-);
-
-const printerIcon = (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="6 9 6 2 18 2 18 9" />
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-    <rect x="6" y="14" width="12" height="8" />
-  </svg>
-);
 
 const renewIcon = (
   <svg
@@ -177,13 +142,7 @@ interface TransactionActionsProps {
   onBuyBack?: () => void;
   onReserveLayaway?: () => void;
   onSalesTransfer?: () => void;
-  onStartDay?: () => void;
-  onEndDay?: () => void;
   onQrScan?: () => void;
-  /** When true, pawn / renew / redeem etc. cannot post (branch day not OPEN). */
-  cashMovementDisabled?: boolean;
-  disableStartDay?: boolean;
-  disableEndDay?: boolean;
 }
 
 export function TransactionActions({
@@ -196,18 +155,12 @@ export function TransactionActions({
   onBuyBack,
   onReserveLayaway,
   onSalesTransfer,
-  onStartDay,
-  onEndDay,
   onQrScan,
-  cashMovementDisabled = false,
-  disableStartDay = false,
-  disableEndDay = false,
 }: TransactionActionsProps) {
-  const cashLockClass = cashMovementDisabled ? "opacity-40 pointer-events-none cursor-not-allowed" : "";
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className={`flex flex-wrap items-center gap-2 ${cashLockClass}`}>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => {
               onFilterChange?.("Renew");
@@ -280,7 +233,7 @@ export function TransactionActions({
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <div className={`flex items-center gap-2 ${cashLockClass}`}>
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onNewPawn}
@@ -288,32 +241,6 @@ export function TransactionActions({
             >
               {plusIcon}
               New Pawn
-            </button>
-            <button
-              type="button"
-              onClick={onStartDay}
-              disabled={disableStartDay}
-              title={
-                disableStartDay
-                  ? "Starting balance is only required when the branch opens a new pending business day."
-                  : undefined
-              }
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
-            >
-              Start Day
-            </button>
-            <button
-              type="button"
-              onClick={onEndDay}
-              disabled={disableEndDay}
-              title={
-                disableEndDay
-                  ? "End Day is available only while the branch business day is OPEN."
-                  : undefined
-              }
-              className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
-            >
-              End Day
             </button>
             <button
               onClick={onQrScan}

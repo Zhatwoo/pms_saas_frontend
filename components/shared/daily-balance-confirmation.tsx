@@ -28,11 +28,23 @@ export function DailyBalanceConfirmation({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      setConfirmedAmount("0.00");
-      setIsSubmitting(false);
+    if (!isOpen) return;
+
+    setIsSubmitting(false);
+    if (type === "starting") {
+      const raw = parseFloat(String(currentCash ?? "").replace(/,/g, ""));
+      const n = Number.isFinite(raw) ? raw : 0;
+      setConfirmedAmount(
+        n.toLocaleString("en-PH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      );
+      return;
     }
-  }, [isOpen]);
+
+    setConfirmedAmount("0.00");
+  }, [isOpen, currentCash, type]);
 
   if (!isOpen) return null;
 

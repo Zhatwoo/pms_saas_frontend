@@ -15,20 +15,18 @@ import { SellsTransferModal } from "./_components/sells-transfer-modal";
 import { ReserveLayawayModal } from "./_components/reserve-layaway-modal";
 import { MoaModal } from "./_components/moa-modal";
 import { ActionButton } from "@/components/shared/action-button";
-import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
-import { BranchEndDayModal } from "@/components/shared/branch-end-day-modal";
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
 import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
-import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
-import { formatDateToYMD } from "@/lib/time";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { formatPeso } from "@/lib/currency";
+import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
@@ -273,36 +271,6 @@ interface BranchFinanceSummary {
   currentBalance: number;
 }
 
-interface BranchFinanceBusinessSession {
-  manilaCalendarDate: string;
-  operationalCashAllowed: boolean;
-  systemEndingBalanceToday: number | null;
-  todaySession: {
-    status: string;
-    businessDate: string;
-    startingBalance: number | null;
-    endingBalance: number | null;
-    endedAt: string | null;
-    autoClosed: boolean;
-    locked: boolean;
-  } | null;
-  pendingStartingSession: {
-    businessDate: string;
-    suggestedStartingBalance: number;
-  } | null;
-  lastEnd: {
-    businessDate: string;
-    endedAt: string;
-    autoClosed: boolean;
-    status: string;
-  } | null;
-  latestBalance: {
-    startingBalance: number;
-    endingBalance: number;
-    date: string | null;
-  };
-}
-
 const DEFAULT_STATS = {
   pawnedToday: 0,
   buyBack: 0,
@@ -440,10 +408,6 @@ export default function EmployeePawnTransactionsPage() {
   const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedTransactionNo, setHighlightedTransactionNo] = useState<string | null>(null);
-  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
-  const [businessSession, setBusinessSession] = useState<BranchFinanceBusinessSession | null>(null);
-  const [endDayModalOpen, setEndDayModalOpen] = useState(false);
-  const [expectedCash, setExpectedCash] = useState("0");
   const [passwordModal, setPasswordModal] = useState<{ open: boolean; onConfirm: () => void }>({
     open: false,
     onConfirm: () => { },
@@ -500,27 +464,14 @@ export default function EmployeePawnTransactionsPage() {
 
       const txUrl = `/transactions?${branchParam}${branchParam ? "&" : ""}date=${selectedDate}`;
       const summaryUrl = `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`;
-      const sessionUrl =
-        branchIdForApi !== "__all__" && branchParam
-          ? `/branch-finance/business-session?${branchParam}`
-          : null;
 
       /** Sequential requests reduce concurrent DB pool usage (Supabase session pool limits). */
       const data = await api.get<TransactionsResponse>(txUrl);
       const financeSummary = await api
         .get<BranchFinanceSummary[]>(summaryUrl)
         .catch(() => [] as BranchFinanceSummary[]);
-      const sessionData = sessionUrl
-        ? await api.get<BranchFinanceBusinessSession>(sessionUrl).catch(() => null)
-        : null;
 
       setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
-
-      if (branchIdForApi === "__all__") {
-        setBusinessSession(null);
-      } else {
-        setBusinessSession(sessionData ?? null);
-      }
 
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
       let endingBalance = Number(data.stats?.endingBalance ?? 0);
@@ -708,46 +659,6 @@ export default function EmployeePawnTransactionsPage() {
     void fetchBranchAdmin();
   }, [selectedBranch.id, user]);
 
-  const cashOpsBlocked = useMemo(() => {
-    if (selectedBranch.id === "__all__") return false;
-    if (!businessSession) return false;
-    return !businessSession.operationalCashAllowed;
-  }, [selectedBranch.id, businessSession]);
-
-  const startDayDisabled = useMemo(() => {
-    if (selectedBranch.id === "__all__") return true;
-    if (!businessSession) return true;
-    return !businessSession.pendingStartingSession;
-  }, [selectedBranch.id, businessSession]);
-
-  const endDayDisabled = useMemo(() => {
-    if (selectedBranch.id === "__all__") return true;
-    if (!businessSession) return true;
-    return businessSession.todaySession?.status !== "OPEN";
-  }, [selectedBranch.id, businessSession]);
-
-  /** YYYY-MM-DD compare: pending row ahead of Manila calendar (legacy end-day) still means “resume for today’s Manila date”. */
-  const sessionStartingBalanceContext = useMemo(() => {
-    if (!businessSession?.pendingStartingSession) {
-      return {
-        hasPending: false as const,
-        resumeForManilaCalendar: false,
-        pendingDate: "",
-        manila: businessSession?.manilaCalendarDate ?? "",
-      };
-    }
-    const pendingDate = businessSession.pendingStartingSession.businessDate;
-    const manila = businessSession.manilaCalendarDate;
-    const resumeForManilaCalendar =
-      pendingDate === manila || pendingDate > manila;
-    return {
-      hasPending: true as const,
-      resumeForManilaCalendar,
-      pendingDate,
-      manila,
-    };
-  }, [businessSession]);
-
   const handleExportCSV = useCallback(() => {
     if (filteredTransactions.length === 0) return;
     const headers = ["Transaction #", "Purpose", "Date", "Time", "Buy Back", "Buy Out", "Sold", "Cash In", "Cash Out", "Return", "Unit", "Unit Code", "Pawn", "Storage"];
@@ -781,7 +692,6 @@ export default function EmployeePawnTransactionsPage() {
   }, []);
 
   const handleActionWithPassword = (action: () => void) => {
-    if (cashOpsBlocked) return;
     setPasswordModal({
       open: true,
       onConfirm: action,
@@ -972,57 +882,9 @@ export default function EmployeePawnTransactionsPage() {
       </div>
 
       <div className="print-hide">
-        {selectedBranch.id !== "__all__" && businessSession && (
-          <div className="mb-3 rounded-xl border border-border-main bg-surface-secondary px-4 py-3 text-xs shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="font-bold text-text-primary">Branch finance session (Manila)</p>
-                <p className="mt-1 text-text-secondary">
-                  Calendar date:{" "}
-                  <span className="font-semibold text-text-primary">{businessSession.manilaCalendarDate}</span>
-                  {" · "}
-                  Status:{" "}
-                  <span className="font-semibold text-text-primary">
-                    {businessSession.pendingStartingSession
-                      ? "PENDING_START_BALANCE"
-                      : businessSession.todaySession?.status ?? "—"}
-                  </span>
-                  {businessSession.pendingStartingSession && (
-                    <span className="ml-2 rounded-md bg-amber-500/15 px-2 py-0.5 font-semibold text-amber-800 dark:text-amber-200">
-                      {sessionStartingBalanceContext.resumeForManilaCalendar
-                        ? `Starting balance required — use Start Day for Manila date ${sessionStartingBalanceContext.manila}.`
-                        : `Starting balance required for business date ${sessionStartingBalanceContext.pendingDate}.`}
-                    </span>
-                  )}
-                </p>
-              </div>
-              {businessSession.lastEnd?.endedAt && (
-                <p className="text-[10px] text-text-tertiary">
-                  Last branch day ended:{" "}
-                  {new Date(businessSession.lastEnd.endedAt).toLocaleString("en-PH", {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                  {businessSession.lastEnd.autoClosed ? " (auto)" : ""}
-                </p>
-              )}
-            </div>
-            {cashOpsBlocked && (
-              <p className="mt-2 border-t border-border-subtle pt-2 text-[11px] text-amber-800 dark:text-amber-200">
-                {sessionStartingBalanceContext.hasPending &&
-                sessionStartingBalanceContext.resumeForManilaCalendar
-                  ? "Cash transactions are paused until the branch business day is OPEN. Submit the branch starting balance on Start Day for today’s Manila date (one entry for the whole branch)."
-                  : "Cash transactions are paused until the branch business day is OPEN. Submit the branch starting balance for the pending business date if prompted."}
-              </p>
-            )}
-          </div>
-        )}
       <TransactionActions
         activeFilter={activeFilter}
         onFilterChange={(f) => setActiveFilter(f)}
-        cashMovementDisabled={cashOpsBlocked}
-        disableStartDay={startDayDisabled}
-        disableEndDay={endDayDisabled}
         onRenewClick={() => handleActionWithPassword(() => setIsRenewModalOpen(true))}
         onRedeem={() => handleActionWithPassword(() => setIsRedeemModalOpen(true))}
         onBuyBack={() => handleActionWithPassword(() => setIsBuyBackModalOpen(true))}
@@ -1032,18 +894,16 @@ export default function EmployeePawnTransactionsPage() {
         })}
         onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
-        onStartDay={async () => {
-          const suggested =
-            businessSession?.pendingStartingSession?.suggestedStartingBalance ??
-            businessSession?.latestBalance?.endingBalance ??
-            currentStats.endingBalance;
-          setExpectedCash(String(suggested ?? 0));
-          setBalanceModalOpen(true);
-        }}
-        onEndDay={() => {
-          void fetchSelectedDateStats().finally(() => setEndDayModalOpen(true));
-        }}
         onQrScan={() => setIsMainScannerOpen(true)}
+      />
+
+      <BranchDaySessionToolbar
+        branchId={branchIdForApi}
+        syncOpeningChecklist={refreshOpeningChecklistFromServer}
+        onSessionChanged={() => {
+          void fetchSelectedDateStats();
+          void fetchTransactions();
+        }}
       />
 
       <TransactionStats data={currentStats} />
@@ -1179,70 +1039,6 @@ export default function EmployeePawnTransactionsPage() {
         }}
         onSuccess={() => {
           setSelectedTransaction(null);
-        }}
-      />
-
-      <BranchEndDayModal
-        isOpen={endDayModalOpen}
-        systemEndingBalance={
-          businessSession?.systemEndingBalanceToday ??
-          currentStats.endingBalance ??
-          0
-        }
-        manilaBusinessDate={
-          businessSession?.manilaCalendarDate || formatDateToYMD()
-        }
-        onClose={() => setEndDayModalOpen(false)}
-        onConfirm={async (physicalEndingAmount) => {
-          try {
-            await api.post("/branch-finance/end-day", {
-              confirmed: true,
-              ...(physicalEndingAmount !== undefined
-                ? { physicalEndingAmount }
-                : {}),
-            });
-            setEndDayModalOpen(false);
-            await fetchSelectedDateStats();
-            fetchTransactionsRef.current();
-            await refreshOpeningChecklistFromServer();
-          } catch (err) {
-            console.error("Failed to end branch day:", err);
-          }
-        }}
-      />
-
-      <DailyBalanceConfirmation
-        isOpen={balanceModalOpen}
-        type="starting"
-        titleOverride={
-          businessSession?.pendingStartingSession
-            ? sessionStartingBalanceContext.resumeForManilaCalendar
-              ? "Branch starting balance (resume same day)"
-              : "Branch starting balance (new business day)"
-            : undefined
-        }
-        subtitleOverride={
-          businessSession?.pendingStartingSession
-            ? sessionStartingBalanceContext.resumeForManilaCalendar
-              ? "The branch ended the Manila business day earlier, or the session row is ahead of the calendar. Enter starting cash again for today’s Manila date on Start Day. One entry applies for all employees at this branch."
-              : "Starting balance required for the new business day. One entry applies for all employees at this branch."
-            : undefined
-        }
-        currentCash={expectedCash}
-        onClose={() => setBalanceModalOpen(false)}
-        onConfirm={async (amt) => {
-          try {
-            await api.post("/branch-finance/daily-balance", {
-              type: "starting",
-              amount: parseFloat(amt) || 0,
-            });
-            setBalanceModalOpen(false);
-            fetchTransactionsRef.current();
-            await fetchSelectedDateStats();
-            await refreshOpeningChecklistFromServer();
-          } catch (err) {
-            console.error("Failed to confirm daily balance:", err);
-          }
         }}
       />
 
