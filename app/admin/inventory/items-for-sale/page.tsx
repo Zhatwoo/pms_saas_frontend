@@ -49,26 +49,6 @@ const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Sold: "orange",
 };
 
-const eyeIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const editIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    <path d="m15 5 4 4" />
-  </svg>
-);
-
-const deleteIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-  </svg>
-);
-
 // ===============================================================
 // ITEMS FOR SALE PAGE (Under Inventory)
 // ===============================================================
@@ -293,35 +273,20 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                       <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
-                          title="View Details"
-                          aria-label="View details"
-                          className="inline-flex items-center justify-center rounded-md p-1.5 text-emerald-500 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
-                        >
-                          {eyeIcon}
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={(event) => { event.stopPropagation(); setViewingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100" : "rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100"}>
+                          View
                         </button>
                         {canEdit && (
                           <>
-                            <button
-                              type="button"
-                              onClick={(event) => { event.stopPropagation(); setEditingItem(item); }}
-                              title="Edit Item"
-                              aria-label="Edit item"
-                              className="inline-flex items-center justify-center rounded-md p-1.5 text-amber-500 transition-colors hover:bg-amber-50 hover:text-amber-700"
-                            >
-                              {editIcon}
+                            <button onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100" : "rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100"}>
+                              Edit
                             </button>
                             <button
-                              type="button"
                               onClick={(event) => { event.stopPropagation(); setDeleteConfirmId(item.id); }}
-                              title="Delete Item"
-                              aria-label="Delete item"
-                              className="inline-flex items-center justify-center rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100" : "rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"}
                             >
-                              {deleteIcon}
+                              Delete
                             </button>
                           </>
                         )}

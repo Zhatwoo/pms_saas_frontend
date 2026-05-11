@@ -53,6 +53,21 @@ interface BranchFinanceSummaryApi {
   fundRequests: { pending: number; approved: number; transferred: number };
 }
 
+function toStatusClass(status: FundRequestRecord["status"]) {
+  switch (status) {
+    case "pending": return "bg-amber-500/15 text-amber-300";
+    case "approved": return "bg-blue-500/15 text-blue-300";
+    case "pending_confirmation": return "bg-violet-500/15 text-violet-300";
+    case "rejected": return "bg-red-500/15 text-red-300";
+    case "transferred": return "bg-emerald-500/15 text-emerald-300";
+    case "cancelled": return "bg-slate-500/15 text-slate-300";
+  }
+}
+
+function toStatusLabel(status: FundRequestRecord["status"]) {
+  return status === "pending_confirmation" ? "Pending Confirmation" : status;
+}
+
 function fmtDate(value: string | null | undefined) {
   return formatFinanceDate(value);
 }
@@ -390,7 +405,7 @@ export default function EmployeeBranchFinancePage() {
                         </p>
                         {request.notes ? (
                           <div className="mt-2 rounded-lg bg-surface-secondary/50 p-2 border border-border-subtle/50">
-                            <p className="text-[11px] italic text-text-muted leading-relaxed">&quot;{request.notes}&quot;</p>
+                            <p className="text-[11px] italic text-text-muted leading-relaxed">"{request.notes}"</p>
                           </div>
                         ) : null}
                         <div className="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
