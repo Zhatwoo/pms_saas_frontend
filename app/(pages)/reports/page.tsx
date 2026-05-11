@@ -102,8 +102,39 @@ interface ReportData {
     date: string;
     openingBalance: number;
     totalSales: number;
-    totalExpenses: number;
+    totalCashOut: number;
     netTotal: number;
+  };
+}
+
+/** API may still send legacy `totalExpenses`; normalize to `totalCashOut` for UI / PDF. */
+function normalizeReportPayload(raw: unknown): ReportData | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const dr = r.dailyReport as Record<string, unknown> | undefined | null;
+  const dailyReport: ReportData["dailyReport"] = dr
+    ? {
+        date: String(dr.date ?? ""),
+        openingBalance: Number(dr.openingBalance ?? 0),
+        totalSales: Number(dr.totalSales ?? 0),
+        netTotal: Number(dr.netTotal ?? 0),
+        totalCashOut: Number(
+          dr.totalCashOut ??
+            dr.totalExpenses ??
+            0,
+        ),
+      }
+    : {
+        date: "",
+        openingBalance: 0,
+        totalSales: 0,
+        totalCashOut: 0,
+        netTotal: 0,
+      };
+
+  return {
+    ...(r as unknown as ReportData),
+    dailyReport,
   };
 }
 
@@ -127,8 +158,8 @@ export default function ReportsPage() {
         params.set("period", activePeriod.toLowerCase());
         if (startDate) params.set("startDate", startDate);
         if (endDate) params.set("endDate", endDate);
-        const data = await api.get<ReportData>(`/reports/system?${params}`);
-        setReportData(data);
+        const data = await api.get<unknown>(`/reports/system?${params}`);
+        setReportData(normalizeReportPayload(data));
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to load reports.";
         console.error("Failed to load reports:", err);
@@ -196,7 +227,7 @@ export default function ReportsPage() {
       const dailyRows = [
         ["Opening Balance", formatPeso(reportData.dailyReport.openingBalance)],
         ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
-        ["Total Expenses", formatPeso(reportData.dailyReport.totalExpenses)],
+        ["Total Cash Out", formatPeso(reportData.dailyReport.totalCashOut)],
         ["Net Total", formatPeso(reportData.dailyReport.netTotal)],
       ]
         .map(

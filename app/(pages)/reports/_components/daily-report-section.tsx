@@ -23,7 +23,7 @@ interface DailyReportData {
   date: string;
   openingBalance: number;
   totalSales: number;
-  totalExpenses: number;
+  totalCashOut: number;
   netTotal: number;
 }
 
@@ -72,10 +72,10 @@ export function DailyReportSection({ data, date }: DailyReportSectionProps) {
         </div>
         <div className="bg-surface p-4">
           <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
-            Total Expenses
+            Total Cash Out
           </p>
           <p className="mt-1.5 text-xl font-bold text-red-500">
-            {formatPeso(data?.totalExpenses ?? 0)}
+            {formatPeso(data?.totalCashOut ?? 0)}
           </p>
         </div>
         <div className="bg-surface p-4">

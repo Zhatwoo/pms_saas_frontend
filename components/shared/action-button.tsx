@@ -17,6 +17,7 @@ interface ActionButtonProps {
   onClick?: () => void;
   size?: "sm" | "md";
   className?: string;
+  disabled?: boolean;
 }
 
 export function ActionButton({
@@ -25,13 +26,16 @@ export function ActionButton({
   onClick,
   size = "md",
   className = "",
+  disabled = false,
 }: ActionButtonProps) {
   return (
     <button
-      onClick={onClick}
+      type="button"
+      disabled={disabled}
+      onClick={disabled ? undefined : onClick}
       className={`rounded border font-bold transition-opacity hover:opacity-80 ${variants[variant]} ${
         size === "sm" ? "px-4 py-1.5 text-xs" : "min-h-[44px] px-5 py-2.5 text-sm"
-      } ${className}`}
+      } ${disabled ? "cursor-not-allowed opacity-50 hover:opacity-50" : ""} ${className}`}
     >
       {children}
     </button>

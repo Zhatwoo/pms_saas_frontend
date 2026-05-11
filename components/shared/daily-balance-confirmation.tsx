@@ -9,6 +9,10 @@ interface DailyBalanceConfirmationProps {
   currentCash: string;
   onConfirm: (amount: string) => void;
   onClose: () => void;
+  /** Override title line (e.g. new business day branch messaging). */
+  titleOverride?: string;
+  /** Override subtitle under title. */
+  subtitleOverride?: string;
 }
 
 export function DailyBalanceConfirmation({
@@ -17,6 +21,8 @@ export function DailyBalanceConfirmation({
   currentCash,
   onConfirm,
   onClose,
+  titleOverride,
+  subtitleOverride,
 }: DailyBalanceConfirmationProps) {
   const [confirmedAmount, setConfirmedAmount] = useState("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,8 +77,13 @@ export function DailyBalanceConfirmation({
             </svg>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary capitalize">{type} Cash Confirmation</h2>
-            <p className="text-xs text-text-tertiary">Please verify the physical cash on hand before proceeding.</p>
+            <h2 className="text-xl font-bold text-text-primary capitalize">
+              {titleOverride ?? `${type} Cash Confirmation`}
+            </h2>
+            <p className="text-xs text-text-tertiary">
+              {subtitleOverride ??
+                "Please verify the physical cash on hand before proceeding."}
+            </p>
           </div>
         </div>
 

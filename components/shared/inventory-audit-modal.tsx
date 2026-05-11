@@ -3,6 +3,7 @@ import Image from "next/image";
 import { BrowserQRCodeReader } from "@zxing/browser";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { StatusBadge } from "./status-badge";
 
@@ -204,7 +205,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const pendingItemRef = useRef<ScannedItemDetails | null>(null);
   const lastDecodedRawRef = useRef<string | null>(null);
   const branchId = selectedBranch.id;
-  const persistenceKey = branchId && branchId !== "__all__" ? `${INVENTORY_AUDIT_STORAGE_PREFIX}:${branchId}` : null;
+  const inventorySessionDate = getPhCalendarDateString();
+  const persistenceKey =
+    branchId && branchId !== "__all__"
+      ? `${INVENTORY_AUDIT_STORAGE_PREFIX}:${branchId}:${inventorySessionDate}`
+      : null;
 
   useEffect(() => {
     scannedItemsRef.current = scannedItems;
@@ -698,7 +703,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
-                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Inventory QR Scan</h2>
+                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Branch inventory QR scan</h2>
                 <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 lg:text-sm">
                   The camera opens automatically so you can scan each pawned item QR code before starting the day.
                 </p>
