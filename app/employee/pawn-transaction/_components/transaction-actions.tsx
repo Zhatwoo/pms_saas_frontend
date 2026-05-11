@@ -180,6 +180,10 @@ interface TransactionActionsProps {
   onStartDay?: () => void;
   onEndDay?: () => void;
   onQrScan?: () => void;
+  /** When true, pawn / renew / redeem etc. cannot post (branch day not OPEN). */
+  cashMovementDisabled?: boolean;
+  disableStartDay?: boolean;
+  disableEndDay?: boolean;
 }
 
 export function TransactionActions({
@@ -195,11 +199,15 @@ export function TransactionActions({
   onStartDay,
   onEndDay,
   onQrScan,
+  cashMovementDisabled = false,
+  disableStartDay = false,
+  disableEndDay = false,
 }: TransactionActionsProps) {
+  const cashLockClass = cashMovementDisabled ? "opacity-40 pointer-events-none cursor-not-allowed" : "";
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={`flex flex-wrap items-center gap-2 ${cashLockClass}`}>
           <button
             onClick={() => {
               onFilterChange?.("Renew");
@@ -272,8 +280,9 @@ export function TransactionActions({
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${cashLockClass}`}>
             <button
+              type="button"
               onClick={onNewPawn}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 whitespace-nowrap"
             >
@@ -281,14 +290,28 @@ export function TransactionActions({
               New Pawn
             </button>
             <button
+              type="button"
               onClick={onStartDay}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+              disabled={disableStartDay}
+              title={
+                disableStartDay
+                  ? "Starting balance is only required when the branch opens a new pending business day."
+                  : undefined
+              }
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
             >
               Start Day
             </button>
             <button
+              type="button"
               onClick={onEndDay}
-              className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700"
+              disabled={disableEndDay}
+              title={
+                disableEndDay
+                  ? "End Day is available only while the branch business day is OPEN."
+                  : undefined
+              }
+              className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
             >
               End Day
             </button>

@@ -9,15 +9,15 @@ import { Toaster } from "sonner";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
-      <Toaster 
-        position="top-center" 
+      <Toaster
+        position="top-center"
         toastOptions={{
           unstyled: true,
           classNames: {
             toast: 'flex w-auto items-center gap-3 rounded-xl border px-5 py-3 shadow-xl backdrop-blur-sm mx-auto',
             title: 'text-sm font-semibold',
             success: 'border-emerald-300/70 bg-emerald-100/70 text-emerald-900',
-            error: 'border-red-300/70 bg-red-100/70 text-red-900',
+            error: 'border-red-300/70 bg-red-100/7  0 text-red-900',
           }
         }}
         icons={{

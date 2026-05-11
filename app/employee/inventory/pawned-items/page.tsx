@@ -206,9 +206,9 @@ export default function EmployeePawnedItemsPage() {
       {!isComplete && currentStep === "INVENTORY_AUDIT" && (
         <div className="flex flex-col gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-4 shadow-md sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-100">Opening checklist — inventory review</p>
+            <p className="text-sm font-semibold text-emerald-100">Branch opening — inventory review</p>
             <p className="mt-1 text-xs text-zinc-300">
-              After reviewing pawned inventory for your branch, confirm here to finish opening and unlock the rest of the app.
+              Complete the branch inventory scan with your team; any employee can confirm here once the branch vault matches records.
             </p>
           </div>
           <button
@@ -217,7 +217,7 @@ export default function EmployeePawnedItemsPage() {
             onClick={() => void handleCompleteOpeningChecklist()}
             className="shrink-0 rounded-lg bg-amber-500 px-4 py-2 text-sm font-bold text-emerald-950 shadow transition-opacity hover:opacity-95 disabled:opacity-50"
           >
-            {isCompletingOpening ? "Saving…" : "Confirm inventory review complete"}
+            {isCompletingOpening ? "Saving…" : "Confirm branch inventory complete"}
           </button>
         </div>
       )}

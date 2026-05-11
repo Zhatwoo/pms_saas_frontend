@@ -46,7 +46,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
   const [isComplete, setIsComplete] = useState(false);
   const [isOpeningChecklistReady, setIsOpeningChecklistReady] = useState(false);
-  const hasLoadedForUserRef = useRef<string | null>(null);
+  const hasLoadedBranchDayRef = useRef<string | null>(null);
   const lastSyncedOpeningDateRef = useRef<string | null>(null);
 
   const applyServerStatus = useCallback((data: DailyOpeningApiStatus) => {
@@ -59,19 +59,19 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     if (!user || user.role !== "employee" || !user.branchId) {
       return;
     }
-    const key = `${user.id}:${user.branchId}`;
+    const key = `${user.branchId}:${getPhCalendarDateString()}`;
     setIsOpeningChecklistReady(false);
     try {
       const data = await api.get<DailyOpeningApiStatus>(
         "/branch-finance/daily-opening/status",
       );
       applyServerStatus(data);
-      hasLoadedForUserRef.current = key;
+      hasLoadedBranchDayRef.current = key;
     } catch (err) {
       console.error("[Checklist] Failed to load daily opening status:", err);
       setCurrentStep("CASH_ON_HAND");
       setIsComplete(false);
-      hasLoadedForUserRef.current = key;
+      hasLoadedBranchDayRef.current = key;
     } finally {
       setIsOpeningChecklistReady(true);
     }
@@ -81,7 +81,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     if (!user || user.role !== "employee") {
       setIsComplete(true);
       setIsOpeningChecklistReady(true);
-      hasLoadedForUserRef.current = null;
+      hasLoadedBranchDayRef.current = null;
       lastSyncedOpeningDateRef.current = null;
       return;
     }
@@ -92,13 +92,17 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       return;
     }
 
-    const key = `${user.id}:${user.branchId}`;
     const phToday = getPhCalendarDateString();
+    const key = `${user.branchId}:${phToday}`;
     const dayChanged =
       lastSyncedOpeningDateRef.current != null &&
       lastSyncedOpeningDateRef.current !== phToday;
 
-    if (hasLoadedForUserRef.current === key && !dayChanged) {
+    if (dayChanged) {
+      hasLoadedBranchDayRef.current = null;
+    }
+
+    if (hasLoadedBranchDayRef.current === key && !dayChanged) {
       setIsOpeningChecklistReady(true);
       return;
     }
@@ -109,22 +113,31 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   useEffect(() => {
     if (!user || user.role !== "employee") return;
 
-    const maybeRefreshForNewPhDay = () => {
+    /** Branch-wide session: refetch when returning to the tab so another employee's completion is picked up. */
+    const syncOpeningFromServer = () => {
+      hasLoadedBranchDayRef.current = null;
+      void loadDailyOpeningForEmployee();
+    };
+
+    const onVisibilityChange = () => {
       const phToday = getPhCalendarDateString();
       if (
         lastSyncedOpeningDateRef.current != null &&
         lastSyncedOpeningDateRef.current !== phToday
       ) {
-        hasLoadedForUserRef.current = null;
-        void loadDailyOpeningForEmployee();
+        syncOpeningFromServer();
+        return;
+      }
+      if (document.visibilityState === "visible") {
+        syncOpeningFromServer();
       }
     };
 
-    window.addEventListener("focus", maybeRefreshForNewPhDay);
-    document.addEventListener("visibilitychange", maybeRefreshForNewPhDay);
+    window.addEventListener("focus", syncOpeningFromServer);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      window.removeEventListener("focus", maybeRefreshForNewPhDay);
-      document.removeEventListener("visibilitychange", maybeRefreshForNewPhDay);
+      window.removeEventListener("focus", syncOpeningFromServer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [user, loadDailyOpeningForEmployee]);
 
@@ -152,7 +165,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const resetChecklist = useCallback(() => {
     setCurrentStep("CASH_ON_HAND");
     setIsComplete(false);
-    hasLoadedForUserRef.current = null;
+    hasLoadedBranchDayRef.current = null;
     lastSyncedOpeningDateRef.current = null;
   }, []);
 
@@ -160,7 +173,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     if (!user || user.role !== "employee" || !user.branchId) {
       return;
     }
-    hasLoadedForUserRef.current = null;
+    hasLoadedBranchDayRef.current = null;
     await loadDailyOpeningForEmployee();
   }, [user, loadDailyOpeningForEmployee]);
 
