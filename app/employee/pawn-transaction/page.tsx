@@ -27,6 +27,7 @@ import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { formatPeso } from "@/lib/currency";
 
 // Use shared `PurposeType` and `FilterType` imported from components
@@ -95,10 +96,6 @@ const MONTH_NAMES = [
 ];
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function isSmartphoneTransaction(transaction: TransactionRow) {
-  return (transaction.category ?? "").trim().toLowerCase() === "smartphone";
-}
 
 function formatSelectedDateLabel(dateString: string) {
   const date = new Date(`${dateString}T00:00:00`);
@@ -231,7 +228,7 @@ function TransactionsCalendar({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
-            <span className="text-[10px] font-bold uppercase text-text-muted">Has smartphone records</span>
+            <span className="text-[10px] font-bold uppercase text-text-muted">Has transactions</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm ring-1 ring-amber-400" />
@@ -422,7 +419,7 @@ export default function EmployeePawnTransactionsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [selectedDate, setSelectedDate] = useState(formatDateToYMD());
+  const [selectedDate, setSelectedDate] = useState(() => getPhCalendarDateString());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
@@ -439,6 +436,8 @@ export default function EmployeePawnTransactionsPage() {
     endingBalance: 0,
   });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
+  /** Rows for `selectedDate` from `/transactions?date=` (same source as stats cards). */
+  const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedTransactionNo, setHighlightedTransactionNo] = useState<string | null>(null);
   const [balanceModalOpen, setBalanceModalOpen] = useState(false);
@@ -453,13 +452,29 @@ export default function EmployeePawnTransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const highlightedTransactionRef = useRef<string | null>(null);
 
+  /**
+   * Employees may briefly have `selectedBranch.id === "__all__"` before BranchProvider syncs.
+   * Backend already scopes by JWT branch for staff; we still send a stable id: `user.branchId` first.
+   */
+  const branchIdForApi = useMemo(() => {
+    if (canSwitchBranch) return selectedBranch.id;
+    const pinned = user?.branchId?.trim();
+    if (pinned) return pinned;
+    return selectedBranch.id !== "__all__" ? selectedBranch.id : "";
+  }, [canSwitchBranch, selectedBranch.id, user?.branchId]);
+
+  const resolvedBranchIdForModals = branchIdForApi || selectedBranch.id;
+
   const fetchTransactions = useCallback(async () => {
-    if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
+    if (!branchIdForApi) {
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(true);
     try {
       const data = await api.get<TransactionsResponse>(
-        `/transactions?branch=${encodeURIComponent(selectedBranch.id)}&range=all`
+        `/transactions?branch=${encodeURIComponent(branchIdForApi)}&range=all`
       );
       if (data) {
         setAllTransactions((data.transactions || []).map(toTransactionRow));
@@ -469,38 +484,39 @@ export default function EmployeePawnTransactionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedBranch, canSwitchBranch]);
+  }, [branchIdForApi]);
 
   const fetchSelectedDateStats = useCallback(async () => {
-    if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
+    if (!branchIdForApi) {
+      setSelectedDateLedgerRows([]);
+      return;
+    }
 
     try {
-      const branchParam = selectedBranch.id === "__all__"
-        ? ""
-        : `branch=${encodeURIComponent(selectedBranch.id)}`;
+      const branchParam =
+        branchIdForApi === "__all__"
+          ? ""
+          : `branch=${encodeURIComponent(branchIdForApi)}`;
 
-      const sessionPromise =
-        selectedBranch.id !== "__all__" && branchParam
-          ? api
-              .get<BranchFinanceBusinessSession>(
-                `/branch-finance/business-session?${branchParam}`,
-              )
-              .catch(() => null)
-          : Promise.resolve(null);
+      const txUrl = `/transactions?${branchParam}${branchParam ? "&" : ""}date=${selectedDate}`;
+      const summaryUrl = `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`;
+      const sessionUrl =
+        branchIdForApi !== "__all__" && branchParam
+          ? `/branch-finance/business-session?${branchParam}`
+          : null;
 
-      const [data, financeSummary, sessionData] = await Promise.all([
-        api.get<TransactionsResponse>(
-          `/transactions?${branchParam}${branchParam ? "&" : ""}date=${selectedDate}`,
-        ),
-        api
-          .get<BranchFinanceSummary[]>(
-            `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`,
-          )
-          .catch(() => [] as BranchFinanceSummary[]),
-        sessionPromise,
-      ]);
+      /** Sequential requests reduce concurrent DB pool usage (Supabase session pool limits). */
+      const data = await api.get<TransactionsResponse>(txUrl);
+      const financeSummary = await api
+        .get<BranchFinanceSummary[]>(summaryUrl)
+        .catch(() => [] as BranchFinanceSummary[]);
+      const sessionData = sessionUrl
+        ? await api.get<BranchFinanceBusinessSession>(sessionUrl).catch(() => null)
+        : null;
 
-      if (selectedBranch.id === "__all__") {
+      setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
+
+      if (branchIdForApi === "__all__") {
         setBusinessSession(null);
       } else {
         setBusinessSession(sessionData ?? null);
@@ -509,7 +525,7 @@ export default function EmployeePawnTransactionsPage() {
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
       let endingBalance = Number(data.stats?.endingBalance ?? 0);
 
-      if (selectedBranch.id === "__all__" && financeSummary.length > 0) {
+      if (branchIdForApi === "__all__" && financeSummary.length > 0) {
         startingBalance = financeSummary.reduce(
           (sum, row) => sum + Number(row.startingBalance ?? 0),
           0,
@@ -531,8 +547,9 @@ export default function EmployeePawnTransactionsPage() {
     } catch (error) {
       console.error("Failed to load selected date transaction stats:", error);
       setCurrentStats(normalizeStats());
+      setSelectedDateLedgerRows([]);
     }
-  }, [selectedBranch, selectedDate, canSwitchBranch]);
+  }, [branchIdForApi, selectedDate]);
 
   useEffect(() => {
     void fetchTransactions();
@@ -545,27 +562,22 @@ export default function EmployeePawnTransactionsPage() {
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
-      if (selectedBranch.id === "__all__" && !canSwitchBranch) return;
+      if (!branchIdForApi) return;
       void fetchSelectedDateStats();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [fetchSelectedDateStats, selectedBranch.id, canSwitchBranch]);
+  }, [fetchSelectedDateStats, branchIdForApi]);
 
   const fetchTransactionsRef = useRef(fetchTransactions);
   useEffect(() => {
     fetchTransactionsRef.current = fetchTransactions;
   }, [fetchTransactions]);
 
-  const smartphoneTransactions = useMemo(
-    () => allTransactions.filter(isSmartphoneTransaction),
-    [allTransactions],
-  );
-
   const calendarData = useMemo(() => {
     const counts: Record<string, number> = {};
 
-    for (const transaction of smartphoneTransactions) {
+    for (const transaction of allTransactions) {
       const [yearString, monthString] = transaction.date.split("-");
       const year = Number(yearString);
       const month = Number(monthString) - 1;
@@ -578,22 +590,22 @@ export default function EmployeePawnTransactionsPage() {
     }
 
     return counts;
-  }, [calendarMonth, calendarYear, smartphoneTransactions]);
+  }, [calendarMonth, calendarYear, allTransactions]);
 
   const selectedDateTransactions = useMemo(
-    () => smartphoneTransactions.filter((transaction) => transaction.date === selectedDate),
-    [selectedDate, smartphoneTransactions],
+    () => selectedDateLedgerRows,
+    [selectedDateLedgerRows],
   );
 
   useEffect(() => {
-    if (selectedBranch.id === "__all__") return;
+    if (!branchIdForApi || branchIdForApi === "__all__") return;
 
     const interval = window.setInterval(
       () => void fetchTransactionsRef.current(),
       60_000,
     );
     return () => window.clearInterval(interval);
-  }, [selectedBranch.id]);
+  }, [branchIdForApi]);
 
   const filteredTransactions = useMemo(() => {
     let result = selectedDateTransactions;
@@ -1133,7 +1145,7 @@ export default function EmployeePawnTransactionsPage() {
         onReprint={handleReprint}
         onViewDetails={setSelectedTransaction}
         highlightedTransactionNo={highlightedTransactionNo}
-        title={`Smartphone transactions for ${formatSelectedDateLabel(selectedDate)}`}
+        title={`Transactions for ${formatSelectedDateLabel(selectedDate)}`}
       />
 
       <div className="mt-4">
@@ -1253,14 +1265,14 @@ export default function EmployeePawnTransactionsPage() {
         onClose={() => setIsRenewModalOpen(false)}
         onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
-        branchId={selectedBranch.id}
+        branchId={resolvedBranchIdForModals}
       />
 
       <NewPawnModal
         isOpen={isNewPawnModalOpen}
         onClose={() => setIsNewPawnModalOpen(false)}
         onSuccess={handleTransactionSuccess}
-        branchId={selectedBranch.id}
+        branchId={resolvedBranchIdForModals}
         branchName={selectedBranch.name}
         branchAddress={selectedBranch.location}
         branchPhone={selectedBranch.phone}
@@ -1272,7 +1284,7 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={isRedeemModalOpen}
         onClose={() => setIsRedeemModalOpen(false)}
         onSuccess={handleTransactionSuccess}
-        branchId={selectedBranch.id}
+        branchId={resolvedBranchIdForModals}
         branchName={selectedBranch.name}
       />
 
@@ -1281,7 +1293,7 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={isBuyBackModalOpen}
         onClose={() => setIsBuyBackModalOpen(false)}
         onSuccess={handleTransactionSuccess}
-        branchId={selectedBranch.id}
+        branchId={resolvedBranchIdForModals}
         branchName={selectedBranch.name}
       />
 
@@ -1296,7 +1308,7 @@ export default function EmployeePawnTransactionsPage() {
         isOpen={isReserveLayawayModalOpen}
         onClose={() => setIsReserveLayawayModalOpen(false)}
         onSuccess={handleTransactionSuccess}
-        branchId={selectedBranch.id}
+        branchId={resolvedBranchIdForModals}
         branchName={selectedBranch.name}
       />
 
