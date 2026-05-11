@@ -510,8 +510,8 @@ export default function ItemsForSalePage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-emerald-900 text-amber-400">
-                {["ID", "Item Name", "Category", "Branch", "Date Expired", "Price", "Status", ""].map((h) => (
-                  {["ID", "Item Name", "Category", "Branch", "Date Added", "Price", "Status", ""].map((h) => (
+                {["ID", "Item Name", "Category", "Branch", "Date Added", "Price", "Status", ""].map((h) => (
+                  <th
                     key={h}
                     className={`whitespace-nowrap px-4 py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"
                       }`}
@@ -557,14 +557,13 @@ export default function ItemsForSalePage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button className="rounded px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedSaleItem(item)}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
-                          >
-                            {eyeIcon}
-                            <span>View</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSaleItem(item)}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300 dark:hover:bg-emerald-400/20"
+                        >
+                          {eyeIcon}
+                          <span>View</span>
                         </button>
                       </div>
                     </td>
