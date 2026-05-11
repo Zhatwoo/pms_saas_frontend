@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatPeso } from "@/lib/currency";
 
 interface ConfirmFundModalProps {
@@ -40,7 +40,9 @@ export function ConfirmFundModal({
   const [receivedAmount, setReceivedAmount] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofName, setProofName] = useState<string | null>(null);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const proofInputRef = useRef<HTMLInputElement | null>(null);
   const hasMaxAmount = Number.isFinite(amount) && amount > 0;
 
   const formatAmountError = () =>
@@ -54,9 +56,17 @@ export function ConfirmFundModal({
       setReceivedAmount(amount > 0 ? String(amount) : "");
       setProofFile(null);
       setProofName(null);
+      setProofPreviewUrl(null);
       setError(null);
+      if (proofInputRef.current) proofInputRef.current.value = "";
     }
   }, [amount, isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
+    };
+  }, [proofPreviewUrl]);
 
   if (!isOpen) return null;
 
@@ -92,6 +102,54 @@ export function ConfirmFundModal({
     }
   }
 
+  function handleProofFileChange(event: React.ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
+    selectProofFile(file, event.target);
+  }
+
+  function selectProofFile(file: File, inputToReset?: HTMLInputElement): void {
+    if (!file.type.startsWith("image/")) {
+      setProofFile(null);
+      setProofName(null);
+      setProofPreviewUrl(null);
+      setError("Please choose an image file for the proof of transaction.");
+      if (inputToReset) inputToReset.value = "";
+      return;
+    }
+
+    setProofFile(file);
+    setProofName(file.name);
+    setProofPreviewUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      return URL.createObjectURL(file);
+    });
+    setError(null);
+  }
+
+  function handleProofDrop(event: React.DragEvent<HTMLDivElement>): void {
+    event.preventDefault();
+    const file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith("image/"));
+    if (file) selectProofFile(file);
+  }
+
+  function handleProofPaste(event: React.ClipboardEvent<HTMLDivElement>): void {
+    const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith("image/"));
+    if (!file) return;
+    event.preventDefault();
+    selectProofFile(file);
+  }
+
+  function clearProofFile(): void {
+    setProofFile(null);
+    setProofName(null);
+    setProofPreviewUrl((currentUrl) => {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      return null;
+    });
+    if (proofInputRef.current) proofInputRef.current.value = "";
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-surface shadow-2xl">
@@ -122,14 +180,7 @@ export function ConfirmFundModal({
           </button>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void runConfirm();
-          }}
-          className="space-y-5 px-6 py-5"
-        >
+        <div className="space-y-5 px-6 py-5">
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
               Receipt Confirmation
@@ -192,19 +243,54 @@ export function ConfirmFundModal({
               Proof of Transaction
             </label>
             <input
+              ref={proofInputRef}
               type="file"
               accept="image/*"
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                setProofFile(file);
-                setProofName(file?.name ?? null);
-                setError(null);
-              }}
-              className="w-full rounded-lg border border-input-border bg-input-bg p-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              required
+              onChange={handleProofFileChange}
+              className="sr-only"
             />
-            {proofName ? (
-              <p className="mt-2 text-xs text-text-muted">Selected proof: {proofName}</p>
+            <div
+              role="button"
+              tabIndex={0}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleProofDrop}
+              onPaste={handleProofPaste}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  proofInputRef.current?.click();
+                }
+              }}
+              onClick={() => proofInputRef.current?.click()}
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input-border bg-input-bg p-3 text-center text-sm font-semibold text-text-primary outline-none transition-colors hover:border-emerald-500 hover:bg-emerald-500/5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span>{proofName ? "Change proof image" : "Drop or choose proof image"}</span>
+              <span className="text-xs font-medium text-text-tertiary">Paste image also works</span>
+            </div>
+            {proofFile ? (
+              <div className="mt-3 overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+                {proofPreviewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={proofPreviewUrl} alt="Selected proof preview" className="h-36 w-full object-cover" />
+                ) : null}
+                <div className="flex items-center justify-between gap-3 px-3 py-2">
+                  <p className="min-w-0 truncate text-xs font-semibold text-text-secondary">
+                    {proofName}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearProofFile}
+                    className="shrink-0 rounded-md px-2 py-1 text-xs font-bold text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
             ) : null}
           </div>
 
@@ -248,7 +334,7 @@ export function ConfirmFundModal({
               {isSubmitting ? "Processing..." : "Confirm Receipt"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
