@@ -77,16 +77,16 @@ const eyeIcon = (
 );
 
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-[10px] text-text-tertiary">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-[10px] text-text-tertiary dark:text-zinc-400">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+          <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-text-tertiary">{r.date}</span>
-          <span className="text-[10px] font-bold text-text-secondary">{formatPeso(r.amount.toLocaleString())}</span>
+          <span className="text-[10px] text-text-tertiary dark:text-zinc-400">{r.date}</span>
+          <span className="text-[10px] font-bold text-text-secondary dark:text-zinc-300">{formatPeso(r.amount.toLocaleString())}</span>
         </div>
       ))}
     </div>
@@ -198,7 +198,7 @@ export default function EmployeePawnedItemsPage() {
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
       <div>
-        <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
+        <p className="text-sm text-emerald-900/60 dark:text-zinc-300">
           Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
         </p>
       </div>
@@ -221,28 +221,28 @@ export default function EmployeePawnedItemsPage() {
           </button>
         </div>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 dark:bg-zinc-800/40 p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="flex flex-wrap items-end gap-3">
             <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
             <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted">Search</label>
+              <label className="text-[10px] font-bold uppercase tracking-wide text-text-muted dark:text-zinc-400">Search</label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search items..."
-                className="h-9 rounded-md border border-input-border bg-input-bg px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500 w-44"
+                className="h-9 rounded-md border border-input-border bg-input-bg dark:bg-zinc-700 dark:border-zinc-600 px-3 text-xs text-text-primary dark:text-zinc-100 outline-none transition-colors focus:border-emerald-500 dark:focus:border-emerald-400 w-44"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex rounded-md border border-border-main bg-surface">
-              <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+            <div className="flex rounded-md border border-border-main bg-surface dark:bg-zinc-800">
+              <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white dark:bg-emerald-600" : "bg-surface dark:bg-zinc-800 text-text-secondary dark:text-zinc-300 hover:bg-surface-hover dark:hover:bg-zinc-700"}`}>
                 List
               </button>
-              <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+              <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white dark:bg-emerald-600" : "bg-surface dark:bg-zinc-800 text-text-secondary dark:text-zinc-300 hover:bg-surface-hover dark:hover:bg-zinc-700"}`}>
                 Calendar
               </button>
             </div>
@@ -251,7 +251,7 @@ export default function EmployeePawnedItemsPage() {
                 <select 
                   value={qrSize} 
                   onChange={(e) => setQrSize(e.target.value as "small" | "large")}
-                  className="h-8 rounded border border-border-main bg-surface px-2 text-[10px] font-bold uppercase text-text-secondary outline-none transition-colors focus:border-emerald-500"
+                  className="h-8 rounded border border-border-main bg-surface dark:bg-zinc-800 px-2 text-[10px] font-bold uppercase text-text-secondary dark:text-zinc-300 outline-none transition-colors focus:border-emerald-500 dark:focus:border-emerald-400"
                 >
                   <option value="small">Small</option>
                   <option value="large">Large</option>
@@ -312,7 +312,7 @@ export default function EmployeePawnedItemsPage() {
                       }, 500);
                     };
                   }}
-                  className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded border border-emerald-700 shadow-md whitespace-nowrap"
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded border border-emerald-700 shadow-md whitespace-nowrap dark:bg-emerald-700 dark:hover:bg-emerald-600 dark:border-emerald-600"
                 >
                   PRINT QR
                 </button>
@@ -323,35 +323,35 @@ export default function EmployeePawnedItemsPage() {
 
 
       {hasHighlightedItem && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 shadow-sm shadow-black/10">
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 shadow-sm shadow-black/10 dark:border-amber-500/30 dark:bg-amber-500/5 dark:text-amber-300">
           Highlighted item from customer transaction history. The full list remains visible.
         </div>
       )}
 
       {viewMode === "list" && (
-        <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20">
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface dark:bg-zinc-900 shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-amber-400">
+                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
                   {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", isAdminOrSuperAdmin ? "QR" : null, ""]
                     .filter((h): h is string => h !== null)
                     .map((h) => (
-                      <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left ${h === "Amount" ? "text-right" : h === "QR" || h === "" ? "text-center" : ""}`}>{h}</th>
+                      <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left dark:text-inherit ${h === "Amount" ? "text-right" : h === "QR" || h === "" ? "text-center" : ""}`}>{h}</th>
                     ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                  <tr className="bg-surface dark:bg-zinc-900">
+                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
                       <div className="flex items-center justify-center">
                         <LoadingSpinnerLabel text="Loading pawned items..." className="text-base font-medium text-text-tertiary" />
                       </div>
                     </td>
                   </tr>
                 ) : pawnedItems.length === 0 ? (
-                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found for this branch</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500 bg-surface dark:bg-zinc-900">No pawned items found for this branch</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
@@ -366,23 +366,23 @@ export default function EmployeePawnedItemsPage() {
                             setSelectedItemId(item.id);
                           }
                         }}
-                        className={`cursor-pointer border-t border-border-subtle transition-colors ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} ${highlightedItemId === item.itemId ? "bg-amber-400/10 ring-2 ring-amber-400/60 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.25)]" : "hover:bg-surface-hover"} ${hasHighlightedItem && highlightedItemId === item.itemId ? "scroll-mt-24" : ""}`}
+                        className={`cursor-pointer border-t border-border-subtle transition-colors ${idx % 2 === 0 ? "bg-surface dark:bg-zinc-900" : "bg-surface-secondary/40 dark:bg-zinc-800"} ${highlightedItemId === item.itemId ? "bg-amber-400/10 ring-2 ring-amber-400/60 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.25)] dark:bg-amber-500/10 dark:ring-amber-500/40" : ""} ${hasHighlightedItem && highlightedItemId === item.itemId ? "scroll-mt-24" : ""}`}
                       >
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-primary">{item.itemName}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right">{formatPeso((item.amount || 0).toLocaleString())}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary">
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-primary dark:text-zinc-100">{item.itemName}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary dark:text-zinc-400">{item.category}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right dark:text-zinc-100">{formatPeso((item.amount || 0).toLocaleString())}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary dark:text-zinc-400">
                           <div className="font-bold">{item.pawnDate}</div>
                           <div className="opacity-50">10:30 AM</div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${item.renewalCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"}`}>
-                            {getRenewalLabel(item.renewalCount)}
-                          </span>
+                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={`text-[10px] font-bold text-emerald-700 hover:underline dark:text-emerald-400`}>
+                            {item.renewalCount}x ▾
+                          </button>
                         </td>
-                        <td className="px-3 py-2 text-[10px] font-bold text-text-tertiary max-w-[200px] truncate" title={item.remarks}>{item.remarks || "No description provided"}</td>
+                        <td className="px-3 py-2 text-[10px] font-bold text-text-tertiary max-w-[200px] truncate dark:text-zinc-400" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         {isAdminOrSuperAdmin && (
                           <td className="px-3 py-2 text-center">
                             {(item.qrCode || item.qr_code) ? (
@@ -402,15 +402,15 @@ export default function EmployeePawnedItemsPage() {
                           <button 
                             onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} 
                             title="View Details"
-                            className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                            className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                           >
                             {eyeIcon}
                           </button>
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr className="bg-amber-500/5">
-                          <td colSpan={8} className="px-6 py-3 border-t border-amber-500/10">
+                        <tr className="bg-amber-50/50 dark:bg-amber-900/20">
+                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100 dark:border-amber-800/30">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>
@@ -428,7 +428,7 @@ export default function EmployeePawnedItemsPage() {
         <InventoryCalendar items={pawnedItems} />
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20 mt-4">
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface dark:bg-zinc-900 shadow-lg shadow-black/20 mt-4">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}

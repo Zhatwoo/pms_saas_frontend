@@ -92,16 +92,16 @@ const expireIcon = (
 );
 
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
-  if (renewals.length === 0) return <span className="text-text-muted text-[10px]">No renewals yet</span>;
+  if (renewals.length === 0) return <span className="text-text-muted text-[10px] dark:text-zinc-400">No renewals yet</span>;
   return (
     <div className="space-y-1.5">
       {renewals.map((r, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 border border-amber-200">
+          <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
             Renew {i + 1}
           </span>
-          <span className="text-[10px] text-text-tertiary">{r.date}</span>
-          <span className="text-[10px] font-bold text-text-secondary">{formatPeso(r.amount.toLocaleString())}</span>
+          <span className="text-[10px] text-text-tertiary dark:text-zinc-400">{r.date}</span>
+          <span className="text-[10px] font-bold text-text-secondary dark:text-zinc-300">{formatPeso(r.amount.toLocaleString())}</span>
         </div>
       ))}
     </div>
@@ -269,22 +269,22 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
       <div>
-        <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
+        <p className="text-sm text-emerald-900/60 dark:text-zinc-300">
           Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
         </p>
       </div>
-      <div className={viewOnly ? "flex flex-wrap items-end justify-between gap-4 rounded-lg border border-border-main bg-surface-secondary/85 p-5 shadow-lg shadow-black/20 backdrop-blur-sm" : "flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm"}>
+      <div className={viewOnly ? "flex flex-wrap items-end justify-between gap-4 rounded-lg border border-border-main bg-surface-secondary/85 dark:bg-zinc-800/40 p-5 shadow-lg shadow-black/20 backdrop-blur-sm" : "flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 dark:bg-zinc-800/40 p-4 shadow-lg shadow-black/20 backdrop-blur-sm"}>
         <div className="flex flex-wrap items-end gap-3">
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
           <FilterSelect label="Status" options={pawnedStatusOptions} value={status} onChange={setStatus} />
           <div className="flex flex-col gap-1">
-            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500"}>Search</label>
+            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400"}>Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500" : "h-9 w-44 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500"}
+              className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100 px-4 text-sm outline-none transition-colors focus:border-emerald-500 dark:focus:border-emerald-400" : "h-9 w-44 rounded-md border border-zinc-300 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100 px-3 text-xs outline-none transition-colors focus:border-emerald-500 dark:focus:border-emerald-400"}
             />
           </div>
         </div>
@@ -384,45 +384,45 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
 
 
       {viewMode === "list" && (
-        <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm"}>
+        <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300 dark:bg-zinc-900" : "overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900"}>
           <div className="overflow-x-auto">
             <table className={viewOnly ? "min-w-[1320px] w-full text-sm" : "w-full text-sm"}>
               <thead>
-                <tr className={viewOnly ? "bg-emerald-900 text-amber-400" : "bg-gradient-to-r from-emerald-950 to-emerald-900 text-white"}>
+                <tr className={viewOnly ? "bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300" : "bg-gradient-to-r from-emerald-950 to-emerald-900 text-white dark:from-emerald-950 dark:to-emerald-900"}>
                   {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", "Renewals", "Remarks", isAdminOrSuperAdmin ? "QR" : null, "Actions"]
                     .filter((h): h is string => h !== null)
                     .map((h) => (
-                      <th key={h} className={viewOnly ? `whitespace-nowrap px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] ${h === "Actions" || h === "QR" ? "text-center" : "text-left"}` : `whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Actions" || h === "QR" ? "text-center" : "text-left"}`}>{h}</th>
+                      <th key={h} className={viewOnly ? `whitespace-nowrap px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] dark:text-inherit ${h === "Actions" || h === "QR" ? "text-center" : "text-left"}` : `whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide dark:text-inherit ${h === "Actions" || h === "QR" ? "text-center" : "text-left"}`}>{h}</th>
                     ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400">
+                  <tr className="bg-white dark:bg-zinc-900">
+                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
                       <div className="flex items-center justify-center">
                         <LoadingSpinnerLabel text="Loading pawned items..." className="text-base font-medium text-text-tertiary" />
                       </div>
                     </td>
                   </tr>
                 ) : pawnedItems.length === 0 ? (
-                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400">No pawned items found</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500 bg-white dark:bg-zinc-900">No pawned items found</td></tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
-                      <tr onClick={viewOnly ? () => setSelectedItemId(item.id) : undefined} className={`border-t border-border-subtle transition-colors ${viewOnly ? "cursor-pointer bg-surface-secondary hover:bg-emerald-surface/60" : `${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} hover:bg-surface-hover`}`}>
-                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm font-bold text-emerald-700" : "whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400"}>{item.itemId}</td>
-                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-secondary" : "whitespace-nowrap px-3 py-2 text-xs text-text-secondary"}>{item.itemName}</td>
-                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.category}</td>
-                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.branch}</td>
-                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.pawnDate}</td>
+                      <tr onClick={viewOnly ? () => setSelectedItemId(item.id) : undefined} className={`border-t border-border-subtle transition-colors ${viewOnly ? "cursor-pointer bg-surface-secondary hover:bg-emerald-surface/60 dark:bg-zinc-800 dark:hover:bg-zinc-700" : `${idx % 2 === 0 ? "bg-white dark:bg-zinc-900" : "bg-zinc-50 dark:bg-zinc-800"} hover:bg-zinc-100 dark:hover:bg-zinc-700`}`}>
+                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm font-bold text-emerald-700 dark:text-emerald-400" : "whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400"}>{item.itemId}</td>
+                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-secondary dark:text-zinc-300" : "whitespace-nowrap px-3 py-2 text-xs text-text-secondary dark:text-zinc-300"}>{item.itemName}</td>
+                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary dark:text-zinc-400" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary dark:text-zinc-400"}>{item.category}</td>
+                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary dark:text-zinc-400" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary dark:text-zinc-400"}>{item.branch}</td>
+                        <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary dark:text-zinc-400" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary dark:text-zinc-400"}>{item.pawnDate}</td>
                         <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2">
-                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={viewOnly ? "text-sm font-bold text-emerald-700 hover:underline" : "text-[10px] font-bold text-emerald-700 hover:underline"}>
+                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={viewOnly ? "text-sm font-bold text-emerald-700 hover:underline dark:text-emerald-400" : "text-[10px] font-bold text-emerald-700 hover:underline dark:text-emerald-400"}>
                             {item.renewalCount}x ▾
                           </button>
                         </td>
-                        <td className={viewOnly ? "px-5 py-4 text-sm text-text-tertiary max-w-[180px] truncate" : "px-3 py-2 text-xs text-text-tertiary max-w-[120px] truncate"} title={item.remarks}>{item.remarks || "—"}</td>
+                        <td className={viewOnly ? "px-5 py-4 text-sm text-text-tertiary max-w-[180px] truncate dark:text-zinc-400" : "px-3 py-2 text-xs text-text-tertiary max-w-[120px] truncate dark:text-zinc-400"} title={item.remarks}>{item.remarks || "—"}</td>
                         {isAdminOrSuperAdmin && (
                           <td className="px-3 py-2 text-center">
                             {(item.qrCode || item.qr_code) ? (
@@ -430,11 +430,11 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                 <img
                                   src={item.qrCode || item.qr_code}
                                   alt={`${item.itemName} QR`}
-                                  className="h-8 w-8 rounded border border-border-main bg-white p-0.5 object-contain"
+                                  className="h-8 w-8 rounded border border-border-main bg-white p-0.5 object-contain dark:bg-zinc-700 dark:border-zinc-600"
                                 />
                               </div>
                             ) : (
-                              <span className="text-text-muted">-</span>
+                              <span className="text-text-muted dark:text-zinc-500">-</span>
                             )}
                           </td>
                         )}
@@ -443,7 +443,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                             <button 
                               onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} 
                               title="View Details"
-                              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 transition-colors hover:bg-emerald-100"
+                              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
                             >
                               {eyeIcon}
                             </button>
@@ -452,7 +452,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                 <button 
                                   onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} 
                                   title="Edit Item"
-                                  className="inline-flex items-center justify-center rounded-lg border border-blue-500/30 bg-blue-500/10 p-2 text-blue-700 transition-colors hover:bg-blue-100"
+                                  className="inline-flex items-center justify-center rounded-lg border border-blue-500/30 bg-blue-500/10 p-2 text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/5 dark:text-blue-400 dark:hover:bg-blue-500/10"
                                 >
                                   {editIcon}
                                 </button>
@@ -464,7 +464,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                       e.stopPropagation();
                                       setConfirmIntent({ type: "expire", itemId: item.id });
                                     }}
-                                    className="inline-flex items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-orange-600 transition-colors hover:bg-orange-100"
+                                    className="inline-flex items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-500/20 dark:bg-orange-500/5 dark:text-orange-400 dark:hover:bg-orange-500/10"
                                   >
                                     {expireIcon}
                                   </button>
@@ -476,7 +476,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                     e.stopPropagation();
                                     setConfirmIntent({ type: "delete", itemId: item.id });
                                   }}
-                                  className="inline-flex items-center justify-center rounded-lg border border-red-500/30 bg-red-50 p-2 text-red-700 transition-colors hover:bg-red-100"
+                                  className="inline-flex items-center justify-center rounded-lg border border-red-500/30 bg-red-50 p-2 text-red-700 transition-colors hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/5 dark:text-red-400 dark:hover:bg-red-500/10"
                                 >
                                   {deleteIcon}
                                 </button>
@@ -486,8 +486,8 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                         </td>
                       </tr>
                       {expandedRow === item.itemId && (
-                        <tr key={`${item.itemId}-exp`} className="bg-amber-50/50">
-                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100">
+                        <tr className="bg-amber-50/50 dark:bg-amber-900/20">
+                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100 dark:border-amber-800/30">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>
@@ -506,7 +506,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
       )}
 
       {viewOnly ? (
-        <div className="overflow-hidden rounded-2xl border border-border-main bg-surface-secondary/50 shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border-main bg-surface-secondary/50 dark:bg-zinc-800/50 shadow-sm">
           <PaginationFooter
             currentPage={currentPage}
             totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
@@ -516,7 +516,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           />
         </div>
       ) : (
-        <div className="mt-4 overflow-hidden rounded-3xl border border-border-main bg-surface shadow-lg shadow-black/20">
+        <div className="mt-4 overflow-hidden rounded-3xl border border-border-main bg-surface dark:bg-zinc-900 shadow-lg shadow-black/20">
           <PaginationFooter
             currentPage={currentPage}
             totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}
