@@ -379,24 +379,24 @@ export function PasswordChangeRequestCard() {
             onClick={() => setIsModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl">
-            <h3 className="text-lg font-bold text-zinc-900">Request Password Change</h3>
-            <p className="mt-1 text-sm text-zinc-600">
+          <div className="relative w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Request Password Change</h3>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
               Provide a reason. This request will be sent to {approverLabel || "the assigned approver"} for approval.
             </p>
 
             <div className="mt-4 space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+              <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 Reason for Password Change
               </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Example: I suspect my password was exposed and need immediate reset approval."
-                className="h-28 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-emerald-500 focus:bg-white"
+                className="h-28 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-emerald-500 focus:bg-white dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:bg-zinc-700"
               />
-              <p className="text-[10px] text-zinc-500">Minimum 10 characters.</p>
-              {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Minimum 10 characters.</p>
+              {error && <p className="text-xs font-semibold text-red-600 dark:text-red-400">{error}</p>}
             </div>
 
             <div className="mt-5 flex items-center justify-end gap-2">
@@ -406,7 +406,7 @@ export function PasswordChangeRequestCard() {
                   setError(null);
                 }}
                 disabled={isSubmitting}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-60"
+                className="rounded-lg border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
               >
                 Cancel
               </button>
