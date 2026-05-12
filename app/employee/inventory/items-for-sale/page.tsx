@@ -41,11 +41,16 @@ const saleStatusOptions = [
   { value: "Sold", label: "Sold" },
 ];
 
+const toolbarInputClass = "h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarTabClass = "px-4 py-2 text-sm font-medium transition-colors";
+
 const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
   Reserved: "blue",
   Sold: "orange",
 };
+
+const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
 
 export default function EmployeeItemsForSalePage() {
   const { selectedBranch } = useBranch();
@@ -92,9 +97,18 @@ export default function EmployeeItemsForSalePage() {
             setIsLoading(false);
             return;
           }
+          if (status !== "all") params.set("status", status);
+          if (searchQuery) params.set("search", searchQuery);
           params.set("date", selectedDate);
           params.set("page", "1");
           params.set("limit", "500");
+
+          const allData = await api.get<{ items: SaleItem[]; total: number }>(`/inventory/for-sale?${params}`);
+          const all = allData.items || [];
+          const filtered = category === "all" ? all : all.filter((item) => item.category === category);
+          setSaleItems(filtered);
+          setTotalItems(filtered.length);
+          return;
         } else {
           params.set("viewMode", saleViewMode);
           params.set("page", String(currentPage));
@@ -138,27 +152,27 @@ export default function EmployeeItemsForSalePage() {
       </div>
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="flex flex-wrap items-end gap-3">
-          <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
-          <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} />
+          <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} size="lg" />
+          <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} size="lg" />
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">Search</label>
+            <label className={toolbarLabelClass}>Search</label>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-border-main bg-surface-secondary px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500 w-44"
+              className={toolbarInputClass}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">Date</label>
+            <label className={toolbarLabelClass}>Date</label>
             <div className="relative flex items-center">
               <input
                 type="date"
                 value={selectedDate || ""}
                 max={todayString}
                 onChange={(e) => setSelectedDate(e.target.value || null)}
-                className="h-9 rounded-md border border-border-main bg-surface-secondary px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500 pr-8"
+                className={`${toolbarInputClass} pr-8`}
               />
               {selectedDate && (
                 <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
@@ -169,16 +183,16 @@ export default function EmployeeItemsForSalePage() {
           </div>
         </div>
 
-        <div className="flex rounded-md border border-zinc-200 overflow-hidden bg-surface">
-          <button onClick={() => setSaleViewMode("current")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>Current</button>
-          <button onClick={() => setSaleViewMode("calendar")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>Calendar</button>
-          <button onClick={() => setSaleViewMode("history")} className={`px-3 py-1.5 text-xs font-medium transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white" : "bg-white text-zinc-600 hover:bg-zinc-50"}`}>History</button>
+        <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
+          <button onClick={() => setSaleViewMode("current")} className={`${toolbarTabClass} ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>Current</button>
+          <button onClick={() => setSaleViewMode("calendar")} className={`${toolbarTabClass} ${saleViewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>Calendar</button>
+          <button onClick={() => setSaleViewMode("history")} className={`${toolbarTabClass} ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>History</button>
         </div>
       </div>
 
 
       {saleViewMode === "calendar" ? (
-        <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20">
+        <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300 shadow-lg shadow-black/20">
           <div className="border-b border-border-main p-3 sm:p-4">
             <SaleCalendar
               calendarData={calendarData}
@@ -195,9 +209,9 @@ export default function EmployeeItemsForSalePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-amber-400">
+                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
                   {["ID", "Item Name", "Category", "Date Expired", "Price", "Status", "Actions"].map((h) => (
-                    <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
+                    <th key={h} className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : h === "Actions" ? "text-center" : "text-left"}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -206,7 +220,7 @@ export default function EmployeeItemsForSalePage() {
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
                       <div className="flex items-center justify-center">
-                        <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                        <LoadingSpinnerLabel text="Loading..." className="text-base font-medium text-text-tertiary" />
                       </div>
                     </td>
                   </tr>
@@ -214,26 +228,26 @@ export default function EmployeeItemsForSalePage() {
                   <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">{selectedDate ? "No items on this day" : "No items for sale found"}</td></tr>
                 ) : (
                   saleItems.map((item, idx) => (
-                    <tr key={item.id || item.itemId} className={`border-t border-border-subtle transition-colors ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} hover:bg-surface-hover`}>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
-                      <td className="whitespace-nowrap px-3 py-2">
-                        <button onClick={() => setViewingItem(item)} className="text-xs font-bold text-zinc-900 transition-colors hover:underline hover:text-emerald-700">
+                    <tr key={item.id || item.itemId} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400">{item.itemId}</td>
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-medium text-text-secondary">
+                        <button onClick={() => setViewingItem(item)} className="text-inherit transition-colors hover:underline hover:text-emerald-700">
                           {item.itemName}
                         </button>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.category}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold italic text-text-secondary">{item.availableDate}</td>
-                      <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-black text-text-primary">&#8369;{item.price.toLocaleString()}</td>
-                      <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
-                      <td className="px-3 py-2 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary">{item.category}</td>
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold italic text-text-tertiary">{item.availableDate}</td>
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-right font-semibold text-text-primary">&#8369;{item.price.toLocaleString()}</td>
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         {item.status === "Available" ? (
-                          <button className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95">
+                          <button className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-800">
                             Sell Item
                           </button>
                         ) : item.status === "Reserved" ? (
-                          <span className="text-[10px] font-bold italic text-sky-500">Reserved for Layaway</span>
+                          <span className="text-xs font-bold italic text-sky-500">Reserved for Layaway</span>
                         ) : (
-                          <span className="text-[10px] font-bold italic text-zinc-400">Sold to Customer</span>
+                          <span className="text-xs font-bold italic text-zinc-400">Sold to Customer</span>
                         )}
                       </td>
                     </tr>
@@ -248,7 +262,7 @@ export default function EmployeeItemsForSalePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-amber-400">
+                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
                   {["ID", "Item Name", "Category", "Date Expired", "Price", "Status", "Actions"].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
@@ -259,7 +273,7 @@ export default function EmployeeItemsForSalePage() {
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-sm text-zinc-400">
                       <div className="flex items-center justify-center">
-                        <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                        <LoadingSpinnerLabel text="Loading..." className="text-base font-medium text-text-tertiary" />
                       </div>
                     </td>
                   </tr>

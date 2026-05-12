@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { formatPeso } from '@/lib/currency';
 import { api } from "@/lib/api";
+import { ActionButton } from "@/components/shared/action-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { useBranch } from "@/contexts/branch-context";
@@ -24,6 +25,13 @@ const eyeIcon = (
   >
     <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
     <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const plusIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14" />
+    <path d="M5 12h14" />
   </svg>
 );
 
@@ -133,10 +141,8 @@ export default function ItemsForSalePage() {
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
-  const [status, setStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState<string | null>(() => todayString);
   const [searchQuery, setSearchQuery] = useState("");
-  const [calendarCategory, setCalendarCategory] = useState("all");
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
 
@@ -154,9 +160,7 @@ export default function ItemsForSalePage() {
   const toolbarLabelClass = "text-[11px] font-bold uppercase tracking-wider text-text-tertiary";
   const toolbarSelectClass = "h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
 
-  useEffect(() => { setCurrentPage(1); }, [selectedBranch.id, viewMode, category, calendarCategory, status, searchQuery, selectedDate]);
-
-  useEffect(() => { setCalendarCategory("all"); }, [selectedDate]);
+  useEffect(() => { setCurrentPage(1); }, [selectedBranch.id, viewMode, category, searchQuery, selectedDate]);
 
   useEffect(() => {
     async function fetchData() {
@@ -167,7 +171,6 @@ export default function ItemsForSalePage() {
 
         if (viewMode === "list") {
           if (category !== "all") params.set("category", category);
-          if (status !== "all") params.set("status", status);
           if (searchQuery) params.set("search", searchQuery);
           if (selectedDate) params.set("date", selectedDate);
           params.set("page", String(currentPage));
@@ -178,7 +181,6 @@ export default function ItemsForSalePage() {
           setTotalItems(data.total || 0);
         } else {
           if (!selectedDate) { setSaleItems([]); setAllDayItems([]); setTotalItems(0); setIsLoading(false); return; }
-          if (status !== "all") params.set("status", status);
           if (searchQuery) params.set("search", searchQuery);
           params.set("date", selectedDate);
           params.set("page", "1");
@@ -186,7 +188,7 @@ export default function ItemsForSalePage() {
           const allData = await api.get<{ items: SaleItem[]; total: number }>(`/inventory/for-sale?${params}`);
           const all = allData.items || [];
           setAllDayItems(all);
-          const filtered = calendarCategory === "all" ? all : all.filter((i) => i.category === calendarCategory);
+          const filtered = category === "all" ? all : all.filter((i) => i.category === category);
           setSaleItems(filtered);
           setTotalItems(filtered.length);
         }
@@ -197,7 +199,7 @@ export default function ItemsForSalePage() {
       }
     }
     fetchData();
-  }, [selectedBranch.id, isAllBranches, viewMode, category, calendarCategory, status, searchQuery, selectedDate, currentPage]);
+  }, [selectedBranch.id, isAllBranches, viewMode, category, searchQuery, selectedDate, currentPage]);
 
   useEffect(() => {
     async function fetchStats() {
@@ -308,20 +310,19 @@ export default function ItemsForSalePage() {
               </div>
             </div>
           )}
-          <div className="flex flex-col gap-1">
-            <label className={toolbarLabelClass}>Status</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className={toolbarSelectClass}>
-              {saleStatusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
         <div className="flex items-center gap-3">
           {user?.role === "super_admin" && (
-            <button onClick={() => setIsAddModalOpen(true)} className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm font-bold shadow-sm hover:bg-emerald-700 transition-colors">+ Add Item For Sale</button>
+            <ActionButton
+              variant="outline"
+              onClick={() => setIsAddModalOpen(true)}
+              className="border-emerald-700 bg-surface-secondary text-white shadow-sm hover:bg-emerald-700 hover:text-white dark:bg-zinc-900 dark:text-white"
+            >
+              <span className="flex items-center gap-1.5">
+                {plusIcon}
+                Add Item For Sale
+              </span>
+            </ActionButton>
           )}
           <div className="flex rounded-md border border-border-main overflow-hidden">
             <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>List</button>

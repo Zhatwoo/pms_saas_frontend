@@ -1,13 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface CalendarProps {
   items: any[];
+  selectedDate?: string | null;
+  onSelectDate?: (date: string) => void;
 }
 
-export function InventoryCalendar({ items }: CalendarProps) {
+export function InventoryCalendar({ items, selectedDate, onSelectDate }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    const nextDate = new Date(`${selectedDate}T00:00:00`);
+    if (!Number.isNaN(nextDate.getTime())) {
+      setCurrentDate(nextDate);
+    }
+  }, [selectedDate]);
 
   const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
@@ -37,6 +49,7 @@ export function InventoryCalendar({ items }: CalendarProps) {
       if (!rawDate) return false;
       
       const itemDate = new Date(rawDate);
+      itemDate.setHours(0, 0, 0, 0);
       return (
         itemDate.getDate() === day && 
         itemDate.getMonth() === month && 
@@ -44,6 +57,8 @@ export function InventoryCalendar({ items }: CalendarProps) {
       );
     });
   };
+
+  const selectedDayString = selectedDate ? `${year}-${String(month + 1).padStart(2, "0")}-${String(selectedDate.split("-")[2]).padStart(2, "0")}` : null;
 
   const statusColors: Record<string, string> = {
     Active: "bg-emerald-500",
@@ -86,10 +101,31 @@ export function InventoryCalendar({ items }: CalendarProps) {
           if (day === null) return <div key={`empty-${i}`} className="border border-border-subtle bg-surface-secondary/30" />;
           
           const dayItems = getItemsForDay(day);
+          const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const isFutureDate = dateString > todayString;
+          const isToday = dateString === todayString;
+          const isSelected = selectedDate === dateString;
+          const Cell = onSelectDate ? "button" : "div";
+          const highlightClass = isToday
+            ? "ring-2 ring-inset ring-yellow-400 bg-yellow-500/10"
+            : isSelected
+              ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10"
+              : "";
+          const dayTextClass = isToday
+            ? "text-yellow-400"
+            : isSelected
+              ? "text-emerald-400"
+              : "text-text-secondary";
           
           return (
-            <div key={day} className="group relative border border-border-subtle bg-surface p-2 transition-colors hover:bg-surface-hover">
-              <span className="text-sm font-bold text-text-secondary">{day}</span>
+            <Cell
+              key={day}
+              type={onSelectDate ? "button" : undefined}
+              disabled={Boolean(onSelectDate) && isFutureDate}
+              onClick={onSelectDate && !isFutureDate ? () => onSelectDate(dateString) : undefined}
+              className={`group relative border border-border-subtle bg-surface p-2 text-left transition-colors ${onSelectDate ? (isFutureDate ? "cursor-not-allowed opacity-45" : "cursor-pointer hover:bg-emerald-50/10") : ""} ${highlightClass}`}
+            >
+              <span className={`text-sm font-bold ${dayTextClass}`}>{day}</span>
               
               <div className="mt-1 space-y-1">
                 {dayItems.slice(0, 4).map((item, idx) => (
@@ -124,7 +160,7 @@ export function InventoryCalendar({ items }: CalendarProps) {
                   </div>
                 </div>
               )}
-            </div>
+            </Cell>
           );
         })}
       </div>

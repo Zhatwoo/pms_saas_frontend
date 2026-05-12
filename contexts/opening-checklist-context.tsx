@@ -9,7 +9,7 @@ import {
   useRef,
 } from "react";
 import { useAuth } from "./auth-context";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 
 export type ChecklistStep = 
@@ -39,6 +39,11 @@ interface OpeningChecklistContextValue {
 
 const OpeningChecklistContext = createContext<OpeningChecklistContextValue | null>(null);
 
+const openingLoadPromiseByKey = new Map<string, Promise<DailyOpeningApiStatus>>();
+const openingLoadStartedAtByKey = new Map<string, number>();
+const OPENING_LOAD_COOLDOWN_MS = 5000;
+const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 30000;
+
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
@@ -46,6 +51,8 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const [isOpeningChecklistReady, setIsOpeningChecklistReady] = useState(false);
   const hasLoadedBranchDayRef = useRef<string | null>(null);
   const lastSyncedOpeningDateRef = useRef<string | null>(null);
+  const isLoadingOpeningRef = useRef(false);
+  const lastVisibilitySyncAtRef = useRef(0);
 
   const applyServerStatus = useCallback((data: DailyOpeningApiStatus) => {
     lastSyncedOpeningDateRef.current = data.openingDate;
@@ -59,14 +66,37 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         return;
       }
       const key = `${user.branchId}:${getPhCalendarDateString()}`;
+      const now = Date.now();
+      const lastStartedAt = openingLoadStartedAtByKey.get(key) ?? 0;
+      const pendingRequest = openingLoadPromiseByKey.get(key);
+
+      if (pendingRequest) {
+        await pendingRequest.then(applyServerStatus).catch((err) => {
+          console.error("[Checklist] Failed to load daily opening status:", err);
+          setCurrentStep("CASH_ON_HAND");
+          setIsComplete(false);
+        }).finally(() => {
+          setIsOpeningChecklistReady(true);
+        });
+        return;
+      }
+
+      if (now - lastStartedAt < OPENING_LOAD_COOLDOWN_MS) {
+        setIsOpeningChecklistReady(true);
+        return;
+      }
+
       /** Avoid unmounting the whole employee shell on tab focus / file-picker blur (would feel like a full page restart). */
       if (!options?.preserveShell) {
         setIsOpeningChecklistReady(false);
       }
+      openingLoadStartedAtByKey.set(key, now);
+
+      const request = api.get<DailyOpeningApiStatus>("/branch-finance/daily-opening/status");
+      openingLoadPromiseByKey.set(key, request);
+
       try {
-        const data = await api.get<DailyOpeningApiStatus>(
-          "/branch-finance/daily-opening/status",
-        );
+        const data = await request;
         applyServerStatus(data);
         hasLoadedBranchDayRef.current = key;
       } catch (err) {
@@ -75,6 +105,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         setIsComplete(false);
         hasLoadedBranchDayRef.current = key;
       } finally {
+        openingLoadPromiseByKey.delete(key);
         setIsOpeningChecklistReady(true);
       }
     },
@@ -117,39 +148,60 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   useEffect(() => {
     if (!user || user.role !== "employee") return;
 
-    /** Branch-wide session: refetch when returning to the tab so another employee's completion is picked up. */
+    /** Branch-wide session: refetch when the tab becomes visible again, but avoid chatty focus churn. */
     const syncOpeningFromServer = () => {
-      hasLoadedBranchDayRef.current = null;
+      const now = Date.now();
+      if (now - lastVisibilitySyncAtRef.current < OPENING_VISIBILITY_SYNC_COOLDOWN_MS) {
+        return;
+      }
+      lastVisibilitySyncAtRef.current = now;
       void loadDailyOpeningForEmployee({ preserveShell: true });
     };
 
     const onVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
       const phToday = getPhCalendarDateString();
       if (
         lastSyncedOpeningDateRef.current != null &&
         lastSyncedOpeningDateRef.current !== phToday
       ) {
-        syncOpeningFromServer();
+        hasLoadedBranchDayRef.current = null;
+        lastVisibilitySyncAtRef.current = 0;
+        void loadDailyOpeningForEmployee({ preserveShell: true });
         return;
       }
-      if (document.visibilityState === "visible") {
-        syncOpeningFromServer();
-      }
+
+      syncOpeningFromServer();
     };
 
-    window.addEventListener("focus", syncOpeningFromServer);
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      window.removeEventListener("focus", syncOpeningFromServer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [user, loadDailyOpeningForEmployee]);
 
   const completeCashOnHand = useCallback(async (amount: string) => {
-    await api.post("/branch-finance/daily-balance", {
-      type: "starting",
-      amount: parseFloat(amount) || 0,
-    });
+    try {
+      await api.post("/branch-finance/daily-balance", {
+        type: "starting",
+        amount: parseFloat(amount) || 0,
+      });
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.statusCode === 409 &&
+        error.message.includes("Starting balance was already submitted")
+      ) {
+        await refreshOpeningChecklistFromServer();
+        setCurrentStep("COMPLETED");
+        setIsComplete(true);
+        return;
+      }
+
+      throw error;
+    }
 
     try {
       const data = await api.get<DailyOpeningApiStatus>(
@@ -186,6 +238,8 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       return;
     }
     hasLoadedBranchDayRef.current = null;
+    lastVisibilitySyncAtRef.current = 0;
+    openingLoadStartedAtByKey.delete(`${user.branchId}:${getPhCalendarDateString()}`);
     await loadDailyOpeningForEmployee({ preserveShell: true });
   }, [user, loadDailyOpeningForEmployee]);
 

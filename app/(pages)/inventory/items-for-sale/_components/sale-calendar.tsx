@@ -46,6 +46,7 @@ export function SaleCalendar({
   onChangeMonth,
 }: SaleCalendarProps) {
   const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const cells = buildCalendarCells(calendarYear, calendarMonth);
 
   return (
@@ -91,15 +92,29 @@ export function SaleCalendar({
           const count = calendarData[dateStr] ?? 0;
           const isToday = today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === day;
           const isSelected = selectedDate === dateStr;
+          const isFutureDate = dateStr > todayString;
+          const highlightClass = isToday
+            ? "bg-yellow-500/10 ring-2 ring-inset ring-yellow-400"
+            : isSelected
+              ? "bg-emerald-500/10 ring-2 ring-inset ring-emerald-500"
+              : "";
+          const dayTextClass = isToday
+            ? "text-yellow-400"
+            : isSelected
+              ? "text-emerald-400"
+              : count > 0
+                ? "text-text-primary"
+                : "text-text-muted";
 
           return (
             <button
               key={day}
               type="button"
-              onClick={() => onSelectDate(isSelected ? null : dateStr)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${isSelected ? "bg-emerald-500/10 ring-2 ring-inset ring-emerald-500" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              disabled={isFutureDate}
+              onClick={isFutureDate ? undefined : () => onSelectDate(isSelected ? null : dateStr)}
+              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all ${isFutureDate ? "cursor-not-allowed opacity-45" : "hover:bg-emerald-50/10"} ${highlightClass} ${isToday ? "ring-1 ring-inset ring-yellow-400" : ""}`}
             >
-              <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
+              <span className={`text-xs font-bold leading-none ${dayTextClass}`}>
                 {day}
               </span>
               {count > 0 && (

@@ -63,7 +63,8 @@ const pawnedStatusOptions = [
 ];
 
 const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
-const toolbarSelectClass = "h-9 rounded-md border border-border-main bg-surface-secondary px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarFieldClass = "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarSelectClass = "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
@@ -81,9 +82,9 @@ const eyeIcon = (
 function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
   if (renewals.length === 0) return <span className="text-[10px] text-text-tertiary dark:text-zinc-400">No renewals yet</span>;
   return (
-    <div className="space-y-1.5">
+    <div className="flex flex-col items-center gap-1.5">
       {renewals.map((r, i) => (
-        <div key={i} className="flex items-center gap-2">
+        <div key={i} className="flex items-center justify-center gap-2">
           <span className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/10 dark:border-amber-500/30 dark:bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
             Renew {i + 1}
           </span>
@@ -282,7 +283,7 @@ export default function EmployeePawnedItemsPage() {
           </button>
         </div>
       )}
-      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface p-4 shadow-lg shadow-black/20 backdrop-blur-sm">
+      <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface p-5 shadow-lg shadow-black/20 backdrop-blur-sm">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <label className={toolbarLabelClass}>Search</label>
@@ -291,26 +292,28 @@ export default function EmployeePawnedItemsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-9 rounded-md border border-border-main bg-surface-secondary px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500 w-44"
+              className={toolbarFieldClass}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={toolbarLabelClass}>Date</label>
-            <div className="relative flex items-center">
-              <input
-                type="date"
-                value={selectedDate || ""}
-                max={todayString}
-                onChange={(e) => setSelectedDate(e.target.value || null)}
-                className="h-9 rounded-md border border-border-main bg-surface-secondary px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500 pr-8"
-              />
-              {selectedDate && (
-                <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
+          {viewMode !== "calendar" && (
+            <div className="flex flex-col gap-1">
+              <label className={toolbarLabelClass}>Date</label>
+              <div className="relative flex items-center">
+                <input
+                  type="date"
+                  value={selectedDate || ""}
+                  max={todayString}
+                  onChange={(e) => setSelectedDate(e.target.value || null)}
+                  className={`${toolbarFieldClass} pr-8`}
+                />
+                {selectedDate && (
+                  <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className={toolbarLabelClass}>Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={toolbarSelectClass}>
@@ -369,11 +372,11 @@ export default function EmployeePawnedItemsPage() {
                 )}
               </div>
             )}
-            <div className="flex overflow-hidden rounded-md border border-border-main bg-surface">
-              <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+            <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
+              <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
                 List
               </button>
-              <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+              <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
                 Calendar
               </button>
             </div>
@@ -387,7 +390,13 @@ export default function EmployeePawnedItemsPage() {
         </div>
       )}
 
-      {viewMode === "list" && (
+      {viewMode === "calendar" && (
+        <div className="mb-4">
+          <InventoryCalendar items={pawnedItems} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        </div>
+      )}
+
+      {(viewMode === "list" || viewMode === "calendar") && (
         <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -396,7 +405,7 @@ export default function EmployeePawnedItemsPage() {
                   {["Item ID", "Item Name", "Category", "Amount", "Date/Time", "Status", "Renewals", "Remarks/Notes", isAdminOrSuperAdmin ? "QR" : null, ""]
                     .filter((h): h is string => h !== null)
                     .map((h) => (
-                      <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left dark:text-inherit ${h === "Amount" ? "text-right" : h === "QR" || h === "" ? "text-center" : ""}`}>{h}</th>
+                      <th key={h} className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide dark:text-inherit ${h === "Amount" ? "text-right" : h === "Renewals" || h === "QR" || h === "" ? "text-center" : "text-left"}`}>{h}</th>
                     ))}
                 </tr>
               </thead>
@@ -410,7 +419,11 @@ export default function EmployeePawnedItemsPage() {
                     </td>
                   </tr>
                 ) : pawnedItems.length === 0 ? (
-                  <tr><td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500 bg-surface">No pawned items found for this branch</td></tr>
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500 bg-surface">
+                      {viewMode === "calendar" && selectedDate ? "No items on this day" : "No pawned items found for this branch"}
+                    </td>
+                  </tr>
                 ) : (
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
@@ -425,25 +438,25 @@ export default function EmployeePawnedItemsPage() {
                             setSelectedItemId(item.id);
                           }
                         }}
-                        className={`cursor-pointer border-t border-border-subtle transition-colors ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} ${highlightedItemId === item.itemId ? "bg-amber-400/10 ring-2 ring-amber-400/60 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.25)]" : ""} ${hasHighlightedItem && highlightedItemId === item.itemId ? "scroll-mt-24" : ""}`}
+                        className={`cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 ${highlightedItemId === item.itemId ? "bg-amber-400/10 ring-2 ring-amber-400/60 shadow-[inset_0_0_0_1px_rgba(251,191,36,0.25)]" : ""} ${hasHighlightedItem && highlightedItemId === item.itemId ? "scroll-mt-24" : ""}`}
                       >
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-primary dark:text-zinc-100">{item.itemName}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary dark:text-zinc-400">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right dark:text-zinc-100">{formatPeso(item.amount || 0)}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary dark:text-zinc-400">
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400">{item.itemId}</td>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-medium text-text-secondary dark:text-zinc-100">{item.itemName}</td>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary dark:text-zinc-400">{item.category}</td>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-semibold text-text-primary text-right dark:text-zinc-100">{formatPeso((item.amount || 0).toLocaleString())}</td>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary dark:text-zinc-400">
                           <div className="font-bold">{item.pawnDate}</div>
                           <div className="opacity-50">10:30 AM</div>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
-                        <td className="px-3 py-2">
-                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={`text-[10px] font-bold text-emerald-700 hover:underline dark:text-emerald-400`}>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 text-center">
+                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className="mx-auto inline-flex text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-400">
                             {item.renewalCount}x ▾
                           </button>
                         </td>
-                        <td className="px-3 py-2 text-[10px] font-bold text-text-tertiary max-w-[200px] truncate dark:text-zinc-400" title={item.remarks}>{item.remarks || "No description provided"}</td>
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 text-sm font-medium text-text-tertiary max-w-[180px] truncate dark:text-zinc-400" title={item.remarks}>{item.remarks || "No description provided"}</td>
                         {isAdminOrSuperAdmin && (
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-3 py-2 sm:px-4 sm:py-3 text-center">
                             {(item.qrCode || item.qr_code) ? (
                               <div className="flex justify-center">
                                 <img
@@ -457,7 +470,7 @@ export default function EmployeePawnedItemsPage() {
                             )}
                           </td>
                         )}
-                        <td className="px-3 py-2 whitespace-nowrap text-right">
+                        <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                           <button 
                             onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} 
                             title="View Details"
@@ -469,7 +482,7 @@ export default function EmployeePawnedItemsPage() {
                       </tr>
                       {expandedRow === item.itemId && (
                         <tr className="bg-amber-50/50 dark:bg-amber-900/20">
-                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100 dark:border-amber-800/30">
+                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100 text-center dark:border-amber-800/30">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>
@@ -483,11 +496,7 @@ export default function EmployeePawnedItemsPage() {
         </div>
       )}
 
-      {viewMode === "calendar" && (
-        <InventoryCalendar items={pawnedItems} />
-      )}
-
-      <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20 mt-4">
+      <div className="mt-4 overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={Math.max(1, Math.ceil(totalItems / itemsPerPage))}

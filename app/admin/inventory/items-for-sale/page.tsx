@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
+import { ActionButton } from "@/components/shared/action-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -43,11 +44,30 @@ const saleStatusOptions = [
   { value: "Sold", label: "Sold" },
 ];
 
+const toolbarInputClass = "h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarTabClass = "px-4 py-2 text-sm font-medium transition-colors";
+
 const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
   Reserved: "blue",
   Sold: "orange",
 };
+
+const plusIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14" />
+    <path d="M5 12h14" />
+  </svg>
+);
+
+const printerIcon = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9V4h12v5" />
+    <rect x="6" y="14" width="12" height="6" rx="1.5" />
+    <path d="M6 12H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1" />
+    <path d="M9 18h6" />
+  </svg>
+);
 
 // ===============================================================
 // ITEMS FOR SALE PAGE (Under Inventory)
@@ -103,9 +123,18 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
             setIsLoading(false);
             return;
           }
+          if (status !== "all") params.set("status", status);
+          if (searchQuery) params.set("search", searchQuery);
           params.set("date", selectedDate);
           params.set("page", "1");
           params.set("limit", "500");
+
+          const allData = await api.get<{ items: SaleItem[]; total: number }>(`/inventory/for-sale?${params}`);
+          const all = allData.items || [];
+          const filtered = category === "all" ? all : all.filter((item) => item.category === category);
+          setSaleItems(filtered);
+          setTotalItems(filtered.length);
+          return;
         } else {
           params.set("viewMode", saleViewMode);
           params.set("page", String(currentPage));
@@ -150,8 +179,8 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
       {/* ── Filter Bar ─────────────────────────────────────── */}
       <div className={viewOnly ? "flex flex-wrap items-end justify-between gap-4 rounded-lg border border-border-main bg-surface-secondary/85 p-5 shadow-lg shadow-black/20 backdrop-blur-sm" : "flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface-secondary/85 p-4 shadow-lg shadow-black/20 backdrop-blur-sm"}>
         <div className="flex flex-wrap items-end gap-3">
-          <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} />
-          <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} />
+          <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} size="lg" />
+          <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} size="lg" />
           <div className="flex flex-col gap-1">
             <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-wide text-zinc-500" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500"}>Search</label>
             <input
@@ -159,7 +188,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500" : "h-9 w-44 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500"}
+              className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500" : toolbarInputClass}
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -170,7 +199,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                 value={selectedDate || ""}
                 max={todayString}
                 onChange={(e) => setSelectedDate(e.target.value || null)}
-                className={viewOnly ? "h-10 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500 pr-8" : "h-9 rounded-md border border-zinc-300 px-3 text-xs outline-none transition-colors focus:border-emerald-500 pr-8"}
+                className={viewOnly ? "h-10 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500 pr-8" : `${toolbarInputClass} pr-8`}
               />
               {selectedDate && (
                 <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
@@ -183,23 +212,25 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
 
         <div className="flex items-center gap-2">
           {canEdit && (
-            <button
+            <ActionButton
+              variant="outline"
               onClick={() => setAddModalOpen(true)}
-              className={viewOnly
-                ? "h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
-                : "h-9 rounded-md bg-emerald-700 px-3 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-800"}
+              className="border-emerald-700 bg-surface-secondary text-white shadow-sm hover:bg-emerald-700 hover:text-white dark:bg-zinc-900 dark:text-white"
             >
-              Add Item
-            </button>
+              <span className="flex items-center gap-1.5">
+                {plusIcon}
+                Add Item For Sale
+              </span>
+            </ActionButton>
           )}
           <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
-          <button onClick={() => setSaleViewMode("current")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+          <button onClick={() => setSaleViewMode("current")} className={`${viewOnly ? "px-4 py-2 text-sm font-semibold" : toolbarTabClass} transition-colors ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
             Current
           </button>
-          <button onClick={() => setSaleViewMode("calendar")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+          <button onClick={() => setSaleViewMode("calendar")} className={`${viewOnly ? "px-4 py-2 text-sm font-semibold" : toolbarTabClass} transition-colors ${saleViewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
             Calendar
           </button>
-          <button onClick={() => setSaleViewMode("history")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+          <button onClick={() => setSaleViewMode("history")} className={`${viewOnly ? "px-4 py-2 text-sm font-semibold" : toolbarTabClass} transition-colors ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
             History
           </button>
           </div>
@@ -213,8 +244,8 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                 <option value="small">Small</option>
                 <option value="large">Large</option>
               </select>
-              <button
-                type="button"
+              <ActionButton
+                variant="outline"
                 onClick={() => {
                   const sizeCm = qrSize === "small" ? "2cm" : "3cm";
                   const fontSize = qrSize === "small" ? "8px" : "10px";
@@ -264,10 +295,13 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                     }, 500);
                   };
                 }}
-                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded border border-emerald-700 shadow-md whitespace-nowrap transition-colors"
+                className="border-emerald-700 bg-surface-secondary text-emerald-700 shadow-sm hover:bg-emerald-50/10 dark:bg-zinc-900 dark:text-emerald-400"
               >
-                PRINT QR
-              </button>
+                <span className="flex items-center gap-1.5">
+                  {printerIcon}
+                  Print QR
+                </span>
+              </ActionButton>
             </div>
           )}
         </div>
@@ -291,11 +325,11 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
           <div className="overflow-x-auto">
             <table className={viewOnly ? "min-w-[1220px] w-full text-sm" : "w-full text-sm"}>
               <thead>
-                <tr className={viewOnly ? "bg-emerald-900 text-amber-400" : "bg-gradient-to-r from-emerald-950 to-emerald-900 text-white"}>
+                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
                   {["ID", "Item Name", "Category", "Branch", "Available Date", "Price", "Status", "Actions"].map((h) => (
                     <th
                       key={h}
-                      className={`whitespace-nowrap px-5 py-4 ${viewOnly ? "text-xs font-bold uppercase tracking-[0.16em]" : "text-[10px] font-bold uppercase tracking-wide"} ${h === "Price" ? "text-right" : h === "Actions" ? "text-center" : "text-left"}`}
+                      className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : h === "Actions" ? "text-center" : "text-left"}`}
                     >
                       {h}
                     </th>
@@ -307,7 +341,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
                       <div className="flex items-center justify-center">
-                        <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                        <LoadingSpinnerLabel text="Loading..." className="text-base font-medium text-text-tertiary" />
                       </div>
                     </td>
                   </tr>
@@ -324,18 +358,18 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                       onClick={viewOnly ? () => setViewingItem(item) : undefined}
                       className={`border-t border-border-subtle transition-colors ${viewOnly ? "cursor-pointer bg-surface-secondary hover:bg-emerald-surface/60" : `${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} hover:bg-surface-hover`}`}
                     >
-                      <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm font-bold text-emerald-700" : "whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800"}>{item.itemId}</td>
-                      <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-secondary" : "whitespace-nowrap px-3 py-2 text-xs text-text-secondary"}>{item.itemName}</td>
-                      <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.category}</td>
-                      <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.branch}</td>
-                      <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.availableDate}</td>
-                      <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-right font-semibold text-text-primary" : "whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-text-primary"}>
+                      <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400"}>{item.itemId}</td>
+                      <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary"}>{item.itemName}</td>
+                      <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary"}>{item.category}</td>
+                      <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary"}>{item.branch}</td>
+                      <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary"}>{item.availableDate}</td>
+                      <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-right font-semibold text-text-primary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-right font-semibold text-text-primary"}>
                         &#8369;{item.price.toLocaleString()}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2">
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3">
                         <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
                       </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-center">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
@@ -381,11 +415,11 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
         <div className="overflow-x-auto">
           <table className={viewOnly ? "min-w-[1220px] w-full text-sm" : "w-full text-sm"}>
             <thead>
-              <tr className={viewOnly ? "bg-emerald-900 text-amber-400" : "bg-gradient-to-r from-emerald-950 to-emerald-900 text-white"}>
+                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
                 {["ID", "Item Name", "Category", "Branch", "Available Date", "Price", "Status", "Actions"].map((h) => (
                   <th
                     key={h}
-                    className={`whitespace-nowrap px-5 py-4 ${viewOnly ? "text-xs font-bold uppercase tracking-[0.16em]" : "text-[10px] font-bold uppercase tracking-wide"} ${h === "Price" ? "text-right" : h === "Actions" ? "text-center" : "text-left"}`}
+                      className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : h === "Actions" ? "text-center" : "text-left"}`}
                   >
                     {h}
                   </th>
@@ -397,7 +431,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
                     <div className="flex items-center justify-center">
-                      <LoadingSpinnerLabel text="Loading items for sale..." className="text-base font-medium text-text-tertiary" />
+                        <LoadingSpinnerLabel text="Loading..." className="text-base font-medium text-text-tertiary" />
                     </div>
                   </td>
                 </tr>
@@ -414,18 +448,18 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                     onClick={viewOnly ? () => setViewingItem(item) : undefined}
                     className={`border-t border-border-subtle transition-colors ${viewOnly ? "cursor-pointer bg-surface-secondary hover:bg-emerald-surface/60" : `${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} hover:bg-surface-hover`}`}
                   >
-                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm font-bold text-emerald-700" : "whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800"}>{item.itemId}</td>
-                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-secondary" : "whitespace-nowrap px-3 py-2 text-xs text-text-secondary"}>{item.itemName}</td>
-                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.category}</td>
-                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.branch}</td>
-                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 text-xs text-text-tertiary"}>{item.availableDate}</td>
-                    <td className={viewOnly ? "whitespace-nowrap px-5 py-4 text-sm text-right font-semibold text-text-primary" : "whitespace-nowrap px-3 py-2 text-xs text-right font-medium text-text-primary"}>
+                    <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400"}>{item.itemId}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary"}>{item.itemName}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary"}>{item.category}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary"}>{item.branch}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary"}>{item.availableDate}</td>
+                    <td className={viewOnly ? "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-right font-semibold text-text-primary" : "whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-right font-semibold text-text-primary"}>
                       &#8369;{item.price.toLocaleString()}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2">
+                    <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3">
                       <StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} />
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                    <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
