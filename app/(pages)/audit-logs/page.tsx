@@ -31,6 +31,8 @@ interface UserDirectoryEntry {
 
 type JsonRecord = Record<string, unknown>;
 
+const PH_TIME_ZONE = "Asia/Manila";
+
 function getInitials(name: string) {
   if (!name) return "U";
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
@@ -56,6 +58,7 @@ function stripApiPrefix(path: string) {
 
 function humanizeText(value: string) {
   return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -77,6 +80,29 @@ function formatMoney(value: unknown) {
     currency: "PHP",
     minimumFractionDigits: 2,
   }).format(value);
+}
+
+function formatAuditDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return { date: value, time: "" };
+  }
+
+  return {
+    date: date.toLocaleDateString("en-CA", {
+      timeZone: PH_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }),
+    time: date.toLocaleTimeString("en-PH", {
+      timeZone: PH_TIME_ZONE,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }),
+  };
 }
 
 function getPathFromAction(action: string) {
@@ -106,16 +132,20 @@ function formatFriendlyActionLabel(action: string, details: string | null) {
     return "Security confirmation";
   }
 
-  if (path.includes("/api/users/") && path.includes("/transfer-branch")) {
+  if (path.includes("/users/") && path.includes("/transfer-branch")) {
     return "Branch reassignment";
   }
 
-  if (path.includes("/api/users/") && action.startsWith("DELETE ")) {
+  if (path.includes("/users/") && action.startsWith("DELETE ")) {
     return "User account removal";
   }
 
-  if (path.includes("/api/users/")) {
+  if (path.includes("/users/")) {
     return "User account update";
+  }
+
+  if (path.includes("/auth/profile")) {
+    return "Profile update";
   }
 
   if (path.includes("/api/auth/register")) {
@@ -152,12 +182,25 @@ function formatFriendlyActionLabel(action: string, details: string | null) {
   return humanizeText(summarizePath(path));
 }
 
-function getChangedFields(body: JsonRecord | null) {
-  if (!body) return [];
+const FIELD_LABELS: Record<string, string> = {
+  fullName: "Name",
+  email: "Email",
+  avatarUrl: "Profile Photo",
+  accountStatus: "Account Status",
+  branchId: "Branch",
+  role: "Role",
+};
 
-  return Object.keys(body)
-    .filter((key) => key !== "password")
-    .map(titleCase);
+function getChangedFields(body: JsonRecord | null, record?: JsonRecord | null) {
+  const rawFields = Array.isArray(record?.changedFields)
+    ? record.changedFields.filter((field): field is string => typeof field === "string")
+    : body
+      ? Object.keys(body)
+      : [];
+
+  return rawFields
+    .filter((key) => !["password", "currentPassword", "newPassword", "token"].includes(key))
+    .map((key) => FIELD_LABELS[key] ?? titleCase(key));
 }
 
 function findBranchName(
@@ -323,16 +366,23 @@ function formatActivityDescription(
     return "Created a new pawn ticket transaction.";
   }
 
-  const userUpdateMatch = path.match(/\/api\/users\/([^/]+)$/);
-  if (userUpdateMatch && action.startsWith("PATCH ")) {
-    const changedFields = getChangedFields(body);
+  if (path.includes("/auth/profile") && (action.startsWith("POST ") || action.startsWith("PATCH "))) {
+    const changedFields = getChangedFields(body, record);
+    return changedFields.length > 0
+      ? `Updated their ${changedFields.join(" and ")}.`
+      : "Updated their profile.";
+  }
+
+  const userUpdateMatch = path.match(/(?:\/api)?\/users\/([^/]+)(?:\/update)?$/);
+  if (userUpdateMatch && (action.startsWith("PATCH ") || action.startsWith("POST ") || action.startsWith("PUT "))) {
+    const changedFields = getChangedFields(body, record);
     const targetUserName = findUserName(userUpdateMatch[1], userNamesById, body, record) ?? "a user";
     return changedFields.length > 0
-      ? `Updated ${targetUserName}'s details: ${changedFields.join(", ")}.`
+      ? `Updated ${targetUserName}'s ${changedFields.join(" and ")}.`
       : `Updated ${targetUserName}'s account details.`;
   }
 
-  const userTransferBranchMatch = path.match(/\/api\/users\/([^/]+)\/transfer-branch$/);
+  const userTransferBranchMatch = path.match(/(?:\/api)?\/users\/([^/]+)\/transfer-branch$/);
   if (userTransferBranchMatch) {
     const targetUserName =
       findUserName(userTransferBranchMatch[1], userNamesById, body, record) ?? "a user";
@@ -342,7 +392,7 @@ function formatActivityDescription(
     return `Transferred ${targetUserName} to ${branchName}.`;
   }
 
-  const deleteUserMatch = path.match(/\/api\/users\/([^/]+)$/);
+  const deleteUserMatch = path.match(/(?:\/api)?\/users\/([^/]+)$/);
   if (deleteUserMatch && action.startsWith("DELETE ")) {
     const targetUserName = findUserName(deleteUserMatch[1], userNamesById, body, record) ?? "a user";
     return `Deleted ${targetUserName}'s account.`;
@@ -754,9 +804,7 @@ export default function AuditLogsPage() {
 
     const headers = ["Date", "Time", "User", "Role", "Branch", "Log Type", "Action", "Description", "Reference", "Status"];
     const rows = filteredLogs.map(log => {
-      const dateObj = new Date(log.createdAt);
-      const dString = dateObj.toISOString().split('T')[0];
-      const tString = dateObj.toTimeString().split(' ')[0];
+      const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
       return [
         dString,
         tString,
@@ -776,7 +824,7 @@ export default function AuditLogsPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `audit-logs-${formatAuditDateTime(new Date().toISOString()).date}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -942,9 +990,7 @@ export default function AuditLogsPage() {
                 <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>
               ) : (
                 paginatedLogs.map((log) => {
-                  const dateObj = new Date(log.createdAt);
-                  const dString = dateObj.toISOString().split('T')[0];
-                  const tString = dateObj.toTimeString().split(' ')[0];
+                  const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
 
                   return (
                     <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors group">
