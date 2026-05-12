@@ -1,8 +1,5 @@
-import AuditLogsPage from "@/app/(pages)/audit-logs/page";
+import { EmployeeAuditLogsClient } from "./components/employee-audit-logs-client";
 
-/**
- * Employee Audit Logs Page
- * Reuses the shared AuditLogsPage component which automatically filters 
- * logs by branch based on the logged-in user's role and assigned branch.
- */
-export default AuditLogsPage;
+export default function EmployeeAuditLogsPage() {
+  return <EmployeeAuditLogsClient />;
+}
