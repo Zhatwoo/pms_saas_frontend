@@ -451,6 +451,16 @@ export function MoaModal({
               display: block !important;
             }
 
+            /* Improve print readability: force all gray text shades to black */
+            #moa-slip-printable .text-zinc-300,
+            #moa-slip-printable .text-zinc-400,
+            #moa-slip-printable .text-zinc-500,
+            #moa-slip-printable .text-zinc-600,
+            #moa-slip-printable .text-zinc-700,
+            #moa-slip-printable .text-zinc-800 {
+              color: #000 !important;
+            }
+
             /* Restore grid/flex for specific components that need them */
             #moa-slip-printable .grid { display: grid !important; }
             #moa-slip-printable .flex { display: flex !important; }
