@@ -142,7 +142,6 @@ interface TransactionActionsProps {
   onBuyBack?: () => void;
   onReserveLayaway?: () => void;
   onSalesTransfer?: () => void;
-  onQrScan?: () => void;
 }
 
 export function TransactionActions({
@@ -155,7 +154,6 @@ export function TransactionActions({
   onBuyBack,
   onReserveLayaway,
   onSalesTransfer,
-  onQrScan,
 }: TransactionActionsProps) {
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
@@ -241,14 +239,6 @@ export function TransactionActions({
             >
               {plusIcon}
               New Pawn
-            </button>
-            <button
-              onClick={onQrScan}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-950 px-4 py-2 text-xs font-bold text-emerald-400 shadow-sm border border-emerald-400/20 transition hover:bg-emerald-900"
-              title="Scan QR Code"
-            >
-              {qrIcon}
-              Scan QR
             </button>
           </div>
 

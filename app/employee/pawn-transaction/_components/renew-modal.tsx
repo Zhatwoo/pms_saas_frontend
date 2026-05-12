@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { QrScanner } from "@/components/shared/qr-scanner";
+
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
@@ -65,6 +66,7 @@ interface RenewModalProps {
   branchName: string;
   branchId: string;
   onSuccess?: () => void;
+  initialSearchCode?: string;
 }
 
 interface PawnItemDetails {
@@ -86,7 +88,7 @@ interface PawnItemDetails {
   amount: number;
 }
 
-export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }: RenewModalProps) {
+export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, initialSearchCode }: RenewModalProps) {
   const [searchCode, setSearchCode] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnItemDetails | null>(null);
   const [itemsRenewed, setItemsRenewed] = useState(1);
@@ -164,7 +166,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
   };
 
   const handleQrScan = (text: string) => {
-    // 1. Try to extract from "Code: ID | ..." format
     const codeMatch = text.match(/Code:\s*([^|]+)/i);
     if (codeMatch) {
       const id = codeMatch[1].trim();
@@ -172,8 +173,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
       void triggerSearch(id);
       return;
     }
-
-    // 2. Try to extract from URL format: .../view-ticket/UNITCODE
     const urlMatch = text.match(/\/view-ticket\/([^/?#\s]+)/i);
     if (urlMatch) {
       const id = urlMatch[1].trim();
@@ -181,8 +180,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
       void triggerSearch(id);
       return;
     }
-
-    // 3. Fallback to whole text
     const id = text.trim();
     setSearchCode(id);
     void triggerSearch(id);
@@ -199,15 +196,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
     isProcessingRef.current = true;
     setIsLoading(true);
     try {
-      // 1. Verify Password
       await api.post("/auth/verify-password", { password: adminForm.password });
-
-      // 2. Compute Amount Paid (Cash In)
-      // If Renew: Paid Interest
-      // If Reappraise: Depends on if they paid partial or just interest
-      const cashIn = interestCalc.interestAmount; 
-
-      // 3. Create Renew Transaction
+      const cashIn = interestCalc.interestAmount * itemsRenewed; 
       await api.post("/transactions", {
         purpose: isReappraiseActive ? "Reappraise" : "Renew",
         transaction_date: formatDateToYMD(),
@@ -218,20 +208,16 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
         unit: selectedItem.unit,
         unit_code: selectedItem.unitCode,
         pawn_amount: isReappraiseActive ? newPrincipal : selectedItem.amount,
-        storage_fee: interestCalc.interestAmount,
+        storage_fee: interestCalc.interestAmount * itemsRenewed,
         details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? `New Principal: ₱${newPrincipal}` : ''} | Processed by: ${adminForm.approvedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id
       });
 
-      // 4. Update Inventory if needed (New principal)
       if (isReappraiseActive && selectedItem.id) {
-        console.log(`Updating inventory item ${selectedItem.id} to new amount: ${newPrincipal}`);
         await api.put(`/inventory/pawned/${selectedItem.id}`, { amount: newPrincipal });
       }
 
-      if (onSuccess) {
-        onSuccess();
-      }
+      if (onSuccess) onSuccess();
       onClose();
       toast.success(`Transaction ${isReappraiseActive ? "reappraised" : "renewed"} successfully!`);
     } catch (err: any) {
@@ -245,8 +231,21 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (isOpen && initialSearchCode) {
+      setSearchCode(initialSearchCode);
+      void triggerSearch(initialSearchCode);
+    } else if (!isOpen) {
+      setSearchCode("");
+      setSelectedItem(null);
+      setError(null);
+      setIsRenewActive(true);
+      setIsReappraiseActive(false);
+      setItemsRenewed(1);
+    }
+  }, [isOpen, initialSearchCode]);
 
+  useEffect(() => {
+    if (!isOpen) return;
     const fetchItems = async () => {
       setIsSidebarLoading(true);
       try {
@@ -280,7 +279,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
         setIsSidebarLoading(false);
       }
     };
-
     const timeout = setTimeout(fetchItems, 300);
     return () => clearTimeout(timeout);
   }, [isOpen, sidebarSearch]);
@@ -288,9 +286,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
-      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
         
         {/* Top Floating Header */}
         <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
@@ -449,7 +447,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                 </div>
             </div>
           </div>
-        </div>
 
           {/* Right Action Panel */}
           <div className="w-[340px] bg-emerald-900 p-6 flex flex-col gap-4 shrink-0 overflow-hidden">
@@ -519,7 +516,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                         className="w-full h-9 pl-8 pr-3 bg-white/10 border-2 border-emerald-500/30 rounded-lg text-white font-black text-lg outline-none focus:border-emerald-500 transition-all"
                         value={newPrincipal || ""}
                         onChange={(e) => {
-                          const val = e.target.value;
+                          const val = e.target.value.replace(/[^0-9.]/g, "");
                           setNewPrincipal(val === "" ? 0 : Number(val));
                         }}
                       />
@@ -531,7 +528,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                       <p className="text-[8px] font-black text-emerald-900/40 dark:text-white uppercase tracking-widest">Interest Due</p>
                       <p className="text-[7px] font-bold text-emerald-500/50 uppercase">({interestCalc.percentage}% Rate)</p>
                     </div>
-                    <p className="text-xl font-black text-emerald-950 dark:text-white">₱ {interestCalc.interestAmount.toLocaleString()}</p>
+                    <p className="text-xl font-black text-emerald-950 dark:text-white">₱ {(interestCalc.interestAmount * itemsRenewed).toLocaleString()}</p>
                  </div>
                )}
              </div>
@@ -539,7 +536,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
              <div className="mt-auto space-y-3">
                  <div className="space-y-2">
                     <div className="flex items-center justify-between px-1">
-                       <p className="text-[9px] font-black text-emerald-100/60 dark:text-white/60 uppercase tracking-widest">TOTAL INTEREST DUE</p>
+                       <p className="text-[9px] font-black text-emerald-100/60 dark:text-white/60 uppercase tracking-widest">TOTAL PAYMENT</p>
                        <p className="text-lg font-black text-emerald-600 dark:text-white font-mono">
                          ₱ {(interestCalc.interestAmount * itemsRenewed).toLocaleString()}
                        </p>
@@ -576,24 +573,25 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess }:
                  <button 
                     disabled={isLoading || !selectedItem}
                     onClick={handleProceed}
-                    className="h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center transition-all active:scale-[0.98]"
+                    className="h-11 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center transition-all active:scale-[0.98] text-xs"
                   >
                    {isLoading ? (
                       <div className="flex items-center gap-2">
-                        <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
+                        <span className="anim-loading h-4 w-4 border-white/30 border-t-white rounded-full" />
                         <span>Processing...</span>
                       </div>
                    ) : (
                       <>
                         {isReappraiseActive ? "Process Reappraisal" : "Process Renewal"}
-                        <ArrowRight className="w-5 h-5 ml-2" />
+                        <ArrowRight className="w-4 h-4 ml-2" />
                       </>
                    )}
                   </button>
              </div>
           </div>
         </div>
-    </div>
+        </div>
+      </div>
       <QrScanner 
         isOpen={isScannerOpen} 
         onScan={handleQrScan} 

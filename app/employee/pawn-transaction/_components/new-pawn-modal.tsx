@@ -335,6 +335,21 @@ export function NewPawnModal({
       return;
     }
 
+    if (type === "number" || name === "contactNo") {
+      // Prevent non-numeric characters
+      // For contactNo, we strip everything except digits.
+      // For type="number", we allow decimal point if needed (amount).
+      const numericValue = name === "contactNo" 
+        ? value.replace(/[^0-9]/g, "") 
+        : value.replace(/[^0-9.]/g, "");
+        
+      setForm((prev) => ({
+        ...prev,
+        [name]: numericValue,
+      }));
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -555,7 +570,6 @@ export function NewPawnModal({
     const requiredFields = {
       firstName: "First Name",
       lastName: "Last Name",
-      address: "Street Address",
       barangay: "Barangay",
       city: "City",
       contactNo: "Contact Number",
@@ -570,6 +584,11 @@ export function NewPawnModal({
         setErrorMessage(`${label} is required.`);
         return;
       }
+    }
+
+    if (!selectedCustomerId && !form.address.trim()) {
+      toast.error("Street / Address is required.");
+      return;
     }
 
     if (!resolvedCategory) {
@@ -814,9 +833,9 @@ export function NewPawnModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}

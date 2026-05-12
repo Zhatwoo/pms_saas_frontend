@@ -207,10 +207,10 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -344,7 +344,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                   <DetailSection title="Record Details" icon={smartphoneIcon}>
-                    <DetailRow label="Original Loan" value={formatPeso(selectedItem.amount.toLocaleString())} />
+                    <DetailRow label="Original Loan" value={formatPeso(selectedItem.amount)} />
                     <DetailRow label="Unit Code" value={selectedItem.itemId} />
                     <DetailRow label="Pawn Date" value={selectedItem.pawnDate || '---'} />
                     <DetailRow label="Category" value={selectedItem.category} />
@@ -360,7 +360,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                           className="w-full h-14 pl-10 pr-4 bg-white dark:bg-surface border-2 border-emerald-200 rounded-xl text-2xl font-black text-emerald-950 dark:text-white outline-none focus:border-emerald-50 dark:border-border0 transition-all"
                           placeholder="0"
                           value={buyBackPrice}
-                          onChange={(e) => setBuyBackPrice(e.target.value)}
+                          onChange={(e) => setBuyBackPrice(e.target.value.replace(/[^0-9.]/g, ""))}
                         />
                       </div>
                       <p className="text-[9px] font-bold text-zinc-500 leading-tight">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -62,6 +62,7 @@ function ExpirationMonitoringPageContent() {
   const searchParams = useSearchParams();
   const highlightTicketNo = searchParams?.get("ticketNo");
   const highlightTransaction = searchParams?.get("highlightTransaction");
+  const router = useRouter();
   const [isBlastSending, setIsBlastSending] = useState(false);
   const [sendingItemId, setSendingItemId] = useState<string | null>(null);
   const [renewingItemId, setRenewingItemId] = useState<string | null>(null);
@@ -179,28 +180,8 @@ function ExpirationMonitoringPageContent() {
     }
   };
 
-  const handleRenew = async (id: string) => {
-    setRenewingItemId(id);
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      await api.post(`/inventory/pawned/${id}/renew`, {
-        renewal_date: today,
-        amount_paid: 0,
-      });
-      showToast("Item renewed successfully.");
-      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-      const data = await api.get<ExpirationMonitoringResponse>(
-        `/dashboard/expiration-monitoring${query}`
-      );
-      if (data) {
-        setStats(data.stats);
-        setBuckets(data.buckets);
-      }
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Failed to renew item.");
-    } finally {
-      setRenewingItemId(null);
-    }
+  const handleRenew = (id: string, ticketNo: string) => {
+    router.push(`/employee/pawn-transaction?action=renew&ticketNo=${encodeURIComponent(ticketNo)}`);
   };
 
   return (

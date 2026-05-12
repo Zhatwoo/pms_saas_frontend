@@ -86,7 +86,7 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
             Renew {i + 1}
           </span>
           <span className="text-[10px] text-text-tertiary dark:text-zinc-400">{r.date}</span>
-          <span className="text-[10px] font-bold text-text-secondary dark:text-zinc-300">{formatPeso(r.amount.toLocaleString())}</span>
+          <span className="text-[10px] font-bold text-text-secondary dark:text-zinc-300">{formatPeso(r.amount)}</span>
         </div>
       ))}
     </div>
@@ -371,7 +371,7 @@ export default function EmployeePawnedItemsPage() {
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs font-medium text-text-primary dark:text-zinc-100">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary dark:text-zinc-400">{item.category}</td>
-                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right dark:text-zinc-100">{formatPeso((item.amount || 0).toLocaleString())}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-text-primary text-right dark:text-zinc-100">{formatPeso(item.amount || 0)}</td>
                         <td className="whitespace-nowrap px-3 py-2 text-[10px] text-text-secondary dark:text-zinc-400">
                           <div className="font-bold">{item.pawnDate}</div>
                           <div className="opacity-50">10:30 AM</div>

@@ -698,8 +698,8 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             </svg>
           </button>
         )}
-        <div className="grid h-full min-h-0 lg:grid-cols-[1.25fr_.88fr]">
-          <section className="relative flex min-h-0 flex-col overflow-hidden bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 lg:p-6">
+        <div className="flex h-full flex-col overflow-y-auto lg:grid lg:min-h-0 lg:grid-cols-[1.25fr_.88fr] lg:overflow-hidden">
+          <section className="relative flex flex-col bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 lg:min-h-0 lg:overflow-hidden lg:p-6 shrink-0 lg:shrink">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
@@ -723,7 +723,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
 
             <div className="relative mt-4 overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 lg:mt-5">
               <div className="relative aspect-[16/10] w-full lg:aspect-[16/9]">
-                <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" autoPlay playsInline muted />
+                <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
                 <div className="absolute inset-0 bg-black/8" />
 
                 <div className="absolute inset-0 flex items-center justify-center p-4">
@@ -772,7 +772,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               </div>
             </div>
 
-            <div className="mt-4 min-h-0 flex-1 overflow-y-auto rounded-3xl border border-zinc-100 bg-zinc-50 p-4 shadow-sm scrollbar-hide dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="mt-4 flex-1 overflow-y-visible lg:min-h-0 lg:overflow-y-auto rounded-3xl border border-zinc-100 bg-zinc-50 p-4 shadow-sm scrollbar-hide dark:border-zinc-700 dark:bg-zinc-900">
               {(pendingItem || detectedScan) && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-700">
@@ -812,7 +812,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             </div>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col overflow-y-auto bg-gradient-to-b from-white to-zinc-50 p-4 scrollbar-hide dark:from-zinc-900 dark:to-zinc-950 lg:p-6">
+          <aside className="flex flex-col bg-gradient-to-b from-white to-zinc-50 p-4 dark:from-zinc-900 dark:to-zinc-950 lg:h-full lg:min-h-0 lg:overflow-y-auto scrollbar-hide lg:p-6 shrink-0 lg:shrink">
             <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 lg:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -885,20 +885,20 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   />
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                  <div className="rounded-xl bg-zinc-50 p-3 text-center">
-                    <div className="text-sm font-black text-zinc-900">{scannedItems.length}</div>
+                  <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{scannedItems.length}</div>
                     Verified
                   </div>
-                  <div className="rounded-xl bg-zinc-50 p-3 text-center">
-                    <div className="text-sm font-black text-zinc-900">{tally?.totalInSystem ?? "-"}</div>
+                  <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.totalInSystem ?? "-"}</div>
                     In branch
                   </div>
-                  <div className="rounded-xl bg-zinc-50 p-3 text-center">
-                    <div className="text-sm font-black text-zinc-900">{tally?.missingInVault?.length ?? "-"}</div>
+                  <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.missingInVault?.length ?? "-"}</div>
                     Missing
                   </div>
                 </div>
-                <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-3">
+                <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
                     <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
@@ -908,15 +908,15 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
                     {tally?.missingItems?.length ? (
                       tally.missingItems.map((item) => (
-                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2">
-                          <p className="text-sm font-black text-zinc-900">{item.itemName}</p>
-                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
+                          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
                             {item.category}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center">
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-800">
                         <p className="text-xs font-bold text-zinc-600">No missing items</p>
                       </div>
                     )}
@@ -926,9 +926,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               </div>
 
               {pendingItem ? (
-                <div className="mt-4 space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 shadow-sm">
+                <div className="mt-4 space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/20">
                   <div className="flex items-start gap-4">
-                    <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-sm">
+                    <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                       {ownerPhoto && !pendingPhotoBroken ? (
                         <Image
                           src={ownerPhoto}
@@ -952,7 +952,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
 
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-600">Owner / Customer</p>
-                      <h3 className="mt-1 break-words text-lg font-black text-zinc-900">{pendingItem.customerName || "Unknown owner"}</h3>
+                      <h3 className="mt-1 break-words text-lg font-black text-zinc-900 dark:text-zinc-100">{pendingItem.customerName || "Unknown owner"}</h3>
                       <div className="mt-3 space-y-2">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">ID Type:</p>
@@ -976,14 +976,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
+                  <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-zinc-800">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Serial number</p>
-                    <p className="mt-2 break-words text-sm font-bold text-zinc-900">{resolvedScanSerial}</p>
+                    <p className="mt-2 break-words text-sm font-bold text-zinc-900 dark:text-zinc-100">{resolvedScanSerial}</p>
                   </div>
                   <div className="flex gap-3">
                     <button
                       onClick={discardPendingItem}
-                      className="flex-1 rounded-2xl border border-zinc-200 bg-white py-3 text-xs font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95"
+                      className="flex-1 rounded-2xl border border-zinc-200 bg-white py-3 text-xs font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
                     >
                       Rescan
                     </button>
@@ -996,8 +996,8 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-zinc-300 bg-white text-zinc-300">
+                <div className="mt-4 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center dark:border-zinc-700 dark:bg-zinc-800">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-zinc-300 bg-white text-zinc-300 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-500">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 7V5a2 2 0 0 1 2-2h2" />
                       <path d="M17 3h2a2 2 0 0 1 2 2v2" />
@@ -1006,17 +1006,17 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       <line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
                   </div>
-                  <p className="text-sm font-bold text-zinc-900">Waiting for a QR code</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.24em] text-zinc-400">Align the item QR inside the camera frame</p>
+                  <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Waiting for a QR code</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.24em] text-zinc-400 dark:text-zinc-500">Align the item QR inside the camera frame</p>
                 </div>
               )}
             </div>
 
-            <div className="mt-5 flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
+            <div className="mt-5 flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-700">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Verified items</p>
-                  <h4 className="mt-1 text-lg font-black text-zinc-900">{scannedItems.length} accounted for</h4>
+                  <h4 className="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">{scannedItems.length} accounted for</h4>
                 </div>
                 <div className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
                   {scannedItems.length} scanned
@@ -1025,14 +1025,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
 
               <div className="flex-1 space-y-2 overflow-y-auto p-4 scrollbar-hide">
                 {scannedItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-10 text-center text-zinc-400">
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-10 text-center text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3" />
                       <path d="M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                    <p className="mt-3 text-sm font-bold text-zinc-700">No items verified yet</p>
-                    <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em]">The list will populate after the first successful scan</p>
+                    <p className="mt-3 text-sm font-bold text-zinc-700 dark:text-zinc-300">No items verified yet</p>
+                    <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] dark:text-zinc-500">The list will populate after the first successful scan</p>
                   </div>
                 ) : (
                   scannedItems.map((item, index) => (
@@ -1047,10 +1047,10 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                           setSelectedVerifiedItem(item);
                         }
                       }}
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50/40 active:scale-[0.99] cursor-pointer"
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50/40 active:scale-[0.99] cursor-pointer dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-emerald-600 dark:hover:bg-emerald-900/30"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100">
+                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
                           {item.originalPhoto ? (
                             <Image
                               src={item.originalPhoto}
@@ -1072,9 +1072,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         </div>
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-extrabold text-zinc-900">{item.itemId}</p>
-                          <p className="mt-1 truncate text-xs font-semibold text-zinc-500">{item.itemName}</p>
-                          <p className="mt-1 text-[11px] text-zinc-400">Serial: {item.serialNumber || "—"}</p>
+                          <p className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{item.itemId}</p>
+                          <p className="mt-1 truncate text-xs font-semibold text-zinc-500 dark:text-zinc-400">{item.itemName}</p>
+                          <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">Serial: {item.serialNumber || "—"}</p>
                         </div>
                       </div>
 
@@ -1083,7 +1083,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         <button
                           aria-label="View verified item"
                           onClick={(e) => { e.stopPropagation(); setSelectedVerifiedItem(item); }}
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 transition-colors hover:text-emerald-700"
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 transition-colors hover:text-emerald-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-emerald-400"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
@@ -1097,14 +1097,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               </div>
             </div>
 
-            <div className="mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5">
-              <div className="flex items-start gap-3 text-amber-600">
+            <div className="mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex items-start gap-3 text-amber-600 dark:text-amber-500">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <p className="text-xs font-bold leading-relaxed text-zinc-700">
+                <p className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
                   Access to inventory tools stays locked until this scan is submitted and confirmed.
                 </p>
               </div>
@@ -1116,7 +1116,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   }
                 }}
                 disabled={activeCompletionBlocked}
-                className="mt-4 w-full rounded-2xl bg-zinc-900 py-4 text-sm font-black text-white shadow-2xl transition-all hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 w-full rounded-2xl bg-emerald-700 py-4 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:shadow-none"
               >
                 Complete Inventory Count
               </button>
@@ -1148,64 +1148,64 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
 
               <div className="pr-10">
                 <p className="text-[10px] font-black uppercase tracking-[0.35em] text-zinc-400">Verified item details</p>
-                <h3 className="mt-2 text-2xl font-black text-zinc-900">{selectedVerifiedItem.itemId}</h3>
-                <p className="mt-1 text-sm font-semibold text-zinc-500">{selectedVerifiedItem.itemName}</p>
+                <h3 className="mt-2 text-2xl font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.itemId}</h3>
+                <p className="mt-1 text-sm font-semibold text-zinc-500 dark:text-zinc-400">{selectedVerifiedItem.itemName}</p>
               </div>
 
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col">
-                  <div className="rounded-2xl bg-zinc-50 p-4">
+                <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col dark:border-zinc-700 dark:bg-zinc-800">
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Owner / Customer</p>
-                    <h4 className="mt-1 break-words text-lg font-black text-zinc-900">{selectedVerifiedItem.customerName || "Unknown owner"}</h4>
+                    <h4 className="mt-1 break-words text-lg font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.customerName || "Unknown owner"}</h4>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-zinc-50 p-4">
+                    <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">ID Type</p>
-                      <p className="mt-2 text-sm font-black text-zinc-900 uppercase">{selectedVerifiedItem.customerIdPresented || "None"}</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900 uppercase dark:text-zinc-100">{selectedVerifiedItem.customerIdPresented || "None"}</p>
                     </div>
-                    <div className="rounded-2xl bg-zinc-50 p-4">
+                    <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Contact Number</p>
-                      <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.customerContact || "—"}</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.customerContact || "—"}</p>
                     </div>
                   </div>
-                  <div className="flex-1 rounded-2xl bg-zinc-50 p-4">
+                  <div className="flex-1 rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Address</p>
-                    <p className="mt-2 text-sm font-black text-zinc-900 leading-relaxed">{selectedVerifiedItem.customerAddress || "No address on file."}</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900 leading-relaxed dark:text-zinc-100">{selectedVerifiedItem.customerAddress || "No address on file."}</p>
                   </div>
                 </div>
 
-                <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm">
-                  <div className="rounded-2xl bg-zinc-50 p-4">
+                <div className="space-y-3 rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Amount</p>
-                    <p className="mt-2 text-sm font-black text-zinc-900">{formatPeso(selectedVerifiedItem.amount)}</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900 dark:text-zinc-100">{formatPeso(selectedVerifiedItem.amount)}</p>
                   </div>
-                  <div className="rounded-2xl bg-zinc-50 p-4">
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Serial</p>
-                    <p className="mt-2 break-words text-sm font-black text-zinc-900">{selectedVerifiedItem.serialNumber || selectedVerifiedItem.scanSerialNumber || detectedScan?.serialNumber || "N/A"}</p>
+                    <p className="mt-2 break-words text-sm font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.serialNumber || selectedVerifiedItem.scanSerialNumber || detectedScan?.serialNumber || "N/A"}</p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-zinc-50 p-4">
+                    <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Branch</p>
-                      <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.branch || "N/A"}</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.branch || "N/A"}</p>
                     </div>
-                    <div className="rounded-2xl bg-zinc-50 p-4">
+                    <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Pawn date</p>
-                      <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.pawnDate || "N/A"}</p>
+                      <p className="mt-2 text-sm font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.pawnDate || "N/A"}</p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-zinc-50 p-4">
+                  <div className="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Status</p>
-                    <p className="mt-2 text-sm font-black text-zinc-900">{selectedVerifiedItem.status || "N/A"}</p>
+                    <p className="mt-2 text-sm font-black text-zinc-900 dark:text-zinc-100">{selectedVerifiedItem.status || "N/A"}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col">
+                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col dark:border-zinc-700 dark:bg-zinc-800">
                   <div className="flex-1 flex flex-col justify-center w-full">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400 mb-4 text-center">Customer Image</p>
-                    <div className="relative aspect-square w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
+                    <div className="relative aspect-square w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                       {((selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto) && !verifiedPhotoBroken) ? (
                         <Image
                           src={selectedVerifiedItem.ownerIdPhoto || selectedVerifiedItem.originalPhoto || ""}
@@ -1228,10 +1228,10 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col">
+                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm h-full flex flex-col dark:border-zinc-700 dark:bg-zinc-800">
                   <div className="flex-1 flex flex-col justify-center w-full">
                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400 mb-4 text-center">Item Visuals</p>
-                    <div className="relative aspect-square w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm">
+                    <div className="relative aspect-square w-full max-w-[240px] mx-auto overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                       {itemPhotos.length > 0 ? (
                         <>
                           <div

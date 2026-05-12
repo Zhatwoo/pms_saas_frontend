@@ -9,6 +9,7 @@ import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
 import { getRoleLabel } from "@/lib/auth";
 import { LogoutIcon, MenuIcon, CloseIcon } from "@/lib/icons";
 import { LogoutModal } from "./logout-modal";
+import { useOptionalOpeningChecklist } from "@/contexts/opening-checklist-context";
 
 interface SidebarProps {
   navGroups: NavGroup[];
@@ -213,6 +214,7 @@ export function Sidebar({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
+  const openingChecklist = useOptionalOpeningChecklist();
 
   const isCompact = collapsed && !isMobileOpen;
 
@@ -462,6 +464,21 @@ export function Sidebar({
           )}
         </div>
       </div>
+
+      {process.env.NODE_ENV === "development" && openingChecklist && (
+        <div className="border-t border-white/10 p-2">
+          <button
+            onClick={() => openingChecklist.debugSetInventoryAudit()}
+            title={isCompact ? "Test Inv Scan" : undefined}
+            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold text-amber-400 bg-amber-400/10 transition-colors hover:bg-amber-400/20 ${
+              isCompact ? "justify-center px-2" : ""
+            }`}
+          >
+            <span className="flex shrink-0">🛠️</span>
+            {!isCompact && "Test Inv Scan"}
+          </button>
+        </div>
+      )}
 
       {/* Logout */}
       <div className="border-t border-white/10 p-2">

@@ -145,8 +145,19 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
   );
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (name === "contactNo") {
+      setForm(prev => ({ ...prev, [name]: value.replace(/[^0-9]/g, "") }));
+      return;
+    }
+    
+    if (name === "downpayment" || type === "number") {
+      setForm(prev => ({ ...prev, [name]: value.replace(/[^0-9.]/g, "") }));
+      return;
+    }
+
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleConfirm = async () => {
@@ -219,10 +230,10 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div
-        className="relative z-10 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-surface dark:shadow-black/40"
+        className="relative z-10 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background dark:shadow-black/40"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">

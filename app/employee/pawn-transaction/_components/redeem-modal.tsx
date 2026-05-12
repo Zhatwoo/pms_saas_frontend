@@ -194,10 +194,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -313,7 +313,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                   <DetailSection title="Loan & Item Details" icon={Smartphone}>
-                    <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount).toLocaleString())} />
+                    <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
                     <DetailRow 
                       label="Maturity Interest" 
                       value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 

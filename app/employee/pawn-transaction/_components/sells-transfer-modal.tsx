@@ -96,7 +96,18 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
   }, [isOpen, searchQuery, selectedBranch]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (name === "contactNo") {
+      setForm(prev => ({ ...prev, [name]: value.replace(/[^0-9]/g, "") }));
+      return;
+    }
+    
+    if (name === "priceSold" || type === "number") {
+      setForm(prev => ({ ...prev, [name]: value.replace(/[^0-9.]/g, "") }));
+      return;
+    }
+
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -180,10 +191,10 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity" onClick={onClose} />
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-surface dark:bg-surface rounded-3xl shadow-2xl shadow-emerald-900/20 dark:shadow-black/40 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}

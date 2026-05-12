@@ -79,7 +79,7 @@ interface ExpirationTableProps {
   isLoading?: boolean;
   onSendEmail?: (id: string) => void;
   sendingItemId?: string | null;
-  onRenew?: (id: string) => void;
+  onRenew?: (id: string, ticketNo: string) => void;
   renewingItemId?: string | null;
   canRenew?: boolean;
   highlightTicketNo?: string | null;
@@ -138,7 +138,7 @@ export function ExpirationTable({
               {canRenew ? (
                 <button
                   type="button"
-                  onClick={() => onRenew?.(row.id)}
+                  onClick={() => onRenew?.(row.id, row.ticketNo)}
                   disabled={renewingItemId === row.id}
                   className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
