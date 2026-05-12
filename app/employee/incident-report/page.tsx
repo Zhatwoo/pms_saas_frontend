@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { History } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { ActionButton } from "@/components/shared/action-button";
 import { useAuth } from "@/contexts/auth-context";
@@ -116,6 +117,9 @@ function buildInitialFormState(branchId: string): ManualTicketFormState {
 export default function EmployeeIncidentReportPage() {
   const { user } = useAuth();
   const { selectedBranch } = useBranch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const startingMismatchHandled = useRef(false);
 
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [tickets, setTickets] = useState<IncidentTicketRow[]>([]);
@@ -145,6 +149,45 @@ export default function EmployeeIncidentReportPage() {
       branchId: selectedBranch.id,
     }));
   }, [selectedBranch.id]);
+
+  useEffect(() => {
+    if (startingMismatchHandled.current || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("startingMismatch") !== "1") return;
+    startingMismatchHandled.current = true;
+
+    const expected = Number(params.get("expected"));
+    const entered = Number(params.get("entered"));
+    const businessDate = params.get("businessDate")?.trim() ?? "";
+    if (!Number.isFinite(expected) || !Number.isFinite(entered)) {
+      router.replace(pathname ?? "/employee/incident-report");
+      return;
+    }
+
+    const variance = Number((entered - expected).toFixed(2));
+    setFormState({
+      ...buildInitialFormState(selectedBranch.id),
+      title: `Branch opening cash variance (${businessDate || "Manila date"})`,
+      summary: [
+        "The system blocked starting the branch day because the entered starting cash did not match the expected amount from the last closed business day (ledger book ending).",
+        "",
+        `Expected (last book ending / suggested): PHP ${expected.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        `Entered: PHP ${entered.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        `Variance: PHP ${variance.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        "",
+        "Add any context for management (e.g. cash handed over, fund transfers) below, then submit this ticket.",
+      ].join("\n"),
+      category: "opening_cash",
+      priority: "high",
+      amountImpact: String(Math.abs(variance)),
+      transactionRef: `branch-day-start:${businessDate || "unknown"}`,
+    });
+    setIsCreateModalOpen(true);
+    setToastMessage(
+      "Kailangan ng incident report dahil hindi tumugma ang starting cash sa inaasahang halaga.",
+    );
+    router.replace(pathname ?? "/employee/incident-report");
+  }, [selectedBranch.id, router, pathname]);
 
   useEffect(() => {
     let isMounted = true;

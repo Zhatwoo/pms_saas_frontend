@@ -11,6 +11,9 @@ export type ApiErrorPayload = Record<string, unknown> & {
   required_amount?: number;
   branch_id?: string;
   business_date?: string;
+  expectedAmount?: number;
+  enteredAmount?: number;
+  businessDate?: string;
 };
 
 export class ApiError extends Error {

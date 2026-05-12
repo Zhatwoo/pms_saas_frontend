@@ -102,7 +102,11 @@ export function DailyBalanceConfirmation({
         <div className="space-y-4">
           <div className="rounded-xl bg-surface-secondary p-4 border border-border-subtle">
             <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 block">Expected Amount</label>
-            <p className="text-2xl font-black text-amber-400">{formatPeso(parseFloat(currentCash).toLocaleString())}</p>
+            <p className="text-2xl font-black text-amber-400">
+              {formatPeso(
+                Number(String(currentCash ?? "0").replace(/,/g, "")) || 0,
+              )}
+            </p>
           </div>
 
           <div className="space-y-2">

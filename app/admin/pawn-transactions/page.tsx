@@ -23,6 +23,8 @@ import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 
@@ -224,7 +226,9 @@ function TransactionsCalendar({
 interface ApiTransaction {
   transaction_no: string;
   branch: string | null;
+  voided_at?: string | null;
   purpose: string;
+  created_at?: string | Date | null;
   details?: string | null;
   transaction_date: string;
   transaction_time: string;
@@ -264,6 +268,7 @@ interface TransactionsResponse {
     transfer?: number;
     startingBalance?: number;
     endingBalance?: number;
+    sessionOpenedAt?: string | null;
   };
 }
 
@@ -399,22 +404,29 @@ export default function SuperAdminPawnTransactionsPage() {
 
       setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
 
+      const phToday = getPhCalendarDateString();
+      const ledger = operationalCashTotalsForPawnEnding(
+        data.transactions ?? [],
+        data.stats?.sessionOpenedAt ?? null,
+      );
+
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
-      let endingBalance = Number(data.stats?.endingBalance ?? 0);
 
       if (selectedBranch.id === "__all__" && financeSummary.length > 0) {
         startingBalance = financeSummary.reduce(
           (sum, row) => sum + Number(row.startingBalance ?? 0),
           0,
         );
-        endingBalance = financeSummary.reduce(
-          (sum, row) => sum + Number(row.currentBalance ?? 0),
-          0,
+      } else if (
+        selectedDate === phToday &&
+        financeSummary.length === 1
+      ) {
+        startingBalance = Number(
+          financeSummary[0].startingBalance ?? startingBalance,
         );
-      } else if (financeSummary.length === 1) {
-        startingBalance = Number(financeSummary[0].startingBalance ?? startingBalance);
-        endingBalance = Number(financeSummary[0].currentBalance ?? endingBalance);
       }
+
+      const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
 
       setCurrentStats({
         ...normalizeStats(data.stats),

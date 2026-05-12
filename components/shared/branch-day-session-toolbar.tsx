@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { BranchEndDayModal } from "@/components/shared/branch-end-day-modal";
@@ -39,11 +40,15 @@ export function BranchDaySessionToolbar({
   onSessionChanged,
   syncOpeningChecklist,
 }: BranchDaySessionToolbarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState<BusinessSessionApi | null>(null);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [startOpen, setStartOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
+  /** While refetching with Start modal open, avoid flashing EXPECTED to 0 before new session arrives. */
+  const lastResolvedExpectedCash = useRef<string | null>(null);
 
   const visible =
     typeof branchId === "string" &&
@@ -72,6 +77,26 @@ export function BranchDaySessionToolbar({
   }, [branchId, visible]);
 
   useEffect(() => {
+    lastResolvedExpectedCash.current = null;
+  }, [branchId]);
+
+  useEffect(() => {
+    if (loading) return;
+    const pending = session?.pendingStartingSession?.suggestedStartingBalance;
+    if (pending != null && Number.isFinite(Number(pending))) {
+      lastResolvedExpectedCash.current = String(pending);
+      return;
+    }
+    const fromLatest = Math.max(
+      Number(session?.latestBalance?.startingBalance ?? 0),
+      Number(session?.latestBalance?.endingBalance ?? 0),
+    );
+    if (Number.isFinite(fromLatest)) {
+      lastResolvedExpectedCash.current = String(fromLatest);
+    }
+  }, [session, loading]);
+
+  useEffect(() => {
     void loadSession();
   }, [loadSession]);
 
@@ -81,10 +106,31 @@ export function BranchDaySessionToolbar({
     return () => window.removeEventListener("transaction_created", onTxn);
   }, [loadSession]);
 
+  /** After end-day, snapshot is stale until refetch — reload when Start modal opens so EXPECTED matches last close. */
+  useEffect(() => {
+    if (startOpen && visible) {
+      void loadSession();
+    }
+  }, [startOpen, visible, loadSession]);
+
   const suggestedCash =
     session?.pendingStartingSession != null
-      ? String(session.pendingStartingSession.suggestedStartingBalance)
-      : String(session?.latestBalance?.startingBalance ?? 0);
+      ? String(
+          session.pendingStartingSession.suggestedStartingBalance ?? 0,
+        )
+      : String(
+          Math.max(
+            Number(session?.latestBalance?.startingBalance ?? 0),
+            Number(session?.latestBalance?.endingBalance ?? 0),
+          ),
+        );
+
+  const expectedCashForModal =
+    startOpen &&
+    loading &&
+    lastResolvedExpectedCash.current != null
+      ? lastResolvedExpectedCash.current
+      : suggestedCash;
 
   const systemEnding =
     session?.systemEndingBalanceToday ??
@@ -102,6 +148,36 @@ export function BranchDaySessionToolbar({
       await loadSession();
       onSessionChanged?.();
     } catch (e: unknown) {
+      if (
+        e instanceof ApiError &&
+        e.statusCode === 422 &&
+        e.payload &&
+        typeof e.payload === "object" &&
+        (e.payload as { code?: string }).code === "STARTING_BALANCE_MISMATCH"
+      ) {
+        const p = e.payload as {
+          expectedAmount?: number;
+          enteredAmount?: number;
+          businessDate?: string;
+        };
+        const expected = Number(p.expectedAmount);
+        const entered = Number(p.enteredAmount);
+        const businessDate =
+          typeof p.businessDate === "string" ? p.businessDate : "";
+        setStartOpen(false);
+        setBanner(null);
+        const incidentBase = pathname?.includes("/admin/")
+          ? "/admin/incident-report"
+          : "/employee/incident-report";
+        const qs = new URLSearchParams({
+          startingMismatch: "1",
+          expected: Number.isFinite(expected) ? String(expected) : "0",
+          entered: Number.isFinite(entered) ? String(entered) : "0",
+          businessDate,
+        });
+        router.push(`${incidentBase}?${qs.toString()}`);
+        return;
+      }
       setBanner(errorMessage(e));
       throw e;
     }
@@ -186,7 +262,7 @@ export function BranchDaySessionToolbar({
       <DailyBalanceConfirmation
         isOpen={startOpen}
         type="starting"
-        currentCash={suggestedCash}
+        currentCash={expectedCashForModal}
         titleOverride="Start branch day"
         subtitleOverride="Ilagay ang physical starting balance para sa branch ngayong petsa (Manila). Parehong sesyon ito para sa lahat ng empleyado."
         onClose={() => setStartOpen(false)}

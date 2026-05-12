@@ -41,10 +41,15 @@ export function BranchEndDayModal({
   if (!isOpen) return null;
 
   const formatCurrencyInput = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (!digits) return "0.00";
+    const trimmed = value.replace(/\s/g, "");
+    const negative = trimmed.startsWith("-");
+    const digits = trimmed.replace(/-/g, "").replace(/\D/g, "");
+    if (!digits) {
+      return negative ? "-0.00" : "0.00";
+    }
     const amount = parseInt(digits, 10) / 100;
-    return amount.toLocaleString("en-PH", {
+    const signed = negative ? -amount : amount;
+    return signed.toLocaleString("en-PH", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -88,7 +93,8 @@ export function BranchEndDayModal({
           <p className="text-2xl font-black text-amber-400">{formatPeso(systemEndingBalance)}</p>
           <p className="mt-2 text-[10px] text-text-tertiary leading-relaxed">
             Stored totals use branch ledger reconciliation (starting balance plus operational cash movement). Adjust the
-            physical count below only if you need that figure recorded for audit.
+            physical count below only if you need that figure recorded for audit. The system figure can be negative when
+            cash out exceeds cash in for the day.
           </p>
         </div>
 

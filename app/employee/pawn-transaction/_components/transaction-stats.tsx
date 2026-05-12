@@ -186,7 +186,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
               Starting balance
             </p>
             <p className="mt-0.5 text-lg font-black text-text-primary leading-none">
-              ₱ {(data?.startingBalance || 0).toLocaleString()}
+              {formatPeso(data?.startingBalance ?? 0)}
             </p>
           </div>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
@@ -202,7 +202,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
               Ending balance
             </p>
             <p className="mt-0.5 text-lg font-black text-emerald-600 leading-none">
-              ₱ {(data?.endingBalance || 0).toLocaleString()}
+              {formatPeso(data?.endingBalance ?? 0)}
             </p>
           </div>
         </div>
