@@ -340,11 +340,8 @@ export function BranchProfile({ branch }: BranchProfileProps) {
       setStaffError("");
       try {
         const users = await api.get<BranchUserApiRecord[]>("/users");
-        const filtered = users.filter((u) => {
-          const branchId = u.branchId ?? u.branch_id ?? null;
-          return String(branchId) === String(branch.id);
-        });
-        setBranchUsers(filtered);
+        // Don't filter by branch - show all staff for admin/super admin
+        setBranchUsers(users || []);
       } catch (error) {
         setStaffError(
           error instanceof Error ? error.message : "Failed to load assigned users.",
@@ -499,12 +496,12 @@ export function BranchProfile({ branch }: BranchProfileProps) {
     void loadData();
   }, [activeTab, branch.id]);
 
-  const manager = useMemo(
+  const managers = useMemo(
     () =>
-      branchUsers.find((u) => {
+      branchUsers.filter((u) => {
         const role = u.role?.toLowerCase();
         return role === "admin";
-      }) ?? null,
+      }),
     [branchUsers],
   );
 
@@ -663,25 +660,35 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 <p className="mb-2 text-xs font-bold uppercase tracking-wide text-text-muted">
                   Branch Admin
                 </p>
-                <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-gold text-xs font-bold text-zinc-900">
-                      {manager ? fullName(manager).split(" ").map((n) => n[0]).join("").slice(0, 2) : "--"}
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold text-text-primary">{manager ? fullName(manager) : "No admin assigned"}</p>
-                      <p className="text-xs text-text-muted">Admin</p>
-                    </div>
+                {managers.length > 0 ? (
+                  <div className="space-y-2">
+                    {managers.map((admin) => (
+                      <div key={admin.id} className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pawn-gold text-xs font-bold text-zinc-900">
+                            {fullName(admin).split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                          </div>
+                          <div>
+                            <p className="text-base font-semibold text-text-primary">{fullName(admin)}</p>
+                            <p className="text-xs text-text-muted">Admin</p>
+                          </div>
+                        </div>
+                        {!pathname.startsWith("/admin") ? (
+                          <button
+                            onClick={() => goToUsers(admin.id)}
+                            className="rounded-lg border border-border-main bg-surface px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
+                          >
+                            Transfer
+                          </button>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
-                  {manager && !pathname.startsWith("/admin") ? (
-                    <button
-                      onClick={() => goToUsers(manager.id)}
-                      className="rounded-lg border border-border-main bg-surface px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:border-amber-500/50 hover:bg-amber-500/5 hover:text-amber-600"
-                    >
-                      Transfer
-                    </button>
-                  ) : null}
-                </div>
+                ) : (
+                  <div className="rounded-lg border border-border-subtle bg-surface-secondary p-3.5">
+                    <p className="text-sm text-text-muted">No admin assigned</p>
+                  </div>
+                )}
               </div>
 
               {/* Employees */}
