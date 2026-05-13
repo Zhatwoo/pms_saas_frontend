@@ -155,6 +155,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [reviewIndex, setReviewIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const lastScrollY = useRef(0);
 
@@ -227,17 +228,17 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       <div className="relative z-10">
         {/* ── NAV ── */}
         <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-emerald-900/90 backdrop-blur-sm">
-          <div className="flex h-16 items-center justify-between px-4 md:px-12">
+          <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
             <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e as any, "home", "HOME")} />
 
             {/* Desktop nav links */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
               {navItems.map((item, index) => {
                 const id = item.toLowerCase().replace(/ /g, "-");
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-sm font-bold tracking-wider transition-colors ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
+                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
                     {item}
                   </a>
                 );
@@ -245,15 +246,29 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <span className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
             </div>
 
-            {/* Right side: Login button + hamburger */}
+            {/* Right side: Login button + tablet dropdown + mobile hamburger */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-black text-emerald-900 transition-colors hover:bg-amber-300"
+                className="rounded-lg bg-amber-400 px-3 py-2 text-xs font-black text-emerald-900 transition-colors hover:bg-amber-300 sm:px-4 sm:text-sm"
               >
                 Login / Sign Up
               </button>
+
+              {/* Tablet dropdown button */}
+              <button
+                type="button"
+                onClick={() => setTabletMenuOpen((prev) => !prev)}
+                aria-label="Toggle tablet navigation"
+                className="hidden h-10 items-center gap-1 rounded-lg border border-white/20 px-3 text-xs font-bold tracking-wider text-white transition hover:bg-white/10 md:flex lg:hidden"
+              >
+                Menu
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={`h-4 w-4 transition-transform ${tabletMenuOpen ? "rotate-180" : ""}`}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+
               {/* Hamburger — mobile only */}
               <button
                 type="button"
@@ -273,6 +288,37 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </button>
             </div>
           </div>
+
+          {/* Tablet dropdown menu */}
+          {tabletMenuOpen && (
+            <div className="hidden border-t border-white/10 bg-emerald-900 px-4 pb-4 md:block lg:hidden">
+              <div className="grid grid-cols-2 gap-2 pt-3">
+                {navItems.map((item, index) => {
+                  const id = item.toLowerCase().replace(/ /g, "-");
+                  return (
+                    <a
+                      key={`tablet-${item}`}
+                      ref={(el) => {
+                        navRefs.current[index] = el;
+                      }}
+                      href={`#${id}`}
+                      onClick={(e) => {
+                        handleScroll(e, id, item);
+                        setTabletMenuOpen(false);
+                      }}
+                      className={`rounded-lg border px-3 py-2 text-center text-[11px] font-bold tracking-wider transition-colors ${
+                        activeNavItem === item
+                          ? "border-amber-300/60 bg-amber-300/10 text-amber-300"
+                          : "border-white/15 text-white hover:border-amber-300/40 hover:text-amber-300"
+                      }`}
+                    >
+                      {item}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Mobile dropdown menu */}
           {mobileMenuOpen && (
@@ -631,9 +677,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ── FOOTER ── */}
-        <footer className="bg-emerald-900 px-8 py-12 md:px-16">
+        <footer className="bg-emerald-900 px-6 py-12 md:px-10 lg:px-16">
           <div className="mx-auto w-full max-w-[1400px]">
-            <div className="grid grid-cols-1 gap-12 md:grid-cols-4 md:gap-16 lg:gap-24">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-4 lg:gap-16">
               {/* Brand */}
               <div className="md:col-span-1">
                 <div className="flex items-center gap-3 mb-4">
@@ -650,15 +696,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Quick Links */}
-              <div className="md:flex md:justify-center">
-                <div className="w-fit">
+              <div className="md:flex md:justify-start lg:justify-center">
+                <div className="w-full max-w-[240px]">
                   <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">QUICK LINKS</p>
                   <ul className="space-y-2.5">
                     {["How It Works", "What We Buy", "Why Choose Us", "Reviews", "Contact Us"].map((link) => {
                       const href = `#${link.toLowerCase().replace(/ /g, "-")}`;
                       return (
                         <li key={link}>
-                          <a href={href} className="flex items-center gap-2 text-sm text-white/60 hover:text-amber-400 transition-colors">
+                          <a href={href} className="flex items-start gap-2 text-sm leading-snug text-white/60 hover:text-amber-400 transition-colors">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
                             {link}
                           </a>
@@ -670,10 +716,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* What We Buy */}
-              <div className="md:flex md:justify-center">
-                <div className="w-fit">
+              <div className="md:flex md:justify-start lg:justify-center">
+                <div className="w-full max-w-[240px]">
                   <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">WHAT WE BUY</p>
-                  <div className="flex flex-wrap gap-2 max-w-[200px]">
+                  <div className="flex flex-wrap gap-2 max-w-[240px]">
                     {["Smartphones", "Laptops", "Gaming Consoles", "Cameras", "Tablets", "Watches"].map((item) => (
                       <span key={item} className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">
                         {item}
@@ -684,7 +730,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Contact */}
-              <div>
+              <div className="w-full max-w-[280px] md:max-w-none">
                 <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">CONTACT US</p>
                 <div className="space-y-3">
                   {[
@@ -696,9 +742,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.color} text-white text-sm font-black`}>
                         {c.icon}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-bold text-white">{c.label}</p>
-                        <p className="text-xs text-white/50">{c.sub}</p>
+                        <p className="text-xs text-white/50 break-words">{c.sub}</p>
                       </div>
                     </div>
                   ))}
@@ -706,7 +752,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
             </div>
 
-            <div className="mt-10 border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-white/40">
+            <div className="mt-10 border-t border-white/10 pt-8 flex flex-col lg:flex-row items-center justify-between gap-5 text-xs text-white/40">
               {/* Left: Badges */}
               <div className="flex flex-wrap justify-center md:justify-start gap-3">
                 {["✓ 100% Legit", "✓ BSP Registered", "✓ 24hr Quick Payout"].map((badge) => (
@@ -717,12 +763,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Middle: Copyright */}
-              <div className="text-center whitespace-nowrap">
+              <div className="text-center px-2">
                 <span>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</span>
               </div>
 
               {/* Right: Slogans */}
-              <div className="flex items-center gap-4 text-center md:text-right whitespace-nowrap">
+              <div className="flex flex-wrap items-center justify-center gap-3 text-center lg:justify-end lg:text-right px-2">
                 <span>Made with ❤️ for our customers</span>
                 <button type="button" onClick={onLoginClick} className="italic text-amber-400/60 transition hover:text-amber-300 hover:underline">
                   &ldquo;Madaling Kausap&rdquo;

@@ -675,6 +675,14 @@ export default function PawnTransactionsPage() {
 
 
       <div className="print-hide">
+        {/* Page Title Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-text-primary">Pawn Transactions</h1>
+          <p className="mt-1 text-sm text-text-tertiary">
+            View and manage all pawn transaction records
+          </p>
+        </div>
+
         <BranchDaySessionToolbar
           branchId={isAllBranches ? null : selectedBranch.id}
         />

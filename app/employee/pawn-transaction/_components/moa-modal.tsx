@@ -213,7 +213,7 @@ export function MoaModal({
 
         {/* MOA Content - Matches Image 2 */}
         <div className="flex-1 overflow-y-auto">
-          <div id="moa-slip-printable" ref={printRef} className="p-6 pb-10 space-y-5 text-[9px] text-zinc-800 leading-tight bg-white sm:text-[10px]">
+          <div id="moa-slip-printable" ref={printRef} className="max-w-full overflow-x-hidden p-6 pb-10 space-y-5 text-[9px] text-zinc-800 leading-tight bg-white sm:text-[10px]">
             {/* Title moved to the very top */}
             <div className="text-center mb-4">
               <h1 className="text-[18px] font-black uppercase tracking-[0.18em] text-emerald-900 underline">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h1>
@@ -235,7 +235,7 @@ export function MoaModal({
               )}
             </div>
 
-            <div className="flex items-start justify-between border-b border-zinc-100 pb-3">
+            <div className="flex flex-col gap-3 border-b border-zinc-100 pb-3 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-1">
                 <p className="font-bold">{labels?.originalCopy || "Original copy"}</p>
                 <div className="flex items-center gap-2">
@@ -248,34 +248,34 @@ export function MoaModal({
                 </div>
               </div>
 
-              <div className="text-center flex-1">
+              <div className="hidden text-center flex-1 lg:block">
                 {/* Spacer or additional small branding can go here */}
               </div>
 
-              <div className="space-y-1 text-right">
-                <div className="flex items-center justify-end gap-2">
+              <div className="space-y-1 text-left lg:ml-auto lg:text-right">
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                   <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
-                  <span className="w-32 border-b border-zinc-400 text-right">{data.unitCode || "---"}</span>
+                  <span className="w-28 sm:w-32 border-b border-zinc-400 text-left lg:text-right">{data.unitCode || "---"}</span>
                 </div>
-                <div className="flex items-center justify-end gap-2">
-                  <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <span className="font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
                   <span className="text-[9px]">1st</span>
-                  <span className="w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 10)}</span>
+                  <span className="w-12 sm:w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 10)}</span>
                   <span className="text-[9px]">2nd</span>
-                  <span className="w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 20)}</span>
+                  <span className="w-12 sm:w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 20)}</span>
                   <span className="text-[9px]">3rd</span>
-                  <span className="w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 30)}</span>
+                  <span className="w-12 sm:w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 30)}</span>
                 </div>
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                   <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider text-red-600">{labels?.expiryDate || "Grace Period End:"}</span>
-                  <span className="w-32 border-b border-zinc-400 text-right text-red-600 font-bold">{gracePeriodEnd}</span>
+                  <span className="w-28 sm:w-32 border-b border-zinc-400 text-left lg:text-right text-red-600 font-bold">{gracePeriodEnd}</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2 px-2">
               <p className="leading-5">
-                {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[200px] text-center">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block px-2 border-b border-zinc-500 font-medium min-w-[400px] text-center">{data.address.toUpperCase()}</span>, {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."}
+                {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block max-w-full px-2 border-b border-zinc-500 font-bold min-w-[120px] sm:min-w-[200px] text-center break-words">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block max-w-full px-2 border-b border-zinc-500 font-medium min-w-[180px] sm:min-w-[400px] text-center break-words">{data.address.toUpperCase()}</span>, {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."}
               </p>
               <p className="leading-5">
                 {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">{formatPeso(amount)}</span> {labels?.plusText || "plus"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">{formatPeso(storageFee)}</span> {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block px-2 border-b border-zinc-500 min-w-[100px] text-center">₱0.00</span> {labels?.overdueText || "applies when overdue."}
@@ -364,7 +364,7 @@ export function MoaModal({
               </div>
             </div>
 
-            <div className="moa-bottom-block space-y-2 pt-4 pb-2">
+            <div className="moa-bottom-block max-w-full overflow-x-hidden space-y-2 pt-4 pb-2">
               {/* Seller advised banner - full width */}
               <div className="w-full border border-emerald-300 bg-emerald-50 p-2 text-center text-[7px] font-black uppercase tracking-widest text-emerald-800 italic leading-[1.25]">
                 {labels?.adviseText || "SELLER IS ADVISED TO READ AND UNDERSTAND THE TERMS AND CONDITIONS ON THE REVERSE SIDE HEREOF"}
@@ -385,17 +385,17 @@ export function MoaModal({
               </div>
 
               {/* Signatures - left and right */}
-              <div className="flex items-end justify-between gap-12 pt-6 pb-2">
-              <div className="flex flex-col text-center space-y-2">
+              <div className="flex max-w-full flex-col items-stretch gap-8 overflow-x-hidden pt-6 pb-2 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+              <div className="flex flex-1 min-w-0 flex-col text-center space-y-2 lg:max-w-[48%]">
                 <span className="block text-[9px] font-black uppercase tracking-widest text-emerald-900 invisible select-none" aria-hidden="true">
                   I HEREBY AUTHORIZED
                 </span>
-                <div className="h-8 border-b-2 border-zinc-800"></div>
+                <div className="h-8 w-full border-b-2 border-zinc-800"></div>
                 <p className="font-black uppercase text-[8px] tracking-widest">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
               </div>
-              <div className="flex flex-col text-center space-y-2">
+              <div className="flex flex-1 min-w-0 flex-col text-center space-y-2 lg:max-w-[48%]">
                 <p className="font-black uppercase text-[9px] text-emerald-900 tracking-widest">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</p>
-                <div className="h-10 border-b-2 border-zinc-800 flex items-end justify-center pb-1">
+                <div className="h-10 w-full border-b-2 border-zinc-800 flex items-end justify-center pb-1">
                   {data.processedBy && (
                     <span className="font-bold text-[11px] uppercase tracking-wider text-zinc-900">{data.processedBy}</span>
                   )}

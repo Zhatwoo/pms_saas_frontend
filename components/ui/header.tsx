@@ -488,7 +488,9 @@ export function Header({
             <MenuIcon />
           </button>
         )}
-        <h1 className="truncate text-xl font-bold text-text-primary leading-tight md:text-2xl lg:text-3xl">{title}</h1>
+        <h1 className="max-w-[9rem] whitespace-normal break-words text-xs font-bold leading-tight text-text-primary sm:max-w-[10rem] sm:text-sm md:max-w-[12rem] md:text-sm lg:max-w-none lg:text-base xl:text-lg">
+          {title}
+        </h1>
         {branchName && (
           <div className="hidden lg:flex items-center gap-4">
             <span className="h-6 w-px bg-border-main" />
