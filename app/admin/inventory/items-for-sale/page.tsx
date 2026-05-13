@@ -12,6 +12,7 @@ import { FilterSelect } from "@/components/shared/filter-select";
 import { toast } from "sonner";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { buildQrSheetDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
 import { AddItemModal } from "@/app/(pages)/inventory/items-for-sale/_components/add-item-modal";
 import { SaleCalendar } from "@/app/(pages)/inventory/items-for-sale/_components/sale-calendar";
 
@@ -251,49 +252,28 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                   const fontSize = qrSize === "small" ? "8px" : "10px";
                   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-                  const qrHtml = saleItems.map(item => {
-                    const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(item.itemId)}`;
-                    const encoded = encodeURIComponent(publicViewUrl);
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
+                  const cardsHtml = saleItems
+                    .map((item) => {
+                      const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(item.itemId)}`;
+                      const encoded = encodeURIComponent(publicViewUrl);
+                      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
 
-                    return `
+                      return `
                       <div style="display:inline-flex; flex-direction:column; align-items:center; margin:3mm; vertical-align:top;">
-                        <img src="${qrUrl}" style="width:${sizeCm}; height:${sizeCm}; display:block;" />
-                        <p style="font-family:sans-serif; font-size:${fontSize}; font-weight:bold; margin-top:1mm; color:#333;">${item.itemId}</p>
+                        <img src="${qrUrl}" style="width:${sizeCm}; height:${sizeCm}; display:block;" alt="" />
+                        <p style="font-size:${fontSize}; font-weight:800; margin-top:1mm; color:#18181b;">${escapeHtml(item.itemId)}</p>
                       </div>
                     `;
-                  }).join('');
+                    })
+                    .join("");
 
-                  const iframe = document.createElement('iframe');
-                  iframe.style.display = 'none';
-                  document.body.appendChild(iframe);
-
-                  const html = `<!DOCTYPE html>
-                    <html>
-                    <head>
-                    <meta charset="utf-8">
-                    <style>
-                      * { margin: 0; padding: 0; }
-                      @page { size: A4; margin: 5mm; }
-                      body { display: flex; flex-wrap: wrap; padding: 5mm; }
-                    </style>
-                    </head>
-                    <body>
-                    ${qrHtml}
-                    </body>
-                    </html>`;
-
-                  iframe.contentDocument?.open();
-                  iframe.contentDocument?.write(html);
-                  iframe.contentDocument?.close();
-
-                  iframe.onload = () => {
-                    setTimeout(() => {
-                      iframe.contentWindow?.focus();
-                      iframe.contentWindow?.print();
-                      setTimeout(() => document.body.removeChild(iframe), 1000);
-                    }, 500);
-                  };
+                  printHtmlDocument(
+                    buildQrSheetDocument({
+                      sheetTitle: "Items for sale — QR labels",
+                      cardsHtml,
+                    }),
+                    { printDelayMs: 650 },
+                  );
                 }}
                 className="border-emerald-700 bg-surface-secondary text-emerald-700 shadow-sm hover:bg-emerald-50/10 dark:bg-zinc-900 dark:text-emerald-400"
               >

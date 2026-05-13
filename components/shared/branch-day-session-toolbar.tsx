@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
-import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { useOptionalOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { BranchEndDayModal } from "@/components/shared/branch-end-day-modal";
 
@@ -48,7 +48,10 @@ export function BranchDaySessionToolbar({
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
-  const { currentStep, isComplete } = useOpeningChecklist();
+  /** Employee layout wraps `OpeningChecklistProvider`; admin/super-admin shells do not — skip gating then. */
+  const openingChecklist = useOptionalOpeningChecklist();
+  const currentStep = openingChecklist?.currentStep ?? "COMPLETED";
+  const isComplete = openingChecklist?.isComplete ?? true;
   const [session, setSession] = useState<BusinessSessionApi | null>(null);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
@@ -235,9 +238,7 @@ export function BranchDaySessionToolbar({
                     : `Needs starting balance / closed — ${session.manilaCalendarDate}`
                   : "Session unavailable"}
             </p>
-            <p className="mt-0.5 text-[11px] text-text-tertiary">
-              Simulan ang araw (starting balance) o tapusin ang araw dito — hindi lang sa Branch Finance.
-            </p>
+          
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button

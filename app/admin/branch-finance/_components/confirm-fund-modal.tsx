@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ClipboardEvent,
+  type DragEvent,
+} from "react";
 import { formatPeso } from "@/lib/currency";
 
 interface ConfirmFundModalProps {
@@ -40,8 +47,57 @@ export function ConfirmFundModal({
   const [receivedAmount, setReceivedAmount] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofName, setProofName] = useState<string | null>(null);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const proofInputRef = useRef<HTMLInputElement>(null);
   const hasMaxAmount = Number.isFinite(amount) && amount > 0;
+
+  function isImageFile(file: File): boolean {
+    return file.type.startsWith("image/");
+  }
+
+  function applyProofFile(file: File): void {
+    if (!isImageFile(file)) {
+      setError("Please upload an image file.");
+      return;
+    }
+    setProofFile(file);
+    setProofName(file.name);
+    setError(null);
+  }
+
+  function handleProofFileChange(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0];
+    if (file) applyProofFile(file);
+    event.target.value = "";
+  }
+
+  function handleProofDrop(event: DragEvent<HTMLDivElement>): void {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file) applyProofFile(file);
+  }
+
+  function handleProofPaste(event: ClipboardEvent<HTMLDivElement>): void {
+    const items = event.clipboardData?.items;
+    if (!items?.length) return;
+    for (const item of items) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          event.preventDefault();
+          applyProofFile(file);
+        }
+        break;
+      }
+    }
+  }
+
+  function clearProofFile(): void {
+    setProofFile(null);
+    setProofName(null);
+    if (proofInputRef.current) proofInputRef.current.value = "";
+  }
 
   const formatAmountError = () =>
     hasMaxAmount
@@ -57,6 +113,16 @@ export function ConfirmFundModal({
       setError(null);
     }
   }, [amount, isOpen]);
+
+  useEffect(() => {
+    if (!proofFile) {
+      setProofPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(proofFile);
+    setProofPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [proofFile]);
 
   if (!isOpen) return null;
 
@@ -192,6 +258,7 @@ export function ConfirmFundModal({
               Proof of Transaction
             </label>
             <input
+              ref={proofInputRef}
               type="file"
               accept="image/*"
               onChange={handleProofFileChange}

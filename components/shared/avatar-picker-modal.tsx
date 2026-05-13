@@ -210,12 +210,13 @@ export function AvatarPickerModal({
       return;
     }
 
+    const imageUrlForPreview = sourceImageUrl;
     let cancelled = false;
 
     async function generatePreview() {
       try {
         const preview = await cropImageWithMath(
-          sourceImageUrl,
+          imageUrlForPreview,
           zoom,
           positionX,
           positionY,

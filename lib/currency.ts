@@ -5,7 +5,11 @@ export function formatPeso(
     compactZero?: boolean;
   },
 ) {
-  const amount = Number(value ?? 0);
+  const raw =
+    typeof value === "string"
+      ? value.replace(/,/g, "").replace(/₱/g, "").trim()
+      : value;
+  const amount = Number(raw ?? 0);
 
   if (!Number.isFinite(amount)) {
     return options?.fallback ?? "₱0.00";

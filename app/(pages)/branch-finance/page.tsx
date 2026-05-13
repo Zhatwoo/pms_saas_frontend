@@ -423,6 +423,12 @@ export default function BranchFinancePage() {
     selectedBranch.id,
   ]);
 
+  const printLedgerTotals = useMemo(() => {
+    const cashIn = printLedgerRows.reduce((acc, r) => acc + (Number(r.cashIn) || 0), 0);
+    const cashOut = printLedgerRows.reduce((acc, r) => acc + (Number(r.cashOut) || 0), 0);
+    return { cashIn, cashOut, net: cashIn - cashOut };
+  }, [printLedgerRows]);
+
   const handleRejectRequestClick = useCallback((id: string) => {
     const target = queues.pendingReview.find((request) => request.id === id) ?? null;
     setSelectedRejectRequest(target);
@@ -913,16 +919,33 @@ export default function BranchFinancePage() {
                     ))
                   )}
                   {printLedgerRows.length > 0 && (
-                    <tr className="border-b-2 border-black bg-gray-50 uppercase">
-                      <td colSpan={4} className="p-2 font-bold text-right">Total:</td>
-                      <td className="p-2 text-right font-bold font-mono">
-                        {formatPeso(printLedgerRows.reduce((acc, r) => acc + (r.cashIn || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}  
-                      </td>
-                      <td className="p-2 text-right font-bold font-mono text-red-600">
-                        {formatPeso(printLedgerRows.reduce((acc, r) => acc + (r.cashOut || 0), 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
-                      </td>
-                      <td></td>
-                    </tr>
+                    <>
+                      <tr className="border-b-2 border-black bg-gray-50 uppercase">
+                        <td colSpan={4} className="p-2 font-bold text-right">
+                          Total:
+                        </td>
+                        <td className="p-2 text-right font-bold font-mono">{formatPeso(printLedgerTotals.cashIn)}</td>
+                        <td className="p-2 text-right font-bold font-mono text-red-600">
+                          {printLedgerTotals.cashOut > 0
+                            ? `-${formatPeso(printLedgerTotals.cashOut)}`
+                            : formatPeso(0)}
+                        </td>
+                        <td />
+                      </tr>
+                      <tr className="border-b-2 border-black bg-white">
+                        <td colSpan={4} className="p-2 font-bold text-right normal-case">
+                          Net income (cash in − cash out):
+                        </td>
+                        <td
+                          colSpan={3}
+                          className={`p-2 text-right font-black font-mono normal-case ${
+                            printLedgerTotals.net >= 0 ? "text-emerald-700" : "text-red-600"
+                          }`}
+                        >
+                          {formatPeso(printLedgerTotals.net)}
+                        </td>
+                      </tr>
+                    </>
                   )}
                 </tbody>
               </table>

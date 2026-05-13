@@ -28,8 +28,20 @@ function buildCalendarCells(year: number, month: number) {
   return cells;
 }
 
+/** API `/inventory/for-sale-calendar` shape, or legacy plain count per date key. */
+export interface SaleCalendarDayData {
+  available?: number;
+  sold?: number;
+}
+
+function resolveDayCount(value: number | SaleCalendarDayData | undefined): number {
+  if (value == null) return 0;
+  if (typeof value === "number") return value;
+  return (Number(value.available) || 0) + (Number(value.sold) || 0);
+}
+
 interface SaleCalendarProps {
-  calendarData: Record<string, number>;
+  calendarData: Record<string, number | SaleCalendarDayData>;
   selectedDate: string | null;
   onSelectDate: (date: string | null) => void;
   calendarYear: number;
@@ -89,7 +101,7 @@ export function SaleCalendar({
           }
 
           const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const count = calendarData[dateStr] ?? 0;
+          const count = resolveDayCount(calendarData[dateStr]);
           const isToday = today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === day;
           const isSelected = selectedDate === dateStr;
           const isFutureDate = dateStr > todayString;

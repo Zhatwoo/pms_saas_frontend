@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
 import type { Column } from "@/components/shared/data-table";
+import { buildPmsPrintDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
 
 export type LedgerEntryType =
   | "pawn"
@@ -178,62 +179,40 @@ export function FinanceLedgerTable({
 
     const colCount = showBranchColumn ? 8 : 7;
 
-    const rows = filtered.map((e) => `
+    const rows = filtered
+      .map(
+        (e) => `
       <tr>
-        <td>${fmtDate(e.date)} ${fmtTime(e.time) || ""}</td>
-        ${showBranchColumn ? `<td>${e.branchName || "—"}</td>` : ""}
-        <td>${(TYPE_CONFIG[e.type] || TYPE_CONFIG.other).label}</td>
-        <td>${e.itemName || "—"}</td>
-        <td>${e.description || "—"}</td>
-        <td style="text-align:right">${e.cashIn > 0 ? fmt(e.cashIn) : "—"}</td>
-        <td style="text-align:right; color:#b91c1c">${e.cashOut > 0 ? fmt(e.cashOut) : "—"}</td>
-        <td style="font-size:10px">${e.reference || "—"}</td>
-      </tr>
-    `).join("");
+        <td>${escapeHtml(`${fmtDate(e.date)} ${fmtTime(e.time) || ""}`.trim())}</td>
+        ${showBranchColumn ? `<td>${escapeHtml(e.branchName || "—")}</td>` : ""}
+        <td>${escapeHtml((TYPE_CONFIG[e.type] || TYPE_CONFIG.other).label)}</td>
+        <td>${escapeHtml(e.itemName || "—")}</td>
+        <td>${escapeHtml(e.description || "—")}</td>
+        <td class="num">${e.cashIn > 0 ? fmt(e.cashIn) : "—"}</td>
+        <td class="num cash-out">${e.cashOut > 0 ? fmt(e.cashOut) : "—"}</td>
+        <td style="font-size:10px">${escapeHtml(e.reference || "—")}</td>
+      </tr>`,
+      )
+      .join("");
 
     const branchMeta = showBranchColumn
       ? `<p><strong>Scope:</strong> All Branches</p>`
-      : `<p><strong>Branch:</strong> ${branchName || entries[0]?.branchName || "Unknown"}</p>
-         <p><strong>Branch Code:</strong> ${branchCode || "N/A"}</p>`;
+      : `<p><strong>Branch:</strong> ${escapeHtml(branchName || entries[0]?.branchName || "Unknown")}</p>
+         <p><strong>Branch Code:</strong> ${escapeHtml(branchCode || "N/A")}</p>`;
 
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>Financial Ledger Report</title>
-  <style>
-    body { font-family: Arial, sans-serif; font-size: 12px; color: #000; margin: 20px; }
-    h1 { font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
-    .meta { margin-bottom: 16px; font-size: 12px; line-height: 1.8; }
-    .meta p { margin: 0; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { background: #f3f4f6; font-weight: bold; padding: 6px 8px; border: 1px solid #ccc; text-align: left; white-space: nowrap; }
-    td { padding: 5px 8px; border: 1px solid #ddd; vertical-align: top; }
-    tr:nth-child(even) { background: #f9fafb; }
-    .total-row { background: #f3f4f6 !important; font-weight: bold; border-top: 2px solid #000; }
-    .net-row { font-size: 13px; font-weight: bold; border-top: 2px solid #000; }
-    .header { display: flex; justify-content: space-between; margin-bottom: 16px; align-items: flex-start; }
-    .logo { font-size: 16px; font-weight: bold; }
-    .subtitle { font-size: 11px; color: #555; }
-    @media print { @page { margin: 10mm; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="logo">Pawnshop Management System</div>
-      <div class="subtitle">Financial Ledger Report</div>
-    </div>
-    <div style="text-align:right; font-size:11px; color:#555">
-      <div>Printed: ${new Date().toLocaleString()}</div>
-      ${dateFrom ? `<div>From: ${dateFrom}</div>` : ""}
-      ${dateTo ? `<div>To: ${dateTo}</div>` : ""}
-    </div>
-  </div>
-  <div class="meta">
-    ${branchMeta}
-  </div>
-  <table>
+    const metaHtml = `${branchMeta}
+      <p><strong>Printed:</strong> ${escapeHtml(new Date().toLocaleString())}</p>
+      ${dateFrom ? `<p><strong>From:</strong> ${escapeHtml(dateFrom)}</p>` : ""}
+      ${dateTo ? `<p><strong>To:</strong> ${escapeHtml(dateTo)}</p>` : ""}`;
+
+    const ledgerScopeLabel = showBranchColumn
+      ? "All branches"
+      : branchName || entries[0]?.branchName || "Branch";
+
+    const bodyHtml = `
+    <div class="pms-print-section">
+      <h2>Ledger entries</h2>
+      <table>
     <thead>
       <tr>
         <th>Date</th>
@@ -241,46 +220,44 @@ export function FinanceLedgerTable({
         <th>Type</th>
         <th>Item Name</th>
         <th>Description</th>
-        <th style="text-align:right">Cash In</th>
-        <th style="text-align:right">Cash Out</th>
+        <th class="num">Cash In</th>
+        <th class="num">Cash Out</th>
         <th>Ref No.</th>
       </tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="${colCount}" style="text-align:center;padding:12px;font-style:italic">No transactions found.</td></tr>`}
+      ${rows || `<tr><td colspan="${colCount}" class="empty">No transactions found.</td></tr>`}
       ${filtered.length > 0 ? `
       <tr class="total-row">
         <td colspan="${colCount - 2}" style="text-align:right">TOTAL</td>
-        <td style="text-align:right">${totalCashIn}</td>
-        <td style="text-align:right; color:#b91c1c">${totalCashOut}</td>
+        <td class="num">${totalCashIn}</td>
+        <td class="num cash-out">${totalCashOut}</td>
         <td></td>
       </tr>
       <tr class="net-row" style="color: ${netColor}">
         <td colspan="${colCount - 2}" style="text-align:right; padding: 10px 8px;">${netLabel}</td>
-        <td colspan="2" style="text-align:right; padding: 10px 8px;">${formattedNet}</td>
+        <td colspan="2" class="num" style="padding: 10px 8px;">${formattedNet}</td>
         <td></td>
       </tr>` : ""}
     </tbody>
   </table>
-</body>
-</html>`;
+    </div>`;
 
-    const win = window.open("", "_blank", "width=900,height=700");
-    if (!win) return;
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    setTimeout(() => {
-      win.print();
-      win.close();
-    }, 500);
+    const html = buildPmsPrintDocument({
+      documentTitle: "Financial Ledger Report",
+      headerSubtitle: `Financial Ledger — ${ledgerScopeLabel}`,
+      metaHtml,
+      bodyHtml,
+    });
+
+    printHtmlDocument(html);
   };
 
   return (
     <div id="print-ledger-root" className="space-y-3 relative">
       <div className="flex justify-end">
         <button
-          onClick={() => window.print()}
+          onClick={handlePrint}
           className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800 dark:hover:bg-emerald-800"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
