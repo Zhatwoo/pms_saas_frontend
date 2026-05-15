@@ -72,11 +72,9 @@ function normalizeTermsText(rawText?: string) {
   const normalizedLines = (rawText ?? "")
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => /^\d+\./.test(line))
-    .slice(0, 10); // Limit to exactly 10 terms, ignore any corrupted extras
+    .filter(Boolean);
 
-  if (normalizedLines.length >= 8) {
+  if (normalizedLines.length >= 1) {
     return normalizedLines.join("\n");
   }
 
@@ -174,7 +172,7 @@ export function MoaModal({
     addDays(baseDate, 30),
   ];
   const gracePeriodEnd = addDays(baseDate, 34);
-  const printableTermsText = CANONICAL_TERMS_TEXT;
+  const printableTermsLines = termsText.split(/\r?\n/).filter(Boolean);
 
   const lineInputClass = "border-b-2 border-zinc-400 bg-transparent px-2 text-xs font-bold text-zinc-900 outline-none w-full h-6 transition-all focus:border-emerald-600";
 
@@ -182,7 +180,7 @@ export function MoaModal({
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div
-        className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10"
+        className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10 light moa-paper-effect"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -213,7 +211,7 @@ export function MoaModal({
 
         {/* MOA Content - Matches Image 2 */}
         <div className="flex-1 overflow-y-auto">
-          <div id="moa-slip-printable" ref={printRef} className="max-w-full overflow-x-hidden p-6 pb-10 space-y-5 text-[9px] text-zinc-800 leading-tight bg-white sm:text-[10px]">
+          <div id="moa-slip-printable" ref={printRef} className="max-w-full overflow-x-auto p-6 pb-10 space-y-5 text-[9px] text-zinc-800 leading-tight bg-white sm:text-[10px] moa-paper-effect">
             {/* Title moved to the very top */}
             <div className="text-center mb-4">
               <h1 className="text-[18px] font-black uppercase tracking-[0.18em] text-emerald-900 underline">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h1>
@@ -235,40 +233,43 @@ export function MoaModal({
               )}
             </div>
 
-            <div className="flex flex-col gap-3 border-b border-zinc-100 pb-3 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-1">
+            <div className="flex flex-col gap-1 border-b border-zinc-100 pb-3">
+              <div className="flex items-center justify-between gap-3">
                 <p className="font-bold">{labels?.originalCopy || "Original copy"}</p>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider">{labels?.purchasedDate || "Purchased Date:"}</span>
-                  <span className="w-32 border-b border-zinc-400">{data.purchasedDate || new Date().toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider">{labels?.idsPresented || "ID(s) Presented:"}</span>
-                  <span className="w-32 border-b border-zinc-400">{data.idPresented || "No ID"}</span>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="font-bold uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
+                  <span className="w-32 border-b border-zinc-400 font-bold">{data.unitCode || "---"}</span>
                 </div>
               </div>
 
-              <div className="hidden text-center flex-1 lg:block">
-                {/* Spacer or additional small branding can go here */}
-              </div>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-28 font-semibold text-[9px] uppercase tracking-wider">{labels?.purchasedDate || "Purchased Date:"}</span>
+                    <span className="flex-1 border-b border-zinc-400">{data.purchasedDate || new Date().toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-28 font-semibold text-[9px] uppercase tracking-wider">{labels?.idsPresented || "ID(s) Presented:"}</span>
+                    <span className="flex-1 border-b border-zinc-400">{data.idPresented || "No ID"}</span>
+                  </div>
+                </div>
 
-              <div className="space-y-1 text-left lg:ml-auto lg:text-right">
-                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
-                  <span className="w-28 sm:w-32 border-b border-zinc-400 text-left lg:text-right">{data.unitCode || "---"}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <span className="font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
-                  <span className="text-[9px]">1st</span>
-                  <span className="w-12 sm:w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 10)}</span>
-                  <span className="text-[9px]">2nd</span>
-                  <span className="w-12 sm:w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 20)}</span>
-                  <span className="text-[9px]">3rd</span>
-                  <span className="w-12 sm:w-16 border-b border-zinc-400 text-center">{addDays(baseDate, 30)}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <span className="font-semibold whitespace-nowrap text-[9px] uppercase tracking-wider text-red-600">{labels?.expiryDate || "Grace Period End:"}</span>
-                  <span className="w-28 sm:w-32 border-b border-zinc-400 text-left lg:text-right text-red-600 font-bold">{gracePeriodEnd}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-32 font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[8px]">1st</span>
+                      <span className="w-14 border-b border-zinc-400 text-center">{addDays(baseDate, 10)}</span>
+                      <span className="text-[8px]">2nd</span>
+                      <span className="w-14 border-b border-zinc-400 text-center">{addDays(baseDate, 20)}</span>
+                      <span className="text-[8px]">3rd</span>
+                      <span className="w-14 border-b border-zinc-400 text-center">{addDays(baseDate, 30)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-32 font-semibold text-[9px] uppercase tracking-wider text-red-600">{labels?.expiryDate || "Expiry Date of Repurchase:"}</span>
+                    <span className="flex-1 border-b border-zinc-400 text-red-600 font-bold">{gracePeriodEnd}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -375,7 +376,7 @@ export function MoaModal({
                 <h4 className="text-center font-black uppercase underline tracking-tighter text-[10px] text-zinc-900">{labels?.termsHeading || "Terms and Conditions"}</h4>
                 <div className="rounded border border-zinc-200 bg-white/80 p-1 text-[7px] leading-tight text-zinc-700">
                   <ol className="space-y-0 pl-2">
-                    {CANONICAL_TERMS_LINES.map((line) => (
+                    {printableTermsLines.map((line) => (
                       <li key={line} className="list-decimal">
                         {line.replace(/^\d+\.\s*/, "")}
                       </li>
@@ -384,24 +385,24 @@ export function MoaModal({
                 </div>
               </div>
 
-              {/* Signatures - left and right */}
-              <div className="flex max-w-full flex-col items-stretch gap-8 overflow-x-hidden pt-6 pb-2 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
-              <div className="flex flex-1 min-w-0 flex-col text-center space-y-2 lg:max-w-[48%]">
-                <span className="block text-[9px] font-black uppercase tracking-widest text-emerald-900 invisible select-none" aria-hidden="true">
-                  I HEREBY AUTHORIZED
-                </span>
-                <div className="h-8 w-full border-b-2 border-zinc-800"></div>
-                <p className="font-black uppercase text-[8px] tracking-widest">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
-              </div>
-              <div className="flex flex-1 min-w-0 flex-col text-center space-y-2 lg:max-w-[48%]">
-                <p className="font-black uppercase text-[9px] text-emerald-900 tracking-widest">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</p>
-                <div className="h-10 w-full border-b-2 border-zinc-800 flex items-end justify-center pb-1">
-                  {data.processedBy && (
-                    <span className="font-bold text-[11px] uppercase tracking-wider text-zinc-900">{data.processedBy}</span>
-                  )}
+              {/* Signatures - 2 Columns */}
+              <div className="moa-signatures grid grid-cols-2 gap-12 pt-8 pb-4">
+                <div className="flex flex-col text-center space-y-2">
+                  <span className="block text-[9px] font-black uppercase tracking-widest text-emerald-900 invisible select-none" aria-hidden="true">
+                    I HEREBY AUTHORIZED
+                  </span>
+                  <div className="h-8 w-full border-b-2 border-zinc-800"></div>
+                  <p className="font-black uppercase text-[8px] tracking-widest">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
                 </div>
-                <p className="font-black uppercase text-[8px] tracking-widest">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
-              </div>
+                <div className="flex flex-col text-center space-y-2">
+                  <p className="font-black uppercase text-[9px] text-emerald-900 tracking-widest">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</p>
+                  <div className="h-8 w-full border-b-2 border-zinc-800 flex items-end justify-center pb-0.5">
+                    {data.processedBy && (
+                      <span className="font-bold text-[10px] uppercase tracking-wider text-zinc-900">{data.processedBy}</span>
+                    )}
+                  </div>
+                  <p className="font-black uppercase text-[8px] tracking-widest">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -456,69 +457,101 @@ export function MoaModal({
 
         {/* Global Print Styles */}
         <style jsx global>{`
-          @media print {
-            .no-print { display: none !important; }
-            
-            body, html {
-              visibility: hidden !important;
-              height: auto !important;
-              overflow: visible !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              ${MOA_BODY_PRINT_COLOR_SNIPPET}
-            }
+        /* Force light mode aesthetics on screen even in dark mode */
+        .moa-paper-effect {
+          background-color: white !important;
+          color: #18181b !important;
+          color-scheme: light !important;
+        }
+        .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
+        .moa-paper-effect .text-zinc-700 { color: #3f3f46 !important; }
+        .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
+        .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
+        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
+        .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
+        .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
+        .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
+        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
+        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
+        .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+        .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
 
-            /* Only reset the modal's outer positioning, NOT the MOA's internal divs */
-            .fixed.inset-0, 
-            .relative.w-full.max-w-4xl {
-              position: static !important;
-              display: block !important;
-              max-height: none !important;
-              width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              transform: none !important;
-              box-shadow: none !important;
-            }
-
-            #moa-slip-printable, 
-            #moa-slip-printable * {
-              visibility: visible !important;
-            }
-
-            #moa-slip-printable {
-              visibility: visible !important;
-              position: absolute !important;
-              top: 0 !important;
-              left: 0 !important;
-              width: 100% !important;
-              background: white !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              display: block !important;
-            }
-
-            /* Improve print readability: force all gray text shades to black */
-            #moa-slip-printable .text-zinc-300,
-            #moa-slip-printable .text-zinc-400,
-            #moa-slip-printable .text-zinc-500,
-            #moa-slip-printable .text-zinc-600,
-            #moa-slip-printable .text-zinc-700,
-            #moa-slip-printable .text-zinc-800 {
-              color: #000 !important;
-            }
-
-            /* Restore grid/flex for specific components that need them */
-            #moa-slip-printable .grid { display: grid !important; }
-            #moa-slip-printable .flex { display: flex !important; }
-            #moa-slip-printable .moa-bottom-block {
-              margin-top: 16px !important;
-              break-inside: avoid !important;
-              page-break-inside: avoid !important;
-            }
-
-            ${MOA_PRINT_PAGE_RULE_CSS}
+        @media print {
+          .no-print { display: none !important; }
+          
+          body, html {
+            visibility: hidden !important;
+            height: auto !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            ${MOA_BODY_PRINT_COLOR_SNIPPET}
           }
+
+          /* Reset all potential scroll/height constraints in the DOM tree */
+          .fixed.inset-0, 
+          .relative.w-full.max-w-4xl,
+          .flex-1.overflow-y-auto {
+            position: static !important;
+            display: block !important;
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            transform: none !important;
+            box-shadow: none !important;
+            flex: none !important;
+          }
+
+          #moa-slip-printable, 
+          #moa-slip-printable * {
+            visibility: visible !important;
+          }
+
+          #moa-slip-printable {
+            visibility: visible !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+          }
+
+          /* Improve print readability: force all gray text shades to black */
+          #moa-slip-printable .text-zinc-300,
+          #moa-slip-printable .text-zinc-400,
+          #moa-slip-printable .text-zinc-500,
+          #moa-slip-printable .text-zinc-600,
+          #moa-slip-printable .text-zinc-700,
+          #moa-slip-printable .text-zinc-800 {
+            color: #000 !important;
+          }
+
+          /* Restore grid/flex for specific components that need them */
+          #moa-slip-printable .grid { display: grid !important; }
+          #moa-slip-printable .flex { display: flex !important; }
+          #moa-slip-printable .moa-bottom-block {
+            margin-top: 16px !important;
+            overflow: visible !important;
+          }
+
+          #moa-slip-printable .moa-signatures {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 3rem !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          ${MOA_PRINT_PAGE_RULE_CSS}
+        }
         `}</style>
       </div>
     </div>
