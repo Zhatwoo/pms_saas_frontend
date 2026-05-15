@@ -107,23 +107,46 @@ class ApiClient {
       path === "/inventory/public/for-sale";
 
     let res: Response;
-    try {
-      res = await fetch(`/api${path}`, {
-        ...requestOptions,
-        method,
-        headers,
-        credentials: requestOptions.credentials ?? "include",
-        ...(method === "GET" && requestOptions.cache == null ? { cache: "no-store" } : {}),
-      });
-    } catch (networkErr) {
-      const msg =
-        networkErr instanceof Error ? networkErr.message : String(networkErr);
-      console.warn(`[API] Network error for ${path}:`, msg);
-      throw new Error(
-        msg.includes("ECONNREFUSED") || msg.includes("fetch failed")
-          ? "Cannot reach the server. Please check if the backend is running."
-          : `Network error: ${msg}`,
-      );
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (true) {
+      try {
+        res = await fetch(`/api${path}`, {
+          ...requestOptions,
+          method,
+          headers,
+          credentials: requestOptions.credentials ?? "include",
+          ...(method === "GET" && requestOptions.cache == null ? { cache: "no-store" } : {}),
+        });
+
+        // Check if it's a pool exhaustion error
+        if (res.status === 500) {
+          const clonedRes = res.clone();
+          try {
+            const body = await clonedRes.text();
+            if (body.includes("EMAXCONNSESSION") && retryCount < maxRetries) {
+              retryCount++;
+              const delay = 500 * Math.pow(2, retryCount - 1); // Exponential backoff: 500ms, 1000ms, 2000ms
+              console.warn(`[API] Pool exhausted (EMAXCONNSESSION). Retrying ${path} in ${delay}ms... (Attempt ${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          } catch (e) {
+            // ignore clone read error
+          }
+        }
+        break;
+      } catch (networkErr) {
+        const msg =
+          networkErr instanceof Error ? networkErr.message : String(networkErr);
+        console.warn(`[API] Network error for ${path}:`, msg);
+        throw new Error(
+          msg.includes("ECONNREFUSED") || msg.includes("fetch failed")
+            ? "Cannot reach the server. Please check if the backend is running."
+            : `Network error: ${msg}`,
+        );
+      }
     }
 
     let text = "";

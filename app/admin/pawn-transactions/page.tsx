@@ -372,7 +372,7 @@ export default function SuperAdminPawnTransactionsPage() {
   const highlightedTransactionRef = useRef<string | null>(null);
 
   const fetchTransactions = useCallback(async () => {
-    setIsLoading(true);
+    // Note: We don't set isLoading(true) here anymore because this is now called sequentially by fetchAllData
     try {
       const data = await api.get<TransactionsResponse>(
         `/transactions?branch=${encodeURIComponent(selectedBranch.id)}&range=all`
@@ -382,8 +382,6 @@ export default function SuperAdminPawnTransactionsPage() {
       }
     } catch (error) {
       console.error("Failed to load transactions:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, [selectedBranch.id]);
 
@@ -440,13 +438,20 @@ export default function SuperAdminPawnTransactionsPage() {
     }
   }, [selectedBranch.id, selectedDate]);
 
-  useEffect(() => {
-    void fetchTransactions();
-  }, [fetchTransactions]);
+  const fetchAllData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Execute sequentially to respect Supabase pool limits (pool_size: 15)
+      await fetchTransactions();
+      await fetchSelectedDateStats();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTransactions, fetchSelectedDateStats]);
 
   useEffect(() => {
-    void fetchSelectedDateStats();
-  }, [fetchSelectedDateStats]);
+    void fetchAllData();
+  }, [fetchAllData]);
 
   const fetchTransactionsRef = useRef(fetchTransactions);
   useEffect(() => {
