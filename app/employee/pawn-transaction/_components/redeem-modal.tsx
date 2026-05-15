@@ -7,6 +7,8 @@ import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
+import { useAuth } from "@/contexts/auth-context";
+
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
@@ -31,6 +33,9 @@ function Undo2({ className }: { className?: string }) {
 }
 function QrCode({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/></svg>);
+}
+function AlertCircle({ className }: { className?: string }) {
+  return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
 }
 
 interface RedeemModalProps {
@@ -60,6 +65,7 @@ interface PawnedSearchItem {
 }
 
 export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }: RedeemModalProps) {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnedSearchItem | null>(null);
   const [adminForm, setAdminForm] = useState({
@@ -73,6 +79,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.fullName) {
+      setAdminForm(prev => ({ ...prev, processedBy: user.fullName }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -374,86 +386,6 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                     </div>
                   </div>
                 </div>
-
-                {/* Confirm Section */}
-                <div className="p-8 rounded-3xl bg-emerald-900 text-white relative overflow-hidden shadow-2xl shadow-emerald-900/20">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-50" />
-                  
-                  <div className="relative z-10 flex flex-col xl:flex-row items-center gap-10">
-                    <div className="flex-1 space-y-8">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-8 h-8 text-emerald-400" />
-                        <h4 className="text-xl font-black uppercase tracking-tight">Verify Authorisation</h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest ml-1">Processed By</label>
-                          <input 
-                            type="text"
-                            placeholder="Admin Name"
-                            className="w-full h-12 px-4 bg-emerald-800/50 border-2 border-emerald-700/50 rounded-xl outline-none focus:border-emerald-400 transition-all text-sm font-medium"
-                            value={adminForm.processedBy}
-                            onChange={(e) => setAdminForm({...adminForm, processedBy: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest ml-1">Security Password</label>
-                          <input 
-                            type="password"
-                            placeholder="••••••••"
-                            className="w-full h-12 px-4 bg-emerald-800/50 border-2 border-emerald-700/50 rounded-xl outline-none focus:border-emerald-400 transition-all text-sm font-medium"
-                            value={adminForm.password}
-                            onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
-                          />
-                        </div>
-                      </div>
-
-                      {error && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                          <p className="text-xs font-bold text-red-200">{error}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-full xl:w-[320px] bg-white dark:bg-surface/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md flex flex-col gap-6">
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                          <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">Net Cash Received</p>
-                          <p className="text-3xl font-black text-white leading-none">₱ {interestCalc.totalAmount.toLocaleString()}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-                            <Plus className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-emerald-200">Proceed with Redemption?</p>
-                            <p className="text-[10px] text-emerald-400/60 leading-tight">Verify full payment and password.</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleConfirmRedeem}
-                        disabled={isConfirming}
-                        className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                      >
-                        {isConfirming ? (
-                          <div className="flex items-center gap-2">
-                            <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
-                            <span>Processing...</span>
-                          </div>
-                        ) : (
-                          <>
-                            Confirm Redemption
-                            <ArrowRight className="w-5 h-5" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-12">
@@ -467,6 +399,73 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
               </div>
             )}
           </div>
+        </div>
+
+        {/* --- MODIFIED SECURITY FOOTER (Like Image 2) --- */}
+        <div className="bg-[#0a0f0d] border-t border-white/5 p-6 shrink-0 relative z-20">
+          <div className="max-w-full flex items-center justify-between gap-8">
+            
+            {/* Left: Cancel Action */}
+            <button 
+              onClick={onClose}
+              className="text-[10px] font-black text-emerald-100/40 hover:text-white uppercase tracking-[0.2em] transition-colors"
+            >
+              CANCEL
+            </button>
+
+            {/* Middle: Security Verification */}
+            <div className="flex-1 max-w-md">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[9px] font-black text-[#34D399] uppercase tracking-widest">
+                  SECURITY PASSWORD VERIFICATION
+                </p>
+                <span className="text-[9px] font-bold text-emerald-100/20 italic">
+                  ({user?.fullName?.toLowerCase() || 'lysa'})
+                </span>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="password" 
+                  placeholder="••••••••"
+                  className="w-full h-12 bg-[#1a2421] border border-white/10 rounded-xl px-4 text-white text-lg tracking-[0.5em] font-black outline-none focus:border-[#34D399]/50 transition-all placeholder:text-white/5"
+                  value={adminForm.password}
+                  onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                />
+              </div>
+            </div>
+
+            {/* Right: Summary & Process Button */}
+            <div className="flex items-center gap-8">
+              <div className="text-right">
+                <p className="text-[9px] font-black text-emerald-100/40 uppercase tracking-widest mb-1">TOTAL LOAN AMOUNT</p>
+                <p className="text-2xl font-black text-white leading-none">
+                  ₱ {interestCalc.totalAmount.toLocaleString()}
+                </p>
+              </div>
+
+              <button 
+                disabled={isConfirming || !selectedItem}
+                onClick={handleConfirmRedeem}
+                className="h-14 px-8 bg-[#34D399] hover:bg-[#10B981] disabled:bg-emerald-800/50 text-emerald-950 rounded-2xl font-black uppercase tracking-wider shadow-lg shadow-emerald-500/10 flex items-center justify-center transition-all active:scale-[0.98] text-xs gap-3"
+              >
+                {isConfirming ? (
+                   <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
+                ) : (
+                   <>
+                     CONFIRM REDEMPTION
+                     <ArrowRight className="w-5 h-5" />
+                   </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-[8px] font-bold uppercase tracking-widest animate-in slide-in-from-bottom-1">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              {error}
+            </div>
+          )}
         </div>
       </div>
       <QrScanner 

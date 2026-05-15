@@ -76,7 +76,6 @@ function EmployeeLayoutInner({
       branchName={selectedBranch.name}
       hideBranchSelector={true}
     >
-      <OpeningChecklistWrapper />
       {children}
     </AppLayout>
   );

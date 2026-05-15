@@ -6,6 +6,7 @@ import type { NavGroup, Role } from "@/types";
 import { Sidebar } from "@/components/ui/sidebar";
 import { Header } from "@/components/ui/header";
 import { useBranch } from "@/contexts/branch-context";
+import { OpeningChecklistWrapper } from "@/components/shared/opening-checklist-wrapper";
 
 interface AppLayoutProps {
   navGroups: NavGroup[];
@@ -85,6 +86,7 @@ export function AppLayout({
           onMenuToggle={() => setMobileMenuOpen(true)}
         />
         <main className="flex-1 overflow-y-auto bg-pawn-content p-4 md:p-6 lg:p-8 transition-colors duration-300">
+          <OpeningChecklistWrapper />
           {children}
         </main>
       </div>

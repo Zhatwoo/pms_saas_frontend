@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
+import { RenewModal } from "./_components/expiration-renew-modal";
 
 const sendIcon = (
   <svg
@@ -57,6 +58,8 @@ function ExpirationMonitoringPageContent() {
   const { selectedBranch, isAllBranches } = useBranch();
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const highlightTicketNo = searchParams?.get("ticketNo");
   const highlightTransaction = searchParams?.get("highlightTransaction");
 
@@ -82,25 +85,29 @@ function ExpirationMonitoringPageContent() {
   const [isBlasting, setIsBlasting] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [renewingId, setRenewingId] = useState<string | null>(null);
+  
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const [selectedRenewTicketNo, setSelectedRenewTicketNo] = useState<string | null>(null);
+
+  const fetchExpirationData = async () => {
+    setIsLoading(true);
+    try {
+      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
+      const data = await api.get<ExpirationMonitoringResponse>(
+        `/dashboard/expiration-monitoring${query}`
+      );
+      if (data) {
+        setStats(data.stats);
+        setBuckets(data.buckets);
+      }
+    } catch (error) {
+      console.error("Failed to load expiration monitoring data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function fetchExpirationData() {
-      setIsLoading(true);
-      try {
-        const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-        const data = await api.get<ExpirationMonitoringResponse>(
-          `/dashboard/expiration-monitoring${query}`
-        );
-        if (data) {
-          setStats(data.stats);
-          setBuckets(data.buckets);
-        }
-      } catch (error) {
-        console.error("Failed to load expiration monitoring data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
     fetchExpirationData();
   }, [selectedBranch.id, isAllBranches]);
 
@@ -167,27 +174,11 @@ function ExpirationMonitoringPageContent() {
     }
   };
 
-  const handleRenew = async (id: string) => {
-    setRenewingId(id);
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      await api.post(`/inventory/pawned/${id}/renew`, {
-        renewal_date: today,
-        amount_paid: 0,
-      });
-      toast.success("Item renewed successfully.");
-      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-      const data = await api.get<ExpirationMonitoringResponse>(
-        `/dashboard/expiration-monitoring${query}`
-      );
-      if (data) {
-        setStats(data.stats);
-        setBuckets(data.buckets);
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to renew item.");
-    } finally {
-      setRenewingId(null);
+  const handleRenew = (id: string) => {
+    const item = getActiveItems().find(i => i.id === id);
+    if (item) {
+      setSelectedRenewTicketNo(item.ticketNo);
+      setIsRenewModalOpen(true);
     }
   };
 
@@ -234,6 +225,18 @@ function ExpirationMonitoringPageContent() {
         onSendEmail={handleSendEmail}
         onRenew={handleRenew}
         highlightTicketNo={highlightTicketNo}
+      />
+      
+      <RenewModal
+        isOpen={isRenewModalOpen}
+        onClose={() => {
+          setIsRenewModalOpen(false);
+          setSelectedRenewTicketNo(null);
+        }}
+        branchName={selectedBranch.name || "Main Branch"}
+        branchId={selectedBranch.id}
+        onSuccess={fetchExpirationData}
+        initialSearchCode={selectedRenewTicketNo || ""}
       />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { DailyBalanceConfirmation } from "./daily-balance-confirmation";
+import { InventoryAuditModal } from "./inventory-audit-modal";
 import { api } from "@/lib/api";
 
 /** Subset of `/branch-finance/business-session` used for expected starting cash. */
@@ -21,7 +22,7 @@ interface BusinessSessionExpectedApi {
  * Branch-wide starting balance + checklist modal for employees (all routes, including pawn).
  */
 export function OpeningChecklistWrapper() {
-  const { currentStep, isComplete, completeCashOnHand } = useOpeningChecklist();
+  const { currentStep, isComplete, completeCashOnHand, completeInventoryAudit } = useOpeningChecklist();
   const [expectedCash, setExpectedCash] = useState("0");
   const [isLoadingExpectedAmount, setIsLoadingExpectedAmount] = useState(true);
 
@@ -103,6 +104,13 @@ export function OpeningChecklistWrapper() {
         onConfirm={completeCashOnHand}
         onClose={() => {}} // Disabled close for mandatory workflow
         isLoadingExpectedAmount={isLoadingExpectedAmount}
+      />
+
+      <InventoryAuditModal
+        isOpen={currentStep === "INVENTORY_AUDIT"}
+        displayMode="overlay"
+        onConfirm={completeInventoryAudit}
+        onClose={() => {}} // Mandatory
       />
     </>
   );
