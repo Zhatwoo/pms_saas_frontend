@@ -8,6 +8,7 @@ import { FilterSelect } from "@/components/shared/filter-select";
 import { SaleCalendar } from "@/app/(pages)/inventory/items-for-sale/_components/sale-calendar";
 import { useBranch } from "@/contexts/branch-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { SellsTransferModal } from "@/app/employee/pawn-transaction/_components/sells-transfer-modal";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -72,6 +73,9 @@ export default function EmployeeItemsForSalePage() {
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
   const [calendarData, setCalendarData] = useState<Record<string, number>>({});
   const [viewingItem, setViewingItem] = useState<SaleItem | null>(null);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [selectedItemForSale, setSelectedItemForSale] = useState<SaleItem | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const itemsPerPage = 10;
 
   useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, saleViewMode, selectedDate]);
@@ -125,7 +129,7 @@ export default function EmployeeItemsForSalePage() {
       }
     }
     fetchData();
-  }, [branchIdent, category, status, searchQuery, saleViewMode, currentPage]);
+  }, [branchIdent, category, status, searchQuery, saleViewMode, currentPage, selectedDate, refreshKey]);
 
   useEffect(() => {
     async function fetchCalendar() {
@@ -227,7 +231,7 @@ export default function EmployeeItemsForSalePage() {
                 ) : saleItems.length === 0 ? (
                   <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">{selectedDate ? "No items on this day" : "No items for sale found"}</td></tr>
                 ) : (
-                  saleItems.map((item, idx) => (
+                  saleItems.map((item) => (
                     <tr key={item.id || item.itemId} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
                       <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400">{item.itemId}</td>
                       <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-medium text-text-secondary">
@@ -241,7 +245,13 @@ export default function EmployeeItemsForSalePage() {
                       <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                       <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         {item.status === "Available" ? (
-                          <button className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-800">
+                          <button
+                            onClick={() => {
+                              setSelectedItemForSale(item);
+                              setShowSellModal(true);
+                            }}
+                            className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 active:scale-95"
+                          >
                             Sell Item
                           </button>
                         ) : item.status === "Reserved" ? (
@@ -297,7 +307,13 @@ export default function EmployeeItemsForSalePage() {
                       <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         {item.status === "Available" ? (
-                          <button className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95">
+                          <button
+                            onClick={() => {
+                              setSelectedItemForSale(item);
+                              setShowSellModal(true);
+                            }}
+                            className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95"
+                          >
                             Sell Item
                           </button>
                         ) : item.status === "Reserved" ? (
@@ -355,7 +371,7 @@ export default function EmployeeItemsForSalePage() {
                 <p className="mb-2 text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Detailed Description</p>
                 <div className="rounded-xl border border-border-main bg-surface-secondary/70 p-4">
                   <p className="text-sm font-medium leading-relaxed italic text-text-primary">
-                    "{viewingItem.description || "Fully authenticated item transitioned from pawn inventory after expiration date."}"
+                    &quot;{viewingItem.description || "Fully authenticated item transitioned from pawn inventory after expiration date."}&quot;
                   </p>
                 </div>
               </div>
@@ -372,6 +388,26 @@ export default function EmployeeItemsForSalePage() {
           </div>
         </div>
       )}
-    </div>
-  );
+      <SellsTransferModal
+        isOpen={showSellModal}
+        onClose={() => {
+          setShowSellModal(false);
+          setSelectedItemForSale(null);
+        }}
+        onSuccess={() => {
+          setShowSellModal(false);
+          setSelectedItemForSale(null);
+          setCurrentPage(1);
+          setRefreshKey((prev) => prev + 1);
+        }}
+        branchName={selectedBranch.name}
+        initialItem={selectedItemForSale ? {
+          id: selectedItemForSale.id,
+          unitId: selectedItemForSale.itemId,
+          unit: selectedItemForSale.itemName,
+          srp: String(selectedItemForSale.price || 0),
+        } : undefined}
+      />
+  </div>
+);
 }
