@@ -242,6 +242,7 @@ function TransactionsCalendar({
 
 
 interface ApiTransaction {
+  id?: string;
   transaction_no: string;
   branch: string | null;
   voided_at?: string | null;
@@ -272,6 +273,17 @@ interface BranchFinanceSummary {
   branchId: string;
   startingBalance: number;
   currentBalance: number;
+}
+
+/** Same-day reopen: use `todaySession.startedAt` so prior-shift txs are not counted twice. */
+interface BranchBusinessSessionPeek {
+  operationalCashAllowed?: boolean;
+  operationalCutoffAt?: string | null;
+  sealedTransactionIds?: string[];
+  todaySession?: {
+    startedAt?: string | null;
+    startingBalance?: number | null;
+  } | null;
 }
 
 const DEFAULT_STATS = {
@@ -474,12 +486,54 @@ export default function EmployeePawnTransactionsPage() {
         .get<BranchFinanceSummary[]>(summaryUrl)
         .catch(() => [] as BranchFinanceSummary[]);
 
-      setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
-
       const phToday = getPhCalendarDateString();
+      let sessionOpenedAt = data.stats?.sessionOpenedAt ?? null;
+      let operationalCutoffAt: string | null = null;
+      let sessionStartingBalance: number | null = null;
+      let sealedTransactionIds: string[] = [];
+      if (branchIdForApi !== "__all__" && selectedDate === phToday) {
+        try {
+          const session = await api.get<BranchBusinessSessionPeek>(
+            `/branch-finance/business-session?branch=${encodeURIComponent(branchIdForApi)}`,
+          );
+          if (session.operationalCashAllowed) {
+            operationalCutoffAt = session.operationalCutoffAt ?? null;
+            sealedTransactionIds = session.sealedTransactionIds ?? [];
+            if (session.todaySession?.startedAt) {
+              sessionOpenedAt = session.todaySession.startedAt;
+            }
+            if (session.todaySession?.startingBalance != null) {
+              sessionStartingBalance = Number(
+                session.todaySession.startingBalance,
+              );
+            }
+          }
+        } catch {
+          // keep transactions stats fallback
+        }
+      }
+      const sealedTxSet = new Set(sealedTransactionIds);
+      const effectiveCutoffIso = operationalCutoffAt ?? sessionOpenedAt;
+      const cutoffMs = effectiveCutoffIso
+        ? new Date(effectiveCutoffIso).getTime()
+        : NaN;
+      const hasCutoff = Number.isFinite(cutoffMs);
+      const visibleTx = (data.transactions ?? []).filter((tx) => {
+        if (tx.id && sealedTxSet.has(tx.id)) return false;
+        if (!hasCutoff) return true;
+        const t =
+          tx.created_at == null
+            ? 0
+            : new Date(String(tx.created_at)).getTime();
+        return Number.isFinite(t) && t >= cutoffMs;
+      });
+      setSelectedDateLedgerRows(visibleTx.map(toTransactionRow));
+
       const ledger = operationalCashTotalsForPawnEnding(
         data.transactions ?? [],
-        data.stats?.sessionOpenedAt ?? null,
+        sessionOpenedAt,
+        operationalCutoffAt,
+        sealedTransactionIds,
       );
 
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
@@ -489,21 +543,24 @@ export default function EmployeePawnTransactionsPage() {
           (sum, row) => sum + Number(row.startingBalance ?? 0),
           0,
         );
-      } else if (
-        selectedDate === phToday &&
-        financeSummary.length === 1
-      ) {
-        startingBalance = Number(
-          financeSummary[0].startingBalance ?? startingBalance,
-        );
+      } else if (selectedDate === phToday && branchIdForApi !== "__all__") {
+        if (sessionStartingBalance != null) {
+          startingBalance = sessionStartingBalance;
+        } else if (financeSummary.length === 1) {
+          startingBalance = Number(
+            financeSummary[0].startingBalance ?? startingBalance,
+          );
+        }
       }
 
+      // Always derive from confirmed session start + post-cutoff ledger net (never stale DB ending).
       const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
 
       setCurrentStats({
         ...normalizeStats(data.stats),
         startingBalance,
         endingBalance,
+        sessionOpenedAt: effectiveCutoffIso,
       });
     } catch (error) {
       console.error("Failed to load selected date transaction stats:", error);
