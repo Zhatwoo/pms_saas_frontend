@@ -465,7 +465,7 @@ export function Sidebar({
         </div>
       </div>
 
-      {process.env.NODE_ENV === "development" && openingChecklist && (
+      {process.env.NODE_ENV === "development" && userRole === "employee" && openingChecklist && (
         <div className="border-t border-white/10 p-2">
           <button
             onClick={() => openingChecklist.debugSetInventoryAudit()}

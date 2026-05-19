@@ -28,11 +28,11 @@ export function StatCard({
   return (
     <div
       onClick={onClick}
-      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 transition-all duration-300 ${
+      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 sm:p-6 transition-all duration-300 ${
         onClick ? "cursor-pointer hover:shadow-md hover:border-zinc-300 active:scale-[0.98]" : ""
       } ${className}`}
     >
-      <div className={`mb-3 h-1 w-full rounded-full ${borderColor}`} />
+      <div className={`mb-4 h-1 w-full rounded-full ${borderColor}`} />
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-text-tertiary">

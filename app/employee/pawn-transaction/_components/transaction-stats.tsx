@@ -133,7 +133,7 @@ interface TransactionStatsProps {
 
 export function TransactionStats({ data }: TransactionStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+    <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-3 lg:gap-6 xl:grid-cols-7 xl:gap-6">
       <StatCard
         label="Pawn Today"
         value={data?.pawnedToday || 0}

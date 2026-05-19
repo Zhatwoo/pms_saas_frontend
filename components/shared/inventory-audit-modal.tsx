@@ -12,6 +12,7 @@ interface InventoryAuditModalProps {
   onConfirm: () => void;
   onClose: () => void;
   displayMode?: "overlay" | "embedded";
+  isMandatory?: boolean;
 }
 
 interface ScannedItemDetails {
@@ -162,7 +163,7 @@ interface InventoryAuditStorageState {
   currentScan: string;
 }
 
-export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = "overlay" }: InventoryAuditModalProps) {
+export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = "overlay", isMandatory = false }: InventoryAuditModalProps) {
   // Ref for modal container to trap focus
   const modalRef = useRef<HTMLDivElement>(null);
   // Activate focus trap when modal opens
@@ -685,7 +686,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   return (
     <div className={rootWrapperClass} {...rootWrapperProps} ref={modalRef}>
       <div className={innerContainerClass}>
-        {!embedded && (
+        {!embedded && !isMandatory && (
           <button
             type="button"
             onClick={onClose}

@@ -540,14 +540,14 @@ export function BranchProfile({ branch }: BranchProfileProps) {
         {/* ═══════════════════════════════════════════════════════
             BRANCH OVERVIEW HEADER (Always visible)
            ═══════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 p-6 shadow-lg">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 p-5 md:p-6 shadow-lg">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
+              <div className="flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
                 <IconBuilding />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{branch.name}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-white">{branch.name}</h1>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <StatusBadge
                     label={branch.status}
@@ -562,22 +562,22 @@ export function BranchProfile({ branch }: BranchProfileProps) {
           </div>
 
           {/* Meta row */}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+            <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
               <span className="text-emerald-400"><IconMapPin /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Location</p>
                 <p className="text-sm font-semibold text-white">{branch.location}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
               <span className="text-emerald-400"><IconPhone /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Contact</p>
                 <p className="text-sm font-semibold text-white">{branch.contactNumber || "—"}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
               <span className="text-emerald-400"><IconCalendar /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Created</p>
@@ -592,14 +592,14 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
               <span className="text-emerald-400"><IconClock /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Last Activity</p>
                 <p className="text-sm font-semibold text-white">10 mins ago</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 backdrop-blur-sm">
+            <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
               <span className="text-emerald-400"><IconUsers /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Staff</p>

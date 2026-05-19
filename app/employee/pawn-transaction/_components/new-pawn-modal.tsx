@@ -849,10 +849,10 @@ export function NewPawnModal({
                 </svg>
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
                   {branchName}
                 </p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                <h1 className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black tracking-tight text-white leading-none">
                   New Pawn Ticket
                 </h1>
               </div>
@@ -871,9 +871,9 @@ export function NewPawnModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-emerald-50/30 dark:bg-surface-secondary">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 lg:p-6 bg-emerald-50/30 dark:bg-surface-secondary">
           <div className="max-w-6xl mx-auto space-y-4">
-            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
               {/* Customer Information */}
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -1013,7 +1013,7 @@ export function NewPawnModal({
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
                       <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
                       <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} readOnly={Boolean(selectedCustomerId)} />
@@ -1138,7 +1138,7 @@ export function NewPawnModal({
                 </div>
 
                 <div className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input label="Unit Code" name="unitCode" value={form.unitCode} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
                     <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
                   </div>
@@ -1150,7 +1150,7 @@ export function NewPawnModal({
                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{form.itemPhotos.length} / 4 Captured</span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-2">
                       {form.itemPhotos.map((photo, index) => (
                         <div key={`${photo.slice(0, 24)}-${index}`} className="group relative aspect-square overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover shadow-sm">
                           <Image
@@ -1228,14 +1228,14 @@ export function NewPawnModal({
                     />
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input label="Serial Number" name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
                     <Input label="Items Included" name="itemsIncluded" value={form.itemsIncluded} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">Condition</label>
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">Condition</label>
                       <select
                         name="condition"
                         value={form.condition}
@@ -1258,7 +1258,7 @@ export function NewPawnModal({
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest ml-1">Memory / Storage (GB)</label>
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">Memory / Storage</label>
                       <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all`}>
                         <input
                           name="memory"
@@ -1280,7 +1280,7 @@ export function NewPawnModal({
 
                   <Input label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input label="Amount" name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
                     <Input label="Purchased Date" name="purchasedDate" value={form.purchasedDate} onChange={handleChange} type="date" bg="bg-zinc-100 dark:bg-surface-hover" />
                   </div>
@@ -1297,12 +1297,12 @@ export function NewPawnModal({
                           className="w-6 h-6 rounded-lg accent-emerald-600 cursor-pointer"
                         />
                       </div>
-                      <label htmlFor="storageFeeModal" className="text-sm font-black text-emerald-900 uppercase tracking-tight cursor-pointer">
-                        Apply Storage Fee
-                      </label>
+                  <label htmlFor="storageFeeModal" className="text-xs md:text-sm font-black text-emerald-900 uppercase tracking-tight md:tracking-wide cursor-pointer">
+                    Apply Storage Fee
+                  </label>
                     </div>
                     {form.storageFee && (
-                      <div className="w-32">
+                      <div className="w-24 md:w-32">
                         <Input label="" name="storageFeeAmount" value={form.storageFeeAmount} onChange={handleChange} type="number" placeholder="0.00" prefix="₱" size="sm" />
                       </div>
                     )}
@@ -1314,22 +1314,24 @@ export function NewPawnModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-6 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-6 shrink-0">
-          <div className="flex items-center gap-6 w-full sm:w-auto">
+        <div className="p-3 sm:p-4 md:p-5 lg:p-6 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col gap-4 shrink-0">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <button 
               onClick={handleReset}
-              className="px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
+              className="self-start px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
             >
               Cancel
             </button>
-            <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-            <div className="flex flex-col sm:flex-row gap-4 flex-1 sm:flex-none">
+
+            <div className="flex w-full flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6 xl:flex-1">
               {/* Password — entered by the logged-in employee */}
-              <div className="min-w-[200px] space-y-1.5">
-                <label className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest ml-1">
-                  Security Password Verification
+              <div className="w-full min-w-0 space-y-1.5 md:max-w-[18rem] xl:max-w-[22rem]">
+                <label className="ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase tracking-[0.12em] leading-none text-emerald-900/40 dark:text-emerald-400 md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
+                  <span className="whitespace-nowrap">Security Password Verification</span>
                   {loggedInUserName && (
-                    <span className="ml-1 text-emerald-600 normal-case font-bold">({loggedInUserName})</span>
+                    <span className="whitespace-nowrap text-emerald-600 normal-case tracking-normal">
+                      ({loggedInUserName})
+                    </span>
                   )}
                 </label>
                 <div className="relative flex items-center rounded-xl border border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all">
@@ -1343,17 +1345,17 @@ export function NewPawnModal({
                   />
                 </div>
               </div>
+
+              <div className="shrink-0 text-right md:pb-1">
+                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
+                <p className="text-lg md:text-xl font-black text-emerald-900 dark:text-white tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-4 sm:pt-0">
-             <div className="text-right hidden sm:block">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
-                <p className="text-xl font-black text-emerald-900 dark:text-white tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
-             </div>
-             
+          <div className="flex flex-col gap-3 border-t border-emerald-50 pt-4 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-4 md:border-t-0 md:pt-0">
              {qrUrl ? (
-               <div className="flex items-center gap-4">
+               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4 md:justify-end">
                  {(user?.role === "admin" || user?.role === "super_admin") ? (
                    <div className="relative group shrink-0">
                      <Image 
@@ -1380,7 +1382,7 @@ export function NewPawnModal({
                    type="button"
                    onClick={handleGenerateTicket}
                    disabled={isSaving}
-                   className="bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 text-white text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-emerald-700/20 transition-all active:scale-[0.98] flex items-center gap-2"
+                   className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 text-white text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-emerald-700/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                  >
                    {isSaving ? (
                     <div className="flex items-center gap-2">
@@ -1396,7 +1398,7 @@ export function NewPawnModal({
                  type="button"
                  onClick={handleGenerateQR}
                  disabled={isGeneratingQR}
-                 className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center gap-2 relative shadow-sm"
+                 className="w-full sm:w-auto md:min-w-[16rem] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 relative shadow-sm"
                >
                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
                  {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}

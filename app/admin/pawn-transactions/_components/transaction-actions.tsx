@@ -37,7 +37,7 @@ const printerIcon = (
   </svg>
 );
 
-const filters = ["Renew", "Redeem", "New Pawn", "Sales / Transfer", "Buy Back"] as const;
+const filters = ["New Pawn", "Renew", "Redeem", "Sales / Transfer", "Buy Back"] as const;
 type FilterButton = (typeof filters)[number];
 type FilterType = "All" | FilterButton;
 

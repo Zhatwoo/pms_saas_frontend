@@ -8,7 +8,7 @@
  * - 35+ days: Expired
  */
 
-export function calculateGadgetInterest(pawnAmount: number, transactionDate: string): { 
+export function calculateGadgetInterest(pawnAmount: number, transactionDate: string, category?: string): { 
   percentage: number; 
   interestAmount: number; 
   totalAmount: number;
@@ -25,22 +25,63 @@ export function calculateGadgetInterest(pawnAmount: number, transactionDate: str
   const diffTime = now.getTime() - start.getTime();
   const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   
+  // Load custom interest rates from localStorage
+  let groups: any[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const stored = localStorage.getItem("interest_rates");
+      if (stored) groups = JSON.parse(stored);
+    } catch (e) {
+      console.warn("Failed to parse stored interest rates");
+    }
+  }
+
+  // Find matching group
+  const activeGroup = groups.find(g => g.categories && g.categories.includes(category));
+
   let percentage = 0;
   let isExpired = false;
 
-  if (daysPassed <= 5) {
-    percentage = 5;
-  } else if (daysPassed <= 10) {
-    percentage = 10;
-  } else if (daysPassed <= 20) {
-    percentage = 20;
-  } else if (daysPassed <= 30) {
-    percentage = 30;
-  } else if (daysPassed <= 34) {
-    percentage = 40;
+  if (activeGroup) {
+    const defaultDuration = activeGroup.defaultDuration ?? 30;
+    const graceDuration = activeGroup.gracePeriodDuration ?? 4;
+
+    const first5Days = activeGroup.first5Days ?? 5;
+    const day10 = activeGroup.day10 ?? 10;
+    const day20 = day10 + (activeGroup.day20Additional ?? 10);
+    const day30 = day20 + (activeGroup.day30Additional ?? 10);
+    const graceRate = day30 + (activeGroup.gracePeriodAdditional ?? 10);
+
+    if (daysPassed <= 5) {
+      percentage = first5Days;
+    } else if (daysPassed <= 10) {
+      percentage = day10;
+    } else if (daysPassed <= 20) {
+      percentage = day20;
+    } else if (daysPassed <= defaultDuration) {
+      percentage = day30;
+    } else if (daysPassed <= defaultDuration + graceDuration) {
+      percentage = graceRate;
+    } else {
+      percentage = graceRate;
+      isExpired = true;
+    }
   } else {
-    percentage = 40; // Max percentage
-    isExpired = true;
+    // Default fallback
+    if (daysPassed <= 5) {
+      percentage = 5;
+    } else if (daysPassed <= 10) {
+      percentage = 10;
+    } else if (daysPassed <= 20) {
+      percentage = 20;
+    } else if (daysPassed <= 30) {
+      percentage = 30;
+    } else if (daysPassed <= 34) {
+      percentage = 40;
+    } else {
+      percentage = 40; // Max percentage
+      isExpired = true;
+    }
   }
 
   const interestAmount = pawnAmount * (percentage / 100);

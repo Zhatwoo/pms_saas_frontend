@@ -448,8 +448,8 @@ function TransactionViewModal({
           </div>
         </div>
 
-        <div className="grid gap-6 p-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
-          <div className="space-y-4 self-start">
+        <div className="grid gap-3 p-3 md:grid-cols-[320px_minmax(0,1fr)] md:items-start md:gap-4 md:p-4 lg:gap-5 lg:p-5 xl:gap-6 xl:p-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
+          <div className="space-y-4 self-start md:sticky md:top-0 md:w-[320px] md:shrink-0">
             <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -486,7 +486,7 @@ function TransactionViewModal({
 
               <div className="mt-4 overflow-hidden rounded-2xl border border-border-main bg-surface">
                 {currentPhoto ? (
-                  <div className="relative aspect-[4/3] w-full">
+                  <div className="relative aspect-[4/3] md:aspect-[3/2] w-full">
                     <img
                       src={currentPhoto}
                       alt={`${transaction.item} photo ${photoIndex + 1}`}
@@ -546,14 +546,14 @@ function TransactionViewModal({
 
             <div className="rounded-3xl border border-border-main bg-surface-secondary p-4 shadow-sm">
               <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">QR Code</p>
-              <div className="mt-3 flex min-h-[320px] items-center justify-center">
+              <div className="mt-3 flex min-h-[240px] md:min-h-[260px] items-center justify-center">
                 {isAdminOrSuperAdmin ? (
                   transaction.qrCode && transaction.qrCode !== "-" ? (
                     isImageUrl(transaction.qrCode) ? (
                       <img
                         src={transaction.qrCode}
                         alt={`${transaction.item} QR code`}
-                        className="h-72 w-72 object-contain"
+                        className="h-56 w-56 md:h-64 md:w-64 lg:h-72 lg:w-72 object-contain"
                         onError={(event) => {
                           event.currentTarget.style.display = "none";
                         }}
@@ -583,7 +583,7 @@ function TransactionViewModal({
           </div>
 
           <div className="space-y-4 min-w-0 self-start xl:sticky xl:top-0">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2 md:gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-2">
               <InfoCard label="Transaction Date" value={transaction.date} />
               <InfoCard label="Time" value={transaction.time} />
               <InfoCard label="Amount" value={formatCurrency(transaction.amount)} highlight />
@@ -595,7 +595,7 @@ function TransactionViewModal({
               <InfoCard label="Condition" value={transaction.condition} />
               <InfoCard label="Items Included" value={transaction.itemsIncluded} />
               <InfoCard label="Memory / Storage" value={transaction.memoryStorage} />
-              <div className="rounded-2xl border border-border-main bg-surface-secondary p-4 sm:col-span-2">
+              <div className="rounded-2xl border border-border-main bg-surface-secondary p-4 md:col-span-2">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Remarks</p>
                 <p className="mt-1 text-sm font-semibold text-text-primary">{transaction.remarks}</p>
               </div>

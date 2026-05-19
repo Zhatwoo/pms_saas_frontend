@@ -113,16 +113,16 @@ export function DateFilterSelector({
   }, []);
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex min-w-0 items-center gap-2 sm:gap-3">
       {/* Dynamic Picker rendering on the left */}
-      <div className="flex items-center">
+      <div className="flex shrink-0 items-center">
         {activePeriod.toLowerCase() === "daily" && (
           <input
             type="date"
             max={getTodayString()}
             value={dailyDate}
             onChange={(e) => setDailyDate(e.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-4 py-2 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            className="h-11 w-[10.5rem] rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
           />
         )}
         
@@ -131,7 +131,7 @@ export function DateFilterSelector({
             <button
               type="button"
               onClick={() => setIsWeeklyOpen(!isWeeklyOpen)}
-              className="flex min-w-[200px] items-center justify-between rounded-lg border border-border-main bg-surface px-4 py-2 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+              className="flex h-11 min-w-[13.5rem] items-center justify-between rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
             >
               <span>{weeks.find((w) => w.id === weeklyId)?.label}</span>
               <svg className="ml-2 h-4 w-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,7 +169,7 @@ export function DateFilterSelector({
             max={getCurrentMonthString()}
             value={monthlyDate}
             onChange={(e) => setMonthlyDate(e.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-4 py-2 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            className="h-11 w-[10.5rem] rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
           />
         )}
 
@@ -177,7 +177,7 @@ export function DateFilterSelector({
           <select
             value={yearlyYear}
             onChange={(e) => setYearlyYear(e.target.value)}
-            className="rounded-lg border border-border-main bg-surface px-4 py-2 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            className="h-11 w-[10.5rem] rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
           >
             {years.map((year) => (
               <option key={year} value={year}>

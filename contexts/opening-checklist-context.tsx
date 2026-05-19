@@ -8,9 +8,11 @@ import {
   useCallback,
   useRef,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "./auth-context";
 import { ApiError, api } from "@/lib/api";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { toast } from "sonner";
 
 export type ChecklistStep = 
   | "CASH_ON_HAND" 
@@ -47,6 +49,7 @@ const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 30000;
 
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
   const [isComplete, setIsComplete] = useState(false);
   const [isOpeningChecklistReady, setIsOpeningChecklistReady] = useState(false);
@@ -206,8 +209,35 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         error.message.includes("Starting balance was already submitted")
       ) {
         await refreshOpeningChecklistFromServer();
-        setCurrentStep("COMPLETED");
-        setIsComplete(true);
+        return;
+      }
+
+      if (
+        error instanceof ApiError &&
+        error.statusCode === 422 &&
+        (error.payload.code === "STARTING_BALANCE_MISMATCH" ||
+          error.message.toLowerCase().includes("starting cash"))
+      ) {
+        const expected = Number(
+          error.payload.expectedAmount ?? error.payload.required_amount ?? 0,
+        );
+        const entered = Number(
+          error.payload.enteredAmount ?? amount.replace(/,/g, "") ?? 0,
+        );
+        const businessDate = String(
+          error.payload.businessDate ??
+            error.payload.business_date ??
+            getPhCalendarDateString(),
+        );
+        const params = new URLSearchParams({
+          startingMismatch: "1",
+          expected: String(Number.isFinite(expected) ? expected : 0),
+          entered: String(Number.isFinite(entered) ? entered : 0),
+          businessDate,
+        });
+
+        toast.error("Starting cash mismatch. Please file an incident report.");
+        router.replace(`/employee/incident-report?${params.toString()}`);
         return;
       }
 

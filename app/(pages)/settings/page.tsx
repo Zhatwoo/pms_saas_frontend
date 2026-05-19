@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+import { InterestRatesSettings } from "./_components/interest-rates-settings";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -446,50 +447,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Pawnshop Policies</h2>
-            </div>
-
-            <div className="grid gap-3 px-4 py-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  test (%)
-                </label>
-                <input
-                  value={policies.interestRate}
-                  onChange={(e) => handlePolicyChange("interestRate", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">per month</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Default Pawn Duration (Days)
-                </label>
-                <input
-                  value={policies.pawnDuration}
-                  onChange={(e) => handlePolicyChange("pawnDuration", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Grace Period (Days)
-                </label>
-                <input
-                  value={policies.gracePeriod}
-                  onChange={(e) => handlePolicyChange("gracePeriod", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-            </div>
-          </section>
+          <InterestRatesSettings />
 
           <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
             <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
@@ -543,8 +501,8 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6 dark:bg-slate-900 dark:border-zinc-700">
-                <div className="space-y-2 border border-emerald-800/70 p-5 text-[10px] text-zinc-800 dark:text-zinc-100">
+              <div className="overflow-x-auto rounded-md border border-zinc-300 bg-white p-3 sm:p-6 moa-paper-effect shadow-inner">
+                <div className="min-w-[720px] space-y-2 border border-emerald-800/70 p-4 sm:p-5 text-[10px] text-zinc-800">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -734,7 +692,7 @@ export default function SettingsPage() {
                       contentEditable={canEditMoa}
                       suppressContentEditableWarning
                       onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
-                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600 dark:text-zinc-100"
+                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600"
                     />
                   </div>
 
@@ -851,6 +809,29 @@ export default function SettingsPage() {
         </aside>
       </div>
 
+      <style jsx global>{`
+        .moa-paper-effect {
+          background-color: white !important;
+          color: #18181b !important;
+          color-scheme: light !important;
+        }
+        .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
+        .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
+        .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
+        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
+        .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
+        .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
+        .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
+        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
+        .moa-paper-effect .text-emerald-950 { color: #022c22 !important; }
+        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
+        .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+        .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
+        .moa-paper-effect input { color: #18181b !important; }
+        .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
+      `}</style>
       <AvatarPickerModal
         isOpen={isAvatarModalOpen}
         isSaving={isSavingAvatar}

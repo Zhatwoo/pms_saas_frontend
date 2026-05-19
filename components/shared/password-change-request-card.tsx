@@ -379,44 +379,67 @@ export function PasswordChangeRequestCard() {
             onClick={() => setIsModalOpen(false)}
           />
 
-          <div className="relative w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
-            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Request Password Change</h3>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-              Provide a reason. This request will be sent to {approverLabel || "the assigned approver"} for approval.
-            </p>
+          <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-[#1a1f2c] text-white shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(79,209,197,0.14),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%)]" />
 
-            <div className="mt-4 space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                Reason for Password Change
-              </label>
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Example: I suspect my password was exposed and need immediate reset approval."
-                className="h-28 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors focus:border-emerald-500 focus:bg-white dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 dark:focus:bg-zinc-700"
-              />
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">Minimum 10 characters.</p>
-              {error && <p className="text-xs font-semibold text-red-600 dark:text-red-400">{error}</p>}
-            </div>
+            <div className="relative px-5 py-6 sm:px-6 sm:py-7">
+              <div className="mx-auto flex w-full flex-col items-center text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-400/15 bg-emerald-400/10 text-emerald-100 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 17.5A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-9A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5z" />
+                    <path d="M12 11a2 2 0 0 1 2 2v2H10v-2a2 2 0 0 1 2-2z" />
+                    <path d="M9 11V9a3 3 0 0 1 6 0v2" />
+                  </svg>
+                </div>
 
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setError(null);
-                }}
-                disabled={isSubmitting}
-                className="rounded-lg border border-zinc-300 px-4 py-2 text-xs font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => void submitRequest()}
-                disabled={isSubmitting}
-                className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Request"}
-              </button>
+                <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-white">
+                  Request Password Change
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Provide a reason for this request. It will be sent to {approverLabel || "the assigned approver"} for review and approval.
+                </p>
+              </div>
+
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <div className="mx-auto">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-slate-300/80">
+                    Reason for Password Change
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Example: I suspect my password was exposed and need immediate reset approval."
+                      className="min-h-[140px] w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 pr-14 text-sm leading-6 text-white outline-none transition-colors placeholder:text-slate-400 focus:border-emerald-400/50 focus:bg-white/7"
+                    />
+                    <span className="pointer-events-none absolute bottom-2.5 right-3 text-xs text-slate-300/80">
+                      {reason.length}/500
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-slate-300/75">Minimum 10 characters.</p>
+                  {error && <p className="mt-1.5 text-xs font-semibold text-red-300">{error}</p>}
+                </div>
+
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setError(null);
+                    }}
+                    disabled={isSubmitting}
+                    className="rounded-lg border border-white/15 bg-white/5 px-5 py-2 text-xs font-bold text-slate-200 transition-colors hover:bg-white/10 disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => void submitRequest()}
+                    disabled={isSubmitting}
+                    className="rounded-lg bg-emerald-600 px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Request"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

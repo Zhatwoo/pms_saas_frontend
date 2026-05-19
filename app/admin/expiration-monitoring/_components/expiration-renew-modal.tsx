@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
-import { QrScanner } from "@/components/shared/qr-scanner";
+
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -68,7 +68,6 @@ interface RenewModalProps {
   branchId: string;
   onSuccess?: () => void;
   initialSearchCode?: string;
-  hideSidebar?: boolean;
 }
 
 interface PawnItemDetails {
@@ -90,7 +89,7 @@ interface PawnItemDetails {
   amount: number;
 }
 
-export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, initialSearchCode, hideSidebar }: RenewModalProps) {
+export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, initialSearchCode }: RenewModalProps) {
   const { user } = useAuth();
   const [searchCode, setSearchCode] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnItemDetails | null>(null);
@@ -103,11 +102,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     password: "",
   });
 
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
-  const [sidebarSearch, setSidebarSearch] = useState("");
   const isProcessingRef = useRef(false);
 
   // Interest Computation based on selected item
@@ -165,24 +162,11 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     }
   };
 
-  const fetchInventory = async () => {
-    try {
-      const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active`);
-      setInventoryItems(response.items || []);
-    } catch (err) {
-      console.error("Failed to fetch inventory", err);
-    }
-  };
-
   const handleSearch = async () => {
     await triggerSearch(searchCode);
   };
 
-  const handleQrScan = (data: string) => {
-    setSearchCode(data);
-    setIsScannerOpen(false);
-    void triggerSearch(data);
-  };
+
 
   const handleProceed = async () => {
     if (isProcessingRef.current) return;
@@ -247,10 +231,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       setIsReappraiseActive(false);
       setItemsRenewed(1);
     }
-    if (isOpen) {
-      fetchInventory();
-    }
   }, [isOpen, initialSearchCode]);
+
 
 
   if (!isOpen) return null;
@@ -278,35 +260,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
             </div>
 
             <div className="flex items-center gap-4">
-              {!hideSidebar && (
-                <div className="hidden md:flex items-center gap-2 bg-black/20 rounded-2xl p-1.5 border border-white/5 pr-4">
-                  <div className="relative group/search flex-1 min-w-[280px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Type Full Unit Code..."
-                      className="w-full h-10 pl-10 pr-4 bg-transparent outline-none text-white text-[11px] font-bold placeholder:text-white/30"
-                      value={searchCode}
-                      onChange={(e) => setSearchCode(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                    />
-                  </div>
-                  <button 
-                    onClick={() => setIsScannerOpen(true)}
-                    className="p-2.5 rounded-xl bg-white/5 text-emerald-400 hover:bg-white/10 transition-colors border border-white/5"
-                  >
-                    <QrCode className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={handleSearch}
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-4 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 transition-all font-black uppercase text-[10px] tracking-widest disabled:opacity-50"
-                  >
-                    {isLoading ? <span className="anim-loading h-3 w-3 border-emerald-950/30 border-t-emerald-950 rounded-full" /> : <Search className="w-3.5 h-3.5" />}
-                    Search
-                  </button>
-                </div>
-              )}
 
               <button 
                 onClick={onClose} 
@@ -320,56 +273,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
         <div className="flex-1 flex overflow-hidden flex-col xl:flex-row">
-          {/* Left Sidebar: Active Inventory List */}
-          {!hideSidebar && (
-            <div className="w-full xl:w-72 border-r border-emerald-100 dark:border-white/5 bg-emerald-50/10 dark:bg-black/20 flex flex-col overflow-hidden">
-               <div className="p-5 space-y-4">
-                  <div className="flex items-center gap-2.5">
-                    <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
-                  </div>
-                  <div className="relative group">
-                    <input 
-                      type="text" 
-                      placeholder="Search Active Pawn..."
-                      className="w-full h-11 pl-4 pr-10 bg-white dark:bg-white/5 border border-emerald-100 dark:border-white/10 rounded-xl outline-none focus:border-emerald-500 transition-all text-xs font-bold"
-                      value={sidebarSearch}
-                      onChange={(e) => setSidebarSearch(e.target.value)}
-                    />
-                  </div>
-               </div>
 
-               <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
-                  {inventoryItems
-                    .filter(item => 
-                      item.itemId.toLowerCase().includes(sidebarSearch.toLowerCase()) || 
-                      item.itemName.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
-                      (item.customers?.[0]?.full_name || "").toLowerCase().includes(sidebarSearch.toLowerCase())
-                    )
-                    .map((item) => (
-                      <div 
-                        key={item.id}
-                        onClick={() => triggerSearch(item.itemId, item)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer group ${
-                          selectedItem?.id === item.id 
-                            ? 'bg-emerald-500/10 border-emerald-500 shadow-lg' 
-                            : 'bg-white dark:bg-white/5 border-emerald-500/20 hover:border-emerald-500'
-                        }`}
-                      >
-                         <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">{item.itemId}</p>
-                         <h3 className="text-xl font-black text-emerald-950 dark:text-white group-hover:text-emerald-500 transition-colors leading-none">{item.itemName}</h3>
-                         <div className="h-px bg-emerald-100 dark:bg-white/5" />
-                         <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-emerald-900/40 dark:text-white/40">
-                              {Array.isArray(item.customers) ? item.customers[0]?.full_name : item.customers?.full_name || "---"}
-                            </span>
-                            <span className="text-sm font-black text-emerald-600">₱ {Number(item.amount).toLocaleString()}</span>
-                         </div>
-                      </div>
-                    ))}
-               </div>
-            </div>
-          )}
 
           {/* Main Info Area */}
           <div className="flex-1 p-4 sm:p-6 xl:p-8 flex flex-col xl:flex-row gap-8 bg-emerald-50/20 dark:bg-surface-secondary overflow-y-auto scrollbar-hide">
@@ -565,11 +469,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           )}
         </div>
       </div>
-      <QrScanner 
-        isOpen={isScannerOpen} 
-        onScan={handleQrScan} 
-        onClose={() => setIsScannerOpen(false)} 
-      />
     </div>
   );
 }

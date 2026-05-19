@@ -256,17 +256,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 Login / Sign Up
               </button>
 
-              {/* Tablet dropdown button */}
+              {/* Tablet dropdown button - Menu Icon */}
               <button
                 type="button"
                 onClick={() => setTabletMenuOpen((prev) => !prev)}
                 aria-label="Toggle tablet navigation"
-                className="hidden h-10 items-center gap-1 rounded-lg border border-white/20 px-3 text-xs font-bold tracking-wider text-white transition hover:bg-white/10 md:flex lg:hidden"
+                className="hidden h-10 w-10 items-center justify-center rounded-lg text-amber-300 transition hover:bg-amber-300/10 md:flex lg:hidden"
               >
-                Menu
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className={`h-4 w-4 transition-transform ${tabletMenuOpen ? "rotate-180" : ""}`}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
-                </svg>
+                {tabletMenuOpen ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
               </button>
 
               {/* Hamburger — mobile only */}

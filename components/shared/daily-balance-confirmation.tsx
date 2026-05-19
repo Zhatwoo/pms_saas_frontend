@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatPeso } from "@/lib/currency";
+import { toast } from "sonner";
 
 interface DailyBalanceConfirmationProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface DailyBalanceConfirmationProps {
   titleOverride?: string;
   /** Override subtitle under title. */
   subtitleOverride?: string;
+  /** When true, disables Confirm button to prevent submission while expected amount is loading. */
+  isLoadingExpectedAmount?: boolean;
 }
 
 export function DailyBalanceConfirmation({
@@ -23,6 +26,7 @@ export function DailyBalanceConfirmation({
   onClose,
   titleOverride,
   subtitleOverride,
+  isLoadingExpectedAmount,
 }: DailyBalanceConfirmationProps) {
   const [confirmedAmount, setConfirmedAmount] = useState("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,6 +78,9 @@ export function DailyBalanceConfirmation({
     setIsSubmitting(true);
     try {
       await onConfirm(rawValue);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save balance. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -131,21 +138,23 @@ export function DailyBalanceConfirmation({
         </div>
 
         <div className="mt-8 flex gap-3">
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
+          {type !== "starting" && (
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleConfirm}
-            disabled={isSubmitting || !confirmedAmount}
-            className={`flex-1 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+            disabled={isSubmitting || !confirmedAmount || isLoadingExpectedAmount}
+            className={`${type !== "starting" ? "flex-1" : "w-full"} rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
               type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
             }`}
           >
-            {isSubmitting ? "Processing..." : "Confirm & Proceed"}
+            {isSubmitting ? "Processing..." : isLoadingExpectedAmount ? "Loading expected amount..." : "Confirm & Proceed"}
           </button>
         </div>
       </div>

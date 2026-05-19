@@ -337,12 +337,15 @@ function resolvePawnedItem(raw: unknown): PawnedItemJoin | null {
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
-  const calculations = calculateGadgetInterest(pawnAmount, transaction.transaction_date);
+  const item = resolvePawnedItem(transaction.pawned_item);
+  const calculations = calculateGadgetInterest(
+    pawnAmount,
+    transaction.transaction_date,
+    item?.category || undefined,
+  );
 
   const isBuyBackAction = transaction.purpose === "Buy Back";
   const isPawnAction = transaction.purpose === "Pawn";
-
-  const item = resolvePawnedItem(transaction.pawned_item);
   // Support both object and array response for customer
   const customerRaw = item?.customer;
   const customer = Array.isArray(customerRaw) ? customerRaw[0] : customerRaw;
@@ -392,9 +395,24 @@ export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
   const { refreshOpeningChecklistFromServer } = useOpeningChecklist();
+
+  useEffect(() => {
+    async function syncInterestRates() {
+      try {
+        const data = await api.get("/settings/interest_rates");
+        if (data && Array.isArray(data)) {
+          localStorage.setItem("interest_rates", JSON.stringify(data));
+        }
+      } catch (error) {
+        // fail silently
+      }
+    }
+    syncInterestRates();
+  }, []);
   const searchParams = useSearchParams();
   const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const [hideRenewSidebar, setHideRenewSidebar] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
@@ -439,11 +457,10 @@ export default function EmployeePawnTransactionsPage() {
 
   const fetchTransactions = useCallback(async () => {
     if (!branchIdForApi) {
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    // Note: We don't set isLoading(true) here anymore because this is now called sequentially by fetchAllData
     try {
       const data = await api.get<TransactionsResponse>(
         `/transactions?branch=${encodeURIComponent(branchIdForApi)}&range=all`
@@ -453,8 +470,6 @@ export default function EmployeePawnTransactionsPage() {
       }
     } catch (error) {
       console.error("Failed to load transactions:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, [branchIdForApi]);
 
@@ -581,13 +596,20 @@ export default function EmployeePawnTransactionsPage() {
     }
   }, [branchIdForApi, selectedDate]);
 
-  useEffect(() => {
-    void fetchTransactions();
-  }, [fetchTransactions]);
+  const fetchAllData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Execute sequentially to respect Supabase pool limits (pool_size: 15)
+      await fetchTransactions();
+      await fetchSelectedDateStats();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTransactions, fetchSelectedDateStats]);
 
   useEffect(() => {
-    void fetchSelectedDateStats();
-  }, [fetchSelectedDateStats]);
+    void fetchAllData();
+  }, [fetchAllData]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -722,8 +744,10 @@ export default function EmployeePawnTransactionsPage() {
   useEffect(() => {
     const action = searchParams.get("action");
     const ticketNo = searchParams.get("ticketNo");
+    const hideSidebar = searchParams.get("hideSidebar") === "true";
     
     if (action === "renew" && ticketNo) {
+      setHideRenewSidebar(hideSidebar);
       setIsRenewModalOpen(true);
     }
   }, [searchParams]);
@@ -969,7 +993,7 @@ export default function EmployeePawnTransactionsPage() {
         </p>
       </div>
 
-      <div className="print-hide">
+      <div className="print-hide flex flex-col gap-4">
       <TransactionActions
         activeFilter={activeFilter}
         onFilterChange={(f) => setActiveFilter(f)}
@@ -1096,7 +1120,7 @@ export default function EmployeePawnTransactionsPage() {
         title={`Transactions for ${formatSelectedDateLabel(selectedDate)}`}
       />
 
-      <div className="mt-4">
+      <div>
         <PaginationFooter
           currentPage={currentPage}
           totalPages={totalPages}
@@ -1146,11 +1170,15 @@ export default function EmployeePawnTransactionsPage() {
 
       <RenewModal
         isOpen={isRenewModalOpen}
-        onClose={() => setIsRenewModalOpen(false)}
+        onClose={() => {
+          setIsRenewModalOpen(false);
+          setHideRenewSidebar(false);
+        }}
         onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
         branchId={resolvedBranchIdForModals}
         initialSearchCode={searchParams.get("action") === "renew" ? searchParams.get("ticketNo") || undefined : undefined}
+        hideSidebar={hideRenewSidebar}
       />
 
       <NewPawnModal

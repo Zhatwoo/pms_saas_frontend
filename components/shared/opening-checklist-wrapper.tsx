@@ -36,6 +36,7 @@ export function OpeningChecklistWrapper() {
     if (currentStep !== "CASH_ON_HAND" || isComplete) return;
 
     let cancelled = false;
+    setIsLoadingExpectedAmount(true);
     (async () => {
       let resolved: number | null = null;
 
@@ -95,6 +96,7 @@ export function OpeningChecklistWrapper() {
 
       if (!cancelled) {
         setExpectedCash(String(resolved ?? 0));
+        setIsLoadingExpectedAmount(false);
       }
     })();
 
