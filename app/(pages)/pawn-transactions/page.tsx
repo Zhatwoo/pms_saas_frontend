@@ -108,6 +108,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const calculations = calculateGadgetInterest(
     pawnAmount,
     transaction.transaction_date,
+    transaction.pawned_item?.category || undefined,
   );
 
   return {

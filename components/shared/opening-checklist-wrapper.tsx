@@ -109,6 +109,7 @@ export function OpeningChecklistWrapper() {
       <InventoryAuditModal
         isOpen={currentStep === "INVENTORY_AUDIT"}
         displayMode="overlay"
+        isMandatory={true}
         onConfirm={completeInventoryAudit}
         onClose={() => {}} // Mandatory
       />

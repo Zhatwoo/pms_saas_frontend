@@ -160,6 +160,15 @@ export function TransactionActions({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
+            onClick={onNewPawn}
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 whitespace-nowrap"
+          >
+            {plusIcon}
+            New Pawn
+          </button>
+
+          <button
             onClick={() => {
               onFilterChange?.("Renew");
               onRenewClick?.();
@@ -228,21 +237,6 @@ export function TransactionActions({
             {reserveIcon}
             Reserve / Layaway
           </button>
-        </div>
-
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onNewPawn}
-              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 whitespace-nowrap"
-            >
-              {plusIcon}
-              New Pawn
-            </button>
-          </div>
-
-
         </div>
       </div>
     </div>

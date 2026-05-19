@@ -113,7 +113,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   // Interest Computation based on selected item
   const interestCalc = useMemo(() => {
     if (!selectedItem) return { percentage: 0, interestAmount: 0, totalAmount: 0, daysPassed: 0 };
-    return calculateGadgetInterest(selectedItem.amount, selectedItem.purchasedDate);
+    return calculateGadgetInterest(selectedItem.amount, selectedItem.purchasedDate, selectedItem.category);
   }, [selectedItem]);
 
   const totalToPay = isReappraiseActive ? newPrincipal : (interestCalc.interestAmount * itemsRenewed);

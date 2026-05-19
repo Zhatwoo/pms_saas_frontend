@@ -335,12 +335,15 @@ function resolvePawnedItem(raw: unknown): PawnedItemJoin | null {
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
-  const calculations = calculateGadgetInterest(pawnAmount, transaction.transaction_date);
+  const item = resolvePawnedItem(transaction.pawned_item);
+  const calculations = calculateGadgetInterest(
+    pawnAmount,
+    transaction.transaction_date,
+    item?.category || undefined,
+  );
 
   const isBuyBackAction = transaction.purpose === "Buy Back";
   const isPawnAction = transaction.purpose === "Pawn";
-
-  const item = resolvePawnedItem(transaction.pawned_item);
   // Support both object and array response for customer
   const customerRaw = item?.customer;
   const customer = Array.isArray(customerRaw) ? customerRaw[0] : customerRaw;
@@ -390,6 +393,20 @@ export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
   const { refreshOpeningChecklistFromServer } = useOpeningChecklist();
+
+  useEffect(() => {
+    async function syncInterestRates() {
+      try {
+        const data = await api.get("/settings/interest_rates");
+        if (data && Array.isArray(data)) {
+          localStorage.setItem("interest_rates", JSON.stringify(data));
+        }
+      } catch (error) {
+        // fail silently
+      }
+    }
+    syncInterestRates();
+  }, []);
   const searchParams = useSearchParams();
   const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);

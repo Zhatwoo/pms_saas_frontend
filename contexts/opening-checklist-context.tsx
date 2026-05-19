@@ -198,8 +198,6 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         error.message.includes("Starting balance was already submitted")
       ) {
         await refreshOpeningChecklistFromServer();
-        setCurrentStep("COMPLETED");
-        setIsComplete(true);
         return;
       }
 

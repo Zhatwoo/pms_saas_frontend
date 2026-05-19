@@ -151,7 +151,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
 
   const interestCalc = useMemo(() => {
     if (!selectedItem) return { percentage: 0, interestAmount: 0, totalAmount: 0, daysPassed: 0 };
-    return calculateGadgetInterest(Number(selectedItem.amount), selectedItem.purchasedDate);
+    return calculateGadgetInterest(Number(selectedItem.amount), selectedItem.purchasedDate, selectedItem.category);
   }, [selectedItem]);
 
   const handleConfirmRedeem = async () => {

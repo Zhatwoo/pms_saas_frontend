@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+import { InterestRatesSettings } from "./_components/interest-rates-settings";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -446,50 +447,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Pawnshop Policies</h2>
-            </div>
-
-            <div className="grid gap-3 px-4 py-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  test (%)
-                </label>
-                <input
-                  value={policies.interestRate}
-                  onChange={(e) => handlePolicyChange("interestRate", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">per month</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Default Pawn Duration (Days)
-                </label>
-                <input
-                  value={policies.pawnDuration}
-                  onChange={(e) => handlePolicyChange("pawnDuration", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Grace Period (Days)
-                </label>
-                <input
-                  value={policies.gracePeriod}
-                  onChange={(e) => handlePolicyChange("gracePeriod", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-            </div>
-          </section>
+          <InterestRatesSettings />
 
           <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
             <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
