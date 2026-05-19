@@ -97,10 +97,7 @@ export function BranchDaySessionToolbar({
       lastResolvedExpectedCash.current = String(pending);
       return;
     }
-    const fromLatest = Math.max(
-      Number(session?.latestBalance?.startingBalance ?? 0),
-      Number(session?.latestBalance?.endingBalance ?? 0),
-    );
+    const fromLatest = Number(session?.latestBalance?.endingBalance ?? 0);
     if (Number.isFinite(fromLatest)) {
       lastResolvedExpectedCash.current = String(fromLatest);
     }
@@ -128,12 +125,7 @@ export function BranchDaySessionToolbar({
       ? String(
           session.pendingStartingSession.suggestedStartingBalance ?? 0,
         )
-      : String(
-          Math.max(
-            Number(session?.latestBalance?.startingBalance ?? 0),
-            Number(session?.latestBalance?.endingBalance ?? 0),
-          ),
-        );
+      : String(Number(session?.latestBalance?.endingBalance ?? 0));
 
   const expectedCashForModal =
     startOpen &&

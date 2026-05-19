@@ -22,6 +22,7 @@ type DailyOpeningApiStatus = {
   status: "none" | "pending" | "completed";
   checklistStep: ChecklistStep;
   startingCash?: number;
+  expectedStartingCash?: number;
 };
 
 interface OpeningChecklistContextValue {
@@ -182,6 +183,16 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     };
   }, [user, loadDailyOpeningForEmployee]);
 
+  const refreshOpeningChecklistFromServer = useCallback(async () => {
+    if (!user || user.role !== "employee" || !user.branchId) {
+      return;
+    }
+    hasLoadedBranchDayRef.current = null;
+    lastVisibilitySyncAtRef.current = 0;
+    openingLoadStartedAtByKey.delete(`${user.branchId}:${getPhCalendarDateString()}`);
+    await loadDailyOpeningForEmployee({ preserveShell: true });
+  }, [user, loadDailyOpeningForEmployee]);
+
   const completeCashOnHand = useCallback(async (amount: string) => {
     try {
       await api.post("/branch-finance/daily-balance", {
@@ -200,6 +211,19 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         return;
       }
 
+      if (
+        error instanceof ApiError &&
+        error.statusCode === 422 &&
+        error.payload?.code === "STARTING_BALANCE_MISMATCH"
+      ) {
+        const expected = Number(error.payload?.expectedAmount);
+        const entered = Number(error.payload?.enteredAmount);
+        const msg = Number.isFinite(expected)
+          ? `Expected ${expected.toLocaleString("en-PH", { minimumFractionDigits: 2 })} but you entered ${Number.isFinite(entered) ? entered.toLocaleString("en-PH", { minimumFractionDigits: 2 }) : amount}. File an incident report for the variance.`
+          : error.message;
+        throw new ApiError(msg, 422, error.payload);
+      }
+
       throw error;
     }
 
@@ -213,7 +237,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       setCurrentStep("COMPLETED");
       setIsComplete(true);
     }
-  }, [applyServerStatus]);
+  }, [applyServerStatus, refreshOpeningChecklistFromServer]);
 
   const completeInventoryAudit = useCallback(async () => {
     await api.post("/branch-finance/daily-opening/complete", {});
@@ -232,16 +256,6 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     setCurrentStep("INVENTORY_AUDIT");
     setIsComplete(false);
   }, []);
-
-  const refreshOpeningChecklistFromServer = useCallback(async () => {
-    if (!user || user.role !== "employee" || !user.branchId) {
-      return;
-    }
-    hasLoadedBranchDayRef.current = null;
-    lastVisibilitySyncAtRef.current = 0;
-    openingLoadStartedAtByKey.delete(`${user.branchId}:${getPhCalendarDateString()}`);
-    await loadDailyOpeningForEmployee({ preserveShell: true });
-  }, [user, loadDailyOpeningForEmployee]);
 
   return (
     <OpeningChecklistContext.Provider
