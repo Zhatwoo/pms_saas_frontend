@@ -280,6 +280,7 @@ interface BranchBusinessSessionPeek {
   operationalCashAllowed?: boolean;
   operationalCutoffAt?: string | null;
   sealedTransactionIds?: string[];
+  systemEndingBalanceToday?: number | null;
   todaySession?: {
     startedAt?: string | null;
     startingBalance?: number | null;
@@ -296,6 +297,7 @@ const DEFAULT_STATS = {
   startingBalance: 0,
   endingBalance: 0,
   sessionOpenedAt: null as string | null,
+  sealedTransactionIds: [] as string[],
 };
 
 function normalizeStats(stats?: Partial<typeof DEFAULT_STATS>) {
@@ -409,16 +411,7 @@ export default function EmployeePawnTransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [isQRReplacementOpen, setIsQRReplacementOpen] = useState(false);
   const [qrReplacementData, setQrReplacementData] = useState<{ pawnedItemId: string; itemCode: string } | null>(null);
-  const [currentStats, setCurrentStats] = useState({
-    pawnedToday: 0,
-    buyBack: 0,
-    renewed: 0,
-    soldItem: 0,
-    redeemed: 0,
-    transfer: 0,
-    startingBalance: 0,
-    endingBalance: 0,
-  });
+  const [currentStats, setCurrentStats] = useState({ ...DEFAULT_STATS });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   /** Rows for `selectedDate` from `/transactions?date=` (same source as stats cards). */
   const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
@@ -487,10 +480,18 @@ export default function EmployeePawnTransactionsPage() {
         .catch(() => [] as BranchFinanceSummary[]);
 
       const phToday = getPhCalendarDateString();
+      // Primary source: /transactions stats (always available alongside the tx list).
+      // It already carries sessionOpenedAt (= operational cutoff), sealedTransactionIds,
+      // and a server-computed startingBalance/endingBalance with sealed+cutoff applied.
       let sessionOpenedAt = data.stats?.sessionOpenedAt ?? null;
       let operationalCutoffAt: string | null = null;
       let sessionStartingBalance: number | null = null;
-      let sealedTransactionIds: string[] = [];
+      let sealedTransactionIds: string[] = data.stats?.sealedTransactionIds ?? [];
+      // Server-computed ending from /transactions stats (starting + sealed-filtered net).
+      let serverEndingBalance: number | null =
+        data.stats?.endingBalance != null
+          ? Number(data.stats.endingBalance)
+          : null;
       if (branchIdForApi !== "__all__" && selectedDate === phToday) {
         try {
           const session = await api.get<BranchBusinessSessionPeek>(
@@ -498,7 +499,9 @@ export default function EmployeePawnTransactionsPage() {
           );
           if (session.operationalCashAllowed) {
             operationalCutoffAt = session.operationalCutoffAt ?? null;
-            sealedTransactionIds = session.sealedTransactionIds ?? [];
+            if (session.sealedTransactionIds) {
+              sealedTransactionIds = session.sealedTransactionIds;
+            }
             if (session.todaySession?.startedAt) {
               sessionOpenedAt = session.todaySession.startedAt;
             }
@@ -507,12 +510,17 @@ export default function EmployeePawnTransactionsPage() {
                 session.todaySession.startingBalance,
               );
             }
+            if (session.systemEndingBalanceToday != null) {
+              serverEndingBalance = Number(session.systemEndingBalanceToday);
+            }
           }
         } catch {
-          // keep transactions stats fallback
+          // business-session is optional — /transactions stats already cover us.
         }
       }
       const sealedTxSet = new Set(sealedTransactionIds);
+      // Effective cutoff = operationalCutoffAt (from session row) OR sessionOpenedAt
+      // (= /transactions cutoff fallback). Both mark the prior-shift boundary.
       const effectiveCutoffIso = operationalCutoffAt ?? sessionOpenedAt;
       const cutoffMs = effectiveCutoffIso
         ? new Date(effectiveCutoffIso).getTime()
@@ -553,8 +561,12 @@ export default function EmployeePawnTransactionsPage() {
         }
       }
 
-      // Always derive from confirmed session start + post-cutoff ledger net (never stale DB ending).
-      const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
+      // Prefer server-computed ending balance (sealed+cutoff applied on backend).
+      // Fall back to client-side ledger.net only when no server value is available.
+      const endingBalance =
+        serverEndingBalance != null
+          ? serverEndingBalance
+          : Number((startingBalance + ledger.net).toFixed(2));
 
       setCurrentStats({
         ...normalizeStats(data.stats),
