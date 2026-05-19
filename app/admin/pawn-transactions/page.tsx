@@ -27,6 +27,7 @@ import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
+import { formatPeso } from "@/lib/currency";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -633,8 +634,123 @@ export default function SuperAdminPawnTransactionsPage() {
     window.dispatchEvent(new CustomEvent("transaction_created"));
   }, [fetchSelectedDateStats]);
 
+  const printLedgerTotals = useMemo(() => {
+    const cashIn = filteredTransactions.reduce(
+      (sum, tx) => sum + (Number(tx.cashIn) || 0),
+      0,
+    );
+    const cashOut = filteredTransactions.reduce(
+      (sum, tx) => sum + (Number(tx.cashOut) || 0),
+      0,
+    );
+    return { cashIn, cashOut, net: cashIn - cashOut };
+  }, [filteredTransactions]);
+
   return (
-    <div className="space-y-3 pb-4">
+    <div className="space-y-3 pb-4 printable-area">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page { size: auto; margin: 12mm; }
+          body * { visibility: hidden; }
+          .printable-area, .printable-area * { visibility: visible; }
+          .printable-area {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            color: black !important;
+          }
+          .print-hide { display: none !important; }
+        }
+      `}} />
+
+      <div id="print-ledger-section" className="hidden print:block mb-8">
+        <h1 className="text-xl font-bold text-black border-b border-black pb-2 mb-4">
+          Branch Financial Ledger
+        </h1>
+        <div className="text-sm text-black space-y-1 mb-4">
+          <p><strong>Branch:</strong> {selectedBranch.name}</p>
+          <p><strong>Date Generated:</strong> {new Date().toLocaleString()}</p>
+          <p><strong>From:</strong> {selectedDate}</p>
+          <p><strong>To:</strong> {selectedDate}</p>
+        </div>
+
+        <table className="w-full text-left text-sm border-collapse text-black print:text-[11px]">
+          <thead>
+            <tr className="bg-gray-100 border-y border-black">
+              <th className="p-2 font-bold whitespace-nowrap">Date</th>
+              <th className="p-2 font-bold whitespace-nowrap">Source</th>
+              <th className="p-2 font-bold">Item Name</th>
+              <th className="p-2 font-bold">Description</th>
+              <th className="p-2 font-bold text-right whitespace-nowrap">Cash In</th>
+              <th className="p-2 font-bold text-right whitespace-nowrap">Cash Out</th>
+              <th className="p-2 font-bold">Ref No.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTransactions.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                  No records found for the selected filters.
+                </td>
+              </tr>
+            ) : (
+              filteredTransactions.map((tx) => (
+                <tr key={tx.transactionNo} className="border-b border-gray-300">
+                  <td className="p-2 whitespace-nowrap">{tx.date} {tx.time || ""}</td>
+                  <td className="p-2 whitespace-nowrap">TXN</td>
+                  <td className="p-2 truncate max-w-[200px]">{tx.unitCode || tx.unit || "—"}</td>
+                  <td className="p-2 truncate max-w-[250px]">{tx.details || tx.purpose || "—"}</td>
+                  <td className="p-2 text-right font-mono">
+                    {(Number(tx.cashIn) || 0) > 0
+                      ? `+₱${Number(tx.cashIn).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : ""}
+                  </td>
+                  <td className="p-2 text-right font-mono text-red-600">
+                    {(Number(tx.cashOut) || 0) > 0
+                      ? `-₱${Number(tx.cashOut).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      : ""}
+                  </td>
+                  <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{tx.transactionNo}</td>
+                </tr>
+              ))
+            )}
+            {filteredTransactions.length > 0 && (
+              <>
+                <tr className="border-b-2 border-black bg-gray-50 uppercase">
+                  <td colSpan={4} className="p-2 font-bold text-right">
+                    Total:
+                  </td>
+                  <td className="p-2 text-right font-bold font-mono">{formatPeso(printLedgerTotals.cashIn)}</td>
+                  <td className="p-2 text-right font-bold font-mono text-red-600">
+                    {printLedgerTotals.cashOut > 0
+                      ? `-${formatPeso(printLedgerTotals.cashOut)}`
+                      : formatPeso(0)}
+                  </td>
+                  <td />
+                </tr>
+                <tr className="border-b-2 border-black bg-white">
+                  <td colSpan={4} className="p-2 font-bold text-right normal-case">
+                    Net income (cash in − cash out):
+                  </td>
+                  <td
+                    colSpan={3}
+                    className={`p-2 text-right font-black font-mono normal-case ${
+                      printLedgerTotals.net >= 0 ? "text-emerald-700" : "text-red-600"
+                    }`}
+                  >
+                    {formatPeso(printLedgerTotals.net)}
+                  </td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="print-hide">
       <div>
         <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
           Branch transactions for the selected calendar date — list and calendar views (calendar counts reflect loaded history).
@@ -760,6 +876,7 @@ export default function SuperAdminPawnTransactionsPage() {
           itemsPerPage={ITEMS_PER_PAGE}
           onPageChange={setCurrentPage}
         />
+      </div>
       </div>
 
       <TransactionDetailsModal
