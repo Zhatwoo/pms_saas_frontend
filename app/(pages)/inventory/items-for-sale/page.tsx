@@ -172,7 +172,6 @@ export default function ItemsForSalePage() {
         if (viewMode === "list") {
           if (category !== "all") params.set("category", category);
           if (searchQuery) params.set("search", searchQuery);
-          if (selectedDate) params.set("date", selectedDate);
           params.set("page", String(currentPage));
           params.set("limit", String(itemsPerPage));
 
@@ -291,25 +290,6 @@ export default function ItemsForSalePage() {
               className="h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
             />
           </div>
-          {viewMode === "list" && (
-            <div className="flex flex-col gap-1">
-              <label className={toolbarLabelClass}>Date</label>
-              <div className="relative flex items-center">
-                <input
-                  type="date"
-                  value={selectedDate || ""}
-                  max={todayString}
-                  onChange={(e) => setSelectedDate(e.target.value || null)}
-                  className="h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 pr-8"
-                />
-                {selectedDate && (
-                  <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
         <div className="flex items-center gap-3">
           {user?.role === "super_admin" && (

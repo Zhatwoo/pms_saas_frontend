@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
@@ -313,11 +313,11 @@ export default function PawnTransactionsPage() {
   const todayString = new Date().toISOString().split("T")[0];
 
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedDate, setSelectedDate] = useState(() => todayString);
-  const [listDateFilter, setListDateFilter] = useState(() => todayString);
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [currentPage, setCurrentPage] = useState(1);
@@ -352,7 +352,7 @@ export default function PawnTransactionsPage() {
   useEffect(() => {
     let active = true;
 
-    async function fetchTransactions() {
+    async function fetchSelectedDateTransactions() {
       setIsLoading(true);
 
       try {
@@ -421,7 +421,7 @@ export default function PawnTransactionsPage() {
       }
     }
 
-    void fetchTransactions();
+    void fetchSelectedDateTransactions();
 
     return () => {
       active = false;
@@ -429,10 +429,36 @@ export default function PawnTransactionsPage() {
   }, [selectedBranch.id, selectedDate, isAllBranches]);
 
   useEffect(() => {
-    if (viewMode === "list") {
-      setListDateFilter(selectedDate);
+    let active = true;
+
+    async function fetchCalendarTransactions() {
+      try {
+        const branchParam = isAllBranches
+          ? ""
+          : `branch=${encodeURIComponent(selectedBranch.id)}&`;
+        const data = await api.get<TransactionsResponse>(
+          `/transactions?${branchParam}range=all`,
+        );
+
+        if (!active) {
+          return;
+        }
+
+        setAllTransactions((data.transactions || []).map(toTransactionRow));
+      } catch (error) {
+        console.error("Failed to load calendar transactions:", error);
+        if (active) {
+          setAllTransactions([]);
+        }
+      }
     }
-  }, [selectedDate, viewMode]);
+
+    void fetchCalendarTransactions();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedBranch.id, isAllBranches]);
 
   // When navigating from a notification, reset to today so the transaction is visible
   useEffect(() => {
@@ -455,7 +481,6 @@ export default function PawnTransactionsPage() {
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesPurpose = purposeFilter === "All" || transaction.purpose === purposeFilter;
-    const matchesDate = viewMode !== "list" || !listDateFilter || transaction.date === listDateFilter;
     const query = search.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -466,7 +491,7 @@ export default function PawnTransactionsPage() {
       transaction.unitCode.toLowerCase().includes(query) ||
       transaction.details.toLowerCase().includes(query);
 
-    return matchesPurpose && matchesDate && matchesSearch;
+    return matchesPurpose && matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
@@ -476,13 +501,21 @@ export default function PawnTransactionsPage() {
   );
 
   // Build calendar data: count transactions per date for the visible month
-  const calendarData: Record<string, number> = {};
-  for (const tx of transactions) {
-    const [yearStr, monthStr] = tx.date.split("-");
-    if (Number(yearStr) === calendarYear && Number(monthStr) - 1 === calendarMonth) {
-      calendarData[tx.date] = (calendarData[tx.date] ?? 0) + 1;
+  const calendarData = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const tx of allTransactions) {
+      const [yearStr, monthStr] = tx.date.split("-");
+      if (
+        Number(yearStr) === calendarYear &&
+        Number(monthStr) - 1 === calendarMonth
+      ) {
+        counts[tx.date] = (counts[tx.date] ?? 0) + 1;
+      }
     }
-  }
+
+    return counts;
+  }, [allTransactions, calendarMonth, calendarYear]);
 
   function handleExportCSV() {
     if (filteredTransactions.length === 0) {
@@ -716,17 +749,6 @@ export default function PawnTransactionsPage() {
           viewMode={viewMode}
           onViewModeChange={(mode) => {
             setViewMode(mode);
-            setCurrentPage(1);
-          }}
-          dateFilter={listDateFilter}
-          onDateFilterChange={(val) => {
-            if (val && val > todayString) {
-              return;
-            }
-            setListDateFilter(val);
-            if (val) {
-              setSelectedDate(val);
-            }
             setCurrentPage(1);
           }}
           onExportCSV={handleExportCSV}

@@ -64,8 +64,6 @@ interface TransactionActionsProps {
   onPurposeFilterChange: (value: TransactionPurposeFilter) => void;
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
-  dateFilter?: string;
-  onDateFilterChange?: (value: string) => void;
   onAddTransaction?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
@@ -78,13 +76,10 @@ export function TransactionActions({
   onPurposeFilterChange,
   viewMode = "list",
   onViewModeChange,
-  dateFilter = "",
-  onDateFilterChange,
   onAddTransaction,
   onExportCSV,
   onPrintReport,
 }: TransactionActionsProps) {
-  const todayString = new Date().toISOString().split("T")[0];
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
       <div className="flex flex-wrap items-end gap-2 sm:gap-3">
@@ -123,34 +118,6 @@ export function TransactionActions({
         </div>
 
         {/* Date — list mode only */}
-        {viewMode === "list" && (
-          <div className="w-full space-y-1.5 sm:w-40">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
-              Date
-            </label>
-            <div className="relative flex items-center">
-              <input
-                type="date"
-                value={dateFilter}
-                max={todayString}
-                onChange={(e) => onDateFilterChange?.(e.target.value)}
-                className="w-full h-[42px] rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 pr-7"
-              />
-              {dateFilter && (
-                <button
-                  type="button"
-                  onClick={() => onDateFilterChange?.("")}
-                  className="absolute right-2 text-text-muted hover:text-text-primary"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Actions */}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <ActionButton
