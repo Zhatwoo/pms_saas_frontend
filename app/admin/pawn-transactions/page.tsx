@@ -244,6 +244,19 @@ interface ApiTransaction {
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
+  } | null;
 }
 
 interface PawnedItemJoin {
@@ -256,21 +269,57 @@ interface PawnedItemJoin {
   category?: string | null;
   memory_storage?: string | null;
   remarks?: string | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+  } | null;
 }
 
 interface TransactionsResponse {
   transactions?: ApiTransaction[];
-  stats?: {
-    pawnedToday?: number;
-    buyBack?: number;
-    renewed?: number;
-    soldItem?: number;
-    redeemed?: number;
-    transfer?: number;
-    startingBalance?: number;
-    endingBalance?: number;
-    sessionOpenedAt?: string | null;
-  };
+  stats?: TransactionStatsResponse;
+}
+
+interface TransactionStatsResponse {
+  pawnedToday?: number;
+  buyBack?: number;
+  renewed?: number;
+  soldItem?: number;
+  redeemed?: number;
+  transfer?: number;
+  startingBalance?: number;
+  endingBalance?: number;
+  sessionOpenedAt?: string | null;
+}
+
+interface ReprintMoaData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  address: string;
+  contactNo: string;
+  unitCode: string;
+  unitName: string;
+  category: string;
+  serialNumber: string;
+  itemsIncluded: string;
+  condition: string;
+  remarks: string;
+  memory: string;
+  amount: string;
+  storageFee: string;
+  parkingFee: string;
+  purchasedDate: string;
+  idPresented: string;
+  branchName: string;
+  branchAddress: string;
+  branchPhone: string;
+  processedBy: string;
 }
 
 interface BranchFinanceSummary {
@@ -279,7 +328,7 @@ interface BranchFinanceSummary {
   currentBalance: number;
 }
 
-function normalizeStats(stats?: any) {
+function normalizeStats(stats?: TransactionStatsResponse) {
   return {
     pawnedToday: Number(stats?.pawnedToday ?? 0),
     buyBack: Number(stats?.buyBack ?? 0),
@@ -300,6 +349,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
 
   // Robustly extract QR code from nested item or root
   const qrCode = item?.qr_code || transaction.qr_code || undefined;
+  const customer = item?.customer ?? transaction.customer;
 
   return {
     transactionNo: transaction.transaction_no,
@@ -317,6 +367,15 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     unitCode: transaction.unit_code ?? "",
     pawn: String(transaction.pawn_amount ?? 0),
     storage: String(transaction.storage_fee ?? 0),
+    customerName: customer?.full_name ?? undefined,
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
+    customerAddress: customer?.address ?? undefined,
+    customerBarangay: customer?.barangay ?? undefined,
+    customerCity: customer?.city ?? undefined,
+    customerRegion: customer?.region ?? undefined,
+    customerPhone: customer?.contact_number ?? undefined,
+    customerMiddleName: customer?.middle_name ?? undefined,
     qrCode: qrCode,
     serialNumber: item?.serial_number ?? undefined,
     itemsIncluded: item?.items_included ?? undefined,
@@ -341,7 +400,7 @@ export default function SuperAdminPawnTransactionsPage() {
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
   const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
-  const [reprintData, setReprintData] = useState<any>(null);
+  const [reprintData, setReprintData] = useState<ReprintMoaData | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");

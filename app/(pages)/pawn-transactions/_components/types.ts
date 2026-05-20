@@ -27,6 +27,8 @@ export interface TransactionRow {
   purpose: PurposeType;
   details: string;
   customerName: string;
+  createdByName?: string;
+  createdByRole?: string;
   customerAddress: string;
   date: string;
   time: string;

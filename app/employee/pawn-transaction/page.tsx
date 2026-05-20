@@ -262,6 +262,19 @@ interface ApiTransaction {
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
+  } | null;
 }
 
 interface TransactionsResponse {
@@ -285,6 +298,30 @@ interface BranchBusinessSessionPeek {
     startedAt?: string | null;
     startingBalance?: number | null;
   } | null;
+}
+
+interface ReprintMoaData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  address: string;
+  contactNo: string;
+  unitCode: string;
+  unitName: string;
+  category: string;
+  serialNumber: string;
+  itemsIncluded: string;
+  condition: string;
+  remarks: string;
+  memory: string;
+  amount: string;
+  storageFee: string;
+  purchasedDate: string;
+  idPresented: string;
+  branchName: string;
+  branchAddress: string;
+  branchPhone: string;
+  processedBy: string;
 }
 
 const DEFAULT_STATS = {
@@ -347,7 +384,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const isBuyBackAction = transaction.purpose === "Buy Back";
   const isPawnAction = transaction.purpose === "Pawn";
   // Support both object and array response for customer
-  const customerRaw = item?.customer;
+  const customerRaw = item?.customer ?? transaction.customer;
   const customer = Array.isArray(customerRaw) ? customerRaw[0] : customerRaw;
 
   return {
@@ -371,6 +408,8 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     pawn: String(transaction.pawn_amount ?? 0),
     storage: String(transaction.storage_fee ?? 0),
     customerName: customer?.full_name ?? undefined,
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
     customerAddress: customer?.address ?? undefined,
     customerBarangay: customer?.barangay ?? undefined,
     customerCity: customer?.city ?? undefined,
@@ -419,7 +458,7 @@ export default function EmployeePawnTransactionsPage() {
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
   const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
-  const [reprintData, setReprintData] = useState<any>(null);
+  const [reprintData, setReprintData] = useState<ReprintMoaData | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -431,7 +470,6 @@ export default function EmployeePawnTransactionsPage() {
   const [qrReplacementData, setQrReplacementData] = useState<{ pawnedItemId: string; itemCode: string } | null>(null);
   const [currentStats, setCurrentStats] = useState({ ...DEFAULT_STATS });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
-  /** Rows for `selectedDate` from `/transactions?date=` (same source as stats cards). */
   const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedTransactionNo, setHighlightedTransactionNo] = useState<string | null>(null);
@@ -533,24 +571,10 @@ export default function EmployeePawnTransactionsPage() {
           // business-session is optional — /transactions stats already cover us.
         }
       }
-      const sealedTxSet = new Set(sealedTransactionIds);
       // Effective cutoff = operationalCutoffAt (from session row) OR sessionOpenedAt
       // (= /transactions cutoff fallback). Both mark the prior-shift boundary.
       const effectiveCutoffIso = operationalCutoffAt ?? sessionOpenedAt;
-      const cutoffMs = effectiveCutoffIso
-        ? new Date(effectiveCutoffIso).getTime()
-        : NaN;
-      const hasCutoff = Number.isFinite(cutoffMs);
-      const visibleTx = (data.transactions ?? []).filter((tx) => {
-        if (tx.id && sealedTxSet.has(tx.id)) return false;
-        if (!hasCutoff) return true;
-        const t =
-          tx.created_at == null
-            ? 0
-            : new Date(String(tx.created_at)).getTime();
-        return Number.isFinite(t) && t >= cutoffMs;
-      });
-      setSelectedDateLedgerRows(visibleTx.map(toTransactionRow));
+      setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
 
       const ledger = operationalCashTotalsForPawnEnding(
         data.transactions ?? [],

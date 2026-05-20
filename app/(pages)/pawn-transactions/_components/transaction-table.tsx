@@ -71,6 +71,31 @@ function isHighlightedValue(value: string) {
   return Number.isFinite(amount) && amount > 0;
 }
 
+function formatRole(value?: string) {
+  if (!value) return "";
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function isExecutorDisplayPurpose(purpose: PurposeType) {
+  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer";
+}
+
+function getCustomerColumnText(row: TransactionRow) {
+  if (isExecutorDisplayPurpose(row.purpose)) {
+    const executor = row.createdByName?.trim();
+    if (!executor) return "System";
+
+    const role = formatRole(row.createdByRole);
+    return role ? `${executor} (${role})` : executor;
+  }
+
+  return row.customerName?.trim() || "Walk-in Customer";
+}
+
 const printerIcon = (
   <svg
     width="16"
@@ -220,7 +245,7 @@ export function TransactionTable({
                       if (col.key === "customerName") {
                         return (
                           <td key={col.key} className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary">
-                            {row.customerName || "Walk-in Customer"}
+                            {getCustomerColumnText(row)}
                           </td>
                         );
                       }

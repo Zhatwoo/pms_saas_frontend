@@ -61,6 +61,14 @@ interface ApiTransaction {
   qr_code?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
+  } | null;
   pawned_item?: {
     qr_code?: string | null;
     serial_number?: string | null;
@@ -121,8 +129,16 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
         ? "Sold Item"
         : (transaction.purpose as TransactionRow["purpose"]),
     details: transaction.details ?? "",
-    customerName: transaction.pawned_item?.customer?.full_name ?? "",
-    customerAddress: transaction.pawned_item?.customer?.address ?? "",
+    customerName:
+      transaction.pawned_item?.customer?.full_name ??
+      transaction.customer?.full_name ??
+      "",
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
+    customerAddress:
+      transaction.pawned_item?.customer?.address ??
+      transaction.customer?.address ??
+      "",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     buyBack: isBuyBackAction ? toAmountString(transaction.cash_in) : "0",
