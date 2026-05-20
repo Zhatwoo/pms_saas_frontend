@@ -31,6 +31,7 @@ export function OpeningChecklistWrapper() {
   const { currentStep, isComplete, completeCashOnHand } = useOpeningChecklist();
   const [expectedCash, setExpectedCash] = useState("0");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLoadingExpectedAmount, setIsLoadingExpectedAmount] = useState(false);
 
   useEffect(() => {
     if (currentStep !== "CASH_ON_HAND" || isComplete) return;
@@ -102,6 +103,7 @@ export function OpeningChecklistWrapper() {
 
     return () => {
       cancelled = true;
+      setIsLoadingExpectedAmount(false);
     };
   }, [currentStep, isComplete]);
 
@@ -164,6 +166,7 @@ export function OpeningChecklistWrapper() {
         titleOverride="Branch starting balance"
         subtitleOverride="Confirm physical cash on hand. Expected amount matches the branch book ending from the last closed day (or system suggestion)."
         currentCash={expectedCash}
+        isLoadingExpectedAmount={isLoadingExpectedAmount}
         onConfirm={handleConfirm}
         onClose={() => {}}
       />
