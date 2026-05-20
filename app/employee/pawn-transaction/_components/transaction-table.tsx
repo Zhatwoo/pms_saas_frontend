@@ -52,6 +52,8 @@ export interface TransactionRow {
   pawn: string;
   storage: string;
   customerName?: string;
+  createdByName?: string;
+  createdByRole?: string;
   customerAddress?: string;
   customerBarangay?: string;
   customerCity?: string;
@@ -75,6 +77,7 @@ export interface TransactionRow {
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
   { key: "purpose", label: "Purpose" },
+  { key: "customer", label: "Customer" },
   { key: "date", label: "Date" },
   { key: "time", label: "Time" },
   { key: "buyBack", label: "Buy Back", align: "right" as const },
@@ -122,6 +125,31 @@ function isHighlightedStorage(value: string): boolean {
 
 function formatMoney(value: string) {
   return formatPeso(value, { compactZero: true });
+}
+
+function formatRole(value?: string) {
+  if (!value) return "";
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function isExecutorDisplayPurpose(purpose: PurposeType) {
+  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer";
+}
+
+function getCustomerColumnText(row: TransactionRow) {
+  if (isExecutorDisplayPurpose(row.purpose)) {
+    const executor = row.createdByName?.trim();
+    if (!executor) return "System";
+
+    const role = formatRole(row.createdByRole);
+    return role ? `${executor} (${role})` : executor;
+  }
+
+  return row.customerName?.trim() || "Walk-in Customer";
 }
 
 interface TransactionTableProps {
@@ -251,6 +279,9 @@ export function TransactionTable({
                         label={row.purpose}
                         variant={purposeVariant[row.purpose]}
                       />
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
+                      {getCustomerColumnText(row)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                       {row.date}
