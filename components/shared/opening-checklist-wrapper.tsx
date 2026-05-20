@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { DailyBalanceConfirmation } from "./daily-balance-confirmation";
+import { InventoryAuditModal } from "./inventory-audit-modal";
 import { api, ApiError } from "@/lib/api";
 
 /** Subset of `/branch-finance/business-session` used for expected starting cash. */
@@ -28,7 +29,7 @@ type DailyOpeningStatusApi = {
 export function OpeningChecklistWrapper() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentStep, isComplete, completeCashOnHand } = useOpeningChecklist();
+  const { currentStep, isComplete, completeCashOnHand, completeInventoryAudit } = useOpeningChecklist();
   const [expectedCash, setExpectedCash] = useState("0");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoadingExpectedAmount, setIsLoadingExpectedAmount] = useState(false);
@@ -169,6 +170,12 @@ export function OpeningChecklistWrapper() {
         isLoadingExpectedAmount={isLoadingExpectedAmount}
         onConfirm={handleConfirm}
         onClose={() => {}}
+      />
+      <InventoryAuditModal
+        isOpen={currentStep === "INVENTORY_AUDIT"}
+        onConfirm={completeInventoryAudit}
+        onClose={() => {}}
+        isMandatory={true}
       />
     </>
   );
