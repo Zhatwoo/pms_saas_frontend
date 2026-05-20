@@ -6,9 +6,17 @@ interface CalendarProps {
   items: any[];
   selectedDate?: string | null;
   onSelectDate?: (date: string) => void;
+  calendarData?: Record<string, number>;
+  onVisibleMonthChange?: (year: number, month: number) => void;
 }
 
-export function InventoryCalendar({ items, selectedDate, onSelectDate }: CalendarProps) {
+export function InventoryCalendar({
+  items,
+  selectedDate,
+  onSelectDate,
+  calendarData,
+  onVisibleMonthChange,
+}: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -26,6 +34,10 @@ export function InventoryCalendar({ items, selectedDate, onSelectDate }: Calenda
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+
+  useEffect(() => {
+    onVisibleMonthChange?.(year, month);
+  }, [month, onVisibleMonthChange, year]);
 
   const days = [];
   const totalDays = daysInMonth(year, month);
@@ -102,6 +114,7 @@ export function InventoryCalendar({ items, selectedDate, onSelectDate }: Calenda
           
           const dayItems = getItemsForDay(day);
           const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const count = calendarData?.[dateString] ?? dayItems.length;
           const isFutureDate = dateString > todayString;
           const isToday = dateString === todayString;
           const isSelected = selectedDate === dateString;
@@ -128,36 +141,44 @@ export function InventoryCalendar({ items, selectedDate, onSelectDate }: Calenda
               <span className={`text-sm font-bold ${dayTextClass}`}>{day}</span>
               
               <div className="mt-1 space-y-1">
-                {dayItems.slice(0, 4).map((item, idx) => (
-                  <div 
-                    key={idx} 
+                {count > 0 ? (
+                  <div className="flex items-center gap-1">
+                    <div className="h-1.5 flex-1 rounded-full bg-emerald-500/70" />
+                    <span className="text-[9px] font-black leading-none text-emerald-400">{count}</span>
+                  </div>
+                ) : null}
+                {!calendarData && dayItems.slice(0, 3).map((item, idx) => (
+                  <div
+                    key={idx}
                     className={`h-1.5 w-full rounded-full ${statusColors[item.status] || "bg-zinc-400"} opacity-70`}
                     title={`${item.itemName} (${item.status})`}
                   />
                 ))}
-                {dayItems.length > 4 && (
-                  <p className="text-[8px] font-bold text-text-muted">+{dayItems.length - 4} more</p>
+                {!calendarData && dayItems.length > 3 && (
+                  <p className="text-[8px] font-bold text-text-muted">+{dayItems.length - 3} more</p>
                 )}
               </div>
 
-              {dayItems.length > 0 && (
+              {count > 0 && (
                 <div className="absolute inset-0 z-10 flex flex-col justify-center bg-emerald-950/95 p-4 text-white opacity-0 transition-all group-hover:opacity-100">
                   <p className="text-[10px] font-bold uppercase underline mb-2 tracking-wider">Day Summary</p>
-                  <p className="text-xs font-bold">{dayItems.length} Total Items</p>
-                  <div className="mt-2 space-y-1">
-                    {(
-                      Object.entries(
-                        dayItems.reduce<Record<string, number>>((acc, curr) => {
-                          acc[curr.status] = (acc[curr.status] || 0) + 1;
-                          return acc;
-                        }, {}),
-                      ) as [string, number][]
-                    ).map(([status, count]) => (
-                      <p key={status} className="text-[9px] font-bold uppercase">
-                        {status}: {count}
-                      </p>
-                    ))}
-                  </div>
+                  <p className="text-xs font-bold">{count} Total Items</p>
+                  {dayItems.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {(
+                        Object.entries(
+                          dayItems.reduce<Record<string, number>>((acc, curr) => {
+                            acc[curr.status] = (acc[curr.status] || 0) + 1;
+                            return acc;
+                          }, {}),
+                        ) as [string, number][]
+                      ).map(([status, statusCount]) => (
+                        <p key={status} className="text-[9px] font-bold uppercase">
+                          {status}: {statusCount}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </Cell>

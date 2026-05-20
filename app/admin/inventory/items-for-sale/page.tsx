@@ -192,23 +192,6 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
               className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500" : toolbarInputClass}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-wide text-zinc-500" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500"}>Date</label>
-            <div className="relative flex items-center">
-              <input
-                type="date"
-                value={selectedDate || ""}
-                max={todayString}
-                onChange={(e) => setSelectedDate(e.target.value || null)}
-                className={viewOnly ? "h-10 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500 pr-8" : `${toolbarInputClass} pr-8`}
-              />
-              {selectedDate && (
-                <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">

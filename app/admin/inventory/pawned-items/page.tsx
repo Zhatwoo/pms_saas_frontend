@@ -237,6 +237,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const [selectedDate, setSelectedDate] = useState<string | null>(() => todayString);
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+  const [calendarData, setCalendarData] = useState<Record<string, number>>({});
 
   const handlePrintQr = useCallback((size: "small" | "large") => {
     const sizeCm = size === "small" ? "2cm" : "3cm";
@@ -274,7 +277,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
     );
   }, [pawnedItems]);
 
-  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id, selectedDate]);
+  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id, selectedDate, viewMode]);
 
   useEffect(() => {
     async function fetchData() {
@@ -284,7 +287,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
         if (category !== "all") params.set("category", category);
         if (status !== "all") params.set("status", status);
         if (searchQuery) params.set("search", searchQuery);
-        if (selectedDate) params.set("date", selectedDate);
+        if (viewMode === "calendar" && selectedDate) params.set("date", selectedDate);
         if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
@@ -300,7 +303,26 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
       }
     }
     fetchData();
-  }, [category, status, searchQuery, selectedDate, currentPage, selectedBranch.id, isAllBranches]);
+  }, [category, status, searchQuery, selectedDate, currentPage, selectedBranch.id, isAllBranches, viewMode]);
+
+  useEffect(() => {
+    async function fetchCalendar() {
+      if (viewMode !== "calendar") return;
+
+      try {
+        const params = new URLSearchParams();
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
+        params.set("month", `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}`);
+        const data = await api.get<Record<string, number>>(`/inventory/pawned-calendar?${params}`);
+        setCalendarData(data || {});
+      } catch (err) {
+        console.error("Calendar fetch error:", err);
+        setCalendarData({});
+      }
+    }
+
+    void fetchCalendar();
+  }, [calendarMonth, calendarYear, isAllBranches, selectedBranch.id, viewMode]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
@@ -338,25 +360,6 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               className={viewOnly ? "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500" : toolbarFieldClass}
             />
           </div>
-          {viewMode !== "calendar" && (
-            <div className="flex flex-col gap-1">
-              <label className={toolbarLabelClass}>Date</label>
-              <div className="relative flex items-center">
-                <input
-                  type="date"
-                  value={selectedDate || ""}
-                  max={todayString}
-                  onChange={(e) => setSelectedDate(e.target.value || null)}
-                  className={viewOnly ? "h-10 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 pr-8" : `${toolbarFieldClass} pr-8`}
-                />
-                {selectedDate && (
-                  <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
           <div className="flex flex-col gap-1">
             <label className={toolbarLabelClass}>Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={toolbarSelectClass}>
@@ -487,7 +490,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
 
       {viewMode === "calendar" && (
         <div className="mb-4">
-          <InventoryCalendar items={pawnedItems} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <InventoryCalendar
+            items={pawnedItems}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            calendarData={calendarData}
+            onVisibleMonthChange={(year, month) => {
+              setCalendarYear(year);
+              setCalendarMonth(month);
+            }}
+          />
         </div>
       )}
 
