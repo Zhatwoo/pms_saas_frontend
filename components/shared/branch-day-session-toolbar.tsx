@@ -47,7 +47,7 @@ export function BranchDaySessionToolbar({
 }: BranchDaySessionToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   /** Employee layout wraps `OpeningChecklistProvider`; admin/super-admin shells do not — skip gating then. */
   const openingChecklist = useOptionalOpeningChecklist();
   const currentStep = openingChecklist?.currentStep ?? "COMPLETED";
@@ -84,11 +84,11 @@ export function BranchDaySessionToolbar({
     } finally {
       setLoading(false);
     }
-  }, [branchId, visible]);
+  }, [branchId, visible, user?.id]);
 
   useEffect(() => {
     lastResolvedExpectedCash.current = null;
-  }, [branchId]);
+  }, [branchId, user?.id]);
 
   useEffect(() => {
     if (loading) return;

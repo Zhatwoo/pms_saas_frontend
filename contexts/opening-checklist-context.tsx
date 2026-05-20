@@ -45,7 +45,16 @@ const OpeningChecklistContext = createContext<OpeningChecklistContextValue | nul
 const openingLoadPromiseByKey = new Map<string, Promise<DailyOpeningApiStatus>>();
 const openingLoadStartedAtByKey = new Map<string, number>();
 const OPENING_LOAD_COOLDOWN_MS = 5000;
-const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 30000;
+/** Keep low so another employee on the same branch/day picks up Start/End day changes after tab focus. */
+const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 8000;
+
+function dailyOpeningCacheKey(
+  userId: string,
+  branchId: string,
+  phDate: string,
+): string {
+  return `${userId}:${branchId}:${phDate}`;
+}
 
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -69,7 +78,11 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       if (!user || user.role !== "employee" || !user.branchId) {
         return;
       }
-      const key = `${user.branchId}:${getPhCalendarDateString()}`;
+      const key = dailyOpeningCacheKey(
+        user.id,
+        user.branchId,
+        getPhCalendarDateString(),
+      );
       const now = Date.now();
       const lastStartedAt = openingLoadStartedAtByKey.get(key) ?? 0;
       const pendingRequest = openingLoadPromiseByKey.get(key);
@@ -132,7 +145,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     }
 
     const phToday = getPhCalendarDateString();
-    const key = `${user.branchId}:${phToday}`;
+    const key = dailyOpeningCacheKey(user.id, user.branchId, phToday);
     const dayChanged =
       lastSyncedOpeningDateRef.current != null &&
       lastSyncedOpeningDateRef.current !== phToday;
@@ -192,7 +205,13 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     }
     hasLoadedBranchDayRef.current = null;
     lastVisibilitySyncAtRef.current = 0;
-    openingLoadStartedAtByKey.delete(`${user.branchId}:${getPhCalendarDateString()}`);
+    openingLoadStartedAtByKey.delete(
+      dailyOpeningCacheKey(
+        user.id,
+        user.branchId,
+        getPhCalendarDateString(),
+      ),
+    );
     await loadDailyOpeningForEmployee({ preserveShell: true });
   }, [user, loadDailyOpeningForEmployee]);
 
