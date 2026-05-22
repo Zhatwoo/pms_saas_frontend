@@ -8,6 +8,7 @@ import { FilterSelect } from "@/components/shared/filter-select";
 import { SaleCalendar } from "@/app/(pages)/inventory/items-for-sale/_components/sale-calendar";
 import { useBranch } from "@/contexts/branch-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { SellsTransferModal } from "@/app/employee/pawn-transaction/_components/sells-transfer-modal";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -67,14 +68,16 @@ export default function EmployeeItemsForSalePage() {
   const [isLoading, setIsLoading] = useState(true);
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  const [selectedDate, setSelectedDate] = useState<string | null>(() => todayString);
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [calendarData, setCalendarData] = useState<Record<string, number>>({});
   const [viewingItem, setViewingItem] = useState<SaleItem | null>(null);
+  const [sellingItem, setSellingItem] = useState<SaleItem | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
   const itemsPerPage = 10;
 
-  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, saleViewMode, selectedDate]);
+  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, saleViewMode]);
 
   useEffect(() => {
     async function fetchData() {
@@ -91,15 +94,8 @@ export default function EmployeeItemsForSalePage() {
         if (status !== "all") params.set("status", status);
         if (searchQuery) params.set("search", searchQuery);
         if (saleViewMode === "calendar") {
-          if (!selectedDate) {
-            setSaleItems([]);
-            setTotalItems(0);
-            setIsLoading(false);
-            return;
-          }
           if (status !== "all") params.set("status", status);
           if (searchQuery) params.set("search", searchQuery);
-          params.set("date", selectedDate);
           params.set("page", "1");
           params.set("limit", "500");
 
@@ -125,7 +121,7 @@ export default function EmployeeItemsForSalePage() {
       }
     }
     fetchData();
-  }, [branchIdent, category, status, searchQuery, saleViewMode, currentPage]);
+  }, [branchIdent, category, status, searchQuery, saleViewMode, currentPage, refreshTick]);
 
   useEffect(() => {
     async function fetchCalendar() {
@@ -164,27 +160,11 @@ export default function EmployeeItemsForSalePage() {
               className={toolbarInputClass}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={toolbarLabelClass}>Date</label>
-            <div className="relative flex items-center">
-              <input
-                type="date"
-                value={selectedDate || ""}
-                max={todayString}
-                onChange={(e) => setSelectedDate(e.target.value || null)}
-                className={`${toolbarInputClass} pr-8`}
-              />
-              {selectedDate && (
-                <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
+          {/* Date filter removed per request */}
         </div>
 
         <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
-          <button onClick={() => setSaleViewMode("current")} className={`${toolbarTabClass} ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>ALL Records</button>
+          <button onClick={() => setSaleViewMode("current")} className={`${toolbarTabClass} ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>All Records</button>
           <button onClick={() => setSaleViewMode("calendar")} className={`${toolbarTabClass} ${saleViewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>Calendar</button>
           <button onClick={() => setSaleViewMode("history")} className={`${toolbarTabClass} ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>History</button>
         </div>
@@ -225,7 +205,7 @@ export default function EmployeeItemsForSalePage() {
                     </td>
                   </tr>
                 ) : saleItems.length === 0 ? (
-                  <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">{selectedDate ? "No items on this day" : "No items for sale found"}</td></tr>
+                  <tr><td colSpan={7} className="py-8 text-center text-sm text-zinc-400">No items for sale found</td></tr>
                 ) : (
                   saleItems.map((item, idx) => (
                     <tr key={item.id || item.itemId} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
@@ -241,7 +221,7 @@ export default function EmployeeItemsForSalePage() {
                       <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                       <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                         {item.status === "Available" ? (
-                          <button className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-800">
+                          <button onClick={() => setSellingItem(item)} className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-800">
                             Sell Item
                           </button>
                         ) : item.status === "Reserved" ? (
@@ -297,7 +277,7 @@ export default function EmployeeItemsForSalePage() {
                       <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         {item.status === "Available" ? (
-                          <button className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95">
+                          <button onClick={() => setSellingItem(item)} className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95">
                             Sell Item
                           </button>
                         ) : item.status === "Reserved" ? (
@@ -324,6 +304,29 @@ export default function EmployeeItemsForSalePage() {
           onPageChange={setCurrentPage}
         />
       </div>
+
+      {sellingItem && (
+        <SellsTransferModal
+          isOpen={Boolean(sellingItem)}
+          onClose={() => setSellingItem(null)}
+          onSuccess={() => {
+            setRefreshTick((value) => value + 1);
+            setSellingItem(null);
+          }}
+          branchName={selectedBranch.name}
+          initialItem={{
+            id: sellingItem.id,
+            unitId: sellingItem.itemId,
+            unit: sellingItem.itemName,
+            srp: String(sellingItem.price),
+            serialNumber: sellingItem.originalPawnId || sellingItem.itemId,
+            included: sellingItem.description || sellingItem.category,
+            condition: sellingItem.status,
+            memory: sellingItem.branch,
+            barcodeId: sellingItem.itemId,
+          }}
+        />
+      )}
 
 
       {viewingItem && (
