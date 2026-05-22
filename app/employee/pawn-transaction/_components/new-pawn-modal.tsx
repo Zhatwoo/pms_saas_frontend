@@ -1315,17 +1315,18 @@ export function NewPawnModal({
 
         {/* Footer Actions */}
         <div className="p-3 sm:p-4 md:p-5 lg:p-6 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col gap-4 shrink-0">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <button 
-              onClick={handleReset}
-              className="self-start px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:gap-6 lg:w-auto lg:flex-1">
+              <button 
+                onClick={handleReset}
+                className="self-start px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover sm:block" />
 
-            <div className="flex w-full flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6 xl:flex-1">
               {/* Password — entered by the logged-in employee */}
-              <div className="w-full min-w-0 space-y-1.5 md:max-w-[18rem] xl:max-w-[22rem]">
+              <div className="w-full min-w-0 space-y-1.5 sm:max-w-[18rem] lg:max-w-[20rem]">
                 <label className="ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase tracking-[0.12em] leading-none text-emerald-900/40 dark:text-emerald-400 md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
                   <span className="whitespace-nowrap">Security Password Verification</span>
                   {loggedInUserName && (
@@ -1345,17 +1346,16 @@ export function NewPawnModal({
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="shrink-0 text-right md:pb-1">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-4 lg:w-auto lg:gap-6">
+              <div className="shrink-0 text-right sm:pb-1">
                 <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
                 <p className="text-lg md:text-xl font-black text-emerald-900 dark:text-white tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
               </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-3 border-t border-emerald-50 pt-4 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-4 md:border-t-0 md:pt-0">
-             {qrUrl ? (
-               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4 md:justify-end">
+
+              {qrUrl ? (
+               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
                  {(user?.role === "admin" || user?.role === "super_admin") ? (
                    <div className="relative group shrink-0">
                      <Image 
@@ -1393,23 +1393,24 @@ export function NewPawnModal({
                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
                  </button>
                </div>
-             ) : (
-               <button
-                 type="button"
-                 onClick={handleGenerateQR}
-                 disabled={isGeneratingQR}
-                 className="w-full sm:w-auto md:min-w-[16rem] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 relative shadow-sm"
-               >
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
-                 {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
-                 {errorMessage && errorMessage.includes("before generating QR") && (
-                   <span className="absolute -top-2 -right-2 flex h-3 w-3">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                   </span>
-                 )}
-               </button>
-             )}
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleGenerateQR}
+                  disabled={isGeneratingQR}
+                  className="w-full sm:w-auto md:min-w-[16rem] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 relative shadow-sm"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
+                  {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
+                  {errorMessage && errorMessage.includes("before generating QR") && (
+                    <span className="absolute -top-2 -right-2 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
           {errorMessage && (
             <div className="absolute top-4 right-6 left-6 z-50 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">

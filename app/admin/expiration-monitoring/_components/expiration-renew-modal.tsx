@@ -402,44 +402,38 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           </div>
         </div>
 
-        {/* --- MODIFIED SECURITY FOOTER (Like Image 2) --- */}
-        <div className="bg-[#0a0f0d] border-t border-white/5 p-6 shrink-0 relative z-20">
-          <div className="max-w-full flex items-center justify-between gap-8">
-            
-            {/* Left: Cancel Action */}
-            <button 
-              onClick={onClose}
-              className="text-[10px] font-black text-emerald-100/40 hover:text-white uppercase tracking-[0.2em] transition-colors"
-            >
-              CANCEL
-            </button>
+        {/* Footer Actions */}
+        <div className="p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
+          <div className="flex items-center gap-8 w-full sm:w-auto">
+             <button 
+                onClick={onClose}
+                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              >
+                Cancel Process
+              </button>
+              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="w-40">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
+                    <input 
+                      type="password" 
+                      placeholder="••••••••"
+                      className="h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted"
+                      value={adminForm.password}
+                      onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
+          </div>
 
-            {/* Middle: Security Verification */}
-            <div className="flex-1 max-w-md">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-[9px] font-black text-[#34D399] uppercase tracking-widest">
-                  SECURITY PASSWORD VERIFICATION
+          <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
+             <div className="text-right">
+                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+                  TOTAL PAYMENT
                 </p>
-                <span className="text-[9px] font-bold text-emerald-100/20 italic">
-                  ({user?.fullName?.toLowerCase() || 'lysa'})
-                </span>
-              </div>
-              <div className="relative group">
-                <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  className="w-full h-12 bg-[#1a2421] border border-white/10 rounded-xl px-4 text-white text-lg tracking-[0.5em] font-black outline-none focus:border-[#34D399]/50 transition-all placeholder:text-white/5"
-                  value={adminForm.password}
-                  onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
-                />
-              </div>
-            </div>
-
-            {/* Right: Summary & Process Button */}
-            <div className="flex items-center gap-8">
-              <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-100/40 uppercase tracking-widest mb-1">TOTAL PAYMENT</p>
-                <p className="text-2xl font-black text-white leading-none">
+                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
                   ₱ {totalToPay.toLocaleString()}
                 </p>
               </div>
@@ -447,7 +441,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               <button 
                 disabled={isLoading || !selectedItem}
                 onClick={handleProceed}
-                className="h-14 px-8 bg-[#34D399] hover:bg-[#10B981] disabled:bg-emerald-800/50 text-emerald-950 rounded-2xl font-black uppercase tracking-wider shadow-lg shadow-emerald-500/10 flex items-center justify-center transition-all active:scale-[0.98] text-xs gap-3"
+                className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isLoading || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
               >
                 {isLoading ? (
                    <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />

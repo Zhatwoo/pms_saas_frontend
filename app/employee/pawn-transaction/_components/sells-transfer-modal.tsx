@@ -335,14 +335,14 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
 
               {isItemLocked && selectedItem ? (
                 <div className="rounded-2xl border border-border-main bg-surface p-4 shadow-lg shadow-black/10">
-                  <div className="flex flex-col gap-4 rounded-xl bg-emerald-950 p-4 text-white shadow-inner sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-4 rounded-xl bg-emerald-900 p-4 text-white shadow-inner sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">Ready to Sell</p>
-                      <p className="mt-1 text-xl font-black leading-tight">{selectedItem.unit}</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Ready to Sell</p>
+                      <p className="mt-1 text-xl font-black leading-tight text-white">{selectedItem.unit}</p>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">{selectedItem.unitId}</p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">Sale Price</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Sale Price</p>
                       <p className="mt-1 text-2xl font-black text-white">&#8369; {Number(selectedItem.srp || 0).toLocaleString()}</p>
                     </div>
                   </div>
