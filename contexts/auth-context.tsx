@@ -17,7 +17,7 @@ import { SessionExpiredModal } from "@/components/ui/session-expired-modal";
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, deviceFingerprint?: string) => Promise<User>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
   isSessionExpiryActive: boolean;
@@ -195,10 +195,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [clearSessionExpiryTimers]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, deviceFingerprint?: string) => {
     const data = await api.post<{ user: User }>(
       "/auth/login",
-      { email, password },
+      { email, password, ...(deviceFingerprint ? { deviceFingerprint } : {}) },
     );
 
     const normalizedUser = normalizeUser(data.user);
