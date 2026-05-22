@@ -261,7 +261,7 @@ export default function EmployeeSettingsPage() {
             <p className="mb-4 text-xs text-text-secondary">{branchName}</p>
             <button
               onClick={() => setIsAvatarModalOpen(true)}
-              className="w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900/70"
+              className="w-full rounded-lg border border-emerald-200 bg-emerald-100 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-200 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
             >
               Change Avatar
             </button>
