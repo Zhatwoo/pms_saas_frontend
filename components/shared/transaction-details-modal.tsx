@@ -63,7 +63,7 @@ export function TransactionDetailsModal({
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
   const { user } = useAuth();
-  const isAdminOrSuperAdmin = user?.role?.toLowerCase().includes("admin");
+  const isAdminOrSuperAdmin = user?.role === "super_admin";
   const modalAriaProps = {
     role: "dialog",
     "aria-modal": "true",
@@ -99,7 +99,7 @@ export function TransactionDetailsModal({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {transaction.relatedPawnedItemId && (
+              {isAdminOrSuperAdmin && transaction.relatedPawnedItemId && (
                 <button
                   onClick={() => {
                     if (onRequestQRReplacement) {

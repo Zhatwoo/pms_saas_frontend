@@ -20,6 +20,22 @@ interface ActivityLog {
   branchName: string;
 }
 
+interface LoginLog {
+  id: string;
+  created_at: string;
+  login_status: string;
+  failure_reason: string | null;
+  ip_address: string | null;
+  device_fingerprint: string | null;
+  employee_id: string | null;
+  employee: {
+    id: string;
+    full_name: string;
+    email: string;
+    role: string;
+  } | null;
+}
+
 interface UserDirectoryEntry {
   id?: string;
   authId?: string;
@@ -577,6 +593,28 @@ function getGuessStatus(action: string, details: string) {
   return "Success";
 }
 
+const FAILURE_REASON_LABELS: Record<string, string> = {
+  INVALID_CREDENTIALS: "Wrong password",
+  USER_NOT_FOUND: "Account not found",
+  ACCOUNT_INACTIVE: "Account inactive",
+  DEVICE_BLOCKED: "Device blocked",
+  DEVICE_PENDING: "Device not yet authorized",
+  UNKNOWN_DEVICE: "Unrecognized device",
+  OUTSIDE_BRANCH_NETWORK: "Outside branch network",
+  OUTSIDE_NETWORK: "Outside allowed network",
+};
+
+function formatLoginReason(reason: string | null) {
+  if (!reason) return "—";
+  return FAILURE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
+}
+
+function formatLoginStatus(status: string) {
+  if (status === "SUCCESS") return { label: "Success", color: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50" };
+  if (status === "BLOCKED") return { label: "Blocked", color: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50" };
+  return { label: "Failed", color: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50" };
+}
+
 const PERIODS = ["Daily", "Weekly", "Monthly", "Yearly", "All Time"];
 
 export default function AuditLogsPage() {
@@ -593,6 +631,12 @@ export default function AuditLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("All Logs");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Login logs state
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  const [loginLogsLoading, setLoginLogsLoading] = useState(false);
+  const [loginStatusFilter, setLoginStatusFilter] = useState("ALL");
+  const [loginSearchQuery, setLoginSearchQuery] = useState("");
 
   // Date Filtering
   const [activePeriod, setActivePeriod] = useState("All Time");
@@ -730,6 +774,26 @@ export default function AuditLogsPage() {
     void fetchUserDirectory();
   }, [canViewAuditLogs, userRole]);
 
+  // Fetch login logs when Login Logs tab is active
+  useEffect(() => {
+    if (filterType !== "Login Logs") return;
+    if (userRole !== "super_admin" && userRole !== "admin") return;
+
+    async function fetchLoginLogs() {
+      setLoginLogsLoading(true);
+      try {
+        const data = await api.get<LoginLog[]>("/devices/logs?limit=500");
+        setLoginLogs(data);
+      } catch (err) {
+        console.error("Failed to fetch login logs:", err);
+      } finally {
+        setLoginLogsLoading(false);
+      }
+    }
+
+    void fetchLoginLogs();
+  }, [filterType, userRole]);
+
   // Derive synthetic data fields for UI matching
   const enrichedLogs = useMemo(() => {
     const userNamesById = new Map(userDirectory);
@@ -769,8 +833,29 @@ export default function AuditLogsPage() {
   const totalFundTransfers = enrichedLogs.filter(l => l.logType === "FUND TRANSFER").length;
   const totalItemTransfers = enrichedLogs.filter(l => l.logType === "ITEM TRANSFER").length;
 
+  // Login logs filter
+  const filteredLoginLogs = useMemo(() => {
+    let result = loginLogs;
+    if (loginStatusFilter !== "ALL") {
+      result = result.filter(l => l.login_status === loginStatusFilter);
+    }
+    if (loginSearchQuery) {
+      const q = loginSearchQuery.toLowerCase();
+      result = result.filter(l =>
+        (l.employee?.full_name ?? "").toLowerCase().includes(q) ||
+        (l.employee?.email ?? "").toLowerCase().includes(q) ||
+        (l.ip_address ?? "").toLowerCase().includes(q) ||
+        (l.device_fingerprint ?? "").toLowerCase().includes(q) ||
+        (l.failure_reason ?? "").toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [loginLogs, loginStatusFilter, loginSearchQuery]);
+
   // Tabs
-  const TABS = ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer"];
+  const TABS = userRole === "super_admin" || userRole === "admin"
+    ? ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer", "Login Logs"]
+    : ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer"];
 
   const filteredLogs = useMemo(() => {
     let result = enrichedLogs;
@@ -887,6 +972,7 @@ export default function AuditLogsPage() {
             if (tab === "Transaction Logs") count = totalTransactions;
             if (tab === "Fund Transfer") count = totalFundTransfers;
             if (tab === "Item Transfer") count = totalItemTransfers;
+            if (tab === "Login Logs") count = loginLogs.length;
 
             return (
               <button
@@ -904,6 +990,116 @@ export default function AuditLogsPage() {
           })}
         </div>
 
+        {filterType === "Login Logs" ? (
+          <>
+            {/* Login Logs Filters */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface border-b border-border-subtle">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-full sm:max-w-sm">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, IP..."
+                    value={loginSearchQuery}
+                    onChange={e => setLoginSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-emerald-500 transition-colors"
+                  />
+                </div>
+                {["ALL", "SUCCESS", "FAILED", "BLOCKED"].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setLoginStatusFilter(s)}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition-colors ${loginStatusFilter === s
+                      ? s === "SUCCESS" ? "bg-emerald-600 text-white border-emerald-600"
+                        : s === "FAILED" ? "bg-amber-500 text-white border-amber-500"
+                          : s === "BLOCKED" ? "bg-rose-600 text-white border-rose-600"
+                            : "bg-zinc-800 text-white border-zinc-700"
+                      : "bg-surface border-border-main text-text-secondary hover:bg-surface-hover"}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+                {filteredLoginLogs.length} RECORDS
+              </div>
+            </div>
+
+            {/* Login Logs Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-emerald-900 text-amber-400">
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Date & Time</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Employee</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Reason</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">IP Address</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Device Fingerprint</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {loginLogsLoading ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">
+                        <div className="flex items-center justify-center">
+                          <LoadingSpinnerLabel text="Loading login logs..." className="text-base font-medium text-text-tertiary" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredLoginLogs.length === 0 ? (
+                    <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No login logs found.</td></tr>
+                  ) : (
+                    filteredLoginLogs.map(log => {
+                      const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
+                      const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                      return (
+                        <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-text-primary">{dStr}</span>
+                              <span className="text-xs font-medium text-text-tertiary mt-0.5">{tStr}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2.5 py-1 rounded border text-xs font-bold ${statusColor}`}>{statusLabel}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {log.employee ? (
+                              <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-pawn-gold text-zinc-900 text-xs font-bold shadow-sm shrink-0">
+                                  {getInitials(log.employee.full_name)}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-text-primary">{log.employee.full_name}</span>
+                                  <span className="text-xs text-text-tertiary capitalize">{log.employee.role.replace('_', ' ')}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-text-tertiary italic">Unknown</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-text-secondary">{formatLoginReason(log.failure_reason)}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-xs font-mono text-text-tertiary">{log.ip_address ?? "—"}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-mono text-text-tertiary truncate max-w-[160px] block" title={log.device_fingerprint ?? ""}>
+                              {log.device_fingerprint ? log.device_fingerprint.slice(0, 16) + "…" : "—"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <>
         {/* Filters Row */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface border-b border-border-subtle">
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto flex-1">
@@ -1071,6 +1267,8 @@ export default function AuditLogsPage() {
           onPageChange={setCurrentPage}
           mode="edge-pairs"
         />
+          </>
+        )}
       </div>
     </div>
   );

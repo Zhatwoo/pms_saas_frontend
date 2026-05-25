@@ -101,7 +101,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const touchStartXRef = useRef<number | null>(null);
 
    const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
-   const canViewQr = userRole?.toLowerCase().includes("admin");
+   const canViewQr = userRole === "super_admin";
 
   useEffect(() => {
     if (isOpen && itemId) {
@@ -490,22 +490,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     )}
                   </>
                 ) : !canViewQr ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/60 bg-emerald-100/20 px-4 text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">QR Visible to Super Admin only</p>
-                    </div>
-                    {qrRequestStatus === "pending" ? (
-                      <span className="text-[10px] font-black text-amber-500 uppercase bg-amber-500/10 px-3 py-1 rounded-full">Request Pending</span>
-                    ) : qrRequestStatus === "approved" ? (
-                      <span className="text-[10px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-3 py-1 rounded-full">Request Approved</span>
-                    ) : (
-                      <button 
-                        onClick={() => setIsQrModalOpen(true)}
-                        className="px-6 py-2 bg-zinc-900 text-white text-[10px] font-black rounded-xl hover:bg-black transition-all shadow-lg active:scale-95"
-                      >
-                        REQUEST QR REPLACEMENT
-                      </button>
-                    )}
+                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/60 bg-emerald-100/20 px-4 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">QR Visible to Super Admin only</p>
                   </div>
                 ) : (
                   <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
