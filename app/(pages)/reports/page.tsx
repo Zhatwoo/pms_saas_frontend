@@ -9,6 +9,7 @@ import { BranchSalesTable } from "./_components/branch-sales-table";
 import { SalesTrendChart } from "./_components/sales-trend-chart";
 import { DailyReportSection } from "./_components/daily-report-section";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { ActionButton } from "@/components/shared/action-button";
 import {
   buildPmsPrintDocument,
   escapeHtml,
@@ -326,12 +327,13 @@ export default function ReportsPage() {
             }, [])}
           />
         </div>
-        <button 
+        <ActionButton 
           onClick={handleDownloadPDF}
-          className="flex h-11 items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90">
-          {downloadIcon}
+          variant="success"
+          leftIcon={downloadIcon}
+        >
           Download PDF
-        </button>
+        </ActionButton>
       </div>
 
       {isLoading && !hasLoadedData ? (

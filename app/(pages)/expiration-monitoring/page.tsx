@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
+import { ActionButton } from "@/components/shared/action-button";
 
 const sendIcon = (
   <svg
@@ -197,16 +198,15 @@ function ExpirationMonitoringPageContent() {
             Track contracts nearing expiration and overdue items
           </p>
         </div>
-        <button
-          type="button"
+        <ActionButton
           onClick={handleBlastEmail}
           disabled={isBlastSending}
-          className="flex h-11 flex-none items-center justify-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90"
+          variant="success"
+          leftIcon={sendIcon}
           title="Send mass email to all customers with nearing expirations"
         >
-          <span className="text-amber-400">{sendIcon}</span>
           {isBlastSending ? "Sending..." : "Instant Email Blast"}
-        </button>
+        </ActionButton>
       </div>
 
       <ExpirationStats data={stats} isLoading={isLoading && !hasLoadedData} />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
+import { findInterestRateGroup, getInterestRateSchedule } from "@/lib/interest";
 import { MOA_BODY_PRINT_COLOR_SNIPPET, MOA_PRINT_PAGE_RULE_CSS } from "@/lib/print-templates";
 
 interface MoaModalProps {
@@ -41,44 +42,13 @@ interface MoaModalProps {
   autoPrint?: boolean;
 }
 
-const DEFAULT_TERMS_TEXT = `TERMS AND CONDITIONS (GADGETS):
-1. INTEREST SCHEDULE:
-   - Day 1 to 5    : 5% of loan amount (Storage Fee)
-   - Day 10 (1st Maturity) : 10% of loan amount
-   - Day 20 (2nd Maturity) : 10% + 10% = 20% of loan amount
-   - Day 30 (3rd Maturity) : 20% + 10% = 30% of loan amount
-   - Day 31 to 34 (Grace Period): 30% + 10% = 40% of loan amount
-2. EXPIRED / REMATADO: After Day 34, JCLB shop has the right to dispose the item without any further notice.
-3. This is an extended purchase sale agreement (BUYBACK), not a pawn loan.
-4. Seller must advise the shop of any changes in address or contact information.
-5. In case of loss of this MOA, present a valid ID and a notarized affidavit promptly.`;
-
-const CANONICAL_TERMS_LINES = [
-  "1. This Memorandum of Agreement is renewable every TEN (10) days.",
-  "2. The Seller shall advise the Buyer of any change of address or mobile number.",
-  "3. This is not a PAWN; this is an extended purchase sale known as the buyback agreement.",
-  "4. JCLB BUY BACK SHOP OPC has the right to open the sealed item and put on display and dispose this item after the extension period expires.",
-  "5. Unpurchased item and all penalties become binding to this MOA.",
-  "6. The seller declares all information and submitted documents are true and authentic.",
-  "7. There are no FINANCE or INTEREST charges connected with this MOA.",
-  "8. In case of loss of this MOA, bring a valid ID and notarized affidavit before buyback period expires.",
-  "9. Representative's signature is required when authorization from owner is used.",
-  "10. Seller confirms ownership and freedom from liens and encumbrances.",
-];
-
-const CANONICAL_TERMS_TEXT = CANONICAL_TERMS_LINES.join("\n");
-
 function normalizeTermsText(rawText?: string) {
   const normalizedLines = (rawText ?? "")
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
 
-  if (normalizedLines.length >= 1) {
-    return normalizedLines.join("\n");
-  }
-
-  return CANONICAL_TERMS_TEXT;
+  return normalizedLines.join("\n");
 }
 
 export function MoaModal({
@@ -91,33 +61,41 @@ export function MoaModal({
   confirmDisabled = false,
   confirmDisabledReason,
 }: MoaModalProps) {
-  const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
+  const [termsText, setTermsText] = useState("");
   const [labels, setLabels] = useState<any>(null);
   const [extensionRows, setExtensionRows] = useState<any[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      async function fetchTemplate() {
+      async function fetchTemplateAndInterestRates() {
         try {
-          const res = await api.get<{ terms_text: string; labels: any; extensionRows?: any[] }>(`/settings/moa_template`);
-          if (res) {
-            setTermsText(normalizeTermsText(res.terms_text));
-            setLabels(res.labels);
-            if (res.extensionRows) setExtensionRows(res.extensionRows);
+          const [moaTemplate, interestRates] = await Promise.all([
+            api.get<{ terms_text: string; labels: any; extensionRows?: any[] }>(`/settings/moa_template`),
+            api.get<any[]>(`/settings/interest_rates`),
+          ]);
+
+          if (moaTemplate) {
+            setTermsText(normalizeTermsText(moaTemplate.terms_text));
+            setLabels(moaTemplate.labels);
+            if (moaTemplate.extensionRows) setExtensionRows(moaTemplate.extensionRows);
+          }
+
+          if (Array.isArray(interestRates) && typeof window !== "undefined") {
+            localStorage.setItem("interest_rates", JSON.stringify(interestRates));
           }
         } catch (error) {
-          console.error("Failed to fetch MOA template:", error);
+          console.error("Failed to fetch MOA template and/or interest rates:", error);
         }
       }
-      fetchTemplate();
+      fetchTemplateAndInterestRates();
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && autoPrint && labels) {
       const timer = setTimeout(() => {
-        window.print();
+        handlePrint();
       }, 800);
       return () => clearTimeout(timer);
     }
@@ -125,7 +103,79 @@ export function MoaModal({
 
   const handlePrint = () => {
     if (!printRef.current) return;
-    window.print();
+
+    try {
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.setAttribute("aria-hidden", "true");
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        document.body.removeChild(iframe);
+        return;
+      }
+
+      iframeDoc.open();
+      iframeDoc.write(`<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title>`);
+
+      // clone stylesheet and style nodes so print styles apply inside iframe
+      Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
+        try {
+          iframeDoc.head.appendChild(node.cloneNode(true));
+        } catch (e) {
+          // ignore cloning errors for some browser-injected styles
+        }
+      });
+
+      // compute base font styles from the host document so iframe matches layout
+      const computedRootStyle = window.getComputedStyle(document.documentElement);
+      const baseFontFamily = computedRootStyle.fontFamily || "Inter, Arial, sans-serif";
+      const baseFontSize = computedRootStyle.fontSize || "12px";
+
+      // also inject our print-specific snippets and a small layout shim to match modal width/padding
+      const layoutShim = `
+        html,body{margin:0;padding:0;background:white}
+        body{font-family: ${baseFontFamily}; font-size: ${baseFontSize}; color:#000}
+        .moa-print-wrapper{width:210mm;max-width:210mm;margin:0 auto;box-sizing:border-box}
+        #moa-slip-printable{padding:15mm;box-sizing:border-box;background:white}
+      `;
+
+      iframeDoc.head.insertAdjacentHTML(
+        "beforeend",
+        `<style>${MOA_BODY_PRINT_COLOR_SNIPPET} ${MOA_PRINT_PAGE_RULE_CSS} ${layoutShim}</style>`
+      );
+
+      iframeDoc.write(`</head><body>`);
+      iframeDoc.write(`<div class="moa-print-wrapper">${printRef.current.outerHTML}</div>`);
+      iframeDoc.write(`</body></html>`);
+      iframeDoc.close();
+
+      const printWindow = iframe.contentWindow;
+      const doPrint = () => {
+        try {
+          printWindow?.focus();
+          printWindow?.print();
+        } catch (err) {
+          console.error("Printing iframe failed:", err);
+        } finally {
+          setTimeout(() => {
+            try { document.body.removeChild(iframe); } catch (_) {}
+          }, 500);
+        }
+      };
+
+      // Give iframe a short time to layout styles
+      setTimeout(doPrint, 300);
+    } catch (err) {
+      console.error("Print failed:", err);
+      window.print();
+    }
   };
 
   useEffect(() => {
@@ -137,6 +187,17 @@ export function MoaModal({
       return () => window.removeEventListener('afterprint', handleAfterPrint);
     }
   }, [autoPrint, isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("printing-moa-active");
+    } else {
+      document.body.classList.remove("printing-moa-active");
+    }
+    return () => {
+      document.body.classList.remove("printing-moa-active");
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -150,7 +211,9 @@ export function MoaModal({
   const parkingFee = Number(data.parkingFee) || 0;
   const totalDue = amount + storageFee + parkingFee;
 
-  // Maturity dates calc (every 10 days)
+  const schedule = getInterestRateSchedule(data.category);
+  const activeGroup = findInterestRateGroup(data.category);
+
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
   const formatCompactDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
@@ -167,17 +230,17 @@ export function MoaModal({
   };
 
   const maturityDates = [
-    addDays(baseDate, 10),
-    addDays(baseDate, 20),
-    addDays(baseDate, 30),
+    addDays(baseDate, schedule[1]?.endDay ?? 10),
+    addDays(baseDate, schedule[2]?.endDay ?? 20),
+    addDays(baseDate, schedule[3]?.endDay ?? 30),
   ];
-  const gracePeriodEnd = addDays(baseDate, 34);
+  const gracePeriodEnd = addDays(baseDate, schedule[4]?.endDay ?? 34);
   const printableTermsLines = termsText.split(/\r?\n/).filter(Boolean);
 
   const lineInputClass = "border-b-2 border-zinc-400 bg-transparent px-2 text-xs font-bold text-zinc-900 outline-none w-full h-6 transition-all focus:border-emerald-600";
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
+    <div id="moa-modal-root" className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div
         className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10 light moa-paper-effect"
@@ -188,7 +251,6 @@ export function MoaModal({
           <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10 flex items-center justify-between no-print">
             <div>
               <h2 className="text-xl font-black tracking-tight text-white leading-none">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h2>
-              <p className="text-xs text-emerald-100/70">Please review the details before finalizing the transaction.</p>
             </div>
             <button
               onClick={onClose}
@@ -259,11 +321,11 @@ export function MoaModal({
                     <span className="w-32 font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
                     <div className="flex items-center gap-1">
                       <span className="text-[8px]">1st</span>
-                      <span className="w-14 border-b border-zinc-400 text-center">{addDays(baseDate, 10)}</span>
+                      <span className="w-14 border-b border-zinc-400 text-center">{maturityDates[0]}</span>
                       <span className="text-[8px]">2nd</span>
-                      <span className="w-14 border-b border-zinc-400 text-center">{addDays(baseDate, 20)}</span>
+                      <span className="w-14 border-b border-zinc-400 text-center">{maturityDates[1]}</span>
                       <span className="text-[8px]">3rd</span>
-                      <span className="w-14 border-b border-zinc-400 text-center">{addDays(baseDate, 30)}</span>
+                      <span className="w-14 border-b border-zinc-400 text-center">{maturityDates[2]}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -273,6 +335,9 @@ export function MoaModal({
                 </div>
               </div>
             </div>
+
+            {/* Interest schedule removed to match global MOA template from settings (super admin)
+                Template-driven content from `/settings/moa_template` will be used instead. */}
 
             <div className="space-y-2 px-2">
               <p className="leading-5">
@@ -480,20 +545,42 @@ export function MoaModal({
 
         @media print {
           .no-print { display: none !important; }
-          
-          body, html {
-            visibility: hidden !important;
+
+          html.printing-moa-active,
+          body.printing-moa-active {
+            visibility: visible !important;
             height: auto !important;
             overflow: visible !important;
             margin: 0 !important;
             padding: 0 !important;
-            ${MOA_BODY_PRINT_COLOR_SNIPPET}
           }
 
-          /* Reset all potential scroll/height constraints in the DOM tree */
-          .fixed.inset-0, 
-          .relative.w-full.max-w-4xl,
-          .flex-1.overflow-y-auto {
+          /* Hide all other sections in printable-area when printing this slip to prevent overlaps and extra pages */
+          body.printing-moa-active .printable-area > *:not(#moa-modal-root) {
+            display: none !important;
+          }
+
+          body.printing-moa-active #moa-modal-root {
+            display: block !important;
+            visibility: visible !important;
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
+          body.printing-moa-active #moa-modal-root *,
+          body.printing-moa-active #moa-slip-printable,
+          body.printing-moa-active #moa-slip-printable * {
+            visibility: visible !important;
+          }
+
+          /* Reset all potential scroll/height constraints in the DOM tree specifically for this print slip modal */
+          #moa-modal-root.fixed.inset-0, 
+          #moa-modal-root .relative.w-full.max-w-4xl,
+          #moa-modal-root .flex-1.overflow-y-auto {
             position: static !important;
             display: block !important;
             max-height: none !important;

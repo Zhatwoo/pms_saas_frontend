@@ -739,6 +739,7 @@ export default function EmployeePawnTransactionsPage() {
   useEffect(() => {
     const transactionNo = searchParams.get("transactionNo");
     const shouldHighlight = searchParams.get("highlightTransaction") === "true";
+    const shouldOpenDetails = searchParams.get("openDetails") === "true";
 
     if (!transactionNo) {
       highlightedTransactionRef.current = null;
@@ -751,7 +752,11 @@ export default function EmployeePawnTransactionsPage() {
       return;
     }
 
-    setSelectedTransaction(matchingTransaction);
+    // Avoid unexpected modal popups from navigation params.
+    // Open details only when explicitly requested via `openDetails=true`.
+    if (shouldOpenDetails) {
+      setSelectedTransaction(matchingTransaction);
+    }
 
     if (shouldHighlight && highlightedTransactionRef.current !== transactionNo) {
       highlightedTransactionRef.current = transactionNo;
@@ -891,7 +896,8 @@ export default function EmployeePawnTransactionsPage() {
         @media print {
           @page { size: auto; margin: 15mm; }
           body { background: white !important; color: black !important; }
-          body * { visibility: hidden; }
+          /* Hide everything when printing, except when MOA modal print is active */
+          body:not(.printing-moa-active) * { visibility: hidden !important; }
           .printable-area, .printable-area * { visibility: visible; }
           .printable-area { 
             position: relative !important; 

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ThemeButton } from "./theme-button";
 
 interface PaginationProps {
   currentPage: number;
@@ -44,13 +45,15 @@ export function Pagination({
 
   return (
     <div className="flex items-center gap-1">
-      <button
+      <ThemeButton
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
+        variant="ghost"
+        size="sm"
+        className="min-w-8 px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
       >
         &lt;
-      </button>
+      </ThemeButton>
       {pages.map((p, index) =>
         p === "ellipsis" ? (
           <span
@@ -60,26 +63,30 @@ export function Pagination({
             ...
           </span>
         ) : (
-          <button
+          <ThemeButton
             key={p}
             onClick={() => onPageChange(p)}
-            className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+            size="sm"
+            variant={p === currentPage ? "primary" : "ghost"}
+            className={`h-8 w-8 p-0 text-sm ${
               p === currentPage
-                ? "bg-emerald-700 font-bold text-white"
+                ? "font-bold text-white"
                 : "text-text-secondary hover:bg-surface-hover"
             }`}
           >
             {p}
-          </button>
+          </ThemeButton>
         ),
       )}
-      <button
+      <ThemeButton
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
+        variant="ghost"
+        size="sm"
+        className="min-w-8 px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
       >
         &gt;
-      </button>
+      </ThemeButton>
     </div>
   );
 }
