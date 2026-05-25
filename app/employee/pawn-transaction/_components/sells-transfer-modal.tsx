@@ -335,14 +335,14 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
 
               {isItemLocked && selectedItem ? (
                 <div className="rounded-2xl border border-border-main bg-surface p-4 shadow-lg shadow-black/10">
-                  <div className="flex flex-col gap-4 rounded-xl bg-emerald-950 p-4 text-white shadow-inner sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-4 rounded-xl bg-emerald-900 p-4 text-white shadow-inner sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">Ready to Sell</p>
-                      <p className="mt-1 text-xl font-black leading-tight">{selectedItem.unit}</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Ready to Sell</p>
+                      <p className="mt-1 text-xl font-black leading-tight text-white">{selectedItem.unit}</p>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">{selectedItem.unitId}</p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-300">Sale Price</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Sale Price</p>
                       <p className="mt-1 text-2xl font-black text-white">&#8369; {Number(selectedItem.srp || 0).toLocaleString()}</p>
                     </div>
                   </div>
@@ -585,7 +585,17 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
               <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
               <div className="flex flex-col sm:flex-row gap-6">
                 <div className="w-40">
-                  <Input label="Password" name="password" value={form.password} onChange={handleChange} type="password" size="sm" bg="bg-slate-50" placeholder="••••••••" />
+                  <div className="space-y-1.5 w-full">
+                    <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">Password</label>
+                    <input
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="••••••••"
+                      type="password"
+                      className="w-full rounded-xl border-2 border-emerald-300 bg-white px-4 py-2 text-xs font-black text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none placeholder:text-zinc-300"
+                    />
+                  </div>
                 </div>
               </div>
           </div>

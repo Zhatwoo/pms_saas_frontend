@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { ActionButton } from "@/components/shared/action-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -47,6 +48,9 @@ const saleStatusOptions = [
 
 const toolbarInputClass = "h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
 const toolbarTabClass = "px-4 py-2 text-sm font-medium transition-colors";
+const viewActionButtonClass = "inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-emerald-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40";
+const editActionButtonClass = "inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-orange-500 transition-colors hover:bg-orange-500/10 hover:text-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40";
+const deleteActionButtonClass = "inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-zinc-500 transition-colors hover:bg-zinc-500/10 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 dark:text-zinc-300 dark:hover:text-white";
 
 const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
@@ -199,6 +203,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
             <ActionButton
               variant="success"
               onClick={() => setAddModalOpen(true)}
+              className="!border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 hover:!text-white dark:!bg-emerald-700 dark:!text-white"
             >
               <span className="flex items-center gap-1.5">
                 {plusIcon}
@@ -337,27 +342,27 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                             onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
                             title={`View ${item.itemName}`}
                             aria-label={`View ${item.itemName}`}
-                            className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100" : "rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center"}
+                            className={viewActionButtonClass}
                           >
-                            {isSuperAdmin ? (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-700">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            ) : (
-                              "View"
-                            )}
+                            <Eye size={16} strokeWidth={2.4} />
                           </button>
                           {canEdit && (
                             <>
-                              <button onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100" : "rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100"}>
-                                Edit
+                              <button
+                                onClick={(event) => { event.stopPropagation(); setEditingItem(item); }}
+                                title={`Edit ${item.itemName}`}
+                                aria-label={`Edit ${item.itemName}`}
+                                className={editActionButtonClass}
+                              >
+                                <Pencil size={16} strokeWidth={2.4} />
                               </button>
                               <button
                                 onClick={(event) => { event.stopPropagation(); setDeleteConfirmId(item.id); }}
-                                className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100" : "rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"}
+                                title={`Delete ${item.itemName}`}
+                                aria-label={`Delete ${item.itemName}`}
+                                className={deleteActionButtonClass}
                               >
-                                Delete
+                                <Trash2 size={16} strokeWidth={2.4} />
                               </button>
                             </>
                           )}
@@ -373,7 +378,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
       )}
 
       {saleViewMode !== "calendar" && (
-      <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm"}>
+      <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20"}>
         <div className="overflow-x-auto">
           <table className={viewOnly ? "min-w-[1220px] w-full text-sm" : "w-full text-sm"}>
             <thead>
@@ -427,27 +432,27 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                           onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
                           title={`View ${item.itemName}`}
                           aria-label={`View ${item.itemName}`}
-                          className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100" : "rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center"}
+                          className={viewActionButtonClass}
                         >
-                          {isSuperAdmin ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-700">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          ) : (
-                            "View"
-                          )}
+                          <Eye size={16} strokeWidth={2.4} />
                         </button>
                         {canEdit && (
                           <>
-                            <button onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100" : "rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100"}>
-                              Edit
+                            <button
+                              onClick={(event) => { event.stopPropagation(); setEditingItem(item); }}
+                              title={`Edit ${item.itemName}`}
+                              aria-label={`Edit ${item.itemName}`}
+                              className={editActionButtonClass}
+                            >
+                              <Pencil size={16} strokeWidth={2.4} />
                             </button>
                             <button
                               onClick={(event) => { event.stopPropagation(); setDeleteConfirmId(item.id); }}
-                              className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100" : "rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"}
+                              title={`Delete ${item.itemName}`}
+                              aria-label={`Delete ${item.itemName}`}
+                              className={deleteActionButtonClass}
                             >
-                              Delete
+                              <Trash2 size={16} strokeWidth={2.4} />
                             </button>
                           </>
                         )}
