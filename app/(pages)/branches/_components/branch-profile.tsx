@@ -339,8 +339,9 @@ export function BranchProfile({ branch }: BranchProfileProps) {
       setIsLoadingStaff(true);
       setStaffError("");
       try {
-        const users = await api.get<BranchUserApiRecord[]>("/users");
-        // Don't filter by branch - show all staff for admin/super admin
+        const users = await api.get<BranchUserApiRecord[]>(
+          `/users?branchId=${encodeURIComponent(branch.id)}`,
+        );
         setBranchUsers(users || []);
       } catch (error) {
         setStaffError(
@@ -499,19 +500,23 @@ export function BranchProfile({ branch }: BranchProfileProps) {
   const managers = useMemo(
     () =>
       branchUsers.filter((u) => {
+        const userBranchId = u.branchId ?? u.branch_id;
+        if (userBranchId !== branch.id) return false;
         const role = u.role?.toLowerCase();
         return role === "admin";
       }),
-    [branchUsers],
+    [branch.id, branchUsers],
   );
 
   const employees = useMemo(
     () =>
       branchUsers.filter((u) => {
+        const userBranchId = u.branchId ?? u.branch_id;
+        if (userBranchId !== branch.id) return false;
         const role = u.role?.toLowerCase();
         return role === "employee" || role === "branch";
       }),
-    [branchUsers],
+    [branch.id, branchUsers],
   );
 
   function fullName(user: BranchUserApiRecord): string {
@@ -603,7 +608,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               <span className="text-emerald-400"><IconUsers /></span>
               <div>
                 <p className="text-xs font-medium uppercase text-emerald-400/70">Staff</p>
-                <p className="text-sm font-semibold text-white">{branchUsers.length} members</p>
+                <p className="text-sm font-semibold text-white">{managers.length + employees.length} members</p>
               </div>
             </div>
           </div>
