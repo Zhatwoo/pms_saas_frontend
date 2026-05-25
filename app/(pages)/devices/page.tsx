@@ -7,6 +7,14 @@ import { useAuth } from "@/contexts/auth-context";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+interface RecentUser {
+  id?: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
+  last_login?: string;
+}
+
 interface Device {
   id: string;
   deviceName: string;
@@ -24,6 +32,7 @@ interface Device {
   created_at: string;
   employee: { id: string; full_name: string; email: string; role: string } | null;
   branch: { id: string; name: string } | null;
+  recent_users?: RecentUser[];
 }
 
 interface Employee {
@@ -493,7 +502,8 @@ export default function DevicesPage() {
                 <tr className="border-b border-zinc-100 bg-zinc-50">
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Device</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Fingerprint</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Employee</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Registered To</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Recent Users</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Branch</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">IP</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Status</th>
@@ -522,6 +532,7 @@ export default function DevicesPage() {
                       <td className="px-4 py-3">
                         <span className="font-mono text-xs text-zinc-500">{fp?.slice(0, 16)}…</span>
                       </td>
+                      {/* Registered owner */}
                       <td className="px-4 py-3">
                         {device.employee ? (
                           <>
@@ -531,6 +542,26 @@ export default function DevicesPage() {
                           </>
                         ) : (
                           <span className="text-zinc-400 text-xs">—</span>
+                        )}
+                      </td>
+                      {/* Recent users who logged in from this device */}
+                      <td className="px-4 py-3">
+                        {device.recent_users && device.recent_users.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {device.recent_users.map((u, i) => (
+                              <div key={u.id ?? i} className="flex items-center gap-1.5">
+                                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-800">
+                                  {(u.full_name ?? u.email ?? "?")[0].toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="text-xs font-medium text-zinc-700 leading-tight">{u.full_name ?? u.email}</div>
+                                  <div className="text-[10px] text-zinc-400 capitalize">{u.role}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-zinc-400 text-xs">No logins yet</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-zinc-600">
