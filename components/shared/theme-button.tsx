@@ -93,7 +93,11 @@ export const ThemeButton = forwardRef<HTMLButtonElement, ThemeButtonProps>(
           />
         ) : null}
         {!loading && leftIcon ? <span className="shrink-0">{leftIcon}</span> : null}
-        {children ? <span className="truncate">{children}</span> : null}
+        {children ? (
+          <span className="inline-flex min-w-0 items-center gap-2 truncate">
+            {children}
+          </span>
+        ) : null}
         {!loading && rightIcon ? <span className="shrink-0">{rightIcon}</span> : null}
       </button>
     );

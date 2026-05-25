@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { ActionButton } from "@/components/shared/action-button";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -414,15 +415,16 @@ export default function DevicesPage() {
           </p>
         </div>
         {isSuperAdmin && (
-          <button
+          <ActionButton
+            variant="success"
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-emerald-600"
+            size="md"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Add Device
-          </button>
+          </ActionButton>
         )}
       </div>
 
@@ -467,15 +469,17 @@ export default function DevicesPage() {
             Add a device manually using the <strong>Add Device</strong> button, or have an employee log in from their device and click &quot;Request Authorization&quot;.
           </p>
           {isSuperAdmin && (
-            <button
+            <ActionButton
+              variant="success"
               onClick={() => setShowAddModal(true)}
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-600"
+              size="md"
+              className="mt-5"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
               Add Device
-            </button>
+            </ActionButton>
           )}
         </div>
       )}

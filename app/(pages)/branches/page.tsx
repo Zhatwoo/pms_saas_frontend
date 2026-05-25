@@ -11,6 +11,7 @@ import { BranchFilters } from "./_components/branch-filters";
 import { BranchTable } from "./_components/branch-table";
 import { BranchModal } from "./_components/branch-modal";
 import { BranchDetailDrawer } from "./_components/branch-detail-drawer";
+import { ActionButton } from "@/components/shared/action-button";
 import type { BranchRow } from "./_components/branch-table";
 
 interface BranchApiItem {
@@ -261,9 +262,11 @@ export default function BranchesPage() {
           </p>
         </div>
         {canCreateBranch && (
-          <button
+          <ActionButton
+            variant="warning"
             onClick={handleCreateBranch}
-            className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
+            size="md"
+            className="text-xs"
           >
             <svg
               width="14"
@@ -279,7 +282,7 @@ export default function BranchesPage() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             Create Branch
-          </button>
+          </ActionButton>
         )}
       </div>
 
