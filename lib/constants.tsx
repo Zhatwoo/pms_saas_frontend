@@ -12,7 +12,6 @@ import {
   AuditLogIcon,
   IncidentReportIcon,
   DeviceIcon,
-  LoginLogIcon,
 } from "@/lib/icons";
 
 export const APP_NAME = "Pawnshop Management System";
@@ -65,7 +64,6 @@ const SUPERADMIN_NAV: NavGroup[] = [
       },
       { label: "Employee Management", href: "/users", icon: <UserManagementIcon /> },
       { label: "Device Management", href: "/devices", icon: <DeviceIcon /> },
-      { label: "Login Logs", href: "/login-logs", icon: <LoginLogIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
     ],
