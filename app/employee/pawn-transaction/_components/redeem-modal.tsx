@@ -44,6 +44,7 @@ interface RedeemModalProps {
   branchId: string;
   branchName: string;
   onSuccess?: () => void;
+  compactTablet?: boolean;
 }
 
 interface PawnedSearchItem {
@@ -64,7 +65,7 @@ interface PawnedSearchItem {
   status: string;
 }
 
-export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }: RedeemModalProps) {
+export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, compactTablet = false }: RedeemModalProps) {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnedSearchItem | null>(null);
@@ -209,7 +210,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className={`relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10 ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -239,10 +240,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col xl:flex-row">
+        <div className={`flex-1 ${compactTablet ? "overflow-y-auto xl:hidden md:max-xl:block" : "overflow-hidden"} flex flex-col xl:flex-row`}>
           {/* Left Side: Search & Selection */}
-          <div className="w-full xl:w-[400px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0">
-            <div className="p-6 space-y-4">
+          <div className={`w-full xl:w-[400px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0 ${compactTablet ? "md:max-xl:w-full md:max-xl:border-r-0 md:max-xl:border-b md:max-xl:min-h-0 md:max-xl:max-h-none" : ""}`}>
+            <div className={`space-y-4 ${compactTablet ? "p-4 md:max-xl:p-4" : "p-6"}`}>
               <div className="flex items-center gap-3 mb-2">
                 <Search className="w-5 h-5 text-emerald-600/40" />
                 <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Active Pawn</h3>
@@ -267,7 +268,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+            <div className={`flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide ${compactTablet ? "md:max-xl:px-4 md:max-xl:pb-4 md:max-xl:max-h-none" : ""}`}>
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
@@ -310,9 +311,9 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
           </div>
 
           {/* Right Side: Details & Computation */}
-          <div className="flex-1 bg-white dark:bg-surface overflow-y-auto scrollbar-hide">
+          <div className={`flex-1 bg-white dark:bg-surface overflow-y-auto scrollbar-hide ${compactTablet ? "hidden md:max-xl:hidden" : ""}`}>
             {selectedItem ? (
-              <div className="p-4 sm:p-6 xl:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className={`p-4 sm:p-6 xl:p-12 animate-in fade-in slide-in-from-right-4 duration-300 ${compactTablet ? "md:max-xl:p-4 md:max-xl:pb-5" : ""}`}>
                 <div className="space-y-1 mb-8">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
                   <h2 className="text-4xl font-black text-emerald-950 dark:text-white dark:text-white tracking-tighter leading-none">
@@ -323,7 +324,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+                <div className={`grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10 ${compactTablet ? "md:max-xl:grid-cols-1 md:max-xl:gap-6 md:max-xl:mb-8" : ""}`}>
                   <DetailSection title="Loan & Item Details" icon={Smartphone}>
                     <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
                     <DetailRow 
@@ -361,7 +362,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                 </div>
 
                 {/* Computation Summary */}
-                <div className="mb-10 p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group">
+                <div className={`mb-10 p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group ${compactTablet ? "md:max-xl:p-5 md:max-xl:mb-8" : ""}`}>
                   <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                   <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-6">
                     <div className="space-y-2">
@@ -399,10 +400,88 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
               </div>
             )}
           </div>
+
+          {compactTablet && selectedItem && (
+            <div className="w-full border-t border-emerald-50 bg-white dark:bg-surface px-4 pb-4 pt-4 md:max-xl:block">
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="space-y-1 mb-5">
+                  <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
+                  <h2 className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none md:max-xl:text-[2.15rem]">
+                    {selectedItem.unit}
+                  </h2>
+                  <p className="text-emerald-900/40 dark:text-emerald-400 font-bold flex items-center gap-2">
+                    {selectedItem.name} • {selectedItem.contactNumber}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 mb-6">
+                  <DetailSection title="Loan & Item Details" icon={Smartphone}>
+                    <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
+                    <DetailRow 
+                      label="Maturity Interest" 
+                      value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
+                    />
+                    <DetailRow label="Purchased Date" value={selectedItem.purchasedDate} />
+                    <DetailRow 
+                      label="Days Since Pawn" 
+                      value={<span className="text-emerald-600">{interestCalc.daysPassed} Days</span>} 
+                    />
+                    <DetailRow label="Category" value={selectedItem.category} />
+                    <DetailRow label="Unit Code" value={selectedItem.unitCode} />
+                  </DetailSection>
+
+                  <DetailSection title="Physical Specs" icon={ShieldCheck}>
+                    <DetailRow label="Serial Number" value={selectedItem.serialNumber} />
+                    <DetailRow label="Condition" value={selectedItem.condition} />
+                    <DetailRow label="Memory" value={selectedItem.memory} />
+                    <DetailRow label="Items Included" value={selectedItem.itemsIncluded} />
+                    <div className="mt-3 pt-3 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
+                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
+                      {selectedItem.qrCode ? (
+                        <div className="h-28 w-28 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm md:max-xl:h-24 md:max-xl:w-24">
+                          <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="h-28 w-28 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center md:max-xl:h-24 md:max-xl:w-24">
+                          <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
+                        </div>
+                      )}
+                    </div>
+                  </DetailSection>
+                </div>
+
+                <div className="mb-5 p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group md:max-xl:p-4">
+                  <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                  <div className="relative z-10 flex flex-col gap-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Computation Summary</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Principal</p>
+                          <p className="text-lg font-black text-emerald-900 dark:text-white md:max-xl:text-[1.05rem]">{formatPeso(Number(selectedItem.amount))}</p>
+                        </div>
+                        <div className="h-8 w-px bg-emerald-200" />
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Interest ({interestCalc.percentage}%)</p>
+                          <p className="text-lg font-black text-emerald-900 dark:text-white md:max-xl:text-[1.05rem]">{formatPeso(interestCalc.interestAmount)}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Total Amount Due</p>
+                      <p className="text-4xl font-black text-emerald-950 dark:text-emerald-400 tracking-tighter md:max-xl:text-[2.25rem]">
+                        ₱ {interestCalc.totalAmount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
+        <div className={`p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0 ${compactTablet ? "md:p-6 md:max-xl:gap-5" : ""}`}>
           <div className="flex items-center gap-8 w-full sm:w-auto">
              <button 
                 onClick={onClose}

@@ -1209,6 +1209,7 @@ export default function EmployeePawnTransactionsPage() {
         branchId={resolvedBranchIdForModals}
         initialSearchCode={searchParams.get("action") === "renew" ? searchParams.get("ticketNo") || undefined : undefined}
         hideSidebar={hideRenewSidebar}
+        compactTablet
       />
 
       <NewPawnModal
@@ -1229,6 +1230,7 @@ export default function EmployeePawnTransactionsPage() {
         onSuccess={handleTransactionSuccess}
         branchId={resolvedBranchIdForModals}
         branchName={selectedBranch.name}
+        compactTablet
       />
 
       {/* Buy Back Modal will handle Expired/For-Sale items */}
@@ -1245,6 +1247,7 @@ export default function EmployeePawnTransactionsPage() {
         onClose={() => setIsSalesTransferModalOpen(false)}
         onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
+        compactTablet
       />
 
       <ReserveLayawayModal
