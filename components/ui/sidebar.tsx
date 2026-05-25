@@ -465,21 +465,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {process.env.NODE_ENV === "development" && userRole === "employee" && openingChecklist && (
-        <div className="border-t border-white/10 p-2">
-          <button
-            onClick={() => openingChecklist.debugSetInventoryAudit()}
-            title={isCompact ? "Test Inv Scan" : undefined}
-            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-bold text-amber-400 bg-amber-400/10 transition-colors hover:bg-amber-400/20 ${
-              isCompact ? "justify-center px-2" : ""
-            }`}
-          >
-            <span className="flex shrink-0">🛠️</span>
-            {!isCompact && "Test Inv Scan"}
-          </button>
-        </div>
-      )}
-
       {/* Logout */}
       <div className="border-t border-white/10 p-2">
         <button

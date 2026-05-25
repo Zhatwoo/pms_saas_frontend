@@ -46,17 +46,21 @@ export function calculateGadgetInterest(pawnAmount: number, transactionDate: str
     const defaultDuration = activeGroup.defaultDuration ?? 30;
     const graceDuration = activeGroup.gracePeriodDuration ?? 4;
 
+    const first5DaysLimit = activeGroup.first5DaysLimit ?? 5;
+    const day10Limit = activeGroup.day10Limit ?? 10;
+    const day20Limit = activeGroup.day20Limit ?? 20;
+
     const first5Days = activeGroup.first5Days ?? 5;
     const day10 = activeGroup.day10 ?? 10;
     const day20 = day10 + (activeGroup.day20Additional ?? 10);
     const day30 = day20 + (activeGroup.day30Additional ?? 10);
     const graceRate = day30 + (activeGroup.gracePeriodAdditional ?? 10);
 
-    if (daysPassed <= 5) {
+    if (daysPassed <= first5DaysLimit) {
       percentage = first5Days;
-    } else if (daysPassed <= 10) {
+    } else if (daysPassed <= day10Limit) {
       percentage = day10;
-    } else if (daysPassed <= 20) {
+    } else if (daysPassed <= day20Limit) {
       percentage = day20;
     } else if (daysPassed <= defaultDuration) {
       percentage = day30;

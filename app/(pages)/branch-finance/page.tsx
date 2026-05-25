@@ -26,6 +26,7 @@ import {
   LedgerTypeFilter,
 } from "@/components/shared/finance-ledger-table";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { ActionButton } from "@/components/shared/action-button";
 import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
@@ -847,9 +848,10 @@ export default function BranchFinancePage() {
             </div>
 
             <div className="flex justify-end print:hidden mb-2">
-              <button
+              <ActionButton
+                variant="primary"
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800"
+                size="md"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
@@ -857,7 +859,7 @@ export default function BranchFinancePage() {
                   <rect width="12" height="8" x="6" y="14" />
                 </svg>
                 Print Ledger
-              </button>
+              </ActionButton>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `

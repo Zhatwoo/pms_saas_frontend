@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+import { ActionButton } from "@/components/shared/action-button";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
@@ -388,8 +389,8 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-7xl space-y-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
         <div className="space-y-4">
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
+            <div className="border-b border-border-main px-4 py-3">
               <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Shop Information</h2>
             </div>
 
@@ -402,7 +403,7 @@ export default function SettingsPage() {
                   value={shopSettings.shopName}
                   onChange={(e) => handleShopSettingChange("shopName", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                  className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -414,7 +415,7 @@ export default function SettingsPage() {
                   value={shopSettings.shopAddress}
                   onChange={(e) => handleShopSettingChange("shopAddress", e.target.value)}
                   disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                  className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -427,7 +428,7 @@ export default function SettingsPage() {
                     value={shopSettings.phoneNumber}
                     onChange={(e) => handleShopSettingChange("phoneNumber", e.target.value)}
                     disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                    className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -440,7 +441,7 @@ export default function SettingsPage() {
                     value={shopSettings.email}
                     onChange={(e) => handleShopSettingChange("email", e.target.value)}
                     disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                    className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -449,8 +450,8 @@ export default function SettingsPage() {
 
           <InterestRatesSettings />
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
+            <div className="border-b border-border-main px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
@@ -475,13 +476,13 @@ export default function SettingsPage() {
                   className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-colors ${
                     isMoaEditMode
                       ? "border border-emerald-700 bg-emerald-700 text-white"
-                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                 </button>
 
-                <label className={`inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-[11px] font-bold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <label className={`inline-flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <input
                     type="checkbox"
                     checked={isMoaLocked}
@@ -495,7 +496,7 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setIsTopHeaderSwapped((v) => !v)}
                   disabled={!isSuperAdmin}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  className="rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300"
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
@@ -720,22 +721,24 @@ export default function SettingsPage() {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
+                  <ActionButton
                     onClick={handleSaveMoa}
                     disabled={!canEditMoa || !isSuperAdmin}
-                    className="rounded-lg bg-emerald-700 px-4 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    variant="success"
+                    size="sm"
                   >
                     Save MOA Template
-                  </button>
-                  <button
+                  </ActionButton>
+                  <ActionButton
                     onClick={handleSendToAllBranches}
                     disabled={sendStatus === "sending" || !isSuperAdmin}
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
+                    variant="outline"
+                    size="sm"
                   >
                     {sendStatus === "sending"
                       ? "Sending to All Branches..."
                       : "Send to All Branches"}
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
 
@@ -749,18 +752,20 @@ export default function SettingsPage() {
           </section>
 
           <div className="flex items-center gap-3">
-            <button 
+            <ActionButton 
               onClick={handleSaveAllSettings}
               disabled={isSavingSettings || !isSuperAdmin}
-              className="rounded-lg bg-emerald-700 px-5 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed">
+              variant="success"
+              size="sm">
               {isSavingSettings ? "Saving..." : "Save Changes"}
-            </button>
-            <button 
+            </ActionButton>
+            <ActionButton 
               onClick={() => window.location.reload()}
               disabled={!isSuperAdmin}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
+              variant="outline"
+              size="sm">
               Discard
-            </button>
+            </ActionButton>
             {settingsSavedAt && (
               <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
                 Settings saved: {settingsSavedAt}
@@ -770,8 +775,8 @@ export default function SettingsPage() {
         </div>
 
         <aside className="space-y-4">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm dark:border-zinc-700 dark:bg-slate-900">
-            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <section className="rounded-xl border border-border-main bg-surface p-4 text-center shadow-sm">
+            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-border-main bg-surface-secondary">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}

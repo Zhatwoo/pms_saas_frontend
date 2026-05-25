@@ -7,8 +7,9 @@ import { DailyBalanceConfirmation } from "./daily-balance-confirmation";
 import { InventoryAuditModal } from "./inventory-audit-modal";
 import { api, ApiError } from "@/lib/api";
 
-/** Subset of `/branch-finance/business-session` used for expected starting cash. */
+/** Subset of `/branch-finance/business-session` used for gates + expected cash. */
 interface BusinessSessionExpectedApi {
+  operationalCashAllowed: boolean;
   pendingStartingSession: {
     suggestedStartingBalance: number;
   } | null;
@@ -29,7 +30,13 @@ type DailyOpeningStatusApi = {
 export function OpeningChecklistWrapper() {
   const router = useRouter();
   const pathname = usePathname();
-  const { currentStep, isComplete, completeCashOnHand, completeInventoryAudit } = useOpeningChecklist();
+  const {
+    currentStep,
+    isComplete,
+    completeCashOnHand,
+    completeInventoryAudit,
+    refreshOpeningChecklistFromServer,
+  } = useOpeningChecklist();
   const [expectedCash, setExpectedCash] = useState("0");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoadingExpectedAmount, setIsLoadingExpectedAmount] = useState(false);
@@ -40,65 +47,74 @@ export function OpeningChecklistWrapper() {
     let cancelled = false;
     setIsLoadingExpectedAmount(true);
     (async () => {
-      let resolved: number | null = null;
-
       try {
-        const opening = await api.get<DailyOpeningStatusApi>(
-          "/branch-finance/daily-opening/status",
-        );
-        if (cancelled) return;
-        if (
-          opening?.expectedStartingCash != null &&
-          Number.isFinite(Number(opening.expectedStartingCash))
-        ) {
-          resolved = Number(opening.expectedStartingCash);
-        }
-      } catch (e) {
-        console.warn("[OpeningChecklistWrapper] daily-opening status failed", e);
-      }
-
-      if (resolved === null) {
-        try {
-          const session = await api.get<BusinessSessionExpectedApi>(
+        const bizSession =
+          await api.get<BusinessSessionExpectedApi>(
             "/branch-finance/business-session",
           );
-          if (cancelled) return;
-          if (session?.pendingStartingSession != null) {
-            resolved = Number(
-              session.pendingStartingSession.suggestedStartingBalance ?? 0,
-            );
-          } else if (session) {
-            resolved = Number(session.latestBalance?.endingBalance ?? 0);
-          }
-        } catch (e) {
-          console.warn(
-            "[OpeningChecklistWrapper] business-session fetch failed",
-            e,
-          );
+        if (cancelled) return;
+        if (bizSession.operationalCashAllowed === true) {
+          await refreshOpeningChecklistFromServer();
+          setIsLoadingExpectedAmount(false);
+          return;
         }
-      }
 
-      if (resolved === null && !cancelled) {
+        let resolved: number | null = null;
+
         try {
-          const bal = await api.get<{
-            startingBalance: number;
-            endingBalance: number;
-          }>("/branch-finance/latest-balance");
-          if (!cancelled) {
-            resolved = Number(bal?.endingBalance ?? bal?.startingBalance ?? 0);
+          const opening = await api.get<DailyOpeningStatusApi>(
+            "/branch-finance/daily-opening/status",
+          );
+          if (cancelled) return;
+          if (
+            opening?.expectedStartingCash != null &&
+            Number.isFinite(Number(opening.expectedStartingCash))
+          ) {
+            resolved = Number(opening.expectedStartingCash);
           }
         } catch (e) {
-          console.warn(
-            "[OpeningChecklistWrapper] latest-balance fetch failed",
-            e,
-          );
-          resolved = 0;
+          console.warn("[OpeningChecklistWrapper] daily-opening status failed", e);
         }
-      }
 
-      if (!cancelled) {
-        setExpectedCash(String(resolved ?? 0));
-        setIsLoadingExpectedAmount(false);
+        if (resolved === null) {
+          if (cancelled) return;
+          if (bizSession?.pendingStartingSession != null) {
+            resolved = Number(
+              bizSession.pendingStartingSession.suggestedStartingBalance ?? 0,
+            );
+          } else if (bizSession) {
+            resolved = Number(bizSession.latestBalance?.endingBalance ?? 0);
+          }
+        }
+
+        if (resolved === null && !cancelled) {
+          try {
+            const bal = await api.get<{
+              startingBalance: number;
+              endingBalance: number;
+            }>("/branch-finance/latest-balance");
+            if (!cancelled) {
+              resolved = Number(bal?.endingBalance ?? bal?.startingBalance ?? 0);
+            }
+          } catch (e) {
+            console.warn(
+              "[OpeningChecklistWrapper] latest-balance fetch failed",
+              e,
+            );
+            resolved = 0;
+          }
+        }
+
+        if (!cancelled) {
+          setExpectedCash(String(resolved ?? 0));
+          setIsLoadingExpectedAmount(false);
+        }
+      } catch (e) {
+        console.warn(
+          "[OpeningChecklistWrapper] business-session gate fetch failed",
+          e,
+        );
+        if (!cancelled) setIsLoadingExpectedAmount(false);
       }
     })();
 
@@ -106,7 +122,7 @@ export function OpeningChecklistWrapper() {
       cancelled = true;
       setIsLoadingExpectedAmount(false);
     };
-  }, [currentStep, isComplete]);
+  }, [currentStep, isComplete, refreshOpeningChecklistFromServer]);
 
   const handleConfirm = async (amount: string) => {
     setSubmitError(null);
