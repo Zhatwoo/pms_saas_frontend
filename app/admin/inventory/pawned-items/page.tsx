@@ -16,6 +16,9 @@ import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-
 import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
+import { calculateGadgetInterest } from "@/lib/interest";
+
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -258,6 +261,162 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   const [calendarYear, setCalendarYear] = useState(today.getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
   const [calendarData, setCalendarData] = useState<Record<string, number>>({});
+
+  const [isMoaModalOpen, setIsMoaModalOpen] = useState(false);
+  const [moaLoading, setMoaLoading] = useState(false);
+  const [moaReprintData, setMoaReprintData] = useState<{
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    address: string;
+    contactNo: string;
+    unitCode: string;
+    unitName: string;
+    category: string;
+    serialNumber: string;
+    itemsIncluded: string;
+    condition: string;
+    remarks: string;
+    memory: string;
+    amount: string;
+    storageFee: string;
+    purchasedDate: string;
+    idPresented: string;
+    branchName: string;
+    branchAddress?: string;
+    branchPhone?: string;
+    processedBy?: string;
+  } | null>(null);
+
+  const handleReprintMoa = async (id: string) => {
+    toast.loading("Loading Memorandum of Agreement (MOA)...", { id: "fetch-moa" });
+    try {
+      const sourceItem = pawnedItems.find((item) => item.id === id);
+      let itemDetails: any;
+      let transactionFallback: any = null;
+      try {
+        itemDetails = await api.get<any>(`/inventory/pawned/${id}`);
+      } catch {
+        if (!sourceItem?.itemId) {
+          throw new Error("Missing item code for MOA reprint fallback.");
+        }
+        itemDetails = await api.get<any>(`/inventory/item/${encodeURIComponent(sourceItem.itemId)}`);
+      }
+
+      const isMissing = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
+      if (
+        isMissing(itemDetails?.items_included ?? itemDetails?.itemsIncluded) ||
+        isMissing(itemDetails?.condition) ||
+        isMissing(itemDetails?.memory_storage ?? itemDetails?.memoryStorage) ||
+        !itemDetails?.created_by_user?.full_name
+      ) {
+        const params = id
+          ? `relatedPawnedItemId=${encodeURIComponent(id)}`
+          : sourceItem?.itemId
+            ? `unitCode=${encodeURIComponent(sourceItem.itemId)}`
+            : "";
+        if (params) {
+          try {
+            transactionFallback = await api.get<any>(`/transactions/pawn-source?${params}`);
+          } catch {
+            transactionFallback = null;
+          }
+        }
+      }
+
+      if (!itemDetails) {
+        toast.error("Item details not found.", { id: "fetch-moa" });
+        return;
+      }
+      const customerDetails =
+        itemDetails.customer ??
+        itemDetails.customers ??
+        transactionFallback?.pawned_item?.customer ??
+        transactionFallback?.customer ??
+        null;
+      const customerFullName = customerDetails?.full_name || itemDetails.customerName || "WALK-IN CUSTOMER";
+      const purchasedDateValue = itemDetails.pawn_date || itemDetails.pawnDate || "";
+      const amountValue = Number(itemDetails.amount ?? 0);
+      const categoryValue = itemDetails.category || "---";
+      const unitCodeValue = itemDetails.item_id || itemDetails.itemId || "---";
+      const unitNameValue = itemDetails.item_name || itemDetails.itemName || "---";
+      const itemAddress =
+        [
+          customerDetails?.address ?? itemDetails.customerAddress,
+          customerDetails?.barangay,
+          customerDetails?.city,
+          customerDetails?.province ?? customerDetails?.region
+        ]
+          .filter(Boolean)
+          .join(", ") || "---";
+
+      const calculations = calculateGadgetInterest(
+        amountValue,
+        purchasedDateValue || new Date().toISOString().slice(0, 10),
+        categoryValue
+      );
+
+      const fullName = customerFullName;
+      const names = fullName.trim().split(" ");
+      const firstName = names[0] || "WALK-IN";
+      const middleName = customerDetails?.middle_name || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
+      const lastName = names.length > 1 ? names[names.length - 1] : "---";
+
+      let branchAddress = "";
+      let branchPhone = "";
+      try {
+        const branchList = await api.get<any[]>("/branches");
+        const match = branchList?.find((b: any) => b.name === itemDetails.branch);
+        if (match) {
+          branchAddress = match.location || "";
+          branchPhone = match.phone || "";
+        }
+      } catch (err) {
+        console.warn("Failed to fetch branches details", err);
+      }
+
+      setMoaReprintData({
+        firstName,
+        middleName,
+        lastName,
+        address: itemAddress,
+        contactNo: customerDetails?.contact_number || itemDetails.customerContact || "",
+        unitCode: unitCodeValue,
+        unitName: unitNameValue,
+        category: categoryValue,
+        serialNumber: itemDetails.serial_number || itemDetails.serialNumber || "---",
+        itemsIncluded:
+          itemDetails.items_included ||
+          itemDetails.itemsIncluded ||
+          transactionFallback?.pawned_item?.items_included ||
+          "---",
+        condition: itemDetails.condition || transactionFallback?.pawned_item?.condition || "---",
+        remarks: itemDetails.remarks || "---",
+        memory:
+          itemDetails.memory_storage ||
+          itemDetails.memoryStorage ||
+          transactionFallback?.pawned_item?.memory_storage ||
+          "---",
+        amount: String(amountValue),
+        storageFee: String(calculations.interestAmount),
+        purchasedDate: purchasedDateValue,
+        idPresented: customerDetails?.id_presented || itemDetails.customerIdPresented || "---",
+        branchName: itemDetails.branch || "",
+        branchAddress,
+        branchPhone,
+        processedBy:
+          itemDetails.created_by_user?.full_name ||
+          transactionFallback?.created_by_user?.full_name ||
+          itemDetails.createdByName ||
+          "AUTHORIZED PERSONNEL"
+      });
+      setIsMoaModalOpen(true);
+      toast.success("MOA loaded successfully!", { id: "fetch-moa" });
+    } catch (err) {
+      console.error("Failed to load MOA reprint data", err);
+      toast.error("Failed to load MOA reprint details.", { id: "fetch-moa" });
+    }
+  };
 
   const handlePrintQr = useCallback((size: "small" | "large") => {
     const sizeCm = size === "small" ? "2cm" : "3cm";
@@ -590,6 +749,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                             >
                               {eyeIcon}
                             </button>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleReprintMoa(item.id);
+                              }}
+                              title="View/Print MOA Slip"
+                              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                            >
+                              {printerIcon}
+                            </button>
                             {canEdit && (
                               <>
                                 <button 
@@ -721,6 +890,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               throw err;
             }
           }}
+        />
+      )}
+
+      {moaReprintData && (
+        <MoaModal
+          isOpen={isMoaModalOpen}
+          onClose={() => setIsMoaModalOpen(false)}
+          onConfirm={() => setIsMoaModalOpen(false)}
+          data={moaReprintData}
+          isLoading={moaLoading}
         />
       )}
     </div>

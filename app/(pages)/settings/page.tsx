@@ -369,17 +369,14 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     setSendStatus("sending");
     try {
-      // First, ensure the current changes are saved to the central template
+      // `moa_template` is a global setting; saving here applies to all branches.
       await api.post(`/settings/moa_template`, {
         terms_text: termsText,
         labels: topLabels,
         lineWidths,
         extensionRows,
       });
-      
-      // Simulate the broadcast process to other branches
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
+
       setMoaSavedAt(new Date().toLocaleString());
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);

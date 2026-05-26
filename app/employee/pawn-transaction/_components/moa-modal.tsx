@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
 import { findInterestRateGroup, getInterestRateSchedule } from "@/lib/interest";
-import { MOA_BODY_PRINT_COLOR_SNIPPET, MOA_PRINT_PAGE_RULE_CSS } from "@/lib/print-templates";
 
 interface MoaModalProps {
   isOpen: boolean;
@@ -64,15 +63,21 @@ export function MoaModal({
   const [termsText, setTermsText] = useState("");
   const [labels, setLabels] = useState<any>(null);
   const [extensionRows, setExtensionRows] = useState<any[]>([]);
+  const [shopInfo, setShopInfo] = useState<{
+    shopName?: string;
+    shopAddress?: string;
+    phoneNumber?: string;
+  } | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       async function fetchTemplateAndInterestRates() {
         try {
-          const [moaTemplate, interestRates] = await Promise.all([
+          const [moaTemplate, interestRates, generalSettings] = await Promise.all([
             api.get<{ terms_text: string; labels: any; extensionRows?: any[] }>(`/settings/moa_template`),
             api.get<any[]>(`/settings/interest_rates`),
+            api.get<{ shopInfo?: { shopName?: string; shopAddress?: string; phoneNumber?: string } }>(`/settings/general`),
           ]);
 
           if (moaTemplate) {
@@ -83,6 +88,9 @@ export function MoaModal({
 
           if (Array.isArray(interestRates) && typeof window !== "undefined") {
             localStorage.setItem("interest_rates", JSON.stringify(interestRates));
+          }
+          if (generalSettings?.shopInfo) {
+            setShopInfo(generalSettings.shopInfo);
           }
         } catch (error) {
           console.error("Failed to fetch MOA template and/or interest rates:", error);
@@ -123,37 +131,19 @@ export function MoaModal({
 
       iframeDoc.open();
       iframeDoc.write(`<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title>`);
-
-      // clone stylesheet and style nodes so print styles apply inside iframe
       Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
         try {
           iframeDoc.head.appendChild(node.cloneNode(true));
-        } catch (e) {
-          // ignore cloning errors for some browser-injected styles
+        } catch {
+          // ignore clone failures from browser-injected styles
         }
       });
-
-      // compute base font styles from the host document so iframe matches layout
-      const computedRootStyle = window.getComputedStyle(document.documentElement);
-      const baseFontFamily = computedRootStyle.fontFamily || "Inter, Arial, sans-serif";
-      const baseFontSize = computedRootStyle.fontSize || "12px";
-
-      // also inject our print-specific snippets and a small layout shim to match modal width/padding
-      const layoutShim = `
-        html,body{margin:0;padding:0;background:white}
-        body{font-family: ${baseFontFamily}; font-size: ${baseFontSize}; color:#000}
-        .moa-print-wrapper{width:210mm;max-width:210mm;margin:0 auto;box-sizing:border-box}
-        #moa-slip-printable{padding:15mm;box-sizing:border-box;background:white}
-      `;
-
-      iframeDoc.head.insertAdjacentHTML(
-        "beforeend",
-        `<style>${MOA_BODY_PRINT_COLOR_SNIPPET} ${MOA_PRINT_PAGE_RULE_CSS} ${layoutShim}</style>`
-      );
-
-      iframeDoc.write(`</head><body>`);
-      iframeDoc.write(`<div class="moa-print-wrapper">${printRef.current.outerHTML}</div>`);
-      iframeDoc.write(`</body></html>`);
+      iframeDoc.write(`<style>
+        @page { size: portrait; margin: 6mm; }
+        html, body { margin: 0; padding: 0; background: #fff; }
+        #moa-slip-printable { margin: 0 auto; padding: 0; width: 100%; }
+      </style>`);
+      iframeDoc.write(`</head><body>${printRef.current.outerHTML}</body></html>`);
       iframeDoc.close();
 
       const printWindow = iframe.contentWindow;
@@ -161,17 +151,14 @@ export function MoaModal({
         try {
           printWindow?.focus();
           printWindow?.print();
-        } catch (err) {
-          console.error("Printing iframe failed:", err);
         } finally {
           setTimeout(() => {
-            try { document.body.removeChild(iframe); } catch (_) {}
-          }, 500);
+            try { document.body.removeChild(iframe); } catch {}
+          }, 800);
         }
       };
 
-      // Give iframe a short time to layout styles
-      setTimeout(doPrint, 300);
+      setTimeout(doPrint, 250);
     } catch (err) {
       console.error("Print failed:", err);
       window.print();
@@ -213,6 +200,7 @@ export function MoaModal({
 
   const schedule = getInterestRateSchedule(data.category);
   const activeGroup = findInterestRateGroup(data.category);
+  const showInterestRate = !!labels?.interestRateHeader;
 
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
   const formatCompactDate = (date: Date) => {
@@ -238,6 +226,9 @@ export function MoaModal({
   const printableTermsLines = termsText.split(/\r?\n/).filter(Boolean);
 
   const lineInputClass = "border-b-2 border-zinc-400 bg-transparent px-2 text-xs font-bold text-zinc-900 outline-none w-full h-6 transition-all focus:border-emerald-600";
+  const headerPrimary = shopInfo?.shopName || data.branchName || "JCLB BUY BACK SHOP";
+  const headerSecondary = shopInfo?.shopAddress || data.branchAddress || "Main Branch";
+  const headerPhone = shopInfo?.phoneNumber || data.branchPhone || "";
 
   return (
     <div id="moa-modal-root" className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
@@ -277,18 +268,18 @@ export function MoaModal({
             {/* Title moved to the very top */}
             <div className="text-center mb-4">
               <h1 className="text-[18px] font-black uppercase tracking-[0.18em] text-emerald-900 underline">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h1>
-              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.22em] leading-none text-zinc-500">{data.branchName || "Main Branch"}</p>
-              {(data.branchAddress || data.branchPhone) && (
+              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.22em] leading-none text-zinc-500">{headerPrimary}</p>
+              {(headerSecondary || headerPhone) && (
                 <div className="mt-1 flex flex-col items-center gap-0.5">
-                  {data.branchAddress && (
-                    <p className="text-[8px] font-medium uppercase tracking-tight text-zinc-500">{data.branchAddress}</p>
+                  {headerSecondary && (
+                    <p className="text-[8px] font-medium uppercase tracking-tight text-zinc-500">{headerSecondary}</p>
                   )}
-                  {data.branchPhone && (
+                  {headerPhone && (
                     <div className="flex items-center gap-1">
                       <svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor" className="text-zinc-400">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.28-2.28a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                       </svg>
-                      <p className="text-[8px] font-medium uppercase tracking-tight text-zinc-500">{data.branchPhone}</p>
+                      <p className="text-[8px] font-medium uppercase tracking-tight text-zinc-500">{headerPhone}</p>
                     </div>
                   )}
                 </div>
@@ -399,18 +390,18 @@ export function MoaModal({
             </div>
 
             <div className="space-y-3 pt-3">
-              <div className="grid grid-cols-6 gap-3 text-[8px] font-black uppercase text-zinc-400 italic text-center">
+              <div className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3 text-[8px] font-black uppercase text-zinc-400 italic text-center`}>
                 <span>{labels?.dateHeader || "Date"}</span>
                 <span>{labels?.storageHeader || "Storage"}</span>
                 <span>{labels?.periodHeader || "Period"}</span>
-                <span>Interest Rate</span>
+                {showInterestRate && <span>{labels?.interestRateHeader || "Interest Rate"}</span>}
                 <span>{labels?.extendHeader || "Extend"}</span>
                 <span>{labels?.signHeader || "Sign"}</span>
               </div>
               {(extensionRows.length > 0 ? extensionRows : [1, 2, 3]).map((row, idx) => {
                 const scheduleItem = schedule[idx + 1];
                 return (
-                  <div key={idx} className="grid grid-cols-6 gap-3">
+                  <div key={idx} className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3`}>
                     <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
                       {maturityDates[idx] || ""}
                     </div>
@@ -418,23 +409,27 @@ export function MoaModal({
                     <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-zinc-50 font-bold text-zinc-500">
                       {typeof row === 'object' ? row.period : `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Period`}
                     </div>
-                    <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
-                      {scheduleItem ? `${scheduleItem.percentage}%` : "—"}
-                    </div>
+                    {showInterestRate && (
+                      <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
+                        {scheduleItem ? `${scheduleItem.percentage}%` : "—"}
+                      </div>
+                    )}
                     <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.extend : ''}</div>
                     <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.sign : ''}</div>
                   </div>
                 );
               })}
-              <div className="grid grid-cols-6 gap-3">
+              <div className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3`}>
                 <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
                   {gracePeriodEnd}
                 </div>
                 <div className="h-5 border-b border-zinc-300 bg-white/50"></div>
                 <div className="flex h-5 items-center justify-center border-b border-zinc-300 font-black text-[7px] uppercase text-zinc-400">{labels?.gracePeriodHeader || "GRACE PERIOD"}</div>
-                <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
-                  {schedule[4] ? `${schedule[4].percentage}%` : "—"}
-                </div>
+                {showInterestRate && (
+                  <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
+                    {schedule[4] ? `${schedule[4].percentage}%` : "—"}
+                  </div>
+                )}
                 <div className="h-5 border-b border-zinc-300"></div>
                 <div className="h-5 border-b border-zinc-300"></div>
               </div>
@@ -554,74 +549,95 @@ export function MoaModal({
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
 
         @media print {
+          @page { size: portrait; margin: 0; }
           .no-print { display: none !important; }
 
           html.printing-moa-active,
           body.printing-moa-active {
-            visibility: visible !important;
-            height: auto !important;
-            overflow: visible !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: #fff !important;
+            overflow: visible !important;
           }
 
-          /* Hide all other sections in printable-area when printing this slip to prevent overlaps and extra pages */
-          body.printing-moa-active .printable-area > *:not(#moa-modal-root) {
-            display: none !important;
+          body.printing-moa-active * {
+            visibility: hidden !important;
+          }
+
+          body.printing-moa-active #moa-modal-root,
+          body.printing-moa-active #moa-modal-root * {
+            visibility: visible !important;
           }
 
           body.printing-moa-active #moa-modal-root {
+            position: fixed !important;
+            inset: 0 !important;
             display: block !important;
-            visibility: visible !important;
-            position: static !important;
-            top: auto !important;
-            left: auto !important;
-            width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: #fff !important;
+            z-index: 99999 !important;
           }
 
-          body.printing-moa-active #moa-modal-root *,
-          body.printing-moa-active #moa-slip-printable,
-          body.printing-moa-active #moa-slip-printable * {
-            visibility: visible !important;
+          body.printing-moa-active #moa-modal-root > div:first-child {
+            display: none !important;
           }
 
-          /* Reset all potential scroll/height constraints in the DOM tree specifically for this print slip modal */
-          #moa-modal-root.fixed.inset-0, 
+          #moa-modal-root,
+          #moa-modal-root * {
+            animation: none !important;
+            transition: none !important;
+          }
+
+          #moa-modal-root.fixed.inset-0,
           #moa-modal-root .relative.w-full.max-w-4xl,
           #moa-modal-root .flex-1.overflow-y-auto {
             position: static !important;
             display: block !important;
-            max-height: none !important;
-            height: auto !important;
-            overflow: visible !important;
             width: 100% !important;
+            max-width: none !important;
+            height: auto !important;
+            max-height: none !important;
             margin: 0 !important;
             padding: 0 !important;
+            overflow: visible !important;
             transform: none !important;
             box-shadow: none !important;
+            border-radius: 0 !important;
             flex: none !important;
           }
 
-          #moa-slip-printable, 
-          #moa-slip-printable * {
-            visibility: visible !important;
-          }
-
           #moa-slip-printable {
-            visibility: visible !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
             width: 100% !important;
-            background: white !important;
-            padding: 0 !important;
             margin: 0 !important;
-            display: block !important;
+            padding: 0 6mm 4mm 6mm !important;
+            background: #fff !important;
+            font-size: 9.5px !important;
+            line-height: 1.15 !important;
           }
 
-          /* Improve print readability: force all gray text shades to black */
+          #moa-slip-printable .grid { display: grid !important; }
+          #moa-slip-printable .flex { display: flex !important; }
+          #moa-slip-printable .text-center { text-align: center !important; }
+          #moa-slip-printable .justify-between { justify-content: space-between !important; }
+          #moa-slip-printable .items-center { align-items: center !important; }
+
+          #moa-slip-printable .mb-4 { margin-bottom: 6px !important; }
+          #moa-slip-printable .space-y-5 > * + * { margin-top: 8px !important; }
+          #moa-slip-printable .space-y-3 > * + * { margin-top: 6px !important; }
+          #moa-slip-printable .space-y-2 > * + * { margin-top: 4px !important; }
+          #moa-slip-printable .moa-bottom-block { margin-top: 8px !important; }
+          #moa-slip-printable .moa-signatures {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 2rem !important;
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          #moa-slip-printable .moa-signatures .h-8 { height: 18px !important; }
+          #moa-slip-printable .moa-signatures .pt-8 { padding-top: 10px !important; }
+          #moa-slip-printable .moa-signatures .pb-4 { padding-bottom: 0 !important; }
+
           #moa-slip-printable .text-zinc-300,
           #moa-slip-printable .text-zinc-400,
           #moa-slip-printable .text-zinc-500,
@@ -631,23 +647,10 @@ export function MoaModal({
             color: #000 !important;
           }
 
-          /* Restore grid/flex for specific components that need them */
-          #moa-slip-printable .grid { display: grid !important; }
-          #moa-slip-printable .flex { display: flex !important; }
-          #moa-slip-printable .moa-bottom-block {
-            margin-top: 16px !important;
-            overflow: visible !important;
+          #moa-slip-printable .rounded-3xl,
+          #moa-slip-printable .rounded-xl {
+            border-radius: 0 !important;
           }
-
-          #moa-slip-printable .moa-signatures {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 3rem !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-
-          ${MOA_PRINT_PAGE_RULE_CSS}
         }
         `}</style>
       </div>

@@ -252,6 +252,7 @@ interface ApiTransaction {
     region?: string | null;
     contact_number?: string | null;
     middle_name?: string | null;
+    id_presented?: string | null;
   } | null;
   created_by_user?: {
     full_name?: string | null;
@@ -277,6 +278,7 @@ interface PawnedItemJoin {
     region?: string | null;
     contact_number?: string | null;
     middle_name?: string | null;
+    id_presented?: string | null;
   } | null;
 }
 
@@ -376,6 +378,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     customerRegion: customer?.region ?? undefined,
     customerPhone: customer?.contact_number ?? undefined,
     customerMiddleName: customer?.middle_name ?? undefined,
+    idPresented: customer?.id_presented ?? undefined,
     qrCode: qrCode,
     serialNumber: item?.serial_number ?? undefined,
     itemsIncluded: item?.items_included ?? undefined,
@@ -661,33 +664,94 @@ export default function SuperAdminPawnTransactionsPage() {
     });
   };
 
-  const handleReprint = useCallback((transactionNo: string) => {
+  const handleReprint = useCallback(async (transactionNo: string) => {
     const tx = allTransactions.find(t => t.transactionNo === transactionNo);
     if (!tx) return;
 
+    const hasMissingField = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
+    const needsEnrichment =
+      hasMissingField(tx.serialNumber) ||
+      hasMissingField(tx.itemsIncluded) ||
+      hasMissingField(tx.condition) ||
+      hasMissingField(tx.memoryStorage) ||
+      hasMissingField(tx.customerAddress) ||
+      hasMissingField(tx.customerName) ||
+      hasMissingField(tx.createdByName);
+
+    let enriched: any = null;
+    let pawnSource: any = null;
+    if (tx.relatedPawnedItemId && needsEnrichment) {
+      try {
+        enriched = await api.get<any>(`/inventory/pawned/${tx.relatedPawnedItemId}`);
+      } catch {
+        enriched = null;
+      }
+    }
+    if (!enriched && tx.unitCode && needsEnrichment) {
+      try {
+        enriched = await api.get<any>(`/inventory/item/${encodeURIComponent(tx.unitCode)}`);
+      } catch {
+        enriched = null;
+      }
+    }
+    if (needsEnrichment) {
+      const params = tx.relatedPawnedItemId
+        ? `relatedPawnedItemId=${encodeURIComponent(tx.relatedPawnedItemId)}`
+        : tx.unitCode
+          ? `unitCode=${encodeURIComponent(tx.unitCode)}`
+          : "";
+      if (params) {
+        try {
+          pawnSource = await api.get<any>(`/transactions/pawn-source?${params}`);
+        } catch {
+          pawnSource = null;
+        }
+      }
+    }
+
+    const resolvedCustomerName = tx.customerName || enriched?.customerName || "WALK-IN CUSTOMER";
+    const names = resolvedCustomerName.split(" ");
+    const firstName = names[0] || "WALK-IN";
+    const middleName = tx.customerMiddleName || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
+    const lastName = names.length > 1 ? names[names.length - 1] : "";
+
+    // Join address components for the MOA
+    const fullAddress = [
+      tx.customerAddress || enriched?.customerAddress,
+      tx.customerBarangay,
+      tx.customerCity,
+      tx.customerRegion
+    ].filter(Boolean).join(", ");
+
     setReprintData({
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      address: "",
-      contactNo: "",
+      firstName,
+      middleName,
+      lastName,
+      address: fullAddress,
+      contactNo: tx.customerPhone || "",
       unitCode: tx.unitCode,
-      unitName: tx.unit,
+      unitName: tx.unit || enriched?.itemName || "",
       category: tx.category || "",
-      serialNumber: tx.serialNumber || "",
-      itemsIncluded: tx.itemsIncluded || "",
-      condition: tx.condition || "",
+      serialNumber: tx.serialNumber || enriched?.serialNumber || pawnSource?.pawned_item?.serial_number || "",
+      itemsIncluded: tx.itemsIncluded || enriched?.itemsIncluded || pawnSource?.pawned_item?.items_included || "",
+      condition: tx.condition || enriched?.condition || pawnSource?.pawned_item?.condition || "",
       remarks: tx.remarks || "",
-      memory: tx.memoryStorage || "",
+      memory: tx.memoryStorage || enriched?.memoryStorage || pawnSource?.pawned_item?.memory_storage || "",
       amount: String(tx.pawn ?? "0"),
       storageFee: String(tx.storage ?? "0"),
       parkingFee: "0",
       purchasedDate: tx.date,
-      idPresented: "",
+      idPresented: tx.idPresented || enriched?.customerIdPresented || "",
       branchName: selectedBranch.name,
       branchAddress: selectedBranch.location || "",
       branchPhone: selectedBranch.phone || "",
-      processedBy: user?.fullName || "",
+      processedBy:
+        tx.createdByName ||
+        enriched?.created_by_user?.full_name ||
+        pawnSource?.created_by_user?.full_name ||
+        tx.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() ||
+        user?.fullName ||
+        "AUTHORIZED PERSONNEL"
     });
     setIsMoaReprintOpen(true);
   }, [allTransactions, selectedBranch, user?.fullName]);
