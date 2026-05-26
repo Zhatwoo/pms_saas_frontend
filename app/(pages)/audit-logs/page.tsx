@@ -637,6 +637,7 @@ export default function AuditLogsPage() {
   const [loginLogsLoading, setLoginLogsLoading] = useState(false);
   const [loginStatusFilter, setLoginStatusFilter] = useState("ALL");
   const [loginSearchQuery, setLoginSearchQuery] = useState("");
+  const [loginCurrentPage, setLoginCurrentPage] = useState(1);
 
   // Date Filtering
   const [activePeriod, setActivePeriod] = useState("All Time");
@@ -852,6 +853,10 @@ export default function AuditLogsPage() {
     return result;
   }, [loginLogs, loginStatusFilter, loginSearchQuery]);
 
+  useEffect(() => {
+    setLoginCurrentPage(1);
+  }, [loginStatusFilter, loginSearchQuery]);
+
   // Tabs
   const TABS = userRole === "super_admin" || userRole === "admin"
     ? ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer", "Login Logs"]
@@ -883,6 +888,8 @@ export default function AuditLogsPage() {
 
   const totalItems = filteredLogs.length;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalLoginItems = filteredLoginLogs.length;
+  const paginatedLoginLogs = filteredLoginLogs.slice((loginCurrentPage - 1) * itemsPerPage, loginCurrentPage * itemsPerPage);
 
   const handleExport = () => {
     if (filteredLogs.length === 0) return;
@@ -1047,10 +1054,10 @@ export default function AuditLogsPage() {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredLoginLogs.length === 0 ? (
+                  ) : paginatedLoginLogs.length === 0 ? (
                     <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No login logs found.</td></tr>
                   ) : (
-                    filteredLoginLogs.map(log => {
+                    paginatedLoginLogs.map(log => {
                       const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
                       const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
                       return (
@@ -1096,6 +1103,17 @@ export default function AuditLogsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="mt-4">
+              <PaginationFooter
+                currentPage={loginCurrentPage}
+                totalPages={Math.ceil(totalLoginItems / itemsPerPage) || 1}
+                totalItems={totalLoginItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setLoginCurrentPage}
+                mode="edge-pairs"
+              />
             </div>
           </>
         ) : (
