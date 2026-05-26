@@ -711,7 +711,7 @@ export default function SuperAdminPawnTransactionsPage() {
   }, [filteredTransactions]);
 
   return (
-    <div className="space-y-3 pb-4 printable-area">
+    <div className="space-y-5 pb-6 printable-area">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: auto; margin: 12mm; }
@@ -814,8 +814,8 @@ export default function SuperAdminPawnTransactionsPage() {
         </table>
       </div>
 
-      <div className="print-hide">
-      <div>
+      <div className="print-hide space-y-5">
+      <div className="rounded-xl border border-border-main bg-surface px-4 py-3 shadow-sm transition-colors duration-300">
         <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
           Branch transactions for the selected calendar date — list and calendar views (calendar counts reflect loaded history).
         </p>
@@ -831,9 +831,9 @@ export default function SuperAdminPawnTransactionsPage() {
 
       <TransactionStats data={currentStats} />
 
-      <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-[240px] flex-1">
+      <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px_auto] xl:items-end">
+          <div className="min-w-0">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
               Search Transactions
             </label>
@@ -846,7 +846,7 @@ export default function SuperAdminPawnTransactionsPage() {
             />
           </div>
 
-          <div className="w-48">
+          <div className="w-full xl:w-56">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
               Purpose Filter
             </label>
@@ -871,7 +871,7 @@ export default function SuperAdminPawnTransactionsPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
             <ActionButton variant="outline" onClick={handleExportCSV}>
               <span className="flex items-center gap-1.5">
                 {downloadIcon}
@@ -932,7 +932,7 @@ export default function SuperAdminPawnTransactionsPage() {
         title={`Transactions for ${formatSelectedDateLabel(selectedDate)}`}
       />
 
-      <div className="mt-4">
+      <div className="mt-5">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={totalPages}
