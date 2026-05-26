@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { useBranch } from "@/contexts/branch-context";
 import { ActionButton } from "@/components/shared/action-button";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -31,7 +32,7 @@ interface Device {
   last_login: string | null;
   createdAt: string;
   created_at: string;
-  employee: { id: string; full_name: string; email: string; role: string } | null;
+  employee: { id: string; full_name: string; email: string; role: string; branch_id?: string | null } | null;
   branch: { id: string; name: string } | null;
   recent_users?: RecentUser[];
 }
@@ -52,15 +53,29 @@ interface Employee {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    AUTHORIZED: "bg-emerald-100 text-emerald-800",
-    PENDING: "bg-amber-100 text-amber-800",
-    BLOCKED: "bg-red-100 text-red-800",
+    AUTHORIZED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400",
+    PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
+    BLOCKED: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400",
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${map[status] ?? "bg-zinc-100 text-zinc-700"}`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${map[status] ?? "bg-badge-muted-bg text-badge-muted-text"}`}>
       {status}
     </span>
   );
+}
+
+const fieldClassName =
+  "w-full rounded border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500";
+const labelClassName = "mb-1 block text-xs font-bold text-text-secondary";
+
+function getDeviceBranchId(device: Device) {
+  if (device.employee?.role === "super_admin") return "__all__";
+  return device.branch?.id ?? device.employee?.branch_id ?? null;
+}
+
+function getDeviceBranchName(device: Device) {
+  if (device.employee?.role === "super_admin") return "All Branches";
+  return device.branch?.name ?? null;
 }
 
 // ── Add Device Modal (Super Admin manually registers a device) ────────────────
@@ -108,14 +123,14 @@ function AddDeviceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-lg rounded-xl border border-border-main bg-surface text-text-primary shadow-2xl dark:shadow-black/50" onClick={(e) => e.stopPropagation()}>
         {/* Modal header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
           <div>
-            <h2 className="text-lg font-bold text-zinc-900">Add Authorized Device</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Manually register a device for an employee</p>
+            <h2 className="text-lg font-bold text-text-primary">Add Authorized Device</h2>
+            <p className="mt-0.5 text-xs text-text-tertiary">Manually register a device for an employee</p>
           </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary hover:bg-surface-hover hover:text-text-primary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
@@ -124,7 +139,7 @@ function AddDeviceModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
           {/* How to get fingerprint tip */}
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
             <p className="font-bold">How to get the Device Fingerprint:</p>
             <ol className="mt-1 list-decimal space-y-1 pl-4">
               <li>Have the employee try to log in from that device</li>
@@ -134,7 +149,7 @@ function AddDeviceModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-600 mb-1">
+            <label className={labelClassName}>
               DEVICE FINGERPRINT / ID <span className="text-red-500">*</span>
             </label>
             <input
@@ -142,19 +157,19 @@ function AddDeviceModal({
               onChange={(e) => setDeviceFingerprint(e.target.value)}
               required
               placeholder="Paste the device fingerprint here..."
-              className="w-full rounded border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 outline-none focus:border-emerald-500"
+              className={`${fieldClassName} font-mono`}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-600 mb-1">
+            <label className={labelClassName}>
               ASSIGN EMPLOYEE <span className="text-red-500">*</span>
             </label>
             <select
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
               required
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500"
+              className={fieldClassName}
             >
               <option value="">Select employee...</option>
               {employees.map((emp) => (
@@ -168,7 +183,7 @@ function AddDeviceModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-zinc-600 mb-1">
+              <label className={labelClassName}>
                 DEVICE NICKNAME <span className="text-red-500">*</span>
               </label>
               <input
@@ -176,16 +191,16 @@ function AddDeviceModal({
                 onChange={(e) => setDeviceName(e.target.value)}
                 required
                 placeholder="e.g. QC_COUNTER_1"
-                className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500"
+                className={fieldClassName}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-600 mb-1">DEVICE TYPE</label>
+              <label className={labelClassName}>DEVICE TYPE</label>
               <select
                 value={deviceType}
                 onChange={(e) => setDeviceType(e.target.value)}
-                className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500"
+                className={fieldClassName}
               >
                 {["DESKTOP", "LAPTOP", "TABLET", "MANAGER_PC", "COUNTER_PC"].map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -195,17 +210,17 @@ function AddDeviceModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-600 mb-1">IP ADDRESS <span className="text-zinc-400 font-normal">(optional)</span></label>
+            <label className={labelClassName}>IP ADDRESS <span className="font-normal text-text-tertiary">(optional)</span></label>
             <input
               value={ipAddress}
               onChange={(e) => setIpAddress(e.target.value)}
               placeholder="e.g. 192.168.1.10"
-              className="w-full rounded border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 outline-none focus:border-emerald-500"
+              className={`${fieldClassName} font-mono`}
             />
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 rounded border border-zinc-300 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+            <button type="button" onClick={onClose} className="flex-1 rounded border border-border-main py-2.5 text-sm font-semibold text-text-secondary hover:bg-surface-hover">
               Cancel
             </button>
             <button type="submit" disabled={saving} className="flex-1 rounded bg-emerald-700 py-2.5 text-sm font-bold text-white hover:bg-emerald-600 disabled:opacity-50">
@@ -260,13 +275,13 @@ function AuthorizeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+      <div className="w-full max-w-md rounded-xl border border-border-main bg-surface text-text-primary shadow-2xl dark:shadow-black/50" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
           <div>
-            <h2 className="text-lg font-bold text-zinc-900">Authorize Device</h2>
-            <p className="mt-0.5 break-all font-mono text-[10px] text-zinc-400">{fp}</p>
+            <h2 className="text-lg font-bold text-text-primary">Authorize Device</h2>
+            <p className="mt-0.5 break-all font-mono text-[10px] text-text-tertiary">{fp}</p>
           </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary hover:bg-surface-hover hover:text-text-primary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
@@ -275,12 +290,12 @@ function AuthorizeModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
           <div>
-            <label className="block text-xs font-bold text-zinc-600 mb-1">ASSIGN EMPLOYEE</label>
+            <label className={labelClassName}>ASSIGN EMPLOYEE</label>
             <select
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
               required
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500"
+              className={fieldClassName}
             >
               <option value="">Select employee...</option>
               {employees.map((emp) => (
@@ -292,22 +307,22 @@ function AuthorizeModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-600 mb-1">DEVICE NICKNAME</label>
+            <label className={labelClassName}>DEVICE NICKNAME</label>
             <input
               value={deviceName}
               onChange={(e) => setDeviceName(e.target.value)}
               required
               placeholder="e.g. QC_COUNTER_1"
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500"
+              className={fieldClassName}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-zinc-600 mb-1">DEVICE TYPE</label>
+            <label className={labelClassName}>DEVICE TYPE</label>
             <select
               value={deviceType}
               onChange={(e) => setDeviceType(e.target.value)}
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-emerald-500"
+              className={fieldClassName}
             >
               {["DESKTOP", "LAPTOP", "TABLET", "MANAGER_PC", "COUNTER_PC"].map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -316,7 +331,7 @@ function AuthorizeModal({
           </div>
 
           <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 rounded border border-zinc-300 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+            <button type="button" onClick={onClose} className="flex-1 rounded border border-border-main py-2 text-sm font-semibold text-text-secondary hover:bg-surface-hover">
               Cancel
             </button>
             <button type="submit" disabled={saving} className="flex-1 rounded bg-emerald-700 py-2 text-sm font-bold text-white hover:bg-emerald-600 disabled:opacity-50">
@@ -333,6 +348,7 @@ function AuthorizeModal({
 
 export default function DevicesPage() {
   const { user } = useAuth();
+  const { selectedBranch, isAllBranches } = useBranch();
   const [devices, setDevices] = useState<Device[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -393,34 +409,46 @@ export default function DevicesPage() {
     }
   };
 
-  const filtered = devices.filter((d) => {
+  const branchScopedDevices = useMemo(() => {
+    if (isAllBranches) return devices;
+    return devices.filter((device) => getDeviceBranchId(device) === selectedBranch.id);
+  }, [devices, isAllBranches, selectedBranch.id]);
+
+  const filtered = branchScopedDevices.filter((d) => {
     const name = (d.device_name ?? d.deviceName ?? "").toLowerCase();
     const fp = (d.device_fingerprint ?? d.deviceFingerprint ?? "").toLowerCase();
     const empName = (d.employee?.full_name ?? "").toLowerCase();
+    const branchName = (getDeviceBranchName(d) ?? "").toLowerCase();
     const matchSearch =
       !search ||
       name.includes(search.toLowerCase()) ||
       fp.includes(search.toLowerCase()) ||
-      empName.includes(search.toLowerCase());
+      empName.includes(search.toLowerCase()) ||
+      branchName.includes(search.toLowerCase());
     const matchStatus = statusFilter === "ALL" || d.status === statusFilter;
     return matchSearch && matchStatus;
+  }).sort((a, b) => {
+    if (!isAllBranches) return 0;
+    const branchA = getDeviceBranchName(a) ?? "";
+    const branchB = getDeviceBranchName(b) ?? "";
+    return branchA.localeCompare(branchB) || new Date(b.created_at ?? b.createdAt).getTime() - new Date(a.created_at ?? a.createdAt).getTime();
   });
 
   const counts = {
-    ALL: devices.length,
-    AUTHORIZED: devices.filter((d) => d.status === "AUTHORIZED").length,
-    PENDING: devices.filter((d) => d.status === "PENDING").length,
-    BLOCKED: devices.filter((d) => d.status === "BLOCKED").length,
+    ALL: branchScopedDevices.length,
+    AUTHORIZED: branchScopedDevices.filter((d) => d.status === "AUTHORIZED").length,
+    PENDING: branchScopedDevices.filter((d) => d.status === "PENDING").length,
+    BLOCKED: branchScopedDevices.filter((d) => d.status === "BLOCKED").length,
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 text-text-primary">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Device Management</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Manage authorized devices for branch employees
+          <h1 className="text-2xl font-bold text-text-primary">Device Management</h1>
+          <p className="mt-1 text-sm text-text-tertiary">
+            Manage authorized devices for {isAllBranches ? "all branches" : selectedBranch.name}
           </p>
         </div>
         {isSuperAdmin && (
@@ -445,8 +473,8 @@ export default function DevicesPage() {
             onClick={() => setStatusFilter(s)}
             className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
               statusFilter === s
-                ? "bg-emerald-700 text-white"
-                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 dark:bg-emerald-600 dark:shadow-emerald-500/20"
+                : "bg-surface-secondary text-text-secondary hover:bg-surface-hover"
             }`}
           >
             {s} ({counts[s]})
@@ -461,20 +489,20 @@ export default function DevicesPage() {
           placeholder="Search by name, fingerprint, or employee..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm outline-none focus:border-emerald-500"
+          className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-4 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500"
         />
       </div>
 
       {/* Empty state with guidance */}
       {!isLoading && devices.length === 0 && (
-        <div className="rounded-xl border border-dashed border-zinc-300 bg-white py-16 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-100">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-7 w-7 text-zinc-400">
+        <div className="rounded-xl border border-dashed border-border-main bg-surface py-16 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-7 w-7 text-text-tertiary">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0H3" />
             </svg>
           </div>
-          <h3 className="mt-4 text-sm font-bold text-zinc-700">No devices registered yet</h3>
-          <p className="mt-2 text-xs text-zinc-500 max-w-sm mx-auto">
+          <h3 className="mt-4 text-sm font-bold text-text-secondary">No devices registered yet</h3>
+          <p className="mx-auto mt-2 max-w-sm text-xs text-text-tertiary">
             Add a device manually using the <strong>Add Device</strong> button, or have an employee log in from their device and click &quot;Request Authorization&quot;.
           </p>
           {isSuperAdmin && (
@@ -495,29 +523,31 @@ export default function DevicesPage() {
 
       {/* Table */}
       {isLoading ? (
-        <div className="py-12 text-center text-sm text-zinc-400">Loading devices...</div>
+        <div className="py-12 text-center text-sm text-text-tertiary">Loading devices...</div>
+      ) : filtered.length === 0 && branchScopedDevices.length > 0 ? (
+        <div className="py-12 text-center text-sm text-text-tertiary">No devices match your search</div>
       ) : filtered.length === 0 && devices.length > 0 ? (
-        <div className="py-12 text-center text-sm text-zinc-400">No devices match your search</div>
+        <div className="py-12 text-center text-sm text-text-tertiary">No devices found for {selectedBranch.name}</div>
       ) : filtered.length > 0 ? (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-lg shadow-black/10 dark:shadow-black/30">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-100 bg-zinc-50">
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Device</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Fingerprint</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Registered To</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Recent Users</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Branch</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">IP</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Last Login</th>
+                <tr className="border-b border-border-subtle bg-surface-secondary">
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Device</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Fingerprint</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Registered To</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Recent Users</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Branch</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">IP</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Last Login</th>
                   {isSuperAdmin && (
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-zinc-500">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Actions</th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody className="divide-y divide-border-subtle">
                 {filtered.map((device) => {
                   const name = device.device_name ?? device.deviceName;
                   const type = device.device_type ?? device.deviceType;
@@ -527,25 +557,25 @@ export default function DevicesPage() {
                   const createdAt = device.created_at ?? device.createdAt;
 
                   return (
-                    <tr key={device.id} className="hover:bg-zinc-50">
+                    <tr key={device.id} className="transition-colors hover:bg-surface-hover">
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-zinc-900">{name}</div>
-                        <div className="text-xs text-zinc-400">{type}</div>
-                        <div className="text-[10px] text-zinc-400">{new Date(createdAt).toLocaleDateString()}</div>
+                        <div className="font-semibold text-text-primary">{name}</div>
+                        <div className="text-xs text-text-tertiary">{type}</div>
+                        <div className="text-[10px] text-text-muted">{new Date(createdAt).toLocaleDateString()}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-zinc-500">{fp?.slice(0, 16)}…</span>
+                        <span className="font-mono text-xs text-text-tertiary">{fp?.slice(0, 16)}…</span>
                       </td>
                       {/* Registered owner */}
                       <td className="px-4 py-3">
                         {device.employee ? (
                           <>
-                            <div className="font-medium text-zinc-800">{device.employee.full_name}</div>
-                            <div className="text-xs text-zinc-400">{device.employee.email}</div>
-                            <div className="text-xs text-zinc-400 capitalize">{device.employee.role}</div>
+                            <div className="font-medium text-text-secondary">{device.employee.full_name}</div>
+                            <div className="text-xs text-text-tertiary">{device.employee.email}</div>
+                            <div className="text-xs text-text-tertiary capitalize">{device.employee.role}</div>
                           </>
                         ) : (
-                          <span className="text-zinc-400 text-xs">—</span>
+                          <span className="text-xs text-text-tertiary">—</span>
                         )}
                       </td>
                       {/* Recent users who logged in from this device */}
@@ -554,28 +584,28 @@ export default function DevicesPage() {
                           <div className="space-y-1.5">
                             {device.recent_users.map((u, i) => (
                               <div key={u.id ?? i} className="flex items-center gap-1.5">
-                                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-800">
+                                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400">
                                   {(u.full_name ?? u.email ?? "?")[0].toUpperCase()}
                                 </div>
                                 <div>
-                                  <div className="text-xs font-medium text-zinc-700 leading-tight">{u.full_name ?? u.email}</div>
-                                  <div className="text-[10px] text-zinc-400 capitalize">{u.role}</div>
+                                  <div className="text-xs font-medium leading-tight text-text-secondary">{u.full_name ?? u.email}</div>
+                                  <div className="text-[10px] text-text-tertiary capitalize">{u.role}</div>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-zinc-400 text-xs">No logins yet</span>
+                          <span className="text-xs text-text-tertiary">No logins yet</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
-                        {device.branch?.name ?? <span className="text-zinc-400">—</span>}
+                      <td className="px-4 py-3 text-sm text-text-secondary">
+                        {getDeviceBranchName(device) ?? <span className="text-text-tertiary">—</span>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-zinc-500 font-mono">{ip ?? "—"}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-text-tertiary">{ip ?? "—"}</td>
                       <td className="px-4 py-3">
                         <StatusBadge status={device.status} />
                       </td>
-                      <td className="px-4 py-3 text-xs text-zinc-500">
+                      <td className="px-4 py-3 text-xs text-text-tertiary">
                         {lastLogin ? new Date(lastLogin).toLocaleString() : "Never"}
                       </td>
                       {isSuperAdmin && (
@@ -584,7 +614,7 @@ export default function DevicesPage() {
                             {device.status === "PENDING" && (
                               <button
                                 onClick={() => setAuthorizeTarget(device)}
-                                className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                                className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30"
                               >
                                 Authorize
                               </button>
@@ -592,7 +622,7 @@ export default function DevicesPage() {
                             {device.status === "AUTHORIZED" && (
                               <button
                                 onClick={() => handleBlock(device.id)}
-                                className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+                                className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30"
                               >
                                 Block
                               </button>
@@ -600,14 +630,14 @@ export default function DevicesPage() {
                             {device.status === "BLOCKED" && (
                               <button
                                 onClick={() => handleUnblock(device.id)}
-                                className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                                className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30"
                               >
                                 Unblock
                               </button>
                             )}
                             <button
                               onClick={() => handleDelete(device.id)}
-                              className="rounded bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600 hover:bg-zinc-200"
+                              className="rounded bg-surface-secondary px-2 py-1 text-xs font-semibold text-text-secondary hover:bg-surface-hover"
                             >
                               Remove
                             </button>
