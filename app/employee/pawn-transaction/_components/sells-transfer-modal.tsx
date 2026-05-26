@@ -13,6 +13,7 @@ interface SellsTransferModalProps {
   onSuccess?: () => void;
   branchName: string;
   initialItem?: InitialInventoryItem;
+  compactTablet?: boolean;
 }
 
 interface InventoryItem {
@@ -78,7 +79,7 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, initialItem }: SellsTransferModalProps) {
+export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, initialItem, compactTablet = false }: SellsTransferModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -269,7 +270,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className={`relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10 ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -304,10 +305,10 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
+        <div className={compactTablet ? "flex-1 flex flex-col overflow-y-auto xl:hidden md:max-xl:flex md:max-xl:flex-col" : "flex-1 flex flex-col xl:flex-row overflow-hidden"}>
           
           {/* Left Side: Inventory & Selection Details */}
-          <div className="w-full xl:w-[60%] border-r border-emerald-50 dark:border-border p-4 sm:p-6 xl:p-8 flex flex-col gap-8 bg-emerald-50/30 dark:bg-surface-secondary dark:bg-surface-secondary overflow-y-auto">
+          <div className={`w-full border-r border-emerald-50 dark:border-border p-4 sm:p-6 xl:p-8 flex flex-col gap-8 bg-emerald-50/30 dark:bg-surface-secondary dark:bg-surface-secondary overflow-y-auto ${compactTablet ? "md:max-xl:w-full md:max-xl:border-r-0 md:max-xl:p-5 md:max-xl:gap-6 md:max-xl:min-h-0 md:max-xl:overflow-visible" : "xl:w-[60%]"}`}>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -417,8 +418,8 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
             </div>
 
             {/* Selection Specifics */}
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-               <div className="space-y-6">
+            <div className={compactTablet ? "grid grid-cols-1 gap-6 md:max-xl:min-h-0" : "grid grid-cols-1 gap-8 xl:grid-cols-2"}>
+              <div className="space-y-6">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
                     <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Transaction Details</h4>
@@ -489,7 +490,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                   </div>
                </div>
 
-               <div className="bg-emerald-900 rounded-3xl p-6 text-white flex flex-col justify-between shadow-xl shadow-emerald-900/20">
+               <div className={`bg-emerald-900 rounded-3xl p-6 text-white flex flex-col justify-between shadow-xl shadow-emerald-900/20 ${compactTablet ? "md:max-xl:p-5 md:max-xl:rounded-2xl" : ""}`}>
                   <div className="space-y-2">
                      <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Quick Summary</p>
                      <p className="text-xl font-black leading-tight tracking-tight">{selectedItem?.unit || "Select an item..."}</p>
@@ -504,11 +505,50 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                      </p>
                   </div>
                </div>
+
+               {compactTablet && form.sellTransfer === "Sales" && (
+                 <div className="space-y-8 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 md:max-xl:p-4">
+                   <div className="space-y-2">
+                     <div className="flex items-center gap-3">
+                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                           <circle cx="12" cy="7" r="4" />
+                         </svg>
+                       </div>
+                       <div>
+                         <h3 className="text-lg font-black uppercase tracking-tight text-emerald-950 dark:text-white">Buyer&apos;s Information</h3>
+                         <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Please fill in current details</p>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div className="grid gap-4">
+                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                       <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
+                       <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
+                       <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
+                     </div>
+
+                     <PhilippineAddressFields
+                       value={{
+                         address: form.address,
+                         barangay: form.barangay,
+                         city: form.city,
+                         region: form.region,
+                       }}
+                       onFieldChange={(field, val) => setForm(prev => ({ ...prev, [field]: val }))}
+                     />
+
+                     <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
+                   </div>
+                 </div>
+               )}
             </div>
           </div>
 
            {/* Right Side: Information Panel */}
-          <div className="flex-1 p-4 sm:p-6 xl:p-8 overflow-y-auto">
+          <div className={`flex-1 p-4 sm:p-6 xl:p-8 overflow-y-auto ${compactTablet ? "hidden md:max-xl:hidden" : ""}`}>
             {form.sellTransfer === "Sales" ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
@@ -523,7 +563,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                   </div>
                 </div>
 
-                <div className="grid gap-6">
+                <div className={compactTablet ? "grid gap-4 md:max-xl:gap-4" : "grid gap-6"}>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
                     <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
@@ -574,7 +614,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
+        <div className={`p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0 ${compactTablet ? "md:p-6 md:max-xl:gap-5" : ""}`}>
           <div className="flex items-center gap-8 w-full sm:w-auto">
              <button 
                 onClick={onClose}

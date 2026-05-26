@@ -69,6 +69,7 @@ interface RenewModalProps {
   onSuccess?: () => void;
   initialSearchCode?: string;
   hideSidebar?: boolean;
+  compactTablet?: boolean;
 }
 
 interface PawnItemDetails {
@@ -90,7 +91,7 @@ interface PawnItemDetails {
   amount: number;
 }
 
-export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, initialSearchCode, hideSidebar }: RenewModalProps) {
+export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, initialSearchCode, hideSidebar, compactTablet = false }: RenewModalProps) {
   const { user } = useAuth();
   const [searchCode, setSearchCode] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnItemDetails | null>(null);
@@ -117,6 +118,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   }, [selectedItem]);
 
   const totalToPay = isReappraiseActive ? newPrincipal : (interestCalc.interestAmount * itemsRenewed);
+  const interestDue = interestCalc.interestAmount * itemsRenewed;
 
   const triggerSearch = async (code: string, preFetchedItem?: any) => {
     if (!code && !preFetchedItem) return;
@@ -256,31 +258,31 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
-      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
+      <div className={`relative z-10 flex h-[calc(100dvh-1rem)] w-full min-h-0 flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-2rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}>
         
         {/* Top Floating Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+        <div className={`relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
+          <div className="flex items-start justify-between gap-3 md:gap-4">
+            <div className={`flex items-center gap-3 ${compactTablet ? "md:gap-3" : "md:gap-4"}`}>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner ${compactTablet ? "md:h-11 md:w-11" : "md:h-12 md:w-12"}`}>
                 <RotateCcw className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
                   {branchName}
                 </p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                <h1 className={`mt-1 font-black tracking-tight leading-none text-white ${compactTablet ? "text-lg md:text-xl" : "text-xl md:text-2xl"}`}>
                   Renew Transaction
                 </h1>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-3 ${compactTablet ? "md:gap-3" : "md:gap-4"}`}>
               {!hideSidebar && (
-                <div className="hidden md:flex items-center gap-2 bg-black/20 rounded-2xl p-1.5 border border-white/5 pr-4">
-                  <div className="relative group/search flex-1 min-w-[280px]">
+                <div className={`hidden md:flex items-center gap-2 rounded-2xl border border-white/5 bg-black/20 p-1.5 ${compactTablet ? "pr-3" : "pr-4"}`}>
+                  <div className={`relative group/search flex-1 ${compactTablet ? "min-w-[220px]" : "min-w-[280px]"}`}>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
                     <input 
                       type="text" 
@@ -300,7 +302,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                   <button 
                     onClick={handleSearch}
                     disabled={isLoading}
-                    className="flex items-center gap-2 px-4 h-10 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-emerald-950 transition-all font-black uppercase text-[10px] tracking-widest disabled:opacity-50"
+                    className={`flex h-10 items-center gap-2 rounded-xl bg-emerald-500 px-4 text-[10px] font-black uppercase tracking-widest text-emerald-950 transition-all hover:bg-emerald-400 disabled:opacity-50 ${compactTablet ? "md:px-3" : ""}`}
                   >
                     {isLoading ? <span className="anim-loading h-3 w-3 border-emerald-950/30 border-t-emerald-950 rounded-full" /> : <Search className="w-3.5 h-3.5" />}
                     Search
@@ -319,11 +321,169 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden flex-col xl:flex-row">
+          {compactTablet && (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden md:max-xl:grid md:max-xl:grid-cols-[392px_minmax(0,1fr)]">
+              {!hideSidebar && (
+                <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[392px]">
+                  <div className="space-y-3 p-4 md:p-4">
+                    <div className="flex items-center gap-2.5">
+                      <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
+                    </div>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        placeholder="Search Active Pawn..."
+                        className="h-10 w-full rounded-xl border border-emerald-100 bg-white pl-4 pr-10 text-xs font-bold outline-none transition-all focus:border-emerald-500 dark:border-white/10 dark:bg-white/5"
+                        value={sidebarSearch}
+                        onChange={(e) => setSidebarSearch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 space-y-1.5 overflow-y-auto px-4 pb-4 pt-0 scrollbar-hide md:max-xl:px-3">
+                    {inventoryItems
+                      .filter((item) =>
+                        item.itemId.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                        item.itemName.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                        (item.customers?.[0]?.full_name || "").toLowerCase().includes(sidebarSearch.toLowerCase())
+                      )
+                      .map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => triggerSearch(item.itemId, item)}
+                          className={`cursor-pointer group rounded-2xl border transition-all ${compactTablet ? "p-3 md:max-xl:p-3" : "p-4"} ${
+                            selectedItem?.id === item.id
+                              ? "border-emerald-500 bg-emerald-500/10 shadow-lg"
+                              : "border-emerald-500/20 bg-white hover:border-emerald-500 dark:bg-white/5"
+                          }`}
+                        >
+                          <p className="text-[8px] font-black uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400">{item.itemId}</p>
+                          <h3 className="text-lg font-black leading-none text-emerald-950 transition-colors group-hover:text-emerald-500 dark:text-white md:max-xl:text-[17px]">
+                            {item.itemName}
+                          </h3>
+                          <div className="mt-2 h-px bg-emerald-100 dark:bg-white/5" />
+                          <div className="mt-2 flex items-center justify-between gap-3">
+                            <span className="min-w-0 truncate text-[9px] font-bold text-emerald-900/40 dark:text-white/40">
+                              {Array.isArray(item.customers) ? item.customers[0]?.full_name : item.customers?.full_name || "---"}
+                            </span>
+                            <span className="text-xs font-black text-emerald-600 md:max-xl:text-[13px]">₱ {Number(item.amount).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </aside>
+              )}
+
+              <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-emerald-50/20 dark:bg-surface-secondary">
+                <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 md:max-xl:p-4 scrollbar-hide">
+                  <div className="rounded-2xl border border-emerald-100 bg-white/85 p-4 shadow-lg shadow-emerald-900/5 backdrop-blur-sm dark:border-white/5 dark:bg-black/20">
+                    <SectionHeader title="Loan & Item Identity" icon={Info} />
+                    <div className="mt-4 grid gap-3 md:max-xl:grid-cols-2">
+                      <TabletMetricCard label="Customer Name" value={selectedItem?.name} className="md:max-xl:col-span-2" />
+                      <TabletMetricCard label="Unit Code" value={selectedItem?.unitCode} />
+                      <TabletMetricCard label="Unit Name" value={selectedItem?.unit} />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 md:max-xl:grid-cols-2">
+                    <TabletMetricCard
+                      label="Principal Amount"
+                      value={selectedItem ? `₱ ${selectedItem.amount.toLocaleString()}` : "---"}
+                      accent
+                    />
+                    <TabletMetricCard
+                      label="Interest"
+                      value={selectedItem ? `₱ ${interestDue.toLocaleString()}` : "---"}
+                      accent
+                    />
+                  </div>
+
+                  <details className="mt-4 rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-black uppercase tracking-[0.22em] text-emerald-900/55 dark:text-emerald-400">
+                      <span>View More Details</span>
+                      <span className="text-emerald-500">+</span>
+                    </summary>
+                    <div className="mt-4 grid gap-2">
+                      <TabletDetailRow label="Contact Number" value={selectedItem?.contactNumber} />
+                      <TabletDetailRow label="Remarks" value={selectedItem?.remarks} />
+                      <TabletDetailRow label="Storage Fee" value={selectedItem?.storageFee} />
+                      <TabletDetailRow label="Parking Fee" value={selectedItem?.parkingFee} />
+                      <TabletDetailRow label="Purchased Date" value={selectedItem?.purchasedDate} />
+                      <TabletDetailRow label="Expiration Date" value={selectedItem?.expirationDate} />
+                      <TabletDetailRow label="Serial No." value={selectedItem?.serialNumber} />
+                      <TabletDetailRow label="Items Included" value={selectedItem?.itemsIncluded} />
+                      <TabletDetailRow label="Condition" value={selectedItem?.condition} />
+                      <TabletDetailRow label="Memory" value={selectedItem?.memory} />
+                      <TabletDetailRow label="Category" value={selectedItem?.category} />
+                    </div>
+                  </details>
+
+                  <div className="mt-4 rounded-2xl border border-white/5 bg-emerald-900 p-4 shadow-lg shadow-emerald-900/10">
+                    <SectionHeader title="Transaction Type" icon={Tag} isDark />
+
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <ActionToggle
+                        label="Renew"
+                        isActive={isRenewActive}
+                        compact
+                        onClick={() => {
+                          setIsRenewActive(true);
+                          setIsReappraiseActive(false);
+                        }}
+                        sub="Interest Payment"
+                      />
+                      <ActionToggle
+                        label="ReAppraise"
+                        isActive={isReappraiseActive}
+                        compact
+                        onClick={() => {
+                          setIsReappraiseActive(true);
+                          setIsRenewActive(false);
+                        }}
+                        sub="Re-assess Value"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/5 bg-emerald-900 p-4 shadow-lg shadow-emerald-900/10">
+                    <SectionHeader title="Period Settings" icon={Calendar} isDark />
+
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 dark:bg-emerald-950/50">
+                      <div className="space-y-0.5">
+                        <p className="text-[8px] font-black uppercase tracking-widest text-emerald-900/40 dark:text-emerald-400">Items Renewed</p>
+                        <p className="text-[7px] font-bold uppercase tracking-tighter text-emerald-600/60 dark:text-emerald-400/60">Extend Multiplier</p>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          onClick={() => setItemsRenewed(Math.max(1, itemsRenewed - 1))}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-900 transition-all active:scale-90 dark:bg-emerald-800 dark:text-white hover:bg-emerald-100 dark:hover:bg-emerald-700"
+                        >
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="min-w-[1.2ch] text-center text-2xl font-black text-emerald-950 dark:text-white">{itemsRenewed}</span>
+                        <button
+                          onClick={() => setItemsRenewed(itemsRenewed + 1)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-90 hover:bg-emerald-700"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+
+                </div>
+
+              </section>
+            </div>
+          )}
+
+          <div className={compactTablet ? "hidden xl:flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row" : "flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row"}>
           {/* Left Sidebar: Active Inventory List */}
           {!hideSidebar && (
-            <div className="w-full xl:w-72 border-r border-emerald-100 dark:border-white/5 bg-emerald-50/10 dark:bg-black/20 flex flex-col overflow-hidden">
-               <div className="p-5 space-y-4">
+            <div className={`flex w-full flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 ${compactTablet ? "lg:w-64 xl:w-72" : "lg:w-72"}`}>
+              <div className={`space-y-4 p-4 ${compactTablet ? "md:p-4" : "md:p-5"}`}>
                   <div className="flex items-center gap-2.5">
                     <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
@@ -339,7 +499,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                   </div>
                </div>
 
-               <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
+               <div className={`flex-1 space-y-2 overflow-y-auto p-4 pt-0 scrollbar-hide ${compactTablet ? "md:p-3" : ""}`}>
                   {inventoryItems
                     .filter(item => 
                       item.itemId.toLowerCase().includes(sidebarSearch.toLowerCase()) || 
@@ -372,7 +532,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           )}
 
           {/* Main Info Area */}
-          <div className="flex-1 p-4 sm:p-6 xl:p-8 flex flex-col xl:flex-row gap-8 bg-emerald-50/20 dark:bg-surface-secondary overflow-y-auto scrollbar-hide">
+          <div className={`flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto bg-emerald-50/20 p-4 scrollbar-hide sm:p-6 dark:bg-surface-secondary ${compactTablet ? "lg:flex-row lg:gap-6 lg:p-6" : "lg:flex-row lg:gap-8 lg:p-8"}`}>
             {/* Left Column: Specs */}
             <div className="flex-1 space-y-5 flex flex-col">
               <SectionHeader title="Loan & Item Identity" icon={Info} />
@@ -411,7 +571,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
             </div>
 
             {/* Right Action Panel */}
-            <div className="w-full xl:w-[340px] bg-emerald-900 p-6 flex flex-col gap-4 shrink-0 overflow-hidden">
+            <div className={`w-full shrink-0 overflow-hidden bg-emerald-900 p-5 flex flex-col gap-4 ${compactTablet ? "lg:w-[300px] xl:w-[320px]" : "lg:w-[320px] xl:w-[340px]"}`}>
                <div className="space-y-3">
                   <SectionHeader title="Transaction Type" icon={Tag} isDark />
                   
@@ -463,84 +623,57 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                   </div>
                </div>
 
-               {/* Dynamic Section: Principal Adjustment OR Interest View */}
-               <div className="space-y-3">
-                 {isReappraiseActive ? (
-                   <div className="bg-emerald-950/50 rounded-xl border border-white/5 p-4 space-y-2 animate-in zoom-in-95 duration-200">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="w-3 h-3 text-emerald-400" />
-                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Adjust Principal</p>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-xs">₱</span>
-                        <input 
-                          type="number"
-                          className="w-full h-9 pl-8 pr-3 bg-white/10 border-2 border-emerald-500/30 rounded-lg text-white font-black text-lg outline-none focus:border-emerald-500 transition-all"
-                          value={newPrincipal || ""}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9.]/g, "");
-                            setNewPrincipal(val === "" ? 0 : Number(val));
-                          }}
-                        />
-                      </div>
-                   </div>
-                 ) : (
-                   <div className="bg-white/5 rounded-xl border border-white/5 p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-[8px] font-black text-emerald-900/40 dark:text-white uppercase tracking-widest">Interest Due</p>
-                        <p className="text-[7px] font-bold text-emerald-500/50 uppercase">({interestCalc.percentage}% Rate)</p>
-                      </div>
-                      <p className="text-xl font-black text-emerald-950 dark:text-white">₱ {(interestCalc.interestAmount * itemsRenewed).toLocaleString()}</p>
-                   </div>
-                 )}
-               </div>
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
-          <div className="flex items-center gap-8 w-full sm:w-auto">
-             <button 
+        <div className={`shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 ${compactTablet ? "lg:p-6" : "lg:p-8"}`}>
+          <div className={`flex flex-col gap-4 ${compactTablet ? "lg:flex-row lg:items-center lg:justify-between lg:gap-6" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
+            <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4 ${compactTablet ? "lg:gap-6" : "lg:gap-8"}`}>
+              <button
                 onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200"
               >
                 Cancel Process
               </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-40">
+
+              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover sm:block" />
+
+              <div className={`flex w-full flex-col gap-3 sm:flex-row ${compactTablet ? "sm:gap-4" : "sm:gap-6"}`}>
+                <div className={`w-full sm:w-40 ${compactTablet ? "md:w-36" : ""}`}>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
-                    <input 
-                      type="password" 
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
+                    <input
+                      type="password"
                       placeholder="••••••••"
-                      className="h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted"
+                      className="h-10 rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary"
                       value={adminForm.password}
-                      onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                      onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
                     />
                   </div>
                 </div>
               </div>
-          </div>
+            </div>
 
-          <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-             <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 lg:w-auto lg:justify-start lg:border-t-0 lg:pt-0 ${compactTablet ? "lg:gap-5" : "lg:gap-6"}`}>
+              <div className="text-right">
+                <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
                   TOTAL PAYMENT
                 </p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
+                <p className={`font-black leading-none tracking-tighter text-emerald-950 dark:text-white ${compactTablet ? "text-2xl md:text-[2rem]" : "text-3xl"}`}>
                   ₱ {totalToPay.toLocaleString()}
                 </p>
-             </div>
-              <button 
-              disabled={isLoading || !selectedItem}
-              onClick={handleProceed}
-              className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isLoading || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
-             >
+              </div>
+
+              <button
+                disabled={isLoading || !selectedItem}
+                onClick={handleProceed}
+                className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "lg:px-10 lg:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
+              >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
-                    <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
+                    <span className="anim-loading h-5 w-5 rounded-full border-t-white border-white/30" />
                     <span>Processing...</span>
                   </div>
                 ) : (
@@ -549,11 +682,13 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
-             </button>
+              </button>
+            </div>
+
           </div>
 
           {error && (
-            <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-[8px] font-bold uppercase tracking-widest animate-in slide-in-from-bottom-1 w-full">
+            <div className="mt-4 flex w-full items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-[8px] font-bold uppercase tracking-widest text-red-400 animate-in slide-in-from-bottom-1">
               <AlertCircle className="w-3 h-3 shrink-0" />
               {error}
             </div>
@@ -598,21 +733,47 @@ function StaticDetailRow({ label, value }: { label: string, value: string | numb
   );
 }
 
-function ActionToggle({ label, isActive, onClick, sub }: { label: string, isActive: boolean, onClick: () => void, sub?: string }) {
+function TabletMetricCard({ label, value, className = "", accent = false }: { label: string; value: string | number | undefined; className?: string; accent?: boolean }) {
+  return (
+    <div className={`rounded-2xl border border-emerald-100 bg-white/85 p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 ${className}`}>
+      <p className="text-[9px] font-black uppercase tracking-[0.22em] text-emerald-900/40 dark:text-emerald-400">
+        {label}
+      </p>
+      <p className={`mt-2 leading-tight ${accent ? "text-lg font-black text-emerald-950 dark:text-white md:max-xl:text-xl" : "text-[13px] font-semibold text-text-primary dark:text-white/80 md:max-xl:text-[14px]"}`}>
+        {value || "---"}
+      </p>
+    </div>
+  );
+}
+
+function TabletDetailRow({ label, value }: { label: string; value: string | number | undefined }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100/60 bg-white px-3 py-2.5 dark:border-white/5 dark:bg-white/5">
+      <span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-900/45 dark:text-white/55">
+        {label}
+      </span>
+      <span className="max-w-[55%] truncate text-[12px] font-bold text-emerald-950 dark:text-white">
+        {value || "---"}
+      </span>
+    </div>
+  );
+}
+
+function ActionToggle({ label, isActive, onClick, sub, compact = false }: { label: string, isActive: boolean, onClick: () => void, sub?: string, compact?: boolean }) {
   return (
     <button 
       onClick={onClick}
-      className={`relative p-3 rounded-2xl border-2 transition-all text-left flex flex-col gap-0.5 overflow-hidden group ${
+      className={`relative flex flex-col gap-0.5 overflow-hidden rounded-2xl border-2 text-left transition-all group ${compact ? "p-2.5" : "p-3"} ${
         isActive 
           ? 'bg-emerald-50 dark:bg-emerald-600/40 border-emerald-400 shadow-xl' 
           : 'bg-white/10 dark:bg-surface/5 border-transparent dark:border-white/5 text-emerald-100/40 dark:text-white/40 hover:border-emerald-200 dark:hover:bg-white/5'
       }`}
     >
-      <div className={`w-3 h-3 rounded-full border-2 mb-1 flex items-center justify-center ${isActive ? 'border-emerald-600 dark:border-white' : 'border-current'}`}>
-        {isActive && <div className="w-1 h-1 rounded-full bg-emerald-600 dark:bg-white" />}
+      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? 'border-emerald-600 dark:border-white' : 'border-current'}`}>
+        {isActive && <div className="h-1 w-1 rounded-full bg-emerald-600 dark:bg-white" />}
       </div>
-      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? 'text-emerald-950 dark:text-white' : 'text-current'}`}>{label}</p>
-      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? 'text-emerald-600/60 dark:text-white/60' : 'text-current'}`}>{sub}</p>}
+      <p className={`font-black uppercase tracking-tight ${compact ? "text-[9px]" : "text-[10px]"} ${isActive ? 'text-emerald-950 dark:text-white' : 'text-current'}`}>{label}</p>
+      {sub && <p className={`font-bold leading-none ${compact ? "text-[7px]" : "text-[8px]"} ${isActive ? 'text-emerald-600/60 dark:text-white/60' : 'text-current'}`}>{sub}</p>}
     </button>
   );
 }

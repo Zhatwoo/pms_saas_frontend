@@ -315,7 +315,7 @@ export default function ItemsForSalePage() {
             <ActionButton
               variant="success"
               onClick={() => setIsAddModalOpen(true)}
-              className="border-emerald-700 bg-emerald-700 text-white shadow-sm hover:bg-emerald-800 dark:bg-emerald-700 dark:text-white"
+              className="!border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 hover:!text-white dark:!bg-emerald-700 dark:!text-white"
             >
               <span className="flex items-center gap-1.5">
                 {plusIcon}

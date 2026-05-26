@@ -329,6 +329,7 @@ export default function EmployeeItemsForSalePage() {
             setSellingItem(null);
           }}
           branchName={selectedBranch.name}
+          compactTablet
           initialItem={{
             id: sellingItem.id,
             unitId: sellingItem.itemId,

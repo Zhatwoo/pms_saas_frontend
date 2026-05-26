@@ -192,7 +192,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         unit_code: selectedItem.unitCode,
         pawn_amount: isReappraiseActive ? newPrincipal : selectedItem.amount,
         storage_fee: interestCalc.interestAmount * itemsRenewed,
-        details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? `New Principal: ₱${newPrincipal}` : ''} | Processed by: ${adminForm.approvedBy || 'Admin'}`,
+        details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? 'New Principal: ₱' + newPrincipal : ''} | Processed by: ${adminForm.approvedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id
       });
 

@@ -534,6 +534,20 @@ export function NewPawnModal({
       }
     }
 
+    // Require email for new customers
+    if (!selectedCustomerId) {
+      const email = (form.email || "").trim();
+      if (!email) {
+        setErrorMessage("Email is required for new customers before generating QR.");
+        return;
+      }
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!emailValid) {
+        setErrorMessage("Please enter a valid email address before generating QR.");
+        return;
+      }
+    }
+
     if (!resolvedCategory) {
       setErrorMessage(
         form.category === "Others"
@@ -633,6 +647,20 @@ export function NewPawnModal({
           : "Category is required.",
       );
       return;
+    }
+
+    // Require email for new customers before creating ticket
+    if (!selectedCustomerId) {
+      const email = (form.email || "").trim();
+      if (!email) {
+        setErrorMessage("Email is required for new customers before creating a ticket.");
+        return;
+      }
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!emailValid) {
+        setErrorMessage("Please enter a valid email address before creating the ticket.");
+        return;
+      }
     }
 
     if (!unitCodeReady) {
