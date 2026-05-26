@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
+import { fetchCategories } from "@/lib/categories";
 
 export interface InterestRateGroup {
   id: string;
@@ -141,12 +142,38 @@ const DEFAULT_GUEST_GROUPS: InterestRateGroup[] = [
 export function InterestRatesSettings() {
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  const isAuthorized = user?.role === "super_admin" || user?.role === "admin";
+  const [isEditing, setIsEditing] = useState(false);
 
   const [groups, setGroups] = useState<InterestRateGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
+
+  const [categoriesList, setCategoriesList] = useState<string[]>(ALL_CATEGORIES);
+  useEffect(() => {
+    async function load() {
+      try {
+        const cats = await fetchCategories();
+        if (cats && cats.length > 0) {
+          setCategoriesList(cats.map(c => c.name));
+        }
+      } catch (err) {
+        console.error("Failed to load categories for interest rates", err);
+      }
+    }
+    load();
+
+    const handleCategoriesUpdated = () => {
+      load();
+    };
+
+    window.addEventListener("categories-updated", handleCategoriesUpdated);
+    return () => {
+      window.removeEventListener("categories-updated", handleCategoriesUpdated);
+    };
+  }, []);
 
   // Fetch groups on mount
   useEffect(() => {
@@ -198,7 +225,7 @@ export function InterestRatesSettings() {
     return [...acc, ...group.categories];
   }, []);
 
-  const unassignedCategories = ALL_CATEGORIES.filter(
+  const unassignedCategories = categoriesList.filter(
     cat => !assignedCategories.includes(cat)
   );
 
@@ -215,7 +242,6 @@ export function InterestRatesSettings() {
 
   // Handlers for managing groups
   const handleAddGroup = () => {
-    if (!isSuperAdmin) return;
     const newGroup: InterestRateGroup = {
       id: `group-${Date.now()}`,
       name: `New Interest Group`,
@@ -242,7 +268,6 @@ export function InterestRatesSettings() {
   };
 
   const handleRemoveGroup = (groupId: string) => {
-    if (!isSuperAdmin) return;
     const groupToRemove = groups.find(g => g.id === groupId);
     if (!groupToRemove) return;
 
@@ -261,7 +286,6 @@ export function InterestRatesSettings() {
     field: keyof Omit<InterestRateGroup, "id" | "categories" | "isExpanded">,
     value: string | number
   ) => {
-    if (!isSuperAdmin) return;
     setGroups(
       groups.map(g => {
         if (g.id === groupId) {
@@ -312,7 +336,6 @@ export function InterestRatesSettings() {
     field: "endDay" | "rate" | "startDay",
     value: number
   ) => {
-    if (!isSuperAdmin) return;
     setGroups(
       groups.map(g => {
         if (g.id !== groupId) return g;
@@ -421,7 +444,6 @@ export function InterestRatesSettings() {
   };
 
   const handleCategoryCheckboxChange = (groupId: string, category: string, checked: boolean) => {
-    if (!isSuperAdmin) return;
     setGroups(
       groups.map(g => {
         if (g.id === groupId) {
@@ -440,7 +462,6 @@ export function InterestRatesSettings() {
   };
 
   const handleResetToDefaults = () => {
-    if (!isSuperAdmin) return;
     if (window.confirm("Are you sure you want to reset all groups and rates to defaults?")) {
       setGroups(DEFAULT_GUEST_GROUPS);
       toast.success("Reset settings to system default gadget rates.");
@@ -448,8 +469,8 @@ export function InterestRatesSettings() {
   };
 
   const handleSaveSettings = async () => {
-    if (!isSuperAdmin) {
-      toast.error("Only Super Admins can modify interest rate policies.");
+    if (!isAuthorized) {
+      toast.error("Only Admins and Super Admins can modify interest rate policies.");
       return;
     }
 
@@ -506,33 +527,47 @@ export function InterestRatesSettings() {
           </p>
         </div>
 
-        {isSuperAdmin && (
+        {isAuthorized && (
           <div className="flex items-center gap-2">
             <button
-              onClick={handleResetToDefaults}
-              className="rounded-lg border border-border-main bg-surface-secondary hover:bg-surface-hover px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 transition dark:text-zinc-300"
+              onClick={() => setIsEditing(!isEditing)}
+              className={`rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
+                isEditing
+                  ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700"
+                  : "border-border-main bg-surface-secondary hover:bg-surface-hover text-zinc-600 dark:text-zinc-300"
+              }`}
             >
-              Reset to Defaults
+              {isEditing ? "Exit Edit Mode" : "Edit Rates"}
             </button>
-            <button
-              onClick={handleAddGroup}
-              className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-emerald-700 transition"
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add Group
-            </button>
+            {isEditing && (
+              <>
+                <button
+                  onClick={handleResetToDefaults}
+                  className="rounded-lg border border-border-main bg-surface-secondary hover:bg-surface-hover px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-600 transition dark:text-zinc-300"
+                >
+                  Reset to Defaults
+                </button>
+                <button
+                  onClick={handleAddGroup}
+                  className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-emerald-700 transition"
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add Group
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -609,7 +644,7 @@ export function InterestRatesSettings() {
                     </button>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      {isSuperAdmin ? (
+                      {isEditing ? (
                         <input
                           type="text"
                           value={group.name}
@@ -630,7 +665,7 @@ export function InterestRatesSettings() {
                     </div>
                   </div>
 
-                  {isSuperAdmin && (
+                  {isEditing && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -711,7 +746,7 @@ export function InterestRatesSettings() {
                                         </div>
                                       </td>
                                       <td className="px-4 py-3.5">
-                                        {isSuperAdmin ? (
+                                        {isEditing ? (
                                           <div className="relative flex items-center">
                                             <span className="absolute left-2.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-bold select-none">Day</span>
                                             <EditableNumberInput
@@ -720,7 +755,7 @@ export function InterestRatesSettings() {
                                               onCommit={(val) => {
                                                 handleUpdateTierValue(group.id, tier.id, "startDay", Math.round(val));
                                               }}
-                                              disabled={tier.id === "tier1" || !isSuperAdmin}
+                                              disabled={tier.id === "tier1"}
                                               className="h-8 w-28 rounded-lg border border-border-main bg-surface-secondary pl-10 pr-3 text-xs font-bold text-text-primary outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
                                             />
                                           </div>
@@ -731,7 +766,7 @@ export function InterestRatesSettings() {
                                         )}
                                       </td>
                                       <td className="px-4 py-3.5">
-                                        {isSuperAdmin ? (
+                                        {isEditing ? (
                                           <div className="relative flex items-center">
                                             <span className="absolute left-2.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-bold select-none">Day</span>
                                             <EditableNumberInput
@@ -740,7 +775,6 @@ export function InterestRatesSettings() {
                                               onCommit={(val) => {
                                                 handleUpdateTierValue(group.id, tier.id, "endDay", Math.round(val));
                                               }}
-                                              disabled={!isSuperAdmin}
                                               className="h-8 w-28 rounded-lg border border-border-main bg-surface-secondary pl-10 pr-3 text-xs font-bold text-text-primary outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
                                             />
                                           </div>
@@ -751,7 +785,7 @@ export function InterestRatesSettings() {
                                         )}
                                       </td>
                                       <td className="px-4 py-3.5">
-                                        {isSuperAdmin ? (
+                                        {isEditing ? (
                                           <div className="relative flex items-center">
                                             <EditableNumberInput
                                               value={tier.rate}
@@ -759,7 +793,6 @@ export function InterestRatesSettings() {
                                               onCommit={(val) => {
                                                 handleUpdateTierValue(group.id, tier.id, "rate", val);
                                               }}
-                                              disabled={!isSuperAdmin}
                                               className="h-8 w-24 rounded-lg border border-border-main bg-surface-secondary px-2.5 pr-6 text-xs font-bold text-text-primary outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
                                             />
                                             <span className="absolute right-2.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-bold pointer-events-none">%</span>
@@ -793,7 +826,7 @@ export function InterestRatesSettings() {
                           Category Alignment
                         </h4>
                         <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                          {ALL_CATEGORIES.map(cat => {
+                          {categoriesList.map(cat => {
                             const isAssignedToThis = group.categories.includes(cat);
                             const isAssignedToOther =
                               !isAssignedToThis &&
@@ -812,7 +845,7 @@ export function InterestRatesSettings() {
                               >
                                 <input
                                   type="checkbox"
-                                  disabled={!isSuperAdmin || isAssignedToOther}
+                                  disabled={!isEditing || isAssignedToOther}
                                   checked={isAssignedToThis}
                                   onChange={(e) =>
                                     handleCategoryCheckboxChange(group.id, cat, e.target.checked)
@@ -896,7 +929,7 @@ export function InterestRatesSettings() {
       </div>
 
       {/* Save panel */}
-      {isSuperAdmin && groups.length > 0 && (
+      {isEditing && groups.length > 0 && (
         <div className="flex items-center justify-end gap-3 border-t border-border-main bg-surface-secondary px-4 py-3">
           {settingsSaved && (
             <span className="text-[10px] font-bold text-emerald-600 animate-fade-in">

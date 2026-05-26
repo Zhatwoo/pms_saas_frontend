@@ -626,9 +626,18 @@ export default function PawnTransactionsPage() {
     <div className="space-y-4 pb-4 printable-area">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body * { visibility: hidden; }
-          .printable-area, .printable-area * { visibility: visible; }
-          .printable-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
+          body:not(.printing-moa-active) * { visibility: hidden; }
+          body:not(.printing-moa-active) .printable-area,
+          body:not(.printing-moa-active) .printable-area * {
+            visibility: visible !important;
+          }
+          .printable-area { 
+            position: relative !important; 
+            display: block !important; 
+            width: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+          }
           .header-print { background: #064e3b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important; padding: 40px 20px !important; text-align: center !important; margin-bottom: 30px !important; border-bottom: 8px solid #f59e0b !important; }
           .header-print h1 { margin: 0 !important; font-size: 32px !important; font-weight: 900 !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: white !important; }
           .header-print p { margin: 10px 0 0 !important; font-size: 14px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 4px !important; opacity: 0.9 !important; color: white !important; }

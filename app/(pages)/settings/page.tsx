@@ -7,6 +7,7 @@ import { PasswordChangeRequestCard } from "@/components/shared/password-change-r
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
+import CategoriesSettings from "./_components/categories-settings";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -179,6 +180,15 @@ export default function SettingsPage() {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [settingsSavedAt, setSettingsSavedAt] = useState<string | null>(null);
 
+  // Shop settings edit mode states
+  const [isShopEditMode, setIsShopEditMode] = useState(false);
+  const [tempShopSettings, setTempShopSettings] = useState({
+    shopName: "JCLB BUY BACK SHOP",
+    shopAddress: "123 Main Street, Manila, Philippines",
+    phoneNumber: "+63 2 1234 5678",
+    email: "info@jclbbuyback.com",
+  });
+
   const adminInitials = (user?.fullName || "Admin")
     .split(" ")
     .map((part) => part[0])
@@ -215,7 +225,10 @@ export default function SettingsPage() {
       try {
         const data = await api.get<{ shopInfo: typeof shopSettings; policies: typeof policies }>('/settings/general');
         if (data) {
-          if (data.shopInfo) setShopSettings(data.shopInfo);
+          if (data.shopInfo) {
+            setShopSettings(data.shopInfo);
+            setTempShopSettings(data.shopInfo);
+          }
           if (data.policies) setPolicies(data.policies);
         }
       } catch (error) {
@@ -282,6 +295,35 @@ export default function SettingsPage() {
     setShopSettings((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleTempShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
+    setTempShopSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCancelShopEdit = () => {
+    setIsShopEditMode(false);
+    setTempShopSettings(shopSettings);
+  };
+
+  const handleSaveShopEdit = async () => {
+    if (!isSuperAdmin) {
+      alert("Only Super Admins can save these settings.");
+      return;
+    }
+    setIsSavingSettings(true);
+    try {
+      await api.post('/settings/general', { shopInfo: tempShopSettings, policies });
+      setShopSettings(tempShopSettings);
+      setSettingsSavedAt(new Date().toLocaleString());
+      setIsShopEditMode(false);
+      setTimeout(() => setSettingsSavedAt(null), 3000);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save settings");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   const handlePolicyChange = (field: keyof typeof policies, value: string) => {
     setPolicies((prev) => ({ ...prev, [field]: value }));
   };
@@ -293,7 +335,12 @@ export default function SettingsPage() {
     }
     setIsSavingSettings(true);
     try {
-      await api.post('/settings/general', { shopInfo: shopSettings, policies });
+      const currentShopInfo = isShopEditMode ? tempShopSettings : shopSettings;
+      await api.post('/settings/general', { shopInfo: currentShopInfo, policies });
+      if (isShopEditMode) {
+        setShopSettings(tempShopSettings);
+        setIsShopEditMode(false);
+      }
       setSettingsSavedAt(new Date().toLocaleString());
       setTimeout(() => setSettingsSavedAt(null), 3000);
     } catch (e) {
@@ -390,20 +437,90 @@ export default function SettingsPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
         <div className="space-y-4">
           <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
-            <div className="border-b border-border-main px-4 py-3">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Shop Information</h2>
+            <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
+              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                <svg
+                  className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                Shop Information
+              </h2>
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  {!isShopEditMode ? (
+                    <button
+                      onClick={() => setIsShopEditMode(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 00-2 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Edit Info
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={handleCancelShopEdit}
+                        className="rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveShopEdit}
+                        disabled={isSavingSettings}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      >
+                        {isSavingSettings ? (
+                          <>
+                            <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Saving...
+                          </>
+                        ) : (
+                          "Save"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-5 px-4 py-4">
+            <div className="space-y-5 px-4 py-4 transition-all duration-300">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Shop Name
                 </label>
                 <input
-                  value={shopSettings.shopName}
-                  onChange={(e) => handleShopSettingChange("shopName", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  value={isShopEditMode ? tempShopSettings.shopName : shopSettings.shopName}
+                  onChange={(e) => handleTempShopSettingChange("shopName", e.target.value)}
+                  disabled={!isShopEditMode}
+                  className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                    isShopEditMode
+                      ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
@@ -412,10 +529,14 @@ export default function SettingsPage() {
                   Shop Address
                 </label>
                 <input
-                  value={shopSettings.shopAddress}
-                  onChange={(e) => handleShopSettingChange("shopAddress", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                  value={isShopEditMode ? tempShopSettings.shopAddress : shopSettings.shopAddress}
+                  onChange={(e) => handleTempShopSettingChange("shopAddress", e.target.value)}
+                  disabled={!isShopEditMode}
+                  className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                    isShopEditMode
+                      ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
@@ -425,10 +546,14 @@ export default function SettingsPage() {
                     Phone Number
                   </label>
                   <input
-                    value={shopSettings.phoneNumber}
-                    onChange={(e) => handleShopSettingChange("phoneNumber", e.target.value)}
-                    disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    value={isShopEditMode ? tempShopSettings.phoneNumber : shopSettings.phoneNumber}
+                    onChange={(e) => handleTempShopSettingChange("phoneNumber", e.target.value)}
+                    disabled={!isShopEditMode}
+                    className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                      isShopEditMode
+                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                    }`}
                   />
                 </div>
 
@@ -438,10 +563,14 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="email"
-                    value={shopSettings.email}
-                    onChange={(e) => handleShopSettingChange("email", e.target.value)}
-                    disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    value={isShopEditMode ? tempShopSettings.email : shopSettings.email}
+                    onChange={(e) => handleTempShopSettingChange("email", e.target.value)}
+                    disabled={!isShopEditMode}
+                    className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                      isShopEditMode
+                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                    }`}
                   />
                 </div>
               </div>
@@ -449,6 +578,8 @@ export default function SettingsPage() {
           </section>
 
           <InterestRatesSettings />
+
+          <CategoriesSettings />
 
           <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
             <div className="border-b border-border-main px-4 py-3">

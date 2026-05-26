@@ -399,32 +399,42 @@ export function MoaModal({
             </div>
 
             <div className="space-y-3 pt-3">
-              <div className="grid grid-cols-5 gap-4 text-[8px] font-black uppercase text-zinc-400 italic text-center">
+              <div className="grid grid-cols-6 gap-3 text-[8px] font-black uppercase text-zinc-400 italic text-center">
                 <span>{labels?.dateHeader || "Date"}</span>
                 <span>{labels?.storageHeader || "Storage"}</span>
                 <span>{labels?.periodHeader || "Period"}</span>
+                <span>Interest Rate</span>
                 <span>{labels?.extendHeader || "Extend"}</span>
                 <span>{labels?.signHeader || "Sign"}</span>
               </div>
-              {(extensionRows.length > 0 ? extensionRows : [1, 2, 3]).map((row, idx) => (
-                <div key={idx} className="grid grid-cols-5 gap-4">
-                  <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
-                    {maturityDates[idx] || ""}
+              {(extensionRows.length > 0 ? extensionRows : [1, 2, 3]).map((row, idx) => {
+                const scheduleItem = schedule[idx + 1];
+                return (
+                  <div key={idx} className="grid grid-cols-6 gap-3">
+                    <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
+                      {maturityDates[idx] || ""}
+                    </div>
+                    <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.storage : ''}</div>
+                    <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-zinc-50 font-bold text-zinc-500">
+                      {typeof row === 'object' ? row.period : `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Period`}
+                    </div>
+                    <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
+                      {scheduleItem ? `${scheduleItem.percentage}%` : "—"}
+                    </div>
+                    <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.extend : ''}</div>
+                    <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.sign : ''}</div>
                   </div>
-                  <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.storage : ''}</div>
-                  <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-zinc-50 font-bold text-zinc-500">
-                    {typeof row === 'object' ? row.period : `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Period`}
-                  </div>
-                  <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.extend : ''}</div>
-                  <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.sign : ''}</div>
-                </div>
-              ))}
-              <div className="grid grid-cols-5 gap-4">
+                );
+              })}
+              <div className="grid grid-cols-6 gap-3">
                 <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
                   {gracePeriodEnd}
                 </div>
                 <div className="h-5 border-b border-zinc-300 bg-white/50"></div>
                 <div className="flex h-5 items-center justify-center border-b border-zinc-300 font-black text-[7px] uppercase text-zinc-400">{labels?.gracePeriodHeader || "GRACE PERIOD"}</div>
+                <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
+                  {schedule[4] ? `${schedule[4].percentage}%` : "—"}
+                </div>
                 <div className="h-5 border-b border-zinc-300"></div>
                 <div className="h-5 border-b border-zinc-300"></div>
               </div>

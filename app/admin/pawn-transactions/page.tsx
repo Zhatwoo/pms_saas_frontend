@@ -715,12 +715,15 @@ export default function SuperAdminPawnTransactionsPage() {
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: auto; margin: 12mm; }
-          body * { visibility: hidden; }
-          .printable-area, .printable-area * { visibility: visible; }
+          body:not(.printing-moa-active) * { visibility: hidden; }
+          body:not(.printing-moa-active) .printable-area,
+          body:not(.printing-moa-active) .printable-area * {
+            visibility: visible !important;
+          }
           .printable-area {
-            position: absolute;
-            inset: 0;
-            width: 100%;
+            position: relative !important;
+            display: block !important;
+            width: 100% !important;
             padding: 0 !important;
             margin: 0 !important;
             background: white !important;
@@ -769,12 +772,12 @@ export default function SuperAdminPawnTransactionsPage() {
                   <td className="p-2 truncate max-w-[250px]">{tx.details || tx.purpose || "—"}</td>
                   <td className="p-2 text-right font-mono">
                     {(Number(tx.cashIn) || 0) > 0
-                      ? `+₱${Number(tx.cashIn).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ? `+${formatPeso(Number(tx.cashIn))}`
                       : ""}
                   </td>
                   <td className="p-2 text-right font-mono text-red-600">
                     {(Number(tx.cashOut) || 0) > 0
-                      ? `-₱${Number(tx.cashOut).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ? `-${formatPeso(Number(tx.cashOut))}`
                       : ""}
                   </td>
                   <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{tx.transactionNo}</td>

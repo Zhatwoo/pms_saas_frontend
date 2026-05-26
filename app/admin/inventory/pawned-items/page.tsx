@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { buildQrSheetDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
 import { useAuth } from "@/contexts/auth-context";
@@ -125,10 +126,12 @@ function EditPawnedItemModal({
   item,
   onClose,
   onSaved,
+  categoriesList,
 }: {
   item: PawnedItem;
   onClose: () => void;
   onSaved: (updated: Partial<PawnedItem> & { id: string }) => void;
+  categoriesList: string[];
 }) {
   const [itemName, setItemName] = useState(item.itemName);
   const [category, setCategory] = useState(item.category);
@@ -181,9 +184,10 @@ function EditPawnedItemModal({
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
             >
-              {categoryOptions.filter((o) => o.value !== "all").map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+              {categoriesList.map((name) => (
+                <option key={name} value={name}>{name}</option>
               ))}
+              <option value="Others">Others</option>
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -216,6 +220,20 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   console.log("Current User Role:", userRole);
   const isAdminOrSuperAdmin = userRole.toLowerCase().includes("admin");
   const canEdit = !viewOnly && isAdminOrSuperAdmin;
+
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      const cats = await fetchCategories();
+      setCategoriesList(cats.map((c) => c.name));
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -385,42 +403,44 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
         <div className="flex items-center gap-3">
           {viewOnly ? (
             <>
-              <div className="relative">
-                <ActionButton
-                  variant="primary"
-                  className="border-emerald-700 bg-emerald-700 text-amber-400"
-                  onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {printerIcon}
-                    Print QR
-                  </span>
-                </ActionButton>
-                {isPrintQrMenuOpen && (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-32 overflow-hidden rounded-md border border-border-main bg-surface shadow-lg">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPrintQrMenuOpen(false);
-                        handlePrintQr("small");
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
-                    >
-                      Small
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPrintQrMenuOpen(false);
-                        handlePrintQr("large");
-                      }}
-                      className="w-full border-t border-border-subtle px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
-                    >
-                      Large
-                    </button>
-                  </div>
-                )}
-              </div>
+              {isAdminOrSuperAdmin && (
+                <div className="relative">
+                  <ActionButton
+                    variant="primary"
+                    className="border-emerald-700 bg-emerald-700 text-amber-400"
+                    onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {printerIcon}
+                      Print QR
+                    </span>
+                  </ActionButton>
+                  {isPrintQrMenuOpen && (
+                    <div className="absolute left-0 top-full z-20 mt-2 w-32 overflow-hidden rounded-md border border-border-main bg-surface shadow-lg">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPrintQrMenuOpen(false);
+                          handlePrintQr("small");
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+                      >
+                        Small
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPrintQrMenuOpen(false);
+                          handlePrintQr("large");
+                        }}
+                        className="w-full border-t border-border-subtle px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+                      >
+                        Large
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex overflow-hidden rounded-md border border-border-main bg-surface">
                 <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
                   List
@@ -659,6 +679,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onSaved={handleEditSaved}
+          categoriesList={categoriesList}
         />
       )}
 

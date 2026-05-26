@@ -897,8 +897,11 @@ export default function EmployeePawnTransactionsPage() {
           @page { size: auto; margin: 15mm; }
           body { background: white !important; color: black !important; }
           /* Hide everything when printing, except when MOA modal print is active */
-          body:not(.printing-moa-active) * { visibility: hidden !important; }
-          .printable-area, .printable-area * { visibility: visible; }
+          body:not(.printing-moa-active) * { visibility: hidden; }
+          body:not(.printing-moa-active) .printable-area,
+          body:not(.printing-moa-active) .printable-area * {
+            visibility: visible !important;
+          }
           .printable-area { 
             position: relative !important; 
             display: block !important; 
@@ -997,16 +1000,16 @@ export default function EmployeePawnTransactionsPage() {
                   <td className="border border-emerald-800/10 p-1 font-bold">{tx.purpose}</td>
                   <td className="border border-emerald-800/10 p-1">{tx.customerName || "Walk-in"}</td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn).toLocaleString()) : "-"}
+                    {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut).toLocaleString()) : "-"}
+                    {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.pawn !== "0" ? formatPeso(Number(tx.pawn).toLocaleString()) : "-"}
+                    {tx.pawn !== "0" ? formatPeso(Number(tx.pawn)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.storage !== "0" ? formatPeso(Number(tx.storage).toLocaleString()) : "-"}
+                    {tx.storage !== "0" ? formatPeso(Number(tx.storage)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1">{tx.unitCode || tx.unit || "-"}</td>
                 </tr>

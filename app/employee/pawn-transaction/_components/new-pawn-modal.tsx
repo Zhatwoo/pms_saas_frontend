@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "reac
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
+import { fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
@@ -168,6 +169,40 @@ export function NewPawnModal({
   const [customerLookupError, setCustomerLookupError] = useState<string | null>(null);
   const [branchCashAvailable, setBranchCashAvailable] = useState<number | null>(null);
   const [branchCashLoading, setBranchCashLoading] = useState(false);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadCats() {
+      try {
+        const [cats, rates] = await Promise.all([
+          fetchCategories(),
+          api.get<any[]>("/settings/interest_rates").catch((err) => {
+            console.warn("Failed to load interest rates for category filtering", err);
+            return [];
+          })
+        ]);
+
+        const assignedCategories = new Set<string>();
+        if (rates && Array.isArray(rates)) {
+          for (const group of rates) {
+            if (group.categories && Array.isArray(group.categories)) {
+              for (const catName of group.categories) {
+                assignedCategories.add(catName.toLowerCase().trim());
+              }
+            }
+          }
+        }
+
+        const filtered = cats.filter(c => assignedCategories.has(c.name.toLowerCase().trim()));
+        setCategoriesList(filtered.map(c => c.name));
+      } catch (err) {
+        console.error("Error loading categories inside new-pawn-modal:", err);
+      }
+    }
+    if (isOpen) {
+      loadCats();
+    }
+  }, [isOpen]);
 
   const loadBranchCashForMoa = useCallback(async () => {
     if (!branchId || branchId === "__all__") {
@@ -1206,13 +1241,11 @@ export function NewPawnModal({
                       className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                     >
                       <option value="">— Select Category —</option>
-                      <option value="Smartphone">Smartphone</option>
-                      <option value="Laptop & PC">Laptop & PC</option>
-                      <option value="Appliances">Appliances</option>
-                      <option value="Gaming Console">Gaming Console</option>
-                      <option value="Camera">Camera</option>
-                      <option value="Smartwatch">Smartwatch</option>
-                      <option value="Audio and Earphone">Audio and Earphone</option>
+                      {categoriesList.map((catName) => (
+                        <option key={catName} value={catName}>
+                          {catName}
+                        </option>
+                      ))}
                       <option value="Others">Others</option>
                     </select>
                   </div>

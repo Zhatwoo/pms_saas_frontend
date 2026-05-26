@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { formatPeso } from '@/lib/currency';
 import { api } from "@/lib/api";
+import { fetchCategories } from "@/lib/categories";
 import { ActionButton } from "@/components/shared/action-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -69,7 +70,7 @@ interface CalendarDayData {
   sold?: number;
 }
 
-const categoryOptions = [
+const categoryOptions_legacy = [
   { value: "all", label: "All" },
   { value: "electronics", label: "Electronics" },
   { value: "jewellery", label: "Jewellery" },
@@ -135,6 +136,24 @@ export default function ItemsForSalePage() {
   const { selectedBranch, branches, setSelectedBranch, isAllBranches } = useBranch();
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      try {
+        const cats = await fetchCategories();
+        setCategoriesList(cats.map((c) => c.name));
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedSaleItem, setSelectedSaleItem] = useState<SaleItem | null>(null);

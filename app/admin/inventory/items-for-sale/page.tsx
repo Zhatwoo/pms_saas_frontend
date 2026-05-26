@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { getCategoriesSync, fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
@@ -83,6 +84,20 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   const userRole = user?.role || "employee";
   const isSuperAdmin = userRole === "super_admin";
   const canEdit = !viewOnly && (userRole === "super_admin" || userRole === "admin");
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      const cats = await fetchCategories();
+      setCategoriesList(cats.map((c) => c.name));
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
+
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 

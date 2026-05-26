@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { fetchCategories } from "@/lib/categories";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { FilterSelect } from "@/components/shared/filter-select";
@@ -56,6 +57,20 @@ const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-t
 export default function EmployeeItemsForSalePage() {
   const { selectedBranch } = useBranch();
   const branchIdent = selectedBranch.id;
+
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      const cats = await fetchCategories();
+      setCategoriesList(cats.map((c) => c.name));
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
 
   const [saleViewMode, setSaleViewMode] = useState<SaleViewMode>("current");
   const [category, setCategory] = useState("all");
