@@ -14,6 +14,92 @@ interface LoginModalProps {
 }
 
 type ViewState = "login" | "unauthorized-device" | "request-sent";
+type LegalModalType = "privacy" | "terms" | null;
+
+const termsSections = [
+  {
+    title: "Website Information",
+    body: "The JCLB Buy Back Pawnshop website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.",
+  },
+  {
+    title: "No Online Transaction Guarantee",
+    body: "Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized JCLB Buy Back Shop personnel.",
+  },
+  {
+    title: "Customer Responsibilities",
+    body: "Customers are responsible for providing accurate contact information, valid identification, truthful item details, and lawful ownership documents when required. Customers should review official receipts, pawn tickets, and agreements before completing a branch transaction.",
+  },
+  {
+    title: "Service Availability",
+    body: "Services, branch schedules, item availability, prices, promotions, and business requirements may change without prior notice. Some services may depend on branch location, staff review, item condition, and applicable pawnshop regulations.",
+  },
+  {
+    title: "Respectful Use",
+    body: "Visitors must not misuse the website, attempt unauthorized access to employee or administrator areas, submit false information, interfere with system security, or use the website for unlawful, harmful, or misleading activity.",
+  },
+  {
+    title: "Internal Login",
+    body: "The login area is reserved for authorized JCLB Buy Back Shop employees and administrators. Customers do not need an account to read the public information on this landing page.",
+  },
+  {
+    title: "Limitations",
+    body: "Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from JCLB Buy Back Shop personnel.",
+  },
+  {
+    title: "Acceptance",
+    body: "By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to JCLB Buy Back Shop services.",
+  },
+];
+
+const privacySections = [
+  {
+    title: "Information We May Collect",
+    body: "When customers contact us or complete branch transactions, JCLB Buy Back Shop may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.",
+  },
+  {
+    title: "How We Use Information",
+    body: "We use customer information to verify identity, evaluate pawned or sold items, process transactions, issue receipts or pawn tickets, manage renewals and redemptions, respond to inquiries, improve service, and comply with legal or regulatory requirements.",
+  },
+  {
+    title: "Branch and Transaction Records",
+    body: "Customer and transaction records may be stored in our internal Pawnshop Management System so authorized personnel can manage customer service, item inventory, payments, audit reviews, reports, and required business documentation.",
+  },
+  {
+    title: "Sharing of Information",
+    body: "We do not sell customer personal information. We may share information only when needed for business operations, customer requests, legal compliance, fraud prevention, security review, or cooperation with authorized government or regulatory offices.",
+  },
+  {
+    title: "Data Protection",
+    body: "We use reasonable administrative, technical, and access-control safeguards to protect customer information. Only authorized employees and administrators may access customer records when needed for legitimate pawnshop operations.",
+  },
+  {
+    title: "Customer Choices",
+    body: "Customers may contact JCLB Buy Back Shop to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.",
+  },
+  {
+    title: "Website Visitors",
+    body: "Public visitors can browse the landing page without logging in. Basic technical information may still be processed by normal website hosting, browser, security, or analytics tools if they are enabled.",
+  },
+  {
+    title: "Policy Updates",
+    body: "We may update this Privacy Policy as our services, systems, or legal requirements change. Updated policy content will apply once posted or otherwise made available.",
+  },
+];
+
+const legalModalContent = {
+  privacy: {
+    title: "Privacy Policy",
+    ariaLabel: "Close privacy policy",
+    intro: "This policy explains how JCLB Buy Back Shop handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.",
+    sections: privacySections,
+  },
+  terms: {
+    title: "Terms of Service",
+    ariaLabel: "Close terms of service",
+    intro: "These terms explain general use of the JCLB Buy Back Shop website and public information for customers, visitors, and anyone learning about our pawnshop services.",
+    sections: termsSections,
+  },
+};
 
 export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
   const router = useRouter();
@@ -26,6 +112,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [view, setView] = useState<ViewState>("login");
+  const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState<string>("");
   const [isRequestingAuth, setIsRequestingAuth] = useState(false);
 
@@ -205,8 +292,26 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
                 <button type="button" onClick={() => { onClose(); onRequestSignUp?.(); }} className="font-bold text-emerald-800 hover:underline">Sign Up</button>
               </p>
               <div className="mt-4 text-center text-[10px] text-zinc-400">
-                <p>JCLB Buy Back Shop · <span className="text-emerald-800">Privacy Policy</span></p>
-                <p className="mt-1">&copy; 2026 All rights reserved · <span className="text-emerald-800">Terms of Service</span></p>
+                <p>
+                  JCLB Buy Back Shop ·{" "}
+                  <button
+                    type="button"
+                    onClick={() => setLegalModal("privacy")}
+                    className="font-semibold text-emerald-800 transition-colors hover:text-emerald-700 hover:underline"
+                  >
+                    Privacy Policy
+                  </button>
+                </p>
+                <p className="mt-1">
+                  &copy; 2026 All rights reserved ·{" "}
+                  <button
+                    type="button"
+                    onClick={() => setLegalModal("terms")}
+                    className="font-semibold text-emerald-800 transition-colors hover:text-emerald-700 hover:underline"
+                  >
+                    Terms of Service
+                  </button>
+                </p>
               </div>
             </>
           )}
@@ -271,6 +376,77 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
           )}
         </div>
       </div>
+
+      {legalModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+          onClick={() => setLegalModal(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="terms-modal-title"
+            className="relative max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-stone-100 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setLegalModal(null)}
+              aria-label={legalModalContent[legalModal].ariaLabel}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="relative overflow-hidden bg-emerald-800 px-6 pb-6 pt-7 text-white sm:px-8">
+              <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
+              <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
+              <div className="relative">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">JCLB Buy Back Pawnshop</p>
+                <h3 id="terms-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50/85">
+                  {legalModalContent[legalModal].intro}
+                </p>
+              </div>
+            </div>
+
+            <div className="relative bg-emerald-800">
+              <div className="h-2 rounded-t-xl bg-stone-100" />
+              <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
+              <div className="space-y-4">
+                {legalModalContent[legalModal].sections.map((section, index) => (
+                  <section key={section.title} className="border-b border-zinc-200 pb-4 last:border-0 last:pb-0">
+                    <div className="flex gap-3">
+                      <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-800 text-xs font-bold text-white">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-emerald-950">{section.title}</h4>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
+                      </div>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-200 bg-white/60 px-6 py-4 sm:px-8">
+              <button
+                type="button"
+                onClick={() => setLegalModal(null)}
+                className="w-full bg-emerald-800 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
