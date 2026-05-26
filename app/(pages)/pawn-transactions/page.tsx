@@ -64,6 +64,12 @@ interface ApiTransaction {
   customer?: {
     full_name?: string | null;
     address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+    id_presented?: string | null;
   } | null;
   created_by_user?: {
     full_name?: string | null;
@@ -80,6 +86,12 @@ interface ApiTransaction {
     customer?: {
       full_name?: string | null;
       address?: string | null;
+      barangay?: string | null;
+      city?: string | null;
+      region?: string | null;
+      contact_number?: string | null;
+      middle_name?: string | null;
+      id_presented?: string | null;
     } | null;
   } | null;
 }
@@ -139,6 +151,30 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
       transaction.pawned_item?.customer?.address ??
       transaction.customer?.address ??
       "",
+    customerBarangay:
+      transaction.pawned_item?.customer?.barangay ??
+      transaction.customer?.barangay ??
+      undefined,
+    customerCity:
+      transaction.pawned_item?.customer?.city ??
+      transaction.customer?.city ??
+      undefined,
+    customerRegion:
+      transaction.pawned_item?.customer?.region ??
+      transaction.customer?.region ??
+      undefined,
+    customerPhone:
+      transaction.pawned_item?.customer?.contact_number ??
+      transaction.customer?.contact_number ??
+      undefined,
+    customerMiddleName:
+      transaction.pawned_item?.customer?.middle_name ??
+      transaction.customer?.middle_name ??
+      undefined,
+    idPresented:
+      transaction.pawned_item?.customer?.id_presented ??
+      transaction.customer?.id_presented ??
+      undefined,
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     buyBack: isBuyBackAction ? toAmountString(transaction.cash_in) : "0",
@@ -584,38 +620,97 @@ export default function PawnTransactionsPage() {
   }, []);
 
   const handlePrintSlip = useCallback(
-    (transaction: TransactionRow) => {
+    async (transaction: TransactionRow) => {
       if (transaction.purpose !== "Pawn") {
         return;
       }
 
-      const names = (transaction.customerName || "WALK-IN CUSTOMER").split(" ");
+      const hasMissingField = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
+      const needsEnrichment =
+        hasMissingField(transaction.serialNumber) ||
+        hasMissingField(transaction.itemsIncluded) ||
+        hasMissingField(transaction.condition) ||
+        hasMissingField(transaction.memoryStorage) ||
+        hasMissingField(transaction.customerAddress) ||
+        hasMissingField(transaction.customerName) ||
+        hasMissingField(transaction.createdByName);
+
+      let enriched: any = null;
+      let pawnSource: any = null;
+      if (transaction.relatedPawnedItemId && needsEnrichment) {
+        try {
+          enriched = await api.get<any>(`/inventory/pawned/${transaction.relatedPawnedItemId}`);
+        } catch {
+          enriched = null;
+        }
+      }
+      if (!enriched && transaction.unitCode && needsEnrichment) {
+        try {
+          enriched = await api.get<any>(`/inventory/item/${encodeURIComponent(transaction.unitCode)}`);
+        } catch {
+          enriched = null;
+        }
+      }
+      if (needsEnrichment) {
+        const params = transaction.relatedPawnedItemId
+          ? `relatedPawnedItemId=${encodeURIComponent(transaction.relatedPawnedItemId)}`
+          : transaction.unitCode
+            ? `unitCode=${encodeURIComponent(transaction.unitCode)}`
+            : "";
+        if (params) {
+          try {
+            pawnSource = await api.get<any>(`/transactions/pawn-source?${params}`);
+          } catch {
+            pawnSource = null;
+          }
+        }
+      }
+
+      const fullName = transaction.customerName || enriched?.customerName || "WALK-IN CUSTOMER";
+      const names = fullName.split(" ");
+      const firstName = names[0];
+      const middleName = transaction.customerMiddleName || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
+      const lastName = names.length > 1 ? names[names.length - 1] : "";
+
+      // Join address components for the MOA
+      const fullAddress = [
+        transaction.customerAddress || enriched?.customerAddress,
+        transaction.customerBarangay,
+        transaction.customerCity,
+        transaction.customerRegion
+      ].filter(Boolean).join(", ");
+
       const branchInfo =
         branches.find((branch) => branch.id === transaction.branchId) ??
         selectedBranch;
 
       setReprintData({
-        firstName: names[0] || "WALK-IN",
-        middleName: "",
-        lastName: names.length > 1 ? names.slice(1).join(" ") : "---",
-        address: transaction.customerAddress || "---",
-        contactNo: "---",
-        unitCode: transaction.unitCode || "---",
-        unitName: transaction.unit || "---",
-        category: transaction.category || "---",
-        serialNumber: transaction.serialNumber || "---",
-        itemsIncluded: transaction.itemsIncluded || "---",
-        condition: transaction.condition || "---",
-        remarks: transaction.remarks || transaction.notes || "---",
-        memory: transaction.memoryStorage || transaction.notes || "---",
+        firstName,
+        middleName,
+        lastName,
+        address: fullAddress,
+        contactNo: transaction.customerPhone || "",
+        unitCode: transaction.unitCode || "",
+        unitName: transaction.unit || enriched?.itemName || "",
+        category: transaction.category || "",
+        serialNumber: transaction.serialNumber || enriched?.serialNumber || pawnSource?.pawned_item?.serial_number || "",
+        itemsIncluded: transaction.itemsIncluded || enriched?.itemsIncluded || pawnSource?.pawned_item?.items_included || "",
+        condition: transaction.condition || enriched?.condition || pawnSource?.pawned_item?.condition || "",
+        remarks: transaction.remarks || transaction.notes || "",
+        memory: transaction.memoryStorage || enriched?.memoryStorage || pawnSource?.pawned_item?.memory_storage || "",
         amount: transaction.pawn,
         storageFee: transaction.storage,
         purchasedDate: transaction.date,
-        idPresented: "---",
+        idPresented: transaction.idPresented || enriched?.customerIdPresented || "",
         branchName: branchInfo?.name || transaction.branch,
         branchAddress: branchInfo?.location || "",
         branchPhone: branchInfo?.phone || "",
-        processedBy: transaction.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() || transaction.createdByName || "AUTHORIZED PERSONNEL",
+        processedBy:
+          transaction.createdByName ||
+          enriched?.created_by_user?.full_name ||
+          pawnSource?.created_by_user?.full_name ||
+          transaction.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() ||
+          "AUTHORIZED PERSONNEL",
       });
       setIsMoaReprintOpen(true);
     },

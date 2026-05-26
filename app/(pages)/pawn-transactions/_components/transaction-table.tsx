@@ -96,23 +96,6 @@ function getCustomerColumnText(row: TransactionRow) {
   return row.customerName?.trim() || "Walk-in Customer";
 }
 
-const printerIcon = (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="6 9 6 2 18 2 18 9" />
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-    <rect x="6" y="14" width="12" height="8" />
-  </svg>
-);
-
 interface TransactionTableProps {
   data?: TransactionRow[];
   isLoading?: boolean;
@@ -389,16 +372,6 @@ export function TransactionTable({
                                   className="rounded-lg p-2 text-text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-700"
                                 >
                                   {eyeIcon}
-                                </button>
-                              ) : null}
-                              {row.purpose === "Pawn" ? (
-                                <button
-                                  type="button"
-                                  onClick={() => onPrint?.(row)}
-                                  title="Print MOA slip"
-                                  className="rounded-lg p-2 text-text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-700"
-                                >
-                                  {printerIcon}
                                 </button>
                               ) : null}
                             </div>
