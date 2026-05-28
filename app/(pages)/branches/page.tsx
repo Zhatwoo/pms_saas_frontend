@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
@@ -59,6 +60,7 @@ function getNextBranchCode(branches: BranchRow[]) {
 }
 
 export default function BranchesPage() {
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { selectedBranch, isAllBranches, canSwitchBranch, refreshBranches } =
     useBranch();
@@ -101,6 +103,19 @@ export default function BranchesPage() {
   useEffect(() => {
     void loadBranches();
   }, [loadBranches]);
+
+  useEffect(() => {
+    const branchId = searchParams.get("branchId");
+    if (!branchId || branches.length === 0) return;
+
+    const target = branches.find(
+      (branch) => branch.id === branchId || branch.branchId === branchId,
+    );
+    if (target) {
+      setSelectedBranchRow(target);
+      setDrawerOpen(true);
+    }
+  }, [branches, searchParams]);
 
   useEffect(() => {
     const interval = window.setInterval(() => void loadBranches(), 60_000);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import {
@@ -32,6 +33,9 @@ import type {
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
 import { formatPeso } from "@/lib/currency";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -131,6 +135,7 @@ interface UserRecord {
 }
 
 export default function BranchFinancePage() {
+  const searchParams = useSearchParams();
   const { selectedBranch, isAllBranches, setSelectedBranch, branches: contextBranches } = useBranch();
 
   const [managers, setManagers] = useState<Manager[]>([]);
@@ -164,6 +169,16 @@ export default function BranchFinancePage() {
     setLedgerDateFrom(today);
     setLedgerDateTo(today);
   }, []);
+
+  useEffect(() => {
+    const branchId = searchParams.get("branch");
+    if (!branchId || contextBranches.length === 0) return;
+
+    const targetBranch = contextBranches.find((branch) => branch.id === branchId);
+    if (targetBranch) {
+      setSelectedBranch(targetBranch);
+    }
+  }, [contextBranches, searchParams, setSelectedBranch]);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -281,6 +296,12 @@ export default function BranchFinancePage() {
 
   useEffect(() => {
     void loadFinanceData();
+  }, [loadFinanceData]);
+
+  useEffect(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
+      void loadFinanceData();
+    });
   }, [loadFinanceData]);
 
   useEffect(() => {

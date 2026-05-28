@@ -214,8 +214,18 @@ export default function UserManagementPage() {
   }, [canManageUsers, roleFilter]);
 
   useEffect(() => {
+    const directUserId = searchParams.get("userId");
     const transferUserId = searchParams.get("transferUserId");
     const shouldHighlight = searchParams.get("highlightTransfer") === "true";
+
+    if (directUserId && users.length > 0) {
+      const targetUser = users.find((u) => u.id === directUserId);
+      if (targetUser) {
+        setSelectedUser(targetUser);
+        setIsDrawerOpen(true);
+      }
+      return;
+    }
 
     if (transferUserId && users.length > 0) {
       const targetUser = users.find((u) => u.id === transferUserId);

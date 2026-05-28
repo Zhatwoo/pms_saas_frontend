@@ -28,6 +28,9 @@ import type {
 } from "@/components/shared/finance-ledger-table";
 import { formatPeso } from "@/lib/currency";
 import { ActionButton } from "@/components/shared/action-button";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface BranchFinanceSummary {
   branchId: string;
@@ -177,6 +180,12 @@ export default function AdminBranchFinancePage() {
 
   useEffect(() => {
     void loadFinanceData();
+  }, [loadFinanceData]);
+
+  useEffect(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
+      void loadFinanceData();
+    });
   }, [loadFinanceData]);
 
   const handleRequestFunds = useCallback(

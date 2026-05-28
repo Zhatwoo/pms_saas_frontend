@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
@@ -105,6 +106,7 @@ function csvCell(value: string) {
 }
 
 export default function AdminUserManagementPage() {
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
 
@@ -157,6 +159,17 @@ export default function AdminUserManagementPage() {
   useEffect(() => {
     void loadUsersPage();
   }, [loadUsersPage]);
+
+  useEffect(() => {
+    const userId = searchParams.get("userId");
+    if (!userId || users.length === 0) return;
+
+    const target = users.find((record) => record.id === userId);
+    if (target) {
+      setSelectedUser(target);
+      setIsDrawerOpen(true);
+    }
+  }, [searchParams, users]);
 
   useEffect(() => {
     if (roleFilter === "SUPER_ADMIN") {

@@ -30,6 +30,12 @@ export interface TransactionRow {
   createdByName?: string;
   createdByRole?: string;
   customerAddress: string;
+  customerBarangay?: string;
+  customerCity?: string;
+  customerRegion?: string;
+  customerPhone?: string;
+  customerMiddleName?: string;
+  idPresented?: string;
   date: string;
   time: string;
   buyBack: string;

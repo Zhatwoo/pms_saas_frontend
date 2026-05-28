@@ -26,6 +26,9 @@ import type { RequestFundsData } from "@/app/admin/branch-finance/_components/re
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { formatPeso } from "@/lib/currency";
 import { ActionButton } from "@/components/shared/action-button";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
@@ -158,6 +161,12 @@ export default function EmployeeBranchFinancePage() {
 
   useEffect(() => {
     void loadFinanceData();
+  }, [loadFinanceData]);
+
+  useEffect(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
+      void loadFinanceData();
+    });
   }, [loadFinanceData]);
 
   const handleRequestFunds = useCallback(
@@ -412,7 +421,9 @@ export default function EmployeeBranchFinancePage() {
                         </p>
                         {request.notes ? (
                           <div className="mt-2 rounded-lg bg-surface-secondary/50 p-2 border border-border-subtle/50">
-                            <p className="text-[11px] italic text-text-muted leading-relaxed">"{request.notes}"</p>
+                            <p className="text-[11px] italic text-text-muted leading-relaxed">
+                              &ldquo;{request.notes}&rdquo;
+                            </p>
                           </div>
                         ) : null}
                         <div className="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">

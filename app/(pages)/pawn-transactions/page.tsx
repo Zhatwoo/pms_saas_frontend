@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
 import { useBranch } from "@/contexts/branch-context";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
@@ -361,6 +362,7 @@ export default function PawnTransactionsPage() {
     useState<TransactionRow | null>(null);
   const [stats, setStats] = useState<TransactionStatsData>(EMPTY_STATS);
   const [isLoading, setIsLoading] = useState(true);
+  const [realtimeRefreshKey, setRealtimeRefreshKey] = useState(0);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
   const [reprintData, setReprintData] = useState<{
     firstName: string;
@@ -463,7 +465,7 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, selectedDate, isAllBranches]);
+  }, [selectedBranch.id, selectedDate, isAllBranches, realtimeRefreshKey]);
 
   useEffect(() => {
     let active = true;
@@ -495,7 +497,13 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, isAllBranches]);
+  }, [selectedBranch.id, isAllBranches, realtimeRefreshKey]);
+
+  useEffect(() => {
+    return subscribeToPawnTransactionNotifications(() => {
+      setRealtimeRefreshKey((value) => value + 1);
+    });
+  }, []);
 
   // When navigating from a notification, reset to today so the transaction is visible
   useEffect(() => {

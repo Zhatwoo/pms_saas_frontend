@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
@@ -9,6 +9,7 @@ import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
 import { ActionButton } from "@/components/shared/action-button";
+import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
 
 const sendIcon = (
   <svg
@@ -89,8 +90,7 @@ function ExpirationMonitoringPageContent() {
     thirtyDays: [],
   });
 
-  useEffect(() => {
-    async function fetchExpirationData() {
+  const fetchExpirationData = useCallback(async () => {
       setIsLoading(true);
       try {
         const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
@@ -107,9 +107,17 @@ function ExpirationMonitoringPageContent() {
         setIsLoading(false);
         setHasLoadedData(true);
       }
-    }
-    fetchExpirationData();
   }, [selectedBranch.id, isAllBranches]);
+
+  useEffect(() => {
+    void fetchExpirationData();
+  }, [fetchExpirationData]);
+
+  useEffect(() => {
+    return subscribeToExpirationAlertNotifications(() => {
+      void fetchExpirationData();
+    });
+  }, [fetchExpirationData]);
 
   useEffect(() => {
     if (highlightTicketNo && highlightTransaction === "true" && buckets) {

@@ -6,106 +6,17 @@ import { ClockIcon, BellIcon, MenuIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api } from "@/lib/api";
-import { buildPawnTransactionHighlightHref, extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
+import { extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
+import {
+  addRolePrefixToTargetUrl,
+  type ApiNotification,
+  type HeaderNotification,
+  isFundTransferNotification,
+  mapNotification,
+  type NotificationTab,
+} from "@/lib/notifications";
+import { getNotificationStreamUrl } from "@/lib/notification-stream";
 import { useAuth } from "@/contexts/auth-context";
-
-type NotificationTab = "All" | "Transactions" | "Alerts" | "Requests";
-type NotificationGroup = "Today" | "Earlier";
-
-interface HeaderNotification {
-  id: string;
-  title: string;
-  subtitle: string;
-  category: Exclude<NotificationTab, "All">;
-  group: NotificationGroup;
-  unread: boolean;
-  userId?: string | null;
-  customerId?: string | null;
-  logId?: string | null;
-}
-
-const DEFAULT_NOTIFICATIONS: HeaderNotification[] = [
-  {
-    id: "tx-1",
-    title: "Juan Dela Cruz - Item expires in 2 days",
-    subtitle: "Transaction Alert: near expiry item",
-    category: "Transactions",
-    group: "Today",
-    unread: true,
-  },
-  {
-    id: "tx-2",
-    title: "Maria Santos - Item already expired",
-    subtitle: "Transaction Alert: expired pawn item",
-    category: "Transactions",
-    group: "Today",
-    unread: true,
-  },
-  {
-    id: "tx-3",
-    title: "Successful buyback completed - OR#2241",
-    subtitle: "Transaction Alert: buyback success",
-    category: "Transactions",
-    group: "Today",
-    unread: true,
-  },
-  {
-    id: "tx-4",
-    title: "New pawn transaction created - PT#9821",
-    subtitle: "Transaction Alert: new pawn",
-    category: "Transactions",
-    group: "Today",
-    unread: true,
-  },
-  {
-    id: "al-1",
-    title: "3 customers have pending interest due today",
-    subtitle: "Payment Reminder",
-    category: "Alerts",
-    group: "Today",
-    unread: true,
-  },
-  {
-    id: "al-2",
-    title: "Low inventory warning: Jewelry trays below threshold",
-    subtitle: "Inventory Update",
-    category: "Alerts",
-    group: "Today",
-    unread: true,
-  },
-  {
-    id: "rq-1",
-    title: "Request #1023 - Waiting for approval",
-    subtitle: "Request / Approval",
-    category: "Requests",
-    group: "Earlier",
-    unread: true,
-  },
-  {
-    id: "rq-2",
-    title: "Request #1021 - Approved",
-    subtitle: "Request / Approval",
-    category: "Requests",
-    group: "Earlier",
-    unread: false,
-  },
-  {
-    id: "al-3",
-    title: "Status update: 2 items are In Transit / OTW",
-    subtitle: "Status Tracking",
-    category: "Alerts",
-    group: "Earlier",
-    unread: false,
-  },
-  {
-    id: "al-4",
-    title: "System warning: Backup sync delayed",
-    subtitle: "Daily Summary / System Alert",
-    category: "Alerts",
-    group: "Earlier",
-    unread: false,
-  },
-];
 
 interface HeaderProps {
   userInitials?: string;
@@ -233,47 +144,86 @@ export function Header({
   const [activeTab, setActiveTab] = useState<NotificationTab>("All");
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const notificationRef = useRef<HTMLDivElement | null>(null);
+  const notificationsRef = useRef<HeaderNotification[]>([]);
+  const readingIdsRef = useRef<Set<string>>(new Set());
+  const soundEnabledRef = useRef(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  }, [notifications]);
+
+  const enableNotificationSound = useCallback(() => {
+    if (soundEnabledRef.current || typeof window === "undefined") return;
+
+    const audio = audioRef.current ?? new Audio("/sounds/notif_1.mp3");
+    audio.preload = "auto";
+    audio.volume = 0.55;
+    audioRef.current = audio;
+    soundEnabledRef.current = true;
+  }, []);
+
+  const playBeepFallback = useCallback(() => {
+    try {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = new AudioContextClass();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.14);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.2);
+    } catch (fallbackError) {
+      console.warn("Notification sound failed:", fallbackError);
+    }
+  }, []);
+
+  const playNotificationSound = useCallback(async () => {
+    if (!soundEnabledRef.current) return;
+
+    const soundPaths = ["/sounds/notif_1.mp3"];
+    for (const path of soundPaths) {
+      try {
+        const audio =
+          audioRef.current?.src.endsWith(path)
+            ? audioRef.current
+            : new Audio(path);
+        audio.preload = "auto";
+        audio.volume = 0.6;
+        audio.currentTime = 0;
+        audioRef.current = audio;
+        await audio.play();
+        return;
+      } catch {
+        continue;
+      }
+    }
+
+    playBeepFallback();
+  }, [playBeepFallback]);
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const data = await api.get<any[]>("/notifications");
+      const data = await api.get<ApiNotification[]>("/notifications");
       if (data && Array.isArray(data)) {
-        const now = new Date();
-        const today = now.toISOString().split("T")[0];
-        
-        let readIds: string[] = [];
-        const readStorageKey = user ? `pms_read_notifs_${user.id}` : null;
-        if (readStorageKey) {
-          try {
-            readIds = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
-          } catch {}
-        }
-
-        const mapped: HeaderNotification[] = data.map((item) => {
-          const itemDate = new Date(item.created_at).toISOString().split("T")[0];
-          let isUnread = !item.is_read;
-          if (readIds.includes(item.id)) {
-            isUnread = false;
-          }
-
-          return {
-            id: item.id,
-            title: item.title,
-            subtitle: item.subtitle ?? "",
-            category: item.category as any,
-            unread: isUnread,
-            userId: item.user_id ?? null,
-            customerId: item.customer_id ?? null,
-            logId: item.log_id ?? null,
-            group: itemDate === today ? "Today" : "Earlier",
-          };
-        });
-        setNotifications(mapped);
+        setNotifications(data.map(mapNotification));
       }
     } catch (err) {
       console.error("Failed to fetch notifications:", err);
     }
-  }, [user]);
+  }, []);
 
   const fetchNotificationsRef = useRef(fetchNotifications);
   useEffect(() => {
@@ -292,20 +242,88 @@ export function Header({
 
     // ─── Custom Event Listener (Bulletproof Fallback) ────────────────────
     const handleTransactionCreated = () => {
-      console.log("[Header] Custom event triggered, refreshing notifications...");
       void fetchNotificationsRef.current();
     };
     window.addEventListener("transaction_created", handleTransactionCreated);
 
     // ─── Realtime Subscription ───────────────────────────────────────────
-    const refreshInterval = setInterval(fetchNotifications, 2 * 60 * 1000);
+    const enableSoundAfterInteraction = () => enableNotificationSound();
+    window.addEventListener("pointerdown", enableSoundAfterInteraction, { once: true });
+    window.addEventListener("keydown", enableSoundAfterInteraction, { once: true });
+
+    let events: EventSource | null = null;
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+    if (typeof EventSource !== "undefined") {
+      events = new EventSource(getNotificationStreamUrl(), { withCredentials: true });
+
+      events.addEventListener("notification.created", (event) => {
+        try {
+          const next = mapNotification(JSON.parse((event as MessageEvent).data));
+          const alreadyLoaded = notificationsRef.current.some((item) => item.id === next.id);
+
+          setNotifications((prev) => {
+            if (prev.some((item) => item.id === next.id)) return prev;
+            return [next, ...prev].slice(0, 50);
+          });
+
+          window.dispatchEvent(
+            new CustomEvent("pms:notification-created", {
+              detail: next,
+            }),
+          );
+
+          if (isFundTransferNotification(next)) {
+            window.dispatchEvent(
+              new CustomEvent("pms:fund-transfer-notification", {
+                detail: next,
+              }),
+            );
+          }
+
+          if (!alreadyLoaded && next.unread) {
+            void playNotificationSound();
+          }
+        } catch (err) {
+          console.error("Failed to parse realtime notification:", err);
+        }
+      });
+
+      events.addEventListener("notification.read", (event) => {
+        try {
+          const payload = JSON.parse((event as MessageEvent).data) as {
+            ids?: string[];
+            all?: boolean;
+          };
+          const ids = new Set(payload.ids ?? []);
+          setNotifications((prev) =>
+            prev.map((item) =>
+              payload.all || ids.has(item.id) ? { ...item, unread: false } : item,
+            ),
+          );
+        } catch (err) {
+          console.error("Failed to parse notification read event:", err);
+        }
+      });
+
+      events.onerror = () => {
+        fallbackInterval ??= setInterval(() => {
+          void fetchNotificationsRef.current();
+        }, 30_000);
+      };
+    } else {
+      fallbackInterval = setInterval(fetchNotifications, 30_000);
+    }
 
     return () => {
       clearInterval(clockInterval);
-      clearInterval(refreshInterval);
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      events?.close();
       window.removeEventListener("transaction_created", handleTransactionCreated);
+      window.removeEventListener("pointerdown", enableSoundAfterInteraction);
+      window.removeEventListener("keydown", enableSoundAfterInteraction);
     };
-  }, [fetchNotifications]);
+  }, [enableNotificationSound, fetchNotifications, playNotificationSound]);
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {
@@ -352,41 +370,40 @@ export function Header({
     return notifications.filter((item) => item.category === activeTab);
   }, [activeTab, notifications]);
 
-  const todayNotifications = filteredNotifications.filter(
-    (item) => item.group === "Today",
-  );
-  const earlierNotifications = filteredNotifications.filter(
-    (item) => item.group === "Earlier",
-  );
+  const recentNotifications = filteredNotifications;
 
   const markAllAsRead = async () => {
-    if (!user) return;
-    const readStorageKey = `pms_read_notifs_${user.id}`;
-    
+    const snapshot = notifications;
     setNotifications((prev) => {
-      const allIds = prev.map((n) => n.id);
-      try {
-        const existing = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
-        const merged = Array.from(new Set([...existing, ...allIds]));
-        localStorage.setItem(readStorageKey, JSON.stringify(merged));
-      } catch {}
       return prev.map((item) => ({ ...item, unread: false }));
     });
+
+    try {
+      await api.patch("/notifications/read-all", {});
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+      setNotifications(snapshot);
+    }
   };
 
-  const markOneAsRead = async (id: string) => {
-    if (!user) return;
-    const readStorageKey = `pms_read_notifs_${user.id}`;
-    
+  const markOneAsRead = async (id: string, options?: { revertOnError?: boolean }) => {
+    if (readingIdsRef.current.has(id)) return;
+    readingIdsRef.current.add(id);
+    const snapshot = notifications;
     setNotifications((prev) =>
       prev.map((item) => (item.id === id ? { ...item, unread: false } : item)),
     );
-    
+
     try {
-      const existing = JSON.parse(localStorage.getItem(readStorageKey) || "[]");
-      const merged = Array.from(new Set([...existing, id]));
-      localStorage.setItem(readStorageKey, JSON.stringify(merged));
-    } catch {}
+      await api.patch(`/notifications/${encodeURIComponent(id)}/read`, {});
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+      if (options?.revertOnError !== false) {
+        setNotifications(snapshot);
+      }
+    } finally {
+      readingIdsRef.current.delete(id);
+    }
   };
 
   const handleViewAllNotifications = () => {
@@ -419,6 +436,10 @@ export function Header({
   };
 
   const resolveNotificationHref = (item: HeaderNotification) => {
+    if (item.targetUrl) {
+      return addRolePrefixToTargetUrl(item.targetUrl, user?.role);
+    }
+
     if (item.customerId) {
       return buildCustomerProfileHref(item.customerId, item.logId);
     }
@@ -426,7 +447,10 @@ export function Header({
     const transactionNo =
       extractTransactionNoFromText(item.title) ?? extractTransactionNoFromText(item.subtitle);
     if (transactionNo) {
-      return buildPawnTransactionHighlightHref(transactionNo);
+      return addRolePrefixToTargetUrl(
+        `/pawn-transactions?transactionNo=${encodeURIComponent(transactionNo)}&highlightTransaction=true`,
+        user?.role,
+      );
     }
 
     return null;
@@ -450,9 +474,15 @@ export function Header({
 
       if (!notificationHref) {
         return (
-          <div key={item.id} className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left">
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => void markOneAsRead(item.id)}
+            className="w-full rounded-lg border border-border-main bg-surface-subtle px-4 py-3 text-left transition-colors hover:border-[var(--emerald-border)] hover:bg-[var(--emerald-surface)]/70"
+            title="Mark as read"
+          >
             {content}
-          </div>
+          </button>
         );
       }
 
@@ -461,7 +491,7 @@ export function Header({
           key={item.id}
           type="button"
           onClick={() => {
-            void markOneAsRead(item.id);
+            void markOneAsRead(item.id, { revertOnError: false });
             setIsNotificationOpen(false);
             router.push(notificationHref);
           }}
@@ -517,7 +547,10 @@ export function Header({
         <div className="relative" ref={notificationRef}>
           <button
             type="button"
-            onClick={() => setIsNotificationOpen((prev) => !prev)}
+            onClick={() => {
+              enableNotificationSound();
+              setIsNotificationOpen((prev) => !prev);
+            }}
             className="relative flex h-11 w-11 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
             aria-label="Open notifications"
           >
@@ -557,29 +590,14 @@ export function Header({
               <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
                 <div>
                   <p className="mb-1 text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Today
+                    Recent
                   </p>
                   <div className="space-y-2">
-                    {todayNotifications.length > 0 ? (
-                      todayNotifications.map(renderNotificationRow)
+                    {recentNotifications.length > 0 ? (
+                      recentNotifications.map(renderNotificationRow)
                     ) : (
                       <p className="rounded-md border border-dashed border-border-main px-3 py-2 text-sm text-text-tertiary">
-                        No items.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-1 text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Earlier
-                  </p>
-                  <div className="space-y-2">
-                    {earlierNotifications.length > 0 ? (
-                      earlierNotifications.map(renderNotificationRow)
-                    ) : (
-                      <p className="rounded-md border border-dashed border-border-main px-3 py-2 text-sm text-text-tertiary">
-                        No items.
+                        No notifications.
                       </p>
                     )}
                   </div>
