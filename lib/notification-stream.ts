@@ -1,9 +1,12 @@
 import {
+  isExpirationAlertApiNotification,
   isFundTransferApiNotification,
+  isPawnTransactionApiNotification,
   type ApiNotification,
 } from "@/lib/notifications";
 
-type FundTransferChangeHandler = (notification?: ApiNotification) => void;
+type NotificationChangeHandler = (notification?: ApiNotification) => void;
+type NotificationPredicate = (notification: ApiNotification) => boolean;
 
 export function getNotificationStreamUrl() {
   const configured =
@@ -25,8 +28,10 @@ export function getNotificationStreamUrl() {
   return "/api/notifications/stream";
 }
 
-export function subscribeToFundTransferNotifications(
-  onChange: FundTransferChangeHandler,
+export function subscribeToNotifications(
+  onChange: NotificationChangeHandler,
+  predicate: NotificationPredicate,
+  fallbackMs = 30_000,
 ) {
   if (typeof window === "undefined") {
     return () => undefined;
@@ -35,7 +40,7 @@ export function subscribeToFundTransferNotifications(
   let fallbackInterval: number | null = null;
 
   const startFallback = () => {
-    fallbackInterval ??= window.setInterval(() => onChange(), 30_000);
+    fallbackInterval ??= window.setInterval(() => onChange(), fallbackMs);
   };
 
   const stopFallback = () => {
@@ -56,11 +61,11 @@ export function subscribeToFundTransferNotifications(
   events.addEventListener("notification.created", (event) => {
     try {
       const notification = JSON.parse((event as MessageEvent).data) as ApiNotification;
-      if (isFundTransferApiNotification(notification)) {
+      if (predicate(notification)) {
         onChange(notification);
       }
     } catch (err) {
-      console.error("Failed to parse fund transfer notification event:", err);
+      console.error("Failed to parse notification stream event:", err);
     }
   });
 
@@ -71,4 +76,33 @@ export function subscribeToFundTransferNotifications(
     stopFallback();
     events.close();
   };
+}
+
+export function subscribeToFundTransferNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isFundTransferApiNotification);
+}
+
+export function subscribeToPawnTransactionNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isPawnTransactionApiNotification);
+}
+
+export function subscribeToFinanceRelevantNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(
+    onChange,
+    (notification) =>
+      isFundTransferApiNotification(notification) ||
+      isPawnTransactionApiNotification(notification),
+  );
+}
+
+export function subscribeToExpirationAlertNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isExpirationAlertApiNotification);
 }

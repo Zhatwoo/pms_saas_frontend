@@ -97,6 +97,30 @@ export function isFundTransferApiNotification(
   );
 }
 
+export function isPawnTransactionApiNotification(
+  notification: Pick<ApiNotification, "category" | "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.category === "Transactions" ||
+    notification.notification_type === "transaction" ||
+    notification.notification_type === "payment" ||
+    notification.notification_type === "redemption" ||
+    notification.entity_type === "transaction" ||
+    notification.entity_type === "payment" ||
+    notification.entity_type === "redemption"
+  );
+}
+
+export function isExpirationAlertApiNotification(
+  notification: Pick<ApiNotification, "category" | "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.category === "Alerts" &&
+    (notification.notification_type === "pawn_item" ||
+      notification.entity_type === "pawn_item")
+  );
+}
+
 export function addRolePrefixToTargetUrl(targetUrl: string, role?: Role): string {
   if (!targetUrl.startsWith("/")) return targetUrl;
   if (targetUrl.startsWith("/admin/") || targetUrl.startsWith("/employee/")) {

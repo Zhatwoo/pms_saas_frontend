@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
 import { RenewModal } from "./_components/expiration-renew-modal";
+import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
 
 const sendIcon = (
   <svg
@@ -90,7 +91,7 @@ function ExpirationMonitoringPageContent() {
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [selectedRenewTicketNo, setSelectedRenewTicketNo] = useState<string | null>(null);
 
-  const fetchExpirationData = async () => {
+  const fetchExpirationData = useCallback(async () => {
     setIsLoading(true);
     try {
       const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
@@ -106,11 +107,17 @@ function ExpirationMonitoringPageContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedBranch.id, isAllBranches]);
 
   useEffect(() => {
-    fetchExpirationData();
-  }, [selectedBranch.id, isAllBranches]);
+    void fetchExpirationData();
+  }, [fetchExpirationData]);
+
+  useEffect(() => {
+    return subscribeToExpirationAlertNotifications(() => {
+      void fetchExpirationData();
+    });
+  }, [fetchExpirationData]);
 
   useEffect(() => {
     if (highlightTicketNo && highlightTransaction === "true" && buckets) {

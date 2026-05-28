@@ -33,7 +33,9 @@ import type {
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
 import { formatPeso } from "@/lib/currency";
-import { subscribeToFundTransferNotifications } from "@/lib/notification-stream";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -297,7 +299,7 @@ export default function BranchFinancePage() {
   }, [loadFinanceData]);
 
   useEffect(() => {
-    return subscribeToFundTransferNotifications(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
       void loadFinanceData();
     });
   }, [loadFinanceData]);

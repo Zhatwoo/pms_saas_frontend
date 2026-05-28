@@ -267,6 +267,12 @@ export function Header({
             return [next, ...prev].slice(0, 50);
           });
 
+          window.dispatchEvent(
+            new CustomEvent("pms:notification-created", {
+              detail: next,
+            }),
+          );
+
           if (isFundTransferNotification(next)) {
             window.dispatchEvent(
               new CustomEvent("pms:fund-transfer-notification", {
@@ -275,7 +281,7 @@ export function Header({
             );
           }
 
-          if (!alreadyLoaded && next.unread && isFundTransferNotification(next)) {
+          if (!alreadyLoaded && next.unread) {
             void playNotificationSound();
           }
         } catch (err) {

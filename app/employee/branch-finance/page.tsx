@@ -26,7 +26,9 @@ import type { RequestFundsData } from "@/app/admin/branch-finance/_components/re
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { formatPeso } from "@/lib/currency";
 import { ActionButton } from "@/components/shared/action-button";
-import { subscribeToFundTransferNotifications } from "@/lib/notification-stream";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
@@ -162,7 +164,7 @@ export default function EmployeeBranchFinancePage() {
   }, [loadFinanceData]);
 
   useEffect(() => {
-    return subscribeToFundTransferNotifications(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
       void loadFinanceData();
     });
   }, [loadFinanceData]);

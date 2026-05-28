@@ -28,6 +28,7 @@ import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-tot
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { formatPeso } from "@/lib/currency";
+import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -514,6 +515,12 @@ export default function SuperAdminPawnTransactionsPage() {
 
   useEffect(() => {
     void fetchAllData();
+  }, [fetchAllData]);
+
+  useEffect(() => {
+    return subscribeToPawnTransactionNotifications(() => {
+      void fetchAllData();
+    });
   }, [fetchAllData]);
 
   const fetchTransactionsRef = useRef(fetchTransactions);

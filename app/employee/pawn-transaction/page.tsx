@@ -28,6 +28,7 @@ import { formatPeso } from "@/lib/currency";
 import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
@@ -633,6 +634,12 @@ export default function EmployeePawnTransactionsPage() {
 
   useEffect(() => {
     void fetchAllData();
+  }, [fetchAllData]);
+
+  useEffect(() => {
+    return subscribeToPawnTransactionNotifications(() => {
+      void fetchAllData();
+    });
   }, [fetchAllData]);
 
   useEffect(() => {
