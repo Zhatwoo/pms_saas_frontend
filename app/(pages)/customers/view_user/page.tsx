@@ -297,20 +297,14 @@ function isImageUrl(value: string) {
 }
 
 function normalizeTransactionStatus(tx: ApiTransaction) {
-  const status = tx.pawned_item?.status;
+  const status = tx.pawned_item?.status || tx.sale_item?.status;
   if (status) return status;
 
-  switch (tx.purpose) {
-    case "Pawn":
-    case "Renew":
-      return "Active";
-    case "Buy Back":
-      return "Redeemed";
-    case "Sold Item":
-      return "Sold";
-    default:
-      return "Active";
+  if (tx.purpose === "Pawn" || tx.purpose === "Renew") {
+    return "Active";
   }
+
+  return "Active";
 }
 
 function mapTransaction(tx: ApiTransaction): Transaction {
@@ -672,6 +666,7 @@ function EmployeeCustomerDetailContent() {
 
   const [reviewContext, setReviewContext] = useState<ReviewContext | null>(null);
 
+  
   const requestingEmployeeId = useMemo(() => {
     const editRequest = activityLogs.find((log) => log.action === "CUSTOMER_EDIT_REQUESTED");
     return editRequest?.userId ?? undefined;

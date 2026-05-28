@@ -361,7 +361,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       const fetchedSerialNumber = typeof data.serialNumber === "string" ? data.serialNumber.trim() : "";
       const resolvedSerialNumber = fetchedSerialNumber || parsed.serialNumber;
 
-      if (String(data.status || "").toLowerCase() !== "active") {
+      const normalizedStatus = String(data.status || "").trim().toLowerCase();
+      const isActiveItem = normalizedStatus === "active" || normalizedStatus === "pawned";
+      const isForSaleItem =
+        normalizedStatus.includes("sale") ||
+        normalizedStatus.includes("avail") ||
+        normalizedStatus === "available";
+
+      if (!isActiveItem && !isForSaleItem) {
         setScanStage("failed");
         setRejectedScanItem({
           ...data,
@@ -370,7 +377,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           scanSerialNumber: parsed.serialNumber,
         });
         setPendingItem(null);
-        setError("Only active pawned items are accepted.");
+        setError("Only active pawned items or items for sale are accepted.");
         return;
       }
 
@@ -1339,7 +1346,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.35em] text-rose-400">Scan rejected</p>
-                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items are accepted</h3>
+                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items or items for sale are accepted</h3>
                   </div>
                 </div>
 
@@ -1351,7 +1358,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 </div>
 
                 <p className="mt-4 text-sm leading-6 text-zinc-600">
-                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item to continue.
+                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item or items for sale item to continue.
                 </p>
 
                 <button
@@ -1376,7 +1383,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.35em] text-rose-400">Scan rejected</p>
-                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items are accepted</h3>
+                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items or items for sale are accepted</h3>
                   </div>
                 </div>
 
@@ -1388,7 +1395,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 </div>
 
                 <p className="mt-4 text-sm leading-6 text-zinc-600">
-                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item to continue.
+                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item or items for sale item to continue.
                 </p>
 
                 <button
