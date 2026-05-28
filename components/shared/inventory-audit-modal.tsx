@@ -6,6 +6,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { StatusBadge } from "./status-badge";
+import IncidentReportModal from "./incident-report-modal";
 
 interface InventoryAuditModalProps {
   isOpen: boolean;
@@ -192,6 +193,8 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const [tally, setTally] = useState<InventoryTally | null>(null);
   const [isCheckingTally, setIsCheckingTally] = useState(false);
   const [tallyError, setTallyError] = useState("");
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [incidentPrefill, setIncidentPrefill] = useState<{ itemId: string; itemName?: string } | null>(null);
   const [pendingPhotoBroken, setPendingPhotoBroken] = useState(false);
   const [verifiedPhotoBroken, setVerifiedPhotoBroken] = useState(false);
   const [hasLoadedPersistedState, setHasLoadedPersistedState] = useState(false);
@@ -708,26 +711,44 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         )}
         <div className="flex h-full flex-col overflow-y-auto lg:grid lg:min-h-0 lg:grid-cols-[1.25fr_.88fr] lg:overflow-hidden">
           <section className="relative flex flex-col bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 lg:min-h-0 lg:overflow-hidden lg:p-6 shrink-0 lg:shrink">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
-                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Branch inventory QR scan</h2>
-                <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 lg:text-sm">
-                  The camera opens automatically so you can scan each pawned item QR code before starting the day.
-                </p>
-              </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                        {tally?.missingItems?.length ?? 0} not yet scanned
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
+                    {tally?.missingItems?.length ? (
+                      tally.missingItems.map((item) => (
+                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
+                          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">{item.category}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-800">
+                        <p className="text-xs font-bold text-zinc-600">No missing items</p>
+                      </div>
+                    )}
+                  </div>
 
-              <div className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-zinc-800 dark:text-emerald-300 lg:px-4 lg:text-xs">
-                {scannedItems.length} Verified
+            {/* Prefill banner above the camera when reporting a specific item */}
+            {incidentPrefill ? (
+              <div className="mb-3 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.28em] text-zinc-400">Reporting item</p>
+                    <p className="mt-1 text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{incidentPrefill.itemId}</p>
+                    {incidentPrefill.itemName ? <p className="text-xs text-zinc-500">{incidentPrefill.itemName}</p> : null}
+                  </div>
+                  <div>
+                    <button onClick={() => { setIncidentPrefill(null); setShowIncidentModal(true); }} className="rounded-md bg-rose-600 px-3 py-1 text-xs font-bold text-white">Report</button>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-300 lg:mt-5 lg:text-xs">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${cameraState === "ready" ? "bg-emerald-500 animate-pulse" : cameraState === "loading" ? "bg-amber-400 animate-pulse" : cameraState === "unsupported" ? "bg-sky-400" : "bg-rose-400"}`}
-              />
-              <span>{cameraStatusLabel}</span>
-            </div>
+            ) : null}
 
             <div className="relative mt-4 overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 lg:mt-5">
               <div className="relative aspect-[16/10] w-full lg:aspect-[16/9]">
@@ -873,7 +894,16 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Checklist progress</p>
                   <h4 className="mt-1 text-base font-black text-zinc-900 dark:text-zinc-100 lg:text-lg">{completionLabel}</h4>
                 </div>
-                <StatusBadge label={cameraStatusLabel} variant={statusVariant[pendingItem?.status || ""] || "blue"} />
+                <div className="flex items-center gap-3">
+                  <StatusBadge label={cameraStatusLabel} variant={statusVariant[pendingItem?.status || ""] || "blue"} />
+                  <button
+                    type="button"
+                    onClick={() => { setIncidentPrefill(null); setShowIncidentModal(true); }}
+                    className="rounded-2xl bg-rose-600 px-3 py-1 text-xs font-bold text-white hover:bg-rose-700"
+                  >
+                    Report
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
@@ -904,30 +934,6 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
                     <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.missingInVault?.length ?? "-"}</div>
                     Missing
-                  </div>
-                </div>
-                <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
-                      {tally?.missingItems?.length ?? 0} not yet scanned
-                    </span>
-                  </div>
-                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
-                    {tally?.missingItems?.length ? (
-                      tally.missingItems.map((item) => (
-                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
-                          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
-                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                            {item.category}
-                          </p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-800">
-                        <p className="text-xs font-bold text-zinc-600">No missing items</p>
-                      </div>
-                    )}
                   </div>
                 </div>
                 {tallyError && <p className="mt-3 text-xs font-semibold text-rose-600">{tallyError}</p>}
@@ -1134,6 +1140,13 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             </div>
           </aside>
         </div>
+        {/* Incident report modal (frontend placeholder) */}
+        <IncidentReportModal
+          isOpen={showIncidentModal}
+          onClose={() => setShowIncidentModal(false)}
+          prefillItem={incidentPrefill}
+          missingItems={tally?.missingItems ?? []}
+        />
 
         {selectedVerifiedItem && (() => {
           const itemPhotos = Array.from(new Set([
