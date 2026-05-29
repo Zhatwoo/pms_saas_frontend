@@ -5,10 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
+import { toast } from "sonner";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
 import { ActionButton } from "@/components/shared/action-button";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
 
 const sendIcon = (
@@ -70,6 +72,10 @@ function ExpirationMonitoringPageContent() {
   const [renewingItemId, setRenewingItemId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const canRenew = user?.role === "admin" || user?.role === "employee";
+  const userRole = user?.role || "employee";
+  const canExpire = userRole === "admin" || userRole === "super_admin";
+  const [confirmExpireId, setConfirmExpireId] = useState<string | null>(null);
+  const [isExpiring, setIsExpiring] = useState(false);
 
   const [stats, setStats] = useState({
     overdue: 0,
@@ -193,6 +199,10 @@ function ExpirationMonitoringPageContent() {
     router.push(`/employee/pawn-transaction?action=renew&ticketNo=${encodeURIComponent(ticketNo)}`);
   };
 
+  const handleExpire = (id: string) => {
+    setConfirmExpireId(id);
+  };
+
   return (
     <div className="space-y-5">
       {toast ? (
@@ -230,8 +240,34 @@ function ExpirationMonitoringPageContent() {
         sendingItemId={sendingItemId}
         onRenew={handleRenew}
         renewingItemId={renewingItemId}
+        onExpire={handleExpire}
+        expiringItemId={confirmExpireId}
         canRenew={canRenew}
+        canExpire={canExpire}
         highlightTicketNo={highlightTicketNo}
+      />
+
+      <ConfirmActionModal
+        isOpen={confirmExpireId !== null}
+        title="Mark as expired?"
+        message="This item will be marked expired and auto-transferred to Items For Sale."
+        confirmLabel={isExpiring ? "Expiring..." : "Yes, mark expired"}
+        variant="warning"
+        onClose={() => setConfirmExpireId(null)}
+        onConfirm={async () => {
+          if (!confirmExpireId) return;
+          setIsExpiring(true);
+          try {
+            await api.post(`/inventory/pawned/${confirmExpireId}/expire`, {});
+            toast.success("Item marked as expired.");
+            setConfirmExpireId(null);
+            void fetchExpirationData();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to expire item.");
+          } finally {
+            setIsExpiring(false);
+          }
+        }}
       />
     </div>
   );

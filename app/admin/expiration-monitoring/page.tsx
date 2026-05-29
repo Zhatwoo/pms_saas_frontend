@@ -5,11 +5,13 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
 import { ActionButton } from "@/components/shared/action-button";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
 import { RenewModal } from "./_components/expiration-renew-modal";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
 
 const sendIcon = (
@@ -58,6 +60,10 @@ interface ExpirationMonitoringResponse {
 function ExpirationMonitoringPageContent() {
   const [activeTab, setActiveTab] = useState("30days");
   const { selectedBranch, isAllBranches } = useBranch();
+  const { user } = useAuth();
+  const userRole = user?.role || "employee";
+  const canExpire = userRole === "admin" || userRole === "super_admin";
+
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -87,6 +93,8 @@ function ExpirationMonitoringPageContent() {
   const [isBlasting, setIsBlasting] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [renewingId, setRenewingId] = useState<string | null>(null);
+  const [confirmExpireId, setConfirmExpireId] = useState<string | null>(null);
+  const [isExpiring, setIsExpiring] = useState(false);
   
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [selectedRenewTicketNo, setSelectedRenewTicketNo] = useState<string | null>(null);
@@ -190,6 +198,10 @@ function ExpirationMonitoringPageContent() {
     }
   };
 
+  const handleExpire = (id: string) => {
+    setConfirmExpireId(id);
+  };
+
   return (
     <div className="space-y-5 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -221,8 +233,11 @@ function ExpirationMonitoringPageContent() {
         isLoading={isLoading} 
         sendingId={sendingId}
         renewingId={renewingId}
+        expiringId={confirmExpireId}
         onSendEmail={handleSendEmail}
         onRenew={handleRenew}
+        onExpire={handleExpire}
+        canExpire={canExpire}
         highlightTicketNo={highlightTicketNo}
       />
       
@@ -236,6 +251,29 @@ function ExpirationMonitoringPageContent() {
         branchId={selectedBranch.id}
         onSuccess={fetchExpirationData}
         initialSearchCode={selectedRenewTicketNo || ""}
+      />
+
+      <ConfirmActionModal
+        isOpen={confirmExpireId !== null}
+        title="Mark as expired?"
+        message="This item will be marked expired and auto-transferred to Items For Sale."
+        confirmLabel={isExpiring ? "Expiring..." : "Yes, mark expired"}
+        variant="warning"
+        onClose={() => setConfirmExpireId(null)}
+        onConfirm={async () => {
+          if (!confirmExpireId) return;
+          setIsExpiring(true);
+          try {
+            await api.post(`/inventory/pawned/${confirmExpireId}/expire`, {});
+            toast.success("Item marked as expired.");
+            setConfirmExpireId(null);
+            void fetchExpirationData();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to expire item.");
+          } finally {
+            setIsExpiring(false);
+          }
+        }}
       />
     </div>
   );

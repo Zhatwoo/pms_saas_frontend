@@ -61,7 +61,6 @@ const pawnedStatusOptions = [
   { value: "all", label: "All" },
   { value: "Active", label: "Active" },
   { value: "Redeemed", label: "Redeemed" },
-  { value: "Expired", label: "Expired" },
 ];
 
 const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
@@ -768,19 +767,6 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                 >
                                   {editIcon}
                                 </button>
-                                {item.status === "Active" && (
-                                  <button
-                                    type="button"
-                                    title="Mark as Expired"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setConfirmIntent({ type: "expire", itemId: item.id });
-                                    }}
-                                    className="inline-flex items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-500/20 dark:bg-orange-500/5 dark:text-orange-400 dark:hover:bg-orange-500/10"
-                                  >
-                                    {expireIcon}
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   title="Delete Item"

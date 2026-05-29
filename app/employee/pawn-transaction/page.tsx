@@ -260,6 +260,7 @@ interface ApiTransaction {
   pawn_amount?: number | string | null;
   storage_fee?: number | string | null;
   qr_code?: string | null;
+  id_photo?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
@@ -428,6 +429,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
     details: transaction.details ?? undefined,
+    idPhoto: transaction.id_photo ?? undefined,
   };
 }
 

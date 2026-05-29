@@ -20,6 +20,7 @@ interface TransactionRow {
   storage: string;
   qrCode?: string;
   qr_code?: string;
+  idPhoto?: string;
 }
 
 const columns = [
