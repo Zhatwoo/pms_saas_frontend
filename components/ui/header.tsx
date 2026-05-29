@@ -11,6 +11,7 @@ import {
   addRolePrefixToTargetUrl,
   type ApiNotification,
   type HeaderNotification,
+  isBranchTransferNotification,
   isFundTransferNotification,
   mapNotification,
   type NotificationTab,
@@ -276,6 +277,14 @@ export function Header({
           if (isFundTransferNotification(next)) {
             window.dispatchEvent(
               new CustomEvent("pms:fund-transfer-notification", {
+                detail: next,
+              }),
+            );
+          }
+
+          if (isBranchTransferNotification(next)) {
+            window.dispatchEvent(
+              new CustomEvent("pms:branch-transfer-notification", {
                 detail: next,
               }),
             );
