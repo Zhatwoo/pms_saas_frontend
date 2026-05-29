@@ -395,14 +395,14 @@ export function PasswordChangeRequestCard() {
                 <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-text-primary">
                   Request Password Change
                 </h3>
-                <p className="mt-2 text-sm leading-6 text-text-tertiary">
+                <p className="mt-2 text-sm leading-6 text-zinc-900 dark:text-zinc-300">
                   Provide a reason for this request. It will be sent to {approverLabel || "the assigned approver"} for review and approval.
                 </p>
               </div>
 
               <div className="mt-5 border-t border-border-main pt-5">
                 <div className="mx-auto">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-text-tertiary">
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.12em] text-zinc-900 dark:text-zinc-300">
                     Reason for Password Change
                   </label>
                   <div className="relative">
@@ -410,13 +410,13 @@ export function PasswordChangeRequestCard() {
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder="Example: I suspect my password was exposed and need immediate reset approval."
-                      className="min-h-[140px] w-full rounded-lg border border-input-border bg-input-bg px-4 py-3 pr-14 text-sm leading-6 text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500"
+                      className="min-h-[140px] w-full rounded-lg border border-input-border bg-input-bg px-4 py-3 pr-14 text-sm leading-6 text-zinc-900 outline-none transition-colors placeholder:text-zinc-500 dark:text-zinc-100 dark:placeholder:text-zinc-400 focus:border-emerald-500"
                     />
-                    <span className="pointer-events-none absolute bottom-2.5 right-3 text-xs text-text-tertiary">
+                    <span className="pointer-events-none absolute bottom-2.5 right-3 text-xs text-zinc-900 dark:text-zinc-400">
                       {reason.length}/500
                     </span>
                   </div>
-                  <p className="mt-1.5 text-xs text-text-tertiary">Minimum 10 characters.</p>
+                  <p className="mt-1.5 text-xs text-zinc-900 dark:text-zinc-400">Minimum 10 characters.</p>
                   {error && <p className="mt-1.5 text-xs font-semibold text-red-600">{error}</p>}
                 </div>
 
@@ -427,7 +427,7 @@ export function PasswordChangeRequestCard() {
                       setError(null);
                     }}
                     disabled={isSubmitting}
-                    className="rounded-lg border border-border-main bg-surface px-5 py-2 text-xs font-bold text-text-secondary transition-colors hover:bg-surface-hover disabled:opacity-60"
+                    className="rounded-lg border border-border-main bg-surface px-5 py-2 text-xs font-bold text-zinc-900 transition-colors hover:bg-surface-hover dark:text-zinc-300 disabled:opacity-60"
                   >
                     Cancel
                   </button>
