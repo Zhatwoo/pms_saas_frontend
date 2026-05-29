@@ -121,6 +121,33 @@ export function isExpirationAlertApiNotification(
   );
 }
 
+export function isIncidentReportApiNotification(
+  notification: Pick<ApiNotification, "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.notification_type === "INCIDENT_REPORT" ||
+    notification.entity_type === "incident_ticket"
+  );
+}
+
+export function isBranchTransferNotification(
+  notification: Pick<HeaderNotification, "notificationType" | "entityType">,
+): boolean {
+  return (
+    notification.notificationType === "USER_BRANCH_TRANSFER" ||
+    notification.entityType === "user_branch_transfer"
+  );
+}
+
+export function isBranchTransferApiNotification(
+  notification: Pick<ApiNotification, "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.notification_type === "USER_BRANCH_TRANSFER" ||
+    notification.entity_type === "user_branch_transfer"
+  );
+}
+
 export function addRolePrefixToTargetUrl(targetUrl: string, role?: Role): string {
   if (!targetUrl.startsWith("/")) return targetUrl;
   if (targetUrl.startsWith("/admin/") || targetUrl.startsWith("/employee/")) {

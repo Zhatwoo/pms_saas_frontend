@@ -22,6 +22,7 @@ interface AuthContextValue {
   refreshProfile: () => Promise<void>;
   isSessionExpiryActive: boolean;
   requireReLogin: (message?: string) => void;
+  forceLogoutToLogin: (message?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -122,6 +123,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       redirectToLogin(SESSION_EXPIRED_REASON);
     }, SESSION_REDIRECT_DELAY_MS);
   }, [clearSession, clearSessionExpiryTimers, redirectToLogin]);
+
+  const forceLogoutToLogin = useCallback((message?: string) => {
+    if (typeof window === "undefined") return;
+
+    clearSessionExpiryTimers();
+    clearSession(true);
+    void api.post("/auth/logout", {}).finally(() => {
+      const params = new URLSearchParams();
+      if (message?.trim()) {
+        params.set("notice", message.trim());
+      }
+      window.location.href = `/login${params.toString() ? `?${params.toString()}` : ""}`;
+    });
+  }, [clearSession, clearSessionExpiryTimers]);
 
   const refreshProfile = useCallback(async (options?: RefreshProfileOptions) => {
     if (isRefreshingRef.current) return;
@@ -243,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshProfile,
         isSessionExpiryActive,
         requireReLogin,
+        forceLogoutToLogin,
       }}
     >
       {children}

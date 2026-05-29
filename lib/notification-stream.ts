@@ -1,6 +1,8 @@
 import {
+  isBranchTransferApiNotification,
   isExpirationAlertApiNotification,
   isFundTransferApiNotification,
+  isIncidentReportApiNotification,
   isPawnTransactionApiNotification,
   type ApiNotification,
 } from "@/lib/notifications";
@@ -105,4 +107,16 @@ export function subscribeToExpirationAlertNotifications(
   onChange: NotificationChangeHandler,
 ) {
   return subscribeToNotifications(onChange, isExpirationAlertApiNotification);
+}
+
+export function subscribeToIncidentReportNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isIncidentReportApiNotification);
+}
+
+export function subscribeToBranchTransferNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isBranchTransferApiNotification);
 }

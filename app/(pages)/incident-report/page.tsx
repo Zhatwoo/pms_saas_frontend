@@ -7,6 +7,7 @@ import { ActionButton } from "@/components/shared/action-button";
 import { useAuth } from "@/contexts/auth-context";
 import { ALL_BRANCHES_OPTION, useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { subscribeToIncidentReportNotifications } from "@/lib/notification-stream";
 import { AddIncidentModal } from "./_components/add-incident-modal";
 import { IncidentHistoryModal } from "./_components/incident-history-modal";
 import { ResolveIncidentModal } from "./_components/resolve-incident-modal";
@@ -248,7 +249,9 @@ export default function IncidentReportPage() {
   }, [fetchTickets]);
 
   useEffect(() => {
-    return undefined;
+    return subscribeToIncidentReportNotifications(() => {
+      void fetchTickets();
+    });
   }, [fetchTickets]);
 
   useEffect(() => {

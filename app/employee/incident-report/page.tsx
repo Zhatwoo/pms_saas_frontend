@@ -8,6 +8,7 @@ import { ActionButton } from "@/components/shared/action-button";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { subscribeToIncidentReportNotifications } from "@/lib/notification-stream";
 import { AddIncidentModal } from "@/app/(pages)/incident-report/_components/add-incident-modal";
 import { IncidentHistoryModal } from "@/app/(pages)/incident-report/_components/incident-history-modal";
 import type {
@@ -239,6 +240,12 @@ export default function EmployeeIncidentReportPage() {
 
   useEffect(() => {
     void fetchTickets();
+  }, [fetchTickets]);
+
+  useEffect(() => {
+    return subscribeToIncidentReportNotifications(() => {
+      void fetchTickets();
+    });
   }, [fetchTickets]);
 
   useEffect(() => {
