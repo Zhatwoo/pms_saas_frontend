@@ -72,6 +72,7 @@ export interface TransactionRow {
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
   details?: string;
+  idPhoto?: string;
 }
 
 const columns = [

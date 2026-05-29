@@ -7,6 +7,7 @@ import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
 import { QrScanner } from "@/components/shared/qr-scanner";
+import { RenewalProofModal } from "@/components/shared/renewal-proof-modal";
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -105,6 +106,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   });
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isProofModalOpen, setIsProofModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
@@ -186,6 +188,45 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     void triggerSearch(data);
   };
 
+  const executeTransaction = async (photoBase64: string | null) => {
+    isProcessingRef.current = true;
+    setIsLoading(true);
+    try {
+      const cashIn = totalToPay; 
+      await api.post("/transactions", {
+        purpose: isReappraiseActive ? "Reappraise" : "Renew",
+        transaction_date: formatDateToYMD(),
+        branch_id: branchId,
+        branch: branchName,
+        cash_in: cashIn,
+        cash_out: 0,
+        unit: selectedItem!.unit,
+        unit_code: selectedItem!.unitCode,
+        pawn_amount: isReappraiseActive ? newPrincipal : selectedItem!.amount,
+        storage_fee: interestCalc.interestAmount * itemsRenewed,
+        details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? `New Principal: ₱${newPrincipal}` : ''} | Processed by: ${adminForm.approvedBy || 'Admin'}`,
+        related_pawned_item_id: selectedItem!.id,
+        id_photo: photoBase64,
+      });
+
+      if (isReappraiseActive && selectedItem!.id) {
+        await api.put(`/inventory/pawned/${selectedItem!.id}`, { amount: newPrincipal });
+      }
+
+      if (onSuccess) onSuccess();
+      onClose();
+      toast.success(`Transaction ${isReappraiseActive ? "reappraised" : "renewed"} successfully!`);
+    } catch (err: any) {
+      const msg = err.message || "Failed to process transaction.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+      isProcessingRef.current = false;
+      setIsProofModalOpen(false);
+    }
+  };
+
   const handleProceed = async () => {
     if (isProcessingRef.current) return;
     if (!selectedItem) return;
@@ -198,34 +239,17 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     setIsLoading(true);
     try {
       await api.post("/auth/verify-password", { password: adminForm.password });
-      const cashIn = totalToPay; 
-      await api.post("/transactions", {
-        purpose: isReappraiseActive ? "Reappraise" : "Renew",
-        transaction_date: formatDateToYMD(),
-        branch_id: branchId,
-        branch: branchName,
-        cash_in: cashIn,
-        cash_out: 0,
-        unit: selectedItem.unit,
-        unit_code: selectedItem.unitCode,
-        pawn_amount: isReappraiseActive ? newPrincipal : selectedItem.amount,
-        storage_fee: interestCalc.interestAmount * itemsRenewed,
-        details: `${isReappraiseActive ? 'Reappraised' : 'Renewed'} for ${itemsRenewed} period(s). ${isReappraiseActive ? `New Principal: ₱${newPrincipal}` : ''} | Processed by: ${adminForm.approvedBy || 'Admin'}`,
-        related_pawned_item_id: selectedItem.id
-      });
-
-      if (isReappraiseActive && selectedItem.id) {
-        await api.put(`/inventory/pawned/${selectedItem.id}`, { amount: newPrincipal });
+      if (!isReappraiseActive) {
+        setIsProofModalOpen(true);
+        setIsLoading(false);
+        isProcessingRef.current = false;
+      } else {
+        await executeTransaction(null);
       }
-
-      if (onSuccess) onSuccess();
-      onClose();
-      toast.success(`Transaction ${isReappraiseActive ? "reappraised" : "renewed"} successfully!`);
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
-    } finally {
       setIsLoading(false);
       isProcessingRef.current = false;
     }
@@ -699,6 +723,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         isOpen={isScannerOpen} 
         onScan={handleQrScan} 
         onClose={() => setIsScannerOpen(false)} 
+      />
+      <RenewalProofModal
+        isOpen={isProofModalOpen}
+        onClose={() => setIsProofModalOpen(false)}
+        onConfirm={executeTransaction}
+        isLoading={isLoading}
       />
     </div>
   );

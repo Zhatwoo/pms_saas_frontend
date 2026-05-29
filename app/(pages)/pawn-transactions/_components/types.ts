@@ -60,6 +60,7 @@ export interface TransactionRow {
   remarks?: string;
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
+  idPhoto?: string;
 }
 
 export interface TransactionStatsData {
