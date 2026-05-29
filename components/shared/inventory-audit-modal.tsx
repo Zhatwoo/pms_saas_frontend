@@ -24,6 +24,7 @@ interface ScannedItemDetails {
   branch: string;
   pawnDate: string;
   status: string;
+  type?: "PAWNED" | "SALE";
   amount?: number;
   originalPhoto?: string;
   ownerIdPhoto?: string;
@@ -59,6 +60,33 @@ interface InventoryTally {
     category: string;
   }>;
   extraInVault: string[];
+}
+
+interface ActivePawnedInventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  status: string;
+  pawnDate: string;
+}
+
+interface SaleInventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  status: string;
+  availableDate?: string;
+}
+
+interface ChecklistInventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  status: string;
+  source: "pawned" | "sale";
 }
 
 type ZXingDecodeResult = {
@@ -162,6 +190,7 @@ interface InventoryAuditStorageState {
   pendingItem: ScannedItemDetails | null;
   detectedScan: ParsedScan | null;
   currentScan: string;
+  activeChecklistSource: "pawned" | "sale" | null;
 }
 
 export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = "overlay", isMandatory = false }: InventoryAuditModalProps) {
@@ -193,6 +222,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const [tally, setTally] = useState<InventoryTally | null>(null);
   const [isCheckingTally, setIsCheckingTally] = useState(false);
   const [tallyError, setTallyError] = useState("");
+  const [checklistItems, setChecklistItems] = useState<ChecklistInventoryItem[]>([]);
+  const [isLoadingChecklistItems, setIsLoadingChecklistItems] = useState(false);
+  const [activeChecklistSource, setActiveChecklistSource] = useState<"pawned" | "sale" | null>(null);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [incidentPrefill, setIncidentPrefill] = useState<{ itemId: string; itemName?: string } | null>(null);
   const [pendingPhotoBroken, setPendingPhotoBroken] = useState(false);
@@ -238,6 +270,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         setPendingItem(null);
         setDetectedScan(null);
         setCurrentScan("");
+        setActiveChecklistSource(null);
         setHasLoadedPersistedState(true);
         return;
       }
@@ -247,6 +280,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       setPendingItem(savedState.pendingItem ?? null);
       setDetectedScan(savedState.detectedScan ?? null);
       setCurrentScan(savedState.currentScan ?? "");
+      setActiveChecklistSource(savedState.activeChecklistSource ?? null);
 
       if (savedState.pendingItem) {
         setScanStage("matched");
@@ -257,6 +291,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       setPendingItem(null);
       setDetectedScan(null);
       setCurrentScan("");
+      setActiveChecklistSource(null);
       setHasLoadedPersistedState(true);
     }
   }, [isOpen, persistenceKey]);
@@ -271,10 +306,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       pendingItem,
       detectedScan,
       currentScan,
+      activeChecklistSource,
     };
 
     window.localStorage.setItem(persistenceKey, JSON.stringify(state));
-  }, [currentScan, detectedScan, hasLoadedPersistedState, isOpen, pendingItem, persistenceKey, scannedItems]);
+  }, [activeChecklistSource, currentScan, detectedScan, hasLoadedPersistedState, isOpen, pendingItem, persistenceKey, scannedItems]);
 
   useEffect(() => {
     setPendingPhotoBroken(false);
@@ -364,12 +400,23 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       const fetchedSerialNumber = typeof data.serialNumber === "string" ? data.serialNumber.trim() : "";
       const resolvedSerialNumber = fetchedSerialNumber || parsed.serialNumber;
 
+      const resolvedType = String(data.type || "").trim().toUpperCase();
       const normalizedStatus = String(data.status || "").trim().toLowerCase();
-      const isActiveItem = normalizedStatus === "active" || normalizedStatus === "pawned";
       const isForSaleItem =
+        resolvedType === "SALE" ||
         normalizedStatus.includes("sale") ||
         normalizedStatus.includes("avail") ||
         normalizedStatus === "available";
+      const isActiveItem =
+        resolvedType === "PAWNED" ||
+        normalizedStatus === "active" ||
+        normalizedStatus === "pawned" ||
+        normalizedStatus === "inventory";
+      const itemSource: "pawned" | "sale" = isForSaleItem ? "sale" : "pawned";
+
+      if (!activeChecklistSource) {
+        setActiveChecklistSource(itemSource);
+      }
 
       if (!isActiveItem && !isForSaleItem) {
         setScanStage("failed");
@@ -380,7 +427,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           scanSerialNumber: parsed.serialNumber,
         });
         setPendingItem(null);
-        setError("Only active pawned items or items for sale are accepted.");
+        setError(
+          activeChecklistSource === "sale"
+            ? "This checklist is set to Items for sale. Scan a sale item first."
+            : "This checklist is set to Pawned items. Scan a pawned item first.",
+        );
         return;
       }
 
@@ -522,6 +573,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     setPendingItem(null);
     setDetectedScan(null);
     setCurrentScan("");
+    setActiveChecklistSource(null);
     onConfirm();
   }, [onConfirm, persistenceKey]);
 
@@ -562,6 +614,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         const data = await api.post<InventoryTally>("/inventory/pawned/qr-tally", {
           branch_id: branchId,
           scanned_item_ids: normalizedScannedIds,
+          checklist_source: activeChecklistSource,
         });
 
         if (!cancelled) {
@@ -588,18 +641,116 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     return () => {
       cancelled = true;
     };
-  }, [branchId, branchReady, isOpen, scannedItems, showCompletionConfirm]);
+  }, [activeChecklistSource, branchId, branchReady, isOpen, scannedItems, showCompletionConfirm]);
+
+  useEffect(() => {
+    if (!isOpen || !branchReady || showCompletionConfirm) {
+      setChecklistItems([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const refreshChecklistItems = async () => {
+      setIsLoadingChecklistItems(true);
+
+      try {
+        const pawnedParams = new URLSearchParams({
+          branch: branchId,
+          status: "Active",
+          page: "1",
+          limit: "50",
+        });
+
+        const saleParams = new URLSearchParams({
+          branch: branchId,
+          status: "Available",
+          page: "1",
+          limit: "50",
+        });
+
+        const [pawnedData, saleData] = await Promise.all([
+          api.get<{ items?: ActivePawnedInventoryItem[] }>(`/inventory/pawned?${pawnedParams.toString()}`),
+          api.get<{ items?: SaleInventoryItem[] }>(`/inventory/for-sale?${saleParams.toString()}`),
+        ]);
+
+        const combinedItems: ChecklistInventoryItem[] = [
+          ...((Array.isArray(pawnedData.items) ? pawnedData.items : []).map((item) => ({
+            id: item.id,
+            itemId: item.itemId,
+            itemName: item.itemName,
+            category: item.category,
+            status: item.status || "Active",
+            source: "pawned" as const,
+          }))),
+          ...((Array.isArray(saleData.items) ? saleData.items : []).map((item) => ({
+            id: item.id,
+            itemId: item.itemId,
+            itemName: item.itemName,
+            category: item.category,
+            status: item.status || "Available",
+            source: "sale" as const,
+          }))),
+        ];
+
+        const uniqueItems = Array.from(
+          combinedItems.reduce((map, item) => {
+            const normalizedId = String(item.itemId || "").trim().toUpperCase();
+            if (!normalizedId || map.has(normalizedId)) {
+              return map;
+            }
+
+            map.set(normalizedId, item);
+            return map;
+          }, new Map<string, ChecklistInventoryItem>()).values(),
+        );
+
+        if (!cancelled) {
+          setChecklistItems(uniqueItems);
+        }
+      } catch {
+        if (!cancelled) {
+          setChecklistItems([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingChecklistItems(false);
+        }
+      }
+    };
+
+    void refreshChecklistItems();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [branchId, branchReady, isOpen, showCompletionConfirm]);
+
+  const verifiedChecklistIds = new Set(
+    scannedItems
+      .map((item) => String(item.itemId || "").trim().toUpperCase())
+      .filter((itemId) => itemId.length > 0),
+  );
+  const activeChecklistItems = checklistItems;
+  const visibleChecklistItems = checklistItems.filter(
+    (item) => !verifiedChecklistIds.has(String(item.itemId || "").trim().toUpperCase()),
+  );
+  const pawnedChecklistItems = visibleChecklistItems.filter((item) => item.source === "pawned");
+  const saleChecklistItems = visibleChecklistItems.filter((item) => item.source === "sale");
+  const checklistFullyVerified = !isLoadingChecklistItems && checklistItems.length > 0 && visibleChecklistItems.length === 0;
+  const checklistVerifiedCount = activeChecklistItems.length - visibleChecklistItems.length;
+  const checklistTitle = "Checklist items";
+  const checklistCountLabel = "to check";
+  const checklistTotalCount = checklistItems.length;
+  const checklistProgressPercent =
+    checklistTotalCount > 0 ? Math.min(100, Math.round((checklistVerifiedCount / checklistTotalCount) * 100)) : 0;
 
   const canComplete = Boolean(
-    tally &&
-      (tally.totalInSystem === 0 ||
-        (tally.totalInSystem > 0 &&
-          tally.missingInVault.length === 0 &&
-          tally.extraInVault.length === 0)),
+    branchReady && checklistFullyVerified
   );
 
   const completionLabel = tally
-    ? `${tally.matched}/${tally.totalInSystem} verified`
+    ? `${checklistVerifiedCount}/${activeChecklistItems.length} verified`
     : "0 verified";
 
   if (!isOpen) return null;
@@ -662,7 +813,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           : "text-rose-100 border-rose-300/30 bg-rose-400/10";
 
   const tallySummary = tally
-    ? `${tally.matched} of ${tally.totalInSystem} items verified`
+    ? `${checklistVerifiedCount} of ${checklistTotalCount} items verified`
     : branchReady
       ? "Checklist syncing"
       : "Select one branch to sync the checklist";
@@ -711,29 +862,6 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         )}
         <div className="flex h-full flex-col overflow-y-auto lg:grid lg:min-h-0 lg:grid-cols-[1.25fr_.88fr] lg:overflow-hidden">
           <section className="relative flex flex-col bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 lg:min-h-0 lg:overflow-hidden lg:p-6 shrink-0 lg:shrink">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
-                        {tally?.missingItems?.length ?? 0} not yet scanned
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
-                    {tally?.missingItems?.length ? (
-                      tally.missingItems.map((item) => (
-                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
-                          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
-                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">{item.category}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-800">
-                        <p className="text-xs font-bold text-zinc-600">No missing items</p>
-                      </div>
-                    )}
-                  </div>
-
             {/* Prefill banner above the camera when reporting a specific item */}
             {incidentPrefill ? (
               <div className="mb-3 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">
@@ -915,10 +1043,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <div
                     className="h-full rounded-full bg-emerald-600 transition-all duration-300"
                     style={{
-                      width:
-                        tally && tally.totalInSystem > 0
-                          ? `${Math.min(100, Math.round((tally.matched / tally.totalInSystem) * 100))}%`
-                          : "0%",
+                      width: `${checklistProgressPercent}%`,
                     }}
                   />
                 </div>
@@ -928,15 +1053,96 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     Verified
                   </div>
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.totalInSystem ?? "-"}</div>
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{checklistTotalCount}</div>
                     In branch
                   </div>
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.missingInVault?.length ?? "-"}</div>
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{Math.max(0, checklistTotalCount - checklistVerifiedCount)}</div>
                     Missing
                   </div>
                 </div>
                 {tallyError && <p className="mt-3 text-xs font-semibold text-rose-600">{tallyError}</p>}
+              </div>
+
+              <div className="mt-4 rounded-3xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 lg:mt-5 lg:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">{checklistTitle}</p>
+                    <h4 className="mt-1 text-base font-black text-zinc-900 dark:text-zinc-100 lg:text-lg">
+                      {isLoadingChecklistItems ? "Syncing list" : `${visibleChecklistItems.length} visible`}
+                    </h4>
+                  </div>
+                  <StatusBadge label="Sync" variant="blue" />
+                </div>
+                <div className="mt-4 max-h-72 space-y-4 overflow-y-auto pr-1 scrollbar-hide">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Pawned items</p>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                        {pawnedChecklistItems.length} active
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {pawnedChecklistItems.length ? (
+                        pawnedChecklistItems.map((item) => (
+                          <div
+                            key={`${item.source}-${item.id}`}
+                            className="rounded-2xl border border-emerald-200 bg-white px-3 py-2 dark:border-emerald-500/20 dark:bg-zinc-950"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                                  {item.itemId} · {item.category}
+                                </p>
+                              </div>
+                              <StatusBadge label={item.status || "Active"} variant="green" />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-950">
+                          <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                            No active pawned items found
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Items for sale</p>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                        {saleChecklistItems.length} available
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {saleChecklistItems.length ? (
+                        saleChecklistItems.map((item) => (
+                          <div
+                            key={`${item.source}-${item.id}`}
+                            className="rounded-2xl border border-sky-200 bg-white px-3 py-2 dark:border-sky-500/20 dark:bg-zinc-950"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                                  {item.itemId} · {item.category}
+                                </p>
+                              </div>
+                              <StatusBadge label={item.status || "Available"} variant="blue" />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-950">
+                          <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">No items for sale found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {pendingItem ? (
@@ -1119,14 +1325,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 <p className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
-                  Access to inventory tools stays locked until this scan is submitted and confirmed.
+                    Access to inventory tools stays locked until every pawned item and every item for sale is verified.
                 </p>
               </div>
 
               <button
                 onClick={() => {
                   if (!activeCompletionBlocked) {
-                    setShowCompletionConfirm(true);
+                    void handleConfirmCompletion();
                   }
                 }}
                 disabled={activeCompletionBlocked}
@@ -1135,7 +1341,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 Complete Inventory Count
               </button>
               <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-                {activeCompletionBlocked ? "Verify every branch item before finishing." : "All items verified. You can complete the checklist."}
+                {activeCompletionBlocked ? "Verify every pawned item and every item for sale before finishing." : "All items verified. You can complete the checklist."}
               </p>
             </div>
           </aside>
