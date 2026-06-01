@@ -17,6 +17,7 @@ interface ActivityLog {
   createdAt: string;
   userFullName: string;
   userRole: string;
+  userAvatarUrl?: string | null;
   branchName: string;
 }
 
@@ -33,6 +34,7 @@ interface LoginLog {
     full_name: string;
     email: string;
     role: string;
+    avatarUrl?: string | null;
   } | null;
 }
 
@@ -52,6 +54,49 @@ const PH_TIME_ZONE = "Asia/Manila";
 function getInitials(name: string) {
   if (!name) return "U";
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+}
+
+function Avatar({
+  src,
+  name,
+  sizeClass = "h-9 w-9",
+  iconSizeClass = "h-5 w-5",
+}: {
+  src?: string | null;
+  name: string;
+  sizeClass?: string;
+  iconSizeClass?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (src && !hasError) {
+    return (
+      <img
+        src={src}
+        alt={`${name} avatar`}
+        className={`${sizeClass} rounded-full object-cover bg-slate-100`}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeClass} rounded-full bg-slate-200 text-slate-500 flex items-center justify-center overflow-hidden`}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={iconSizeClass}
+      >
+        <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M4 21v-2a4 4 0 0 1 3-3.87" />
+        <path d="M16 3.13a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+      </svg>
+    </div>
+  );
 }
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -944,24 +989,24 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         {[
           { label: "ALL ACTIVITY", count: totalLogs, sub: "All log types", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
           { label: "TRANSACTIONS", count: totalTransactions, sub: "Pawn, redeem, renew", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
           { label: "FUND TRANSFERS", count: totalFundTransfers, sub: "Cash moves", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
           { label: "ITEM TRANSFERS", count: totalItemTransfers, sub: "Branch to Branch", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }
         ].map((card, i) => (
-          <div key={i} className="flex flex-col justify-between rounded-xl bg-surface p-5 border border-border-main shadow-sm relative overflow-hidden group transition-colors duration-300">
+          <div key={i} className="flex flex-col justify-between rounded-xl bg-surface p-3 md:p-5 border border-border-main shadow-sm relative overflow-hidden group transition-colors duration-300">
             <div className="flex justify-between items-start z-10">
-              <span className="text-xs font-bold text-text-muted tracking-widest uppercase">{card.label}</span>
-              <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
+              <span className="text-[10px] md:text-xs font-bold text-text-muted tracking-widest uppercase">{card.label}</span>
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
             </div>
-            <div className="mt-4 z-10">
-              <span className="text-4xl font-black text-text-primary">{card.count}</span>
+            <div className="mt-3 md:mt-4 z-10">
+              <span className="text-2xl md:text-4xl font-black text-text-primary">{card.count}</span>
             </div>
-            <div className="mt-2 flex items-center gap-2 z-10">
+            <div className="mt-1.5 md:mt-2 flex items-center gap-2 z-10">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-              <span className="text-xs text-text-muted font-medium">{card.sub}</span>
+              <span className="text-[10px] md:text-xs text-text-muted font-medium">{card.sub}</span>
             </div>
             {/* Hover dash effect */}
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-500/10 transition-all duration-500"></div>
@@ -1032,78 +1077,122 @@ export default function AuditLogsPage() {
               </div>
             </div>
 
-            {/* Login Logs Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-emerald-900 text-amber-400">
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Date & Time</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Status</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Employee</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Reason</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">IP Address</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide">Device Fingerprint</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle">
-                  {loginLogsLoading ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">
-                        <div className="flex items-center justify-center">
-                          <LoadingSpinnerLabel text="Loading login logs..." className="text-base font-medium text-text-tertiary" />
+            {/* Login Logs — Card view for tablet portrait, table for landscape+ */}
+            {loginLogsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinnerLabel text="Loading login logs..." className="text-base font-medium text-text-tertiary" />
+              </div>
+            ) : paginatedLoginLogs.length === 0 ? (
+              <div className="py-12 text-center text-base font-medium text-text-tertiary">No login logs found.</div>
+            ) : (
+              <>
+                {/* Card view < lg */}
+                <div className="block lg:hidden divide-y divide-border-subtle">
+                  {paginatedLoginLogs.map(log => {
+                    const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
+                    const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                    return (
+                      <div key={log.id} className="bg-surface p-4 hover:bg-surface-hover transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-text-primary">{dStr}</span>
+                            <span className="text-xs font-medium text-text-tertiary mt-0.5">{tStr}</span>
+                          </div>
+                          <span className={`shrink-0 inline-flex px-2.5 py-1 rounded border text-xs font-bold ${statusColor}`}>{statusLabel}</span>
                         </div>
-                      </td>
-                    </tr>
-                  ) : paginatedLoginLogs.length === 0 ? (
-                    <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No login logs found.</td></tr>
-                  ) : (
-                    paginatedLoginLogs.map(log => {
-                      const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
-                      const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
-                      return (
-                        <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                        {log.employee && (
+                          <div className="mt-3 flex items-center gap-3">
+                            <Avatar
+                              src={log.employee.avatarUrl}
+                              name={log.employee.full_name}
+                              sizeClass="h-8 w-8"
+                              iconSizeClass="h-4 w-4"
+                            />
                             <div className="flex flex-col">
-                              <span className="text-sm font-bold text-text-primary">{dStr}</span>
-                              <span className="text-xs font-medium text-text-tertiary mt-0.5">{tStr}</span>
+                              <span className="text-sm font-bold text-text-primary">{log.employee.full_name}</span>
+                              <span className="text-xs text-text-tertiary capitalize">{log.employee.role.replace('_', ' ')}</span>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2.5 py-1 rounded border text-xs font-bold ${statusColor}`}>{statusLabel}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {log.employee ? (
-                              <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full flex items-center justify-center bg-pawn-gold text-zinc-900 text-xs font-bold shadow-sm shrink-0">
-                                  {getInitials(log.employee.full_name)}
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-bold text-text-primary">{log.employee.full_name}</span>
-                                  <span className="text-xs text-text-tertiary capitalize">{log.employee.role.replace('_', ' ')}</span>
-                                </div>
+                          </div>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
+                          <span><span className="font-bold text-text-tertiary">Reason:</span> {formatLoginReason(log.failure_reason)}</span>
+                          <span><span className="font-bold text-text-tertiary">IP:</span> {log.ip_address ?? "—"}</span>
+                        </div>
+                        {log.device_fingerprint && (
+                          <p className="mt-1 text-[10px] font-mono text-text-tertiary truncate" title={log.device_fingerprint}>
+                            Device: {log.device_fingerprint.slice(0, 24)}…
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Table view ≥ lg */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-emerald-900 text-amber-400">
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Date & Time</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Status</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Employee</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Reason</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">IP Address</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Device Fingerprint</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {paginatedLoginLogs.map(log => {
+                        const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
+                        const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                        return (
+                          <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors">
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-text-primary">{dStr}</span>
+                                <span className="text-xs font-medium text-text-tertiary mt-0.5">{tStr}</span>
                               </div>
-                            ) : (
-                              <span className="text-xs text-text-tertiary italic">Unknown</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm text-text-secondary">{formatLoginReason(log.failure_reason)}</span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-xs font-mono text-text-tertiary">{log.ip_address ?? "—"}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-xs font-mono text-text-tertiary truncate max-w-[160px] block" title={log.device_fingerprint ?? ""}>
-                              {log.device_fingerprint ? log.device_fingerprint.slice(0, 16) + "…" : "—"}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <span className={`inline-flex px-2.5 py-1 rounded border text-xs font-bold ${statusColor}`}>{statusLabel}</span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              {log.employee ? (
+                                <div className="flex items-center gap-3">
+                                  <Avatar
+                                    src={log.employee.avatarUrl}
+                                    name={log.employee.full_name}
+                                    sizeClass="h-8 w-8"
+                                    iconSizeClass="h-4 w-4"
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-text-primary">{log.employee.full_name}</span>
+                                    <span className="text-xs text-text-tertiary capitalize">{log.employee.role.replace('_', ' ')}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-text-tertiary italic">Unknown</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <span className="text-sm text-text-secondary">{formatLoginReason(log.failure_reason)}</span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <span className="text-xs font-mono text-text-tertiary">{log.ip_address ?? "—"}</span>
+                            </td>
+                            <td className="px-4 py-4 xl:px-6">
+                              <span className="text-xs font-mono text-text-tertiary truncate max-w-[160px] block" title={log.device_fingerprint ?? ""}>
+                                {log.device_fingerprint ? log.device_fingerprint.slice(0, 16) + "…" : "—"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
 
             <div className="mt-4">
               <PaginationFooter
@@ -1178,103 +1267,168 @@ export default function AuditLogsPage() {
           </div>
         </div>
 
-        {/* Table Data */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-emerald-900 text-amber-400">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Date & Time</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">User</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Log Type</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Action</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%]">Description</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">
-                    <div className="flex items-center justify-center">
-                      <LoadingSpinnerLabel text="Loading audit trail..." className="text-base font-medium text-text-tertiary" />
-                    </div>
-                  </td>
-                </tr>
-              ) : paginatedLogs.length === 0 ? (
-                <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>
-              ) : (
-                paginatedLogs.map((log) => {
-                  const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
+        {/* Table Data — Card view for tablet portrait, table for landscape+ */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinnerLabel text="Loading audit trail..." className="text-base font-medium text-text-tertiary" />
+          </div>
+        ) : paginatedLogs.length === 0 ? (
+          <div className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</div>
+        ) : (
+          <>
+            {/* Card view < lg */}
+            <div className="block lg:hidden divide-y divide-border-subtle">
+              {paginatedLogs.map((log) => {
+                const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
+                const statusBadge =
+                  log.statusGuess === "Success" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50" :
+                  log.statusGuess === "Failed" ? "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50" :
+                  "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50";
 
-                  return (
-                    <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors group">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-text-primary">{dString}</span>
-                          <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full flex items-center justify-center bg-pawn-gold text-zinc-900 text-xs font-bold shadow-sm">
-                            {getInitials(log.userFullName)}
-                          </div>
+                return (
+                  <div key={log.id} className="bg-surface p-4 hover:bg-surface-hover transition-colors">
+                    {/* Top row: date + status */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-primary">{dString}</span>
+                        <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
+                      </div>
+                      <span className={`shrink-0 inline-flex px-2.5 py-1 rounded text-xs font-bold ${statusBadge}`}>
+                        {log.statusGuess}
+                      </span>
+                    </div>
+
+                    {/* User */}
+                    <div className="mt-3 flex items-center gap-3">
+                      <Avatar
+                        src={log.userAvatarUrl}
+                        name={log.userFullName}
+                        sizeClass="h-8 w-8"
+                        iconSizeClass="h-4 w-4"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
+                        <span className="text-xs font-medium text-text-tertiary capitalize">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                      </div>
+                    </div>
+
+                    {/* Badges row */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border ${
+                        log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                        log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
+                        log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+                        'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                      }`}>{log.logType}</span>
+                      <span className={`text-xs font-black tracking-widest uppercase ${
+                        log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
+                        log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
+                        'text-emerald-600 dark:text-emerald-400'
+                      }`}>{log.actionBadge}</span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="mt-2 text-sm font-bold leading-relaxed text-text-primary line-clamp-3">{log.description}</p>
+                    {(log.reference || log.action) && (
+                      <p className="mt-1 text-xs text-text-tertiary line-clamp-2">
+                        {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Table view ≥ lg */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-emerald-900 text-amber-400">
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Date & Time</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">User</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Log Type</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Action</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%] xl:px-6">Description</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-right xl:px-6">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {paginatedLogs.map((log) => {
+                    const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
+
+                    return (
+                      <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors group">
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
-                            <span className="text-xs font-medium text-text-tertiary capitalize mt-0.5">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                            <span className="text-sm font-bold text-text-primary">{dString}</span>
+                            <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase border ${log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
-                          log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
-                            log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
-                              'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                          }`}>
-                          {log.logType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-xs font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
-                          log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
-                            'text-emerald-600 dark:text-emerald-400'
-                          }`}>
-                          {log.actionBadge}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col max-w-sm">
-                          <span className="text-sm font-bold text-text-primary line-clamp-2" title={log.description}>
-                            {log.description}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src={log.userAvatarUrl}
+                              name={log.userFullName}
+                              sizeClass="h-9 w-9"
+                              iconSizeClass="h-5 w-5"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
+                              <span className="text-xs font-medium text-text-tertiary capitalize mt-0.5">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase border ${log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                            log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
+                              log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+                                'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                            }`}>
+                            {log.logType}
                           </span>
-                          <span
-                            className="text-xs text-text-tertiary mt-1 line-clamp-2"
-                            title={log.reference || log.action}
-                          >
-                            {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                          <span className={`text-xs font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
+                            log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
+                              'text-emerald-600 dark:text-emerald-400'
+                            }`}>
+                            {log.actionBadge}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex justify-end">
-                          {log.statusGuess === "Success" && (
-                            <span className="inline-flex px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-xs font-bold">Success</span>
-                          )}
-                          {log.statusGuess === "Failed" && (
-                            <span className="inline-flex px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-xs font-bold">Failed</span>
-                          )}
-                          {log.statusGuess === "Pending" && (
-                            <span className="inline-flex px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 text-xs font-bold">Pending</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                        </td>
+                        <td className="px-4 py-4 xl:px-6">
+                          <div className="flex flex-col max-w-sm">
+                            <span className="text-sm font-bold text-text-primary line-clamp-2" title={log.description}>
+                              {log.description}
+                            </span>
+                            <span
+                              className="text-xs text-text-tertiary mt-1 line-clamp-2"
+                              title={log.reference || log.action}
+                            >
+                              {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right xl:px-6">
+                          <div className="flex justify-end">
+                            {log.statusGuess === "Success" && (
+                              <span className="inline-flex px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-xs font-bold">Success</span>
+                            )}
+                            {log.statusGuess === "Failed" && (
+                              <span className="inline-flex px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-xs font-bold">Failed</span>
+                            )}
+                            {log.statusGuess === "Pending" && (
+                              <span className="inline-flex px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 text-xs font-bold">Pending</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {/* Footer Pagination */}
         <PaginationFooter
