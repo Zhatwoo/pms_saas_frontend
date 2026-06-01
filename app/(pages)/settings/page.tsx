@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
+import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
 
@@ -81,12 +83,25 @@ const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every T
 9. Representative's signature is required when authorization from owner is used.
 10. Seller confirms ownership and freedom from liens and encumbrances.`;
 
+function normalizeMoaTerms(value?: string | null) {
+  const trimmed = value?.trim() ?? "";
+  if (trimmed.length < 80) {
+    return DEFAULT_TERMS_TEXT;
+  }
+  return trimmed;
+}
+
 export default function SettingsPage() {
   const { user, refreshProfile } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  const [activeTab, setActiveTab] = useState("Profile");
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [avatarToast, setAvatarToast] = useState<string | null>(null);
+  const [profileToast, setProfileToast] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileFullName, setProfileFullName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
   
   const [isMoaEditMode, setIsMoaEditMode] = useState(false);
   const [isMoaLocked, setIsMoaLocked] = useState(false);
@@ -178,8 +193,6 @@ export default function SettingsPage() {
   });
   
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [settingsSavedAt, setSettingsSavedAt] = useState<string | null>(null);
-
   // Shop settings edit mode states
   const [isShopEditMode, setIsShopEditMode] = useState(false);
   const [tempShopSettings, setTempShopSettings] = useState({
@@ -189,12 +202,19 @@ export default function SettingsPage() {
     email: "info@jclbbuyback.com",
   });
 
-  const adminInitials = (user?.fullName || "Admin")
+  const adminInitials = (profileFullName || user?.fullName || "Admin")
     .split(" ")
     .map((part) => part[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  useEffect(() => {
+    if (user) {
+      setProfileFullName(user.fullName || "");
+      setProfileEmail(user.email || "");
+    }
+  }, [user]);
 
   useEffect(() => {
     async function fetchMoaTemplate() {
@@ -206,7 +226,7 @@ export default function SettingsPage() {
           extensionRows?: ExtensionRow[];
         }>(`/settings/moa_template`);
         if (data) {
-          if (data.terms_text) setTermsText(data.terms_text);
+          setTermsText(normalizeMoaTerms(data.terms_text));
           if (data.labels && typeof data.labels === "object") {
             setTopLabels((prev) => ({ ...prev, ...data.labels }));
           }
@@ -231,7 +251,7 @@ export default function SettingsPage() {
           }
           if (data.policies) setPolicies(data.policies);
         }
-      } catch (error) {
+      } catch {
         console.warn("Failed to fetch settings, using defaults.");
       }
     }
@@ -240,17 +260,17 @@ export default function SettingsPage() {
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+  const resolvedTermsText = normalizeMoaTerms(termsText);
 
   // Uncontrolled ref for the Terms editor — avoids cursor-jump on every keystroke
   const termsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (termsRef.current && termsText) {
-      if (termsRef.current.innerText !== termsText) {
-        termsRef.current.innerText = termsText;
+    if (termsRef.current) {
+      if (termsRef.current.innerText !== resolvedTermsText) {
+        termsRef.current.innerText = resolvedTermsText;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termsText]);
+  }, [activeTab, resolvedTermsText]);
 
   // Line widths state — keyed by fieldKey, persisted with MOA template save
   const [lineWidths, setLineWidths] = useState<Record<string, number>>({});
@@ -291,10 +311,6 @@ export default function SettingsPage() {
     );
   };
 
-  const handleShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
-    setShopSettings((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleTempShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
     setTempShopSettings((prev) => ({ ...prev, [field]: value }));
   };
@@ -313,9 +329,7 @@ export default function SettingsPage() {
     try {
       await api.post('/settings/general', { shopInfo: tempShopSettings, policies });
       setShopSettings(tempShopSettings);
-      setSettingsSavedAt(new Date().toLocaleString());
       setIsShopEditMode(false);
-      setTimeout(() => setSettingsSavedAt(null), 3000);
     } catch (e) {
       console.error(e);
       alert("Failed to save settings");
@@ -324,37 +338,32 @@ export default function SettingsPage() {
     }
   };
 
-  const handlePolicyChange = (field: keyof typeof policies, value: string) => {
-    setPolicies((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveAllSettings = async () => {
-    if (!isSuperAdmin) {
-      alert("Only Super Admins can save these settings.");
-      return;
-    }
-    setIsSavingSettings(true);
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+    setProfileToast(null);
     try {
-      const currentShopInfo = isShopEditMode ? tempShopSettings : shopSettings;
-      await api.post('/settings/general', { shopInfo: currentShopInfo, policies });
-      if (isShopEditMode) {
-        setShopSettings(tempShopSettings);
-        setIsShopEditMode(false);
-      }
-      setSettingsSavedAt(new Date().toLocaleString());
-      setTimeout(() => setSettingsSavedAt(null), 3000);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to save settings");
+      await api.patch("/auth/profile", { fullName: profileFullName });
+      await refreshProfile();
+      setProfileToast("Profile updated successfully.");
+      setTimeout(() => setProfileToast(null), 3000);
+    } catch (error) {
+      setProfileToast(error instanceof Error ? error.message : "Failed to update profile.");
     } finally {
-      setIsSavingSettings(false);
+      setIsSavingProfile(false);
     }
+  };
+
+  const handleDiscardProfile = () => {
+    setProfileFullName(user?.fullName || "");
+    setProfileEmail(user?.email || "");
+    setProfileToast(null);
   };
 
   const handleSaveMoa = async () => {
     try {
       await api.post(`/settings/moa_template`, {
-        terms_text: termsText,
+        terms_text: resolvedTermsText,
         labels: topLabels,
         lineWidths,
         extensionRows,
@@ -371,7 +380,7 @@ export default function SettingsPage() {
     try {
       // `moa_template` is a global setting; saving here applies to all branches.
       await api.post(`/settings/moa_template`, {
-        terms_text: termsText,
+        terms_text: resolvedTermsText,
         labels: topLabels,
         lineWidths,
         extensionRows,
@@ -430,9 +439,100 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-        <div className="space-y-4">
+    <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
+      <div className="flex w-full gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
+        {["Profile", "Notifications", "Shop", "Interest Rate", "MOA"].map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`whitespace-nowrap rounded-md px-6 py-2 font-bold transition-all ${
+              activeTab === tab
+                ? "bg-emerald-700 text-white shadow-sm"
+                : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className={`grid w-full gap-6 ${activeTab === "Profile" ? "2xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+        <div className="min-w-0 space-y-6">
+          {profileToast && (
+            <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
+              <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+                {profileToast}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "Profile" && (
+            <>
+              <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+                <h3 className="mb-4 border-b border-border-main pb-2 text-base font-bold text-text-primary">
+                  My Account Profile
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                        Full Name
+                      </label>
+                      <input
+                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                        value={profileFullName}
+                        onChange={(event) => setProfileFullName(event.target.value)}
+                        placeholder="Your full name"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                        Account Role
+                      </label>
+                      <div className="rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm capitalize text-text-tertiary">
+                        {user?.role?.replace("_", " ") || "Super Admin"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                      Email Address
+                    </label>
+                    <input
+                      className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm text-zinc-400 outline-none"
+                      value={profileEmail}
+                      readOnly
+                      title="Email cannot be changed from this page"
+                    />
+                    <p className="text-[10px] italic text-zinc-400">
+                      Email updates require administrative verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={isSavingProfile || profileFullName === user?.fullName}
+                  className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSavingProfile ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  onClick={handleDiscardProfile}
+                  className="rounded-lg border border-input-border px-6 py-2 text-xs font-bold text-zinc-600 transition-colors hover:bg-surface-hover"
+                >
+                  Discard
+                </button>
+              </div>
+            </>
+          )}
+
+          {activeTab === "Notifications" && <NotificationSoundSettings />}
+
+          {activeTab === "Shop" && (
           <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
             <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
               <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
@@ -468,7 +568,7 @@ export default function SettingsPage() {
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 00-2 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                         />
                       </svg>
                       Edit Info
@@ -573,12 +673,17 @@ export default function SettingsPage() {
               </div>
             </div>
           </section>
+          )}
 
-          <InterestRatesSettings />
+          {activeTab === "Interest Rate" && (
+            <>
+              <InterestRatesSettings />
+              <CategoriesSettings />
+            </>
+          )}
 
-          <CategoriesSettings />
-
-          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
+          {activeTab === "MOA" && (
+          <section className="overflow-visible rounded-xl border border-border-main bg-surface pb-4 shadow-sm">
             <div className="border-b border-border-main px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
@@ -630,8 +735,8 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              <div className="overflow-x-auto rounded-md border border-zinc-300 bg-white p-3 sm:p-6 moa-paper-effect shadow-inner">
-                <div className="min-w-[720px] space-y-2 border border-emerald-800/70 p-4 sm:p-5 text-[10px] text-zinc-800">
+              <div className="overflow-x-auto overflow-y-visible rounded-md border border-border-main bg-surface-secondary p-3 shadow-inner sm:p-6 dark:bg-surface-secondary">
+                <div className="moa-paper-effect mx-auto min-h-[1120px] w-[794px] max-w-none space-y-3 border border-emerald-800/70 bg-white p-6 text-[10px] leading-normal text-zinc-800">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -822,7 +927,9 @@ export default function SettingsPage() {
                       suppressContentEditableWarning
                       onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
                       className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600"
-                    />
+                    >
+                      {resolvedTermsText}
+                    </div>
                   </div>
 
                   <div className="grid gap-8 pt-4 md:grid-cols-2 items-end">
@@ -878,37 +985,21 @@ export default function SettingsPage() {
               )}
             </div>
           </section>
+          )}
 
-          <div className="flex items-center gap-3">
-            <ActionButton 
-              onClick={handleSaveAllSettings}
-              disabled={isSavingSettings || !isSuperAdmin}
-              variant="success"
-              size="sm">
-              {isSavingSettings ? "Saving..." : "Save Changes"}
-            </ActionButton>
-            <ActionButton 
-              onClick={() => window.location.reload()}
-              disabled={!isSuperAdmin}
-              variant="outline"
-              size="sm">
-              Discard
-            </ActionButton>
-            {settingsSavedAt && (
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
-                Settings saved: {settingsSavedAt}
-              </span>
-            )}
-          </div>
         </div>
 
-        <aside className="space-y-4">
+        {activeTab === "Profile" && (
+        <aside className="min-w-0 space-y-4">
           <section className="rounded-xl border border-border-main bg-surface p-4 text-center shadow-sm">
             <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-border-main bg-surface-secondary">
               {user?.avatarUrl ? (
-                <img
+                <Image
                   src={user.avatarUrl}
                   alt="Profile avatar"
+                  width={64}
+                  height={64}
+                  unoptimized
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -917,7 +1008,7 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-100">Admin Panel</h3>
+            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-100">{profileFullName || "Admin Panel"}</h3>
             <p className="mt-1 text-[10px] text-zinc-700 dark:text-zinc-400">Super Admin Settings</p>
             <button
               onClick={() => setIsAvatarModalOpen(true)}
@@ -929,17 +1020,17 @@ export default function SettingsPage() {
               <p className="mt-2 text-[10px] font-medium text-emerald-800 dark:text-emerald-300">{avatarToast}</p>
             )}
             <PasswordChangeRequestCard />
-          </section>
-
-          <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900 dark:bg-emerald-950">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
-              Security Restriction
-            </p>
-            <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
-              System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
-            </p>
+            <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left dark:border-emerald-900 dark:bg-emerald-950">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
+                Security Restriction
+              </p>
+              <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
+                System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
+              </p>
+            </div>
           </section>
         </aside>
+        )}
       </div>
 
       <style jsx global>{`
@@ -947,6 +1038,8 @@ export default function SettingsPage() {
           background-color: white !important;
           color: #18181b !important;
           color-scheme: light !important;
+          overflow-y: visible !important;
+          max-height: none !important;
         }
         .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
         .moa-paper-effect .text-zinc-500 { color: #71717a !important; }

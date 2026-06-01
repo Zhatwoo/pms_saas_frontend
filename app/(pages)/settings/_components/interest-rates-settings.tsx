@@ -141,7 +141,6 @@ const DEFAULT_GUEST_GROUPS: InterestRateGroup[] = [
 
 export function InterestRatesSettings() {
   const { user } = useAuth();
-  const isSuperAdmin = user?.role === "super_admin";
   const isAuthorized = user?.role === "super_admin" || user?.role === "admin";
   const [isEditing, setIsEditing] = useState(false);
 
@@ -209,7 +208,7 @@ export function InterestRatesSettings() {
           setGroups(DEFAULT_GUEST_GROUPS);
           persistInterestRatesLocally(DEFAULT_GUEST_GROUPS);
         }
-      } catch (error) {
+      } catch {
         console.warn("No custom interest rates found, loading defaults.");
         setGroups(DEFAULT_GUEST_GROUPS);
         persistInterestRatesLocally(DEFAULT_GUEST_GROUPS);
@@ -342,7 +341,7 @@ export function InterestRatesSettings() {
 
         let limit1 = g.first5DaysLimit ?? 5;
         let rate1 = g.first5Days;
-        let start1 = g.first5DaysStart ?? 1;
+        const start1 = g.first5DaysStart ?? 1;
 
         let limit2 = g.day10Limit ?? 10;
         let rate2 = g.day10;
@@ -531,12 +530,27 @@ export function InterestRatesSettings() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className={`rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition ${
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-bold transition ${
                 isEditing
                   ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700"
                   : "border-border-main bg-surface-secondary hover:bg-surface-hover text-zinc-600 dark:text-zinc-300"
               }`}
             >
+              {!isEditing && (
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              )}
               {isEditing ? "Exit Edit Mode" : "Edit Rates"}
             </button>
             {isEditing && (
