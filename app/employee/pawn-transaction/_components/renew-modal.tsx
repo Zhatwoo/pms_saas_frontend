@@ -284,7 +284,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
-      <div className={`relative z-10 flex h-[calc(100dvh-1rem)] w-full min-h-0 flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-2rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}>
+      <div className={`relative z-10 flex h-[calc(100dvh-1rem)] w-[92vw] max-w-[1200px] min-h-0 flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-2rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}>
         
         {/* Top Floating Header */}
         <div className={`relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
@@ -653,8 +653,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
         {/* Footer Actions */}
         <div className={`shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 ${compactTablet ? "lg:p-6" : "lg:p-8"}`}>
-          <div className={`flex flex-col gap-4 ${compactTablet ? "lg:flex-row lg:items-center lg:justify-between lg:gap-6" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
-            <div className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4 ${compactTablet ? "lg:gap-6" : "lg:gap-8"}`}>
+          <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:justify-between md:gap-6" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
+            <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:gap-5" : "sm:flex-row sm:items-center sm:gap-4 lg:gap-8"}`}>
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200"
@@ -662,25 +662,23 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                 Cancel Process
               </button>
 
-              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover sm:block" />
+              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover md:block" />
 
-              <div className={`flex w-full flex-col gap-3 sm:flex-row ${compactTablet ? "sm:gap-4" : "sm:gap-6"}`}>
-                <div className={`w-full sm:w-40 ${compactTablet ? "md:w-36" : ""}`}>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      className="h-10 rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary"
-                      value={adminForm.password}
-                      onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-                    />
-                  </div>
+              <div className={`w-full ${compactTablet ? "md:w-36" : "sm:w-40"}`}>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className="h-10 rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary"
+                    value={adminForm.password}
+                    onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                  />
                 </div>
               </div>
             </div>
 
-            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 lg:w-auto lg:justify-start lg:border-t-0 lg:pt-0 ${compactTablet ? "lg:gap-5" : "lg:gap-6"}`}>
+            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 md:w-auto md:border-t-0 md:pt-0 ${compactTablet ? "md:gap-5" : "lg:gap-6"}`}>
               <div className="text-right">
                 <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
                   TOTAL PAYMENT
@@ -693,7 +691,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               <button
                 disabled={isLoading || !selectedItem}
                 onClick={handleProceed}
-                className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "lg:px-10 lg:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
+                className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "md:px-10 md:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

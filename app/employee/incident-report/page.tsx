@@ -346,7 +346,7 @@ export default function EmployeeIncidentReportPage() {
   const tableColumnCount = 5;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 dark:[&_.text-text-primary]:text-slate-50 dark:[&_.text-text-secondary]:text-slate-100 dark:[&_.text-text-tertiary]:text-slate-300 dark:[&_.text-text-muted]:text-slate-300 dark:[&_.text-slate-700]:text-slate-200 dark:[&_.text-slate-600]:text-slate-300 dark:[&_.text-slate-500]:text-slate-300 dark:[&_.text-slate-400]:text-slate-200 dark:[&_.border-border-main]:border-slate-700/70 dark:[&_.border-border-subtle]:border-slate-700/70">
       {toastMessage ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
           <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
@@ -395,13 +395,13 @@ export default function EmployeeIncidentReportPage() {
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search ticket, branch, or transaction reference..."
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
           />
 
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none dark:text-slate-100"
           >
             <option value="all">All Status</option>
             {statusOptions.map((option) => (
@@ -418,7 +418,7 @@ export default function EmployeeIncidentReportPage() {
                 setSearchQuery("");
                 setStatusFilter("all");
               }}
-              className="rounded-lg border border-red-200 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50"
+              className="rounded-lg border border-red-200 px-3 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 dark:text-red-300"
             >
               Clear Filters
             </button>

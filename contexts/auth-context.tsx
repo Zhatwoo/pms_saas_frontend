@@ -46,6 +46,12 @@ function clearRememberedSessionCookie() {
   return `pms_was_logged_in=; path=/; max-age=0; samesite=lax${cookieSecuritySuffix()}`;
 }
 
+function isAuthRefreshGraceActive() {
+  const rawUntil = sessionStorage.getItem("pms_auth_refresh_grace_until");
+  const until = rawUntil ? Number(rawUntil) : 0;
+  return Number.isFinite(until) && Date.now() < until;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
@@ -153,6 +159,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearSession(false);
       }
     } catch (err) {
+      if (isAuthRefreshGraceActive()) {
+        console.warn("[AuthContext] Profile refresh paused while auth cookie is being refreshed.");
+        return;
+      }
       clearSession(false);
       console.warn("[AuthContext] Failed to refresh profile:", err);
     } finally {
@@ -162,6 +172,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleSessionExpired = (event: Event) => {
+      if (isAuthRefreshGraceActive()) return;
+
       const detail =
         event instanceof CustomEvent
           ? (event.detail as { message?: string } | undefined)
@@ -196,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
     if (pathname.startsWith("/login")) return;
     if (user) return;
+    if (isAuthRefreshGraceActive()) return;
 
     const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
 

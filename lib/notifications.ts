@@ -148,6 +148,15 @@ export function isBranchTransferApiNotification(
   );
 }
 
+export function isPasswordRequestApiNotification(
+  notification: Pick<ApiNotification, "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.notification_type === "PASSWORD_CHANGE_REQUEST" ||
+    notification.entity_type === "password_request"
+  );
+}
+
 export function addRolePrefixToTargetUrl(targetUrl: string, role?: Role): string {
   if (!targetUrl.startsWith("/")) return targetUrl;
   if (targetUrl.startsWith("/admin/") || targetUrl.startsWith("/employee/")) {

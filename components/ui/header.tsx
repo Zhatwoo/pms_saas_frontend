@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon, MenuIcon } from "@/lib/icons";
 import { useTheme } from "@/contexts/theme-context";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
 import {
   addRolePrefixToTargetUrl,
@@ -17,6 +18,7 @@ import {
   type NotificationTab,
 } from "@/lib/notifications";
 import { getNotificationStreamUrl } from "@/lib/notification-stream";
+import { resolveNotificationSoundPath } from "@/lib/notification-sounds";
 import { useAuth } from "@/contexts/auth-context";
 
 interface HeaderProps {
@@ -157,12 +159,13 @@ export function Header({
   const enableNotificationSound = useCallback(() => {
     if (soundEnabledRef.current || typeof window === "undefined") return;
 
-    const audio = audioRef.current ?? new Audio("/sounds/notif_1.mp3");
+    const audio =
+      audioRef.current ?? new Audio(resolveNotificationSoundPath(user?.notificationSound));
     audio.preload = "auto";
     audio.volume = 0.55;
     audioRef.current = audio;
     soundEnabledRef.current = true;
-  }, []);
+  }, [user?.notificationSound]);
 
   const playBeepFallback = useCallback(() => {
     try {
@@ -194,7 +197,7 @@ export function Header({
   const playNotificationSound = useCallback(async () => {
     if (!soundEnabledRef.current) return;
 
-    const soundPaths = ["/sounds/notif_1.mp3"];
+    const soundPaths = [resolveNotificationSoundPath(user?.notificationSound)];
     for (const path of soundPaths) {
       try {
         const audio =
@@ -213,7 +216,7 @@ export function Header({
     }
 
     playBeepFallback();
-  }, [playBeepFallback]);
+  }, [playBeepFallback, user?.notificationSound]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -406,6 +409,11 @@ export function Header({
     try {
       await api.patch(`/notifications/${encodeURIComponent(id)}/read`, {});
     } catch (err) {
+      if (err instanceof ApiError && err.statusCode === 404) {
+        void fetchNotificationsRef.current();
+        return;
+      }
+
       console.error("Failed to mark notification as read:", err);
       if (options?.revertOnError !== false) {
         setNotifications(snapshot);
@@ -639,9 +647,12 @@ export function Header({
         {/* User Avatar */}
         <div className="h-11 w-11 overflow-hidden rounded-full bg-pawn-sidebar">
           {user?.avatarUrl ? (
-            <img
+            <Image
               src={user.avatarUrl}
               alt="User avatar"
+              width={44}
+              height={44}
+              unoptimized
               className="h-full w-full object-cover"
             />
           ) : (
@@ -654,3 +665,6 @@ export function Header({
     </header>
   );
 }
+
+
+

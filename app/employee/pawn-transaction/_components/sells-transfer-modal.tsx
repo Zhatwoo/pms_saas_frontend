@@ -420,89 +420,95 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
             {/* Selection Specifics */}
             <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
               <div className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
-                    <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Transaction Details</h4>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
+                  <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Transaction Details</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between group">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Status:</span>
+                    <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest">{form.status}</div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between group">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Status:</span>
-                      <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest">{form.status}</div>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 group">
-                      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">
-                        {isItemLocked ? "Transaction:" : "Sell / Transfer:"}
-                      </span>
-                      <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle dark:border-border-subtle" />
-                      {isItemLocked ? (
-                        <div className="min-w-[140px] rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-left text-xs font-black text-emerald-800 dark:border-border-subtle dark:bg-emerald-500/10 dark:text-emerald-300">
-                          Sell
-                        </div>
-                      ) : (
-                        <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle dark:border-border-subtle bg-white dark:bg-surface dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
-                          <select 
-                            name="sellTransfer"
-                            value={form.sellTransfer}
-                            onChange={handleChange}
-                            className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
-                          >
-                            <option value="Sales">Sell</option>
-                            <option value="Transfer">Transfer</option>
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <DetailInput label="Item Included" name="itemIncluded" value={form.itemIncluded} onChange={handleChange} placeholder={selectedItem?.included || "Specify items..."} />
-                    <div className="flex items-center justify-between pt-2 border-t border-dashed border-emerald-100 dark:border-border-subtle">
-                       <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">SRP:</span>
-                       <span className="text-lg font-black text-emerald-950 dark:text-white">₱ {Number(selectedItem?.srp || 0).toLocaleString()}</span>
-                    </div>
-                    {form.sellTransfer === "Sales" ? (
-                      <DetailInput label="Price Sold" name="priceSold" value={form.priceSold} onChange={handleChange} type="number" prefix="₱" highlight />
+                  <div className="flex items-center justify-between gap-4 group">
+                    <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">
+                      {isItemLocked ? "Transaction:" : "Sell / Transfer:"}
+                    </span>
+                    <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle dark:border-border-subtle" />
+                    {isItemLocked ? (
+                      <div className="min-w-[140px] rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-left text-xs font-black text-emerald-800 dark:border-border-subtle dark:bg-emerald-500/10 dark:text-emerald-300">
+                        Sell
+                      </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-4 group">
-                        <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">To Branch:</span>
-                        <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle" />
-                        <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
-                          <select 
-                            name="targetBranchId"
-                            value={form.targetBranchId}
-                            onChange={handleChange}
-                            className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
-                          >
-                            <option value="">— Select Branch —</option>
-                            {branches
-                              .filter(b => b.id !== selectedBranch?.id)
-                              .map(b => (
-                                <option key={b.id} value={b.id}>{getBranchName(b)}</option>
-                              ))
-                            }
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
+                      <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle dark:border-border-subtle bg-white dark:bg-surface dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
+                        <select
+                          name="sellTransfer"
+                          value={form.sellTransfer}
+                          onChange={handleChange}
+                          className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
+                        >
+                          <option value="Sales">Sell</option>
+                          <option value="Transfer">Transfer</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
                         </div>
                       </div>
                     )}
                   </div>
-               </div>
+                  <DetailInput label="Item Included" name="itemIncluded" value={form.itemIncluded} onChange={handleChange} placeholder={selectedItem?.included || "Specify items..."} />
+                  <div className="flex items-center justify-between pt-2 border-t border-dashed border-emerald-100 dark:border-border-subtle">
+                    <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">SRP:</span>
+                    <span className="text-lg font-black text-emerald-950 dark:text-white">₱ {Number(selectedItem?.srp || 0).toLocaleString()}</span>
+                  </div>
+                  {form.sellTransfer === "Sales" ? (
+                    <DetailInput label="Price Sold" name="priceSold" value={form.priceSold} onChange={handleChange} type="number" prefix="₱" highlight />
+                  ) : (
+                    <div className="flex items-center justify-between gap-4 group">
+                      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">To Branch:</span>
+                      <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle" />
+                      <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
+                        <select
+                          name="targetBranchId"
+                          value={form.targetBranchId}
+                          onChange={handleChange}
+                          className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
+                        >
+                          <option value="">— Select Branch —</option>
+                          {branches
+                            .filter((b) => b.id !== selectedBranch?.id)
+                            .map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {getBranchName(b)}
+                              </option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
 
                <div className="flex flex-col justify-between rounded-3xl bg-emerald-900 p-6 text-white shadow-xl shadow-emerald-900/20">
                   <div className="space-y-2">
-                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Quick Summary</p>
-                     <p className="text-xl font-black leading-tight tracking-tight">{selectedItem?.unit || "Select an item..."}</p>
-                     <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{selectedItem?.unitId || "---"}</p>
-                  </div>
-                  <div className="pt-8 text-right border-t border-white/10 mt-8">
-                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">
-                       {form.sellTransfer === "Sales" ? "Total Transaction Value" : "Transfer Value (Market)"}
-                     </p>
-                     <p className="text-4xl font-black tracking-tighter">
-                       ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
-                     </p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black uppercase tracking-tight text-emerald-950 dark:text-white">Buyer&apos;s Information</h3>
+                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Please fill in current details</p>
+                      </div>
+                    </div>
                   </div>
                </div>
 
@@ -523,27 +529,27 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                      </div>
                    </div>
 
-                   <div className="grid gap-4">
-                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                       <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
-                       <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
-                       <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
-                     </div>
+                  <div className="grid gap-4 md:max-xl:gap-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
+                      <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
+                      <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
+                    </div>
 
-                     <PhilippineAddressFields
-                       value={{
-                         address: form.address,
-                         barangay: form.barangay,
-                         city: form.city,
-                         region: form.region,
-                       }}
-                       onFieldChange={(field, val) => setForm(prev => ({ ...prev, [field]: val }))}
-                     />
+                    <PhilippineAddressFields
+                      value={{
+                        address: form.address,
+                        barangay: form.barangay,
+                        city: form.city,
+                        region: form.region,
+                      }}
+                      onFieldChange={(field, val) => setForm(prev => ({ ...prev, [field]: val }))}
+                    />
 
-                     <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
-                   </div>
-                 </div>
-               )}
+                    <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -591,7 +597,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                 <div className="space-y-2 max-w-sm">
                    <h3 className="text-2xl font-black text-emerald-950 dark:text-white uppercase tracking-tight">Internal Transfer</h3>
                    <p className="text-sm font-medium text-zinc-500 leading-relaxed">
-                     Moving an item between branches does not record any cash movement. 
+                     Moving an item between branches does not record any cash movement.
                      The item will be deducted from <strong>{branchName}</strong> and added to the target branch inventory.
                    </p>
                 </div>
@@ -604,7 +610,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                    <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-zinc-400 uppercase">To:</span>
                       <span className="text-xs font-black text-emerald-600">
-                        {form.targetBranchId ? getBranchName(branches.find(b => b.id === form.targetBranchId)) : "Select Destination..."}
+                        {form.targetBranchId ? getBranchName(branches.find((b) => b.id === form.targetBranchId)) : "Select Destination..."}
                       </span>
                    </div>
                 </div>
@@ -616,56 +622,58 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
         {/* Footer Actions */}
         <div className={`p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0 ${compactTablet ? "md:p-6 md:max-xl:gap-5" : ""}`}>
           <div className="flex items-center gap-8 w-full sm:w-auto">
-             <button 
-                onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 transition-colors"
-              >
-                Cancel Process
-              </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-40">
-                  <div className="space-y-1.5 w-full">
-                    <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">Password</label>
-                    <input
-                      name="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder="••••••••"
-                      type="password"
-                      className="w-full rounded-xl border-2 border-emerald-300 bg-white px-4 py-2 text-xs font-black text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none placeholder:text-zinc-300"
-                    />
-                  </div>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 transition-colors"
+            >
+              Cancel Process
+            </button>
+            <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="w-40">
+                <div className="space-y-1.5 w-full">
+                  <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">Password</label>
+                  <input
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    type="password"
+                    className="w-full rounded-xl border-2 border-emerald-300 bg-white px-4 py-2 text-xs font-black text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none placeholder:text-zinc-300"
+                  />
                 </div>
               </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-             <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
-                  {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
-                </p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">
-                  ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
-                </p>
-             </div>
-              <button 
+            <div className="text-right">
+              <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+                {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
+              </p>
+              <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">
+                ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
+              </p>
+            </div>
+            <button
               disabled={!isFormValid || isConfirming}
               onClick={handleConfirmAction}
               className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isFormValid ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30' : 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed'}`}
-             >
-                {isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  <>
-                    Confirm & Print
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                  </>
-                )}
-             </button>
+            >
+              {isConfirming ? (
+                <div className="flex items-center gap-2">
+                  <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                <>
+                  Confirm & Print
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M5 12h14m-7-7 7 7-7 7" />
+                  </svg>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

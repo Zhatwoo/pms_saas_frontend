@@ -43,8 +43,17 @@ export class ApiError extends Error {
 }
 
 class ApiClient {
+  private isAuthRefreshGraceActive() {
+    if (typeof window === "undefined") return false;
+
+    const rawUntil = window.sessionStorage.getItem("pms_auth_refresh_grace_until");
+    const until = rawUntil ? Number(rawUntil) : 0;
+    return Number.isFinite(until) && Date.now() < until;
+  }
+
   private notifySessionExpired(message: string, path: string) {
     if (typeof window === "undefined") return;
+    if (this.isAuthRefreshGraceActive()) return;
 
     window.dispatchEvent(
       new CustomEvent("pms:auth-expired", {
@@ -132,7 +141,7 @@ class ApiClient {
               await new Promise(resolve => setTimeout(resolve, delay));
               continue;
             }
-          } catch (e) {
+          } catch {
             // ignore clone read error
           }
         }
@@ -169,7 +178,12 @@ class ApiClient {
         suppressLogging,
       );
 
-      if (res.status === 401 && !isPublicPath && !suppressAuthExpired) {
+      if (
+        res.status === 401 &&
+        !isPublicPath &&
+        !suppressAuthExpired &&
+        !this.isAuthRefreshGraceActive()
+      ) {
         console.warn(`[API] 401 Unauthorized for ${path}.`);
         this.notifySessionExpired(message, path);
       }

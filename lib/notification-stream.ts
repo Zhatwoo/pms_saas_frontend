@@ -4,6 +4,7 @@ import {
   isFundTransferApiNotification,
   isIncidentReportApiNotification,
   isPawnTransactionApiNotification,
+  isPasswordRequestApiNotification,
   type ApiNotification,
 } from "@/lib/notifications";
 
@@ -119,4 +120,10 @@ export function subscribeToBranchTransferNotifications(
   onChange: NotificationChangeHandler,
 ) {
   return subscribeToNotifications(onChange, isBranchTransferApiNotification);
+}
+
+export function subscribeToPasswordRequestNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isPasswordRequestApiNotification, 15_000);
 }
