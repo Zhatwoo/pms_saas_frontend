@@ -707,7 +707,7 @@ export function InterestRatesSettings() {
                 {group.isExpanded && (
                   <div className="p-4 space-y-5 border-t border-border-main">
                     {/* Grid Layout: Config Fields + Categories + display logic */}
-                    <div className="grid gap-6 md:grid-cols-[1fr_260px]">
+                    <div className="grid gap-6 md:max-xl:grid-cols-1 xl:grid-cols-[1fr_260px]">
                       {/* Left: Input Rates fields */}
                       <div className="space-y-4">
                         <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
@@ -818,8 +818,9 @@ export function InterestRatesSettings() {
                                         )}
                                       </td>
                                       <td className="px-4 py-3.5 hidden sm:table-cell">
-                                        <span className="inline-flex items-center rounded-md bg-surface-secondary px-2 py-1 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
-                                          Days {tier.startDay} - {tier.endDay} → {tier.rate}%
+                                        <span className="inline-flex flex-col items-start rounded-md bg-surface-secondary px-2 py-1 text-[10px] font-bold leading-tight text-zinc-600 dark:text-zinc-300">
+                                          <span>Days {tier.startDay} - {tier.endDay}</span>
+                                          <span>→ {tier.rate}%</span>
                                         </span>
                                       </td>
                                     </tr>
