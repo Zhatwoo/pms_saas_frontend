@@ -240,10 +240,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
           </div>
         </div>
 
-        <div className={`flex-1 ${compactTablet ? "overflow-y-auto" : "overflow-hidden"} flex flex-col xl:flex-row`}>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className={`w-full xl:w-[400px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0 ${compactTablet ? "md:max-xl:w-full md:max-xl:border-r-0 md:max-xl:border-b md:max-xl:min-h-0 md:max-xl:max-h-none" : ""}`}>
-            <div className={`space-y-4 ${compactTablet ? "p-4 md:max-xl:p-4" : "p-6"}`}>
+          <div className="flex w-full shrink-0 flex-col border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary xl:w-[400px] xl:border-r">
+            <div className="space-y-4 p-4 md:p-6">
               <div className="flex items-center gap-3 mb-2">
                 <Search className="w-5 h-5 text-emerald-600/40" />
                 <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Active Pawn</h3>
@@ -253,7 +253,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 <input 
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium shadow-sm"
+                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -268,7 +268,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
               </div>
             </div>
 
-            <div className={`flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide ${compactTablet ? "md:max-xl:px-4 md:max-xl:pb-4 md:max-xl:max-h-none" : ""}`}>
+            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
@@ -310,10 +310,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             </div>
           </div>
 
-          {/* Right Side: Details & Computation */}
-          <div className={`flex-1 bg-white dark:bg-surface overflow-y-auto scrollbar-hide ${compactTablet ? "md:max-xl:block md:max-xl:border-t md:max-xl:border-emerald-50" : ""}`}>
+          {/* Right Side: Details & Computation (desktop xl+) */}
+          <div className={`min-h-0 flex-1 overflow-y-auto bg-white scrollbar-hide dark:bg-surface ${compactTablet ? "hidden xl:block" : ""}`}>
             {selectedItem ? (
-              <div className={`p-4 sm:p-6 xl:p-12 animate-in fade-in slide-in-from-right-4 duration-300 ${compactTablet ? "md:max-xl:p-4 md:max-xl:pb-5" : ""}`}>
+              <div className="animate-in fade-in slide-in-from-right-4 p-4 duration-300 sm:p-6 xl:p-12">
                 <div className="space-y-1 mb-8">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
                   <h2 className="text-4xl font-black text-emerald-950 dark:text-white dark:text-white tracking-tighter leading-none">
@@ -324,7 +324,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                   </p>
                 </div>
 
-                <div className={`grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10 ${compactTablet ? "md:max-xl:grid-cols-1 md:max-xl:gap-6 md:max-xl:mb-8" : ""}`}>
+                <div className="mb-10 grid grid-cols-1 gap-8 xl:grid-cols-2">
                   <DetailSection title="Loan & Item Details" icon={Smartphone}>
                     <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
                     <DetailRow 
@@ -362,7 +362,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 </div>
 
                 {/* Computation Summary */}
-                <div className={`mb-10 p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group ${compactTablet ? "md:max-xl:p-5 md:max-xl:mb-8" : ""}`}>
+                <div className="relative mb-10 overflow-hidden rounded-3xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-900/30 dark:bg-emerald-950/20">
                   <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                   <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-6">
                     <div className="space-y-2">
@@ -401,8 +401,22 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             )}
           </div>
 
+          {compactTablet && !selectedItem && (
+            <div className="flex flex-1 flex-col items-center justify-center border-t border-emerald-50 bg-white p-8 text-center dark:bg-surface xl:hidden">
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50">
+                <Undo2 className="h-12 w-12 text-emerald-200" />
+              </div>
+              <h3 className="text-2xl font-black uppercase italic tracking-tight text-emerald-950 dark:text-white">
+                Scan or Search Item
+              </h3>
+              <p className="mt-2 max-w-xs font-bold leading-relaxed text-emerald-900/30">
+                Only active items within the loan period are eligible for redemption.
+              </p>
+            </div>
+          )}
+
           {compactTablet && selectedItem && (
-            <div className="w-full border-t border-emerald-50 bg-white dark:bg-surface px-4 pb-4 pt-4 md:max-xl:block">
+            <div className="w-full border-t border-emerald-50 bg-white px-4 pb-4 pt-4 dark:bg-surface xl:hidden">
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-1 mb-5">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>

@@ -35,20 +35,8 @@ export function DailyBalanceConfirmation({
     if (!isOpen) return;
 
     setIsSubmitting(false);
-    if (type === "starting") {
-      const raw = parseFloat(String(currentCash ?? "").replace(/,/g, ""));
-      const n = Number.isFinite(raw) ? raw : 0;
-      setConfirmedAmount(
-        n.toLocaleString("en-PH", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }),
-      );
-      return;
-    }
-
     setConfirmedAmount("0.00");
-  }, [isOpen, currentCash, type]);
+  }, [isOpen, type]);
 
   if (!isOpen) return null;
 

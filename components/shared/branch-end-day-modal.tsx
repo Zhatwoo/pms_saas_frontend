@@ -28,15 +28,10 @@ export function BranchEndDayModal({
   useEffect(() => {
     if (isOpen) {
       setConfirmed(false);
-      setPhysicalInput(
-        systemEndingBalance.toLocaleString("en-PH", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }),
-      );
+      setPhysicalInput("0.00");
       setIsSubmitting(false);
     }
-  }, [isOpen, systemEndingBalance]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -64,9 +59,7 @@ export function BranchEndDayModal({
     const raw = physicalInput.replace(/,/g, "");
     const parsed = parseFloat(raw);
     const physical =
-      Number.isFinite(parsed) && Math.abs(parsed - systemEndingBalance) > 0.005
-        ? parsed
-        : undefined;
+      Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 
     setIsSubmitting(true);
     try {
@@ -99,7 +92,7 @@ export function BranchEndDayModal({
         </div>
 
         <div className="space-y-2 mb-4">
-          <label className="text-xs font-bold text-text-secondary">Physical cash on hand (optional)</label>
+          <label className="text-xs font-bold text-text-secondary">Physical cash on hand</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-text-muted">₱</span>
             <input
