@@ -6,18 +6,15 @@ import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { DailyBalanceConfirmation } from "./daily-balance-confirmation";
 import { InventoryAuditModal } from "./inventory-audit-modal";
 import { api, ApiError } from "@/lib/api";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { toast } from "sonner";
 
-/** Subset of `/branch-finance/business-session` used for gates + expected cash. */
-interface BusinessSessionExpectedApi {
+/** Subset of `/branch-finance/business-session` used for operational gate only. */
+interface BusinessSessionGateApi {
   operationalCashAllowed: boolean;
   pendingStartingSession: {
     suggestedStartingBalance: number;
   } | null;
-  latestBalance: {
-    startingBalance: number;
-    endingBalance: number;
-    date: string;
-  };
 }
 
 type DailyOpeningStatusApi = {
@@ -33,6 +30,9 @@ export function OpeningChecklistWrapper() {
   const {
     currentStep,
     isComplete,
+    openingChecklistModalHidden,
+    hideOpeningChecklistModal,
+    resetOpeningChecklistModalHidden,
     completeCashOnHand,
     completeInventoryAudit,
     refreshOpeningChecklistFromServer,
@@ -41,6 +41,18 @@ export function OpeningChecklistWrapper() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoadingExpectedAmount, setIsLoadingExpectedAmount] = useState(false);
 
+  const isOnIncidentReportPage = Boolean(pathname?.includes("/incident-report"));
+  const showStartingBalanceModal =
+    currentStep === "CASH_ON_HAND" &&
+    !openingChecklistModalHidden &&
+    !isOnIncidentReportPage;
+
+  useEffect(() => {
+    if (isOnIncidentReportPage) {
+      resetOpeningChecklistModalHidden();
+    }
+  }, [isOnIncidentReportPage, resetOpeningChecklistModalHidden]);
+
   useEffect(() => {
     if (currentStep !== "CASH_ON_HAND" || isComplete) return;
 
@@ -48,11 +60,14 @@ export function OpeningChecklistWrapper() {
     setIsLoadingExpectedAmount(true);
     (async () => {
       try {
-        const bizSession =
-          await api.get<BusinessSessionExpectedApi>(
-            "/branch-finance/business-session",
-          );
+        const [bizSession, opening] = await Promise.all([
+          api.get<BusinessSessionGateApi>("/branch-finance/business-session"),
+          api.get<DailyOpeningStatusApi>("/branch-finance/daily-opening/status").catch(
+            () => ({ expectedStartingCash: undefined } as DailyOpeningStatusApi),
+          ),
+        ]);
         if (cancelled) return;
+
         if (bizSession.operationalCashAllowed === true) {
           await refreshOpeningChecklistFromServer();
           setIsLoadingExpectedAmount(false);
@@ -60,49 +75,15 @@ export function OpeningChecklistWrapper() {
         }
 
         let resolved: number | null = null;
-
-        try {
-          const opening = await api.get<DailyOpeningStatusApi>(
-            "/branch-finance/daily-opening/status",
+        if (
+          opening?.expectedStartingCash != null &&
+          Number.isFinite(Number(opening.expectedStartingCash))
+        ) {
+          resolved = Number(opening.expectedStartingCash);
+        } else if (bizSession?.pendingStartingSession != null) {
+          resolved = Number(
+            bizSession.pendingStartingSession.suggestedStartingBalance ?? 0,
           );
-          if (cancelled) return;
-          if (
-            opening?.expectedStartingCash != null &&
-            Number.isFinite(Number(opening.expectedStartingCash))
-          ) {
-            resolved = Number(opening.expectedStartingCash);
-          }
-        } catch (e) {
-          console.warn("[OpeningChecklistWrapper] daily-opening status failed", e);
-        }
-
-        if (resolved === null) {
-          if (cancelled) return;
-          if (bizSession?.pendingStartingSession != null) {
-            resolved = Number(
-              bizSession.pendingStartingSession.suggestedStartingBalance ?? 0,
-            );
-          } else if (bizSession) {
-            resolved = Number(bizSession.latestBalance?.endingBalance ?? 0);
-          }
-        }
-
-        if (resolved === null && !cancelled) {
-          try {
-            const bal = await api.get<{
-              startingBalance: number;
-              endingBalance: number;
-            }>("/branch-finance/latest-balance");
-            if (!cancelled) {
-              resolved = Number(bal?.endingBalance ?? bal?.startingBalance ?? 0);
-            }
-          } catch (e) {
-            console.warn(
-              "[OpeningChecklistWrapper] latest-balance fetch failed",
-              e,
-            );
-            resolved = 0;
-          }
         }
 
         if (!cancelled) {
@@ -111,7 +92,7 @@ export function OpeningChecklistWrapper() {
         }
       } catch (e) {
         console.warn(
-          "[OpeningChecklistWrapper] business-session gate fetch failed",
+          "[OpeningChecklistWrapper] expected starting amount fetch failed",
           e,
         );
         if (!cancelled) setIsLoadingExpectedAmount(false);
@@ -124,8 +105,39 @@ export function OpeningChecklistWrapper() {
     };
   }, [currentStep, isComplete, refreshOpeningChecklistFromServer]);
 
+  const redirectStartingMismatch = (
+    expected: number,
+    entered: number,
+    businessDate: string,
+  ) => {
+    hideOpeningChecklistModal();
+    toast.error("Starting cash mismatch. Please file an incident report.");
+    const incidentBase = pathname?.includes("/admin/")
+      ? "/admin/incident-report"
+      : "/employee/incident-report";
+    const qs = new URLSearchParams({
+      startingMismatch: "1",
+      expected: String(expected),
+      entered: String(entered),
+      businessDate,
+    });
+    router.replace(`${incidentBase}?${qs.toString()}`);
+  };
+
   const handleConfirm = async (amount: string) => {
     setSubmitError(null);
+
+    const entered = parseFloat(amount.replace(/,/g, "")) || 0;
+    const expected = parseFloat(String(expectedCash).replace(/,/g, "")) || 0;
+    if (Math.abs(expected - entered) > 0.009) {
+      redirectStartingMismatch(
+        expected,
+        entered,
+        getPhCalendarDateString(),
+      );
+      return;
+    }
+
     try {
       await completeCashOnHand(amount);
     } catch (e: unknown) {
@@ -134,22 +146,23 @@ export function OpeningChecklistWrapper() {
         e.statusCode === 422 &&
         e.payload?.code === "STARTING_BALANCE_MISMATCH"
       ) {
-        const expected = Number(e.payload?.expectedAmount);
-        const entered = Number(e.payload?.enteredAmount);
+        const mismatchExpected = Number(
+          e.payload?.expectedAmount ?? e.payload?.required_amount ?? expected,
+        );
+        const mismatchEntered = Number(
+          e.payload?.enteredAmount ?? entered,
+        );
         const businessDate =
           typeof e.payload?.businessDate === "string"
             ? e.payload.businessDate
-            : "";
-        const incidentBase = pathname?.includes("/admin/")
-          ? "/admin/incident-report"
-          : "/employee/incident-report";
-        const qs = new URLSearchParams({
-          startingMismatch: "1",
-          expected: Number.isFinite(expected) ? String(expected) : "0",
-          entered: Number.isFinite(entered) ? String(entered) : amount,
+            : typeof e.payload?.business_date === "string"
+              ? e.payload.business_date
+              : getPhCalendarDateString();
+        redirectStartingMismatch(
+          Number.isFinite(mismatchExpected) ? mismatchExpected : expected,
+          Number.isFinite(mismatchEntered) ? mismatchEntered : entered,
           businessDate,
-        });
-        router.push(`${incidentBase}?${qs.toString()}`);
+        );
         return;
       }
       setSubmitError(
@@ -178,7 +191,7 @@ export function OpeningChecklistWrapper() {
         </div>
       ) : null}
       <DailyBalanceConfirmation
-        isOpen={currentStep === "CASH_ON_HAND"}
+        isOpen={showStartingBalanceModal}
         type="starting"
         titleOverride="Branch starting balance"
         subtitleOverride="Confirm physical cash on hand. Expected amount matches the branch book ending from the last closed day (or system suggestion)."

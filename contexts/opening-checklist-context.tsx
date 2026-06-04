@@ -32,6 +32,10 @@ interface OpeningChecklistContextValue {
   isComplete: boolean;
   /** False until the first daily-opening status fetch finishes for employees. */
   isOpeningChecklistReady: boolean;
+  /** Hides opening modals while filing a starting-cash mismatch incident report. */
+  openingChecklistModalHidden: boolean;
+  hideOpeningChecklistModal: () => void;
+  resetOpeningChecklistModalHidden: () => void;
   completeCashOnHand: (amount: string) => Promise<void>;
   completeInventoryAudit: () => Promise<void>;
   resetChecklist: () => void;
@@ -63,6 +67,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
   const [isComplete, setIsComplete] = useState(false);
   const [isOpeningChecklistReady, setIsOpeningChecklistReady] = useState(false);
+  const [openingChecklistModalHidden, setOpeningChecklistModalHidden] = useState(false);
   const hasLoadedBranchDayRef = useRef<string | null>(null);
   const lastSyncedOpeningDateRef = useRef<string | null>(null);
   const lastVisibilitySyncAtRef = useRef(0);
@@ -239,6 +244,14 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     await loadDailyOpeningForEmployee({ preserveShell: true });
   }, [user, loadDailyOpeningForEmployee]);
 
+  const hideOpeningChecklistModal = useCallback(() => {
+    setOpeningChecklistModalHidden(true);
+  }, []);
+
+  const resetOpeningChecklistModalHidden = useCallback(() => {
+    setOpeningChecklistModalHidden(false);
+  }, []);
+
   const completeCashOnHand = useCallback(async (amount: string) => {
     try {
       await api.post("/branch-finance/daily-balance", {
@@ -284,22 +297,10 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
           businessDate,
         });
 
+        setOpeningChecklistModalHidden(true);
         toast.error("Starting cash mismatch. Please file an incident report.");
         router.replace(`/employee/incident-report?${params.toString()}`);
         return;
-      }
-
-      if (
-        error instanceof ApiError &&
-        error.statusCode === 422 &&
-        error.payload?.code === "STARTING_BALANCE_MISMATCH"
-      ) {
-        const expected = Number(error.payload?.expectedAmount);
-        const entered = Number(error.payload?.enteredAmount);
-        const msg = Number.isFinite(expected)
-          ? `Expected ${expected.toLocaleString("en-PH", { minimumFractionDigits: 2 })} but you entered ${Number.isFinite(entered) ? entered.toLocaleString("en-PH", { minimumFractionDigits: 2 }) : amount}. File an incident report for the variance.`
-          : error.message;
-        throw new ApiError(msg, 422, error.payload);
       }
 
       throw error;
@@ -326,6 +327,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const resetChecklist = useCallback(() => {
     setCurrentStep("CASH_ON_HAND");
     setIsComplete(false);
+    setOpeningChecklistModalHidden(false);
     hasLoadedBranchDayRef.current = null;
     lastSyncedOpeningDateRef.current = null;
   }, []);
@@ -336,6 +338,9 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         currentStep,
         isComplete,
         isOpeningChecklistReady,
+        openingChecklistModalHidden,
+        hideOpeningChecklistModal,
+        resetOpeningChecklistModalHidden,
         completeCashOnHand,
         completeInventoryAudit,
         resetChecklist,

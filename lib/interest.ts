@@ -146,8 +146,20 @@ export function getInterestRateSchedule(category?: string): InterestRateSchedule
   ];
 }
 
-export function calculateGadgetInterest(amount: number, pawnDate: string | Date | null, category?: string) {
-  if (!pawnDate) return { percentage: 0, interestAmount: 0, totalAmount: amount, daysPassed: 0 };
+export function calculateGadgetInterest(
+  amount: number,
+  pawnDate: string | Date | null,
+  category?: string,
+) {
+  if (!pawnDate) {
+    return {
+      percentage: 0,
+      interestAmount: 0,
+      totalAmount: amount,
+      daysPassed: 0,
+      isExpired: false,
+    };
+  }
 
   const start = new Date(pawnDate);
   const now = new Date();
@@ -162,8 +174,7 @@ export function calculateGadgetInterest(amount: number, pawnDate: string | Date 
   const activeGroup = findInterestRateGroup(category);
 
   let percentage = 5;
-  let interestAmount = 0;
-  let totalAmount = amount;
+  let isExpired = false;
 
   if (activeGroup) {
     const group = normalizeGroup(activeGroup);
@@ -181,6 +192,7 @@ export function calculateGadgetInterest(amount: number, pawnDate: string | Date 
 
     if (daysPassed > defaultDuration + graceDuration) {
       percentage = graceRate;
+      isExpired = true;
     } else if (daysPassed > defaultDuration) {
       percentage = graceRate;
     } else if (daysPassed > day20Limit) {
@@ -193,7 +205,10 @@ export function calculateGadgetInterest(amount: number, pawnDate: string | Date 
       percentage = first5Days;
     }
   } else {
-    if (daysPassed > 30) {
+    if (daysPassed > 34) {
+      percentage = 40;
+      isExpired = true;
+    } else if (daysPassed > 30) {
       percentage = 40;
     } else if (daysPassed > 20) {
       percentage = 30;
@@ -204,13 +219,14 @@ export function calculateGadgetInterest(amount: number, pawnDate: string | Date 
     }
   }
 
-  interestAmount = amount * (percentage / 100);
-  totalAmount = amount + interestAmount;
+  const interestAmount = amount * (percentage / 100);
+  const totalAmount = amount + interestAmount;
 
   return {
     percentage,
     interestAmount,
     totalAmount,
     daysPassed,
+    isExpired,
   };
 }
