@@ -346,9 +346,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
           {compactTablet && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden md:max-xl:grid md:max-xl:grid-cols-[392px_minmax(0,1fr)]">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden md:max-xl:grid md:max-xl:grid-cols-[360px_minmax(0,1fr)]">
               {!hideSidebar && (
-                <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[392px]">
+                <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[360px]">
                   <div className="space-y-3 p-4 md:p-4">
                     <div className="flex items-center gap-2.5">
                       <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -399,18 +399,18 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                 </aside>
               )}
 
-              <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-emerald-50/20 dark:bg-surface-secondary">
+              <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-emerald-50/20 dark:bg-surface-secondary">
                 <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 md:max-xl:p-4 scrollbar-hide">
                   <div className="rounded-2xl border border-emerald-100 bg-white/85 p-4 shadow-lg shadow-emerald-900/5 backdrop-blur-sm dark:border-white/5 dark:bg-black/20">
                     <SectionHeader title="Loan & Item Identity" icon={Info} />
-                    <div className="mt-4 grid gap-3 md:max-xl:grid-cols-2">
+                    <div className="mt-4 grid min-w-0 gap-3 md:max-xl:grid-cols-2">
                       <TabletMetricCard label="Customer Name" value={selectedItem?.name} className="md:max-xl:col-span-2" />
                       <TabletMetricCard label="Unit Code" value={selectedItem?.unitCode} />
                       <TabletMetricCard label="Unit Name" value={selectedItem?.unit} />
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 md:max-xl:grid-cols-2">
+                  <div className="mt-4 grid min-w-0 gap-3 md:max-xl:grid-cols-2">
                     <TabletMetricCard
                       label="Principal Amount"
                       value={selectedItem ? `₱ ${selectedItem.amount.toLocaleString()}` : "---"}
@@ -423,7 +423,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                     />
                   </div>
 
-                  <details className="mt-4 rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20">
+                  <details className="mt-4 min-w-0 rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-black uppercase tracking-[0.22em] text-emerald-900/55 dark:text-emerald-400">
                       <span>View More Details</span>
                       <span className="text-emerald-500">+</span>
@@ -763,11 +763,11 @@ function StaticDetailRow({ label, value }: { label: string, value: string | numb
 
 function TabletMetricCard({ label, value, className = "", accent = false }: { label: string; value: string | number | undefined; className?: string; accent?: boolean }) {
   return (
-    <div className={`rounded-2xl border border-emerald-100 bg-white/85 p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 ${className}`}>
+    <div className={`min-w-0 rounded-2xl border border-emerald-100 bg-white/85 p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 ${className}`}>
       <p className="text-[9px] font-black uppercase tracking-[0.22em] text-emerald-900/40 dark:text-emerald-400">
         {label}
       </p>
-      <p className={`mt-2 leading-tight ${accent ? "text-lg font-black text-emerald-950 dark:text-white md:max-xl:text-xl" : "text-[13px] font-semibold text-text-primary dark:text-white/80 md:max-xl:text-[14px]"}`}>
+      <p className={`mt-2 truncate leading-tight ${accent ? "text-lg font-black text-emerald-950 dark:text-white md:max-xl:text-xl" : "text-[13px] font-semibold text-text-primary dark:text-white/80 md:max-xl:text-[14px]"}`}>
         {value || "---"}
       </p>
     </div>
@@ -776,11 +776,11 @@ function TabletMetricCard({ label, value, className = "", accent = false }: { la
 
 function TabletDetailRow({ label, value }: { label: string; value: string | number | undefined }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100/60 bg-white px-3 py-2.5 dark:border-white/5 dark:bg-white/5">
-      <span className="text-[9px] font-black uppercase tracking-[0.18em] text-emerald-900/45 dark:text-white/55">
+    <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-emerald-100/60 bg-white px-3 py-2.5 dark:border-white/5 dark:bg-white/5">
+      <span className="min-w-0 truncate text-[9px] font-black uppercase tracking-[0.18em] text-emerald-900/45 dark:text-white/55">
         {label}
       </span>
-      <span className="max-w-[55%] truncate text-[12px] font-bold text-emerald-950 dark:text-white">
+      <span className="min-w-0 max-w-[52%] shrink-0 truncate text-right text-[12px] font-bold text-emerald-950 dark:text-white">
         {value || "---"}
       </span>
     </div>
