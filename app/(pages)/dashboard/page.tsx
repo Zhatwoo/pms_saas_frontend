@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api";
-import { useBranch } from "@/contexts/branch-context";
+import { ALL_BRANCHES_OPTION, useBranch } from "@/contexts/branch-context";
 import { DateFilterSelector } from "@/components/shared/date-filter-selector";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type { ContractTrendData } from "./_components/contract-trends-chart";
@@ -46,8 +46,9 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const { selectedBranch, isAllBranches } = useBranch();
+  const requiresBranchSelection =
+    !isAllBranches && selectedBranch.id === ALL_BRANCHES_OPTION.id;
   const [isLoading, setIsLoading] = useState(true);
-  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   const [overallData, setOverallData] = useState({
     totalContracts: 0,
@@ -73,6 +74,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchDashboardKpis() {
+      if (requiresBranchSelection) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
@@ -99,11 +105,10 @@ export default function DashboardPage() {
         console.error("Failed to load dashboard KPIs:", error);
       } finally {
         setIsLoading(false);
-        setHasLoadedData(true);
       }
     }
     fetchDashboardKpis();
-  }, [selectedBranch.id, isAllBranches, activePeriod, startDate, endDate]);
+  }, [requiresBranchSelection, selectedBranch.id, isAllBranches, activePeriod, startDate, endDate]);
 
   return (
     <div className="space-y-5">
@@ -128,7 +133,11 @@ export default function DashboardPage() {
 
       <AutoResetBanner />
 
-      {isLoading ? (
+      {requiresBranchSelection ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-12 text-center text-sm text-amber-900">
+          Select a branch to view dashboard metrics.
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center rounded-xl border border-border-main bg-surface px-5 py-16 text-sm text-text-tertiary">
           <LoadingSpinnerLabel text="Updating data..." className="text-base font-medium text-text-tertiary" />
         </div>

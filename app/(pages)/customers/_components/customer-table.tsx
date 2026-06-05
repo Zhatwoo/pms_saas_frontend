@@ -117,6 +117,13 @@ export function CustomerTable() {
     return baseColumns;
   }, [isAllBranches]);
 
+  const totalPages = Math.max(1, Math.ceil(customers.length / ITEMS_PER_PAGE));
+  const currentPageSafe = Math.min(currentPage, totalPages);
+  const pageCustomers = useMemo(() => {
+    const start = (currentPageSafe - 1) * ITEMS_PER_PAGE;
+    return customers.slice(start, start + ITEMS_PER_PAGE);
+  }, [customers, currentPageSafe]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -160,7 +167,7 @@ export function CustomerTable() {
       cancelled = true;
     };
 
-  }, [currentPage, totalPages]);
+  }, [branchNames, isAllBranches, selectedBranch.id]);
 
   return (
     <div className="rounded-lg border border-border-main bg-surface shadow-sm transition-colors duration-300">

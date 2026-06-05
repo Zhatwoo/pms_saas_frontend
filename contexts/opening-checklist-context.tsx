@@ -24,8 +24,11 @@ type DailyOpeningApiStatus = {
   status: "none" | "pending" | "completed";
   checklistStep: ChecklistStep;
   startingCash?: number;
-  expectedStartingCash?: number;
 };
+
+function isOpeningChecklistRole(role?: string | null) {
+  return role === "employee" || role === "admin";
+}
 
 interface OpeningChecklistContextValue {
   currentStep: ChecklistStep;
@@ -41,6 +44,7 @@ interface OpeningChecklistContextValue {
   resetChecklist: () => void;
   /** Re-fetch daily opening from server (e.g. after end-of-day balance closes the session). */
   refreshOpeningChecklistFromServer: () => Promise<void>;
+  debugSetInventoryAudit: () => void;
 }
 
 const OpeningChecklistContext = createContext<OpeningChecklistContextValue | null>(null);
@@ -48,18 +52,7 @@ const OpeningChecklistContext = createContext<OpeningChecklistContextValue | nul
 const openingLoadPromiseByKey = new Map<string, Promise<DailyOpeningApiStatus>>();
 const openingLoadStartedAtByKey = new Map<string, number>();
 const OPENING_LOAD_COOLDOWN_MS = 5000;
-/** Keep low so another employee on the same branch/day picks up Start/End day changes after tab focus. */
-const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 8000;
-/** While waiting on starting balance, poll so coworkers see when another opens the branch day. */
-const OPENING_CASH_POLL_MS = 12_000;
-
-function dailyOpeningCacheKey(
-  userId: string,
-  branchId: string,
-  phDate: string,
-): string {
-  return `${userId}:${branchId}:${phDate}`;
-}
+const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 30000;
 
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -70,6 +63,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   const [openingChecklistModalHidden, setOpeningChecklistModalHidden] = useState(false);
   const hasLoadedBranchDayRef = useRef<string | null>(null);
   const lastSyncedOpeningDateRef = useRef<string | null>(null);
+  const isLoadingOpeningRef = useRef(false);
   const lastVisibilitySyncAtRef = useRef(0);
 
   const applyServerStatus = useCallback((data: DailyOpeningApiStatus) => {
@@ -79,15 +73,11 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   }, []);
 
   const loadDailyOpeningForEmployee = useCallback(
-    async (options?: { preserveShell?: boolean; bypassCooldown?: boolean }) => {
-      if (!user || user.role !== "employee" || !user.branchId) {
+    async (options?: { preserveShell?: boolean }) => {
+      if (!user || !isOpeningChecklistRole(user.role) || !user.branchId) {
         return;
       }
-      const key = dailyOpeningCacheKey(
-        user.id,
-        user.branchId,
-        getPhCalendarDateString(),
-      );
+      const key = `${user.branchId}:${getPhCalendarDateString()}`;
       const now = Date.now();
       const lastStartedAt = openingLoadStartedAtByKey.get(key) ?? 0;
       const pendingRequest = openingLoadPromiseByKey.get(key);
@@ -103,10 +93,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         return;
       }
 
-      if (
-        !options?.bypassCooldown &&
-        now - lastStartedAt < OPENING_LOAD_COOLDOWN_MS
-      ) {
+      if (now - lastStartedAt < OPENING_LOAD_COOLDOWN_MS) {
         setIsOpeningChecklistReady(true);
         return;
       }
@@ -138,7 +125,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   );
 
   useEffect(() => {
-    if (!user || user.role !== "employee") {
+    if (!user || !isOpeningChecklistRole(user.role)) {
       setIsComplete(true);
       setIsOpeningChecklistReady(true);
       hasLoadedBranchDayRef.current = null;
@@ -153,7 +140,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     }
 
     const phToday = getPhCalendarDateString();
-    const key = dailyOpeningCacheKey(user.id, user.branchId, phToday);
+    const key = `${user.branchId}:${phToday}`;
     const dayChanged =
       lastSyncedOpeningDateRef.current != null &&
       lastSyncedOpeningDateRef.current !== phToday;
@@ -171,28 +158,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   }, [user, loadDailyOpeningForEmployee]);
 
   useEffect(() => {
-    if (!user || user.role !== "employee" || !user.branchId) {
-      return;
-    }
-    if (currentStep !== "CASH_ON_HAND" || isComplete) {
-      return;
-    }
-    const id = window.setInterval(() => {
-      void loadDailyOpeningForEmployee({
-        preserveShell: true,
-        bypassCooldown: true,
-      });
-    }, OPENING_CASH_POLL_MS);
-    return () => window.clearInterval(id);
-  }, [
-    user,
-    currentStep,
-    isComplete,
-    loadDailyOpeningForEmployee,
-  ]);
-
-  useEffect(() => {
-    if (!user || user.role !== "employee") return;
+    if (!user || !isOpeningChecklistRole(user.role)) return;
 
     /** Branch-wide session: refetch when the tab becomes visible again, but avoid chatty focus churn. */
     const syncOpeningFromServer = () => {
@@ -229,18 +195,12 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
   }, [user, loadDailyOpeningForEmployee]);
 
   const refreshOpeningChecklistFromServer = useCallback(async () => {
-    if (!user || user.role !== "employee" || !user.branchId) {
+    if (!user || !isOpeningChecklistRole(user.role) || !user.branchId) {
       return;
     }
     hasLoadedBranchDayRef.current = null;
     lastVisibilitySyncAtRef.current = 0;
-    openingLoadStartedAtByKey.delete(
-      dailyOpeningCacheKey(
-        user.id,
-        user.branchId,
-        getPhCalendarDateString(),
-      ),
-    );
+    openingLoadStartedAtByKey.delete(`${user.branchId}:${getPhCalendarDateString()}`);
     await loadDailyOpeningForEmployee({ preserveShell: true });
   }, [user, loadDailyOpeningForEmployee]);
 
@@ -262,14 +222,11 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       if (
         error instanceof ApiError &&
         error.statusCode === 409 &&
-        (((error.payload as { code?: string } | undefined)?.code ===
-          "BRANCH_STARTING_BALANCE_RACE") ||
-          error.message.includes("Starting balance was already submitted"))
+        error.message.includes("Starting balance was already submitted")
       ) {
-        toast.info(
-          "Branch day was already opened by someone else—refreshing your checklist.",
-        );
         await refreshOpeningChecklistFromServer();
+        setCurrentStep("COMPLETED");
+        setIsComplete(true);
         return;
       }
 
@@ -312,11 +269,10 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
       );
       applyServerStatus(data);
     } catch {
-      /** Fallback so UI unlocks if status refetch fails after a successful POST. */
-      setCurrentStep("COMPLETED");
-      setIsComplete(true);
+      setCurrentStep("INVENTORY_AUDIT");
+      setIsComplete(false);
     }
-  }, [applyServerStatus, refreshOpeningChecklistFromServer, router]);
+  }, [applyServerStatus, router]);
 
   const completeInventoryAudit = useCallback(async () => {
     await api.post("/branch-finance/daily-opening/complete", {});
@@ -332,6 +288,11 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     lastSyncedOpeningDateRef.current = null;
   }, []);
 
+  const debugSetInventoryAudit = useCallback(() => {
+    setCurrentStep("INVENTORY_AUDIT");
+    setIsComplete(false);
+  }, []);
+
   return (
     <OpeningChecklistContext.Provider
       value={{
@@ -345,6 +306,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         completeInventoryAudit,
         resetChecklist,
         refreshOpeningChecklistFromServer,
+        debugSetInventoryAudit,
       }}
     >
       {children}

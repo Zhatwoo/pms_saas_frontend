@@ -47,7 +47,7 @@ export function BranchDaySessionToolbar({
 }: BranchDaySessionToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   /** Employee layout wraps `OpeningChecklistProvider`; admin/super-admin shells do not — skip gating then. */
   const openingChecklist = useOptionalOpeningChecklist();
   const currentStep = openingChecklist?.currentStep ?? "COMPLETED";
@@ -84,11 +84,11 @@ export function BranchDaySessionToolbar({
     } finally {
       setLoading(false);
     }
-  }, [branchId, visible, user?.id]);
+  }, [branchId, visible]);
 
   useEffect(() => {
     lastResolvedExpectedCash.current = null;
-  }, [branchId, user?.id]);
+  }, [branchId]);
 
   useEffect(() => {
     if (loading) return;
@@ -97,7 +97,10 @@ export function BranchDaySessionToolbar({
       lastResolvedExpectedCash.current = String(pending);
       return;
     }
-    const fromLatest = Number(session?.latestBalance?.endingBalance ?? 0);
+    const fromLatest = Math.max(
+      Number(session?.latestBalance?.startingBalance ?? 0),
+      Number(session?.latestBalance?.endingBalance ?? 0),
+    );
     if (Number.isFinite(fromLatest)) {
       lastResolvedExpectedCash.current = String(fromLatest);
     }
@@ -125,7 +128,12 @@ export function BranchDaySessionToolbar({
       ? String(
           session.pendingStartingSession.suggestedStartingBalance ?? 0,
         )
-      : String(Number(session?.latestBalance?.endingBalance ?? 0));
+      : String(
+          Math.max(
+            Number(session?.latestBalance?.startingBalance ?? 0),
+            Number(session?.latestBalance?.endingBalance ?? 0),
+          ),
+        );
 
   const expectedCashForModal =
     startOpen &&
@@ -169,8 +177,8 @@ export function BranchDaySessionToolbar({
         setStartOpen(false);
         setBanner(null);
         const incidentBase = pathname?.includes("/admin/")
-          ? "/admin/incident-report"
-          : "/employee/incident-report";
+          ? "/admin/incident-tickets"
+          : "/employee/incident-tickets";
         const qs = new URLSearchParams({
           startingMismatch: "1",
           expected: Number.isFinite(expected) ? String(expected) : "0",

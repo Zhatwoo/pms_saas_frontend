@@ -69,8 +69,8 @@ function ExpirationMonitoringPageContent() {
   const router = useRouter();
   const [isBlastSending, setIsBlastSending] = useState(false);
   const [sendingItemId, setSendingItemId] = useState<string | null>(null);
-  const [renewingItemId, setRenewingItemId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const renewingItemId: string | null = null;
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const canRenew = user?.role === "admin" || user?.role === "employee";
   const userRole = user?.role || "employee";
   const canExpire = userRole === "admin" || userRole === "super_admin";
@@ -140,8 +140,8 @@ function ExpirationMonitoringPageContent() {
   }, [highlightTicketNo, highlightTransaction, buckets]);
 
   const showToast = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2500);
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(null), 2500);
   };
 
   // Determine which bucket to show based on active tab
@@ -205,9 +205,9 @@ function ExpirationMonitoringPageContent() {
 
   return (
     <div className="space-y-5">
-      {toast ? (
+      {toastMessage ? (
         <div className="fixed right-4 top-4 z-50 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md">
-          {toast}
+          {toastMessage}
         </div>
       ) : null}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
