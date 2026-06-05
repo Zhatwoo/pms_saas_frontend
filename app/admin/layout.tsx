@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/ui/app-layout";
 import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 
 export default function ProtectedLayout({
   children,
@@ -16,19 +16,8 @@ export default function ProtectedLayout({
 }) {
   const { user, logout, isLoading, isSessionExpiryActive } = useAuth();
   const { selectedBranch } = useBranch();
+  const { isOpeningChecklistReady } = useOpeningChecklist();
   const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      api.get("/settings/interest_rates")
-        .then((data) => {
-          if (data && Array.isArray(data)) {
-            localStorage.setItem("interest_rates", JSON.stringify(data));
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -49,6 +38,10 @@ export default function ProtectedLayout({
   }
 
   if (user.role !== "admin") {
+    return null;
+  }
+
+  if (!isOpeningChecklistReady) {
     return null;
   }
 

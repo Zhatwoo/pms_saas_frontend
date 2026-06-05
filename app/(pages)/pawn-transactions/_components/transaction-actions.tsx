@@ -64,6 +64,8 @@ interface TransactionActionsProps {
   onPurposeFilterChange: (value: TransactionPurposeFilter) => void;
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
+  dateFilter?: string;
+  onDateFilterChange?: (value: string) => void;
   onAddTransaction?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
@@ -76,6 +78,8 @@ export function TransactionActions({
   onPurposeFilterChange,
   viewMode = "list",
   onViewModeChange,
+  dateFilter = "",
+  onDateFilterChange,
   onAddTransaction,
   onExportCSV,
   onPrintReport,
@@ -118,6 +122,20 @@ export function TransactionActions({
         </div>
 
         {/* Date — list mode only */}
+        {viewMode === "list" ? (
+          <div className="w-full space-y-1.5 sm:w-44">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
+              Date
+            </label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(event) => onDateFilterChange?.(event.target.value)}
+              className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+            />
+          </div>
+        ) : null}
+
         {/* Actions */}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <ActionButton

@@ -7,12 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
-import {
-  OpeningChecklistProvider,
-  useOpeningChecklist,
-} from "@/contexts/opening-checklist-context";
-import { OpeningChecklistWrapper } from "@/components/shared/opening-checklist-wrapper";
-import { api } from "@/lib/api";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 
 function EmployeeLayoutInner({
   children,
@@ -25,18 +20,6 @@ function EmployeeLayoutInner({
   const router = useRouter();
 
   const isLoading = isAuthLoading;
-
-  useEffect(() => {
-    if (user) {
-      api.get("/settings/interest_rates")
-        .then((data) => {
-          if (data && Array.isArray(data)) {
-            localStorage.setItem("interest_rates", JSON.stringify(data));
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -99,9 +82,5 @@ export default function EmployeeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <OpeningChecklistProvider>
-      <EmployeeLayoutInner>{children}</EmployeeLayoutInner>
-    </OpeningChecklistProvider>
-  );
+  return <EmployeeLayoutInner>{children}</EmployeeLayoutInner>;
 }

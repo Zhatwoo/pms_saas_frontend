@@ -18,6 +18,17 @@ export default function EmployeeInventoryLayout({ children }: { children: React.
       <div className={!isComplete && currentStep === "INVENTORY_AUDIT" ? "pointer-events-none opacity-50 blur-sm" : ""}>
         {children}
       </div>
+
+      {/* Mandatory inventory audit modal (cannot be closed until completed) */}
+      {!isComplete && currentStep === "INVENTORY_AUDIT" && (
+        <InventoryAuditModal
+          isOpen={true}
+          onClose={() => {}}
+          onConfirm={async () => {
+            await completeInventoryAudit();
+          }}
+        />
+      )}
     </div>
   );
 }

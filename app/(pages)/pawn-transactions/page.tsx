@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
-import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
-import { useBranch } from "@/contexts/branch-context";
+import { ApiError, api } from "@/lib/api";
+import { ALL_BRANCHES_OPTION, useBranch } from "@/contexts/branch-context";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
@@ -20,7 +19,6 @@ import type {
   TransactionRow,
   TransactionStatsData,
 } from "./_components/types";
-import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 
 function csvCell(value: string) {
@@ -60,23 +58,8 @@ interface ApiTransaction {
   pawn_amount?: number | string | null;
   storage_fee?: number | string | null;
   qr_code?: string | null;
-  id_photo?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
-  customer?: {
-    full_name?: string | null;
-    address?: string | null;
-    barangay?: string | null;
-    city?: string | null;
-    region?: string | null;
-    contact_number?: string | null;
-    middle_name?: string | null;
-    id_presented?: string | null;
-  } | null;
-  created_by_user?: {
-    full_name?: string | null;
-    role?: string | null;
-  } | null;
   pawned_item?: {
     qr_code?: string | null;
     serial_number?: string | null;
@@ -88,12 +71,6 @@ interface ApiTransaction {
     customer?: {
       full_name?: string | null;
       address?: string | null;
-      barangay?: string | null;
-      city?: string | null;
-      region?: string | null;
-      contact_number?: string | null;
-      middle_name?: string | null;
-      id_presented?: string | null;
     } | null;
   } | null;
 }
@@ -130,7 +107,6 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const calculations = calculateGadgetInterest(
     pawnAmount,
     transaction.transaction_date,
-    transaction.pawned_item?.category || undefined,
   );
 
   return {
@@ -143,40 +119,8 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
         ? "Sold Item"
         : (transaction.purpose as TransactionRow["purpose"]),
     details: transaction.details ?? "",
-    customerName:
-      transaction.pawned_item?.customer?.full_name ??
-      transaction.customer?.full_name ??
-      "",
-    createdByName: transaction.created_by_user?.full_name ?? undefined,
-    createdByRole: transaction.created_by_user?.role ?? undefined,
-    customerAddress:
-      transaction.pawned_item?.customer?.address ??
-      transaction.customer?.address ??
-      "",
-    customerBarangay:
-      transaction.pawned_item?.customer?.barangay ??
-      transaction.customer?.barangay ??
-      undefined,
-    customerCity:
-      transaction.pawned_item?.customer?.city ??
-      transaction.customer?.city ??
-      undefined,
-    customerRegion:
-      transaction.pawned_item?.customer?.region ??
-      transaction.customer?.region ??
-      undefined,
-    customerPhone:
-      transaction.pawned_item?.customer?.contact_number ??
-      transaction.customer?.contact_number ??
-      undefined,
-    customerMiddleName:
-      transaction.pawned_item?.customer?.middle_name ??
-      transaction.customer?.middle_name ??
-      undefined,
-    idPresented:
-      transaction.pawned_item?.customer?.id_presented ??
-      transaction.customer?.id_presented ??
-      undefined,
+    customerName: transaction.pawned_item?.customer?.full_name ?? "",
+    customerAddress: transaction.pawned_item?.customer?.address ?? "",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     buyBack: isBuyBackAction ? toAmountString(transaction.cash_in) : "0",
@@ -212,7 +156,6 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     remarks: transaction.pawned_item?.remarks ?? undefined,
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
-    idPhoto: transaction.id_photo ?? undefined,
   };
 }
 
@@ -278,7 +221,11 @@ function TransactionsCalendar({
           disabled={isNextDisabled}
           onClick={() => {
             if (isNextDisabled) return;
-            calendarMonth === 11 ? onChangeMonth(calendarYear + 1, 0) : onChangeMonth(calendarYear, calendarMonth + 1);
+            if (calendarMonth === 11) {
+              onChangeMonth(calendarYear + 1, 0);
+            } else {
+              onChangeMonth(calendarYear, calendarMonth + 1);
+            }
           }}
           className={`flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors ${isNextDisabled ? "cursor-not-allowed opacity-40" : "hover:bg-white/10"}`}
           aria-label="Next month"
@@ -345,6 +292,7 @@ function TransactionsCalendar({
 
 export default function PawnTransactionsPage() {
   const { selectedBranch, branches, isAllBranches } = useBranch();
+  const requiresBranchSelection = selectedBranch.id === ALL_BRANCHES_OPTION.id;
   const searchParams = useSearchParams();
   const highlightTransactionNo = searchParams.get("transactionNo");
   const shouldHighlight = searchParams.get("highlightTransaction") === "true";
@@ -352,11 +300,11 @@ export default function PawnTransactionsPage() {
   const todayString = new Date().toISOString().split("T")[0];
 
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
-  const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedDate, setSelectedDate] = useState(() => todayString);
+  const [listDateFilter, setListDateFilter] = useState(() => todayString);
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [currentPage, setCurrentPage] = useState(1);
@@ -364,7 +312,6 @@ export default function PawnTransactionsPage() {
     useState<TransactionRow | null>(null);
   const [stats, setStats] = useState<TransactionStatsData>(EMPTY_STATS);
   const [isLoading, setIsLoading] = useState(true);
-  const [realtimeRefreshKey, setRealtimeRefreshKey] = useState(0);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
   const [reprintData, setReprintData] = useState<{
     firstName: string;
@@ -387,13 +334,21 @@ export default function PawnTransactionsPage() {
     branchName: string;
     branchAddress?: string;
     branchPhone?: string;
-    processedBy?: string;
   } | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    async function fetchSelectedDateTransactions() {
+    async function fetchTransactions() {
+      if (requiresBranchSelection) {
+        if (active) {
+          setTransactions([]);
+          setStats(EMPTY_STATS);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       setIsLoading(true);
 
       try {
@@ -450,6 +405,18 @@ export default function PawnTransactionsPage() {
         setTransactions((data.transactions || []).map(toTransactionRow));
         setStats(normalizedStats);
       } catch (error) {
+        if (
+          error instanceof ApiError &&
+          error.statusCode === 403 &&
+          /select a branch|starting balance/i.test(error.message)
+        ) {
+          if (active) {
+            setTransactions([]);
+            setStats(EMPTY_STATS);
+          }
+          return;
+        }
+
         console.error("Failed to load transactions:", error);
         if (active) {
           setTransactions([]);
@@ -462,57 +429,24 @@ export default function PawnTransactionsPage() {
       }
     }
 
-    void fetchSelectedDateTransactions();
+    void fetchTransactions();
 
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, selectedDate, isAllBranches, realtimeRefreshKey]);
+  }, [requiresBranchSelection, selectedBranch.id, selectedDate, isAllBranches]);
 
   useEffect(() => {
-    let active = true;
-
-    async function fetchCalendarTransactions() {
-      try {
-        const branchParam = isAllBranches
-          ? ""
-          : `branch=${encodeURIComponent(selectedBranch.id)}&`;
-        const data = await api.get<TransactionsResponse>(
-          `/transactions?${branchParam}range=all`,
-        );
-
-        if (!active) {
-          return;
-        }
-
-        setAllTransactions((data.transactions || []).map(toTransactionRow));
-      } catch (error) {
-        console.error("Failed to load calendar transactions:", error);
-        if (active) {
-          setAllTransactions([]);
-        }
-      }
+    if (viewMode === "list") {
+      setListDateFilter(selectedDate);
     }
-
-    void fetchCalendarTransactions();
-
-    return () => {
-      active = false;
-    };
-  }, [selectedBranch.id, isAllBranches, realtimeRefreshKey]);
-
-  useEffect(() => {
-    return subscribeToPawnTransactionNotifications(() => {
-      setRealtimeRefreshKey((value) => value + 1);
-    });
-  }, []);
+  }, [selectedDate, viewMode]);
 
   // When navigating from a notification, reset to today so the transaction is visible
   useEffect(() => {
     if (shouldHighlight && highlightTransactionNo) {
       setSelectedDate(new Date().toISOString().split("T")[0]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldHighlight, highlightTransactionNo]);
 
   // Scroll to and highlight the target transaction row after data loads
@@ -528,6 +462,7 @@ export default function PawnTransactionsPage() {
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesPurpose = purposeFilter === "All" || transaction.purpose === purposeFilter;
+    const matchesDate = viewMode !== "list" || !listDateFilter || transaction.date === listDateFilter;
     const query = search.trim().toLowerCase();
     const matchesSearch =
       query.length === 0 ||
@@ -538,7 +473,7 @@ export default function PawnTransactionsPage() {
       transaction.unitCode.toLowerCase().includes(query) ||
       transaction.details.toLowerCase().includes(query);
 
-    return matchesPurpose && matchesSearch;
+    return matchesPurpose && matchesDate && matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredTransactions.length / ITEMS_PER_PAGE);
@@ -548,21 +483,13 @@ export default function PawnTransactionsPage() {
   );
 
   // Build calendar data: count transactions per date for the visible month
-  const calendarData = useMemo(() => {
-    const counts: Record<string, number> = {};
-
-    for (const tx of allTransactions) {
-      const [yearStr, monthStr] = tx.date.split("-");
-      if (
-        Number(yearStr) === calendarYear &&
-        Number(monthStr) - 1 === calendarMonth
-      ) {
-        counts[tx.date] = (counts[tx.date] ?? 0) + 1;
-      }
+  const calendarData: Record<string, number> = {};
+  for (const tx of transactions) {
+    const [yearStr, monthStr] = tx.date.split("-");
+    if (Number(yearStr) === calendarYear && Number(monthStr) - 1 === calendarMonth) {
+      calendarData[tx.date] = (calendarData[tx.date] ?? 0) + 1;
     }
-
-    return counts;
-  }, [allTransactions, calendarMonth, calendarYear]);
+  }
 
   function handleExportCSV() {
     if (filteredTransactions.length === 0) {
@@ -630,97 +557,37 @@ export default function PawnTransactionsPage() {
   }, []);
 
   const handlePrintSlip = useCallback(
-    async (transaction: TransactionRow) => {
+    (transaction: TransactionRow) => {
       if (transaction.purpose !== "Pawn") {
         return;
       }
 
-      const hasMissingField = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
-      const needsEnrichment =
-        hasMissingField(transaction.serialNumber) ||
-        hasMissingField(transaction.itemsIncluded) ||
-        hasMissingField(transaction.condition) ||
-        hasMissingField(transaction.memoryStorage) ||
-        hasMissingField(transaction.customerAddress) ||
-        hasMissingField(transaction.customerName) ||
-        hasMissingField(transaction.createdByName);
-
-      let enriched: any = null;
-      let pawnSource: any = null;
-      if (transaction.relatedPawnedItemId && needsEnrichment) {
-        try {
-          enriched = await api.get<any>(`/inventory/pawned/${transaction.relatedPawnedItemId}`);
-        } catch {
-          enriched = null;
-        }
-      }
-      if (!enriched && transaction.unitCode && needsEnrichment) {
-        try {
-          enriched = await api.get<any>(`/inventory/item/${encodeURIComponent(transaction.unitCode)}`);
-        } catch {
-          enriched = null;
-        }
-      }
-      if (needsEnrichment) {
-        const params = transaction.relatedPawnedItemId
-          ? `relatedPawnedItemId=${encodeURIComponent(transaction.relatedPawnedItemId)}`
-          : transaction.unitCode
-            ? `unitCode=${encodeURIComponent(transaction.unitCode)}`
-            : "";
-        if (params) {
-          try {
-            pawnSource = await api.get<any>(`/transactions/pawn-source?${params}`);
-          } catch {
-            pawnSource = null;
-          }
-        }
-      }
-
-      const fullName = transaction.customerName || enriched?.customerName || "WALK-IN CUSTOMER";
-      const names = fullName.split(" ");
-      const firstName = names[0];
-      const middleName = transaction.customerMiddleName || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
-      const lastName = names.length > 1 ? names[names.length - 1] : "";
-
-      // Join address components for the MOA
-      const fullAddress = [
-        transaction.customerAddress || enriched?.customerAddress,
-        transaction.customerBarangay,
-        transaction.customerCity,
-        transaction.customerRegion
-      ].filter(Boolean).join(", ");
-
+      const names = (transaction.customerName || "WALK-IN CUSTOMER").split(" ");
       const branchInfo =
         branches.find((branch) => branch.id === transaction.branchId) ??
         selectedBranch;
 
       setReprintData({
-        firstName,
-        middleName,
-        lastName,
-        address: fullAddress,
-        contactNo: transaction.customerPhone || "",
-        unitCode: transaction.unitCode || "",
-        unitName: transaction.unit || enriched?.itemName || "",
-        category: transaction.category || "",
-        serialNumber: transaction.serialNumber || enriched?.serialNumber || pawnSource?.pawned_item?.serial_number || "",
-        itemsIncluded: transaction.itemsIncluded || enriched?.itemsIncluded || pawnSource?.pawned_item?.items_included || "",
-        condition: transaction.condition || enriched?.condition || pawnSource?.pawned_item?.condition || "",
-        remarks: transaction.remarks || transaction.notes || "",
-        memory: transaction.memoryStorage || enriched?.memoryStorage || pawnSource?.pawned_item?.memory_storage || "",
+        firstName: names[0] || "WALK-IN",
+        middleName: "",
+        lastName: names.length > 1 ? names.slice(1).join(" ") : "---",
+        address: transaction.customerAddress || "---",
+        contactNo: "---",
+        unitCode: transaction.unitCode || "---",
+        unitName: transaction.unit || "---",
+        category: transaction.category || "---",
+        serialNumber: transaction.serialNumber || "---",
+        itemsIncluded: transaction.itemsIncluded || "---",
+        condition: transaction.condition || "---",
+        remarks: transaction.remarks || transaction.notes || "---",
+        memory: transaction.memoryStorage || transaction.notes || "---",
         amount: transaction.pawn,
         storageFee: transaction.storage,
         purchasedDate: transaction.date,
-        idPresented: transaction.idPresented || enriched?.customerIdPresented || "",
+        idPresented: "---",
         branchName: branchInfo?.name || transaction.branch,
         branchAddress: branchInfo?.location || "",
         branchPhone: branchInfo?.phone || "",
-        processedBy:
-          transaction.createdByName ||
-          enriched?.created_by_user?.full_name ||
-          pawnSource?.created_by_user?.full_name ||
-          transaction.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() ||
-          "AUTHORIZED PERSONNEL",
       });
       setIsMoaReprintOpen(true);
     },
@@ -731,18 +598,9 @@ export default function PawnTransactionsPage() {
     <div className="space-y-4 pb-4 printable-area">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          body:not(.printing-moa-active) * { visibility: hidden; }
-          body:not(.printing-moa-active) .printable-area,
-          body:not(.printing-moa-active) .printable-area * {
-            visibility: visible !important;
-          }
-          .printable-area { 
-            position: relative !important; 
-            display: block !important; 
-            width: 100% !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
-          }
+          body * { visibility: hidden; }
+          .printable-area, .printable-area * { visibility: visible; }
+          .printable-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
           .header-print { background: #064e3b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important; padding: 40px 20px !important; text-align: center !important; margin-bottom: 30px !important; border-bottom: 8px solid #f59e0b !important; }
           .header-print h1 { margin: 0 !important; font-size: 32px !important; font-weight: 900 !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: white !important; }
           .header-print p { margin: 10px 0 0 !important; font-size: 14px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 4px !important; opacity: 0.9 !important; color: white !important; }
@@ -849,8 +707,14 @@ export default function PawnTransactionsPage() {
           </p>
         </div>
 
+        {requiresBranchSelection ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+            Select a branch to view pawn transactions.
+          </div>
+        ) : null}
+
         <BranchDaySessionToolbar
-          branchId={isAllBranches ? null : selectedBranch.id}
+          branchId={requiresBranchSelection || isAllBranches ? null : selectedBranch.id}
         />
         <TransactionStats data={stats} />
       </div>
@@ -867,12 +731,23 @@ export default function PawnTransactionsPage() {
             setViewMode(mode);
             setCurrentPage(1);
           }}
+          dateFilter={listDateFilter}
+          onDateFilterChange={(val) => {
+            if (val && val > todayString) {
+              return;
+            }
+            setListDateFilter(val);
+            if (val) {
+              setSelectedDate(val);
+            }
+            setCurrentPage(1);
+          }}
           onExportCSV={handleExportCSV}
           onPrintReport={handlePrintReport}
         />
       </div>
 
-      {viewMode === "calendar" && (
+      {!requiresBranchSelection && viewMode === "calendar" && (
         <div className="print-hide">
           <TransactionsCalendar
             calendarData={calendarData}
@@ -892,6 +767,7 @@ export default function PawnTransactionsPage() {
         </div>
       )}
 
+      {!requiresBranchSelection ? (
       <div className="print-hide">
         <TransactionTable
           isLoading={isLoading}
@@ -903,8 +779,9 @@ export default function PawnTransactionsPage() {
           isToday={selectedDate === new Date().toISOString().split("T")[0]}
         />
       </div>
+      ) : null}
 
-      {totalPages > 1 ? (
+      {!requiresBranchSelection && totalPages > 1 ? (
         <div className="print-hide">
           <PaginationFooter
             currentPage={currentPage}
