@@ -112,10 +112,7 @@ export function CustomerTable() {
       baseColumns.push({ key: "branch", label: "Branch" });
     }
 
-    baseColumns.push(
-      { key: "registered", label: "Registered" },
-      { key: "actions", label: "Actions", align: "center" },
-    );
+    baseColumns.push({ key: "registered", label: "Registered" });
 
     return baseColumns;
   }, [isAllBranches]);
@@ -162,21 +159,7 @@ export function CustomerTable() {
     return () => {
       cancelled = true;
     };
-  }, [branchNames, isAllBranches, selectedBranch.id]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedBranch.id, isAllBranches]);
-
-  const totalPages = Math.max(1, Math.ceil(customers.length / ITEMS_PER_PAGE));
-  const currentPageSafe = Math.min(currentPage, totalPages);
-  const pageStart = (currentPageSafe - 1) * ITEMS_PER_PAGE;
-  const pageCustomers = customers.slice(pageStart, pageStart + ITEMS_PER_PAGE);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
   }, [currentPage, totalPages]);
 
   return (

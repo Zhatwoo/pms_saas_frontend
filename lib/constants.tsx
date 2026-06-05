@@ -11,6 +11,7 @@ import {
   SettingsIcon,
   AuditLogIcon,
   IncidentReportIcon,
+  DeviceIcon,
 } from "@/lib/icons";
 
 export const APP_NAME = "Pawnshop Management System";
@@ -62,6 +63,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
         ],
       },
       { label: "Employee Management", href: "/users", icon: <UserManagementIcon /> },
+      { label: "Device Management", href: "/devices", icon: <DeviceIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
     ],
@@ -100,6 +102,8 @@ const ADMIN_NAV: NavGroup[] = [
     section: "ADMIN",
     items: [
       { label: "Customers", href: "/admin/customers", icon: <CustomersIcon /> },
+      { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
+      { label: "Incident Report", href: "/admin/incident-report", icon: <IncidentReportIcon /> },
       {
         label: "Branch Management",
         href: "/admin/branches",
@@ -109,8 +113,6 @@ const ADMIN_NAV: NavGroup[] = [
           { label: "Finance", href: "/admin/branch-finance" },
         ],
       },
-      { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
-      { label: "Incident Report", href: "/admin/incident-report", icon: <IncidentReportIcon /> },
       { label: "Employee Management", href: "/admin/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/admin/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/admin/audit-logs", icon: <AuditLogIcon /> },
@@ -132,9 +134,8 @@ const BRANCH_NAV: NavGroup[] = [
     ],
   },
   {
-    section: "MANAGEMENT",
+    section: "INVENTORY",
     items: [
-      { label: "Customers", href: "/employee/customers", icon: <CustomersIcon /> },
       {
         label: "Inventory",
         href: "/employee/inventory",
@@ -145,8 +146,14 @@ const BRANCH_NAV: NavGroup[] = [
         ],
       },
       { label: "Expiration Monitoring", href: "/employee/expiration-monitoring", icon: <ExpirationIcon /> },
-      { label: "Branch Finance", href: "/employee/branch-finance", icon: <ReportsIcon /> },
+    ],
+  },
+  {
+    section: "MANAGEMENT",
+    items: [
+      { label: "Customers", href: "/employee/customers", icon: <CustomersIcon /> },
       { label: "Incident Report", href: "/employee/incident-report", icon: <IncidentReportIcon /> },
+      { label: "Branch Finance", href: "/employee/branch-finance", icon: <ReportsIcon /> },
     ],
   },
   {

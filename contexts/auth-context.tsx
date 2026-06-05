@@ -17,11 +17,12 @@ import { SessionExpiredModal } from "@/components/ui/session-expired-modal";
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, deviceFingerprint?: string) => Promise<User>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
   isSessionExpiryActive: boolean;
   requireReLogin: (message?: string) => void;
+  forceLogoutToLogin: (message?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -43,6 +44,12 @@ function rememberedSessionCookie(maxAge: number) {
 
 function clearRememberedSessionCookie() {
   return `pms_was_logged_in=; path=/; max-age=0; samesite=lax${cookieSecuritySuffix()}`;
+}
+
+function isAuthRefreshGraceActive() {
+  const rawUntil = sessionStorage.getItem("pms_auth_refresh_grace_until");
+  const until = rawUntil ? Number(rawUntil) : 0;
+  return Number.isFinite(until) && Date.now() < until;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -123,6 +130,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, SESSION_REDIRECT_DELAY_MS);
   }, [clearSession, clearSessionExpiryTimers, redirectToLogin]);
 
+  const forceLogoutToLogin = useCallback((message?: string) => {
+    if (typeof window === "undefined") return;
+
+    clearSessionExpiryTimers();
+    clearSession(true);
+    void api.post("/auth/logout", {}).finally(() => {
+      const params = new URLSearchParams();
+      if (message?.trim()) {
+        params.set("notice", message.trim());
+      }
+      window.location.href = `/login${params.toString() ? `?${params.toString()}` : ""}`;
+    });
+  }, [clearSession, clearSessionExpiryTimers]);
+
   const refreshProfile = useCallback(async (options?: RefreshProfileOptions) => {
     if (isRefreshingRef.current) return;
     isRefreshingRef.current = true;
@@ -138,6 +159,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearSession(false);
       }
     } catch (err) {
+      if (isAuthRefreshGraceActive()) {
+        console.warn("[AuthContext] Profile refresh paused while auth cookie is being refreshed.");
+        return;
+      }
       clearSession(false);
       console.warn("[AuthContext] Failed to refresh profile:", err);
     } finally {
@@ -147,6 +172,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleSessionExpired = (event: Event) => {
+      if (isAuthRefreshGraceActive()) return;
+
       const detail =
         event instanceof CustomEvent
           ? (event.detail as { message?: string } | undefined)
@@ -181,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
     if (pathname.startsWith("/login")) return;
     if (user) return;
+    if (isAuthRefreshGraceActive()) return;
 
     const hadPreviousSession = document.cookie.includes("pms_was_logged_in=1");
 
@@ -195,10 +223,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [clearSessionExpiryTimers]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, deviceFingerprint?: string) => {
     const data = await api.post<{ user: User }>(
       "/auth/login",
-      { email, password },
+      { email, password, ...(deviceFingerprint ? { deviceFingerprint } : {}) },
     );
 
     const normalizedUser = normalizeUser(data.user);
@@ -243,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshProfile,
         isSessionExpiryActive,
         requireReLogin,
+        forceLogoutToLogin,
       }}
     >
       {children}

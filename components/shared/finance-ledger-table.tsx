@@ -374,17 +374,76 @@ interface FinanceSummaryCardsProps {
 const BREAKDOWN_ITEMS: {
   key: keyof FinanceSummaryBreakdown;
   label: string;
-  color: string;
   direction: "in" | "out" | "neutral";
+  cardClass: string;
+  labelClass: string;
+  valueClass: string;
+  barClass: string;
 }[] = [
-    { key: "pawnOut", label: "Pawn Out", color: "text-orange-300", direction: "out" },
-    { key: "redeemIn", label: "Redeem", color: "text-cyan-300", direction: "in" },
-    { key: "buyBackIn", label: "Buy Back", color: "text-blue-300", direction: "in" },
-    { key: "renewalIn", label: "Renewals", color: "text-teal-300", direction: "in" },
-    { key: "saleIn", label: "Sales", color: "text-purple-300", direction: "in" },
-    { key: "fundTransferIn", label: "Fund In", color: "text-emerald-300", direction: "in" },
-    { key: "fundTransferOut", label: "Fund Out", color: "text-red-300", direction: "out" },
-  ];
+  {
+    key: "pawnOut",
+    label: "Pawn Out",
+    direction: "out",
+    cardClass: "border-orange-500/30 bg-orange-50/50 dark:bg-orange-950/40",
+    labelClass: "text-orange-700 dark:text-orange-300",
+    valueClass: "text-orange-700 dark:text-orange-300",
+    barClass: "bg-orange-500",
+  },
+  {
+    key: "redeemIn",
+    label: "Redeem",
+    direction: "in",
+    cardClass: "border-cyan-500/30 bg-cyan-50/50 dark:bg-cyan-950/40",
+    labelClass: "text-cyan-700 dark:text-cyan-300",
+    valueClass: "text-cyan-700 dark:text-cyan-300",
+    barClass: "bg-cyan-500",
+  },
+  {
+    key: "buyBackIn",
+    label: "Buy Back",
+    direction: "in",
+    cardClass: "border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/40",
+    labelClass: "text-blue-700 dark:text-blue-300",
+    valueClass: "text-blue-700 dark:text-blue-300",
+    barClass: "bg-blue-500",
+  },
+  {
+    key: "renewalIn",
+    label: "Renewals",
+    direction: "in",
+    cardClass: "border-teal-500/30 bg-teal-50/50 dark:bg-teal-950/40",
+    labelClass: "text-teal-700 dark:text-teal-300",
+    valueClass: "text-teal-700 dark:text-teal-300",
+    barClass: "bg-teal-500",
+  },
+  {
+    key: "saleIn",
+    label: "Sales",
+    direction: "in",
+    cardClass: "border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/40",
+    labelClass: "text-purple-700 dark:text-purple-300",
+    valueClass: "text-purple-700 dark:text-purple-300",
+    barClass: "bg-purple-500",
+  },
+  {
+    key: "fundTransferIn",
+    label: "Fund In",
+    direction: "in",
+    cardClass: "border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/40",
+    labelClass: "text-emerald-700 dark:text-emerald-300",
+    valueClass: "text-emerald-700 dark:text-emerald-300",
+    barClass: "bg-emerald-500",
+  },
+  {
+    key: "fundTransferOut",
+    label: "Fund Out",
+    direction: "out",
+    cardClass: "border-red-500/30 bg-red-50/50 dark:bg-red-950/40",
+    labelClass: "text-red-700 dark:text-red-300",
+    valueClass: "text-red-700 dark:text-red-300",
+    barClass: "bg-red-500",
+  },
+];
 
 export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: FinanceSummaryCardsProps) {
   return (
@@ -421,18 +480,18 @@ export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: Fi
         const val = breakdown[item.key];
         if (val === 0) return null;
 
-        // Map colors to more vibrant versions for the premium look
-        const colorClass = item.color.replace('text-', 'text-').replace('-300', '-600 dark:text-').replace('-300', '-400');
-        const borderClass = item.color.replace('text-', 'border-').replace('-300', '-500/20');
-        const bgClass = item.color.replace('text-', 'bg-').replace('-300', '-50/50 dark:bg-').replace('-300', '-900/10');
-
         return (
-          <div key={item.key} className={`group relative overflow-hidden rounded-xl border ${borderClass} ${bgClass} p-4 transition-all hover:shadow-md`}>
-            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{item.label}</p>
-            <p className={`mt-2 text-lg font-black truncate ${colorClass}`}>
+          <div
+            key={item.key}
+            className={`group relative overflow-hidden rounded-xl border p-4 transition-all hover:shadow-md ${item.cardClass}`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest ${item.labelClass}`}>
+              {item.label}
+            </p>
+            <p className={`mt-2 text-lg font-black truncate ${item.valueClass}`}>
               {item.direction === "out" ? "-" : "+"}{fmt(val)}
             </p>
-            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-20 ${item.color.replace('text-', 'bg-')}`} />
+            <div className={`absolute bottom-0 left-0 h-1 w-full opacity-20 ${item.barClass}`} />
           </div>
         );
       })}

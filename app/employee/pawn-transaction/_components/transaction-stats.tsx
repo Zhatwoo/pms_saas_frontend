@@ -100,21 +100,7 @@ const transferIcon = (
   </svg>
 );
 
-const balanceIcon = (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
-);
+const balanceIcon = <span className="text-lg font-black leading-none">₱</span>;
 
 export interface TransactionStatsData {
   pawnedToday: number;
@@ -177,11 +163,11 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         borderColor="bg-orange-500"
       />
       
-      <div className="flex flex-col justify-between rounded-lg border border-border-main bg-surface p-3 shadow-sm transition-colors duration-300">
+      <div className="flex flex-col justify-between overflow-hidden rounded-lg border border-border-main bg-surface p-3 shadow-sm transition-colors duration-300">
         <div className="mb-2 h-1 w-full rounded-full bg-emerald-900 dark:bg-emerald-500" />
 
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start xl:items-center justify-between gap-2 min-w-0">
+          <div className="min-w-0">
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
               Starting balance
             </p>
@@ -189,15 +175,15 @@ export function TransactionStats({ data }: TransactionStatsProps) {
               {formatPeso(data?.startingBalance ?? 0)}
             </p>
           </div>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
+          <div className="flex h-8 w-8 xl:h-6 xl:w-6 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
             {balanceIcon}
           </div>
         </div>
 
         <div className="my-2 border-t border-dashed border-border-subtle" />
 
-        <div className="flex items-end justify-between">
-          <div className="text-right w-full">
+        <div className="flex items-end xl:items-center justify-between min-w-0">
+          <div className="text-right w-full min-w-0">
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
               Ending balance
             </p>

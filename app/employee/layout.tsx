@@ -12,6 +12,7 @@ import {
   useOpeningChecklist,
 } from "@/contexts/opening-checklist-context";
 import { OpeningChecklistWrapper } from "@/components/shared/opening-checklist-wrapper";
+import { api } from "@/lib/api";
 
 function EmployeeLayoutInner({
   children,
@@ -24,6 +25,18 @@ function EmployeeLayoutInner({
   const router = useRouter();
 
   const isLoading = isAuthLoading;
+
+  useEffect(() => {
+    if (user) {
+      api.get("/settings/interest_rates")
+        .then((data) => {
+          if (data && Array.isArray(data)) {
+            localStorage.setItem("interest_rates", JSON.stringify(data));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -76,7 +89,6 @@ function EmployeeLayoutInner({
       branchName={selectedBranch.name}
       hideBranchSelector={true}
     >
-      <OpeningChecklistWrapper />
       {children}
     </AppLayout>
   );

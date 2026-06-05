@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
+import { toast } from "sonner";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
+import { ActionButton } from "@/components/shared/action-button";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
+import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
 
 const sendIcon = (
   <svg
@@ -68,6 +72,10 @@ function ExpirationMonitoringPageContent() {
   const [renewingItemId, setRenewingItemId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const canRenew = user?.role === "admin" || user?.role === "employee";
+  const userRole = user?.role || "employee";
+  const canExpire = userRole === "admin" || userRole === "super_admin";
+  const [confirmExpireId, setConfirmExpireId] = useState<string | null>(null);
+  const [isExpiring, setIsExpiring] = useState(false);
 
   const [stats, setStats] = useState({
     overdue: 0,
@@ -88,8 +96,7 @@ function ExpirationMonitoringPageContent() {
     thirtyDays: [],
   });
 
-  useEffect(() => {
-    async function fetchExpirationData() {
+  const fetchExpirationData = useCallback(async () => {
       setIsLoading(true);
       try {
         const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
@@ -106,9 +113,17 @@ function ExpirationMonitoringPageContent() {
         setIsLoading(false);
         setHasLoadedData(true);
       }
-    }
-    fetchExpirationData();
   }, [selectedBranch.id, isAllBranches]);
+
+  useEffect(() => {
+    void fetchExpirationData();
+  }, [fetchExpirationData]);
+
+  useEffect(() => {
+    return subscribeToExpirationAlertNotifications(() => {
+      void fetchExpirationData();
+    });
+  }, [fetchExpirationData]);
 
   useEffect(() => {
     if (highlightTicketNo && highlightTransaction === "true" && buckets) {
@@ -184,6 +199,10 @@ function ExpirationMonitoringPageContent() {
     router.push(`/employee/pawn-transaction?action=renew&ticketNo=${encodeURIComponent(ticketNo)}`);
   };
 
+  const handleExpire = (id: string) => {
+    setConfirmExpireId(id);
+  };
+
   return (
     <div className="space-y-5">
       {toast ? (
@@ -197,16 +216,15 @@ function ExpirationMonitoringPageContent() {
             Track contracts nearing expiration and overdue items
           </p>
         </div>
-        <button
-          type="button"
+        <ActionButton
           onClick={handleBlastEmail}
           disabled={isBlastSending}
-          className="flex h-11 flex-none items-center justify-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-sm font-bold text-amber-400 shadow-sm transition-all hover:opacity-90"
+          variant="success"
+          leftIcon={sendIcon}
           title="Send mass email to all customers with nearing expirations"
         >
-          <span className="text-amber-400">{sendIcon}</span>
           {isBlastSending ? "Sending..." : "Instant Email Blast"}
-        </button>
+        </ActionButton>
       </div>
 
       <ExpirationStats data={stats} isLoading={isLoading && !hasLoadedData} />
@@ -222,8 +240,34 @@ function ExpirationMonitoringPageContent() {
         sendingItemId={sendingItemId}
         onRenew={handleRenew}
         renewingItemId={renewingItemId}
+        onExpire={handleExpire}
+        expiringItemId={confirmExpireId}
         canRenew={canRenew}
+        canExpire={canExpire}
         highlightTicketNo={highlightTicketNo}
+      />
+
+      <ConfirmActionModal
+        isOpen={confirmExpireId !== null}
+        title="Mark as expired?"
+        message="This item will be marked expired and auto-transferred to Items For Sale."
+        confirmLabel={isExpiring ? "Expiring..." : "Yes, mark expired"}
+        variant="warning"
+        onClose={() => setConfirmExpireId(null)}
+        onConfirm={async () => {
+          if (!confirmExpireId) return;
+          setIsExpiring(true);
+          try {
+            await api.post(`/inventory/pawned/${confirmExpireId}/expire`, {});
+            toast.success("Item marked as expired.");
+            setConfirmExpireId(null);
+            void fetchExpirationData();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to expire item.");
+          } finally {
+            setIsExpiring(false);
+          }
+        }}
       />
     </div>
   );

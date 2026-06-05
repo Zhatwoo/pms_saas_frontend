@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
+import { fetchCategories } from "@/lib/categories";
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -32,6 +33,21 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
   });
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      try {
+        const cats = await fetchCategories();
+        setCategoriesList(cats.map(c => c.name));
+      } catch (err) {
+        console.error("Error loading categories:", err);
+      }
+    }
+    if (isOpen) {
+      load();
+    }
+  }, [isOpen]);
+
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [generatedItemId, setGeneratedItemId] = useState<string>("");
 
@@ -160,14 +176,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                   className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-emerald-500 cursor-pointer appearance-none dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
                 >
                   <option value="">-- Select Category --</option>
-                  <option value="Jewelry">Jewelry</option>
-                  <option value="Smartphone">Smartphone</option>
-                  <option value="Laptop & PC">Laptop & PC</option>
-                  <option value="Appliances">Appliances</option>
-                  <option value="Gaming Console">Gaming Console</option>
-                  <option value="Camera">Camera</option>
-                  <option value="Smartwatch">Smartwatch</option>
-                  <option value="Audio and Earphone">Audio and Earphone</option>
+                  {categoriesList.map((catName) => (
+                    <option key={catName} value={catName}>
+                      {catName}
+                    </option>
+                  ))}
                   <option value="Others">Others</option>
                 </select>
               </div>

@@ -47,7 +47,7 @@ export function BranchDaySessionToolbar({
 }: BranchDaySessionToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   /** Employee layout wraps `OpeningChecklistProvider`; admin/super-admin shells do not — skip gating then. */
   const openingChecklist = useOptionalOpeningChecklist();
   const currentStep = openingChecklist?.currentStep ?? "COMPLETED";
@@ -84,11 +84,11 @@ export function BranchDaySessionToolbar({
     } finally {
       setLoading(false);
     }
-  }, [branchId, visible]);
+  }, [branchId, visible, user?.id]);
 
   useEffect(() => {
     lastResolvedExpectedCash.current = null;
-  }, [branchId]);
+  }, [branchId, user?.id]);
 
   useEffect(() => {
     if (loading) return;
@@ -97,10 +97,7 @@ export function BranchDaySessionToolbar({
       lastResolvedExpectedCash.current = String(pending);
       return;
     }
-    const fromLatest = Math.max(
-      Number(session?.latestBalance?.startingBalance ?? 0),
-      Number(session?.latestBalance?.endingBalance ?? 0),
-    );
+    const fromLatest = Number(session?.latestBalance?.endingBalance ?? 0);
     if (Number.isFinite(fromLatest)) {
       lastResolvedExpectedCash.current = String(fromLatest);
     }
@@ -128,12 +125,7 @@ export function BranchDaySessionToolbar({
       ? String(
           session.pendingStartingSession.suggestedStartingBalance ?? 0,
         )
-      : String(
-          Math.max(
-            Number(session?.latestBalance?.startingBalance ?? 0),
-            Number(session?.latestBalance?.endingBalance ?? 0),
-          ),
-        );
+      : String(Number(session?.latestBalance?.endingBalance ?? 0));
 
   const expectedCashForModal =
     startOpen &&

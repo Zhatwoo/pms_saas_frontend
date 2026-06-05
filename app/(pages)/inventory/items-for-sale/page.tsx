@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { formatPeso } from '@/lib/currency';
 import { api } from "@/lib/api";
+import { fetchCategories } from "@/lib/categories";
 import { ActionButton } from "@/components/shared/action-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -69,7 +70,7 @@ interface CalendarDayData {
   sold?: number;
 }
 
-const categoryOptions = [
+const categoryOptions_legacy = [
   { value: "all", label: "All" },
   { value: "electronics", label: "Electronics" },
   { value: "jewellery", label: "Jewellery" },
@@ -136,6 +137,24 @@ export default function ItemsForSalePage() {
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      try {
+        const cats = await fetchCategories();
+        setCategoriesList(cats.map((c) => c.name));
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedSaleItem, setSelectedSaleItem] = useState<SaleItem | null>(null);
 
@@ -172,7 +191,6 @@ export default function ItemsForSalePage() {
         if (viewMode === "list") {
           if (category !== "all") params.set("category", category);
           if (searchQuery) params.set("search", searchQuery);
-          if (selectedDate) params.set("date", selectedDate);
           params.set("page", String(currentPage));
           params.set("limit", String(itemsPerPage));
 
@@ -291,32 +309,13 @@ export default function ItemsForSalePage() {
               className="h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
             />
           </div>
-          {viewMode === "list" && (
-            <div className="flex flex-col gap-1">
-              <label className={toolbarLabelClass}>Date</label>
-              <div className="relative flex items-center">
-                <input
-                  type="date"
-                  value={selectedDate || ""}
-                  max={todayString}
-                  onChange={(e) => setSelectedDate(e.target.value || null)}
-                  className="h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 pr-8"
-                />
-                {selectedDate && (
-                  <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
         <div className="flex items-center gap-3">
           {user?.role === "super_admin" && (
             <ActionButton
-              variant="outline"
+              variant="success"
               onClick={() => setIsAddModalOpen(true)}
-              className="border-emerald-700 bg-surface-secondary text-white shadow-sm hover:bg-emerald-700 hover:text-white dark:bg-zinc-900 dark:text-white"
+              className="!border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 hover:!text-white dark:!bg-emerald-700 dark:!text-white"
             >
               <span className="flex items-center gap-1.5">
                 {plusIcon}

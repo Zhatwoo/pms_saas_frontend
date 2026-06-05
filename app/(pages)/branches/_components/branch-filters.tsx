@@ -1,6 +1,7 @@
 "use client";
 
 import { FilterSelect } from "@/components/shared/filter-select";
+import { ActionButton } from "@/components/shared/action-button";
 
 const statusOptions = [
   { value: "all", label: "All Statuses" },
@@ -62,9 +63,11 @@ export function BranchFilters({
         </div>
       </div>
       {onCreateBranch && (
-        <button
+        <ActionButton
           onClick={onCreateBranch}
-          className="ml-auto flex h-11 items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-pawn-sidebar px-5 py-2.5 text-base font-bold text-amber-400 transition-opacity hover:opacity-90"
+          variant="primary"
+          size="lg"
+          className="ml-auto"
         >
           <svg
             width="14"
@@ -80,7 +83,7 @@ export function BranchFilters({
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Create Branch
-        </button>
+        </ActionButton>
       )}
     </div>
   );

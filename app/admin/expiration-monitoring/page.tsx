@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
+import { useAuth } from "@/contexts/auth-context";
+import { ActionButton } from "@/components/shared/action-button";
 import { ExpirationStats } from "./_components/expiration-stats";
 import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
+import { RenewModal } from "./_components/expiration-renew-modal";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
+import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
 
 const sendIcon = (
   <svg
@@ -55,8 +60,14 @@ interface ExpirationMonitoringResponse {
 function ExpirationMonitoringPageContent() {
   const [activeTab, setActiveTab] = useState("30days");
   const { selectedBranch, isAllBranches } = useBranch();
+  const { user } = useAuth();
+  const userRole = user?.role || "employee";
+  const canExpire = userRole === "admin" || userRole === "super_admin";
+
   const [isLoading, setIsLoading] = useState(true);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const highlightTicketNo = searchParams?.get("ticketNo");
   const highlightTransaction = searchParams?.get("highlightTransaction");
 
@@ -82,27 +93,39 @@ function ExpirationMonitoringPageContent() {
   const [isBlasting, setIsBlasting] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [renewingId, setRenewingId] = useState<string | null>(null);
+  const [confirmExpireId, setConfirmExpireId] = useState<string | null>(null);
+  const [isExpiring, setIsExpiring] = useState(false);
+  
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const [selectedRenewTicketNo, setSelectedRenewTicketNo] = useState<string | null>(null);
+
+  const fetchExpirationData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
+      const data = await api.get<ExpirationMonitoringResponse>(
+        `/dashboard/expiration-monitoring${query}`
+      );
+      if (data) {
+        setStats(data.stats);
+        setBuckets(data.buckets);
+      }
+    } catch (error) {
+      console.error("Failed to load expiration monitoring data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedBranch.id, isAllBranches]);
 
   useEffect(() => {
-    async function fetchExpirationData() {
-      setIsLoading(true);
-      try {
-        const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-        const data = await api.get<ExpirationMonitoringResponse>(
-          `/dashboard/expiration-monitoring${query}`
-        );
-        if (data) {
-          setStats(data.stats);
-          setBuckets(data.buckets);
-        }
-      } catch (error) {
-        console.error("Failed to load expiration monitoring data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchExpirationData();
-  }, [selectedBranch.id, isAllBranches]);
+    void fetchExpirationData();
+  }, [fetchExpirationData]);
+
+  useEffect(() => {
+    return subscribeToExpirationAlertNotifications(() => {
+      void fetchExpirationData();
+    });
+  }, [fetchExpirationData]);
 
   useEffect(() => {
     if (highlightTicketNo && highlightTransaction === "true" && buckets) {
@@ -167,28 +190,16 @@ function ExpirationMonitoringPageContent() {
     }
   };
 
-  const handleRenew = async (id: string) => {
-    setRenewingId(id);
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      await api.post(`/inventory/pawned/${id}/renew`, {
-        renewal_date: today,
-        amount_paid: 0,
-      });
-      toast.success("Item renewed successfully.");
-      const query = isAllBranches ? "" : `?branch=${encodeURIComponent(selectedBranch.id)}`;
-      const data = await api.get<ExpirationMonitoringResponse>(
-        `/dashboard/expiration-monitoring${query}`
-      );
-      if (data) {
-        setStats(data.stats);
-        setBuckets(data.buckets);
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to renew item.");
-    } finally {
-      setRenewingId(null);
+  const handleRenew = (id: string) => {
+    const item = getActiveItems().find(i => i.id === id);
+    if (item) {
+      setSelectedRenewTicketNo(item.ticketNo);
+      setIsRenewModalOpen(true);
     }
+  };
+
+  const handleExpire = (id: string) => {
+    setConfirmExpireId(id);
   };
 
   return (
@@ -199,25 +210,16 @@ function ExpirationMonitoringPageContent() {
             Track contracts nearing expiration and overdue items
           </p>
         </div>
-        <button
-          type="button"
+        <ActionButton
           disabled={isBlasting || getActiveItems().length === 0}
           onClick={handleEmailBlast}
-          className={`flex flex-none items-center justify-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 px-5 py-2.5 text-sm font-bold shadow-sm transition-all ${
-            isBlasting || getActiveItems().length === 0
-              ? "bg-pawn-sidebar/50 text-amber-400/50 cursor-not-allowed"
-              : "bg-pawn-sidebar text-amber-400 hover:opacity-90"
-          }`}
+          variant="success"
+          leftIcon={sendIcon}
+          loading={isBlasting}
           title="Send mass email to all customers with nearing expirations"
         >
-          {isBlasting ? (
-            <svg className="h-4 w-4 animate-spin text-amber-400" viewBox="0 0 24 24" fill="none">
-               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          ) : sendIcon}
           {isBlasting ? "Sending Blast..." : "Instant Email Blast"}
-        </button>
+        </ActionButton>
       </div>
 
       <ExpirationStats data={stats} isLoading={isLoading} />
@@ -231,9 +233,47 @@ function ExpirationMonitoringPageContent() {
         isLoading={isLoading} 
         sendingId={sendingId}
         renewingId={renewingId}
+        expiringId={confirmExpireId}
         onSendEmail={handleSendEmail}
         onRenew={handleRenew}
+        onExpire={handleExpire}
+        canExpire={canExpire}
         highlightTicketNo={highlightTicketNo}
+      />
+      
+      <RenewModal
+        isOpen={isRenewModalOpen}
+        onClose={() => {
+          setIsRenewModalOpen(false);
+          setSelectedRenewTicketNo(null);
+        }}
+        branchName={selectedBranch.name || "Main Branch"}
+        branchId={selectedBranch.id}
+        onSuccess={fetchExpirationData}
+        initialSearchCode={selectedRenewTicketNo || ""}
+      />
+
+      <ConfirmActionModal
+        isOpen={confirmExpireId !== null}
+        title="Mark as expired?"
+        message="This item will be marked expired and auto-transferred to Items For Sale."
+        confirmLabel={isExpiring ? "Expiring..." : "Yes, mark expired"}
+        variant="warning"
+        onClose={() => setConfirmExpireId(null)}
+        onConfirm={async () => {
+          if (!confirmExpireId) return;
+          setIsExpiring(true);
+          try {
+            await api.post(`/inventory/pawned/${confirmExpireId}/expire`, {});
+            toast.success("Item marked as expired.");
+            setConfirmExpireId(null);
+            void fetchExpirationData();
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to expire item.");
+          } finally {
+            setIsExpiring(false);
+          }
+        }}
       />
     </div>
   );

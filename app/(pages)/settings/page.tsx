@@ -1,10 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+import { ActionButton } from "@/components/shared/action-button";
+import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
+import { InterestRatesSettings } from "./_components/interest-rates-settings";
+import CategoriesSettings from "./_components/categories-settings";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -78,12 +83,25 @@ const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every T
 9. Representative's signature is required when authorization from owner is used.
 10. Seller confirms ownership and freedom from liens and encumbrances.`;
 
+function normalizeMoaTerms(value?: string | null) {
+  const trimmed = value?.trim() ?? "";
+  if (trimmed.length < 80) {
+    return DEFAULT_TERMS_TEXT;
+  }
+  return trimmed;
+}
+
 export default function SettingsPage() {
   const { user, refreshProfile } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  const [activeTab, setActiveTab] = useState("Profile");
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [avatarToast, setAvatarToast] = useState<string | null>(null);
+  const [profileToast, setProfileToast] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileFullName, setProfileFullName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
   
   const [isMoaEditMode, setIsMoaEditMode] = useState(false);
   const [isMoaLocked, setIsMoaLocked] = useState(false);
@@ -175,14 +193,28 @@ export default function SettingsPage() {
   });
   
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [settingsSavedAt, setSettingsSavedAt] = useState<string | null>(null);
+  // Shop settings edit mode states
+  const [isShopEditMode, setIsShopEditMode] = useState(false);
+  const [tempShopSettings, setTempShopSettings] = useState({
+    shopName: "JCLB BUY BACK SHOP",
+    shopAddress: "123 Main Street, Manila, Philippines",
+    phoneNumber: "+63 2 1234 5678",
+    email: "info@jclbbuyback.com",
+  });
 
-  const adminInitials = (user?.fullName || "Admin")
+  const adminInitials = (profileFullName || user?.fullName || "Admin")
     .split(" ")
     .map((part) => part[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  useEffect(() => {
+    if (user) {
+      setProfileFullName(user.fullName || "");
+      setProfileEmail(user.email || "");
+    }
+  }, [user]);
 
   useEffect(() => {
     async function fetchMoaTemplate() {
@@ -194,7 +226,7 @@ export default function SettingsPage() {
           extensionRows?: ExtensionRow[];
         }>(`/settings/moa_template`);
         if (data) {
-          if (data.terms_text) setTermsText(data.terms_text);
+          setTermsText(normalizeMoaTerms(data.terms_text));
           if (data.labels && typeof data.labels === "object") {
             setTopLabels((prev) => ({ ...prev, ...data.labels }));
           }
@@ -213,10 +245,13 @@ export default function SettingsPage() {
       try {
         const data = await api.get<{ shopInfo: typeof shopSettings; policies: typeof policies }>('/settings/general');
         if (data) {
-          if (data.shopInfo) setShopSettings(data.shopInfo);
+          if (data.shopInfo) {
+            setShopSettings(data.shopInfo);
+            setTempShopSettings(data.shopInfo);
+          }
           if (data.policies) setPolicies(data.policies);
         }
-      } catch (error) {
+      } catch {
         console.warn("Failed to fetch settings, using defaults.");
       }
     }
@@ -225,17 +260,17 @@ export default function SettingsPage() {
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+  const resolvedTermsText = normalizeMoaTerms(termsText);
 
   // Uncontrolled ref for the Terms editor — avoids cursor-jump on every keystroke
   const termsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (termsRef.current && termsText) {
-      if (termsRef.current.innerText !== termsText) {
-        termsRef.current.innerText = termsText;
+    if (termsRef.current) {
+      if (termsRef.current.innerText !== resolvedTermsText) {
+        termsRef.current.innerText = resolvedTermsText;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termsText]);
+  }, [activeTab, resolvedTermsText]);
 
   // Line widths state — keyed by fieldKey, persisted with MOA template save
   const [lineWidths, setLineWidths] = useState<Record<string, number>>({});
@@ -276,24 +311,25 @@ export default function SettingsPage() {
     );
   };
 
-  const handleShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
-    setShopSettings((prev) => ({ ...prev, [field]: value }));
+  const handleTempShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
+    setTempShopSettings((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePolicyChange = (field: keyof typeof policies, value: string) => {
-    setPolicies((prev) => ({ ...prev, [field]: value }));
+  const handleCancelShopEdit = () => {
+    setIsShopEditMode(false);
+    setTempShopSettings(shopSettings);
   };
 
-  const handleSaveAllSettings = async () => {
+  const handleSaveShopEdit = async () => {
     if (!isSuperAdmin) {
       alert("Only Super Admins can save these settings.");
       return;
     }
     setIsSavingSettings(true);
     try {
-      await api.post('/settings/general', { shopInfo: shopSettings, policies });
-      setSettingsSavedAt(new Date().toLocaleString());
-      setTimeout(() => setSettingsSavedAt(null), 3000);
+      await api.post('/settings/general', { shopInfo: tempShopSettings, policies });
+      setShopSettings(tempShopSettings);
+      setIsShopEditMode(false);
     } catch (e) {
       console.error(e);
       alert("Failed to save settings");
@@ -302,10 +338,32 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+    setProfileToast(null);
+    try {
+      await api.patch("/auth/profile", { fullName: profileFullName });
+      await refreshProfile();
+      setProfileToast("Profile updated successfully.");
+      setTimeout(() => setProfileToast(null), 3000);
+    } catch (error) {
+      setProfileToast(error instanceof Error ? error.message : "Failed to update profile.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleDiscardProfile = () => {
+    setProfileFullName(user?.fullName || "");
+    setProfileEmail(user?.email || "");
+    setProfileToast(null);
+  };
+
   const handleSaveMoa = async () => {
     try {
       await api.post(`/settings/moa_template`, {
-        terms_text: termsText,
+        terms_text: resolvedTermsText,
         labels: topLabels,
         lineWidths,
         extensionRows,
@@ -320,17 +378,14 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     setSendStatus("sending");
     try {
-      // First, ensure the current changes are saved to the central template
+      // `moa_template` is a global setting; saving here applies to all branches.
       await api.post(`/settings/moa_template`, {
-        terms_text: termsText,
+        terms_text: resolvedTermsText,
         labels: topLabels,
         lineWidths,
         extensionRows,
       });
-      
-      // Simulate the broadcast process to other branches
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
+
       setMoaSavedAt(new Date().toLocaleString());
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);
@@ -384,24 +439,185 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-        <div className="space-y-4">
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Shop Information</h2>
+    <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
+      <div className="flex w-full gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
+        {["Profile", "Notifications", "Shop", "Interest Rate", "MOA"].map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`whitespace-nowrap rounded-md px-6 py-2 font-bold transition-all ${
+              activeTab === tab
+                ? "bg-emerald-700 text-white shadow-sm"
+                : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className={`grid w-full gap-6 ${activeTab === "Profile" ? "2xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+        <div className="min-w-0 space-y-6">
+          {profileToast && (
+            <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
+              <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+                {profileToast}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "Profile" && (
+            <>
+              <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+                <h3 className="mb-4 border-b border-border-main pb-2 text-base font-bold text-text-primary">
+                  My Account Profile
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                        Full Name
+                      </label>
+                      <input
+                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                        value={profileFullName}
+                        onChange={(event) => setProfileFullName(event.target.value)}
+                        placeholder="Your full name"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                        Account Role
+                      </label>
+                      <div className="rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm capitalize text-text-tertiary">
+                        {user?.role?.replace("_", " ") || "Super Admin"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                      Email Address
+                    </label>
+                    <input
+                      className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm text-zinc-400 outline-none"
+                      value={profileEmail}
+                      readOnly
+                      title="Email cannot be changed from this page"
+                    />
+                    <p className="text-[10px] italic text-zinc-400">
+                      Email updates require administrative verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={isSavingProfile || profileFullName === user?.fullName}
+                  className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSavingProfile ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  onClick={handleDiscardProfile}
+                  className="rounded-lg border border-input-border px-6 py-2 text-xs font-bold text-zinc-600 transition-colors hover:bg-surface-hover"
+                >
+                  Discard
+                </button>
+              </div>
+            </>
+          )}
+
+          {activeTab === "Notifications" && <NotificationSoundSettings />}
+
+          {activeTab === "Shop" && (
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
+            <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
+              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                <svg
+                  className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                Shop Information
+              </h2>
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  {!isShopEditMode ? (
+                    <button
+                      onClick={() => setIsShopEditMode(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Edit Info
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={handleCancelShopEdit}
+                        className="rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveShopEdit}
+                        disabled={isSavingSettings}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      >
+                        {isSavingSettings ? (
+                          <>
+                            <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Saving...
+                          </>
+                        ) : (
+                          "Save"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-5 px-4 py-4">
+            <div className="space-y-5 px-4 py-4 transition-all duration-300">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Shop Name
                 </label>
                 <input
-                  value={shopSettings.shopName}
-                  onChange={(e) => handleShopSettingChange("shopName", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                  value={isShopEditMode ? tempShopSettings.shopName : shopSettings.shopName}
+                  onChange={(e) => handleTempShopSettingChange("shopName", e.target.value)}
+                  disabled={!isShopEditMode}
+                  className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                    isShopEditMode
+                      ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
@@ -410,10 +626,14 @@ export default function SettingsPage() {
                   Shop Address
                 </label>
                 <input
-                  value={shopSettings.shopAddress}
-                  onChange={(e) => handleShopSettingChange("shopAddress", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                  value={isShopEditMode ? tempShopSettings.shopAddress : shopSettings.shopAddress}
+                  onChange={(e) => handleTempShopSettingChange("shopAddress", e.target.value)}
+                  disabled={!isShopEditMode}
+                  className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                    isShopEditMode
+                      ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
@@ -423,10 +643,14 @@ export default function SettingsPage() {
                     Phone Number
                   </label>
                   <input
-                    value={shopSettings.phoneNumber}
-                    onChange={(e) => handleShopSettingChange("phoneNumber", e.target.value)}
-                    disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                    value={isShopEditMode ? tempShopSettings.phoneNumber : shopSettings.phoneNumber}
+                    onChange={(e) => handleTempShopSettingChange("phoneNumber", e.target.value)}
+                    disabled={!isShopEditMode}
+                    className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                      isShopEditMode
+                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                    }`}
                   />
                 </div>
 
@@ -436,63 +660,31 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="email"
-                    value={shopSettings.email}
-                    onChange={(e) => handleShopSettingChange("email", e.target.value)}
-                    disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                    value={isShopEditMode ? tempShopSettings.email : shopSettings.email}
+                    onChange={(e) => handleTempShopSettingChange("email", e.target.value)}
+                    disabled={!isShopEditMode}
+                    className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                      isShopEditMode
+                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                    }`}
                   />
                 </div>
               </div>
             </div>
           </section>
+          )}
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Pawnshop Policies</h2>
-            </div>
+          {activeTab === "Interest Rate" && (
+            <>
+              <InterestRatesSettings />
+              <CategoriesSettings />
+            </>
+          )}
 
-            <div className="grid gap-3 px-4 py-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  test (%)
-                </label>
-                <input
-                  value={policies.interestRate}
-                  onChange={(e) => handlePolicyChange("interestRate", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">per month</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Default Pawn Duration (Days)
-                </label>
-                <input
-                  value={policies.pawnDuration}
-                  onChange={(e) => handlePolicyChange("pawnDuration", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Grace Period (Days)
-                </label>
-                <input
-                  value={policies.gracePeriod}
-                  onChange={(e) => handlePolicyChange("gracePeriod", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+          {activeTab === "MOA" && (
+          <section className="overflow-visible rounded-xl border border-border-main bg-surface pb-4 shadow-sm">
+            <div className="border-b border-border-main px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
@@ -517,13 +709,13 @@ export default function SettingsPage() {
                   className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-colors ${
                     isMoaEditMode
                       ? "border border-emerald-700 bg-emerald-700 text-white"
-                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                 </button>
 
-                <label className={`inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-[11px] font-bold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <label className={`inline-flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <input
                     type="checkbox"
                     checked={isMoaLocked}
@@ -537,14 +729,14 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setIsTopHeaderSwapped((v) => !v)}
                   disabled={!isSuperAdmin}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  className="rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300"
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
               </div>
 
-              <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6 dark:bg-slate-900 dark:border-zinc-700">
-                <div className="space-y-2 border border-emerald-800/70 p-5 text-[10px] text-zinc-800 dark:text-zinc-100">
+              <div className="overflow-x-auto overflow-y-visible rounded-md border border-border-main bg-surface-secondary p-3 shadow-inner sm:p-6 dark:bg-surface-secondary">
+                <div className="moa-paper-effect mx-auto min-h-[1120px] w-[794px] max-w-none space-y-3 border border-emerald-800/70 bg-white p-6 text-[10px] leading-normal text-zinc-800">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -734,8 +926,10 @@ export default function SettingsPage() {
                       contentEditable={canEditMoa}
                       suppressContentEditableWarning
                       onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
-                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600 dark:text-zinc-100"
-                    />
+                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600"
+                    >
+                      {resolvedTermsText}
+                    </div>
                   </div>
 
                   <div className="grid gap-8 pt-4 md:grid-cols-2 items-end">
@@ -762,22 +956,24 @@ export default function SettingsPage() {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
+                  <ActionButton
                     onClick={handleSaveMoa}
                     disabled={!canEditMoa || !isSuperAdmin}
-                    className="rounded-lg bg-emerald-700 px-4 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    variant="success"
+                    size="sm"
                   >
                     Save MOA Template
-                  </button>
-                  <button
+                  </ActionButton>
+                  <ActionButton
                     onClick={handleSendToAllBranches}
                     disabled={sendStatus === "sending" || !isSuperAdmin}
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
+                    variant="outline"
+                    size="sm"
                   >
                     {sendStatus === "sending"
                       ? "Sending to All Branches..."
                       : "Send to All Branches"}
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
 
@@ -789,35 +985,21 @@ export default function SettingsPage() {
               )}
             </div>
           </section>
+          )}
 
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={handleSaveAllSettings}
-              disabled={isSavingSettings || !isSuperAdmin}
-              className="rounded-lg bg-emerald-700 px-5 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed">
-              {isSavingSettings ? "Saving..." : "Save Changes"}
-            </button>
-            <button 
-              onClick={() => window.location.reload()}
-              disabled={!isSuperAdmin}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
-              Discard
-            </button>
-            {settingsSavedAt && (
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
-                Settings saved: {settingsSavedAt}
-              </span>
-            )}
-          </div>
         </div>
 
-        <aside className="space-y-4">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm dark:border-zinc-700 dark:bg-slate-900">
-            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        {activeTab === "Profile" && (
+        <aside className="min-w-0 space-y-4">
+          <section className="rounded-xl border border-border-main bg-surface p-4 text-center shadow-sm">
+            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-border-main bg-surface-secondary">
               {user?.avatarUrl ? (
-                <img
+                <Image
                   src={user.avatarUrl}
                   alt="Profile avatar"
+                  width={64}
+                  height={64}
+                  unoptimized
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -826,7 +1008,7 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-100">Admin Panel</h3>
+            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-100">{profileFullName || "Admin Panel"}</h3>
             <p className="mt-1 text-[10px] text-zinc-700 dark:text-zinc-400">Super Admin Settings</p>
             <button
               onClick={() => setIsAvatarModalOpen(true)}
@@ -838,19 +1020,44 @@ export default function SettingsPage() {
               <p className="mt-2 text-[10px] font-medium text-emerald-800 dark:text-emerald-300">{avatarToast}</p>
             )}
             <PasswordChangeRequestCard />
-          </section>
-
-          <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900 dark:bg-emerald-950">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
-              Security Restriction
-            </p>
-            <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
-              System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
-            </p>
+            <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left dark:border-emerald-900 dark:bg-emerald-950">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
+                Security Restriction
+              </p>
+              <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
+                System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
+              </p>
+            </div>
           </section>
         </aside>
+        )}
       </div>
 
+      <style jsx global>{`
+        .moa-paper-effect {
+          background-color: white !important;
+          color: #18181b !important;
+          color-scheme: light !important;
+          overflow-y: visible !important;
+          max-height: none !important;
+        }
+        .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
+        .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
+        .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
+        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
+        .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
+        .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
+        .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
+        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
+        .moa-paper-effect .text-emerald-950 { color: #022c22 !important; }
+        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
+        .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+        .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
+        .moa-paper-effect input { color: #18181b !important; }
+        .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
+      `}</style>
       <AvatarPickerModal
         isOpen={isAvatarModalOpen}
         isSaving={isSavingAvatar}

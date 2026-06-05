@@ -47,7 +47,7 @@ export function AddIncidentModal({
   getUserName,
 }: AddIncidentModalProps) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/45 p-3 sm:p-4">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-black/45 p-3 sm:p-4 dark:[&_.text-text-primary]:text-slate-50 dark:[&_.text-text-secondary]:text-slate-100 dark:[&_.text-text-tertiary]:text-slate-300 dark:[&_.text-text-muted]:text-slate-300 dark:[&_.text-slate-700]:text-slate-200 dark:[&_.text-slate-600]:text-slate-300 dark:[&_.text-slate-500]:text-slate-300 dark:[&_.text-slate-400]:text-slate-200">
       <div
         className="my-auto flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl sm:rounded-[1.75rem]"
         onClick={(event) => event.stopPropagation()}

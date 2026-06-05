@@ -6,12 +6,14 @@ import { useBranch } from "@/contexts/branch-context";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { StatusBadge } from "./status-badge";
+import IncidentReportModal from "./incident-report-modal";
 
 interface InventoryAuditModalProps {
   isOpen: boolean;
   onConfirm: () => void;
   onClose: () => void;
   displayMode?: "overlay" | "embedded";
+  isMandatory?: boolean;
 }
 
 interface ScannedItemDetails {
@@ -22,6 +24,7 @@ interface ScannedItemDetails {
   branch: string;
   pawnDate: string;
   status: string;
+  type?: "PAWNED" | "SALE";
   amount?: number;
   originalPhoto?: string;
   ownerIdPhoto?: string;
@@ -57,6 +60,33 @@ interface InventoryTally {
     category: string;
   }>;
   extraInVault: string[];
+}
+
+interface ActivePawnedInventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  status: string;
+  pawnDate: string;
+}
+
+interface SaleInventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  status: string;
+  availableDate?: string;
+}
+
+interface ChecklistInventoryItem {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  status: string;
+  source: "pawned" | "sale";
 }
 
 type ZXingDecodeResult = {
@@ -160,9 +190,10 @@ interface InventoryAuditStorageState {
   pendingItem: ScannedItemDetails | null;
   detectedScan: ParsedScan | null;
   currentScan: string;
+  activeChecklistSource: "pawned" | "sale" | null;
 }
 
-export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = "overlay" }: InventoryAuditModalProps) {
+export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = "overlay", isMandatory = false }: InventoryAuditModalProps) {
   // Ref for modal container to trap focus
   const modalRef = useRef<HTMLDivElement>(null);
   // Activate focus trap when modal opens
@@ -191,6 +222,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const [tally, setTally] = useState<InventoryTally | null>(null);
   const [isCheckingTally, setIsCheckingTally] = useState(false);
   const [tallyError, setTallyError] = useState("");
+  const [checklistItems, setChecklistItems] = useState<ChecklistInventoryItem[]>([]);
+  const [isLoadingChecklistItems, setIsLoadingChecklistItems] = useState(false);
+  const [activeChecklistSource, setActiveChecklistSource] = useState<"pawned" | "sale" | null>(null);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [incidentPrefill, setIncidentPrefill] = useState<{ itemId: string; itemName?: string } | null>(null);
   const [pendingPhotoBroken, setPendingPhotoBroken] = useState(false);
   const [verifiedPhotoBroken, setVerifiedPhotoBroken] = useState(false);
   const [hasLoadedPersistedState, setHasLoadedPersistedState] = useState(false);
@@ -234,6 +270,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         setPendingItem(null);
         setDetectedScan(null);
         setCurrentScan("");
+        setActiveChecklistSource(null);
         setHasLoadedPersistedState(true);
         return;
       }
@@ -243,6 +280,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       setPendingItem(savedState.pendingItem ?? null);
       setDetectedScan(savedState.detectedScan ?? null);
       setCurrentScan(savedState.currentScan ?? "");
+      setActiveChecklistSource(savedState.activeChecklistSource ?? null);
 
       if (savedState.pendingItem) {
         setScanStage("matched");
@@ -253,6 +291,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       setPendingItem(null);
       setDetectedScan(null);
       setCurrentScan("");
+      setActiveChecklistSource(null);
       setHasLoadedPersistedState(true);
     }
   }, [isOpen, persistenceKey]);
@@ -267,10 +306,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       pendingItem,
       detectedScan,
       currentScan,
+      activeChecklistSource,
     };
 
     window.localStorage.setItem(persistenceKey, JSON.stringify(state));
-  }, [currentScan, detectedScan, hasLoadedPersistedState, isOpen, pendingItem, persistenceKey, scannedItems]);
+  }, [activeChecklistSource, currentScan, detectedScan, hasLoadedPersistedState, isOpen, pendingItem, persistenceKey, scannedItems]);
 
   useEffect(() => {
     setPendingPhotoBroken(false);
@@ -360,7 +400,25 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       const fetchedSerialNumber = typeof data.serialNumber === "string" ? data.serialNumber.trim() : "";
       const resolvedSerialNumber = fetchedSerialNumber || parsed.serialNumber;
 
-      if (String(data.status || "").toLowerCase() !== "active") {
+      const resolvedType = String(data.type || "").trim().toUpperCase();
+      const normalizedStatus = String(data.status || "").trim().toLowerCase();
+      const isForSaleItem =
+        resolvedType === "SALE" ||
+        normalizedStatus.includes("sale") ||
+        normalizedStatus.includes("avail") ||
+        normalizedStatus === "available";
+      const isActiveItem =
+        resolvedType === "PAWNED" ||
+        normalizedStatus === "active" ||
+        normalizedStatus === "pawned" ||
+        normalizedStatus === "inventory";
+      const itemSource: "pawned" | "sale" = isForSaleItem ? "sale" : "pawned";
+
+      if (!activeChecklistSource) {
+        setActiveChecklistSource(itemSource);
+      }
+
+      if (!isActiveItem && !isForSaleItem) {
         setScanStage("failed");
         setRejectedScanItem({
           ...data,
@@ -369,7 +427,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           scanSerialNumber: parsed.serialNumber,
         });
         setPendingItem(null);
-        setError("Only active pawned items are accepted.");
+        setError(
+          activeChecklistSource === "sale"
+            ? "This checklist is set to Items for sale. Scan a sale item first."
+            : "This checklist is set to Pawned items. Scan a pawned item first.",
+        );
         return;
       }
 
@@ -511,6 +573,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     setPendingItem(null);
     setDetectedScan(null);
     setCurrentScan("");
+    setActiveChecklistSource(null);
     onConfirm();
   }, [onConfirm, persistenceKey]);
 
@@ -551,6 +614,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         const data = await api.post<InventoryTally>("/inventory/pawned/qr-tally", {
           branch_id: branchId,
           scanned_item_ids: normalizedScannedIds,
+          checklist_source: activeChecklistSource,
         });
 
         if (!cancelled) {
@@ -577,19 +641,126 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     return () => {
       cancelled = true;
     };
-  }, [branchId, branchReady, isOpen, scannedItems, showCompletionConfirm]);
+  }, [activeChecklistSource, branchId, branchReady, isOpen, scannedItems, showCompletionConfirm]);
+
+  useEffect(() => {
+    if (!isOpen || !branchReady || showCompletionConfirm) {
+      setChecklistItems([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const refreshChecklistItems = async () => {
+      setIsLoadingChecklistItems(true);
+
+      try {
+        const pawnedParams = new URLSearchParams({
+          branch: branchId,
+          status: "Active",
+          page: "1",
+          limit: "50",
+        });
+
+        const saleParams = new URLSearchParams({
+          branch: branchId,
+          status: "Available",
+          page: "1",
+          limit: "50",
+        });
+
+        const [pawnedData, saleData] = await Promise.all([
+          api.get<{ items?: ActivePawnedInventoryItem[] }>(`/inventory/pawned?${pawnedParams.toString()}`),
+          api.get<{ items?: SaleInventoryItem[] }>(`/inventory/for-sale?${saleParams.toString()}`),
+        ]);
+
+        const combinedItems: ChecklistInventoryItem[] = [
+          ...((Array.isArray(pawnedData.items) ? pawnedData.items : []).map((item) => ({
+            id: item.id,
+            itemId: item.itemId,
+            itemName: item.itemName,
+            category: item.category,
+            status: item.status || "Active",
+            source: "pawned" as const,
+          }))),
+          ...((Array.isArray(saleData.items) ? saleData.items : []).map((item) => ({
+            id: item.id,
+            itemId: item.itemId,
+            itemName: item.itemName,
+            category: item.category,
+            status: item.status || "Available",
+            source: "sale" as const,
+          }))),
+        ];
+
+        const uniqueItems = Array.from(
+          combinedItems.reduce((map, item) => {
+            const normalizedId = String(item.itemId || "").trim().toUpperCase();
+            if (!normalizedId || map.has(normalizedId)) {
+              return map;
+            }
+
+            map.set(normalizedId, item);
+            return map;
+          }, new Map<string, ChecklistInventoryItem>()).values(),
+        );
+
+        if (!cancelled) {
+          setChecklistItems(uniqueItems);
+        }
+      } catch {
+        if (!cancelled) {
+          setChecklistItems([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingChecklistItems(false);
+        }
+      }
+    };
+
+    void refreshChecklistItems();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [branchId, branchReady, isOpen, showCompletionConfirm]);
+
+  const verifiedChecklistIds = new Set(
+    scannedItems
+      .map((item) => String(item.itemId || "").trim().toUpperCase())
+      .filter((itemId) => itemId.length > 0),
+  );
+  const activeChecklistItems = checklistItems;
+  const visibleChecklistItems = checklistItems.filter(
+    (item) => !verifiedChecklistIds.has(String(item.itemId || "").trim().toUpperCase()),
+  );
+  const pawnedChecklistItems = visibleChecklistItems.filter((item) => item.source === "pawned");
+  const saleChecklistItems = visibleChecklistItems.filter((item) => item.source === "sale");
+  const checklistEmpty = !isLoadingChecklistItems && checklistItems.length === 0;
+  const checklistFullyVerified =
+    !isLoadingChecklistItems &&
+    (checklistEmpty || visibleChecklistItems.length === 0);
+  const checklistVerifiedCount = activeChecklistItems.length - visibleChecklistItems.length;
+  const checklistTitle = "Checklist items";
+  const checklistCountLabel = "to check";
+  const checklistTotalCount = checklistItems.length;
+  const checklistProgressPercent =
+    checklistTotalCount > 0
+      ? Math.min(100, Math.round((checklistVerifiedCount / checklistTotalCount) * 100))
+      : checklistEmpty
+        ? 100
+        : 0;
 
   const canComplete = Boolean(
-    tally &&
-      (tally.totalInSystem === 0 ||
-        (tally.totalInSystem > 0 &&
-          tally.missingInVault.length === 0 &&
-          tally.extraInVault.length === 0)),
+    branchReady && checklistFullyVerified
   );
 
-  const completionLabel = tally
-    ? `${tally.matched}/${tally.totalInSystem} verified`
-    : "0 verified";
+  const completionLabel = isLoadingChecklistItems
+    ? "Syncing checklist..."
+    : checklistTotalCount === 0
+      ? "0/0 verified"
+      : `${checklistVerifiedCount}/${activeChecklistItems.length} verified`;
 
   if (!isOpen) return null;
   // Apply ARIA attributes to root wrapper
@@ -651,7 +822,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           : "text-rose-100 border-rose-300/30 bg-rose-400/10";
 
   const tallySummary = tally
-    ? `${tally.matched} of ${tally.totalInSystem} items verified`
+    ? `${checklistVerifiedCount} of ${checklistTotalCount} items verified`
     : branchReady
       ? "Checklist syncing"
       : "Select one branch to sync the checklist";
@@ -685,7 +856,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   return (
     <div className={rootWrapperClass} {...rootWrapperProps} ref={modalRef}>
       <div className={innerContainerClass}>
-        {!embedded && (
+        {!embedded && !isMandatory && (
           <button
             type="button"
             onClick={onClose}
@@ -700,26 +871,21 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         )}
         <div className="flex h-full flex-col overflow-y-auto lg:grid lg:min-h-0 lg:grid-cols-[1.25fr_.88fr] lg:overflow-hidden">
           <section className="relative flex flex-col bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 lg:min-h-0 lg:overflow-hidden lg:p-6 shrink-0 lg:shrink">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
-                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Branch inventory QR scan</h2>
-                <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 lg:text-sm">
-                  The camera opens automatically so you can scan each pawned item QR code before starting the day.
-                </p>
+            {/* Prefill banner above the camera when reporting a specific item */}
+            {incidentPrefill ? (
+              <div className="mb-3 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.28em] text-zinc-400">Reporting item</p>
+                    <p className="mt-1 text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{incidentPrefill.itemId}</p>
+                    {incidentPrefill.itemName ? <p className="text-xs text-zinc-500">{incidentPrefill.itemName}</p> : null}
+                  </div>
+                  <div>
+                    <button onClick={() => { setIncidentPrefill(null); setShowIncidentModal(true); }} className="rounded-md bg-rose-600 px-3 py-1 text-xs font-bold text-white">Report</button>
+                  </div>
+                </div>
               </div>
-
-              <div className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-zinc-800 dark:text-emerald-300 lg:px-4 lg:text-xs">
-                {scannedItems.length} Verified
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-300 lg:mt-5 lg:text-xs">
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${cameraState === "ready" ? "bg-emerald-500 animate-pulse" : cameraState === "loading" ? "bg-amber-400 animate-pulse" : cameraState === "unsupported" ? "bg-sky-400" : "bg-rose-400"}`}
-              />
-              <span>{cameraStatusLabel}</span>
-            </div>
+            ) : null}
 
             <div className="relative mt-4 overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 lg:mt-5">
               <div className="relative aspect-[16/10] w-full lg:aspect-[16/9]">
@@ -744,7 +910,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       <span>{scanStageLabel}</span>
                     </div>
 
-                    {tally && tally.totalInSystem === 0 && !isCheckingTally && (
+                    {(checklistEmpty || (tally != null && tally.totalInSystem === 0)) &&
+                      !isCheckingTally &&
+                      !isLoadingChecklistItems && (
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 p-8 text-center animate-in fade-in duration-500 dark:bg-zinc-900/90">
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -754,7 +922,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         </div>
                         <h4 className="text-lg font-black tracking-tight text-zinc-900 uppercase dark:text-zinc-100">Empty Inventory</h4>
                         <p className="mt-2 max-w-xs text-xs font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300">
-                          No active pawned items found for this branch. You can complete the audit immediately.
+                          No pawned items or items for sale found for this branch. You can complete the audit immediately.
                         </p>
                       </div>
                     )}
@@ -865,7 +1033,16 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Checklist progress</p>
                   <h4 className="mt-1 text-base font-black text-zinc-900 dark:text-zinc-100 lg:text-lg">{completionLabel}</h4>
                 </div>
-                <StatusBadge label={cameraStatusLabel} variant={statusVariant[pendingItem?.status || ""] || "blue"} />
+                <div className="flex items-center gap-3">
+                  <StatusBadge label={cameraStatusLabel} variant={statusVariant[pendingItem?.status || ""] || "blue"} />
+                  <button
+                    type="button"
+                    onClick={() => { setIncidentPrefill(null); setShowIncidentModal(true); }}
+                    className="rounded-2xl bg-rose-600 px-3 py-1 text-xs font-bold text-white hover:bg-rose-700"
+                  >
+                    Report
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
@@ -877,10 +1054,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <div
                     className="h-full rounded-full bg-emerald-600 transition-all duration-300"
                     style={{
-                      width:
-                        tally && tally.totalInSystem > 0
-                          ? `${Math.min(100, Math.round((tally.matched / tally.totalInSystem) * 100))}%`
-                          : "0%",
+                      width: `${checklistProgressPercent}%`,
                     }}
                   />
                 </div>
@@ -890,39 +1064,96 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     Verified
                   </div>
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.totalInSystem ?? "-"}</div>
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{checklistTotalCount}</div>
                     In branch
                   </div>
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.missingInVault?.length ?? "-"}</div>
+                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{Math.max(0, checklistTotalCount - checklistVerifiedCount)}</div>
                     Missing
                   </div>
                 </div>
-                <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
-                      {tally?.missingItems?.length ?? 0} not yet scanned
-                    </span>
+                {tallyError && <p className="mt-3 text-xs font-semibold text-rose-600">{tallyError}</p>}
+              </div>
+
+              <div className="mt-4 rounded-3xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 lg:mt-5 lg:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">{checklistTitle}</p>
+                    <h4 className="mt-1 text-base font-black text-zinc-900 dark:text-zinc-100 lg:text-lg">
+                      {isLoadingChecklistItems ? "Syncing list" : `${visibleChecklistItems.length} visible`}
+                    </h4>
                   </div>
-                  <div className="mt-3 max-h-40 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
-                    {tally?.missingItems?.length ? (
-                      tally.missingItems.map((item) => (
-                        <div key={item.itemId} className="rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
-                          <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
-                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                            {item.category}
+                  <StatusBadge label="Sync" variant="blue" />
+                </div>
+                <div className="mt-4 max-h-72 space-y-4 overflow-y-auto pr-1 scrollbar-hide">
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Pawned items</p>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                        {pawnedChecklistItems.length} active
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {pawnedChecklistItems.length ? (
+                        pawnedChecklistItems.map((item) => (
+                          <div
+                            key={`${item.source}-${item.id}`}
+                            className="rounded-2xl border border-emerald-200 bg-white px-3 py-2 dark:border-emerald-500/20 dark:bg-zinc-950"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                                  {item.itemId} · {item.category}
+                                </p>
+                              </div>
+                              <StatusBadge label={item.status || "Active"} variant="green" />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-950">
+                          <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                            No active pawned items found
                           </p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-800">
-                        <p className="text-xs font-bold text-zinc-600">No missing items</p>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-950/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Items for sale</p>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
+                        {saleChecklistItems.length} available
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {saleChecklistItems.length ? (
+                        saleChecklistItems.map((item) => (
+                          <div
+                            key={`${item.source}-${item.id}`}
+                            className="rounded-2xl border border-sky-200 bg-white px-3 py-2 dark:border-sky-500/20 dark:bg-zinc-950"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                                  {item.itemId} · {item.category}
+                                </p>
+                              </div>
+                              <StatusBadge label={item.status || "Available"} variant="blue" />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white px-3 py-4 text-center dark:border-zinc-700 dark:bg-zinc-950">
+                          <p className="text-xs font-bold text-zinc-600 dark:text-zinc-300">No items for sale found</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {tallyError && <p className="mt-3 text-xs font-semibold text-rose-600">{tallyError}</p>}
               </div>
 
               {pendingItem ? (
@@ -1098,34 +1329,49 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             </div>
 
             <div className="mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-900">
-              <div className="flex items-start gap-3 text-amber-600 dark:text-amber-500">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-                <p className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
-                  Access to inventory tools stays locked until this scan is submitted and confirmed.
-                </p>
-              </div>
+              {!checklistEmpty && (
+                <div className="flex items-start gap-3 text-amber-600 dark:text-amber-500">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <p className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
+                    Access to inventory tools stays locked until every pawned item and every item for sale is verified.
+                  </p>
+                </div>
+              )}
 
               <button
                 onClick={() => {
                   if (!activeCompletionBlocked) {
-                    setShowCompletionConfirm(true);
+                    void handleConfirmCompletion();
                   }
                 }}
                 disabled={activeCompletionBlocked}
-                className="mt-4 w-full rounded-2xl bg-emerald-700 py-4 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:shadow-none"
+                className={`w-full rounded-2xl bg-emerald-700 py-4 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:shadow-none ${checklistEmpty ? "" : "mt-4"}`}
               >
                 Complete Inventory Count
               </button>
               <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-                {activeCompletionBlocked ? "Verify every branch item before finishing." : "All items verified. You can complete the checklist."}
+                {activeCompletionBlocked
+                  ? isLoadingChecklistItems || isCheckingTally
+                    ? "Syncing inventory checklist..."
+                    : "Verify every pawned item and every item for sale before finishing."
+                  : checklistEmpty
+                    ? "No inventory items to verify. You can complete the checklist."
+                    : "All items verified. You can complete the checklist."}
               </p>
             </div>
           </aside>
         </div>
+        {/* Incident report modal (frontend placeholder) */}
+        <IncidentReportModal
+          isOpen={showIncidentModal}
+          onClose={() => setShowIncidentModal(false)}
+          prefillItem={incidentPrefill}
+          missingItems={tally?.missingItems ?? []}
+        />
 
         {selectedVerifiedItem && (() => {
           const itemPhotos = Array.from(new Set([
@@ -1338,7 +1584,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.35em] text-rose-400">Scan rejected</p>
-                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items are accepted</h3>
+                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items or items for sale are accepted</h3>
                   </div>
                 </div>
 
@@ -1350,7 +1596,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 </div>
 
                 <p className="mt-4 text-sm leading-6 text-zinc-600">
-                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item to continue.
+                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item or items for sale item to continue.
                 </p>
 
                 <button
@@ -1375,7 +1621,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.35em] text-rose-400">Scan rejected</p>
-                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items are accepted</h3>
+                    <h3 className="mt-1 text-xl font-black text-zinc-900">Only active pawned items or items for sale are accepted</h3>
                   </div>
                 </div>
 
@@ -1387,7 +1633,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 </div>
 
                 <p className="mt-4 text-sm leading-6 text-zinc-600">
-                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item to continue.
+                  This item is marked <span className="font-black text-rose-600">{rejectedScanItem.status}</span>. Rescan a current active pawned item or items for sale item to continue.
                 </p>
 
                 <button

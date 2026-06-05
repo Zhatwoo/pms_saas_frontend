@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "reac
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
+import { fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
@@ -168,6 +169,40 @@ export function NewPawnModal({
   const [customerLookupError, setCustomerLookupError] = useState<string | null>(null);
   const [branchCashAvailable, setBranchCashAvailable] = useState<number | null>(null);
   const [branchCashLoading, setBranchCashLoading] = useState(false);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadCats() {
+      try {
+        const [cats, rates] = await Promise.all([
+          fetchCategories(),
+          api.get<any[]>("/settings/interest_rates").catch((err) => {
+            console.warn("Failed to load interest rates for category filtering", err);
+            return [];
+          })
+        ]);
+
+        const assignedCategories = new Set<string>();
+        if (rates && Array.isArray(rates)) {
+          for (const group of rates) {
+            if (group.categories && Array.isArray(group.categories)) {
+              for (const catName of group.categories) {
+                assignedCategories.add(catName.toLowerCase().trim());
+              }
+            }
+          }
+        }
+
+        const filtered = cats.filter(c => assignedCategories.has(c.name.toLowerCase().trim()));
+        setCategoriesList(filtered.map(c => c.name));
+      } catch (err) {
+        console.error("Error loading categories inside new-pawn-modal:", err);
+      }
+    }
+    if (isOpen) {
+      loadCats();
+    }
+  }, [isOpen]);
 
   const loadBranchCashForMoa = useCallback(async () => {
     if (!branchId || branchId === "__all__") {
@@ -499,6 +534,20 @@ export function NewPawnModal({
       }
     }
 
+    // Require email for new customers
+    if (!selectedCustomerId) {
+      const email = (form.email || "").trim();
+      if (!email) {
+        setErrorMessage("Email is required for new customers before generating QR.");
+        return;
+      }
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!emailValid) {
+        setErrorMessage("Please enter a valid email address before generating QR.");
+        return;
+      }
+    }
+
     if (!resolvedCategory) {
       setErrorMessage(
         form.category === "Others"
@@ -598,6 +647,20 @@ export function NewPawnModal({
           : "Category is required.",
       );
       return;
+    }
+
+    // Require email for new customers before creating ticket
+    if (!selectedCustomerId) {
+      const email = (form.email || "").trim();
+      if (!email) {
+        setErrorMessage("Email is required for new customers before creating a ticket.");
+        return;
+      }
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!emailValid) {
+        setErrorMessage("Please enter a valid email address before creating the ticket.");
+        return;
+      }
     }
 
     if (!unitCodeReady) {
@@ -1206,13 +1269,11 @@ export function NewPawnModal({
                       className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                     >
                       <option value="">— Select Category —</option>
-                      <option value="Smartphone">Smartphone</option>
-                      <option value="Laptop & PC">Laptop & PC</option>
-                      <option value="Appliances">Appliances</option>
-                      <option value="Gaming Console">Gaming Console</option>
-                      <option value="Camera">Camera</option>
-                      <option value="Smartwatch">Smartwatch</option>
-                      <option value="Audio and Earphone">Audio and Earphone</option>
+                      {categoriesList.map((catName) => (
+                        <option key={catName} value={catName}>
+                          {catName}
+                        </option>
+                      ))}
                       <option value="Others">Others</option>
                     </select>
                   </div>
@@ -1315,17 +1376,18 @@ export function NewPawnModal({
 
         {/* Footer Actions */}
         <div className="p-3 sm:p-4 md:p-5 lg:p-6 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col gap-4 shrink-0">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <button 
-              onClick={handleReset}
-              className="self-start px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:gap-6 lg:w-auto lg:flex-1">
+              <button 
+                onClick={handleReset}
+                className="self-start px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover sm:block" />
 
-            <div className="flex w-full flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-6 xl:flex-1">
               {/* Password — entered by the logged-in employee */}
-              <div className="w-full min-w-0 space-y-1.5 md:max-w-[18rem] xl:max-w-[22rem]">
+              <div className="w-full min-w-0 space-y-1.5 sm:max-w-[18rem] lg:max-w-[20rem]">
                 <label className="ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase tracking-[0.12em] leading-none text-emerald-900/40 dark:text-emerald-400 md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
                   <span className="whitespace-nowrap">Security Password Verification</span>
                   {loggedInUserName && (
@@ -1345,17 +1407,16 @@ export function NewPawnModal({
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="shrink-0 text-right md:pb-1">
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-4 lg:w-auto lg:gap-6">
+              <div className="shrink-0 text-right sm:pb-1">
                 <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
                 <p className="text-lg md:text-xl font-black text-emerald-900 dark:text-white tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
               </div>
-            </div>
-          </div>
-          
-          <div className="flex flex-col gap-3 border-t border-emerald-50 pt-4 md:flex-row md:flex-wrap md:items-center md:justify-end md:gap-4 md:border-t-0 md:pt-0">
-             {qrUrl ? (
-               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4 md:justify-end">
+
+              {qrUrl ? (
+               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
                  {(user?.role === "admin" || user?.role === "super_admin") ? (
                    <div className="relative group shrink-0">
                      <Image 
@@ -1373,7 +1434,7 @@ export function NewPawnModal({
                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                      </button>
                    </div>
-                 ) : (
+                 ) : user?.role === "employee" ? null : (
                    <div className="relative group shrink-0 flex items-center justify-center w-11 h-11 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
                    </div>
@@ -1393,23 +1454,24 @@ export function NewPawnModal({
                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
                  </button>
                </div>
-             ) : (
-               <button
-                 type="button"
-                 onClick={handleGenerateQR}
-                 disabled={isGeneratingQR}
-                 className="w-full sm:w-auto md:min-w-[16rem] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 relative shadow-sm"
-               >
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
-                 {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
-                 {errorMessage && errorMessage.includes("before generating QR") && (
-                   <span className="absolute -top-2 -right-2 flex h-3 w-3">
-                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                     <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                   </span>
-                 )}
-               </button>
-             )}
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleGenerateQR}
+                  disabled={isGeneratingQR}
+                  className="w-full sm:w-auto md:min-w-[16rem] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 relative shadow-sm"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
+                  {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
+                  {errorMessage && errorMessage.includes("before generating QR") && (
+                    <span className="absolute -top-2 -right-2 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    </span>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
           {errorMessage && (
             <div className="absolute top-4 right-6 left-6 z-50 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">

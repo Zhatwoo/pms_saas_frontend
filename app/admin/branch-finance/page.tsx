@@ -27,6 +27,10 @@ import type {
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
 import { formatPeso } from "@/lib/currency";
+import { ActionButton } from "@/components/shared/action-button";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface BranchFinanceSummary {
   branchId: string;
@@ -176,6 +180,12 @@ export default function AdminBranchFinancePage() {
 
   useEffect(() => {
     void loadFinanceData();
+  }, [loadFinanceData]);
+
+  useEffect(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
+      void loadFinanceData();
+    });
   }, [loadFinanceData]);
 
   const handleRequestFunds = useCallback(
@@ -598,17 +608,14 @@ export default function AdminBranchFinancePage() {
             </div>
 
             <div className="flex justify-end print:hidden mb-2">
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800 dark:hover:bg-emerald-800"
-              >
+              <ActionButton variant="primary" onClick={() => window.print()} size="md">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                   <rect width="12" height="8" x="6" y="14" />
                 </svg>
                 Print Ledger
-              </button>
+              </ActionButton>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `

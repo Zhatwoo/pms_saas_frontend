@@ -44,7 +44,6 @@ const columns: Column[] = [
   { key: "idType", label: "ID Type" },
   { key: "idNumber", label: "ID Number" },
   { key: "registered", label: "Registered" },
-  { key: "actions", label: "Actions", align: "center" },
 ];
 
 
@@ -151,33 +150,7 @@ export function CustomerTable() {
           loadingMessage="Loading customers..."
           onRowClick={(row) => router.push(`/employee/customers/view_user?id=${row.id}`)}
           renderCell={(key, value, row) => {
-            if (key === "actions") {
-              return (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    router.push(`/employee/customers/view_user?id=${row.id}`);
-                  }}
-                  className="mx-auto inline-flex items-center justify-center rounded-md border border-border-main bg-surface p-1.5 text-text-tertiary transition-colors hover:bg-emerald-surface/50 hover:text-emerald-text"
-                  title={`View ${row.name}`}
-                >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </button>
-              );
-            }
+            
             return value;
           }}
         />

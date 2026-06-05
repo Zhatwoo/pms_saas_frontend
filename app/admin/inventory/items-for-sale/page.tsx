@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { getCategoriesSync, fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { ActionButton } from "@/components/shared/action-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -47,6 +49,9 @@ const saleStatusOptions = [
 
 const toolbarInputClass = "h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
 const toolbarTabClass = "px-4 py-2 text-sm font-medium transition-colors";
+const viewActionButtonClass = "inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-emerald-500 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40";
+const editActionButtonClass = "inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-orange-500 transition-colors hover:bg-orange-500/10 hover:text-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40";
+const deleteActionButtonClass = "inline-flex h-7 w-7 items-center justify-center rounded-md bg-transparent text-zinc-500 transition-colors hover:bg-zinc-500/10 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 dark:text-zinc-300 dark:hover:text-white";
 
 const statusVariant: Record<string, "green" | "orange" | "blue"> = {
   Available: "green",
@@ -79,6 +84,20 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   const userRole = user?.role || "employee";
   const isSuperAdmin = userRole === "super_admin";
   const canEdit = !viewOnly && (userRole === "super_admin" || userRole === "admin");
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      const cats = await fetchCategories();
+      setCategoriesList(cats.map((c) => c.name));
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
+
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
@@ -192,31 +211,14 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
               className={viewOnly ? "h-10 w-56 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500" : toolbarInputClass}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-wide text-zinc-500" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500"}>Date</label>
-            <div className="relative flex items-center">
-              <input
-                type="date"
-                value={selectedDate || ""}
-                max={todayString}
-                onChange={(e) => setSelectedDate(e.target.value || null)}
-                className={viewOnly ? "h-10 rounded-md border border-zinc-300 px-4 text-sm outline-none transition-colors focus:border-emerald-500 pr-8" : `${toolbarInputClass} pr-8`}
-              />
-              {selectedDate && (
-                <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center gap-2">
           {canEdit && (
             <ActionButton
-              variant="outline"
+              variant="success"
               onClick={() => setAddModalOpen(true)}
-              className="border-emerald-700 bg-surface-secondary text-white shadow-sm hover:bg-emerald-700 hover:text-white dark:bg-zinc-900 dark:text-white"
+              className="!border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 hover:!text-white dark:!bg-emerald-700 dark:!text-white"
             >
               <span className="flex items-center gap-1.5">
                 {plusIcon}
@@ -275,7 +277,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                     { printDelayMs: 650 },
                   );
                 }}
-                className="border-emerald-700 bg-surface-secondary text-emerald-700 shadow-sm hover:bg-emerald-50/10 dark:bg-zinc-900 dark:text-emerald-400"
+                className="border-emerald-600 bg-surface-secondary text-[#0f172a] shadow-sm hover:bg-emerald-50 hover:text-[#0f172a] dark:text-white dark:hover:bg-emerald-700 dark:hover:text-white"
               >
                 <span className="flex items-center gap-1.5">
                   {printerIcon}
@@ -355,27 +357,27 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                             onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
                             title={`View ${item.itemName}`}
                             aria-label={`View ${item.itemName}`}
-                            className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100" : "rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center"}
+                            className={viewActionButtonClass}
                           >
-                            {isSuperAdmin ? (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-700">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            ) : (
-                              "View"
-                            )}
+                            <Eye size={16} strokeWidth={2.4} />
                           </button>
                           {canEdit && (
                             <>
-                              <button onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100" : "rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100"}>
-                                Edit
+                              <button
+                                onClick={(event) => { event.stopPropagation(); setEditingItem(item); }}
+                                title={`Edit ${item.itemName}`}
+                                aria-label={`Edit ${item.itemName}`}
+                                className={editActionButtonClass}
+                              >
+                                <Pencil size={16} strokeWidth={2.4} />
                               </button>
                               <button
                                 onClick={(event) => { event.stopPropagation(); setDeleteConfirmId(item.id); }}
-                                className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100" : "rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"}
+                                title={`Delete ${item.itemName}`}
+                                aria-label={`Delete ${item.itemName}`}
+                                className={deleteActionButtonClass}
                               >
-                                Delete
+                                <Trash2 size={16} strokeWidth={2.4} />
                               </button>
                             </>
                           )}
@@ -391,7 +393,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
       )}
 
       {saleViewMode !== "calendar" && (
-      <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm"}>
+      <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20"}>
         <div className="overflow-x-auto">
           <table className={viewOnly ? "min-w-[1220px] w-full text-sm" : "w-full text-sm"}>
             <thead>
@@ -445,27 +447,27 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                           onClick={(event) => { event.stopPropagation(); setViewingItem(item); }}
                           title={`View ${item.itemName}`}
                           aria-label={`View ${item.itemName}`}
-                          className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100" : "rounded px-2 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center"}
+                          className={viewActionButtonClass}
                         >
-                          {isSuperAdmin ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-700">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          ) : (
-                            "View"
-                          )}
+                          <Eye size={16} strokeWidth={2.4} />
                         </button>
                         {canEdit && (
                           <>
-                            <button onClick={(event) => { event.stopPropagation(); setEditingItem(item); }} className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100" : "rounded px-2 py-1 text-[10px] font-bold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100"}>
-                              Edit
+                            <button
+                              onClick={(event) => { event.stopPropagation(); setEditingItem(item); }}
+                              title={`Edit ${item.itemName}`}
+                              aria-label={`Edit ${item.itemName}`}
+                              className={editActionButtonClass}
+                            >
+                              <Pencil size={16} strokeWidth={2.4} />
                             </button>
                             <button
                               onClick={(event) => { event.stopPropagation(); setDeleteConfirmId(item.id); }}
-                              className={viewOnly ? "rounded px-3.5 py-1.5 text-xs font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100" : "rounded px-2 py-1 text-[10px] font-bold text-red-700 border border-red-200 bg-red-50 hover:bg-red-100"}
+                              title={`Delete ${item.itemName}`}
+                              aria-label={`Delete ${item.itemName}`}
+                              className={deleteActionButtonClass}
                             >
-                              Delete
+                              <Trash2 size={16} strokeWidth={2.4} />
                             </button>
                           </>
                         )}

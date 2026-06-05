@@ -216,9 +216,9 @@ export function RewardsConfiguration() {
           {rewards.map((reward) => (
             <div
               key={reward.id}
-              className={`group relative rounded-2xl border p-5 shadow-sm transition-all hover:shadow-md ${
+              className={`group relative rounded-xl border bg-surface p-5 shadow-sm transition-colors hover:border-emerald-border hover:bg-surface-raised ${
                 reward.is_active
-                  ? "border-emerald-200 bg-gradient-to-br from-surface to-emerald-50/30"
+                  ? "border-border-main"
                   : "border-border-main bg-surface opacity-70"
               }`}
             >
@@ -227,8 +227,8 @@ export function RewardsConfiguration() {
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                     reward.is_active
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-zinc-100 text-zinc-500"
+                      ? "bg-emerald-surface text-emerald-text"
+                      : "bg-badge-muted-bg text-badge-muted-text"
                   }`}
                 >
                   {reward.is_active ? "Active" : "Inactive"}
@@ -240,10 +240,10 @@ export function RewardsConfiguration() {
                 <div
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
                     reward.reward_type === "cashback"
-                      ? "bg-emerald-100 text-emerald-700"
+                      ? "bg-emerald-surface text-emerald-text"
                       : reward.reward_type === "discount"
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-purple-100 text-purple-700"
+                        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+                        : "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300"
                   }`}
                 >
                   {reward.reward_type === "cashback" ? "₱" : reward.reward_type === "discount" ? "%" : "🎁"}
@@ -258,16 +258,16 @@ export function RewardsConfiguration() {
 
               {/* Requirements */}
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-md bg-surface-secondary px-2 py-1 text-[10px] font-semibold text-text-secondary">
+                <span className="rounded-md border border-border-subtle bg-surface-secondary px-2 py-1 text-[10px] font-semibold text-text-secondary">
                   {reward.required_transaction_count} transactions
                 </span>
                 {Number(reward.required_total_amount) > 0 && (
-                  <span className="rounded-md bg-surface-secondary px-2 py-1 text-[10px] font-semibold text-text-secondary">
+                  <span className="rounded-md border border-border-subtle bg-surface-secondary px-2 py-1 text-[10px] font-semibold text-text-secondary">
                     ₱{Number(reward.required_total_amount).toLocaleString()} min
                   </span>
                 )}
                 {reward.transaction_type && (
-                  <span className="rounded-md bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
+                  <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
                     {reward.transaction_type}
                   </span>
                 )}
@@ -276,7 +276,7 @@ export function RewardsConfiguration() {
               {/* Value & Actions */}
               <div className="mt-4 flex items-center justify-between border-t border-border-main pt-3">
                 <div>
-                  <p className="text-lg font-bold text-emerald-700">
+                  <p className="text-lg font-bold text-emerald-text">
                     {formatRewardValue(reward.reward_type, Number(reward.reward_value))}
                   </p>
                 </div>
@@ -285,7 +285,7 @@ export function RewardsConfiguration() {
                     <button
                       type="button"
                       onClick={() => openEdit(reward)}
-                      className="rounded-lg border border-border-main bg-surface px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover"
+                      className="rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary"
                     >
                       Edit
                     </button>
@@ -293,7 +293,7 @@ export function RewardsConfiguration() {
                       type="button"
                       onClick={() => handleDelete(reward.id)}
                       disabled={deletingId === reward.id}
-                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/15"
                     >
                       {deletingId === reward.id ? "..." : "Del"}
                     </button>

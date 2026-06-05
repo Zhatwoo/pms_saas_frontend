@@ -431,12 +431,6 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
                     </p>
                   </div>
 
-                  <div className="mt-4">
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-300">Password</label>
-                    <input name="password" value={form.password} onChange={handleChange} type="password" placeholder="Enter password to confirm" className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
-                  </div>
-
-                  {error && <p className="mt-3 text-xs font-semibold text-rose-600">{error}</p>}
                 </div>
               </div>
             </div>
@@ -446,7 +440,11 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
                 <div className="text-xs text-zinc-500 dark:text-zinc-300">
                   <span className="font-black uppercase tracking-[0.24em] text-zinc-400">Content summary:</span> Hold the item, record a downpayment, and keep the balance visible until completion.
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-end gap-3">
+                  <div className="w-52">
+                    <label className="mb-1 block text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
+                    <input name="password" value={form.password} onChange={handleChange} type="password" placeholder="••••••••" className="h-10 w-full rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted" />
+                  </div>
                   <button onClick={onClose} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-border-subtle dark:bg-surface-secondary dark:text-zinc-200">
                     Cancel
                   </button>
@@ -459,6 +457,7 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
                   </button>
                 </div>
               </div>
+              {error && <p className="mt-3 text-xs font-semibold text-rose-600">{error}</p>}
             </div>
           </div>
         </div>

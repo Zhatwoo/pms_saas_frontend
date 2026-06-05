@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useBranch } from "@/contexts/branch-context";
+import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
+import { toast } from "sonner";
+import { AddIncidentModal } from "@/app/(pages)/incident-report/_components/add-incident-modal";
+import type {
+  IncidentCategory,
+  IncidentPriority,
+  ManualTicketFormState,
+  UserRecord,
+} from "@/app/(pages)/incident-report/_components/types";
 
 interface DailyBalanceConfirmationProps {
   isOpen: boolean;
@@ -13,6 +23,8 @@ interface DailyBalanceConfirmationProps {
   titleOverride?: string;
   /** Override subtitle under title. */
   subtitleOverride?: string;
+  /** When true, disables Confirm button to prevent submission while expected amount is loading. */
+  isLoadingExpectedAmount?: boolean;
 }
 
 export function DailyBalanceConfirmation({
@@ -23,28 +35,31 @@ export function DailyBalanceConfirmation({
   onClose,
   titleOverride,
   subtitleOverride,
+  isLoadingExpectedAmount,
 }: DailyBalanceConfirmationProps) {
+  const { selectedBranch } = useBranch();
   const [confirmedAmount, setConfirmedAmount] = useState("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isIncidentReportOpen, setIsIncidentReportOpen] = useState(false);
+  const [isIncidentSubmitting, setIsIncidentSubmitting] = useState(false);
+  const [incidentForm, setIncidentForm] = useState<ManualTicketFormState>(() => ({
+    title: "Starting balance issue",
+    summary: "",
+    category: "opening_cash",
+    priority: "high",
+    branchId: selectedBranch.id,
+    userId: "",
+    amountImpact: "",
+    transactionRef: "",
+    requiresManagerEscalation: false,
+  }));
 
   useEffect(() => {
     if (!isOpen) return;
 
     setIsSubmitting(false);
-    if (type === "starting") {
-      const raw = parseFloat(String(currentCash ?? "").replace(/,/g, ""));
-      const n = Number.isFinite(raw) ? raw : 0;
-      setConfirmedAmount(
-        n.toLocaleString("en-PH", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }),
-      );
-      return;
-    }
-
     setConfirmedAmount("0.00");
-  }, [isOpen, currentCash, type]);
+  }, [isOpen, type]);
 
   if (!isOpen) return null;
 
@@ -66,22 +81,81 @@ export function DailyBalanceConfirmation({
     setConfirmedAmount(formatted);
   };
 
+  const expectedAmount = Number(String(currentCash ?? "0").replace(/,/g, "")) || 0;
+  const enteredAmount = Number(confirmedAmount.replace(/,/g, "")) || 0;
+  const isStartingBelowExpected = type === "starting" && enteredAmount < expectedAmount;
+
   const handleConfirm = async () => {
     if (isSubmitting) return;
+    if (isStartingBelowExpected) {
+      toast.error("Actual physical cash cannot be lower than the expected amount.");
+      return;
+    }
     const rawValue = confirmedAmount.replace(/,/g, "");
     if (isNaN(parseFloat(rawValue))) return;
 
     setIsSubmitting(true);
     try {
       await onConfirm(rawValue);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save balance. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleIncidentReport = () => {
+    const expectedAmount = Number(String(currentCash ?? "0").replace(/,/g, "")) || 0;
+    const enteredAmount = Number(confirmedAmount.replace(/,/g, "")) || 0;
+    const amountImpact = Math.abs(expectedAmount - enteredAmount);
+
+    setIncidentForm({
+      title: "Starting balance issue",
+      summary: `Starting balance needs review. Expected ${formatPeso(expectedAmount)} and entered ${formatPeso(enteredAmount)}.`,
+      category: "opening_cash",
+      priority: amountImpact > 0 ? "high" : "medium",
+      branchId: selectedBranch.id,
+      userId: "",
+      amountImpact: amountImpact > 0 ? String(amountImpact) : "",
+      transactionRef: "Starting balance",
+      requiresManagerEscalation: amountImpact > 0,
+    });
+
+    setIsIncidentReportOpen(true);
+  };
+
+  const handleIncidentSubmit = async () => {
+    if (isIncidentSubmitting) return;
+
+    setIsIncidentSubmitting(true);
+    try {
+      await api.post("/incident-tickets", {
+        title: incidentForm.title.trim(),
+        summary: incidentForm.summary.trim(),
+        category: incidentForm.category as IncidentCategory,
+        priority: incidentForm.priority as IncidentPriority,
+        branchId: incidentForm.branchId,
+        userId: null,
+        amountImpact: incidentForm.amountImpact ? Number(incidentForm.amountImpact) : null,
+        transactionRef: incidentForm.transactionRef.trim() || null,
+        requiresManagerEscalation: incidentForm.requiresManagerEscalation,
+      });
+
+      toast.success("Incident report saved.");
+      setIsIncidentReportOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save incident report.";
+      toast.error(message);
+    } finally {
+      setIsIncidentSubmitting(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
-      <div className="w-full max-w-md scale-in-center rounded-2xl bg-surface p-6 shadow-2xl border border-border-main">
+    <>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
+        <div className="w-full max-w-md scale-in-center rounded-2xl bg-surface p-6 shadow-2xl border border-border-main">
         <div className="flex items-center gap-4 mb-6">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-700 text-amber-400">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -130,25 +204,70 @@ export function DailyBalanceConfirmation({
           </div>
         </div>
 
-        <div className="mt-8 flex gap-3">
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
+          <div className={`mt-8 ${type === "starting" ? "grid grid-cols-2 gap-3" : "flex gap-3"}`}>
+          {type === "starting" && (
+            <button
+              type="button"
+              onClick={handleIncidentReport}
+              className="rounded-xl border border-red-600 bg-red-600 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              Incident Report
+            </button>
+          )}
+          {type !== "starting" && (
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleConfirm}
-            disabled={isSubmitting || !confirmedAmount}
-            className={`flex-1 rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+            disabled={isSubmitting || !confirmedAmount || isLoadingExpectedAmount || isStartingBelowExpected}
+            className={`${type !== "starting" ? "flex-1" : "w-full"} rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
               type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
             }`}
           >
-            {isSubmitting ? "Processing..." : "Confirm & Proceed"}
+            {isSubmitting ? "Processing..." : isLoadingExpectedAmount ? "Loading expected amount..." : "Confirm & Proceed"}
           </button>
+          </div>
+
+        {type === "starting" && isStartingBelowExpected ? (
+          <p className="mt-3 text-xs font-semibold text-red-600">
+            Actual physical cash must be equal to or higher than the expected amount before you can proceed.
+          </p>
+        ) : null}
         </div>
       </div>
-    </div>
+
+      {isIncidentReportOpen ? (
+        <AddIncidentModal
+          formState={incidentForm}
+          setFormState={setIncidentForm}
+          branches={[selectedBranch]}
+          users={[] as UserRecord[]}
+          categoryOptions={[
+            { value: "opening_cash", label: "Opening Cash Issue" },
+            { value: "cash_shortage", label: "Cash Shortage" },
+            { value: "other", label: "Other Money Incident" },
+          ]}
+          priorityOptions={[
+            { value: "critical", label: "Critical" },
+            { value: "high", label: "High" },
+            { value: "medium", label: "Medium" },
+            { value: "low", label: "Low" },
+          ]}
+          isLoadingUsers={false}
+          isSubmitting={isIncidentSubmitting}
+          canSelectBranch={false}
+          canSelectUser={false}
+          onClose={() => setIsIncidentReportOpen(false)}
+          onSubmit={handleIncidentSubmit}
+          getUserName={() => ""}
+        />
+      ) : null}
+    </>
   );
 }
