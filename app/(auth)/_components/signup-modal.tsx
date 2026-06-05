@@ -60,7 +60,9 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
       setIsLoadingBranches(true);
       setLoadError("");
       try {
-        const data = await api.get<BranchSummary[]>("/auth/signup/branches");
+        const data = await api.get<BranchSummary[]>("/auth/signup/branches", {
+          suppressApiIssueLogging: true,
+        });
         if (!cancelled) {
           const list = Array.isArray(data) ? data : [];
           setBranches(list);

@@ -17,31 +17,33 @@ function statusClass(status: DisplayEmployeeActivityLog["status"]) {
 /* ── Mobile / tablet portrait card ── */
 function LogCard({ log }: { log: DisplayEmployeeActivityLog }) {
   return (
-    <div className="border-b border-border-subtle bg-surface p-4 transition-colors hover:bg-surface-hover last:border-b-0">
+    <div className="border-b border-border-subtle bg-surface p-4 transition-colors hover:bg-surface-hover last:border-b-0 md:grid md:grid-cols-[8.75rem_minmax(0,1fr)_5.75rem] md:gap-x-4 md:px-5">
       {/* Top row: date + status */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col">
+      <div className="flex items-start justify-between gap-3 md:contents">
+        <div className="flex flex-col md:col-start-1 md:row-start-1">
           <span className="text-sm font-bold text-text-primary">{log.dateLabel}</span>
           <span className="mt-0.5 text-xs font-medium text-text-tertiary">{log.timeLabel}</span>
         </div>
-        <span className={`shrink-0 inline-flex rounded px-2.5 py-1 text-xs font-bold ${statusClass(log.status)}`}>
+        <span className={`shrink-0 inline-flex rounded px-2.5 py-1 text-xs font-bold md:col-start-3 md:row-start-1 md:justify-self-end ${statusClass(log.status)}`}>
           {log.status}
         </span>
       </div>
 
       {/* Activity badge */}
-      <div className="mt-3">
+      <div className="mt-3 md:col-start-2 md:row-start-1 md:mt-0">
         <span className="inline-flex rounded bg-surface-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-text-secondary">
           {log.actionLabel}
         </span>
       </div>
 
       {/* Description */}
-      <p className="mt-2 text-sm leading-relaxed text-text-primary">{log.description}</p>
+      <p className="mt-2 text-sm leading-relaxed text-text-primary md:col-start-2 md:row-start-2">
+        {log.description}
+      </p>
 
       {/* Reference */}
       {log.reference && (
-        <p className="mt-1.5 text-xs text-text-secondary">{log.reference}</p>
+        <p className="mt-1.5 text-xs text-text-secondary md:col-start-2 md:row-start-3">{log.reference}</p>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 type ApiRequestInit = RequestInit & {
   suppressAuthExpired?: boolean;
+  suppressApiIssueLogging?: boolean;
 };
 
 /** Structured API failure (4xx/5xx JSON from Nest or proxy). */
@@ -120,6 +121,8 @@ class ApiClient {
     let res: Response;
     let retryCount = 0;
     const maxRetries = 3;
+    const suppressApiIssueLogging = Boolean(requestOptions.suppressApiIssueLogging);
+    delete requestOptions.suppressApiIssueLogging;
 
     while (true) {
       try {
@@ -171,7 +174,8 @@ class ApiClient {
     }
 
     if (!res.ok) {
-      const suppressLogging = Boolean(suppressAuthExpired && res.status === 401);
+      const suppressLogging =
+        suppressApiIssueLogging || Boolean(suppressAuthExpired && res.status === 401);
       const { message, payload } = this.parseErrorFromBody(
         res.status,
         text,

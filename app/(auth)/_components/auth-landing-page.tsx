@@ -289,7 +289,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     setIsLoadingBranches(true);
     setBranchLoadError("");
     try {
-      const data = await api.get<PublicBranch[]>("/auth/signup/branches");
+      const data = await api.get<PublicBranch[]>("/auth/signup/branches", {
+        suppressApiIssueLogging: true,
+      });
       setPublicBranches(Array.isArray(data) ? data : []);
     } catch (error) {
       setBranchLoadError(error instanceof Error ? error.message : "Could not load branches.");
@@ -315,7 +317,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     allReviews[0],
   ];
 
-  const handleScroll = (e: React.MouseEvent, id: string, item: string) => {
+  const handleScroll = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => {
     e.preventDefault();
     setActiveNavItem(item);
     const element = document.getElementById(id);
@@ -369,7 +371,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ NAV ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-emerald-900/90 backdrop-blur-sm">
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
-            <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e as any, "home", "HOME")} />
+            <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e, "home", "HOME")} />
 
             {/* Desktop nav links */}
             <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
