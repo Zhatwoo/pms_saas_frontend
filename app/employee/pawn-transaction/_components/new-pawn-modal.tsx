@@ -9,7 +9,6 @@ import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
 import { MoaModal } from "./moa-modal";
 import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
-import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 import { formatDateToYMD } from "@/lib/time";
@@ -18,6 +17,26 @@ const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
 
 type CustomerMode = "new" | "existing";
+type FinancialFieldKey = "amount" | "storageFee" | "parkingFee" | "netProceeds";
+type UnitFieldKey = "brandModel" | "itemsIncluded" | "condition" | "serialNo" | "memory" | "remarks";
+type CustomMoaField = { id: string; label: string };
+type MoaCategoryTemplate = {
+  labels?: Record<string, string>;
+  financialFields?: FinancialFieldKey[];
+  unitFields?: UnitFieldKey[];
+  customFinancialFields?: CustomMoaField[];
+  customUnitFields?: CustomMoaField[];
+};
+type MoaTemplateSettings = MoaCategoryTemplate & {
+  category_templates?: Record<string, MoaCategoryTemplate>;
+};
+type InterestRateCategoryGroup = {
+  categories?: string[];
+};
+
+const DEFAULT_FINANCIAL_FIELDS: FinancialFieldKey[] = ["amount", "storageFee", "parkingFee", "netProceeds"];
+const DEFAULT_UNIT_FIELDS: UnitFieldKey[] = ["brandModel", "itemsIncluded", "condition", "serialNo", "memory", "remarks"];
+const MOA_EXTRA_PREFIX = "[MOA Fields] ";
 
 interface CustomerLookupRecord {
   id: string;
@@ -108,6 +127,8 @@ function createEmptyForm() {
     purchasedDate: getTodayDate(),
     storageFee: false,
     storageFeeAmount: "",
+    parkingFeeAmount: "",
+    customMoaValues: {} as Record<string, string>,
     profilePhoto: null as string | null,
       itemPhotos: [] as string[],
     idPhoto: null as string | null,
@@ -170,16 +191,24 @@ export function NewPawnModal({
   const [branchCashAvailable, setBranchCashAvailable] = useState<number | null>(null);
   const [branchCashLoading, setBranchCashLoading] = useState(false);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  const [defaultMoaFieldConfig, setDefaultMoaFieldConfig] = useState<MoaCategoryTemplate>({});
+  const [categoryMoaFieldConfigs, setCategoryMoaFieldConfigs] = useState<Record<string, MoaCategoryTemplate>>({});
 
   useEffect(() => {
     async function loadCats() {
       try {
-        const [cats, rates] = await Promise.all([
+        const [cats, rates, moaTemplate] = await Promise.all([
           fetchCategories(),
-          api.get<any[]>("/settings/interest_rates").catch((err) => {
+          api.get<InterestRateCategoryGroup[]>("/settings/interest_rates").catch((err) => {
             console.warn("Failed to load interest rates for category filtering", err);
             return [];
-          })
+          }),
+          api.get<MoaTemplateSettings>(
+            "/settings/moa_template",
+          ).catch((err) => {
+            console.warn("Failed to load MOA field configuration", err);
+            return {} as MoaTemplateSettings;
+          }),
         ]);
 
         const assignedCategories = new Set<string>();
@@ -195,6 +224,8 @@ export function NewPawnModal({
 
         const filtered = cats.filter(c => assignedCategories.has(c.name.toLowerCase().trim()));
         setCategoriesList(filtered.map(c => c.name));
+        setDefaultMoaFieldConfig(moaTemplate);
+        setCategoryMoaFieldConfigs(moaTemplate.category_templates ?? {});
       } catch (err) {
         console.error("Error loading categories inside new-pawn-modal:", err);
       }
@@ -203,6 +234,32 @@ export function NewPawnModal({
       loadCats();
     }
   }, [isOpen]);
+
+  const resolvedMoaCategory =
+    form.category === "Others"
+      ? form.categorySpecify.trim()
+      : form.category.trim();
+  const categoryConfigKey = Object.keys(categoryMoaFieldConfigs).find(
+    (category) => category.trim().toLowerCase() === resolvedMoaCategory.toLowerCase(),
+  );
+  const activeMoaFieldConfig = categoryConfigKey
+    ? categoryMoaFieldConfigs[categoryConfigKey]
+    : defaultMoaFieldConfig;
+  const activeFinancialFields =
+    activeMoaFieldConfig.financialFields ?? DEFAULT_FINANCIAL_FIELDS;
+  const activeUnitFields = activeMoaFieldConfig.unitFields ?? DEFAULT_UNIT_FIELDS;
+  const activeMoaLabels = {
+    ...(defaultMoaFieldConfig.labels ?? {}),
+    ...(activeMoaFieldConfig.labels ?? {}),
+  };
+  const activeCustomFields = [
+    ...(activeMoaFieldConfig.customFinancialFields ?? []),
+    ...(activeMoaFieldConfig.customUnitFields ?? []),
+  ];
+
+  const showFinancialField = (field: FinancialFieldKey) =>
+    activeFinancialFields.includes(field);
+  const showUnitField = (field: UnitFieldKey) => activeUnitFields.includes(field);
 
   const loadBranchCashForMoa = useCallback(async () => {
     if (!branchId || branchId === "__all__") {
@@ -588,11 +645,6 @@ export function NewPawnModal({
     }
 
     setErrorMessage(null);
-    const fullName = [form.firstName, form.middleName, form.lastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(form.unitCode)}`;
 
@@ -729,6 +781,27 @@ export function NewPawnModal({
 
     const amountValue = Number(form.amount || 0);
     const storageAmount = form.storageFee ? Number(form.storageFeeAmount || 0) : 0;
+    const extraMoaValues = [
+      ...(showFinancialField("parkingFee") && form.parkingFeeAmount
+        ? [{ label: "Parking fee", value: form.parkingFeeAmount }]
+        : []),
+      ...activeCustomFields
+        .map((field) => ({
+          label: field.label,
+          value: form.customMoaValues[field.id]?.trim() ?? "",
+        }))
+        .filter((field) => field.value),
+    ];
+    const persistedRemarks = [
+      form.remarks.trim(),
+      extraMoaValues.length > 0
+        ? `${MOA_EXTRA_PREFIX}${extraMoaValues
+            .map((field) => `${field.label}: ${field.value}`)
+            .join("; ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
     const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ").trim();
     const verificationMode = getVerificationMode(form.idPresented);
     const resolvedCategory = getResolvedCategory();
@@ -810,7 +883,7 @@ export function NewPawnModal({
           itemsIncluded: form.itemsIncluded.trim(),
           condition: form.condition,
           memoryStorage: form.memory.trim(),
-          remarks: form.remarks.trim(),
+          remarks: persistedRemarks,
           amount: amountValue,
           purchasedDate: form.purchasedDate,
           qrCode: qrUrl || undefined,
@@ -1203,7 +1276,9 @@ export function NewPawnModal({
                 <div className="grid gap-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input label="Unit Code" name="unitCode" value={form.unitCode} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
-                    <Input label="Unit Name" name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
+                    {showUnitField("brandModel") && (
+                      <Input label={activeMoaLabels.brandModel || "Unit Name / Brand and Model"} name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
+                    )}
                   </div>
 
                   {/* Item Photos Section */}
@@ -1289,14 +1364,19 @@ export function NewPawnModal({
                     />
                   )}
 
-<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input label="Serial Number" name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
-                    <Input label="Items Included" name="itemsIncluded" value={form.itemsIncluded} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {showUnitField("serialNo") && (
+                      <Input label={activeMoaLabels.serialNo || "Serial Number"} name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
+                    )}
+                    {showUnitField("itemsIncluded") && (
+                      <Input label={activeMoaLabels.itemsIncluded || "Items Included"} name="itemsIncluded" value={form.itemsIncluded} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {showUnitField("condition") && (
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">Condition</label>
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">{activeMoaLabels.condition || "Condition"}</label>
                       <select
                         name="condition"
                         value={form.condition}
@@ -1318,8 +1398,10 @@ export function NewPawnModal({
                         </optgroup>
                       </select>
                     </div>
+                    )}
+                    {showUnitField("memory") && (
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">Memory / Storage</label>
+                      <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">{activeMoaLabels.memory || "Memory / Storage"}</label>
                       <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all`}>
                         <input
                           name="memory"
@@ -1337,15 +1419,63 @@ export function NewPawnModal({
                         <span className="pr-4 text-zinc-400 font-bold text-xs">GB</span>
                       </div>
                     </div>
+                    )}
                   </div>
 
-                  <Input label="Remarks" name="remarks" value={form.remarks} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
+                  {showUnitField("remarks") && (
+                    <Input label={activeMoaLabels.remarks || "Remarks"} name="remarks" value={form.remarks} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
+                  )}
+
+                  {activeCustomFields.length > 0 && (
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      {activeCustomFields.map((field) => (
+                        <Input
+                          key={field.id}
+                          label={field.label}
+                          name={`customMoa-${field.id}`}
+                          value={form.customMoaValues[field.id] ?? ""}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              customMoaValues: {
+                                ...prev.customMoaValues,
+                                [field.id]: event.target.value,
+                              },
+                            }))
+                          }
+                          bg="bg-zinc-100 dark:bg-surface-hover"
+                        />
+                      ))}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <Input label="Amount" name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
+                    {showFinancialField("amount") && (
+                      <Input label={activeMoaLabels.amount || "Amount"} name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
+                    )}
                     <Input label="Purchased Date" name="purchasedDate" value={form.purchasedDate} onChange={handleChange} type="date" bg="bg-zinc-100 dark:bg-surface-hover" />
+                    {showFinancialField("parkingFee") && (
+                      <Input label={activeMoaLabels.parkingFee || "Parking Fee"} name="parkingFeeAmount" value={form.parkingFeeAmount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
+                    )}
+                    {showFinancialField("netProceeds") && (
+                      <Input
+                        label={activeMoaLabels.netProceeds || "Net Proceeds"}
+                        name="netProceeds"
+                        value={String(
+                          (Number(form.amount) || 0)
+                          + (form.storageFee ? Number(form.storageFeeAmount) || 0 : 0)
+                          + (Number(form.parkingFeeAmount) || 0),
+                        )}
+                        onChange={() => undefined}
+                        type="number"
+                        bg="bg-zinc-200"
+                        prefix="₱"
+                        readOnly
+                      />
+                    )}
                   </div>
 
+                  {showFinancialField("storageFee") && (
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 dark:border-border-subtle mt-2">
                     <div className="flex items-center gap-3">
                       <div className="relative flex items-center cursor-pointer">
@@ -1359,7 +1489,7 @@ export function NewPawnModal({
                         />
                       </div>
                   <label htmlFor="storageFeeModal" className="text-xs md:text-sm font-black text-emerald-900 uppercase tracking-tight md:tracking-wide cursor-pointer">
-                    Apply Storage Fee
+                    {activeMoaLabels.storageFee || "Apply Storage Fee"}
                   </label>
                     </div>
                     {form.storageFee && (
@@ -1368,6 +1498,7 @@ export function NewPawnModal({
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1528,6 +1659,8 @@ export function NewPawnModal({
             form.region,
           ].filter(Boolean).join(", "),
           storageFee: form.storageFeeAmount,
+          parkingFee: form.parkingFeeAmount,
+          customMoaValues: form.customMoaValues,
           idPresented: form.idPresented || "",
           branchName: branchName || "Pasig branch",
           branchAddress: branchAddress || "",

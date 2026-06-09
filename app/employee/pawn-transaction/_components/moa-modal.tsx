@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
-import { findInterestRateGroup, getInterestRateSchedule } from "@/lib/interest";
+import { getInterestRateSchedule } from "@/lib/interest";
 
 interface MoaModalProps {
   isOpen: boolean;
@@ -30,6 +30,7 @@ interface MoaModalProps {
     amount: string;
     storageFee: string;
     parkingFee?: string;
+    customMoaValues?: Record<string, string>;
     purchasedDate: string;
     idPresented: string;
     branchName: string;
@@ -41,6 +42,56 @@ interface MoaModalProps {
   autoPrint?: boolean;
 }
 
+type MoaLabels = Record<string, string>;
+type FinancialFieldKey = "amount" | "storageFee" | "parkingFee" | "netProceeds";
+type UnitFieldKey = "brandModel" | "itemsIncluded" | "condition" | "serialNo" | "memory" | "remarks";
+type CustomMoaField = {
+  id: string;
+  label: string;
+};
+
+const DEFAULT_FINANCIAL_FIELDS: FinancialFieldKey[] = [
+  "amount",
+  "storageFee",
+  "parkingFee",
+  "netProceeds",
+];
+const DEFAULT_UNIT_FIELDS: UnitFieldKey[] = [
+  "brandModel",
+  "itemsIncluded",
+  "condition",
+  "serialNo",
+  "memory",
+  "remarks",
+];
+
+type MoaExtensionRow = {
+  date?: string;
+  storage?: string;
+  period?: string;
+  extend?: string;
+  sign?: string;
+};
+
+type MoaTemplate = {
+  terms_text: string;
+  labels: MoaLabels;
+  extensionRows?: MoaExtensionRow[];
+  financialFields?: FinancialFieldKey[];
+  unitFields?: UnitFieldKey[];
+  customFinancialFields?: CustomMoaField[];
+  customUnitFields?: CustomMoaField[];
+  category_templates?: Record<string, {
+    terms_text?: string;
+    labels?: MoaLabels;
+    extensionRows?: MoaExtensionRow[];
+    financialFields?: FinancialFieldKey[];
+    unitFields?: UnitFieldKey[];
+    customFinancialFields?: CustomMoaField[];
+    customUnitFields?: CustomMoaField[];
+  }>;
+};
+
 function normalizeTermsText(rawText?: string) {
   const normalizedLines = (rawText ?? "")
     .split(/\r?\n/)
@@ -48,6 +99,29 @@ function normalizeTermsText(rawText?: string) {
     .filter(Boolean);
 
   return normalizedLines.join("\n");
+}
+
+function parsePersistedMoaValues(remarks?: string) {
+  const metadataLine = (remarks ?? "")
+    .split(/\r?\n/)
+    .find((line) => line.startsWith("[MOA Fields] "));
+  if (!metadataLine) return {};
+
+  return Object.fromEntries(
+    metadataLine
+      .slice("[MOA Fields] ".length)
+      .split(";")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => {
+        const separatorIndex = entry.indexOf(":");
+        if (separatorIndex < 0) return [entry, ""];
+        return [
+          entry.slice(0, separatorIndex).trim(),
+          entry.slice(separatorIndex + 1).trim(),
+        ];
+      }),
+  );
 }
 
 export function MoaModal({
@@ -61,8 +135,12 @@ export function MoaModal({
   confirmDisabledReason,
 }: MoaModalProps) {
   const [termsText, setTermsText] = useState("");
-  const [labels, setLabels] = useState<any>(null);
-  const [extensionRows, setExtensionRows] = useState<any[]>([]);
+  const [labels, setLabels] = useState<MoaLabels | null>(null);
+  const [extensionRows, setExtensionRows] = useState<MoaExtensionRow[]>([]);
+  const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
+  const [unitFields, setUnitFields] = useState<UnitFieldKey[]>(DEFAULT_UNIT_FIELDS);
+  const [customFinancialFields, setCustomFinancialFields] = useState<CustomMoaField[]>([]);
+  const [customUnitFields, setCustomUnitFields] = useState<CustomMoaField[]>([]);
   const [shopInfo, setShopInfo] = useState<{
     shopName?: string;
     shopAddress?: string;
@@ -75,15 +153,42 @@ export function MoaModal({
       async function fetchTemplateAndInterestRates() {
         try {
           const [moaTemplate, interestRates, generalSettings] = await Promise.all([
-            api.get<{ terms_text: string; labels: any; extensionRows?: any[] }>(`/settings/moa_template`),
-            api.get<any[]>(`/settings/interest_rates`),
+            api.get<MoaTemplate>(`/settings/moa_template`),
+            api.get<unknown[]>(`/settings/interest_rates`),
             api.get<{ shopInfo?: { shopName?: string; shopAddress?: string; phoneNumber?: string } }>(`/settings/general`),
           ]);
 
           if (moaTemplate) {
-            setTermsText(normalizeTermsText(moaTemplate.terms_text));
-            setLabels(moaTemplate.labels);
-            if (moaTemplate.extensionRows) setExtensionRows(moaTemplate.extensionRows);
+            const categoryKey = Object.keys(moaTemplate.category_templates ?? {}).find(
+              (category) => category.trim().toLowerCase() === data.category.trim().toLowerCase(),
+            );
+            const categoryTemplate = categoryKey
+              ? moaTemplate.category_templates?.[categoryKey]
+              : undefined;
+
+            setTermsText(normalizeTermsText(categoryTemplate?.terms_text ?? moaTemplate.terms_text));
+            setLabels({ ...moaTemplate.labels, ...(categoryTemplate?.labels ?? {}) });
+            setExtensionRows(categoryTemplate?.extensionRows ?? moaTemplate.extensionRows ?? []);
+            setFinancialFields(
+              categoryTemplate?.financialFields
+              ?? moaTemplate.financialFields
+              ?? DEFAULT_FINANCIAL_FIELDS,
+            );
+            setUnitFields(
+              categoryTemplate?.unitFields
+              ?? moaTemplate.unitFields
+              ?? DEFAULT_UNIT_FIELDS,
+            );
+            setCustomFinancialFields(
+              categoryTemplate?.customFinancialFields
+              ?? moaTemplate.customFinancialFields
+              ?? [],
+            );
+            setCustomUnitFields(
+              categoryTemplate?.customUnitFields
+              ?? moaTemplate.customUnitFields
+              ?? [],
+            );
           }
 
           if (Array.isArray(interestRates) && typeof window !== "undefined") {
@@ -98,7 +203,7 @@ export function MoaModal({
       }
       fetchTemplateAndInterestRates();
     }
-  }, [isOpen]);
+  }, [data.category, isOpen]);
 
   useEffect(() => {
     if (isOpen && autoPrint && labels) {
@@ -195,11 +300,47 @@ export function MoaModal({
 
   const amount = Number(data.amount) || 0;
   const storageFee = Number(data.storageFee) || 0;
-  const parkingFee = Number(data.parkingFee) || 0;
+  const persistedMoaValues = parsePersistedMoaValues(data.remarks);
+  const parkingFee =
+    Number(data.parkingFee)
+    || Number(persistedMoaValues["Parking fee"])
+    || 0;
+  const visibleRemarks = data.remarks
+    .split(/\r?\n/)
+    .filter((line) => !line.startsWith("[MOA Fields] "))
+    .join("\n")
+    .trim();
   const totalDue = amount + storageFee + parkingFee;
+  const financialValues: Record<FinancialFieldKey, string> = {
+    amount: formatPeso(amount),
+    storageFee: formatPeso(storageFee),
+    parkingFee: formatPeso(parkingFee),
+    netProceeds: formatPeso(totalDue),
+  };
+  const unitValues: Record<UnitFieldKey, string> = {
+    brandModel: data.unitName || "---",
+    itemsIncluded: data.itemsIncluded || "---",
+    condition: data.condition || "---",
+    serialNo: data.serialNumber || "---",
+    memory: data.memory || "---",
+    remarks: visibleRemarks || "---",
+  };
+  const financialLabelFallbacks: Record<FinancialFieldKey, string> = {
+    amount: "Amount:",
+    storageFee: "Storage fee:",
+    parkingFee: "Parking fee:",
+    netProceeds: "Total Due:",
+  };
+  const unitLabelFallbacks: Record<UnitFieldKey, string> = {
+    brandModel: "Brand and model:",
+    itemsIncluded: "Items included:",
+    condition: "Condition:",
+    serialNo: "Serial No.:",
+    memory: "Memory:",
+    remarks: "Remarks:",
+  };
 
   const schedule = getInterestRateSchedule(data.category);
-  const activeGroup = findInterestRateGroup(data.category);
   const showInterestRate = !!labels?.interestRateHeader;
 
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
@@ -225,7 +366,6 @@ export function MoaModal({
   const gracePeriodEnd = addDays(baseDate, schedule[4]?.endDay ?? 34);
   const printableTermsLines = termsText.split(/\r?\n/).filter(Boolean);
 
-  const lineInputClass = "border-b-2 border-zinc-400 bg-transparent px-2 text-xs font-bold text-zinc-900 outline-none w-full h-6 transition-all focus:border-emerald-600";
   const headerPrimary = shopInfo?.shopName || data.branchName || "JCLB BUY BACK SHOP";
   const headerSecondary = shopInfo?.shopAddress || data.branchAddress || "Main Branch";
   const headerPhone = shopInfo?.phoneNumber || data.branchPhone || "";
@@ -343,48 +483,60 @@ export function MoaModal({
               <div className="space-y-3">
                 <h3 className="font-black text-[9px] uppercase underline tracking-wider text-emerald-900">{labels?.financialDetails || "Financial Details"}</h3>
                 <div className="space-y-1.5">
-                  <div className="grid grid-cols-[1fr_96px] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.amount || "Amount:"}</span>
-                    <span className="text-right font-bold tabular-nums text-zinc-900">{formatPeso(amount)}</span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_96px] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.storageFee || "Storage fee:"}</span>
-                    <span className="text-right font-medium tabular-nums text-zinc-900">{formatPeso(storageFee)}</span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_96px] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.parkingFee || "Parking fee:"}</span>
-                    <span className="text-right font-medium tabular-nums text-zinc-900">{formatPeso(parkingFee)}</span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_96px] items-center gap-2 border-t border-zinc-200 pt-2">
-                    <span className="font-black uppercase text-emerald-800 text-[9px]">{labels?.totalDue || "Total Due:"}</span>
-                    <span className="text-right font-black tabular-nums text-emerald-800 text-lg">{formatPeso(totalDue)}</span>
-                  </div>
+                  {financialFields.map((field, index) => {
+                    const isTotal = field === "netProceeds";
+                    return (
+                      <div
+                        key={field}
+                        className={`grid grid-cols-[1fr_96px] items-center gap-2 ${
+                          isTotal && index > 0 ? "border-t border-zinc-200 pt-2" : ""
+                        }`}
+                      >
+                        <span className={`${isTotal ? "font-black text-emerald-800 text-[9px]" : "font-semibold text-zinc-500 text-[8px]"} uppercase`}>
+                          {labels?.[field] || financialLabelFallbacks[field]}
+                        </span>
+                        <span className={`text-right tabular-nums ${isTotal ? "font-black text-emerald-800 text-lg" : "font-medium text-zinc-900"}`}>
+                          {financialValues[field]}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {customFinancialFields.map((field) => (
+                    <div key={field.id} className="grid grid-cols-[1fr_96px] items-center gap-2">
+                      <span className="font-semibold uppercase text-zinc-500 text-[8px]">
+                        {field.label}:
+                      </span>
+                      <span className="h-4 border-b border-zinc-300 text-right text-zinc-900">
+                        {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="space-y-3">
                 <h3 className="font-black text-[9px] uppercase underline tracking-wider text-emerald-900">{labels?.unitDescription || "Unit Description"}</h3>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.brandModel || "Brand and model:"}</span>
-                    <span className="font-bold text-zinc-900 border-b border-zinc-300">{data.unitName || "---"}</span>
-                  </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.itemsIncluded || "Items included:"}</span>
-                    <span className="text-zinc-700 border-b border-zinc-300">{data.itemsIncluded || "---"}</span>
-                  </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.condition || "Condition:"}</span>
-                    <span className="text-zinc-700 border-b border-zinc-300 italic">{data.condition || "---"}</span>
-                  </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.serialNo || "Serial No.:"}</span>
-                    <span className="font-medium text-zinc-900 border-b border-zinc-300 tracking-wider uppercase">{data.serialNumber || "---"}</span>
-                  </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <span className="font-semibold uppercase text-zinc-500 text-[8px]">{labels?.memory || "Memory:"}</span>
-                    <span className="text-zinc-700 border-b border-zinc-300">{data.memory || "---"}</span>
-                  </div>
+                  {unitFields.map((field) => (
+                    <div key={field} className="grid grid-cols-[80px_1fr] items-center gap-2">
+                      <span className="font-semibold uppercase text-zinc-500 text-[8px]">
+                        {labels?.[field] || unitLabelFallbacks[field]}
+                      </span>
+                      <span className="border-b border-zinc-300 text-zinc-900">
+                        {unitValues[field]}
+                      </span>
+                    </div>
+                  ))}
+                  {customUnitFields.map((field) => (
+                    <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-2">
+                      <span className="font-semibold uppercase text-zinc-500 text-[8px]">
+                        {field.label}:
+                      </span>
+                      <span className="h-4 border-b border-zinc-300 text-zinc-900">
+                        {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -398,24 +550,31 @@ export function MoaModal({
                 <span>{labels?.extendHeader || "Extend"}</span>
                 <span>{labels?.signHeader || "Sign"}</span>
               </div>
-              {(extensionRows.length > 0 ? extensionRows : [1, 2, 3]).map((row, idx) => {
+              {(extensionRows.length > 0
+                ? extensionRows
+                : [
+                    { period: "1st Period" },
+                    { period: "2nd Period" },
+                    { period: "3rd Period" },
+                  ]
+              ).map((row, idx) => {
                 const scheduleItem = schedule[idx + 1];
                 return (
                   <div key={idx} className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3`}>
                     <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
                       {maturityDates[idx] || ""}
                     </div>
-                    <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.storage : ''}</div>
+                    <div className="h-5 border-b border-zinc-300 bg-white/50">{row.storage ?? ""}</div>
                     <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-zinc-50 font-bold text-zinc-500">
-                      {typeof row === 'object' ? row.period : `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Period`}
+                      {row.period ?? `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Period`}
                     </div>
                     {showInterestRate && (
                       <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
                         {scheduleItem ? `${scheduleItem.percentage}%` : "—"}
                       </div>
                     )}
-                    <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.extend : ''}</div>
-                    <div className="h-5 border-b border-zinc-300 bg-white/50">{typeof row === 'object' ? row.sign : ''}</div>
+                    <div className="h-5 border-b border-zinc-300 bg-white/50">{row.extend ?? ""}</div>
+                    <div className="h-5 border-b border-zinc-300 bg-white/50">{row.sign ?? ""}</div>
                   </div>
                 );
               })}

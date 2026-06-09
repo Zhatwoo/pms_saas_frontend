@@ -8,6 +8,7 @@ import { PasswordChangeRequestCard } from "@/components/shared/password-change-r
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
+import { fetchCategories } from "@/lib/categories";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
 
@@ -72,6 +73,45 @@ type ExtensionRow = {
   sign: string;
 };
 
+type FinancialFieldKey = "amount" | "storageFee" | "parkingFee" | "netProceeds";
+type UnitFieldKey = "brandModel" | "itemsIncluded" | "condition" | "serialNo" | "memory" | "remarks";
+type CustomMoaField = {
+  id: string;
+  label: string;
+};
+
+const FINANCIAL_FIELD_OPTIONS: Array<{ key: FinancialFieldKey; valueKey: FinancialFieldKey }> = [
+  { key: "amount", valueKey: "amount" },
+  { key: "storageFee", valueKey: "storageFee" },
+  { key: "parkingFee", valueKey: "parkingFee" },
+  { key: "netProceeds", valueKey: "netProceeds" },
+];
+
+const UNIT_FIELD_OPTIONS: Array<{ key: UnitFieldKey; valueKey: UnitFieldKey }> = [
+  { key: "brandModel", valueKey: "brandModel" },
+  { key: "itemsIncluded", valueKey: "itemsIncluded" },
+  { key: "condition", valueKey: "condition" },
+  { key: "serialNo", valueKey: "serialNo" },
+  { key: "memory", valueKey: "memory" },
+  { key: "remarks", valueKey: "remarks" },
+];
+
+const DEFAULT_FINANCIAL_FIELDS = FINANCIAL_FIELD_OPTIONS.map((field) => field.key);
+const DEFAULT_UNIT_FIELDS = UNIT_FIELD_OPTIONS.map((field) => field.key);
+
+type MoaTemplateVariant = {
+  terms_text: string;
+  labels: Record<string, string>;
+  lineWidths: Record<string, number>;
+  extensionRows: ExtensionRow[];
+  financialFields: FinancialFieldKey[];
+  unitFields: UnitFieldKey[];
+  customFinancialFields: CustomMoaField[];
+  customUnitFields: CustomMoaField[];
+};
+
+const DEFAULT_MOA_CATEGORY = "__default__";
+
 const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every TEN (10) days.
 2. The Seller shall advise the Buyer of any change of address or mobile number.
 3. This is not a PAWN; this is an extended purchase sale known as the buyback agreement.
@@ -127,6 +167,7 @@ export default function SettingsPage() {
     condition: "",
     serialNo: "",
     memory: "",
+    remarks: "",
     sellerName: "",
     representativeName: "",
   });
@@ -157,6 +198,7 @@ export default function SettingsPage() {
     condition: "Condition:",
     serialNo: "Serial No.:",
     memory: "Memory:",
+    remarks: "Remarks:",
     dateHeader: "Date",
     storageHeader: "Storage",
     periodHeader: "Period",
@@ -176,8 +218,20 @@ export default function SettingsPage() {
   ]);
   const [isTopHeaderSwapped, setIsTopHeaderSwapped] = useState(false);
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
+  const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
+  const [unitFields, setUnitFields] = useState<UnitFieldKey[]>(DEFAULT_UNIT_FIELDS);
+  const [customFinancialFields, setCustomFinancialFields] = useState<CustomMoaField[]>([]);
+  const [customUnitFields, setCustomUnitFields] = useState<CustomMoaField[]>([]);
+  const [newFinancialField, setNewFinancialField] = useState("");
+  const [newUnitField, setNewUnitField] = useState("");
+  const [moaCategories, setMoaCategories] = useState<string[]>([]);
+  const [selectedMoaCategory, setSelectedMoaCategory] = useState(DEFAULT_MOA_CATEGORY);
+  const [defaultMoaTemplate, setDefaultMoaTemplate] = useState<MoaTemplateVariant | null>(null);
+  const [categoryMoaTemplates, setCategoryMoaTemplates] = useState<Record<string, MoaTemplateVariant>>({});
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const initialTopLabelsRef = useRef(topLabels);
+  const initialExtensionRowsRef = useRef(extensionRows);
 
   const [shopSettings, setShopSettings] = useState({
     shopName: "JCLB BUY BACK SHOP",
@@ -224,22 +278,77 @@ export default function SettingsPage() {
           labels: Partial<typeof topLabels> | null; 
           lineWidths?: Record<string, number>;
           extensionRows?: ExtensionRow[];
+          financialFields?: FinancialFieldKey[];
+          unitFields?: UnitFieldKey[];
+          customFinancialFields?: CustomMoaField[];
+          customUnitFields?: CustomMoaField[];
+          category_templates?: Record<string, Partial<MoaTemplateVariant>>;
         }>(`/settings/moa_template`);
         if (data) {
-          setTermsText(normalizeMoaTerms(data.terms_text));
-          if (data.labels && typeof data.labels === "object") {
-            setTopLabels((prev) => ({ ...prev, ...data.labels }));
-          }
-          if (data.lineWidths && typeof data.lineWidths === "object") {
-            setLineWidths(data.lineWidths);
-          }
-          if (data.extensionRows && Array.isArray(data.extensionRows)) {
-            setExtensionRows(data.extensionRows);
-          }
+          const loadedDefault: MoaTemplateVariant = {
+            terms_text: normalizeMoaTerms(data.terms_text),
+            labels: { ...initialTopLabelsRef.current, ...(data.labels ?? {}) },
+            lineWidths: data.lineWidths ?? {},
+            extensionRows: Array.isArray(data.extensionRows)
+              ? data.extensionRows
+              : initialExtensionRowsRef.current,
+            financialFields: Array.isArray(data.financialFields)
+              ? data.financialFields
+              : DEFAULT_FINANCIAL_FIELDS,
+            unitFields: Array.isArray(data.unitFields)
+              ? data.unitFields
+              : DEFAULT_UNIT_FIELDS,
+            customFinancialFields: Array.isArray(data.customFinancialFields)
+              ? data.customFinancialFields
+              : [],
+            customUnitFields: Array.isArray(data.customUnitFields)
+              ? data.customUnitFields
+              : [],
+          };
+          const loadedCategoryTemplates = Object.fromEntries(
+            Object.entries(data.category_templates ?? {}).map(([category, template]) => [
+              category,
+              {
+                terms_text: normalizeMoaTerms(template.terms_text ?? loadedDefault.terms_text),
+                labels: { ...loadedDefault.labels, ...(template.labels ?? {}) },
+                lineWidths: template.lineWidths ?? loadedDefault.lineWidths,
+                extensionRows: Array.isArray(template.extensionRows)
+                  ? template.extensionRows
+                  : loadedDefault.extensionRows,
+                financialFields: Array.isArray(template.financialFields)
+                  ? template.financialFields
+                  : loadedDefault.financialFields,
+                unitFields: Array.isArray(template.unitFields)
+                  ? template.unitFields
+                  : loadedDefault.unitFields,
+                customFinancialFields: Array.isArray(template.customFinancialFields)
+                  ? template.customFinancialFields
+                  : loadedDefault.customFinancialFields,
+                customUnitFields: Array.isArray(template.customUnitFields)
+                  ? template.customUnitFields
+                  : loadedDefault.customUnitFields,
+              },
+            ]),
+          );
+
+          setTermsText(loadedDefault.terms_text);
+          setTopLabels((prev) => ({ ...prev, ...loadedDefault.labels }));
+          setLineWidths(loadedDefault.lineWidths);
+          setExtensionRows(loadedDefault.extensionRows);
+          setFinancialFields(loadedDefault.financialFields);
+          setUnitFields(loadedDefault.unitFields);
+          setCustomFinancialFields(loadedDefault.customFinancialFields);
+          setCustomUnitFields(loadedDefault.customUnitFields);
+          setDefaultMoaTemplate(loadedDefault);
+          setCategoryMoaTemplates(loadedCategoryTemplates);
         }
       } catch (error) {
         console.error("Failed to fetch MOA template:", error);
       }
+    }
+    async function loadMoaCategories() {
+      const categories = await fetchCategories();
+      setMoaCategories(categories.map((category) => category.name));
     }
     async function fetchSettings() {
       try {
@@ -256,7 +365,14 @@ export default function SettingsPage() {
       }
     }
     fetchMoaTemplate();
+    loadMoaCategories();
     fetchSettings();
+
+    const handleCategoriesUpdated = () => {
+      void loadMoaCategories();
+    };
+    window.addEventListener("categories-updated", handleCategoriesUpdated);
+    return () => window.removeEventListener("categories-updated", handleCategoriesUpdated);
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
@@ -311,6 +427,125 @@ export default function SettingsPage() {
     );
   };
 
+  const getCurrentMoaTemplate = (): MoaTemplateVariant => ({
+    terms_text: resolvedTermsText,
+    labels: { ...topLabels },
+    lineWidths: { ...lineWidths },
+    extensionRows: extensionRows.map((row) => ({ ...row })),
+    financialFields: [...financialFields],
+    unitFields: [...unitFields],
+    customFinancialFields: customFinancialFields.map((field) => ({ ...field })),
+    customUnitFields: customUnitFields.map((field) => ({ ...field })),
+  });
+
+  const applyMoaTemplate = (template: MoaTemplateVariant) => {
+    setTermsText(normalizeMoaTerms(template.terms_text));
+    setTopLabels((prev) => ({ ...prev, ...template.labels }));
+    setLineWidths({ ...template.lineWidths });
+    setExtensionRows(template.extensionRows.map((row) => ({ ...row })));
+    setFinancialFields([...template.financialFields]);
+    setUnitFields([...template.unitFields]);
+    setCustomFinancialFields(template.customFinancialFields.map((field) => ({ ...field })));
+    setCustomUnitFields(template.customUnitFields.map((field) => ({ ...field })));
+    setNewFinancialField("");
+    setNewUnitField("");
+  };
+
+  const toggleMoaSectionField = <T extends string>(
+    field: T,
+    fields: T[],
+    setFields: (next: T[]) => void,
+  ) => {
+    setFields(
+      fields.includes(field)
+        ? fields.filter((currentField) => currentField !== field)
+        : [...fields, field],
+    );
+  };
+
+  const addCustomMoaField = (
+    label: string,
+    setLabel: (value: string) => void,
+    setFields: React.Dispatch<React.SetStateAction<CustomMoaField[]>>,
+  ) => {
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return;
+    setFields((fields) => [
+      ...fields,
+      {
+        id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        label: trimmedLabel,
+      },
+    ]);
+    setLabel("");
+  };
+
+  const handleMoaCategoryChange = (nextCategory: string) => {
+    const currentTemplate = getCurrentMoaTemplate();
+    const nextCategoryTemplates = { ...categoryMoaTemplates };
+    let nextDefaultTemplate = defaultMoaTemplate ?? currentTemplate;
+
+    if (selectedMoaCategory === DEFAULT_MOA_CATEGORY) {
+      nextDefaultTemplate = currentTemplate;
+      setDefaultMoaTemplate(currentTemplate);
+    } else {
+      nextCategoryTemplates[selectedMoaCategory] = currentTemplate;
+      setCategoryMoaTemplates(nextCategoryTemplates);
+    }
+
+    const nextTemplate =
+      nextCategory === DEFAULT_MOA_CATEGORY
+        ? nextDefaultTemplate
+        : nextCategoryTemplates[nextCategory] ?? nextDefaultTemplate;
+
+    setSelectedMoaCategory(nextCategory);
+    applyMoaTemplate(nextTemplate);
+  };
+
+  useEffect(() => {
+    if (
+      selectedMoaCategory !== DEFAULT_MOA_CATEGORY
+      || moaCategories.length === 0
+      || !defaultMoaTemplate
+    ) {
+      return;
+    }
+
+    const firstCategory = moaCategories[0];
+    setSelectedMoaCategory(firstCategory);
+    applyMoaTemplate(categoryMoaTemplates[firstCategory] ?? defaultMoaTemplate);
+  }, [
+    categoryMoaTemplates,
+    defaultMoaTemplate,
+    moaCategories,
+    selectedMoaCategory,
+  ]);
+
+  const handleApplyMoaToAllCategories = () => {
+    if (!canEditMoa || moaCategories.length === 0) return;
+
+    const currentTemplate = getCurrentMoaTemplate();
+    const templatesForAllCategories = Object.fromEntries(
+      moaCategories.map((category) => [
+        category,
+        {
+          ...currentTemplate,
+          labels: { ...currentTemplate.labels },
+          lineWidths: { ...currentTemplate.lineWidths },
+          extensionRows: currentTemplate.extensionRows.map((row) => ({ ...row })),
+          financialFields: [...currentTemplate.financialFields],
+          unitFields: [...currentTemplate.unitFields],
+          customFinancialFields: currentTemplate.customFinancialFields.map((field) => ({ ...field })),
+          customUnitFields: currentTemplate.customUnitFields.map((field) => ({ ...field })),
+        },
+      ]),
+    );
+
+    setCategoryMoaTemplates(templatesForAllCategories);
+    setDefaultMoaTemplate(currentTemplate);
+    setMoaSavedAt(null);
+  };
+
   const handleTempShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
     setTempShopSettings((prev) => ({ ...prev, [field]: value }));
   };
@@ -362,12 +597,24 @@ export default function SettingsPage() {
 
   const handleSaveMoa = async () => {
     try {
+      const currentTemplate = getCurrentMoaTemplate();
+      const nextDefaultTemplate =
+        selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? currentTemplate
+          : defaultMoaTemplate ?? currentTemplate;
+      const nextCategoryTemplates = {
+        ...categoryMoaTemplates,
+        ...(selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? {}
+          : { [selectedMoaCategory]: currentTemplate }),
+      };
+
       await api.post(`/settings/moa_template`, {
-        terms_text: resolvedTermsText,
-        labels: topLabels,
-        lineWidths,
-        extensionRows,
+        ...nextDefaultTemplate,
+        category_templates: nextCategoryTemplates,
       });
+      setDefaultMoaTemplate(nextDefaultTemplate);
+      setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
     } catch (error) {
       console.error("Failed to save MOA template:", error);
@@ -378,14 +625,26 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     setSendStatus("sending");
     try {
+      const currentTemplate = getCurrentMoaTemplate();
+      const nextDefaultTemplate =
+        selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? currentTemplate
+          : defaultMoaTemplate ?? currentTemplate;
+      const nextCategoryTemplates = {
+        ...categoryMoaTemplates,
+        ...(selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? {}
+          : { [selectedMoaCategory]: currentTemplate }),
+      };
+
       // `moa_template` is a global setting; saving here applies to all branches.
       await api.post(`/settings/moa_template`, {
-        terms_text: resolvedTermsText,
-        labels: topLabels,
-        lineWidths,
-        extensionRows,
+        ...nextDefaultTemplate,
+        category_templates: nextCategoryTemplates,
       });
 
+      setDefaultMoaTemplate(nextDefaultTemplate);
+      setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);
@@ -733,10 +992,53 @@ export default function SettingsPage() {
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleApplyMoaToAllCategories}
+                  disabled={!canEditMoa || moaCategories.length === 0}
+                  className="rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Apply to All Categories
+                </button>
+
               </div>
 
+              {isMoaEditMode && (
+                <div className="overflow-x-auto rounded-lg border border-border-main bg-surface-secondary p-1.5">
+                  <div className="flex min-w-max items-center gap-1.5">
+                    {moaCategories.map((categoryName) => {
+                      const category = { value: categoryName, label: categoryName };
+                      const isActive = selectedMoaCategory === category.value;
+                      return (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => handleMoaCategoryChange(category.value)}
+                          disabled={!canEditMoa}
+                          className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                            isActive
+                              ? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
+                              : "border-border-main bg-surface text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:text-zinc-300"
+                          }`}
+                        >
+                          {category.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {isMoaEditMode && selectedMoaCategory !== DEFAULT_MOA_CATEGORY && (
+                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-medium text-emerald-800">
+                  Editing the MOA used for <strong>{selectedMoaCategory}</strong> transactions.
+                </p>
+              )}
+
               <div className="overflow-x-auto overflow-y-visible rounded-md border border-border-main bg-surface-secondary p-3 shadow-inner sm:p-6 dark:bg-surface-secondary">
-                <div className="moa-paper-effect mx-auto min-h-[1120px] w-[794px] max-w-none space-y-3 border border-emerald-800/70 bg-white p-6 text-[10px] leading-normal text-zinc-800">
+                <div className={`flex items-start gap-4 ${isMoaEditMode ? "min-w-[1090px]" : ""}`}>
+                <div className="moa-paper-effect mx-auto min-h-[1120px] w-full max-w-[794px] flex-none space-y-3 border border-emerald-800/70 bg-white p-6 text-[10px] leading-normal text-zinc-800">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -745,7 +1047,7 @@ export default function SettingsPage() {
                       readOnly={!canEditMoa}
                       tabIndex={canEditMoa ? 0 : -1}
                       spellCheck={false}
-                      className={`block w-full text-center text-sm font-black uppercase underline tracking-widest border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                      className={`moa-title-input block w-full text-center text-sm font-black uppercase underline tracking-widest border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
                     />
                     <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                       {shopSettings.shopName}
@@ -852,30 +1154,56 @@ export default function SettingsPage() {
                     <div className="space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("financialDetails", "inline")}</p>
                       <div className="grid grid-cols-[74px_1fr] items-center gap-2">
-                        {renderEditableLabel("amount", "inline")}
-                        {RL("amount", moaFields.amount, (v) => updateMoaField("amount", v))}
-                        {renderEditableLabel("storageFee", "inline")}
-                        {RL("storageFee", moaFields.storageFee, (v) => updateMoaField("storageFee", v))}
-                        {renderEditableLabel("parkingFee", "inline")}
-                        {RL("parkingFee", moaFields.parkingFee, (v) => updateMoaField("parkingFee", v))}
-                        {renderEditableLabel("netProceeds", "inline")}
-                        {RL("netProceeds", moaFields.netProceeds, (v) => updateMoaField("netProceeds", v))}
+                        {FINANCIAL_FIELD_OPTIONS.filter((field) =>
+                          financialFields.includes(field.key),
+                        ).map((field) => (
+                          <div key={field.key} className="contents">
+                            {renderEditableLabel(field.key, "inline")}
+                            {RL(
+                              field.key,
+                              moaFields[field.valueKey],
+                              (value) => updateMoaField(field.valueKey, value),
+                            )}
+                          </div>
+                        ))}
+                        {customFinancialFields.map((field) => (
+                          <div key={field.id} className="contents">
+                            <span>{field.label}:</span>
+                            {RL(
+                              `custom-financial-${field.id}`,
+                              "",
+                              () => undefined,
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("unitDescription", "inline")}</p>
                       <div className="grid grid-cols-[92px_1fr] items-center gap-2">
-                        {renderEditableLabel("brandModel", "inline")}
-                        {RL("brandModel", moaFields.brandModel, (v) => updateMoaField("brandModel", v))}
-                        {renderEditableLabel("itemsIncluded", "inline")}
-                        {RL("itemsIncluded", moaFields.itemsIncluded, (v) => updateMoaField("itemsIncluded", v))}
-                        {renderEditableLabel("condition", "inline")}
-                        {RL("condition", moaFields.condition, (v) => updateMoaField("condition", v))}
-                        {renderEditableLabel("serialNo", "inline")}
-                        {RL("serialNo", moaFields.serialNo, (v) => updateMoaField("serialNo", v))}
-                        {renderEditableLabel("memory", "inline")}
-                        {RL("memory", moaFields.memory, (v) => updateMoaField("memory", v))}
+                        {UNIT_FIELD_OPTIONS.filter((field) =>
+                          unitFields.includes(field.key),
+                        ).map((field) => (
+                          <div key={field.key} className="contents">
+                            {renderEditableLabel(field.key, "inline")}
+                            {RL(
+                              field.key,
+                              moaFields[field.valueKey],
+                              (value) => updateMoaField(field.valueKey, value),
+                            )}
+                          </div>
+                        ))}
+                        {customUnitFields.map((field) => (
+                          <div key={field.id} className="contents">
+                            <span>{field.label}:</span>
+                            {RL(
+                              `custom-unit-${field.id}`,
+                              "",
+                              () => undefined,
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -947,6 +1275,187 @@ export default function SettingsPage() {
                       <p className="mt-1 text-[9px]">{renderEditableLabel("representativeSignature", "inline")}</p>
                     </div>
                   </div>
+                </div>
+                {isMoaEditMode && (
+                  <aside className="sticky top-3 w-[280px] flex-none space-y-3 rounded-lg border border-emerald-200 bg-white p-3 text-zinc-800 shadow-sm">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-wide text-emerald-900">
+                        MOA Fields
+                      </p>
+                      <p className="mt-1 text-[9px] leading-4 text-zinc-500">
+                        Configure fields for {selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "all categories" : selectedMoaCategory}.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border border-zinc-200 p-2">
+                      <p className="text-[10px] font-bold uppercase text-zinc-700">Financial Details</p>
+                      <div className="space-y-1">
+                        {FINANCIAL_FIELD_OPTIONS.map((field) => (
+                          <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
+                            <input
+                              type="checkbox"
+                              checked={financialFields.includes(field.key)}
+                              onChange={() =>
+                                toggleMoaSectionField(field.key, financialFields, setFinancialFields)
+                              }
+                              disabled={!canEditMoa}
+                              className="h-3.5 w-3.5 accent-emerald-700"
+                            />
+                            {topLabels[field.key]}
+                          </label>
+                        ))}
+                      </div>
+                      {customFinancialFields.map((field) => (
+                        <div key={field.id} className="flex items-center gap-1">
+                          <input
+                            value={field.label}
+                            onChange={(event) =>
+                              setCustomFinancialFields((fields) =>
+                                fields.map((currentField) =>
+                                  currentField.id === field.id
+                                    ? { ...currentField, label: event.target.value }
+                                    : currentField,
+                                ),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomFinancialFields((fields) =>
+                                fields.filter((currentField) => currentField.id !== field.id),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            aria-label={`Remove ${field.label}`}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-1">
+                        <input
+                          value={newFinancialField}
+                          onChange={(event) => setNewFinancialField(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              addCustomMoaField(
+                                newFinancialField,
+                                setNewFinancialField,
+                                setCustomFinancialFields,
+                              );
+                            }
+                          }}
+                          disabled={!canEditMoa}
+                          placeholder="New financial field"
+                          className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addCustomMoaField(
+                              newFinancialField,
+                              setNewFinancialField,
+                              setCustomFinancialFields,
+                            )
+                          }
+                          disabled={!canEditMoa || !newFinancialField.trim()}
+                          className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border border-zinc-200 p-2">
+                      <p className="text-[10px] font-bold uppercase text-zinc-700">Unit Description</p>
+                      <div className="space-y-1">
+                        {UNIT_FIELD_OPTIONS.map((field) => (
+                          <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
+                            <input
+                              type="checkbox"
+                              checked={unitFields.includes(field.key)}
+                              onChange={() =>
+                                toggleMoaSectionField(field.key, unitFields, setUnitFields)
+                              }
+                              disabled={!canEditMoa}
+                              className="h-3.5 w-3.5 accent-emerald-700"
+                            />
+                            {topLabels[field.key]}
+                          </label>
+                        ))}
+                      </div>
+                      {customUnitFields.map((field) => (
+                        <div key={field.id} className="flex items-center gap-1">
+                          <input
+                            value={field.label}
+                            onChange={(event) =>
+                              setCustomUnitFields((fields) =>
+                                fields.map((currentField) =>
+                                  currentField.id === field.id
+                                    ? { ...currentField, label: event.target.value }
+                                    : currentField,
+                                ),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomUnitFields((fields) =>
+                                fields.filter((currentField) => currentField.id !== field.id),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            aria-label={`Remove ${field.label}`}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-1">
+                        <input
+                          value={newUnitField}
+                          onChange={(event) => setNewUnitField(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              addCustomMoaField(
+                                newUnitField,
+                                setNewUnitField,
+                                setCustomUnitFields,
+                              );
+                            }
+                          }}
+                          disabled={!canEditMoa}
+                          placeholder="New unit field"
+                          className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addCustomMoaField(
+                              newUnitField,
+                              setNewUnitField,
+                              setCustomUnitFields,
+                            )
+                          }
+                          disabled={!canEditMoa || !newUnitField.trim()}
+                          className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </aside>
+                )}
                 </div>
               </div>
 
@@ -1040,6 +1549,14 @@ export default function SettingsPage() {
           color-scheme: light !important;
           overflow-y: visible !important;
           max-height: none !important;
+        }
+        .moa-paper-effect input {
+          min-width: 0;
+          font-size: 10px !important;
+          line-height: 1.5 !important;
+        }
+        .moa-paper-effect .moa-title-input {
+          font-size: 14px !important;
         }
         .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
         .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
