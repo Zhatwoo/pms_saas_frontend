@@ -177,8 +177,8 @@ export function BranchDaySessionToolbar({
         setStartOpen(false);
         setBanner(null);
         const incidentBase = pathname?.includes("/admin/")
-          ? "/admin/incident-tickets"
-          : "/employee/incident-tickets";
+          ? "/admin/incident-report"
+          : "/employee/incident-report";
         const qs = new URLSearchParams({
           startingMismatch: "1",
           expected: Number.isFinite(expected) ? String(expected) : "0",

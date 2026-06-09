@@ -52,7 +52,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Customers", href: "/customers", icon: <CustomersIcon /> },
       { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
-      { label: "Incident Ticket", href: "/incident-tickets", icon: <IncidentReportIcon /> },
+      { label: "Incident Ticket", href: "/incident-report", icon: <IncidentReportIcon /> },
       {
         label: "Branch Management",
         href: "/branches",
@@ -112,7 +112,7 @@ const ADMIN_NAV: NavGroup[] = [
         ],
       },
       { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
-      { label: "Incident Ticket", href: "/admin/incident-tickets", icon: <IncidentReportIcon /> },
+      { label: "Incident Ticket", href: "/admin/incident-report", icon: <IncidentReportIcon /> },
       { label: "Employee Management", href: "/admin/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/admin/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/admin/audit-logs", icon: <AuditLogIcon /> },
@@ -148,7 +148,7 @@ const BRANCH_NAV: NavGroup[] = [
       },
       { label: "Expiration Monitoring", href: "/employee/expiration-monitoring", icon: <ExpirationIcon /> },
       { label: "Branch Finance", href: "/employee/branch-finance", icon: <ReportsIcon /> },
-      { label: "Incident Ticket", href: "/employee/incident-tickets", icon: <IncidentReportIcon /> },
+      { label: "Incident Ticket", href: "/employee/incident-report", icon: <IncidentReportIcon /> },
     ],
   },
   {
