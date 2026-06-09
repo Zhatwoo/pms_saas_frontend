@@ -64,8 +64,8 @@ const pawnedStatusOptions = [
 ];
 
 const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
-const toolbarFieldClass = "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
-const toolbarSelectClass = "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarFieldClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarSelectClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
@@ -524,19 +524,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
         </p>
       </div>
-      <div className={viewOnly ? "flex flex-wrap items-end justify-between gap-4 rounded-lg border border-border-main bg-surface p-5 shadow-lg shadow-black/20 backdrop-blur-sm" : "flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface p-4 shadow-lg shadow-black/20 backdrop-blur-sm"}>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <label className={toolbarLabelClass}>Search</label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search items..."
-              className={viewOnly ? "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500" : toolbarFieldClass}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
+      <div className={viewOnly ? "flex flex-col items-start gap-4 rounded-lg border border-border-main bg-surface p-5 shadow-lg shadow-black/20 backdrop-blur-sm lg:flex-row lg:items-end lg:justify-between" : "flex flex-col items-start gap-3 rounded-lg border border-border-main bg-surface p-4 shadow-lg shadow-black/20 backdrop-blur-sm lg:flex-row lg:items-end lg:justify-between"}>
+        <div className="grid w-full grid-cols-3 items-end gap-3 lg:flex lg:w-auto lg:flex-wrap">
+          <div className="order-1 flex min-w-0 flex-col gap-1 lg:order-2">
             <label className={toolbarLabelClass}>Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={toolbarSelectClass}>
               {categoryOptions.map((option) => (
@@ -546,7 +536,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="order-2 flex min-w-0 flex-col gap-1 lg:order-3">
             <label className={toolbarLabelClass}>Status</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className={toolbarSelectClass}>
               {pawnedStatusOptions.map((option) => (
@@ -556,9 +546,19 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               ))}
             </select>
           </div>
+          <div className="order-3 flex min-w-0 flex-col gap-1 lg:order-1">
+            <label className={toolbarLabelClass}>Search</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items..."
+              className={viewOnly ? "h-10 w-full rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 lg:w-56" : toolbarFieldClass}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center gap-3 lg:w-auto">
           {viewOnly ? (
             <>
               {isAdminOrSuperAdmin && (
