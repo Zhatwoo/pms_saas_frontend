@@ -8,40 +8,47 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, MouseEvent } from "react";
+import { applyThemeWithAnimation } from "@/lib/theme-transition";
 
 type Theme = "light" | "dark";
 
 interface ThemeContextValue {
   theme: Theme;
-  toggleTheme: () => void;
+  toggleTheme: (event?: MouseEvent<HTMLElement>) => void;
   isDark: boolean;
+  isTransitioning: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = "pms-theme";
 
+function readStoredTheme(): Theme | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Read stored theme on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-      if (stored === "dark" || stored === "light") {
-        setTheme(stored);
-      } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        setTheme("dark");
-      }
-    } catch {
-      // SSR or localStorage unavailable
+    const stored = readStoredTheme();
+    if (stored) {
+      setTheme(stored);
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
     }
     setMounted(true);
   }, []);
 
-  // Apply theme class to <html>
   useEffect(() => {
     if (!mounted) return;
     const root = document.documentElement;
@@ -50,17 +57,29 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme, mounted]);
 
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  }, []);
+  const toggleTheme = useCallback(
+    (event?: MouseEvent<HTMLElement>) => {
+      const next: Theme = theme === "light" ? "dark" : "light";
+      const origin = event
+        ? { x: event.clientX, y: event.clientY }
+        : undefined;
+
+      setIsTransitioning(true);
+      void applyThemeWithAnimation(() => setTheme(next), origin).finally(() => {
+        setIsTransitioning(false);
+      });
+    },
+    [theme],
+  );
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme,
       toggleTheme,
       isDark: theme === "dark",
+      isTransitioning,
     }),
-    [theme, toggleTheme],
+    [theme, toggleTheme, isTransitioning],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
