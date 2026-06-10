@@ -8,6 +8,62 @@
 /* ── Light theme (default) ──────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* ── Dark mode switch: circular reveal (View Transitions API) ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+  animation: none;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+  animation-name: theme-reveal;
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-reveal-r, 150%) at var(--theme-reveal-x, 50%) var(--theme-reveal-y, 50%));
+  }
+}
+
+/* Fallback when View Transitions are unavailable */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition-duration: 0.45s !important;
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, outline-color, text-decoration-color !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+
+  html.theme-transitioning,
+  html.theme-transitioning *,
+  html.theme-transitioning *::before,
+  html.theme-transitioning *::after {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 :root {
@@ -116,7 +172,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 section[id] {
