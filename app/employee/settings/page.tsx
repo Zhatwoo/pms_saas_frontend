@@ -193,7 +193,7 @@ export default function EmployeeSettingsPage() {
                   notificationSound ===
                     (user?.notificationSound || DEFAULT_NOTIFICATION_SOUND))
               }
-              className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg bg-emerald-800 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-700 disabled:opacity-100"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
