@@ -97,7 +97,7 @@ export function NotificationSoundSettings({
               }}
               className={`min-w-0 rounded-lg border px-3 py-3 text-left text-sm transition ${
                 isSelected
-                  ? "border-emerald-500 bg-emerald-950/20 text-emerald-300"
+                  ? "border-emerald-600 bg-emerald-100 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-300"
                   : "border-border-main bg-surface-subtle text-text-secondary hover:border-emerald-500/60 hover:text-text-primary"
               }`}
             >
