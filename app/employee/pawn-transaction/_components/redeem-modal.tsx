@@ -67,6 +67,8 @@ interface PawnedSearchItem {
 
 export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, compactTablet = false }: RedeemModalProps) {
   const { user } = useAuth();
+  const isAdminOrSuperAdmin =
+    user?.role === "admin" || user?.role === "super_admin";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnedSearchItem | null>(null);
   const [adminForm, setAdminForm] = useState({
@@ -345,19 +347,21 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <DetailRow label="Condition" value={selectedItem.condition} />
                     <DetailRow label="Memory" value={selectedItem.memory} />
                     <DetailRow label="Items Included" value={selectedItem.itemsIncluded} />
-                    
-                    <div className="mt-4 pt-4 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
-                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
-                      {selectedItem.qrCode ? (
-                        <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm">
-                          <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
-                        </div>
-                      ) : (
-                        <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center">
-                          <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
-                        </div>
-                      )}
-                    </div>
+
+                    {isAdminOrSuperAdmin && (
+                      <div className="mt-4 pt-4 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
+                        {selectedItem.qrCode ? (
+                          <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm">
+                            <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                            <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </DetailSection>
                 </div>
 
@@ -449,18 +453,20 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <DetailRow label="Condition" value={selectedItem.condition} />
                     <DetailRow label="Memory" value={selectedItem.memory} />
                     <DetailRow label="Items Included" value={selectedItem.itemsIncluded} />
-                    <div className="mt-3 pt-3 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
-                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
-                      {selectedItem.qrCode ? (
-                        <div className="h-28 w-28 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm md:max-xl:h-24 md:max-xl:w-24">
-                          <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
-                        </div>
-                      ) : (
-                        <div className="h-28 w-28 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center md:max-xl:h-24 md:max-xl:w-24">
-                          <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
-                        </div>
-                      )}
-                    </div>
+                    {isAdminOrSuperAdmin && (
+                      <div className="mt-3 pt-3 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
+                        {selectedItem.qrCode ? (
+                          <div className="h-28 w-28 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm md:max-xl:h-24 md:max-xl:w-24">
+                            <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="h-28 w-28 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center md:max-xl:h-24 md:max-xl:w-24">
+                            <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </DetailSection>
                 </div>
 

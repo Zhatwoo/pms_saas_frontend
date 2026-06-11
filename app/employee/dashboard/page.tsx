@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { AutoResetBanner } from "@/app/(pages)/dashboard/_components/auto-reset-banner";
@@ -41,7 +41,7 @@ interface PawnKpisResponse {
 export default function EmployeeDashboard() {
   const { user } = useAuth();
   const { selectedBranch, isAllBranches } = useBranch();
-  const { modulesAllowed } = useOpeningChecklist();
+  const { isComplete } = useOpeningChecklist();
   const [isLoading, setIsLoading] = useState(true);
 
   const [overallData, setOverallData] = useState({
@@ -65,7 +65,7 @@ export default function EmployeeDashboard() {
   const [itemsAttentionData, setItemsAttentionData] = useState<AttentionItem[]>([]);
 
   useEffect(() => {
-    if (!modulesAllowed) {
+    if (!isComplete) {
       setIsLoading(false);
       return;
     }
@@ -86,13 +86,20 @@ export default function EmployeeDashboard() {
           setItemsAttentionData(data.attentionItems || []);
         }
       } catch (error) {
+        if (
+          error instanceof ApiError &&
+          error.statusCode === 403 &&
+          error.message.includes("opening checklist")
+        ) {
+          return;
+        }
         console.error("Failed to load dashboard KPIs:", error);
       } finally {
         setIsLoading(false);
       }
     }
     fetchDashboardKpis();
-  }, [selectedBranch.id, isAllBranches, modulesAllowed]);
+  }, [selectedBranch.id, isAllBranches, isComplete]);
 
   return (
     <div className="space-y-5">

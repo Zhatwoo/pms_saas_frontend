@@ -73,14 +73,14 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
 
   const applyServerStatus = useCallback((data: DailyOpeningApiStatus) => {
     lastSyncedOpeningDateRef.current = data.openingDate;
-    const allowed = Boolean(data.modulesAllowed);
     const step =
-      !allowed && data.checklistStep === "COMPLETED"
+      !data.modulesAllowed && data.checklistStep === "COMPLETED"
         ? "CASH_ON_HAND"
         : data.checklistStep;
+    const complete = step === "COMPLETED" && Boolean(data.modulesAllowed);
     setCurrentStep(step);
-    setIsComplete(step === "COMPLETED" && allowed);
-    setModulesAllowed(allowed);
+    setIsComplete(complete);
+    setModulesAllowed(complete);
   }, []);
 
   const loadDailyOpeningForEmployee = useCallback(
@@ -284,7 +284,7 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     } catch {
       setCurrentStep("INVENTORY_AUDIT");
       setIsComplete(false);
-      setModulesAllowed(true);
+      setModulesAllowed(false);
     }
   }, [applyServerStatus, refreshOpeningChecklistFromServer, router]);
 

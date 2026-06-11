@@ -15,14 +15,14 @@ function EmployeeLayoutInner({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive } = useAuth();
+  const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive } = useAuth();  
   const { selectedBranch } = useBranch();
-  const { modulesAllowed, isOpeningChecklistReady } = useOpeningChecklist();
+  const { isComplete, isOpeningChecklistReady } = useOpeningChecklist();
   const pathname = usePathname();
   const router = useRouter();
 
   const allowModuleContent =
-    modulesAllowed || Boolean(pathname?.includes("/incident-report"));
+    isComplete || Boolean(pathname?.includes("/incident-report"));
 
   const isLoading = isAuthLoading;
 
