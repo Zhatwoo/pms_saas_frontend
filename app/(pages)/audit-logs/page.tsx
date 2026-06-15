@@ -7,6 +7,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { DateFilterSelector } from "@/components/shared/date-filter-selector";
+import { toast } from "sonner";
 
 interface ActivityLog {
   id: string;
@@ -30,10 +31,10 @@ interface LoginLog {
   device_fingerprint: string | null;
   employee_id: string | null;
   employee: {
-    id: string;
-    full_name: string;
-    email: string;
-    role: string;
+    id?: string;
+    full_name?: string | null;
+    email?: string | null;
+    role?: string | null;
     avatarUrl?: string | null;
   } | null;
 }
@@ -660,6 +661,18 @@ function formatLoginStatus(status: string) {
   return { label: "Failed", color: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50" };
 }
 
+function getLoginEmployeeName(employee: LoginLog["employee"]) {
+  return employee?.full_name?.trim() || employee?.email?.trim() || "Unknown";
+}
+
+function formatLoginRole(role?: string | null) {
+  return role ? humanizeText(role) : "Role unavailable";
+}
+
+function canRequestDeviceAuthorization(log: LoginLog) {
+  return log.failure_reason === "UNKNOWN_DEVICE" && Boolean(log.device_fingerprint);
+}
+
 const PERIODS = ["Daily", "Weekly", "Monthly", "Yearly", "All Time"];
 
 export default function AuditLogsPage() {
@@ -683,6 +696,7 @@ export default function AuditLogsPage() {
   const [loginStatusFilter, setLoginStatusFilter] = useState("ALL");
   const [loginSearchQuery, setLoginSearchQuery] = useState("");
   const [loginCurrentPage, setLoginCurrentPage] = useState(1);
+  const [requestingDeviceLogId, setRequestingDeviceLogId] = useState<string | null>(null);
 
   // Date Filtering
   const [activePeriod, setActivePeriod] = useState("All Time");
@@ -934,7 +948,38 @@ export default function AuditLogsPage() {
   const totalItems = filteredLogs.length;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalLoginItems = filteredLoginLogs.length;
+  const totalLoginPages = Math.ceil(totalLoginItems / itemsPerPage) || 1;
   const paginatedLoginLogs = filteredLoginLogs.slice((loginCurrentPage - 1) * itemsPerPage, loginCurrentPage * itemsPerPage);
+
+  useEffect(() => {
+    if (loginCurrentPage > totalLoginPages) {
+      setLoginCurrentPage(totalLoginPages);
+    }
+  }, [loginCurrentPage, totalLoginPages]);
+
+  const handleRequestDeviceAuthorization = async (log: LoginLog) => {
+    if (!log.device_fingerprint) {
+      toast.error("This login log has no device fingerprint.");
+      return;
+    }
+
+    setRequestingDeviceLogId(log.id);
+    try {
+      const employeeName = getLoginEmployeeName(log.employee);
+      await api.post("/devices/request-authorization", {
+        deviceFingerprint: log.device_fingerprint,
+        deviceName: `${employeeName} device request from login log`,
+        deviceType: "DESKTOP",
+        ipAddress: log.ip_address ?? undefined,
+        email: log.employee?.email ?? undefined,
+      });
+      toast.success("Device authorization request sent.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to request device authorization.");
+    } finally {
+      setRequestingDeviceLogId(null);
+    }
+  };
 
   const handleExport = () => {
     if (filteredLogs.length === 0) return;
@@ -1091,6 +1136,10 @@ export default function AuditLogsPage() {
                   {paginatedLoginLogs.map(log => {
                     const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
                     const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                    const employeeName = getLoginEmployeeName(log.employee);
+                    const employeeRole = formatLoginRole(log.employee?.role);
+                    const showRequestAction = canRequestDeviceAuthorization(log);
+                    const isRequesting = requestingDeviceLogId === log.id;
                     return (
                       <div key={log.id} className="bg-surface p-4 hover:bg-surface-hover transition-colors">
                         <div className="flex items-start justify-between gap-3">
@@ -1104,13 +1153,13 @@ export default function AuditLogsPage() {
                           <div className="mt-3 flex items-center gap-3">
                             <Avatar
                               src={log.employee.avatarUrl}
-                              name={log.employee.full_name}
+                              name={employeeName}
                               sizeClass="h-8 w-8"
                               iconSizeClass="h-4 w-4"
                             />
                             <div className="flex flex-col">
-                              <span className="text-sm font-bold text-text-primary">{log.employee.full_name}</span>
-                              <span className="text-xs text-text-tertiary capitalize">{log.employee.role.replace('_', ' ')}</span>
+                              <span className="text-sm font-bold text-text-primary">{employeeName}</span>
+                              <span className="text-xs text-text-tertiary capitalize">{employeeRole}</span>
                             </div>
                           </div>
                         )}
@@ -1122,6 +1171,16 @@ export default function AuditLogsPage() {
                           <p className="mt-1 text-[10px] font-mono text-text-tertiary truncate" title={log.device_fingerprint}>
                             Device: {log.device_fingerprint.slice(0, 24)}…
                           </p>
+                        )}
+                        {showRequestAction && (
+                          <button
+                            type="button"
+                            onClick={() => void handleRequestDeviceAuthorization(log)}
+                            disabled={isRequesting}
+                            className="mt-3 rounded-lg border border-emerald-600 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                          >
+                            {isRequesting ? "Sending..." : "Request Access"}
+                          </button>
                         )}
                       </div>
                     );
@@ -1139,12 +1198,17 @@ export default function AuditLogsPage() {
                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Reason</th>
                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">IP Address</th>
                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Device Fingerprint</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border-subtle">
                       {paginatedLoginLogs.map(log => {
                         const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
                         const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                        const employeeName = getLoginEmployeeName(log.employee);
+                        const employeeRole = formatLoginRole(log.employee?.role);
+                        const showRequestAction = canRequestDeviceAuthorization(log);
+                        const isRequesting = requestingDeviceLogId === log.id;
                         return (
                           <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors">
                             <td className="px-4 py-4 whitespace-nowrap xl:px-6">
@@ -1161,13 +1225,13 @@ export default function AuditLogsPage() {
                                 <div className="flex items-center gap-3">
                                   <Avatar
                                     src={log.employee.avatarUrl}
-                                    name={log.employee.full_name}
+                                    name={employeeName}
                                     sizeClass="h-8 w-8"
                                     iconSizeClass="h-4 w-4"
                                   />
                                   <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-text-primary">{log.employee.full_name}</span>
-                                    <span className="text-xs text-text-tertiary capitalize">{log.employee.role.replace('_', ' ')}</span>
+                                    <span className="text-sm font-bold text-text-primary">{employeeName}</span>
+                                    <span className="text-xs text-text-tertiary capitalize">{employeeRole}</span>
                                   </div>
                                 </div>
                               ) : (
@@ -1185,6 +1249,20 @@ export default function AuditLogsPage() {
                                 {log.device_fingerprint ? log.device_fingerprint.slice(0, 16) + "…" : "—"}
                               </span>
                             </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              {showRequestAction ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRequestDeviceAuthorization(log)}
+                                  disabled={isRequesting}
+                                  className="rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                                >
+                                  {isRequesting ? "Sending..." : "Request Access"}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-text-tertiary">—</span>
+                              )}
+                            </td>
                           </tr>
                         );
                       })}
@@ -1197,7 +1275,7 @@ export default function AuditLogsPage() {
             <div className="mt-4">
               <PaginationFooter
                 currentPage={loginCurrentPage}
-                totalPages={Math.ceil(totalLoginItems / itemsPerPage) || 1}
+                totalPages={totalLoginPages}
                 totalItems={totalLoginItems}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setLoginCurrentPage}

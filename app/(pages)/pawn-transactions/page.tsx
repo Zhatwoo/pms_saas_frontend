@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
 import { ApiError, api } from "@/lib/api";
@@ -71,7 +71,27 @@ interface ApiTransaction {
     customer?: {
       full_name?: string | null;
       address?: string | null;
+      barangay?: string | null;
+      city?: string | null;
+      region?: string | null;
+      contact_number?: string | null;
+      middle_name?: string | null;
+      id_presented?: string | null;
     } | null;
+  } | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+    id_presented?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
   } | null;
 }
 
@@ -104,6 +124,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
   const isBuyBackAction = transaction.purpose === "Buy Back";
   const isPawnAction = transaction.purpose === "Pawn";
+  const customer = transaction.pawned_item?.customer ?? transaction.customer;
   const calculations = calculateGadgetInterest(
     pawnAmount,
     transaction.transaction_date,
@@ -119,8 +140,16 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
         ? "Sold Item"
         : (transaction.purpose as TransactionRow["purpose"]),
     details: transaction.details ?? "",
-    customerName: transaction.pawned_item?.customer?.full_name ?? "",
-    customerAddress: transaction.pawned_item?.customer?.address ?? "",
+    customerName: customer?.full_name ?? "",
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
+    customerAddress: customer?.address ?? "",
+    customerBarangay: customer?.barangay ?? undefined,
+    customerCity: customer?.city ?? undefined,
+    customerRegion: customer?.region ?? undefined,
+    customerPhone: customer?.contact_number ?? undefined,
+    customerMiddleName: customer?.middle_name ?? undefined,
+    idPresented: customer?.id_presented ?? undefined,
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     buyBack: isBuyBackAction ? toAmountString(transaction.cash_in) : "0",
@@ -297,9 +326,10 @@ export default function PawnTransactionsPage() {
   const highlightTransactionNo = searchParams.get("transactionNo");
   const shouldHighlight = searchParams.get("highlightTransaction") === "true";
   const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
-  const todayString = new Date().toISOString().split("T")[0];
+  const todayString = getPhCalendarDateString();
 
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -343,6 +373,7 @@ export default function PawnTransactionsPage() {
       if (requiresBranchSelection) {
         if (active) {
           setTransactions([]);
+          setAllTransactions([]);
           setStats(EMPTY_STATS);
           setIsLoading(false);
         }
@@ -437,6 +468,42 @@ export default function PawnTransactionsPage() {
   }, [requiresBranchSelection, selectedBranch.id, selectedDate, isAllBranches]);
 
   useEffect(() => {
+    let active = true;
+
+    async function fetchCalendarTransactions() {
+      if (requiresBranchSelection) {
+        if (active) {
+          setAllTransactions([]);
+        }
+        return;
+      }
+
+      try {
+        const branchParam = isAllBranches
+          ? ""
+          : `branch=${encodeURIComponent(selectedBranch.id)}`;
+        const query = `${branchParam}${branchParam ? "&" : ""}range=all`;
+        const data = await api.get<TransactionsResponse>(`/transactions?${query}`);
+
+        if (active) {
+          setAllTransactions((data.transactions || []).map(toTransactionRow));
+        }
+      } catch (error) {
+        console.error("Failed to load transaction calendar data:", error);
+        if (active) {
+          setAllTransactions([]);
+        }
+      }
+    }
+
+    void fetchCalendarTransactions();
+
+    return () => {
+      active = false;
+    };
+  }, [requiresBranchSelection, selectedBranch.id, isAllBranches]);
+
+  useEffect(() => {
     if (viewMode === "list") {
       setListDateFilter(selectedDate);
     }
@@ -483,13 +550,18 @@ export default function PawnTransactionsPage() {
   );
 
   // Build calendar data: count transactions per date for the visible month
-  const calendarData: Record<string, number> = {};
-  for (const tx of transactions) {
-    const [yearStr, monthStr] = tx.date.split("-");
-    if (Number(yearStr) === calendarYear && Number(monthStr) - 1 === calendarMonth) {
-      calendarData[tx.date] = (calendarData[tx.date] ?? 0) + 1;
+  const calendarData = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const tx of allTransactions) {
+      const [yearStr, monthStr] = tx.date.split("-");
+      if (Number(yearStr) === calendarYear && Number(monthStr) - 1 === calendarMonth) {
+        counts[tx.date] = (counts[tx.date] ?? 0) + 1;
+      }
     }
-  }
+
+    return counts;
+  }, [allTransactions, calendarMonth, calendarYear]);
 
   function handleExportCSV() {
     if (filteredTransactions.length === 0) {
