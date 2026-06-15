@@ -168,9 +168,9 @@ function TransactionsCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-border-subtle bg-surface-secondary">
+      <div className="grid grid-cols-7 border-b border-zinc-200/80 bg-surface-secondary dark:border-border-subtle">
         {DAY_NAMES.map((dayName) => (
-          <div key={dayName} className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted">
+          <div key={dayName} className="border-r border-zinc-200/80 py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted last:border-r-0 dark:border-border-subtle">
             {dayName}
           </div>
         ))}
@@ -179,7 +179,7 @@ function TransactionsCalendar({
       <div className="grid grid-cols-7">
         {cells.map((day, index) => {
           if (day === null) {
-            return <div key={`empty-${index}`} className="h-16 border-b border-r border-border-subtle/40 bg-surface-secondary/20" />;
+            return <div key={`empty-${index}`} className="h-16 border-b border-r border-zinc-200/80 bg-surface-secondary/20 dark:border-border-subtle" />;
           }
 
           const dateString = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -192,7 +192,7 @@ function TransactionsCalendar({
               key={day}
               type="button"
               onClick={() => onSelectDate(dateString)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
@@ -209,7 +209,7 @@ function TransactionsCalendar({
         })}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border-subtle bg-surface-secondary/60 px-4 py-2.5">
+      <div className="flex items-center justify-between border-t border-zinc-200/80 bg-surface-secondary/60 px-4 py-2.5 dark:border-border-subtle">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
