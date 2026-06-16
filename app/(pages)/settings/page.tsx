@@ -46,11 +46,11 @@ function ResizableLine({
     <span
       ref={spanRef}
       onPointerUp={handlePointerUp}
-      className="inline-block overflow-hidden border-b border-zinc-400 align-bottom"
+      className="moa-resizable-line inline-block min-w-0 shrink overflow-hidden border-b border-zinc-400 align-bottom"
       style={{
         resize: canEdit ? "horizontal" : "none",
         minWidth: 48,
-        maxWidth: 400,
+        maxWidth: "min(400px, 100%)",
         width,
       }}
       title={canEdit ? "Drag right edge to resize" : undefined}
@@ -1036,9 +1036,9 @@ export default function SettingsPage() {
                 </p>
               )}
 
-              <div className="overflow-x-auto overflow-y-visible rounded-md border border-border-main bg-surface-secondary p-3 shadow-inner sm:p-6 dark:bg-surface-secondary">
-                <div className={`flex items-start gap-4 ${isMoaEditMode ? "min-w-[1090px]" : ""}`}>
-                <div className="moa-paper-effect mx-auto min-h-[1120px] w-full max-w-[794px] flex-none space-y-3 border border-emerald-800/70 bg-white p-6 text-[10px] leading-normal text-zinc-800">
+              <div className="overflow-hidden rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
+                <div className="flex min-w-0 flex-col items-stretch gap-4 2xl:flex-row 2xl:items-start">
+                <div className="moa-paper-effect moa-settings-paper mx-auto min-h-[1120px] w-full max-w-[794px] min-w-0 flex-none space-y-3 overflow-hidden border border-emerald-800/70 bg-white p-3 text-[10px] leading-normal text-zinc-800 sm:p-5 lg:p-6">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -1061,69 +1061,85 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Row 2: Original Copy | Unit Code */}
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    {renderEditableLabel("originalCopy", "font-semibold")}
-                    <div className="min-w-0 flex items-center gap-2 text-[10px]">
-                      {renderEditableLabel("unitCode", "font-semibold uppercase whitespace-nowrap")}
-                      {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v))}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    {renderEditableLabel("originalCopy", "inline font-semibold")}
+                    <div className="flex min-w-0 max-w-full items-center justify-end gap-1 text-[10px]">
+                      {renderEditableLabel("unitCode", "inline font-semibold uppercase whitespace-nowrap")}
+                      {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v), 80)}
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid min-w-0 gap-x-6 gap-y-3 sm:grid-cols-2">
                     {isTopHeaderSwapped ? (
                       <>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("maturityDate", "w-32")}
-                            <span>1st</span>
-                            {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 80)}
-                            <span>2nd</span>
-                            {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 80)}
-                            <span>3rd</span>
-                            {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 80)}
+                        <div className="min-w-0 space-y-1">
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("maturityDate", "whitespace-nowrap")}
+                            <div className="grid min-w-0 justify-end grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                              <span className="contents whitespace-nowrap">
+                                <span>1st</span>
+                                {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>2nd</span>
+                                {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>3rd</span>
+                                {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 48)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("expiryDate", "w-32")}
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("expiryDate", "whitespace-nowrap")}
                             {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v))}
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("purchasedDate", "w-28")}
+                        <div className="min-w-0 space-y-1 sm:justify-self-end sm:w-full">
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("purchasedDate", "w-24 sm:w-28")}
                             {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v))}
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("idsPresented", "w-28")}
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("idsPresented", "w-24 sm:w-28")}
                             {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v))}
                           </div>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("purchasedDate", "w-28")}
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("purchasedDate", "w-24 sm:w-28")}
                             {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v))}
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("idsPresented", "w-28")}
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("idsPresented", "w-24 sm:w-28")}
                             {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v))}
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("maturityDate", "w-32")}
-                            <span>1st</span>
-                            {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 80)}
-                            <span>2nd</span>
-                            {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 80)}
-                            <span>3rd</span>
-                            {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 80)}
+                        <div className="min-w-0 space-y-1 sm:justify-self-end sm:w-full">
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("maturityDate", "whitespace-nowrap")}
+                            <div className="grid min-w-0 justify-end grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                              <span className="contents whitespace-nowrap">
+                                <span>1st</span>
+                                {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>2nd</span>
+                                {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>3rd</span>
+                                {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 48)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("expiryDate", "w-32")}
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("expiryDate", "whitespace-nowrap")}
                             {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v))}
                           </div>
                         </div>
@@ -1150,8 +1166,8 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  <div className="grid gap-5 border-y border-emerald-900/50 py-4 md:grid-cols-2">
-                    <div className="space-y-1">
+                  <div className="grid min-w-0 gap-5 border-y border-emerald-900/50 py-4 sm:grid-cols-2">
+                    <div className="min-w-0 space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("financialDetails", "inline")}</p>
                       <div className="grid grid-cols-[74px_1fr] items-center gap-2">
                         {FINANCIAL_FIELD_OPTIONS.filter((field) =>
@@ -1179,7 +1195,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("unitDescription", "inline")}</p>
                       <div className="grid grid-cols-[92px_1fr] items-center gap-2">
                         {UNIT_FIELD_OPTIONS.filter((field) =>
@@ -1260,7 +1276,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-8 pt-4 md:grid-cols-2 items-end">
+                  <div className="grid min-w-0 items-end gap-8 pt-4 sm:grid-cols-2">
                     <div className="flex flex-col text-center">
                       {/* Invisible spacer — same height as "I HEREBY AUTHORIZED" on the other column */}
                       <span className="block text-[11px] font-bold uppercase text-emerald-900 invisible select-none" aria-hidden="true">
@@ -1277,7 +1293,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 {isMoaEditMode && (
-                  <aside className="sticky top-3 w-[280px] flex-none space-y-3 rounded-lg border border-emerald-200 bg-white p-3 text-zinc-800 shadow-sm">
+                  <aside className="w-full min-w-0 flex-none space-y-3 rounded-lg border border-emerald-200 bg-white p-3 text-zinc-800 shadow-sm 2xl:sticky 2xl:top-3 2xl:w-[280px]">
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-wide text-emerald-900">
                         MOA Fields
@@ -1549,6 +1565,18 @@ export default function SettingsPage() {
           color-scheme: light !important;
           overflow-y: visible !important;
           max-height: none !important;
+        }
+        .moa-settings-paper,
+        .moa-settings-paper * {
+          box-sizing: border-box;
+        }
+        .moa-settings-paper {
+          overflow-wrap: anywhere;
+        }
+        .moa-settings-paper input,
+        .moa-settings-paper [contenteditable="true"],
+        .moa-settings-paper .moa-resizable-line {
+          max-width: 100%;
         }
         .moa-paper-effect input {
           min-width: 0;

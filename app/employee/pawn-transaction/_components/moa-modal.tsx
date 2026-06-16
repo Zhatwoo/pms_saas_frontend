@@ -214,7 +214,7 @@ export function MoaModal({
     }
   }, [isOpen, autoPrint, labels]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!printRef.current) return;
 
     try {
@@ -235,21 +235,64 @@ export function MoaModal({
       }
 
       iframeDoc.open();
-      iframeDoc.write(`<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title>`);
+      iframeDoc.write(
+        `<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title></head>` +
+        `<body class="moa-print-document">${printRef.current.outerHTML}</body></html>`,
+      );
+      iframeDoc.close();
+
+      const stylesheetPromises: Promise<void>[] = [];
       Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
         try {
-          iframeDoc.head.appendChild(node.cloneNode(true));
+          const clone = node.cloneNode(true) as HTMLLinkElement | HTMLStyleElement;
+          if (clone instanceof HTMLLinkElement) {
+            stylesheetPromises.push(new Promise((resolve) => {
+              clone.addEventListener("load", () => resolve(), { once: true });
+              clone.addEventListener("error", () => resolve(), { once: true });
+            }));
+          }
+          iframeDoc.head.appendChild(clone);
         } catch {
-          // ignore clone failures from browser-injected styles
+          // Ignore clone failures from browser-injected styles.
         }
       });
-      iframeDoc.write(`<style>
+
+      const printOverrides = iframeDoc.createElement("style");
+      printOverrides.textContent = `
         @page { size: portrait; margin: 6mm; }
         html, body { margin: 0; padding: 0; background: #fff; }
-        #moa-slip-printable { margin: 0 auto; padding: 0; width: 100%; }
-      </style>`);
-      iframeDoc.write(`</head><body>${printRef.current.outerHTML}</body></html>`);
-      iframeDoc.close();
+        body.moa-print-document,
+        body.moa-print-document *,
+        body.moa-print-document:not(.printing-moa-active) *,
+        body.moa-print-document #moa-slip-printable,
+        body.moa-print-document #moa-slip-printable * {
+          visibility: visible !important;
+        }
+        #moa-slip-printable {
+          display: block !important;
+          margin: 0 auto;
+          padding: 0;
+          width: 100%;
+        }
+      `;
+      iframeDoc.head.appendChild(printOverrides);
+
+      const imagePromises = Array.from(iframeDoc.images).map((image) => {
+        if (image.complete) return Promise.resolve();
+        return new Promise<void>((resolve) => {
+          image.addEventListener("load", () => resolve(), { once: true });
+          image.addEventListener("error", () => resolve(), { once: true });
+        });
+      });
+      const assetsReady = Promise.all([
+        ...stylesheetPromises,
+        ...imagePromises,
+        iframeDoc.fonts?.ready ?? Promise.resolve(),
+      ]);
+      await Promise.race([
+        assetsReady,
+        new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+      ]);
 
       const printWindow = iframe.contentWindow;
       const doPrint = () => {
@@ -263,7 +306,9 @@ export function MoaModal({
         }
       };
 
-      setTimeout(doPrint, 250);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(doPrint);
+      });
     } catch (err) {
       console.error("Print failed:", err);
       window.print();
@@ -429,9 +474,9 @@ export function MoaModal({
             <div className="flex flex-col gap-1 border-b border-zinc-100 pb-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-bold">{labels?.originalCopy || "Original copy"}</p>
-                <div className="flex items-center gap-2 text-[10px]">
+                <div className="flex items-center gap-1 text-[10px]">
                   <span className="font-bold uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
-                  <span className="w-32 border-b border-zinc-400 font-bold">{data.unitCode || "---"}</span>
+                  <span className="w-20 border-b border-zinc-400 font-bold">{data.unitCode || "---"}</span>
                 </div>
               </div>
 
@@ -448,19 +493,25 @@ export function MoaModal({
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-32 font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[8px]">1st</span>
-                      <span className="w-14 border-b border-zinc-400 text-center">{maturityDates[0]}</span>
-                      <span className="text-[8px]">2nd</span>
-                      <span className="w-14 border-b border-zinc-400 text-center">{maturityDates[1]}</span>
-                      <span className="text-[8px]">3rd</span>
-                      <span className="w-14 border-b border-zinc-400 text-center">{maturityDates[2]}</span>
+                  <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                    <span className="whitespace-nowrap font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
+                    <div className="grid min-w-0 justify-end grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                      <span className="contents whitespace-nowrap">
+                        <span className="text-[8px]">1st</span>
+                        <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[0]}</span>
+                      </span>
+                      <span className="contents whitespace-nowrap">
+                        <span className="text-[8px]">2nd</span>
+                        <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[1]}</span>
+                      </span>
+                      <span className="contents whitespace-nowrap">
+                        <span className="text-[8px]">3rd</span>
+                        <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[2]}</span>
+                      </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-32 font-semibold text-[9px] uppercase tracking-wider text-red-600">{labels?.expiryDate || "Expiry Date of Repurchase:"}</span>
+                  <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                    <span className="whitespace-nowrap font-semibold text-[9px] uppercase tracking-wider text-red-600">{labels?.expiryDate || "Expiry Date:"}</span>
                     <span className="flex-1 border-b border-zinc-400 text-red-600 font-bold">{gracePeriodEnd}</span>
                   </div>
                 </div>
