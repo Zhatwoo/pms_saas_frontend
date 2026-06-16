@@ -465,32 +465,47 @@ export default function DevicesPage() {
         )}
       </div>
 
-      {/* Stat chips */}
-      <div className="flex flex-wrap gap-2">
-        {(["ALL", "AUTHORIZED", "PENDING", "BLOCKED"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-              statusFilter === s
-                ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 dark:bg-emerald-600 dark:shadow-emerald-500/20"
-                : "bg-surface-secondary text-text-secondary hover:bg-surface-hover"
-            }`}
-          >
-            {s} ({counts[s]})
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:flex-1 md:min-w-0">
+            <div className="min-w-0 md:flex-1">
+              <input
+                type="text"
+                placeholder="Search by name, fingerprint, or employee..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full min-w-0 rounded-lg border border-input-border bg-input-bg px-4 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 md:w-auto lg:hidden"
+            >
+              {(["ALL", "AUTHORIZED", "PENDING", "BLOCKED"] as const).map((s) => (
+                <option key={s} value={s}>
+                  {s} ({counts[s]})
+                </option>
+              ))}
+            </select>
+          </div>
 
-      {/* Search */}
-      <div className="flex gap-3">
-        <input
-          type="text"
-          placeholder="Search by name, fingerprint, or employee..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-4 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500"
-        />
+          <div className="hidden flex-wrap gap-2 lg:flex">
+            {(["ALL", "AUTHORIZED", "PENDING", "BLOCKED"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                  statusFilter === s
+                    ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 dark:bg-emerald-600 dark:shadow-emerald-500/20"
+                    : "bg-surface-secondary text-text-secondary hover:bg-surface-hover"
+                }`}
+              >
+                {s} ({counts[s]})
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Empty state with guidance */}
@@ -529,24 +544,111 @@ export default function DevicesPage() {
       ) : filtered.length === 0 && devices.length > 0 ? (
         <div className="py-12 text-center text-sm text-text-tertiary">No devices found for {selectedBranch.name}</div>
       ) : filtered.length > 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-lg shadow-black/10 dark:shadow-black/30">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-subtle bg-surface-secondary">
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Device</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Fingerprint</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Registered To</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Recent Users</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Branch</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">IP</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Last Login</th>
-                  {isSuperAdmin && (
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Actions</th>
-                  )}
-                </tr>
-              </thead>
+        <>
+          <div className="space-y-3 lg:hidden">
+            {filtered.map((device) => {
+              const name = device.device_name ?? device.deviceName;
+              const type = device.device_type ?? device.deviceType;
+              const fp = device.device_fingerprint ?? device.deviceFingerprint;
+              const ip = device.ip_address ?? device.ipAddress;
+              const lastLogin = device.last_login ?? device.lastLogin;
+              const createdAt = device.created_at ?? device.createdAt;
+
+              return (
+                <div key={device.id} className="rounded-2xl border border-border-main bg-surface p-4 shadow-sm">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-text-primary truncate">{name}</div>
+                        <div className="text-xs text-text-tertiary">{type}</div>
+                      </div>
+                      <StatusBadge status={device.status} />
+                    </div>
+
+                    <div className="grid gap-2 text-xs text-text-tertiary">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-text-secondary">Fingerprint</span>
+                        <span className="font-mono truncate">{fp ? `${fp.slice(0, 18)}…` : "—"}</span>
+                      </div>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-semibold text-text-secondary">Registered To</span>
+                        <div className="text-right">
+                          <div className="font-medium text-text-secondary truncate">{device.employee?.full_name ?? "—"}</div>
+                          {device.employee?.email && (
+                            <div className="text-[10px] text-text-tertiary">{device.employee.email}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-text-secondary">Branch</span>
+                        <span>{getDeviceBranchName(device) ?? "—"}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-text-secondary">Last login</span>
+                        <span>{lastLogin ? new Date(lastLogin).toLocaleString() : "Never"}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-text-secondary">IP</span>
+                        <span className="font-mono truncate">{ip ?? "—"}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {device.status === "PENDING" && (
+                        <button
+                          onClick={() => setAuthorizeTarget(device)}
+                          className="rounded bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                        >
+                          Authorize
+                        </button>
+                      )}
+                      {device.status === "AUTHORIZED" && (
+                        <button
+                          onClick={() => handleBlock(device.id)}
+                          className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+                        >
+                          Block
+                        </button>
+                      )}
+                      {device.status === "BLOCKED" && (
+                        <button
+                          onClick={() => handleUnblock(device.id)}
+                          className="rounded bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                        >
+                          Unblock
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(device.id)}
+                        className="rounded bg-surface-secondary px-3 py-1 text-xs font-semibold text-text-secondary hover:bg-surface-hover"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden lg:block overflow-hidden rounded-xl border border-border-main bg-surface shadow-lg shadow-black/10 dark:shadow-black/30">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border-subtle bg-surface-secondary">
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Device</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Fingerprint</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Registered To</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Recent Users</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Branch</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">IP</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Last Login</th>
+                    {isSuperAdmin && (
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase text-text-tertiary">Actions</th>
+                    )}
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-border-subtle">
                 {filtered.map((device) => {
                   const name = device.device_name ?? device.deviceName;
@@ -651,7 +753,7 @@ export default function DevicesPage() {
             </table>
           </div>
         </div>
-      ) : null}
+      </> ) : null}
 
       {/* Modals */}
       {showAddModal && (

@@ -707,7 +707,7 @@ export function InterestRatesSettings() {
                 {group.isExpanded && (
                   <div className="p-4 space-y-5 border-t border-border-main">
                     {/* Grid Layout: Config Fields + Categories + display logic */}
-                    <div className="grid gap-6 md:max-xl:grid-cols-1 xl:grid-cols-[1fr_260px]">
+                    <div className="grid gap-6 grid-cols-1 xl:grid-cols-[1fr_260px]">
                       {/* Left: Input Rates fields */}
                       <div className="space-y-4">
                         <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
@@ -715,14 +715,14 @@ export function InterestRatesSettings() {
                         </h4>
                         <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
                           <div className="overflow-x-auto">
-                            <table className="w-full border-collapse text-left">
+                            <table className="w-full min-w-[720px] border-collapse text-left">
                               <thead>
                                 <tr className="border-b border-border-main bg-surface-secondary text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                                   <th className="px-4 py-3">Maturity Stage / Tier</th>
                                   <th className="px-4 py-3 w-40">Maturity Start Day</th>
                                   <th className="px-4 py-3 w-40">Maturity End Day</th>
                                   <th className="px-4 py-3 w-32">Total Interest</th>
-                                  <th className="px-4 py-3 hidden sm:table-cell">Active Range Preview</th>
+                                  <th className="px-4 py-3 hidden lg:table-cell">Active Range Preview</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-border-main text-xs">
@@ -817,7 +817,7 @@ export function InterestRatesSettings() {
                                           </span>
                                         )}
                                       </td>
-                                      <td className="px-4 py-3.5 hidden sm:table-cell">
+                                      <td className="px-4 py-3.5 hidden lg:table-cell">
                                         <span className="inline-flex flex-col items-start rounded-md bg-surface-secondary px-2 py-1 text-[10px] font-bold leading-tight text-zinc-600 dark:text-zinc-300">
                                           <span>Days {tier.startDay} - {tier.endDay}</span>
                                           <span>→ {tier.rate}%</span>
