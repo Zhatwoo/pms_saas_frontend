@@ -316,16 +316,16 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       )}
 
       <div 
-        className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col overflow-hidden rounded-[2.5rem] border border-white/20 bg-surface shadow-2xl transition-all duration-500 scale-in-center print:hidden md:w-[90vw] xl:flex-row"
+        className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col overflow-y-auto rounded-[2.5rem] border border-white/20 bg-surface shadow-2xl transition-all duration-500 scale-in-center print:hidden md:w-[90vw] lg:flex-row lg:overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full shrink-0 overflow-y-auto bg-emerald-950 p-5 text-white scrollbar-hide xl:max-h-[90vh] xl:w-[320px]">
+        <div className="w-full shrink-0 bg-emerald-950 p-5 text-white lg:max-h-[90vh] lg:w-[320px] lg:overflow-y-auto lg:scrollbar-hide">
           <div className="flex flex-col gap-4 min-h-max">
             <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Identity Media</span></SectionTitle>
               {hasCustomerId ? (
-                <div className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-1">
+                <div className="grid w-full gap-3 md:grid-cols-2 lg:grid-cols-1">
                   {identityMedia.map((media) => (
                     <button
                       key={media.label}
@@ -504,7 +504,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         </div>
 
         {/* Right Section: Detailed Information */}
-        <div className="flex-1 overflow-y-auto p-5 scrollbar-hide md:p-8 xl:max-h-[90vh] xl:p-12">
+        <div className="flex-1 p-5 md:p-8 lg:max-h-[90vh] lg:overflow-y-auto lg:p-12 lg:scrollbar-hide">
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-50">
                <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
@@ -662,7 +662,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         {/* Close Button Top-Right (Desktop) */}
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all z-50 md:hidden lg:flex"
+          className="absolute right-4 top-4 z-50 flex rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-all hover:bg-white/20 md:right-6 md:top-6"
+          aria-label="Close pawned item details"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
