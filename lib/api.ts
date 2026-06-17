@@ -116,7 +116,8 @@ class ApiClient {
       path === "/auth/register" ||
       path === "/auth/signup/branches" ||
       path === "/branches/public" ||
-      path === "/inventory/public/for-sale";
+      path === "/inventory/public/for-sale" ||
+      path === "/devices/request-authorization";
 
     let res: Response;
     let retryCount = 0;
