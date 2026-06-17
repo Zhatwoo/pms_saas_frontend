@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { getAuthorizedRedirect, getDefaultRouteForRole } from "@/lib/auth";
 import { getDeviceFingerprint } from "@/lib/fingerprint";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -15,6 +15,38 @@ interface LoginModalProps {
 
 type ViewState = "login" | "unauthorized-device" | "request-sent";
 type LegalModalType = "privacy" | "terms" | null;
+
+const DEVICE_AUTH_CODES = new Set([
+  "UNKNOWN_DEVICE",
+  "DEVICE_PENDING",
+  "DEVICE_BLOCKED",
+  "MISSING_DEVICE_FINGERPRINT",
+]);
+
+function getDeviceAuthFailure(
+  err: unknown,
+): { code?: string; message: string } | null {
+  if (err instanceof ApiError) {
+    const code =
+      typeof err.payload.code === "string" ? err.payload.code : undefined;
+    if (code && DEVICE_AUTH_CODES.has(code)) {
+      return { code, message: err.message };
+    }
+  }
+
+  const msg = err instanceof Error ? err.message : String(err);
+  if (
+    msg.includes("Unauthorized Device") ||
+    msg.includes("Device not authorized") ||
+    msg.includes("Device authorization is pending") ||
+    msg.includes("Device fingerprint is required") ||
+    msg.includes("This device has been blocked")
+  ) {
+    return { message: msg };
+  }
+
+  return null;
+}
 
 const termsSections = [
   {
@@ -114,12 +146,76 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
   const [view, setView] = useState<ViewState>("login");
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [deviceFingerprint, setDeviceFingerprint] = useState<string>("");
+  const [fingerprintError, setFingerprintError] = useState<string>("");
   const [isRequestingAuth, setIsRequestingAuth] = useState(false);
 
   useEffect(() => {
-    // Pre-load fingerprint so login feels instant
-    getDeviceFingerprint().then(setDeviceFingerprint).catch(() => {});
+    getDeviceFingerprint()
+      .then((fp) => {
+        setDeviceFingerprint(fp);
+        setFingerprintError("");
+      })
+      .catch(() => {
+        setFingerprintError(
+          "Unable to verify this device. Disable ad blockers or try another browser.",
+        );
+      });
   }, []);
+
+  const resolveFingerprint = async (): Promise<string> => {
+    if (deviceFingerprint) return deviceFingerprint;
+    try {
+      const fp = await getDeviceFingerprint();
+      setDeviceFingerprint(fp);
+      setFingerprintError("");
+      return fp;
+    } catch {
+      const message =
+        "Unable to verify this device. Disable ad blockers or try another browser.";
+      setFingerprintError(message);
+      throw new Error(message);
+    }
+  };
+
+  const submitDeviceAuthorizationRequest = async (fp: string) => {
+    await api.post("/devices/request-authorization", {
+      deviceFingerprint: fp,
+      deviceName: `${navigator.platform || "Device"} — ${new Date().toLocaleDateString()}`,
+      deviceType: "DESKTOP",
+      email: email.trim(),
+    });
+  };
+
+  const handleDeviceAuthFailure = async (
+    failure: { code?: string; message: string },
+    fp: string,
+  ) => {
+    if (failure.code === "DEVICE_BLOCKED") {
+      setError(failure.message);
+      setView("unauthorized-device");
+      return;
+    }
+
+    if (failure.code === "DEVICE_PENDING") {
+      setView("request-sent");
+      return;
+    }
+
+    setIsRequestingAuth(true);
+    try {
+      await submitDeviceAuthorizationRequest(fp);
+      setView("request-sent");
+    } catch (reqErr) {
+      const msg =
+        reqErr instanceof Error
+          ? reqErr.message
+          : "Failed to send authorization request. Please try again.";
+      setError(msg);
+      setView("unauthorized-device");
+    } finally {
+      setIsRequestingAuth(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,8 +224,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
     setIsSubmitting(true);
 
     try {
-      // Ensure fingerprint is available
-      const fp = deviceFingerprint || (await getDeviceFingerprint());
+      const fp = await resolveFingerprint();
       const user = await login(email, password, fp);
       const requestedRedirect =
         searchParams.get("reason") === "session-expired"
@@ -139,18 +234,19 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
       router.replace(redirect || getDefaultRouteForRole(user.role));
       router.refresh();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Login failed";
-      // Show the device authorization request flow for device-related errors
-      if (
-        msg.includes("Unauthorized Device") ||
-        msg.includes("authorization") ||
-        msg.includes("UNKNOWN_DEVICE") ||
-        msg.includes("Device not authorized")
-      ) {
-        setView("unauthorized-device");
-      } else {
-        setError(msg);
+      const deviceFailure = getDeviceAuthFailure(err);
+      if (deviceFailure) {
+        try {
+          const fp = await resolveFingerprint();
+          await handleDeviceAuthFailure(deviceFailure, fp);
+        } catch (fpErr) {
+          setError(fpErr instanceof Error ? fpErr.message : "Login failed");
+        }
+        return;
       }
+
+      const msg = err instanceof Error ? err.message : "Login failed";
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -158,18 +254,18 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
 
   const handleRequestAuthorization = async () => {
     setIsRequestingAuth(true);
+    setError("");
     try {
-      const fp = deviceFingerprint || (await getDeviceFingerprint());
-      await api.post("/devices/request-authorization", {
-        deviceFingerprint: fp,
-        deviceName: `${navigator.platform || "Device"} — ${new Date().toLocaleDateString()}`,
-        deviceType: "DESKTOP",
-        email: email,
-      });
+      const fp = await resolveFingerprint();
+      await submitDeviceAuthorizationRequest(fp);
       setView("request-sent");
-    } catch {
-      setError("Failed to send authorization request. Please try again.");
-      setView("login");
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to send authorization request. Please try again.";
+      setError(msg);
+      if (!msg.includes("Unable to verify this device")) {
+        setView("login");
+      }
     } finally {
       setIsRequestingAuth(false);
     }
@@ -221,9 +317,9 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               <h3 className="text-xl font-bold text-emerald-950">Welcome back</h3>
               <p className="mt-1 text-xs text-zinc-500">Sign in to access your branch portal</p>
 
-              {error && (
+              {(error || fingerprintError) && (
                 <div className="mt-4 rounded-lg bg-red-50 px-4 py-2.5 text-xs font-medium text-red-600">
-                  {error}
+                  {error || fingerprintError}
                 </div>
               )}
 
@@ -279,10 +375,14 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isRequestingAuth}
                   className="w-full bg-emerald-800 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Signing in..." : "Sign In"}
+                  {isSubmitting
+                    ? isRequestingAuth
+                      ? "Sending device request..."
+                      : "Signing in..."
+                    : "Sign In"}
                 </button>
               </form>
 
@@ -325,7 +425,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               </div>
               <h3 className="mt-4 text-lg font-bold text-zinc-900">Unauthorized Device</h3>
               <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
-                This device is not authorized to access the system. You can request authorization from your branch admin.
+                This device is not authorized for your account. Request authorization from your Super Admin.
               </p>
 
               {deviceFingerprint && (
@@ -364,7 +464,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               </div>
               <h3 className="mt-4 text-lg font-bold text-zinc-900">Request Sent</h3>
               <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
-                Your device authorization request has been sent to your branch admin. You will be able to log in once they approve your device.
+                Your device authorization request has been sent to your Super Admin. You will be able to log in once they approve this device for your account.
               </p>
               <button
                 onClick={onClose}
