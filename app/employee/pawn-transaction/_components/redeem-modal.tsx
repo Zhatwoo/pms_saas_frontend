@@ -242,10 +242,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
+        <div className={`flex min-h-0 flex-1 flex-col xl:flex-row ${compactTablet ? "overflow-y-auto" : "overflow-hidden"}`}>
           {/* Left Side: Search & Selection */}
           <div className="flex w-full shrink-0 flex-col border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary xl:w-[400px] xl:border-r">
-            <div className="space-y-4 p-4 md:p-6">
+            <div className={`space-y-4 p-4 ${compactTablet ? "md:p-5" : "md:p-6"}`}>
               <div className="flex items-center gap-3 mb-2">
                 <Search className="w-5 h-5 text-emerald-600/40" />
                 <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Active Pawn</h3>
@@ -270,7 +270,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+            <div className={`overflow-y-auto px-4 pb-6 scrollbar-hide ${compactTablet ? "max-h-[210px] md:max-xl:max-h-[230px]" : "flex-1"}`}>
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
@@ -420,7 +420,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
           )}
 
           {compactTablet && selectedItem && (
-            <div className="w-full border-t border-emerald-50 bg-white px-4 pb-4 pt-4 dark:bg-surface xl:hidden">
+            <div className="w-full shrink-0 border-t border-emerald-50 bg-white px-4 pb-4 pt-4 dark:bg-surface xl:hidden">
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-1 mb-5">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
@@ -501,7 +501,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         </div>
 
         {/* Footer Actions */}
-        <div className={`p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0 ${compactTablet ? "md:p-6 md:max-xl:gap-5" : ""}`}>
+        <div className={`border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between shrink-0 ${compactTablet ? "gap-4 p-4 md:p-5 md:max-xl:gap-5" : "gap-8 p-8"}`}>
           <div className="flex items-center gap-8 w-full sm:w-auto">
              <button 
                 onClick={onClose}
@@ -539,7 +539,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
               <button 
                 disabled={isConfirming || !selectedItem}
                 onClick={handleConfirmRedeem}
-                className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isConfirming || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
+                className={`flex items-center justify-center gap-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${compactTablet ? "px-8 py-4" : "px-12 py-5"} ${isConfirming || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
               >
                 {isConfirming ? (
                    <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />

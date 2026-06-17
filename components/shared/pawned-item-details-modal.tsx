@@ -316,16 +316,16 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       )}
 
       <div 
-        className="relative w-[95vw] max-w-5xl bg-surface rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row transition-all duration-500 scale-in-center print:hidden md:w-[90vw]"
+        className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col overflow-hidden rounded-[2.5rem] border border-white/20 bg-surface shadow-2xl transition-all duration-500 scale-in-center print:hidden md:w-[90vw] xl:flex-row"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full md:w-[320px] bg-emerald-950 p-5 flex flex-col text-white shrink-0 md:max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <div className="w-full shrink-0 overflow-y-auto bg-emerald-950 p-5 text-white scrollbar-hide xl:max-h-[90vh] xl:w-[320px]">
           <div className="flex flex-col gap-4 min-h-max">
             <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Identity Media</span></SectionTitle>
               {hasCustomerId ? (
-                <div className="grid w-full gap-3 md:grid-cols-2">
+                <div className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-1">
                   {identityMedia.map((media) => (
                     <button
                       key={media.label}
@@ -504,7 +504,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         </div>
 
         {/* Right Section: Detailed Information */}
-        <div className="flex-1 p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-5 scrollbar-hide md:p-8 xl:max-h-[90vh] xl:p-12">
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-50">
                <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
@@ -522,7 +522,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
           ) : !item ? null : (
             <div className="space-y-10">
               {/* Header Info */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-border-main">
+              <div className="flex flex-col gap-6 border-b border-border-main pb-8 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Pawned Inventory Record</span>
                   <h2 className="text-4xl font-black text-text-primary tracking-tighter uppercase">{item.item_name}</h2>
@@ -539,7 +539,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
 
               {/* Grid 1: Item specs */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 gap-5 md:grid-cols-4 md:gap-6 xl:gap-8">
                 <DetailItem label="Unit Code" value={item.item_id} highlight />
                 <DetailItem label="Pawn Date" value={item.pawn_date} />
                 <DetailItem label="Serial #" value={item.serial_number || "—"} />

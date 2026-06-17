@@ -403,17 +403,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 type="button"
                 onClick={() => setTabletMenuOpen((prev) => !prev)}
                 aria-label="Toggle tablet navigation"
+                aria-expanded={tabletMenuOpen}
                 className="hidden h-10 w-10 items-center justify-center rounded-lg text-amber-300 transition hover:bg-amber-300/10 md:flex lg:hidden"
               >
-                {tabletMenuOpen ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                )}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               </button>
 
               {/* Hamburger ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mobile only */}
@@ -436,34 +431,68 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             </div>
           </div>
 
-          {/* Tablet dropdown menu */}
+          {/* Tablet side panel menu */}
           {tabletMenuOpen && (
-            <div className="hidden border-t border-white/10 bg-emerald-900 px-4 pb-4 md:block lg:hidden">
-              <div className="grid grid-cols-2 gap-2 pt-3">
-                {navItems.map((item, index) => {
-                  const id = item.toLowerCase().replace(/ /g, "-");
-                  return (
-                    <a
-                      key={`tablet-${item}`}
-                      ref={(el) => {
-                        navRefs.current[index] = el;
-                      }}
-                      href={`#${id}`}
-                      onClick={(e) => {
-                        handleScroll(e, id, item);
-                        setTabletMenuOpen(false);
-                      }}
-                      className={`rounded-lg border px-3 py-2 text-center text-[11px] font-bold tracking-wider transition-colors ${
-                        activeNavItem === item
-                          ? "border-amber-300/60 bg-amber-300/10 text-amber-300"
-                          : "border-white/15 text-white hover:border-amber-300/40 hover:text-amber-300"
-                      }`}
-                    >
-                      {item}
-                    </a>
-                  );
-                })}
-              </div>
+            <div className="fixed inset-0 z-[70] hidden md:block lg:hidden">
+              <button
+                type="button"
+                aria-label="Close tablet navigation overlay"
+                onClick={() => setTabletMenuOpen(false)}
+                className="absolute inset-0 bg-emerald-950/55 backdrop-blur-sm"
+              />
+
+              <aside className="absolute right-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-l border-white/10 bg-emerald-950 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg" />
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400">JCLB PawnShop</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTabletMenuOpen(false)}
+                    aria-label="Close tablet navigation"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-amber-300 transition hover:bg-white/10"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 py-5">
+                  <div className="space-y-2">
+                    {navItems.map((item, index) => {
+                      const id = item.toLowerCase().replace(/ /g, "-");
+                      const isActive = activeNavItem === item;
+                      return (
+                        <a
+                          key={`tablet-${item}`}
+                          ref={(el) => {
+                            navRefs.current[index] = el;
+                          }}
+                          href={`#${id}`}
+                          onClick={(e) => {
+                            handleScroll(e, id, item);
+                            setTabletMenuOpen(false);
+                          }}
+                          className={`group flex items-center gap-3 rounded-md border px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
+                            isActive
+                              ? "border-amber-300 bg-amber-300/15 text-amber-300"
+                              : "border-transparent bg-transparent text-white/80 hover:border-amber-300/70 hover:bg-white/[0.03] hover:text-amber-300"
+                          }`}
+                        >
+                          <span className={`h-2 w-2 rounded-full transition-colors ${isActive ? "bg-amber-300" : "bg-white/20 group-hover:bg-amber-300/70"}`} />
+                          <span>{item}</span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 p-4" />
+              </aside>
             </div>
           )}
 
@@ -652,12 +681,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         <FeaturedSaleItems />
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="reviews" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-48">
+        <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-amber-500">CUSTOMER REVIEWS</p>
             <h2 className="mt-2 text-3xl font-black text-emerald-900 md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
 
-            <div className="mt-8 relative flex items-center gap-2 md:mt-12 md:gap-4">
+            <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
               {/* Left arrow */}
               <button onClick={prevReview}
                 className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95 md:h-12 md:w-12">
@@ -690,7 +719,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Desktop: 3-card carousel */}
-              <div className="hidden flex-1 overflow-hidden py-10 md:block">
+              <div className="hidden flex-1 overflow-hidden py-8 md:block lg:py-10">
                 <div 
                   className="flex transition-transform duration-500 ease-out"
                   style={{ transform: `translateX(${(1 - (reviewIndex + 1)) * 33.333}%)` }}
@@ -698,8 +727,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   {extendedReviews.map((review, i) => {
                     const isCenter = i === reviewIndex + 1;
                     return (
-                      <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-4 transition-all duration-500">
-                        <div className={`h-full rounded-2xl p-6 shadow-lg transition-all duration-500 ${
+                      <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-2 transition-all duration-500 lg:px-4">
+                        <div className={`h-full rounded-2xl p-4 shadow-lg transition-all duration-500 lg:p-6 ${
                           isCenter
                             ? "bg-emerald-900 text-white scale-105 shadow-2xl z-10"
                             : "bg-emerald-50/80 text-emerald-900 scale-95 opacity-50"
@@ -711,15 +740,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                               </svg>
                             ))}
                           </div>
-                          <p className={`text-sm leading-relaxed mb-6 ${isCenter ? "text-white/90" : "text-zinc-600"}`}>
+                          <p className={`mb-5 text-xs leading-relaxed lg:mb-6 lg:text-sm ${isCenter ? "text-white/90" : "text-zinc-600"}`}>
                             &ldquo;{review.quote}&rdquo;
                           </p>
                           <div className="flex items-center gap-3">
                             <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${isCenter ? "bg-amber-400 text-emerald-900" : "bg-emerald-900 text-white"}`}>
                               {review.initials}
                             </div>
-                            <div>
-                              <p className={`font-bold text-sm ${isCenter ? "text-white" : "text-emerald-900"}`}>{review.name}</p>
+                            <div className="min-w-0">
+                              <p className={`text-sm font-bold leading-tight ${isCenter ? "text-white" : "text-emerald-900"}`}>{review.name}</p>
                               <p className={`text-xs ${isCenter ? "text-white/60" : "text-zinc-400"}`}>{review.sold}</p>
                             </div>
                           </div>
@@ -843,11 +872,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <footer className="bg-emerald-900 px-6 py-12 md:px-10 lg:px-16">
+        <footer className="bg-emerald-900 px-6 py-12 md:px-8 md:py-10 lg:px-16 lg:py-12">
           <div className="mx-auto w-full max-w-7xl">
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:gap-12 lg:grid-cols-4 lg:gap-12">
+            <div className="grid grid-cols-1 gap-9 md:grid-cols-[1.15fr_0.9fr_1fr_1.35fr] md:gap-6 lg:gap-12">
               {/* Brand */}
-              <div className="mx-auto w-full max-w-[280px] md:mx-0 lg:mx-auto">
+              <div className="w-full max-w-[320px] md:max-w-none lg:mx-auto lg:max-w-[280px]">
                 <div className="flex items-center gap-3 mb-4">
                   <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg" />
                   <div>
@@ -855,16 +884,16 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     <p className="text-xl font-black text-white leading-none">Pawnshop</p>
                   </div>
                 </div>
-                <p className="text-sm text-white/50 leading-relaxed">
+                <p className="text-xs leading-relaxed text-white/50 lg:text-sm">
                   Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
                   <span className="text-amber-400 font-bold">JCLB promise.</span>
                 </p>
               </div>
 
               {/* Quick Links */}
-              <div className="mx-auto w-full max-w-[240px]">
+              <div className="w-full max-w-[280px] justify-self-start md:max-w-none md:justify-self-start lg:mx-auto lg:max-w-[240px] lg:justify-self-auto">
                 <div className="w-full">
-                  <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">QUICK LINKS</p>
+                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-amber-400 lg:text-xs">QUICK LINKS</p>
                   <ul className="space-y-2.5">
                     {[
                       { label: "How It Works", href: "#how-it-works" },
@@ -877,7 +906,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     ].map((link) => {
                       return (
                         <li key={link.label}>
-                          <a href={link.href} className="flex items-start gap-2 text-sm leading-snug text-white/60 hover:text-amber-400 transition-colors">
+                          <a href={link.href} className="flex items-start gap-2 text-xs leading-snug text-white/60 transition-colors hover:text-amber-400 lg:text-sm">
                             <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
                             {link.label}
                           </a>
@@ -889,12 +918,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* What We Buy */}
-              <div className="mx-auto w-full max-w-[240px]">
+              <div className="w-full max-w-[320px] md:max-w-none lg:mx-auto lg:max-w-[240px]">
                 <div className="w-full">
-                  <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">WHAT WE BUY</p>
-                  <div className="flex flex-wrap gap-2 max-w-[240px]">
+                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-amber-400 lg:text-xs">WHAT WE BUY</p>
+                  <div className="flex max-w-[280px] flex-wrap gap-2">
                     {["Smartphones", "Laptops", "Gaming Consoles", "Cameras", "Tablets", "Watches"].map((item) => (
-                      <span key={item} className="rounded-full border border-white/20 px-3 py-1 text-xs text-white/60">
+                      <span key={item} className="rounded-full border border-white/20 px-2.5 py-1 text-[11px] text-white/60 lg:px-3 lg:text-xs">
                         {item}
                       </span>
                     ))}
@@ -903,9 +932,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Contact */}
-              <div className="mx-auto w-full max-w-[320px]">
-                <p className="text-xs font-black uppercase tracking-widest text-amber-400 mb-4">CONTACT US</p>
-                <div className="space-y-3">
+              <div className="w-full max-w-[320px] justify-self-start md:max-w-none md:justify-self-start lg:mx-auto lg:justify-self-auto">
+                <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-amber-400 lg:text-xs">CONTACT US</p>
+                <div className="space-y-2.5 lg:space-y-3">
                   {[
                     { icon: "f", label: "Facebook", sub: "JCLB Buy Back Shop", color: "bg-blue-600" },
                     { icon: "@", label: "Email Us", sub: "Compose with Gmail", color: "bg-red-500" },
@@ -925,9 +954,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                         }
                         void openBranchModal();
                       }}
-                      className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
+                      className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition-colors hover:bg-white/10 lg:gap-3 lg:px-4 lg:py-3"
                     >
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.color} text-white text-sm font-black`}>
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.color} text-white text-sm font-black lg:h-9 lg:w-9`}>
                         {c.icon === "pin" ? (
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-5 w-5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
@@ -938,8 +967,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-white">{c.label}</p>
-                        <p className="text-xs text-white/50 break-words">{c.sub}</p>
+                        <p className="text-xs font-bold text-white lg:text-sm">{c.label}</p>
+                        <p className="break-words text-[11px] text-white/50 lg:text-xs">{c.sub}</p>
                       </div>
                     </button>
                   ))}
@@ -947,9 +976,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 items-center gap-6 border-t border-white/10 pt-8 text-xs text-white/40 xl:grid-cols-[minmax(420px,1fr)_minmax(320px,auto)_minmax(420px,1fr)]">
+            <div className="mt-10 grid grid-cols-1 items-center gap-5 border-t border-white/10 pt-7 text-xs text-white/40 md:grid-cols-2 xl:grid-cols-[minmax(420px,1fr)_minmax(320px,auto)_minmax(420px,1fr)]">
               {/* Left: Badges */}
-              <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              <div className="flex flex-wrap justify-center gap-2.5 md:justify-start lg:gap-3">
                 {["100% Legit", "BSP Registered", "24hr Quick Payout"].map((badge) => (
                   <span key={badge} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 font-bold text-amber-400 whitespace-nowrap">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" aria-hidden="true">
@@ -961,7 +990,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Middle: Copyright */}
-              <div className="justify-self-center px-2 text-center">
+              <div className="justify-self-center px-2 text-center md:justify-self-end md:text-right xl:justify-self-center xl:text-center">
                 <span>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</span>
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                   <button
@@ -983,7 +1012,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               {/* Right: Slogans */}
-              <div className="flex flex-wrap items-center justify-center gap-3 px-2 text-center lg:justify-end lg:text-right">
+              <div className="flex flex-wrap items-center justify-center gap-3 px-2 text-center md:col-span-2 xl:col-span-1 xl:justify-end xl:text-right">
                 <span>Made with care for our customers</span>
                 <button type="button" onClick={onLoginClick} className="italic text-amber-400/60 transition hover:text-amber-300 hover:underline">
                   &ldquo;Madaling Kausap&rdquo;

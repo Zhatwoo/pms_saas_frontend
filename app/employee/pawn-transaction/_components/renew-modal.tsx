@@ -346,9 +346,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
           {compactTablet && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden md:max-xl:grid md:max-xl:grid-cols-[360px_minmax(0,1fr)]">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden md:max-xl:grid md:max-xl:grid-cols-[300px_minmax(0,1fr)]">
               {!hideSidebar && (
-                <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[360px]">
+                <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[300px]">
                   <div className="space-y-3 p-4 md:p-4">
                     <div className="flex items-center gap-2.5">
                       <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -653,8 +653,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
         {/* Footer Actions */}
         <div className={`shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 ${compactTablet ? "lg:p-6" : "lg:p-8"}`}>
-          <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:justify-between md:gap-6" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
-            <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:gap-5" : "sm:flex-row sm:items-center sm:gap-4 lg:gap-8"}`}>
+              <div className={`flex flex-col gap-4 ${compactTablet ? "md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
+            <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:gap-4" : "sm:flex-row sm:items-center sm:gap-4 lg:gap-8"}`}>
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200"
@@ -664,7 +664,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
               <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover md:block" />
 
-              <div className={`w-full ${compactTablet ? "md:w-36" : "sm:w-40"}`}>
+              <div className={`w-full ${compactTablet ? "md:w-40" : "sm:w-40"}`}>
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
                   <input
@@ -678,7 +678,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               </div>
             </div>
 
-            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 md:w-auto md:border-t-0 md:pt-0 ${compactTablet ? "md:gap-5" : "lg:gap-6"}`}>
+            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 md:border-t-0 md:pt-0 ${compactTablet ? "md:w-auto md:gap-4" : "lg:gap-6"}`}>
               <div className="text-right">
                 <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
                   TOTAL PAYMENT
@@ -691,7 +691,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               <button
                 disabled={isLoading || !selectedItem}
                 onClick={handleProceed}
-                className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "md:px-10 md:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
+                className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "md:px-8 md:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">

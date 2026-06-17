@@ -19,6 +19,21 @@ import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
 import { calculateGadgetInterest } from "@/lib/interest";
 
+const moaToastClassName =
+  "mx-auto flex min-w-[260px] items-center justify-center gap-2 rounded-xl border px-4 py-3 text-center shadow-xl backdrop-blur-sm sm:min-w-[320px]";
+
+const moaLoadingIcon = (
+  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+);
+
+const moaSuccessIcon = (
+  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  </span>
+);
+
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -288,7 +303,11 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   } | null>(null);
 
   const handleReprintMoa = async (id: string) => {
-    toast.loading("Loading Memorandum of Agreement (MOA)...", { id: "fetch-moa" });
+    toast.loading("Loading Memorandum of Agreement (MOA)...", {
+      id: "fetch-moa",
+      icon: moaLoadingIcon,
+      className: `${moaToastClassName} border-zinc-300/70 bg-white/90 text-zinc-900`,
+    });
     try {
       const sourceItem = pawnedItems.find((item) => item.id === id);
       let itemDetails: any;
@@ -410,7 +429,11 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           "AUTHORIZED PERSONNEL"
       });
       setIsMoaModalOpen(true);
-      toast.success("MOA loaded successfully!", { id: "fetch-moa" });
+      toast.success("MOA loaded successfully!", {
+        id: "fetch-moa",
+        icon: moaSuccessIcon,
+        className: `${moaToastClassName} border-emerald-300/70 bg-emerald-100/90 text-emerald-900`,
+      });
     } catch (err) {
       console.error("Failed to load MOA reprint data", err);
       toast.error("Failed to load MOA reprint details.", { id: "fetch-moa" });
