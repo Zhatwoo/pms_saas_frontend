@@ -83,22 +83,11 @@ function EditableNumberInput({
   );
 }
 
-const ALL_CATEGORIES = [
-  "Smartphone",
-  "Laptop & PC",
-  "Appliances",
-  "Gaming Console",
-  "Cameras",
-  "Smartwatches",
-  "Audio & Earphones",
-  "Other Items",
-];
-
 const DEFAULT_GUEST_GROUPS: InterestRateGroup[] = [
   {
     id: "group-1",
     name: "Gadgets",
-    categories: ["Smartphone", "Laptop & PC", "Gaming Console"],
+    categories: [],
     first5Days: 5,
     first5DaysLimit: 5,
     day10: 10,
@@ -119,7 +108,7 @@ const DEFAULT_GUEST_GROUPS: InterestRateGroup[] = [
   {
     id: "group-2",
     name: "General & Appliances",
-    categories: ["Appliances", "Cameras", "Smartwatches", "Audio & Earphones", "Other Items"],
+    categories: [],
     first5Days: 7,
     first5DaysLimit: 5,
     day10: 12,
@@ -150,12 +139,12 @@ export function InterestRatesSettings() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
 
-  const [categoriesList, setCategoriesList] = useState<string[]>(ALL_CATEGORIES);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
   useEffect(() => {
     async function load() {
       try {
         const cats = await fetchCategories();
-        if (cats && cats.length > 0) {
+        if (cats) {
           setCategoriesList(cats.map(c => c.name));
         }
       } catch (err) {
@@ -483,11 +472,16 @@ export function InterestRatesSettings() {
     }
 
     setIsSaving(true);
+    const cleanedGroups = groups.map(g => ({
+      ...g,
+      categories: g.categories.filter(c => categoriesList.includes(c))
+    }));
     try {
-      await api.post("/settings/interest_rates", groups);
+      await api.post("/settings/interest_rates", cleanedGroups);
       if (typeof window !== "undefined") {
-        localStorage.setItem("interest_rates", JSON.stringify(groups));
+        localStorage.setItem("interest_rates", JSON.stringify(cleanedGroups));
       }
+      setGroups(cleanedGroups);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
       toast.success("Interest Rate structures updated successfully!");
@@ -674,7 +668,7 @@ export function InterestRatesSettings() {
 
                       {/* Display assigned categories count badge */}
                       <span className="rounded bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
-                        {group.categories.length} Categories Assigned
+                        {group.categories.filter(c => categoriesList.includes(c)).length} Categories Assigned
                       </span>
                     </div>
                   </div>
@@ -841,36 +835,42 @@ export function InterestRatesSettings() {
                           Category Alignment
                         </h4>
                         <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                          {categoriesList.map(cat => {
-                            const isAssignedToThis = group.categories.includes(cat);
-                            const isAssignedToOther =
-                              !isAssignedToThis &&
-                              groups.some(other => other.id !== group.id && other.categories.includes(cat));
+                          {categoriesList.length === 0 ? (
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 italic py-2">
+                              No categories found. Please add categories in the &quot;Manage Categories&quot; tab first.
+                            </p>
+                          ) : (
+                            categoriesList.map(cat => {
+                              const isAssignedToThis = group.categories.includes(cat);
+                              const isAssignedToOther =
+                                !isAssignedToThis &&
+                                groups.some(other => other.id !== group.id && other.categories.includes(cat));
 
-                            return (
-                              <label
-                                key={cat}
-                                className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition cursor-pointer ${
-                                  isAssignedToThis
-                                    ? "bg-emerald-50/50 font-semibold text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400"
-                                    : isAssignedToOther
-                                    ? "opacity-40 cursor-not-allowed text-zinc-400"
-                                    : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  disabled={!isEditing || isAssignedToOther}
-                                  checked={isAssignedToThis}
-                                  onChange={(e) =>
-                                    handleCategoryCheckboxChange(group.id, cat, e.target.checked)
-                                  }
-                                  className="h-3.5 w-3.5 rounded border-border-main text-emerald-600 outline-none focus:ring-0 focus:ring-offset-0 disabled:opacity-50 bg-surface-secondary"
-                                />
-                                <span className="text-[11px] select-none">{cat}</span>
-                              </label>
-                            );
-                          })}
+                              return (
+                                <label
+                                  key={cat}
+                                  className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition cursor-pointer ${
+                                    isAssignedToThis
+                                      ? "bg-emerald-50/50 font-semibold text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                      : isAssignedToOther
+                                      ? "opacity-40 cursor-not-allowed text-zinc-400"
+                                      : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    disabled={!isEditing || isAssignedToOther}
+                                    checked={isAssignedToThis}
+                                    onChange={(e) =>
+                                      handleCategoryCheckboxChange(group.id, cat, e.target.checked)
+                                    }
+                                    className="h-3.5 w-3.5 rounded border-border-main text-emerald-600 outline-none focus:ring-0 focus:ring-offset-0 disabled:opacity-50 bg-surface-secondary"
+                                  />
+                                  <span className="text-[11px] select-none">{cat}</span>
+                                </label>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
                     </div>

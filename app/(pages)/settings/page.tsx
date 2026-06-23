@@ -700,7 +700,7 @@ export default function SettingsPage() {
   return (
     <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
       <div className="flex w-full gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
-        {["Profile", "Notifications", "Shop", "Interest Rate", "MOA"].map((tab) => (
+        {["Profile", "Notifications", "Shop", "Manage Categories", "MOA"].map((tab) => (
           <button
             key={tab}
             type="button"
@@ -934,7 +934,7 @@ export default function SettingsPage() {
           </section>
           )}
 
-          {activeTab === "Interest Rate" && (
+          {activeTab === "Manage Categories" && (
             <>
               <InterestRatesSettings />
               <CategoriesSettings />

@@ -98,6 +98,22 @@ interface FinanceLedgerTableProps {
   branchCode?: string | null;
 }
 
+export function getReadableLedgerDescription(entry: LedgerEntry): string {
+  if (entry.type !== "fund_transfer_in" && entry.type !== "fund_transfer_out") {
+    return entry.description || "—";
+  }
+
+  const existing = entry.description?.trim() ?? "";
+  if (/^Cash (received|sent)\b/i.test(existing)) {
+    return existing;
+  }
+
+  const branch = entry.branchName?.trim() || "this branch";
+  return entry.type === "fund_transfer_in"
+    ? `Cash received by ${branch}`
+    : `Cash sent from ${branch}`;
+}
+
 export function FinanceLedgerTable({
   entries,
   isLoading,
@@ -124,7 +140,7 @@ export function FinanceLedgerTable({
       { key: "description", label: "Description" },
       { key: "cashIn", label: "Cash In", align: "right" },
       { key: "cashOut", label: "Cash Out", align: "right" },
-      { key: "reference", label: "Reference" },
+      { key: "reference", label: "Reference Code" },
     );
     return cols;
   }, [showBranchColumn]);
@@ -134,7 +150,7 @@ export function FinanceLedgerTable({
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchesSearch =
-          (e.description ?? "").toLowerCase().includes(q) ||
+          getReadableLedgerDescription(e).toLowerCase().includes(q) ||
           (e.itemName ?? "").toLowerCase().includes(q) ||
           (e.branchName ?? "").toLowerCase().includes(q) ||
           (e.reference ?? "").toLowerCase().includes(q);
@@ -187,7 +203,7 @@ export function FinanceLedgerTable({
         ${showBranchColumn ? `<td>${escapeHtml(e.branchName || "—")}</td>` : ""}
         <td>${escapeHtml((TYPE_CONFIG[e.type] || TYPE_CONFIG.other).label)}</td>
         <td>${escapeHtml(e.itemName || "—")}</td>
-        <td>${escapeHtml(e.description || "—")}</td>
+        <td>${escapeHtml(getReadableLedgerDescription(e))}</td>
         <td class="num">${e.cashIn > 0 ? fmt(e.cashIn) : "—"}</td>
         <td class="num cash-out">${e.cashOut > 0 ? fmt(e.cashOut) : "—"}</td>
         <td style="font-size:10px">${escapeHtml(e.reference || "—")}</td>
@@ -222,7 +238,7 @@ export function FinanceLedgerTable({
         <th>Description</th>
         <th class="num">Cash In</th>
         <th class="num">Cash Out</th>
-        <th>Ref No.</th>
+        <th>Reference Code</th>
       </tr>
     </thead>
     <tbody>
@@ -307,12 +323,13 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "description") {
+              const readableDescription = getReadableLedgerDescription(row as LedgerEntry);
               return (
                 <span
-                  className="block max-w-[260px] truncate text-sm text-text-secondary"
-                  title={value}
+                  className="block min-w-[220px] max-w-[360px] whitespace-normal text-sm leading-5 text-text-secondary"
+                  title={readableDescription}
                 >
-                  {value || "—"}
+                  {readableDescription}
                 </span>
               );
             }
