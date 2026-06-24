@@ -60,7 +60,9 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
       setIsLoadingBranches(true);
       setLoadError("");
       try {
-        const data = await api.get<BranchSummary[]>("/auth/signup/branches");
+        const data = await api.get<BranchSummary[]>("/auth/signup/branches", {
+          suppressApiIssueLogging: true,
+        });
         if (!cancelled) {
           const list = Array.isArray(data) ? data : [];
           setBranches(list);
@@ -173,11 +175,11 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
             <div className="rounded-2xl bg-emerald-950/50 p-2">
               <div className="overflow-hidden rounded-xl ring-2 ring-amber-400/60">
                 <Image
-                  src="/logo.jpg"
+                  src="/logo.png"
                   alt="JCLB Logo"
                   width={120}
                   height={120}
-                  className="h-28 w-28 object-cover"
+                  className="h-28 w-28 object-contain"
                 />
               </div>
             </div>

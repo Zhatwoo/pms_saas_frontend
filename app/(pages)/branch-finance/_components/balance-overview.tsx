@@ -97,13 +97,13 @@ function SingleBranchCard({
   return (
     <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-3">
+      <div className="flex items-center justify-between px-5 pt-5 pb-3 md:px-6 md:pt-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
+          <div className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
             <WalletIcon />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">{branchName}</h2>
+            <h2 className="text-lg md:text-xl font-bold text-white">{branchName}</h2>
             <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
               Balance Overview
             </p>
@@ -118,7 +118,7 @@ function SingleBranchCard({
       </div>
 
       {/* Current Balance (hero) */}
-      <div className="px-6 py-4 flex items-center justify-between">
+      <div className="px-5 py-4 md:px-6 flex items-center justify-between">
         <div>
           <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
             Current Balance
@@ -144,9 +144,9 @@ function SingleBranchCard({
         {/* Action Buttons beside balance */}
         {onAddFunds && (
           <div className="flex items-center gap-2">
-            <button
+              <button
               onClick={onAddFunds}
-              className="flex items-center gap-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 px-5 py-2.5 text-base font-bold text-white transition-colors hover:bg-emerald-500/30"
+              className="flex items-center gap-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 px-5 py-2.5 text-sm md:px-6 md:py-3 md:text-base font-bold text-white transition-colors hover:bg-emerald-500/30"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -159,7 +159,7 @@ function SingleBranchCard({
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-3 gap-3 px-6 pb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 md:px-6 pb-6">
         <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
           <p className="text-xs font-medium uppercase text-emerald-400/70">Starting</p>
           <p className="mt-0.5 text-base font-bold text-white">{fmt(startingBalance)}</p>

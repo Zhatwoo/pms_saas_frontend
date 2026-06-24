@@ -26,7 +26,7 @@ export function TransactionFilters({
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
       {/* Search */}
-      <div className="w-full flex-1 flex-col gap-1 sm:min-w-[180px]">
+      <div className="w-full flex flex-1 flex-col gap-1 sm:min-w-[180px]">
         <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           Search
         </label>
@@ -56,14 +56,14 @@ export function TransactionFilters({
       </div>
 
       {/* Branch */}
-      <div className="w-full flex-col gap-1 sm:w-auto">
+      <div className="w-full flex flex-col gap-1 sm:w-auto">
         <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           Branch
         </label>
         <select
           value={branchFilter}
           onChange={(e) => onBranchFilterChange(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400 sm:w-auto"
+          className="mt-2 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400 sm:w-auto"
         >
           <option value="all">All Branches</option>
           {branches.map((b) => (
@@ -75,7 +75,7 @@ export function TransactionFilters({
       </div>
 
       {/* Date */}
-      <div className="w-full flex-col gap-1 sm:w-auto">
+      <div className="w-full flex flex-col gap-1 sm:w-auto">
         <label className="text-xs font-bold uppercase tracking-wide text-text-muted">
           Date
         </label>
@@ -83,7 +83,7 @@ export function TransactionFilters({
           type="date"
           value={dateFilter}
           onChange={(e) => onDateFilterChange(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400 sm:w-auto"
+          className="mt-2 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400 sm:w-auto"
         />
       </div>
 

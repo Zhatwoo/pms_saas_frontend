@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
-import { formatPeso } from "@/lib/currency";
+import { PaginationFooter } from "@/components/shared/pagination";
+import { useBranch } from "@/contexts/branch-context";
+import { ActionButton } from "@/components/shared/action-button";
 
 interface QrReplacementRequest {
   id: string;
@@ -19,6 +20,7 @@ interface QrReplacementRequest {
 }
 
 export default function QrReplacementRequestsPage() {
+  const { branches } = useBranch();
   const [requests, setRequests] = useState<QrReplacementRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -27,6 +29,13 @@ export default function QrReplacementRequestsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [reasonFilter, setReasonFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  const toolbarLabelClass = "text-[11px] font-bold uppercase tracking-wider text-text-tertiary";
+  const toolbarSelectClass = "h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+
+  const availableBranches = branches.filter((b) => b.id !== "__all__");
 
   useEffect(() => {
     fetchRequests();
@@ -114,20 +123,47 @@ export default function QrReplacementRequestsPage() {
       setIsProcessing(null);
     }
   };
+
+  const parseRequestDetails = (rawDetails?: string) => {
+    if (!rawDetails) return {};
+    try {
+      return JSON.parse(rawDetails);
+    } catch {
+      return {};
+    }
+  };
+
   const filteredRequests = requests.filter(req => {
-    const details = JSON.parse(req.details || "{}");
+    const details = parseRequestDetails(req.details);
+    const selectedBranchName =
+      branchFilter === "all"
+        ? "all"
+        : availableBranches.find((b) => b.id === branchFilter)?.name;
     const matchesSearch = 
       details.itemId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.itemName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.userFullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.branchName?.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesBranch = branchFilter === "all" || req.branchName === branchFilter;
+    const matchesBranch =
+      selectedBranchName === "all" ||
+      (req.branchName || "").toLowerCase() === (selectedBranchName || "").toLowerCase();
     const matchesReason = reasonFilter === "all" || details.reason?.toLowerCase() === reasonFilter.toLowerCase();
     const matchesStatus = statusFilter === "all" || details.requestStatus === statusFilter;
     
     return matchesSearch && matchesStatus && matchesBranch && matchesReason;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, branchFilter, reasonFilter]);
+
+  const paginatedRequests = filteredRequests.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / ITEMS_PER_PAGE));
 
   return (
     <div className="space-y-4 pt-2 px-6 pb-6">
@@ -135,28 +171,30 @@ export default function QrReplacementRequestsPage() {
       <p className="text-[13px] font-medium text-text-secondary/80 mb-1">Comprehensive list of all QR replacement requests across all branches.</p>
 
       {/* Filters Card */}
-      <div className="bg-surface rounded-xl border border-border-main p-6 shadow-sm transition-colors">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-text-muted uppercase tracking-widest ml-1">Branch</label>
+      <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main">
+        <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <label className={toolbarLabelClass}>Branch</label>
               <select 
                 value={branchFilter}
                 onChange={(e) => setBranchFilter(e.target.value)}
-                className="h-10 rounded-xl border border-input-border bg-input-bg px-3 text-xs font-bold text-text-primary outline-none transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                className={toolbarSelectClass}
               >
                 <option value="all">All Branches</option>
-                <option value="Taguig Branch">Taguig Branch</option>
-                <option value="Bulacan Branch">Bulacan Branch</option>
+                {availableBranches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-text-muted uppercase tracking-widest ml-1">Status</label>
+            <div className="flex flex-col gap-1">
+              <label className={toolbarLabelClass}>Status</label>
               <select 
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-10 w-32 rounded-xl border border-input-border bg-input-bg px-3 text-xs font-bold text-text-primary outline-none transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                className={`${toolbarSelectClass} w-36`}
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
@@ -165,24 +203,21 @@ export default function QrReplacementRequestsPage() {
               </select>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-text-muted uppercase tracking-widest ml-1">Search</label>
-              <div className="relative">
-                <input 
-                  type="text"
-                  placeholder="Search items..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-10 w-64 rounded-xl border border-input-border bg-input-bg px-4 text-xs font-bold text-text-primary outline-none transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                />
-              </div>
+            <div className="flex flex-col gap-1">
+              <label className={toolbarLabelClass}>Search</label>
+              <input 
+                type="text"
+                placeholder="Search items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 w-64 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+              />
             </div>
-          </div>
         </div>
       </div>
 
       {/* Table Section */}
-      <div className="overflow-hidden rounded-xl border border-emerald-900/30 bg-surface shadow-xl transition-colors">
+      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
         <table className="w-full text-sm text-left">
           <thead>
             <tr className="bg-[#064e3b] text-[#fbbf24] uppercase text-[10px] font-bold tracking-[0.1em]">
@@ -204,15 +239,15 @@ export default function QrReplacementRequestsPage() {
                   <LoadingSpinnerLabel text="Loading requests..." />
                 </td>
               </tr>
-            ) : filteredRequests.length === 0 ? (
+            ) : paginatedRequests.length === 0 ? (
               <tr>
                 <td colSpan={9} className="py-20 text-center text-text-tertiary italic">
                   No matching QR replacement requests found.
                 </td>
               </tr>
             ) : (
-              filteredRequests.map((req) => {
-                const details = JSON.parse(req.details || "{}");
+              paginatedRequests.map((req) => {
+                const details = parseRequestDetails(req.details);
 
                 return (
                   <tr key={req.id} className="hover:bg-surface-hover/50 transition-colors group">
@@ -233,12 +268,15 @@ export default function QrReplacementRequestsPage() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       {details.proofPhoto ? (
-                        <button 
+                        <ActionButton
+                          variant="ghost"
+                          size="icon"
                           onClick={() => window.open(details.proofPhoto, '_blank')}
-                          className="h-8 w-8 rounded-lg border border-border-subtle overflow-hidden hover:scale-110 transition-transform shadow-sm"
+                          className="h-8 w-8 rounded-lg border border-border-subtle overflow-hidden shadow-sm"
+                          title="View Proof"
                         >
                           <img src={details.proofPhoto} className="h-full w-full object-cover" />
-                        </button>
+                        </ActionButton>
                       ) : (
                         <span className="text-[10px] text-text-tertiary">No Proof</span>
                       )}
@@ -262,31 +300,37 @@ export default function QrReplacementRequestsPage() {
                       <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {details.requestStatus === "pending" ? (
                           <>
-                            <button
+                            <ActionButton
+                              variant="success"
+                              size="icon"
                               disabled={isProcessing === req.id}
                               onClick={() => handleReview(req.id, "approve", details)}
-                              className="h-7 w-7 flex items-center justify-center bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-md active:scale-90"
+                              className="h-7 w-7 rounded-lg shadow-md active:scale-90"
                               title="Approve & Print"
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                            </button>
-                            <button
+                            </ActionButton>
+                            <ActionButton
+                              variant="danger"
+                              size="icon"
                               disabled={isProcessing === req.id}
                               onClick={() => handleReview(req.id, "reject")}
-                              className="h-7 w-7 flex items-center justify-center bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-all shadow-md active:scale-90"
+                              className="h-7 w-7 rounded-lg shadow-md active:scale-90"
                               title="Reject"
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                            </button>
+                            </ActionButton>
                           </>
                         ) : (
-                            <button
+                            <ActionButton
+                              variant="success"
+                              size="icon"
                               onClick={() => handlePrint(details.itemId, details.qrCode)}
-                              className="h-7 w-7 flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all active:scale-90"
+                              className="h-7 w-7 rounded-lg active:scale-90"
                               title="Re-print QR"
                             >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
-                          </button>
+                          </ActionButton>
                         )}
                       </div>
                     </td>
@@ -298,21 +342,13 @@ export default function QrReplacementRequestsPage() {
         </table>
       </div>
 
-      {/* Pagination Footer Section */}
-      <div className="bg-surface rounded-xl border border-border-main p-4 flex items-center justify-between shadow-sm transition-colors">
-        <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
-          Showing 1-{filteredRequests.length} of {filteredRequests.length} records
-        </div>
-        <div className="flex items-center gap-1">
-          <button className="h-8 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-emerald-500 transition-all disabled:opacity-30">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-emerald-800 text-white text-[11px] font-bold shadow-md shadow-emerald-900/20">1</div>
-          <button className="h-8 w-8 flex items-center justify-center rounded-lg text-text-muted hover:text-emerald-500 transition-all disabled:opacity-30">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
-        </div>
-      </div>
+      <PaginationFooter
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredRequests.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

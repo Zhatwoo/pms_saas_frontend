@@ -7,6 +7,8 @@ import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
+import { useAuth } from "@/contexts/auth-context";
+
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>);
@@ -32,6 +34,9 @@ function Undo2({ className }: { className?: string }) {
 function QrCode({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/></svg>);
 }
+function AlertCircle({ className }: { className?: string }) {
+  return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
+}
 
 interface RedeemModalProps {
   isOpen: boolean;
@@ -39,6 +44,7 @@ interface RedeemModalProps {
   branchId: string;
   branchName: string;
   onSuccess?: () => void;
+  compactTablet?: boolean;
 }
 
 interface PawnedSearchItem {
@@ -59,7 +65,10 @@ interface PawnedSearchItem {
   status: string;
 }
 
-export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }: RedeemModalProps) {
+export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, compactTablet = false }: RedeemModalProps) {
+  const { user } = useAuth();
+  const isAdminOrSuperAdmin =
+    user?.role === "admin" || user?.role === "super_admin";
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<PawnedSearchItem | null>(null);
   const [adminForm, setAdminForm] = useState({
@@ -73,6 +82,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.fullName) {
+      setAdminForm(prev => ({ ...prev, processedBy: user.fullName }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -139,7 +154,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
 
   const interestCalc = useMemo(() => {
     if (!selectedItem) return { percentage: 0, interestAmount: 0, totalAmount: 0, daysPassed: 0 };
-    return calculateGadgetInterest(Number(selectedItem.amount), selectedItem.purchasedDate);
+    return calculateGadgetInterest(Number(selectedItem.amount), selectedItem.purchasedDate, selectedItem.category);
   }, [selectedItem]);
 
   const handleConfirmRedeem = async () => {
@@ -197,7 +212,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className={`relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10 ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -227,10 +242,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col xl:flex-row">
+        <div className={`flex min-h-0 flex-1 flex-col xl:flex-row ${compactTablet ? "overflow-y-auto" : "overflow-hidden"}`}>
           {/* Left Side: Search & Selection */}
-          <div className="w-full xl:w-[400px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0">
-            <div className="p-6 space-y-4">
+          <div className="flex w-full shrink-0 flex-col border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary xl:w-[400px] xl:border-r">
+            <div className={`space-y-4 p-4 ${compactTablet ? "md:p-5" : "md:p-6"}`}>
               <div className="flex items-center gap-3 mb-2">
                 <Search className="w-5 h-5 text-emerald-600/40" />
                 <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Active Pawn</h3>
@@ -240,7 +255,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                 <input 
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium shadow-sm"
+                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -255,7 +270,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+            <div className={`overflow-y-auto px-4 pb-6 scrollbar-hide ${compactTablet ? "max-h-[210px] md:max-xl:max-h-[230px]" : "flex-1"}`}>
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
@@ -297,10 +312,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
             </div>
           </div>
 
-          {/* Right Side: Details & Computation */}
-          <div className="flex-1 bg-white dark:bg-surface overflow-y-auto scrollbar-hide">
+          {/* Right Side: Details & Computation (desktop xl+) */}
+          <div className={`min-h-0 flex-1 overflow-y-auto bg-white scrollbar-hide dark:bg-surface ${compactTablet ? "hidden xl:block" : ""}`}>
             {selectedItem ? (
-              <div className="p-4 sm:p-6 xl:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="animate-in fade-in slide-in-from-right-4 p-4 duration-300 sm:p-6 xl:p-12">
                 <div className="space-y-1 mb-8">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
                   <h2 className="text-4xl font-black text-emerald-950 dark:text-white dark:text-white tracking-tighter leading-none">
@@ -311,7 +326,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+                <div className="mb-10 grid grid-cols-1 gap-8 xl:grid-cols-2">
                   <DetailSection title="Loan & Item Details" icon={Smartphone}>
                     <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
                     <DetailRow 
@@ -332,24 +347,26 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                     <DetailRow label="Condition" value={selectedItem.condition} />
                     <DetailRow label="Memory" value={selectedItem.memory} />
                     <DetailRow label="Items Included" value={selectedItem.itemsIncluded} />
-                    
-                    <div className="mt-4 pt-4 border-t border-emerald-50 dark:border-border font-google">
-                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
-                      {selectedItem.qrCode ? (
-                        <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm">
-                          <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
-                        </div>
-                      ) : (
-                        <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center">
-                          <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
-                        </div>
-                      )}
-                    </div>
+
+                    {isAdminOrSuperAdmin && (
+                      <div className="mt-4 pt-4 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
+                        {selectedItem.qrCode ? (
+                          <div className="w-32 h-32 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm">
+                            <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="w-32 h-32 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                            <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </DetailSection>
                 </div>
 
                 {/* Computation Summary */}
-                <div className="mb-10 p-6 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group">
+                <div className="relative mb-10 overflow-hidden rounded-3xl border border-emerald-100 bg-emerald-50 p-6 dark:border-emerald-900/30 dark:bg-emerald-950/20">
                   <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                   <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-6">
                     <div className="space-y-2">
@@ -374,86 +391,6 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
                     </div>
                   </div>
                 </div>
-
-                {/* Confirm Section */}
-                <div className="p-8 rounded-3xl bg-emerald-900 text-white relative overflow-hidden shadow-2xl shadow-emerald-900/20">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl opacity-50" />
-                  
-                  <div className="relative z-10 flex flex-col xl:flex-row items-center gap-10">
-                    <div className="flex-1 space-y-8">
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-8 h-8 text-emerald-400" />
-                        <h4 className="text-xl font-black uppercase tracking-tight">Verify Authorisation</h4>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest ml-1">Processed By</label>
-                          <input 
-                            type="text"
-                            placeholder="Admin Name"
-                            className="w-full h-12 px-4 bg-emerald-800/50 border-2 border-emerald-700/50 rounded-xl outline-none focus:border-emerald-400 transition-all text-sm font-medium"
-                            value={adminForm.processedBy}
-                            onChange={(e) => setAdminForm({...adminForm, processedBy: e.target.value})}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest ml-1">Security Password</label>
-                          <input 
-                            type="password"
-                            placeholder="••••••••"
-                            className="w-full h-12 px-4 bg-emerald-800/50 border-2 border-emerald-700/50 rounded-xl outline-none focus:border-emerald-400 transition-all text-sm font-medium"
-                            value={adminForm.password}
-                            onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
-                          />
-                        </div>
-                      </div>
-
-                      {error && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                          <p className="text-xs font-bold text-red-200">{error}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-full xl:w-[320px] bg-white dark:bg-surface/5 p-6 rounded-2xl border border-white/10 backdrop-blur-md flex flex-col gap-6">
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                          <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-widest">Net Cash Received</p>
-                          <p className="text-3xl font-black text-white leading-none">₱ {interestCalc.totalAmount.toLocaleString()}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
-                            <Plus className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-emerald-200">Proceed with Redemption?</p>
-                            <p className="text-[10px] text-emerald-400/60 leading-tight">Verify full payment and password.</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleConfirmRedeem}
-                        disabled={isConfirming}
-                        className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                      >
-                        {isConfirming ? (
-                          <div className="flex items-center gap-2">
-                            <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
-                            <span>Processing...</span>
-                          </div>
-                        ) : (
-                          <>
-                            Confirm Redemption
-                            <ArrowRight className="w-5 h-5" />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-12">
@@ -467,6 +404,160 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess }
               </div>
             )}
           </div>
+
+          {compactTablet && !selectedItem && (
+            <div className="flex flex-1 flex-col items-center justify-center border-t border-emerald-50 bg-white p-8 text-center dark:bg-surface xl:hidden">
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50">
+                <Undo2 className="h-12 w-12 text-emerald-200" />
+              </div>
+              <h3 className="text-2xl font-black uppercase italic tracking-tight text-emerald-950 dark:text-white">
+                Scan or Search Item
+              </h3>
+              <p className="mt-2 max-w-xs font-bold leading-relaxed text-emerald-900/30">
+                Only active items within the loan period are eligible for redemption.
+              </p>
+            </div>
+          )}
+
+          {compactTablet && selectedItem && (
+            <div className="w-full shrink-0 border-t border-emerald-50 bg-white px-4 pb-4 pt-4 dark:bg-surface xl:hidden">
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="space-y-1 mb-5">
+                  <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
+                  <h2 className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none md:max-xl:text-[2.15rem]">
+                    {selectedItem.unit}
+                  </h2>
+                  <p className="text-emerald-900/40 dark:text-emerald-400 font-bold flex items-center gap-2">
+                    {selectedItem.name} • {selectedItem.contactNumber}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 mb-6">
+                  <DetailSection title="Loan & Item Details" icon={Smartphone}>
+                    <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
+                    <DetailRow 
+                      label="Maturity Interest" 
+                      value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
+                    />
+                    <DetailRow label="Purchased Date" value={selectedItem.purchasedDate} />
+                    <DetailRow 
+                      label="Days Since Pawn" 
+                      value={<span className="text-emerald-600">{interestCalc.daysPassed} Days</span>} 
+                    />
+                    <DetailRow label="Category" value={selectedItem.category} />
+                    <DetailRow label="Unit Code" value={selectedItem.unitCode} />
+                  </DetailSection>
+
+                  <DetailSection title="Physical Specs" icon={ShieldCheck}>
+                    <DetailRow label="Serial Number" value={selectedItem.serialNumber} />
+                    <DetailRow label="Condition" value={selectedItem.condition} />
+                    <DetailRow label="Memory" value={selectedItem.memory} />
+                    <DetailRow label="Items Included" value={selectedItem.itemsIncluded} />
+                    {isAdminOrSuperAdmin && (
+                      <div className="mt-3 pt-3 border-t border-emerald-50 dark:border-border font-google flex flex-col items-center">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Security QR Code</p>
+                        {selectedItem.qrCode ? (
+                          <div className="h-28 w-28 rounded-xl border border-zinc-100 p-2 bg-white dark:bg-surface flex items-center justify-center shadow-sm md:max-xl:h-24 md:max-xl:w-24">
+                            <img src={selectedItem.qrCode} alt="Unit QR" className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <div className="h-28 w-28 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center md:max-xl:h-24 md:max-xl:w-24">
+                            <p className="text-[8px] font-bold text-zinc-300 uppercase">No QR Generated</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </DetailSection>
+                </div>
+
+                <div className="mb-5 p-4 rounded-3xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 relative overflow-hidden group md:max-xl:p-4">
+                  <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                  <div className="relative z-10 flex flex-col gap-4">
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Computation Summary</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Principal</p>
+                          <p className="text-lg font-black text-emerald-900 dark:text-white md:max-xl:text-[1.05rem]">{formatPeso(Number(selectedItem.amount))}</p>
+                        </div>
+                        <div className="h-8 w-px bg-emerald-200" />
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Interest ({interestCalc.percentage}%)</p>
+                          <p className="text-lg font-black text-emerald-900 dark:text-white md:max-xl:text-[1.05rem]">{formatPeso(interestCalc.interestAmount)}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Total Amount Due</p>
+                      <p className="text-4xl font-black text-emerald-950 dark:text-emerald-400 tracking-tighter md:max-xl:text-[2.25rem]">
+                        ₱ {interestCalc.totalAmount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className={`border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between shrink-0 ${compactTablet ? "gap-4 p-4 md:p-5 md:max-xl:gap-5" : "gap-8 p-8"}`}>
+          <div className="flex items-center gap-8 w-full sm:w-auto">
+             <button 
+                onClick={onClose}
+                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+              >
+                Cancel Process
+              </button>
+              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="w-40">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
+                    <input 
+                      type="password" 
+                      placeholder="••••••••"
+                      className="h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted"
+                      value={adminForm.password}
+                      onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
+             <div className="text-right">
+                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+                  TOTAL LOAN AMOUNT
+                </p>
+                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
+                  ₱ {interestCalc.totalAmount.toLocaleString()}
+                </p>
+              </div>
+
+              <button 
+                disabled={isConfirming || !selectedItem}
+                onClick={handleConfirmRedeem}
+                className={`flex items-center justify-center gap-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${compactTablet ? "px-8 py-4" : "px-12 py-5"} ${isConfirming || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
+              >
+                {isConfirming ? (
+                   <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
+                ) : (
+                   <>
+                     CONFIRM REDEMPTION
+                     <ArrowRight className="w-5 h-5" />
+                   </>
+                )}
+                           </button>
+            </div>
+
+          {error && (
+            <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-[8px] font-bold uppercase tracking-widest animate-in slide-in-from-bottom-1 w-full">
+              <AlertCircle className="w-3 h-3 shrink-0" />
+              {error}
+            </div>
+          )}
         </div>
       </div>
       <QrScanner 

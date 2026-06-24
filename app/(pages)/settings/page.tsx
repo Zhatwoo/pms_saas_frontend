@@ -1,10 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+import { ActionButton } from "@/components/shared/action-button";
+import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
+import { fetchCategories } from "@/lib/categories";
+import { InterestRatesSettings } from "./_components/interest-rates-settings";
+import CategoriesSettings from "./_components/categories-settings";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -40,11 +46,11 @@ function ResizableLine({
     <span
       ref={spanRef}
       onPointerUp={handlePointerUp}
-      className="inline-block overflow-hidden border-b border-zinc-400 align-bottom"
+      className="moa-resizable-line inline-block min-w-0 shrink overflow-hidden border-b border-zinc-400 align-bottom"
       style={{
         resize: canEdit ? "horizontal" : "none",
         minWidth: 48,
-        maxWidth: 400,
+        maxWidth: "min(400px, 100%)",
         width,
       }}
       title={canEdit ? "Drag right edge to resize" : undefined}
@@ -67,6 +73,45 @@ type ExtensionRow = {
   sign: string;
 };
 
+type FinancialFieldKey = "amount" | "storageFee" | "parkingFee" | "netProceeds";
+type UnitFieldKey = "brandModel" | "itemsIncluded" | "condition" | "serialNo" | "memory" | "remarks";
+type CustomMoaField = {
+  id: string;
+  label: string;
+};
+
+const FINANCIAL_FIELD_OPTIONS: Array<{ key: FinancialFieldKey; valueKey: FinancialFieldKey }> = [
+  { key: "amount", valueKey: "amount" },
+  { key: "storageFee", valueKey: "storageFee" },
+  { key: "parkingFee", valueKey: "parkingFee" },
+  { key: "netProceeds", valueKey: "netProceeds" },
+];
+
+const UNIT_FIELD_OPTIONS: Array<{ key: UnitFieldKey; valueKey: UnitFieldKey }> = [
+  { key: "brandModel", valueKey: "brandModel" },
+  { key: "itemsIncluded", valueKey: "itemsIncluded" },
+  { key: "condition", valueKey: "condition" },
+  { key: "serialNo", valueKey: "serialNo" },
+  { key: "memory", valueKey: "memory" },
+  { key: "remarks", valueKey: "remarks" },
+];
+
+const DEFAULT_FINANCIAL_FIELDS = FINANCIAL_FIELD_OPTIONS.map((field) => field.key);
+const DEFAULT_UNIT_FIELDS = UNIT_FIELD_OPTIONS.map((field) => field.key);
+
+type MoaTemplateVariant = {
+  terms_text: string;
+  labels: Record<string, string>;
+  lineWidths: Record<string, number>;
+  extensionRows: ExtensionRow[];
+  financialFields: FinancialFieldKey[];
+  unitFields: UnitFieldKey[];
+  customFinancialFields: CustomMoaField[];
+  customUnitFields: CustomMoaField[];
+};
+
+const DEFAULT_MOA_CATEGORY = "__default__";
+
 const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every TEN (10) days.
 2. The Seller shall advise the Buyer of any change of address or mobile number.
 3. This is not a PAWN; this is an extended purchase sale known as the buyback agreement.
@@ -78,12 +123,25 @@ const DEFAULT_TERMS_TEXT = `1. This Memorandum of Agreement is renewable every T
 9. Representative's signature is required when authorization from owner is used.
 10. Seller confirms ownership and freedom from liens and encumbrances.`;
 
+function normalizeMoaTerms(value?: string | null) {
+  const trimmed = value?.trim() ?? "";
+  if (trimmed.length < 80) {
+    return DEFAULT_TERMS_TEXT;
+  }
+  return trimmed;
+}
+
 export default function SettingsPage() {
   const { user, refreshProfile } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  const [activeTab, setActiveTab] = useState("Profile");
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
   const [avatarToast, setAvatarToast] = useState<string | null>(null);
+  const [profileToast, setProfileToast] = useState<string | null>(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileFullName, setProfileFullName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
   
   const [isMoaEditMode, setIsMoaEditMode] = useState(false);
   const [isMoaLocked, setIsMoaLocked] = useState(false);
@@ -109,6 +167,7 @@ export default function SettingsPage() {
     condition: "",
     serialNo: "",
     memory: "",
+    remarks: "",
     sellerName: "",
     representativeName: "",
   });
@@ -139,6 +198,7 @@ export default function SettingsPage() {
     condition: "Condition:",
     serialNo: "Serial No.:",
     memory: "Memory:",
+    remarks: "Remarks:",
     dateHeader: "Date",
     storageHeader: "Storage",
     periodHeader: "Period",
@@ -158,8 +218,20 @@ export default function SettingsPage() {
   ]);
   const [isTopHeaderSwapped, setIsTopHeaderSwapped] = useState(false);
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
+  const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
+  const [unitFields, setUnitFields] = useState<UnitFieldKey[]>(DEFAULT_UNIT_FIELDS);
+  const [customFinancialFields, setCustomFinancialFields] = useState<CustomMoaField[]>([]);
+  const [customUnitFields, setCustomUnitFields] = useState<CustomMoaField[]>([]);
+  const [newFinancialField, setNewFinancialField] = useState("");
+  const [newUnitField, setNewUnitField] = useState("");
+  const [moaCategories, setMoaCategories] = useState<string[]>([]);
+  const [selectedMoaCategory, setSelectedMoaCategory] = useState(DEFAULT_MOA_CATEGORY);
+  const [defaultMoaTemplate, setDefaultMoaTemplate] = useState<MoaTemplateVariant | null>(null);
+  const [categoryMoaTemplates, setCategoryMoaTemplates] = useState<Record<string, MoaTemplateVariant>>({});
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const initialTopLabelsRef = useRef(topLabels);
+  const initialExtensionRowsRef = useRef(extensionRows);
 
   const [shopSettings, setShopSettings] = useState({
     shopName: "JCLB BUY BACK SHOP",
@@ -175,14 +247,28 @@ export default function SettingsPage() {
   });
   
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [settingsSavedAt, setSettingsSavedAt] = useState<string | null>(null);
+  // Shop settings edit mode states
+  const [isShopEditMode, setIsShopEditMode] = useState(false);
+  const [tempShopSettings, setTempShopSettings] = useState({
+    shopName: "JCLB BUY BACK SHOP",
+    shopAddress: "123 Main Street, Manila, Philippines",
+    phoneNumber: "+63 2 1234 5678",
+    email: "info@jclbbuyback.com",
+  });
 
-  const adminInitials = (user?.fullName || "Admin")
+  const adminInitials = (profileFullName || user?.fullName || "Admin")
     .split(" ")
     .map((part) => part[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  useEffect(() => {
+    if (user) {
+      setProfileFullName(user.fullName || "");
+      setProfileEmail(user.email || "");
+    }
+  }, [user]);
 
   useEffect(() => {
     async function fetchMoaTemplate() {
@@ -192,50 +278,115 @@ export default function SettingsPage() {
           labels: Partial<typeof topLabels> | null; 
           lineWidths?: Record<string, number>;
           extensionRows?: ExtensionRow[];
+          financialFields?: FinancialFieldKey[];
+          unitFields?: UnitFieldKey[];
+          customFinancialFields?: CustomMoaField[];
+          customUnitFields?: CustomMoaField[];
+          category_templates?: Record<string, Partial<MoaTemplateVariant>>;
         }>(`/settings/moa_template`);
         if (data) {
-          if (data.terms_text) setTermsText(data.terms_text);
-          if (data.labels && typeof data.labels === "object") {
-            setTopLabels((prev) => ({ ...prev, ...data.labels }));
-          }
-          if (data.lineWidths && typeof data.lineWidths === "object") {
-            setLineWidths(data.lineWidths);
-          }
-          if (data.extensionRows && Array.isArray(data.extensionRows)) {
-            setExtensionRows(data.extensionRows);
-          }
+          const loadedDefault: MoaTemplateVariant = {
+            terms_text: normalizeMoaTerms(data.terms_text),
+            labels: { ...initialTopLabelsRef.current, ...(data.labels ?? {}) },
+            lineWidths: data.lineWidths ?? {},
+            extensionRows: Array.isArray(data.extensionRows)
+              ? data.extensionRows
+              : initialExtensionRowsRef.current,
+            financialFields: Array.isArray(data.financialFields)
+              ? data.financialFields
+              : DEFAULT_FINANCIAL_FIELDS,
+            unitFields: Array.isArray(data.unitFields)
+              ? data.unitFields
+              : DEFAULT_UNIT_FIELDS,
+            customFinancialFields: Array.isArray(data.customFinancialFields)
+              ? data.customFinancialFields
+              : [],
+            customUnitFields: Array.isArray(data.customUnitFields)
+              ? data.customUnitFields
+              : [],
+          };
+          const loadedCategoryTemplates = Object.fromEntries(
+            Object.entries(data.category_templates ?? {}).map(([category, template]) => [
+              category,
+              {
+                terms_text: normalizeMoaTerms(template.terms_text ?? loadedDefault.terms_text),
+                labels: { ...loadedDefault.labels, ...(template.labels ?? {}) },
+                lineWidths: template.lineWidths ?? loadedDefault.lineWidths,
+                extensionRows: Array.isArray(template.extensionRows)
+                  ? template.extensionRows
+                  : loadedDefault.extensionRows,
+                financialFields: Array.isArray(template.financialFields)
+                  ? template.financialFields
+                  : loadedDefault.financialFields,
+                unitFields: Array.isArray(template.unitFields)
+                  ? template.unitFields
+                  : loadedDefault.unitFields,
+                customFinancialFields: Array.isArray(template.customFinancialFields)
+                  ? template.customFinancialFields
+                  : loadedDefault.customFinancialFields,
+                customUnitFields: Array.isArray(template.customUnitFields)
+                  ? template.customUnitFields
+                  : loadedDefault.customUnitFields,
+              },
+            ]),
+          );
+
+          setTermsText(loadedDefault.terms_text);
+          setTopLabels((prev) => ({ ...prev, ...loadedDefault.labels }));
+          setLineWidths(loadedDefault.lineWidths);
+          setExtensionRows(loadedDefault.extensionRows);
+          setFinancialFields(loadedDefault.financialFields);
+          setUnitFields(loadedDefault.unitFields);
+          setCustomFinancialFields(loadedDefault.customFinancialFields);
+          setCustomUnitFields(loadedDefault.customUnitFields);
+          setDefaultMoaTemplate(loadedDefault);
+          setCategoryMoaTemplates(loadedCategoryTemplates);
         }
       } catch (error) {
         console.error("Failed to fetch MOA template:", error);
       }
     }
+    async function loadMoaCategories() {
+      const categories = await fetchCategories();
+      setMoaCategories(categories.map((category) => category.name));
+    }
     async function fetchSettings() {
       try {
         const data = await api.get<{ shopInfo: typeof shopSettings; policies: typeof policies }>('/settings/general');
         if (data) {
-          if (data.shopInfo) setShopSettings(data.shopInfo);
+          if (data.shopInfo) {
+            setShopSettings(data.shopInfo);
+            setTempShopSettings(data.shopInfo);
+          }
           if (data.policies) setPolicies(data.policies);
         }
-      } catch (error) {
+      } catch {
         console.warn("Failed to fetch settings, using defaults.");
       }
     }
     fetchMoaTemplate();
+    loadMoaCategories();
     fetchSettings();
+
+    const handleCategoriesUpdated = () => {
+      void loadMoaCategories();
+    };
+    window.addEventListener("categories-updated", handleCategoriesUpdated);
+    return () => window.removeEventListener("categories-updated", handleCategoriesUpdated);
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+  const resolvedTermsText = normalizeMoaTerms(termsText);
 
   // Uncontrolled ref for the Terms editor — avoids cursor-jump on every keystroke
   const termsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (termsRef.current && termsText) {
-      if (termsRef.current.innerText !== termsText) {
-        termsRef.current.innerText = termsText;
+    if (termsRef.current) {
+      if (termsRef.current.innerText !== resolvedTermsText) {
+        termsRef.current.innerText = resolvedTermsText;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [termsText]);
+  }, [activeTab, resolvedTermsText]);
 
   // Line widths state — keyed by fieldKey, persisted with MOA template save
   const [lineWidths, setLineWidths] = useState<Record<string, number>>({});
@@ -276,24 +427,144 @@ export default function SettingsPage() {
     );
   };
 
-  const handleShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
-    setShopSettings((prev) => ({ ...prev, [field]: value }));
+  const getCurrentMoaTemplate = (): MoaTemplateVariant => ({
+    terms_text: resolvedTermsText,
+    labels: { ...topLabels },
+    lineWidths: { ...lineWidths },
+    extensionRows: extensionRows.map((row) => ({ ...row })),
+    financialFields: [...financialFields],
+    unitFields: [...unitFields],
+    customFinancialFields: customFinancialFields.map((field) => ({ ...field })),
+    customUnitFields: customUnitFields.map((field) => ({ ...field })),
+  });
+
+  const applyMoaTemplate = (template: MoaTemplateVariant) => {
+    setTermsText(normalizeMoaTerms(template.terms_text));
+    setTopLabels((prev) => ({ ...prev, ...template.labels }));
+    setLineWidths({ ...template.lineWidths });
+    setExtensionRows(template.extensionRows.map((row) => ({ ...row })));
+    setFinancialFields([...template.financialFields]);
+    setUnitFields([...template.unitFields]);
+    setCustomFinancialFields(template.customFinancialFields.map((field) => ({ ...field })));
+    setCustomUnitFields(template.customUnitFields.map((field) => ({ ...field })));
+    setNewFinancialField("");
+    setNewUnitField("");
   };
 
-  const handlePolicyChange = (field: keyof typeof policies, value: string) => {
-    setPolicies((prev) => ({ ...prev, [field]: value }));
+  const toggleMoaSectionField = <T extends string>(
+    field: T,
+    fields: T[],
+    setFields: (next: T[]) => void,
+  ) => {
+    setFields(
+      fields.includes(field)
+        ? fields.filter((currentField) => currentField !== field)
+        : [...fields, field],
+    );
   };
 
-  const handleSaveAllSettings = async () => {
+  const addCustomMoaField = (
+    label: string,
+    setLabel: (value: string) => void,
+    setFields: React.Dispatch<React.SetStateAction<CustomMoaField[]>>,
+  ) => {
+    const trimmedLabel = label.trim();
+    if (!trimmedLabel) return;
+    setFields((fields) => [
+      ...fields,
+      {
+        id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        label: trimmedLabel,
+      },
+    ]);
+    setLabel("");
+  };
+
+  const handleMoaCategoryChange = (nextCategory: string) => {
+    const currentTemplate = getCurrentMoaTemplate();
+    const nextCategoryTemplates = { ...categoryMoaTemplates };
+    let nextDefaultTemplate = defaultMoaTemplate ?? currentTemplate;
+
+    if (selectedMoaCategory === DEFAULT_MOA_CATEGORY) {
+      nextDefaultTemplate = currentTemplate;
+      setDefaultMoaTemplate(currentTemplate);
+    } else {
+      nextCategoryTemplates[selectedMoaCategory] = currentTemplate;
+      setCategoryMoaTemplates(nextCategoryTemplates);
+    }
+
+    const nextTemplate =
+      nextCategory === DEFAULT_MOA_CATEGORY
+        ? nextDefaultTemplate
+        : nextCategoryTemplates[nextCategory] ?? nextDefaultTemplate;
+
+    setSelectedMoaCategory(nextCategory);
+    applyMoaTemplate(nextTemplate);
+  };
+
+  useEffect(() => {
+    if (
+      selectedMoaCategory !== DEFAULT_MOA_CATEGORY
+      || moaCategories.length === 0
+      || !defaultMoaTemplate
+    ) {
+      return;
+    }
+
+    const firstCategory = moaCategories[0];
+    setSelectedMoaCategory(firstCategory);
+    applyMoaTemplate(categoryMoaTemplates[firstCategory] ?? defaultMoaTemplate);
+  }, [
+    categoryMoaTemplates,
+    defaultMoaTemplate,
+    moaCategories,
+    selectedMoaCategory,
+  ]);
+
+  const handleApplyMoaToAllCategories = () => {
+    if (!canEditMoa || moaCategories.length === 0) return;
+
+    const currentTemplate = getCurrentMoaTemplate();
+    const templatesForAllCategories = Object.fromEntries(
+      moaCategories.map((category) => [
+        category,
+        {
+          ...currentTemplate,
+          labels: { ...currentTemplate.labels },
+          lineWidths: { ...currentTemplate.lineWidths },
+          extensionRows: currentTemplate.extensionRows.map((row) => ({ ...row })),
+          financialFields: [...currentTemplate.financialFields],
+          unitFields: [...currentTemplate.unitFields],
+          customFinancialFields: currentTemplate.customFinancialFields.map((field) => ({ ...field })),
+          customUnitFields: currentTemplate.customUnitFields.map((field) => ({ ...field })),
+        },
+      ]),
+    );
+
+    setCategoryMoaTemplates(templatesForAllCategories);
+    setDefaultMoaTemplate(currentTemplate);
+    setMoaSavedAt(null);
+  };
+
+  const handleTempShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
+    setTempShopSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCancelShopEdit = () => {
+    setIsShopEditMode(false);
+    setTempShopSettings(shopSettings);
+  };
+
+  const handleSaveShopEdit = async () => {
     if (!isSuperAdmin) {
       alert("Only Super Admins can save these settings.");
       return;
     }
     setIsSavingSettings(true);
     try {
-      await api.post('/settings/general', { shopInfo: shopSettings, policies });
-      setSettingsSavedAt(new Date().toLocaleString());
-      setTimeout(() => setSettingsSavedAt(null), 3000);
+      await api.post('/settings/general', { shopInfo: tempShopSettings, policies });
+      setShopSettings(tempShopSettings);
+      setIsShopEditMode(false);
     } catch (e) {
       console.error(e);
       alert("Failed to save settings");
@@ -302,14 +573,48 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    setIsSavingProfile(true);
+    setProfileToast(null);
+    try {
+      await api.patch("/auth/profile", { fullName: profileFullName });
+      await refreshProfile();
+      setProfileToast("Profile updated successfully.");
+      setTimeout(() => setProfileToast(null), 3000);
+    } catch (error) {
+      setProfileToast(error instanceof Error ? error.message : "Failed to update profile.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleDiscardProfile = () => {
+    setProfileFullName(user?.fullName || "");
+    setProfileEmail(user?.email || "");
+    setProfileToast(null);
+  };
+
   const handleSaveMoa = async () => {
     try {
+      const currentTemplate = getCurrentMoaTemplate();
+      const nextDefaultTemplate =
+        selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? currentTemplate
+          : defaultMoaTemplate ?? currentTemplate;
+      const nextCategoryTemplates = {
+        ...categoryMoaTemplates,
+        ...(selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? {}
+          : { [selectedMoaCategory]: currentTemplate }),
+      };
+
       await api.post(`/settings/moa_template`, {
-        terms_text: termsText,
-        labels: topLabels,
-        lineWidths,
-        extensionRows,
+        ...nextDefaultTemplate,
+        category_templates: nextCategoryTemplates,
       });
+      setDefaultMoaTemplate(nextDefaultTemplate);
+      setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
     } catch (error) {
       console.error("Failed to save MOA template:", error);
@@ -320,17 +625,26 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     setSendStatus("sending");
     try {
-      // First, ensure the current changes are saved to the central template
+      const currentTemplate = getCurrentMoaTemplate();
+      const nextDefaultTemplate =
+        selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? currentTemplate
+          : defaultMoaTemplate ?? currentTemplate;
+      const nextCategoryTemplates = {
+        ...categoryMoaTemplates,
+        ...(selectedMoaCategory === DEFAULT_MOA_CATEGORY
+          ? {}
+          : { [selectedMoaCategory]: currentTemplate }),
+      };
+
+      // `moa_template` is a global setting; saving here applies to all branches.
       await api.post(`/settings/moa_template`, {
-        terms_text: termsText,
-        labels: topLabels,
-        lineWidths,
-        extensionRows,
+        ...nextDefaultTemplate,
+        category_templates: nextCategoryTemplates,
       });
-      
-      // Simulate the broadcast process to other branches
-      await new Promise(resolve => setTimeout(resolve, 1200));
-      
+
+      setDefaultMoaTemplate(nextDefaultTemplate);
+      setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 2500);
@@ -384,24 +698,185 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-        <div className="space-y-4">
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Shop Information</h2>
+    <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
+      <div className="flex w-full gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
+        {["Profile", "Notifications", "Shop", "Manage Categories", "MOA"].map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActiveTab(tab)}
+            className={`whitespace-nowrap rounded-md px-6 py-2 font-bold transition-all ${
+              activeTab === tab
+                ? "bg-emerald-700 text-white shadow-sm"
+                : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className={`grid w-full gap-6 ${activeTab === "Profile" ? "2xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+        <div className="min-w-0 space-y-6">
+          {profileToast && (
+            <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
+              <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+                {profileToast}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "Profile" && (
+            <>
+              <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
+                <h3 className="mb-4 border-b border-border-main pb-2 text-base font-bold text-text-primary">
+                  My Account Profile
+                </h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                        Full Name
+                      </label>
+                      <input
+                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                        value={profileFullName}
+                        onChange={(event) => setProfileFullName(event.target.value)}
+                        placeholder="Your full name"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                        Account Role
+                      </label>
+                      <div className="rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm capitalize text-text-tertiary">
+                        {user?.role?.replace("_", " ") || "Super Admin"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
+                      Email Address
+                    </label>
+                    <input
+                      className="cursor-not-allowed rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-sm text-zinc-400 outline-none"
+                      value={profileEmail}
+                      readOnly
+                      title="Email cannot be changed from this page"
+                    />
+                    <p className="text-[10px] italic text-zinc-400">
+                      Email updates require administrative verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={isSavingProfile || profileFullName === user?.fullName}
+                  className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSavingProfile ? "Saving..." : "Save Changes"}
+                </button>
+                <button
+                  onClick={handleDiscardProfile}
+                  className="rounded-lg border border-input-border px-6 py-2 text-xs font-bold text-zinc-600 transition-colors hover:bg-surface-hover"
+                >
+                  Discard
+                </button>
+              </div>
+            </>
+          )}
+
+          {activeTab === "Notifications" && <NotificationSoundSettings />}
+
+          {activeTab === "Shop" && (
+          <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
+            <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
+              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                <svg
+                  className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
+                </svg>
+                Shop Information
+              </h2>
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  {!isShopEditMode ? (
+                    <button
+                      onClick={() => setIsShopEditMode(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      Edit Info
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={handleCancelShopEdit}
+                        className="rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSaveShopEdit}
+                        disabled={isSavingSettings}
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                      >
+                        {isSavingSettings ? (
+                          <>
+                            <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Saving...
+                          </>
+                        ) : (
+                          "Save"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-5 px-4 py-4">
+            <div className="space-y-5 px-4 py-4 transition-all duration-300">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Shop Name
                 </label>
                 <input
-                  value={shopSettings.shopName}
-                  onChange={(e) => handleShopSettingChange("shopName", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                  value={isShopEditMode ? tempShopSettings.shopName : shopSettings.shopName}
+                  onChange={(e) => handleTempShopSettingChange("shopName", e.target.value)}
+                  disabled={!isShopEditMode}
+                  className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                    isShopEditMode
+                      ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
@@ -410,10 +885,14 @@ export default function SettingsPage() {
                   Shop Address
                 </label>
                 <input
-                  value={shopSettings.shopAddress}
-                  onChange={(e) => handleShopSettingChange("shopAddress", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                  value={isShopEditMode ? tempShopSettings.shopAddress : shopSettings.shopAddress}
+                  onChange={(e) => handleTempShopSettingChange("shopAddress", e.target.value)}
+                  disabled={!isShopEditMode}
+                  className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                    isShopEditMode
+                      ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                  }`}
                 />
               </div>
 
@@ -423,10 +902,14 @@ export default function SettingsPage() {
                     Phone Number
                   </label>
                   <input
-                    value={shopSettings.phoneNumber}
-                    onChange={(e) => handleShopSettingChange("phoneNumber", e.target.value)}
-                    disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                    value={isShopEditMode ? tempShopSettings.phoneNumber : shopSettings.phoneNumber}
+                    onChange={(e) => handleTempShopSettingChange("phoneNumber", e.target.value)}
+                    disabled={!isShopEditMode}
+                    className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                      isShopEditMode
+                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                    }`}
                   />
                 </div>
 
@@ -436,63 +919,31 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="email"
-                    value={shopSettings.email}
-                    onChange={(e) => handleShopSettingChange("email", e.target.value)}
-                    disabled={!isSuperAdmin}
-                    className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
+                    value={isShopEditMode ? tempShopSettings.email : shopSettings.email}
+                    onChange={(e) => handleTempShopSettingChange("email", e.target.value)}
+                    disabled={!isShopEditMode}
+                    className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${
+                      isShopEditMode
+                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                    }`}
                   />
                 </div>
               </div>
             </div>
           </section>
+          )}
 
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
-              <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Pawnshop Policies</h2>
-            </div>
+          {activeTab === "Manage Categories" && (
+            <>
+              <InterestRatesSettings />
+              <CategoriesSettings />
+            </>
+          )}
 
-            <div className="grid gap-3 px-4 py-4 md:grid-cols-3">
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  test (%)
-                </label>
-                <input
-                  value={policies.interestRate}
-                  onChange={(e) => handlePolicyChange("interestRate", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-                <p className="text-[9px] text-zinc-400 dark:text-zinc-500">per month</p>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Default Pawn Duration (Days)
-                </label>
-                <input
-                  value={policies.pawnDuration}
-                  onChange={(e) => handlePolicyChange("pawnDuration", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Grace Period (Days)
-                </label>
-                <input
-                  value={policies.gracePeriod}
-                  onChange={(e) => handlePolicyChange("gracePeriod", e.target.value)}
-                  disabled={!isSuperAdmin}
-                  className="h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:focus:bg-zinc-700"
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:bg-slate-900 dark:border-zinc-700">
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+          {activeTab === "MOA" && (
+          <section className="overflow-visible rounded-xl border border-border-main bg-surface pb-4 shadow-sm">
+            <div className="border-b border-border-main px-4 py-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
@@ -517,13 +968,13 @@ export default function SettingsPage() {
                   className={`rounded-lg px-4 py-2 text-[11px] font-bold transition-colors ${
                     isMoaEditMode
                       ? "border border-emerald-700 bg-emerald-700 text-white"
-                      : "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                 </button>
 
-                <label className={`inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-[11px] font-bold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <label className={`inline-flex items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <input
                     type="checkbox"
                     checked={isMoaLocked}
@@ -537,14 +988,57 @@ export default function SettingsPage() {
                 <button
                   onClick={() => setIsTopHeaderSwapped((v) => !v)}
                   disabled={!isSuperAdmin}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  className="rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300"
                 >
                   {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleApplyMoaToAllCategories}
+                  disabled={!canEditMoa || moaCategories.length === 0}
+                  className="rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Apply to All Categories
+                </button>
+
               </div>
 
-              <div className="overflow-hidden rounded-md border border-zinc-300 bg-white p-6 dark:bg-slate-900 dark:border-zinc-700">
-                <div className="space-y-2 border border-emerald-800/70 p-5 text-[10px] text-zinc-800 dark:text-zinc-100">
+              {isMoaEditMode && (
+                <div className="overflow-x-auto rounded-lg border border-border-main bg-surface-secondary p-1.5">
+                  <div className="flex min-w-max items-center gap-1.5">
+                    {moaCategories.map((categoryName) => {
+                      const category = { value: categoryName, label: categoryName };
+                      const isActive = selectedMoaCategory === category.value;
+                      return (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => handleMoaCategoryChange(category.value)}
+                          disabled={!canEditMoa}
+                          className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                            isActive
+                              ? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
+                              : "border-border-main bg-surface text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:text-zinc-300"
+                          }`}
+                        >
+                          {category.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {isMoaEditMode && selectedMoaCategory !== DEFAULT_MOA_CATEGORY && (
+                <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-medium text-emerald-800">
+                  Editing the MOA used for <strong>{selectedMoaCategory}</strong> transactions.
+                </p>
+              )}
+
+              <div className="overflow-hidden rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
+                <div className="flex min-w-0 flex-col items-stretch gap-4 2xl:flex-row 2xl:items-start">
+                <div className="moa-paper-effect moa-settings-paper mx-auto min-h-[1120px] w-full max-w-[794px] min-w-0 flex-none space-y-3 overflow-hidden border border-emerald-800/70 bg-white p-3 text-[10px] leading-normal text-zinc-800 sm:p-5 lg:p-6">
                   {/* Row 1: Title + Branch Info (centered) */}
                   <div className="text-center space-y-0.5 pb-3 border-b border-zinc-100">
                     <input
@@ -553,7 +1047,7 @@ export default function SettingsPage() {
                       readOnly={!canEditMoa}
                       tabIndex={canEditMoa ? 0 : -1}
                       spellCheck={false}
-                      className={`block w-full text-center text-sm font-black uppercase underline tracking-widest border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                      className={`moa-title-input block w-full text-center text-sm font-black uppercase underline tracking-widest border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
                     />
                     <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                       {shopSettings.shopName}
@@ -567,69 +1061,85 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Row 2: Original Copy | Unit Code */}
-                  <div className="flex items-center justify-between gap-3 pt-1">
-                    {renderEditableLabel("originalCopy", "font-semibold")}
-                    <div className="min-w-0 flex items-center gap-2 text-[10px]">
-                      {renderEditableLabel("unitCode", "font-semibold uppercase whitespace-nowrap")}
-                      {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v))}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    {renderEditableLabel("originalCopy", "inline font-semibold")}
+                    <div className="flex min-w-0 max-w-full items-center justify-end gap-1 text-[10px]">
+                      {renderEditableLabel("unitCode", "inline font-semibold uppercase whitespace-nowrap")}
+                      {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v), 80)}
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid min-w-0 gap-x-6 gap-y-3 sm:grid-cols-2">
                     {isTopHeaderSwapped ? (
                       <>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("maturityDate", "w-32")}
-                            <span>1st</span>
-                            {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 80)}
-                            <span>2nd</span>
-                            {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 80)}
-                            <span>3rd</span>
-                            {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 80)}
+                        <div className="min-w-0 space-y-1">
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("maturityDate", "whitespace-nowrap")}
+                            <div className="grid min-w-0 justify-end grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                              <span className="contents whitespace-nowrap">
+                                <span>1st</span>
+                                {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>2nd</span>
+                                {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>3rd</span>
+                                {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 48)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("expiryDate", "w-32")}
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("expiryDate", "whitespace-nowrap")}
                             {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v))}
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("purchasedDate", "w-28")}
+                        <div className="min-w-0 space-y-1 sm:justify-self-end sm:w-full">
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("purchasedDate", "w-24 sm:w-28")}
                             {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v))}
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("idsPresented", "w-28")}
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("idsPresented", "w-24 sm:w-28")}
                             {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v))}
                           </div>
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("purchasedDate", "w-28")}
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("purchasedDate", "w-24 sm:w-28")}
                             {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v))}
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("idsPresented", "w-28")}
+                          <div className="flex min-w-0 items-center gap-1">
+                            {renderEditableLabel("idsPresented", "w-24 sm:w-28")}
                             {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v))}
                           </div>
                         </div>
 
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("maturityDate", "w-32")}
-                            <span>1st</span>
-                            {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 80)}
-                            <span>2nd</span>
-                            {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 80)}
-                            <span>3rd</span>
-                            {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 80)}
+                        <div className="min-w-0 space-y-1 sm:justify-self-end sm:w-full">
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("maturityDate", "whitespace-nowrap")}
+                            <div className="grid min-w-0 justify-end grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                              <span className="contents whitespace-nowrap">
+                                <span>1st</span>
+                                {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>2nd</span>
+                                {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 48)}
+                              </span>
+                              <span className="contents whitespace-nowrap">
+                                <span>3rd</span>
+                                {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 48)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {renderEditableLabel("expiryDate", "w-32")}
+                          <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
+                            {renderEditableLabel("expiryDate", "whitespace-nowrap")}
                             {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v))}
                           </div>
                         </div>
@@ -656,34 +1166,60 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  <div className="grid gap-5 border-y border-emerald-900/50 py-4 md:grid-cols-2">
-                    <div className="space-y-1">
+                  <div className="grid min-w-0 gap-5 border-y border-emerald-900/50 py-4 sm:grid-cols-2">
+                    <div className="min-w-0 space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("financialDetails", "inline")}</p>
                       <div className="grid grid-cols-[74px_1fr] items-center gap-2">
-                        {renderEditableLabel("amount", "inline")}
-                        {RL("amount", moaFields.amount, (v) => updateMoaField("amount", v))}
-                        {renderEditableLabel("storageFee", "inline")}
-                        {RL("storageFee", moaFields.storageFee, (v) => updateMoaField("storageFee", v))}
-                        {renderEditableLabel("parkingFee", "inline")}
-                        {RL("parkingFee", moaFields.parkingFee, (v) => updateMoaField("parkingFee", v))}
-                        {renderEditableLabel("netProceeds", "inline")}
-                        {RL("netProceeds", moaFields.netProceeds, (v) => updateMoaField("netProceeds", v))}
+                        {FINANCIAL_FIELD_OPTIONS.filter((field) =>
+                          financialFields.includes(field.key),
+                        ).map((field) => (
+                          <div key={field.key} className="contents">
+                            {renderEditableLabel(field.key, "inline")}
+                            {RL(
+                              field.key,
+                              moaFields[field.valueKey],
+                              (value) => updateMoaField(field.valueKey, value),
+                            )}
+                          </div>
+                        ))}
+                        {customFinancialFields.map((field) => (
+                          <div key={field.id} className="contents">
+                            <span>{field.label}:</span>
+                            {RL(
+                              `custom-financial-${field.id}`,
+                              "",
+                              () => undefined,
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="min-w-0 space-y-1">
                       <p className="font-bold underline">{renderEditableLabel("unitDescription", "inline")}</p>
                       <div className="grid grid-cols-[92px_1fr] items-center gap-2">
-                        {renderEditableLabel("brandModel", "inline")}
-                        {RL("brandModel", moaFields.brandModel, (v) => updateMoaField("brandModel", v))}
-                        {renderEditableLabel("itemsIncluded", "inline")}
-                        {RL("itemsIncluded", moaFields.itemsIncluded, (v) => updateMoaField("itemsIncluded", v))}
-                        {renderEditableLabel("condition", "inline")}
-                        {RL("condition", moaFields.condition, (v) => updateMoaField("condition", v))}
-                        {renderEditableLabel("serialNo", "inline")}
-                        {RL("serialNo", moaFields.serialNo, (v) => updateMoaField("serialNo", v))}
-                        {renderEditableLabel("memory", "inline")}
-                        {RL("memory", moaFields.memory, (v) => updateMoaField("memory", v))}
+                        {UNIT_FIELD_OPTIONS.filter((field) =>
+                          unitFields.includes(field.key),
+                        ).map((field) => (
+                          <div key={field.key} className="contents">
+                            {renderEditableLabel(field.key, "inline")}
+                            {RL(
+                              field.key,
+                              moaFields[field.valueKey],
+                              (value) => updateMoaField(field.valueKey, value),
+                            )}
+                          </div>
+                        ))}
+                        {customUnitFields.map((field) => (
+                          <div key={field.id} className="contents">
+                            <span>{field.label}:</span>
+                            {RL(
+                              `custom-unit-${field.id}`,
+                              "",
+                              () => undefined,
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -734,11 +1270,13 @@ export default function SettingsPage() {
                       contentEditable={canEditMoa}
                       suppressContentEditableWarning
                       onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
-                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600 dark:text-zinc-100"
-                    />
+                      className="min-h-[200px] whitespace-pre-wrap rounded-sm border border-zinc-300 bg-transparent p-3 text-[10px] leading-relaxed text-zinc-800 outline-none dark:border-zinc-600"
+                    >
+                      {resolvedTermsText}
+                    </div>
                   </div>
 
-                  <div className="grid gap-8 pt-4 md:grid-cols-2 items-end">
+                  <div className="grid min-w-0 items-end gap-8 pt-4 sm:grid-cols-2">
                     <div className="flex flex-col text-center">
                       {/* Invisible spacer — same height as "I HEREBY AUTHORIZED" on the other column */}
                       <span className="block text-[11px] font-bold uppercase text-emerald-900 invisible select-none" aria-hidden="true">
@@ -754,6 +1292,187 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
+                {isMoaEditMode && (
+                  <aside className="w-full min-w-0 flex-none space-y-3 rounded-lg border border-emerald-200 bg-white p-3 text-zinc-800 shadow-sm 2xl:sticky 2xl:top-3 2xl:w-[280px]">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-wide text-emerald-900">
+                        MOA Fields
+                      </p>
+                      <p className="mt-1 text-[9px] leading-4 text-zinc-500">
+                        Configure fields for {selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "all categories" : selectedMoaCategory}.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border border-zinc-200 p-2">
+                      <p className="text-[10px] font-bold uppercase text-zinc-700">Financial Details</p>
+                      <div className="space-y-1">
+                        {FINANCIAL_FIELD_OPTIONS.map((field) => (
+                          <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
+                            <input
+                              type="checkbox"
+                              checked={financialFields.includes(field.key)}
+                              onChange={() =>
+                                toggleMoaSectionField(field.key, financialFields, setFinancialFields)
+                              }
+                              disabled={!canEditMoa}
+                              className="h-3.5 w-3.5 accent-emerald-700"
+                            />
+                            {topLabels[field.key]}
+                          </label>
+                        ))}
+                      </div>
+                      {customFinancialFields.map((field) => (
+                        <div key={field.id} className="flex items-center gap-1">
+                          <input
+                            value={field.label}
+                            onChange={(event) =>
+                              setCustomFinancialFields((fields) =>
+                                fields.map((currentField) =>
+                                  currentField.id === field.id
+                                    ? { ...currentField, label: event.target.value }
+                                    : currentField,
+                                ),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomFinancialFields((fields) =>
+                                fields.filter((currentField) => currentField.id !== field.id),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            aria-label={`Remove ${field.label}`}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-1">
+                        <input
+                          value={newFinancialField}
+                          onChange={(event) => setNewFinancialField(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              addCustomMoaField(
+                                newFinancialField,
+                                setNewFinancialField,
+                                setCustomFinancialFields,
+                              );
+                            }
+                          }}
+                          disabled={!canEditMoa}
+                          placeholder="New financial field"
+                          className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addCustomMoaField(
+                              newFinancialField,
+                              setNewFinancialField,
+                              setCustomFinancialFields,
+                            )
+                          }
+                          disabled={!canEditMoa || !newFinancialField.trim()}
+                          className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border border-zinc-200 p-2">
+                      <p className="text-[10px] font-bold uppercase text-zinc-700">Unit Description</p>
+                      <div className="space-y-1">
+                        {UNIT_FIELD_OPTIONS.map((field) => (
+                          <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
+                            <input
+                              type="checkbox"
+                              checked={unitFields.includes(field.key)}
+                              onChange={() =>
+                                toggleMoaSectionField(field.key, unitFields, setUnitFields)
+                              }
+                              disabled={!canEditMoa}
+                              className="h-3.5 w-3.5 accent-emerald-700"
+                            />
+                            {topLabels[field.key]}
+                          </label>
+                        ))}
+                      </div>
+                      {customUnitFields.map((field) => (
+                        <div key={field.id} className="flex items-center gap-1">
+                          <input
+                            value={field.label}
+                            onChange={(event) =>
+                              setCustomUnitFields((fields) =>
+                                fields.map((currentField) =>
+                                  currentField.id === field.id
+                                    ? { ...currentField, label: event.target.value }
+                                    : currentField,
+                                ),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCustomUnitFields((fields) =>
+                                fields.filter((currentField) => currentField.id !== field.id),
+                              )
+                            }
+                            disabled={!canEditMoa}
+                            className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            aria-label={`Remove ${field.label}`}
+                          >
+                            X
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-1">
+                        <input
+                          value={newUnitField}
+                          onChange={(event) => setNewUnitField(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              addCustomMoaField(
+                                newUnitField,
+                                setNewUnitField,
+                                setCustomUnitFields,
+                              );
+                            }
+                          }}
+                          disabled={!canEditMoa}
+                          placeholder="New unit field"
+                          className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addCustomMoaField(
+                              newUnitField,
+                              setNewUnitField,
+                              setCustomUnitFields,
+                            )
+                          }
+                          disabled={!canEditMoa || !newUnitField.trim()}
+                          className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </aside>
+                )}
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -762,22 +1481,24 @@ export default function SettingsPage() {
                 </p>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
+                  <ActionButton
                     onClick={handleSaveMoa}
                     disabled={!canEditMoa || !isSuperAdmin}
-                    className="rounded-lg bg-emerald-700 px-4 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    variant="success"
+                    size="sm"
                   >
                     Save MOA Template
-                  </button>
-                  <button
+                  </ActionButton>
+                  <ActionButton
                     onClick={handleSendToAllBranches}
                     disabled={sendStatus === "sending" || !isSuperAdmin}
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
+                    variant="outline"
+                    size="sm"
                   >
                     {sendStatus === "sending"
                       ? "Sending to All Branches..."
                       : "Send to All Branches"}
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
 
@@ -789,35 +1510,21 @@ export default function SettingsPage() {
               )}
             </div>
           </section>
+          )}
 
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={handleSaveAllSettings}
-              disabled={isSavingSettings || !isSuperAdmin}
-              className="rounded-lg bg-emerald-700 px-5 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed">
-              {isSavingSettings ? "Saving..." : "Save Changes"}
-            </button>
-            <button 
-              onClick={() => window.location.reload()}
-              disabled={!isSuperAdmin}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
-              Discard
-            </button>
-            {settingsSavedAt && (
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
-                Settings saved: {settingsSavedAt}
-              </span>
-            )}
-          </div>
         </div>
 
-        <aside className="space-y-4">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 text-center shadow-sm dark:border-zinc-700 dark:bg-slate-900">
-            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        {activeTab === "Profile" && (
+        <aside className="min-w-0 space-y-4">
+          <section className="rounded-xl border border-border-main bg-surface p-4 text-center shadow-sm">
+            <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full border-2 border-border-main bg-surface-secondary">
               {user?.avatarUrl ? (
-                <img
+                <Image
                   src={user.avatarUrl}
                   alt="Profile avatar"
+                  width={64}
+                  height={64}
+                  unoptimized
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -826,7 +1533,7 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-100">Admin Panel</h3>
+            <h3 className="text-sm font-bold text-zinc-950 dark:text-zinc-100">{profileFullName || "Admin Panel"}</h3>
             <p className="mt-1 text-[10px] text-zinc-700 dark:text-zinc-400">Super Admin Settings</p>
             <button
               onClick={() => setIsAvatarModalOpen(true)}
@@ -838,19 +1545,64 @@ export default function SettingsPage() {
               <p className="mt-2 text-[10px] font-medium text-emerald-800 dark:text-emerald-300">{avatarToast}</p>
             )}
             <PasswordChangeRequestCard />
-          </section>
-
-          <section className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm dark:border-emerald-900 dark:bg-emerald-950">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
-              Security Restriction
-            </p>
-            <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
-              System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
-            </p>
+            <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left dark:border-emerald-900 dark:bg-emerald-950">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
+                Security Restriction
+              </p>
+              <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
+                System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
+              </p>
+            </div>
           </section>
         </aside>
+        )}
       </div>
 
+      <style jsx global>{`
+        .moa-paper-effect {
+          background-color: white !important;
+          color: #18181b !important;
+          color-scheme: light !important;
+          overflow-y: visible !important;
+          max-height: none !important;
+        }
+        .moa-settings-paper,
+        .moa-settings-paper * {
+          box-sizing: border-box;
+        }
+        .moa-settings-paper {
+          overflow-wrap: anywhere;
+        }
+        .moa-settings-paper input,
+        .moa-settings-paper [contenteditable="true"],
+        .moa-settings-paper .moa-resizable-line {
+          max-width: 100%;
+        }
+        .moa-paper-effect input {
+          min-width: 0;
+          font-size: 10px !important;
+          line-height: 1.5 !important;
+        }
+        .moa-paper-effect .moa-title-input {
+          font-size: 14px !important;
+        }
+        .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
+        .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
+        .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
+        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
+        .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
+        .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
+        .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
+        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
+        .moa-paper-effect .text-emerald-950 { color: #022c22 !important; }
+        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
+        .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
+        .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
+        .moa-paper-effect input { color: #18181b !important; }
+        .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
+      `}</style>
       <AvatarPickerModal
         isOpen={isAvatarModalOpen}
         isSaving={isSavingAvatar}

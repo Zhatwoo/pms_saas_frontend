@@ -63,7 +63,7 @@ export function TransactionDetailsModal({
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalRef, isOpen);
   const { user } = useAuth();
-  const isAdminOrSuperAdmin = user?.role?.toLowerCase().includes("admin");
+  const isAdminOrSuperAdmin = user?.role === "super_admin";
   const modalAriaProps = {
     role: "dialog",
     "aria-modal": "true",
@@ -99,7 +99,7 @@ export function TransactionDetailsModal({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {transaction.relatedPawnedItemId && (
+              {isAdminOrSuperAdmin && transaction.relatedPawnedItemId && (
                 <button
                   onClick={() => {
                     if (onRequestQRReplacement) {
@@ -142,7 +142,7 @@ export function TransactionDetailsModal({
           />
         </div>
 
-        <div className="grid gap-4 px-6 pb-6 lg:grid-cols-1">
+        <div className={`grid gap-4 px-6 pb-6 ${transaction.idPhoto ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
           <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
               Security Identity
@@ -176,6 +176,21 @@ export function TransactionDetailsModal({
               </div>
             )}
           </div>
+
+          {transaction.idPhoto && (
+            <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm flex flex-col">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
+                Renewal MOA Proof
+              </p>
+              <div className="mt-4 flex-1 flex flex-col items-center justify-center">
+                <img
+                  src={transaction.idPhoto}
+                  alt="Renewal MOA Proof"
+                  className="max-h-64 rounded-2xl bg-white p-1 object-contain shadow-lg border border-border-main dark:opacity-90"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

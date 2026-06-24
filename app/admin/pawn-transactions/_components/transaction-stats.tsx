@@ -98,13 +98,14 @@ interface TransactionStatsProps {
 
 export function TransactionStats({ data }: TransactionStatsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
       <StatCard
         label="Pawned Today"
         value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
         borderColor="bg-emerald-600"
+        className="min-h-[160px] rounded-xl p-6"
       />
       <StatCard
         label="Buy Back"
@@ -112,6 +113,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         subtitle="Purchased today"
         icon={buyBackIcon}
         borderColor="bg-blue-600"
+        className="min-h-[160px] rounded-xl p-6"
       />
       <StatCard
         label="Renewed"
@@ -119,6 +121,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         subtitle="Contracts renewed"
         icon={renewedIcon}
         borderColor="bg-amber-500"
+        className="min-h-[160px] rounded-xl p-6"
       />
       <StatCard
         label="Sold Item"
@@ -126,8 +129,9 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         subtitle="Units sold"
         icon={soldIcon}
         borderColor="bg-orange-500"
+        className="min-h-[160px] rounded-xl p-6"
       />
-      <div className="flex flex-col justify-between rounded-lg border border-border-main bg-surface p-4 transition-colors duration-300">
+      <div className="flex min-h-[160px] flex-col justify-between rounded-xl border border-border-main bg-surface p-6 transition-colors duration-300">
         <div className="mb-3 h-1 w-full rounded-full bg-text-primary" />
         
         {/* Starting Balance */}
@@ -140,7 +144,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
               ₱ {data?.startingBalance?.toLocaleString() || "0"}
             </p>
           </div>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
             {balanceIcon}
           </div>
         </div>

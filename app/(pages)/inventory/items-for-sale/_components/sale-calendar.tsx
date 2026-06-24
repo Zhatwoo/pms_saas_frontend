@@ -62,7 +62,7 @@ export function SaleCalendar({
   const cells = buildCalendarCells(calendarYear, calendarMonth);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20 transition-colors duration-300">
+    <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
       <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-950 to-emerald-900 px-4 py-4 sm:px-5">
         <button
           type="button"
@@ -86,9 +86,9 @@ export function SaleCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-border-subtle bg-surface-secondary">
+      <div className="grid grid-cols-7 border-b border-zinc-200/80 bg-surface-secondary dark:border-border-subtle">
         {DAY_NAMES.map((day) => (
-          <div key={day} className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted">
+          <div key={day} className="border-r border-zinc-200/80 py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted last:border-r-0 dark:border-border-subtle">
             {day}
           </div>
         ))}
@@ -97,7 +97,7 @@ export function SaleCalendar({
       <div className="grid grid-cols-7">
         {cells.map((day, index) => {
           if (day === null) {
-            return <div key={`empty-${index}`} className="h-16 border-b border-r border-border-subtle/40 bg-surface-secondary/20" />;
+            return <div key={`empty-${index}`} className="h-16 border-b border-r border-zinc-200/80 bg-surface-secondary/20 dark:border-border-subtle" />;
           }
 
           const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -124,7 +124,7 @@ export function SaleCalendar({
               type="button"
               disabled={isFutureDate}
               onClick={isFutureDate ? undefined : () => onSelectDate(isSelected ? null : dateStr)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all ${isFutureDate ? "cursor-not-allowed opacity-45" : "hover:bg-emerald-50/10"} ${highlightClass} ${isToday ? "ring-1 ring-inset ring-yellow-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle ${isFutureDate ? "cursor-not-allowed opacity-45" : "hover:bg-emerald-50/10"} ${highlightClass} ${isToday ? "ring-1 ring-inset ring-yellow-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${dayTextClass}`}>
                 {day}

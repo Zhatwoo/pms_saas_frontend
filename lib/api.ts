@@ -1,5 +1,6 @@
 type ApiRequestInit = RequestInit & {
   suppressAuthExpired?: boolean;
+  suppressApiIssueLogging?: boolean;
 };
 
 /** Structured API failure (4xx/5xx JSON from Nest or proxy). */
@@ -43,8 +44,19 @@ export class ApiError extends Error {
 }
 
 class ApiClient {
+  private pendingGets = new Map<string, Promise<unknown>>();
+
+  private isAuthRefreshGraceActive() {
+    if (typeof window === "undefined") return false;
+
+    const rawUntil = window.sessionStorage.getItem("pms_auth_refresh_grace_until");
+    const until = rawUntil ? Number(rawUntil) : 0;
+    return Number.isFinite(until) && Date.now() < until;
+  }
+
   private notifySessionExpired(message: string, path: string) {
     if (typeof window === "undefined") return;
+    if (this.isAuthRefreshGraceActive()) return;
 
     window.dispatchEvent(
       new CustomEvent("pms:auth-expired", {
@@ -104,26 +116,52 @@ class ApiClient {
       path === "/auth/register" ||
       path === "/auth/signup/branches" ||
       path === "/branches/public" ||
-      path === "/inventory/public/for-sale";
+      path === "/inventory/public/for-sale" ||
+      path === "/devices/request-authorization";
 
     let res: Response;
-    try {
-      res = await fetch(`/api${path}`, {
-        ...requestOptions,
-        method,
-        headers,
-        credentials: requestOptions.credentials ?? "include",
-        ...(method === "GET" && requestOptions.cache == null ? { cache: "no-store" } : {}),
-      });
-    } catch (networkErr) {
-      const msg =
-        networkErr instanceof Error ? networkErr.message : String(networkErr);
-      console.warn(`[API] Network error for ${path}:`, msg);
-      throw new Error(
-        msg.includes("ECONNREFUSED") || msg.includes("fetch failed")
-          ? "Cannot reach the server. Please check if the backend is running."
-          : `Network error: ${msg}`,
-      );
+    let retryCount = 0;
+    const maxRetries = 3;
+    const suppressApiIssueLogging = Boolean(requestOptions.suppressApiIssueLogging);
+    delete requestOptions.suppressApiIssueLogging;
+
+    while (true) {
+      try {
+        res = await fetch(`/api${path}`, {
+          ...requestOptions,
+          method,
+          headers,
+          credentials: requestOptions.credentials ?? "include",
+          ...(method === "GET" && requestOptions.cache == null ? { cache: "no-store" } : {}),
+        });
+
+        // Check if it's a pool exhaustion error
+        if (res.status === 500) {
+          const clonedRes = res.clone();
+          try {
+            const body = await clonedRes.text();
+            if (body.includes("EMAXCONNSESSION") && retryCount < maxRetries) {
+              retryCount++;
+              const delay = 500 * Math.pow(2, retryCount - 1); // Exponential backoff: 500ms, 1000ms, 2000ms
+              console.warn(`[API] Pool exhausted (EMAXCONNSESSION). Retrying ${path} in ${delay}ms... (Attempt ${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              continue;
+            }
+          } catch {
+            // ignore clone read error
+          }
+        }
+        break;
+      } catch (networkErr) {
+        const msg =
+          networkErr instanceof Error ? networkErr.message : String(networkErr);
+        console.warn(`[API] Network error for ${path}:`, msg);
+        throw new Error(
+          msg.includes("ECONNREFUSED") || msg.includes("fetch failed")
+            ? "Cannot reach the server. Please check if the backend is running."
+            : `Network error: ${msg}`,
+        );
+      }
     }
 
     let text = "";
@@ -137,7 +175,8 @@ class ApiClient {
     }
 
     if (!res.ok) {
-      const suppressLogging = Boolean(suppressAuthExpired && res.status === 401);
+      const suppressLogging =
+        suppressApiIssueLogging || Boolean(suppressAuthExpired && res.status === 401);
       const { message, payload } = this.parseErrorFromBody(
         res.status,
         text,
@@ -146,7 +185,12 @@ class ApiClient {
         suppressLogging,
       );
 
-      if (res.status === 401 && !isPublicPath && !suppressAuthExpired) {
+      if (
+        res.status === 401 &&
+        !isPublicPath &&
+        !suppressAuthExpired &&
+        !this.isAuthRefreshGraceActive()
+      ) {
         console.warn(`[API] 401 Unauthorized for ${path}.`);
         this.notifySessionExpired(message, path);
       }
@@ -353,7 +397,27 @@ class ApiClient {
   }
 
   get<T>(path: string, options?: ApiRequestInit) {
-    return this.fetch<T>(path, { ...options, method: "GET" });
+    const key = JSON.stringify({
+      path,
+      headers: options?.headers ?? null,
+      cache: options?.cache ?? null,
+      credentials: options?.credentials ?? null,
+      suppressAuthExpired: options?.suppressAuthExpired ?? false,
+    });
+
+    const existing = this.pendingGets.get(key) as Promise<T> | undefined;
+    if (existing) {
+      return existing;
+    }
+
+    const request = this.fetch<T>(path, { ...options, method: "GET" });
+    this.pendingGets.set(key, request as Promise<unknown>);
+
+    return request.finally(() => {
+      if (this.pendingGets.get(key) === request) {
+        this.pendingGets.delete(key);
+      }
+    });
   }
 
   delete<T>(path: string, options?: ApiRequestInit) {

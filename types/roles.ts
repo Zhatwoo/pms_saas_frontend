@@ -11,6 +11,7 @@ export interface User {
   branchId?: string;
   branchName?: string;
   avatarUrl?: string;
+  notificationSound?: string;
 }
 
 export interface NavItem {

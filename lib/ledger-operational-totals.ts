@@ -3,6 +3,7 @@
  * Excludes voided rows and journal Start/End markers (zero cash, bookkeeping only).
  */
 export type LedgerOperationalRow = {
+  id?: string | null;
   purpose?: string | null;
   cash_in?: number | string | null;
   cash_out?: number | string | null;
@@ -11,13 +12,16 @@ export type LedgerOperationalRow = {
   created_at?: string | Date | null;
 };
 
-function isInboundFundTransferCashRow(row: LedgerOperationalRow): boolean {
+function isFundTransferBookRow(row: LedgerOperationalRow): boolean {
   if (row.voided_at != null && row.voided_at !== "") return false;
-  const ci = Number(row.cash_in ?? 0);
-  if (!Number.isFinite(ci) || ci <= 0) return false;
   const unit = (row.unit ?? "").toLowerCase().trim();
   const purpose = (row.purpose ?? "").toLowerCase().trim();
-  return unit === "fund_transfer" || purpose === "cash transfer";
+  return (
+    unit === "fund_transfer" ||
+    unit === "fund_transfer_out" ||
+    purpose === "cash transfer" ||
+    purpose === "fund transfer"
+  );
 }
 
 function createdAtMs(value: string | Date | null | undefined): number {
@@ -29,12 +33,15 @@ function createdAtMs(value: string | Date | null | undefined): number {
 
 /**
  * Operational cash for pawn "ending balance" cards: same as {@link operationalCashTotals},
- * but inbound fund-transfer cash posted **before** the branch day `sessionOpenedAt` is skipped.
- * That cash is already part of the employee's physical starting count when they open the day.
+ * but rows posted **before** `sessionOpenedAt` are skipped (prior employee shift on the same
+ * Manila calendar day after End Day → Start Day). Inbound fund transfers before open are included
+ * in that rule — the physical starting count already reflects them.
  */
 export function operationalCashTotalsForPawnEnding(
   rows: LedgerOperationalRow[],
   sessionOpenedAtIso?: string | null,
+  operationalCutoffAtIso?: string | null,
+  sealedTransactionIds?: string[] | null,
 ): {
   cashIn: number;
   cashOut: number;
@@ -43,7 +50,15 @@ export function operationalCashTotalsForPawnEnding(
   const openMs = sessionOpenedAtIso
     ? new Date(sessionOpenedAtIso).getTime()
     : NaN;
-  const hasOpen = Number.isFinite(openMs);
+  const cutoffMs = operationalCutoffAtIso
+    ? new Date(operationalCutoffAtIso).getTime()
+    : NaN;
+  const effectiveMs = Math.max(
+    Number.isFinite(openMs) ? openMs : 0,
+    Number.isFinite(cutoffMs) ? cutoffMs : 0,
+  );
+  const hasOpen = effectiveMs > 0;
+  const sealed = new Set(sealedTransactionIds ?? []);
 
   let cashIn = 0;
   let cashOut = 0;
@@ -51,12 +66,15 @@ export function operationalCashTotalsForPawnEnding(
     if (tx.voided_at != null && tx.voided_at !== "") continue;
     const p = (tx.purpose ?? "").toLowerCase().trim();
     if (p === "start" || p === "end") continue;
+    if (tx.id && sealed.has(tx.id)) continue;
 
-    if (
-      hasOpen &&
-      isInboundFundTransferCashRow(tx) &&
-      createdAtMs(tx.created_at) < openMs
-    ) {
+    if (hasOpen && createdAtMs(tx.created_at) < effectiveMs) {
+      if (isFundTransferBookRow(tx)) {
+        const ci = Number(tx.cash_in ?? 0);
+        const co = Number(tx.cash_out ?? 0);
+        if (Number.isFinite(ci)) cashIn += ci;
+        if (Number.isFinite(co)) cashOut += co;
+      }
       continue;
     }
 

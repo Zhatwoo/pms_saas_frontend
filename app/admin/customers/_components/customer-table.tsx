@@ -35,7 +35,6 @@ const columns: Column[] = [
   { key: "idType", label: "ID Type" },
   { key: "idNumber", label: "ID Number" },
   { key: "registered", label: "Registered" },
-  { key: "actions", label: "Actions", align: "center" },
 ];
 
 interface CustomerData {
@@ -195,21 +194,7 @@ export function CustomerTable() {
           loadingMessage="Loading customers..."
           onRowClick={(row) => router.push(`/admin/customers/view_user?id=${row.id}`)}
           renderCell={(key, value, row) => {
-            if (key === "actions") {
-              return (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    router.push(`/admin/customers/view_user?id=${row.id}&mode=edit`);
-                  }}
-                  className="mx-auto flex h-8 w-8 items-center justify-center rounded-md text-emerald-text transition-colors hover:bg-emerald-surface/50"
-                  title={`Edit ${row.name}`}
-                >
-                  {editIcon}
-                </button>
-              );
-            }
+            
             return value;
           }}
         />

@@ -121,7 +121,6 @@ export function EmployeeAuditLogsClient() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-text-primary">My Audit Logs</h1>
           <p className="mt-1 text-sm text-text-secondary">
             Personal activity history for {user?.fullName || user?.email || "your account"}.
           </p>

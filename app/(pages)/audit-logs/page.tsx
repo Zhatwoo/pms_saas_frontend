@@ -7,6 +7,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { DateFilterSelector } from "@/components/shared/date-filter-selector";
+import { toast } from "sonner";
 
 interface ActivityLog {
   id: string;
@@ -17,7 +18,25 @@ interface ActivityLog {
   createdAt: string;
   userFullName: string;
   userRole: string;
+  userAvatarUrl?: string | null;
   branchName: string;
+}
+
+interface LoginLog {
+  id: string;
+  created_at: string;
+  login_status: string;
+  failure_reason: string | null;
+  ip_address: string | null;
+  device_fingerprint: string | null;
+  employee_id: string | null;
+  employee: {
+    id?: string;
+    full_name?: string | null;
+    email?: string | null;
+    role?: string | null;
+    avatarUrl?: string | null;
+  } | null;
 }
 
 interface UserDirectoryEntry {
@@ -36,6 +55,49 @@ const PH_TIME_ZONE = "Asia/Manila";
 function getInitials(name: string) {
   if (!name) return "U";
   return name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+}
+
+function Avatar({
+  src,
+  name,
+  sizeClass = "h-9 w-9",
+  iconSizeClass = "h-5 w-5",
+}: {
+  src?: string | null;
+  name: string;
+  sizeClass?: string;
+  iconSizeClass?: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+
+  if (src && !hasError) {
+    return (
+      <img
+        src={src}
+        alt={`${name} avatar`}
+        className={`${sizeClass} rounded-full object-cover bg-slate-100`}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${sizeClass} rounded-full bg-slate-200 text-slate-500 flex items-center justify-center overflow-hidden`}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={iconSizeClass}
+      >
+        <path d="M20 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M4 21v-2a4 4 0 0 1 3-3.87" />
+        <path d="M16 3.13a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
+      </svg>
+    </div>
+  );
 }
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -577,6 +639,41 @@ function getGuessStatus(action: string, details: string) {
   return "Success";
 }
 
+const FAILURE_REASON_LABELS: Record<string, string> = {
+  INVALID_CREDENTIALS: "Wrong password",
+  USER_NOT_FOUND: "Account not found",
+  ACCOUNT_INACTIVE: "Account inactive",
+  DEVICE_BLOCKED: "Device blocked",
+  DEVICE_PENDING: "Device not yet authorized",
+  MISSING_DEVICE_FINGERPRINT: "Device fingerprint missing",
+  UNKNOWN_DEVICE: "Unauthorized device",
+  OUTSIDE_BRANCH_NETWORK: "Outside branch network",
+  OUTSIDE_NETWORK: "Outside allowed network",
+};
+
+function formatLoginReason(reason: string | null) {
+  if (!reason) return "—";
+  return FAILURE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ").toLowerCase().replace(/^\w/, c => c.toUpperCase());
+}
+
+function formatLoginStatus(status: string) {
+  if (status === "SUCCESS") return { label: "Success", color: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50" };
+  if (status === "BLOCKED") return { label: "Blocked", color: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50" };
+  return { label: "Failed", color: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50" };
+}
+
+function getLoginEmployeeName(employee: LoginLog["employee"]) {
+  return employee?.full_name?.trim() || employee?.email?.trim() || "Unknown";
+}
+
+function formatLoginRole(role?: string | null) {
+  return role ? humanizeText(role) : "Role unavailable";
+}
+
+function canRequestDeviceAuthorization(log: LoginLog) {
+  return log.failure_reason === "UNKNOWN_DEVICE" && Boolean(log.device_fingerprint);
+}
+
 const PERIODS = ["Daily", "Weekly", "Monthly", "Yearly", "All Time"];
 
 export default function AuditLogsPage() {
@@ -593,6 +690,14 @@ export default function AuditLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("All Logs");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Login logs state
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  const [loginLogsLoading, setLoginLogsLoading] = useState(false);
+  const [loginStatusFilter, setLoginStatusFilter] = useState("ALL");
+  const [loginSearchQuery, setLoginSearchQuery] = useState("");
+  const [loginCurrentPage, setLoginCurrentPage] = useState(1);
+  const [requestingDeviceLogId, setRequestingDeviceLogId] = useState<string | null>(null);
 
   // Date Filtering
   const [activePeriod, setActivePeriod] = useState("All Time");
@@ -730,6 +835,26 @@ export default function AuditLogsPage() {
     void fetchUserDirectory();
   }, [canViewAuditLogs, userRole]);
 
+  // Fetch login logs when Login Logs tab is active
+  useEffect(() => {
+    if (filterType !== "Login Logs") return;
+    if (userRole !== "super_admin" && userRole !== "admin") return;
+
+    async function fetchLoginLogs() {
+      setLoginLogsLoading(true);
+      try {
+        const data = await api.get<LoginLog[]>("/devices/logs?limit=500");
+        setLoginLogs(data);
+      } catch (err) {
+        console.error("Failed to fetch login logs:", err);
+      } finally {
+        setLoginLogsLoading(false);
+      }
+    }
+
+    void fetchLoginLogs();
+  }, [filterType, userRole]);
+
   // Derive synthetic data fields for UI matching
   const enrichedLogs = useMemo(() => {
     const userNamesById = new Map(userDirectory);
@@ -769,8 +894,33 @@ export default function AuditLogsPage() {
   const totalFundTransfers = enrichedLogs.filter(l => l.logType === "FUND TRANSFER").length;
   const totalItemTransfers = enrichedLogs.filter(l => l.logType === "ITEM TRANSFER").length;
 
+  // Login logs filter
+  const filteredLoginLogs = useMemo(() => {
+    let result = loginLogs;
+    if (loginStatusFilter !== "ALL") {
+      result = result.filter(l => l.login_status === loginStatusFilter);
+    }
+    if (loginSearchQuery) {
+      const q = loginSearchQuery.toLowerCase();
+      result = result.filter(l =>
+        (l.employee?.full_name ?? "").toLowerCase().includes(q) ||
+        (l.employee?.email ?? "").toLowerCase().includes(q) ||
+        (l.ip_address ?? "").toLowerCase().includes(q) ||
+        (l.device_fingerprint ?? "").toLowerCase().includes(q) ||
+        (l.failure_reason ?? "").toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [loginLogs, loginStatusFilter, loginSearchQuery]);
+
+  useEffect(() => {
+    setLoginCurrentPage(1);
+  }, [loginStatusFilter, loginSearchQuery]);
+
   // Tabs
-  const TABS = ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer"];
+  const TABS = userRole === "super_admin" || userRole === "admin"
+    ? ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer", "Login Logs"]
+    : ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer"];
 
   const filteredLogs = useMemo(() => {
     let result = enrichedLogs;
@@ -798,6 +948,39 @@ export default function AuditLogsPage() {
 
   const totalItems = filteredLogs.length;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalLoginItems = filteredLoginLogs.length;
+  const totalLoginPages = Math.ceil(totalLoginItems / itemsPerPage) || 1;
+  const paginatedLoginLogs = filteredLoginLogs.slice((loginCurrentPage - 1) * itemsPerPage, loginCurrentPage * itemsPerPage);
+
+  useEffect(() => {
+    if (loginCurrentPage > totalLoginPages) {
+      setLoginCurrentPage(totalLoginPages);
+    }
+  }, [loginCurrentPage, totalLoginPages]);
+
+  const handleRequestDeviceAuthorization = async (log: LoginLog) => {
+    if (!log.device_fingerprint) {
+      toast.error("This login log has no device fingerprint.");
+      return;
+    }
+
+    setRequestingDeviceLogId(log.id);
+    try {
+      const employeeName = getLoginEmployeeName(log.employee);
+      await api.post("/devices/request-authorization", {
+        deviceFingerprint: log.device_fingerprint,
+        deviceName: `${employeeName} device request from login log`,
+        deviceType: "DESKTOP",
+        ipAddress: log.ip_address ?? undefined,
+        email: log.employee?.email ?? undefined,
+      });
+      toast.success("Device authorization request sent.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to request device authorization.");
+    } finally {
+      setRequestingDeviceLogId(null);
+    }
+  };
 
   const handleExport = () => {
     if (filteredLogs.length === 0) return;
@@ -852,24 +1035,24 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
         {[
           { label: "ALL ACTIVITY", count: totalLogs, sub: "All log types", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
           { label: "TRANSACTIONS", count: totalTransactions, sub: "Pawn, redeem, renew", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
           { label: "FUND TRANSFERS", count: totalFundTransfers, sub: "Cash moves", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
           { label: "ITEM TRANSFERS", count: totalItemTransfers, sub: "Branch to Branch", icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" }
         ].map((card, i) => (
-          <div key={i} className="flex flex-col justify-between rounded-xl bg-surface p-5 border border-border-main shadow-sm relative overflow-hidden group transition-colors duration-300">
+          <div key={i} className="flex flex-col justify-between rounded-xl bg-surface p-3 md:p-5 border border-border-main shadow-sm relative overflow-hidden group transition-colors duration-300">
             <div className="flex justify-between items-start z-10">
-              <span className="text-xs font-bold text-text-muted tracking-widest uppercase">{card.label}</span>
-              <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
+              <span className="text-[10px] md:text-xs font-bold text-text-muted tracking-widest uppercase">{card.label}</span>
+              <svg className="w-4 h-4 md:w-5 md:h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={card.icon} /></svg>
             </div>
-            <div className="mt-4 z-10">
-              <span className="text-4xl font-black text-text-primary">{card.count}</span>
+            <div className="mt-3 md:mt-4 z-10">
+              <span className="text-2xl md:text-4xl font-black text-text-primary">{card.count}</span>
             </div>
-            <div className="mt-2 flex items-center gap-2 z-10">
+            <div className="mt-1.5 md:mt-2 flex items-center gap-2 z-10">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
-              <span className="text-xs text-text-muted font-medium">{card.sub}</span>
+              <span className="text-[10px] md:text-xs text-text-muted font-medium">{card.sub}</span>
             </div>
             {/* Hover dash effect */}
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-500/10 transition-all duration-500"></div>
@@ -887,6 +1070,7 @@ export default function AuditLogsPage() {
             if (tab === "Transaction Logs") count = totalTransactions;
             if (tab === "Fund Transfer") count = totalFundTransfers;
             if (tab === "Item Transfer") count = totalItemTransfers;
+            if (tab === "Login Logs") count = loginLogs.length;
 
             return (
               <button
@@ -904,6 +1088,204 @@ export default function AuditLogsPage() {
           })}
         </div>
 
+        {filterType === "Login Logs" ? (
+          <>
+            {/* Login Logs Filters */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface border-b border-border-subtle">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative w-full sm:max-w-sm">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, IP..."
+                    value={loginSearchQuery}
+                    onChange={e => setLoginSearchQuery(e.target.value)}
+                    className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-emerald-500 transition-colors"
+                  />
+                </div>
+                {["ALL", "SUCCESS", "FAILED", "BLOCKED"].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setLoginStatusFilter(s)}
+                    className={`px-3 py-2 rounded-lg text-xs font-bold border transition-colors ${loginStatusFilter === s
+                      ? s === "SUCCESS" ? "bg-emerald-600 text-white border-emerald-600"
+                        : s === "FAILED" ? "bg-amber-500 text-white border-amber-500"
+                          : s === "BLOCKED" ? "bg-rose-600 text-white border-rose-600"
+                            : "bg-zinc-800 text-white border-zinc-700"
+                      : "bg-surface border-border-main text-text-secondary hover:bg-surface-hover"}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs font-bold text-text-tertiary uppercase tracking-widest">
+                {filteredLoginLogs.length} RECORDS
+              </div>
+            </div>
+
+            {/* Login Logs — Card view for tablet portrait, table for landscape+ */}
+            {loginLogsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinnerLabel text="Loading login logs..." className="text-base font-medium text-text-tertiary" />
+              </div>
+            ) : paginatedLoginLogs.length === 0 ? (
+              <div className="py-12 text-center text-base font-medium text-text-tertiary">No login logs found.</div>
+            ) : (
+              <>
+                {/* Card view < lg */}
+                <div className="block lg:hidden divide-y divide-border-subtle">
+                  {paginatedLoginLogs.map(log => {
+                    const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
+                    const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                    const employeeName = getLoginEmployeeName(log.employee);
+                    const employeeRole = formatLoginRole(log.employee?.role);
+                    const showRequestAction = canRequestDeviceAuthorization(log);
+                    const isRequesting = requestingDeviceLogId === log.id;
+                    return (
+                      <div key={log.id} className="bg-surface p-4 hover:bg-surface-hover transition-colors">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-text-primary">{dStr}</span>
+                            <span className="text-xs font-medium text-text-tertiary mt-0.5">{tStr}</span>
+                          </div>
+                          <span className={`shrink-0 inline-flex px-2.5 py-1 rounded border text-xs font-bold ${statusColor}`}>{statusLabel}</span>
+                        </div>
+                        {log.employee && (
+                          <div className="mt-3 flex items-center gap-3">
+                            <Avatar
+                              src={log.employee.avatarUrl}
+                              name={employeeName}
+                              sizeClass="h-8 w-8"
+                              iconSizeClass="h-4 w-4"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-text-primary">{employeeName}</span>
+                              <span className="text-xs text-text-tertiary capitalize">{employeeRole}</span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
+                          <span><span className="font-bold text-text-tertiary">Reason:</span> {formatLoginReason(log.failure_reason)}</span>
+                          <span><span className="font-bold text-text-tertiary">IP:</span> {log.ip_address ?? "—"}</span>
+                        </div>
+                        {log.device_fingerprint && (
+                          <p className="mt-1 text-[10px] font-mono text-text-tertiary truncate" title={log.device_fingerprint}>
+                            Device: {log.device_fingerprint.slice(0, 24)}…
+                          </p>
+                        )}
+                        {showRequestAction && (
+                          <button
+                            type="button"
+                            onClick={() => void handleRequestDeviceAuthorization(log)}
+                            disabled={isRequesting}
+                            className="mt-3 rounded-lg border border-emerald-600 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                          >
+                            {isRequesting ? "Sending..." : "Request Access"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Table view ≥ lg */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-emerald-900 text-amber-400">
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Date & Time</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Status</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Employee</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Reason</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">IP Address</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Device Fingerprint</th>
+                        <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {paginatedLoginLogs.map(log => {
+                        const { date: dStr, time: tStr } = formatAuditDateTime(log.created_at);
+                        const { label: statusLabel, color: statusColor } = formatLoginStatus(log.login_status);
+                        const employeeName = getLoginEmployeeName(log.employee);
+                        const employeeRole = formatLoginRole(log.employee?.role);
+                        const showRequestAction = canRequestDeviceAuthorization(log);
+                        const isRequesting = requestingDeviceLogId === log.id;
+                        return (
+                          <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors">
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-text-primary">{dStr}</span>
+                                <span className="text-xs font-medium text-text-tertiary mt-0.5">{tStr}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <span className={`inline-flex px-2.5 py-1 rounded border text-xs font-bold ${statusColor}`}>{statusLabel}</span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              {log.employee ? (
+                                <div className="flex items-center gap-3">
+                                  <Avatar
+                                    src={log.employee.avatarUrl}
+                                    name={employeeName}
+                                    sizeClass="h-8 w-8"
+                                    iconSizeClass="h-4 w-4"
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-text-primary">{employeeName}</span>
+                                    <span className="text-xs text-text-tertiary capitalize">{employeeRole}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-text-tertiary italic">Unknown</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <span className="text-sm text-text-secondary">{formatLoginReason(log.failure_reason)}</span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              <span className="text-xs font-mono text-text-tertiary">{log.ip_address ?? "—"}</span>
+                            </td>
+                            <td className="px-4 py-4 xl:px-6">
+                              <span className="text-xs font-mono text-text-tertiary truncate max-w-[160px] block" title={log.device_fingerprint ?? ""}>
+                                {log.device_fingerprint ? log.device_fingerprint.slice(0, 16) + "…" : "—"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                              {showRequestAction ? (
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRequestDeviceAuthorization(log)}
+                                  disabled={isRequesting}
+                                  className="rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                                >
+                                  {isRequesting ? "Sending..." : "Request Access"}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-text-tertiary">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            <div className="mt-4">
+              <PaginationFooter
+                currentPage={loginCurrentPage}
+                totalPages={totalLoginPages}
+                totalItems={totalLoginItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setLoginCurrentPage}
+                mode="edge-pairs"
+              />
+            </div>
+          </>
+        ) : (
+          <>
         {/* Filters Row */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface border-b border-border-subtle">
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto flex-1">
@@ -964,103 +1346,168 @@ export default function AuditLogsPage() {
           </div>
         </div>
 
-        {/* Table Data */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-emerald-900 text-amber-400">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Date & Time</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">User</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Log Type</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left">Action</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%]">Description</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wide text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">
-                    <div className="flex items-center justify-center">
-                      <LoadingSpinnerLabel text="Loading audit trail..." className="text-base font-medium text-text-tertiary" />
-                    </div>
-                  </td>
-                </tr>
-              ) : paginatedLogs.length === 0 ? (
-                <tr><td colSpan={6} className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</td></tr>
-              ) : (
-                paginatedLogs.map((log) => {
-                  const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
+        {/* Table Data — Card view for tablet portrait, table for landscape+ */}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinnerLabel text="Loading audit trail..." className="text-base font-medium text-text-tertiary" />
+          </div>
+        ) : paginatedLogs.length === 0 ? (
+          <div className="py-12 text-center text-base font-medium text-text-tertiary">No logs found matching your criteria.</div>
+        ) : (
+          <>
+            {/* Card view < lg */}
+            <div className="block lg:hidden divide-y divide-border-subtle">
+              {paginatedLogs.map((log) => {
+                const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
+                const statusBadge =
+                  log.statusGuess === "Success" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50" :
+                  log.statusGuess === "Failed" ? "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50" :
+                  "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50";
 
-                  return (
-                    <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors group">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-text-primary">{dString}</span>
-                          <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full flex items-center justify-center bg-pawn-gold text-zinc-900 text-xs font-bold shadow-sm">
-                            {getInitials(log.userFullName)}
-                          </div>
+                return (
+                  <div key={log.id} className="bg-surface p-4 hover:bg-surface-hover transition-colors">
+                    {/* Top row: date + status */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-primary">{dString}</span>
+                        <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
+                      </div>
+                      <span className={`shrink-0 inline-flex px-2.5 py-1 rounded text-xs font-bold ${statusBadge}`}>
+                        {log.statusGuess}
+                      </span>
+                    </div>
+
+                    {/* User */}
+                    <div className="mt-3 flex items-center gap-3">
+                      <Avatar
+                        src={log.userAvatarUrl}
+                        name={log.userFullName}
+                        sizeClass="h-8 w-8"
+                        iconSizeClass="h-4 w-4"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
+                        <span className="text-xs font-medium text-text-tertiary capitalize">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                      </div>
+                    </div>
+
+                    {/* Badges row */}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase border ${
+                        log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                        log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
+                        log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+                        'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                      }`}>{log.logType}</span>
+                      <span className={`text-xs font-black tracking-widest uppercase ${
+                        log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
+                        log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
+                        'text-emerald-600 dark:text-emerald-400'
+                      }`}>{log.actionBadge}</span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="mt-2 text-sm font-bold leading-relaxed text-text-primary line-clamp-3">{log.description}</p>
+                    {(log.reference || log.action) && (
+                      <p className="mt-1 text-xs text-text-tertiary line-clamp-2">
+                        {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Table view ≥ lg */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-emerald-900 text-amber-400">
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Date & Time</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">User</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Log Type</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Action</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left w-[30%] xl:px-6">Description</th>
+                    <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-right xl:px-6">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle">
+                  {paginatedLogs.map((log) => {
+                    const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
+
+                    return (
+                      <tr key={log.id} className="bg-surface hover:bg-surface-hover transition-colors group">
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
-                            <span className="text-xs font-medium text-text-tertiary capitalize mt-0.5">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                            <span className="text-sm font-bold text-text-primary">{dString}</span>
+                            <span className="text-xs font-medium text-text-tertiary mt-0.5">{tString}</span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase border ${log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
-                          log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
-                            log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
-                              'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                          }`}>
-                          {log.logType}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-xs font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
-                          log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
-                            'text-emerald-600 dark:text-emerald-400'
-                          }`}>
-                          {log.actionBadge}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col max-w-sm">
-                          <span className="text-sm font-bold text-text-primary line-clamp-2" title={log.description}>
-                            {log.description}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src={log.userAvatarUrl}
+                              name={log.userFullName}
+                              sizeClass="h-9 w-9"
+                              iconSizeClass="h-5 w-5"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-text-primary">{log.userFullName}</span>
+                              <span className="text-xs font-medium text-text-tertiary capitalize mt-0.5">{log.userRole.replace('_', ' ')} • {log.branchName || "All"}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold tracking-widest uppercase border ${log.logType === 'TRANSACTION' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' :
+                            log.logType === 'ITEM TRANSFER' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' :
+                              log.logType === 'FUND TRANSFER' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+                                'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                            }`}>
+                            {log.logType}
                           </span>
-                          <span
-                            className="text-xs text-text-tertiary mt-1 line-clamp-2"
-                            title={log.reference || log.action}
-                          >
-                            {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap xl:px-6">
+                          <span className={`text-xs font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
+                            log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
+                              'text-emerald-600 dark:text-emerald-400'
+                            }`}>
+                            {log.actionBadge}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex justify-end">
-                          {log.statusGuess === "Success" && (
-                            <span className="inline-flex px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-xs font-bold">Success</span>
-                          )}
-                          {log.statusGuess === "Failed" && (
-                            <span className="inline-flex px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-xs font-bold">Failed</span>
-                          )}
-                          {log.statusGuess === "Pending" && (
-                            <span className="inline-flex px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 text-xs font-bold">Pending</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                        </td>
+                        <td className="px-4 py-4 xl:px-6">
+                          <div className="flex flex-col max-w-sm">
+                            <span className="text-sm font-bold text-text-primary line-clamp-2" title={log.description}>
+                              {log.description}
+                            </span>
+                            <span
+                              className="text-xs text-text-tertiary mt-1 line-clamp-2"
+                              title={log.reference || log.action}
+                            >
+                              {log.reference || formatFriendlyActionLabel(log.action, log.details || "")}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right xl:px-6">
+                          <div className="flex justify-end">
+                            {log.statusGuess === "Success" && (
+                              <span className="inline-flex px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-xs font-bold">Success</span>
+                            )}
+                            {log.statusGuess === "Failed" && (
+                              <span className="inline-flex px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-xs font-bold">Failed</span>
+                            )}
+                            {log.statusGuess === "Pending" && (
+                              <span className="inline-flex px-2.5 py-1 rounded bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50 text-xs font-bold">Pending</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {/* Footer Pagination */}
         <PaginationFooter
@@ -1071,6 +1518,8 @@ export default function AuditLogsPage() {
           onPageChange={setCurrentPage}
           mode="edge-pairs"
         />
+          </>
+        )}
       </div>
     </div>
   );

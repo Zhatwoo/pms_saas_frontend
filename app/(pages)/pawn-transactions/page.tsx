@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
-import { useBranch } from "@/contexts/branch-context";
+import { ApiError, api } from "@/lib/api";
+import { ALL_BRANCHES_OPTION, useBranch } from "@/contexts/branch-context";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
-import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
 import { TransactionActions, type ViewMode } from "./_components/transaction-actions";
@@ -19,7 +19,6 @@ import type {
   TransactionRow,
   TransactionStatsData,
 } from "./_components/types";
-import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 
 function csvCell(value: string) {
@@ -72,7 +71,27 @@ interface ApiTransaction {
     customer?: {
       full_name?: string | null;
       address?: string | null;
+      barangay?: string | null;
+      city?: string | null;
+      region?: string | null;
+      contact_number?: string | null;
+      middle_name?: string | null;
+      id_presented?: string | null;
     } | null;
+  } | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+    id_presented?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
   } | null;
 }
 
@@ -105,6 +124,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
   const isBuyBackAction = transaction.purpose === "Buy Back";
   const isPawnAction = transaction.purpose === "Pawn";
+  const customer = transaction.pawned_item?.customer ?? transaction.customer;
   const calculations = calculateGadgetInterest(
     pawnAmount,
     transaction.transaction_date,
@@ -120,8 +140,16 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
         ? "Sold Item"
         : (transaction.purpose as TransactionRow["purpose"]),
     details: transaction.details ?? "",
-    customerName: transaction.pawned_item?.customer?.full_name ?? "",
-    customerAddress: transaction.pawned_item?.customer?.address ?? "",
+    customerName: customer?.full_name ?? "",
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
+    customerAddress: customer?.address ?? "",
+    customerBarangay: customer?.barangay ?? undefined,
+    customerCity: customer?.city ?? undefined,
+    customerRegion: customer?.region ?? undefined,
+    customerPhone: customer?.contact_number ?? undefined,
+    customerMiddleName: customer?.middle_name ?? undefined,
+    idPresented: customer?.id_presented ?? undefined,
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     buyBack: isBuyBackAction ? toAmountString(transaction.cash_in) : "0",
@@ -222,7 +250,11 @@ function TransactionsCalendar({
           disabled={isNextDisabled}
           onClick={() => {
             if (isNextDisabled) return;
-            calendarMonth === 11 ? onChangeMonth(calendarYear + 1, 0) : onChangeMonth(calendarYear, calendarMonth + 1);
+            if (calendarMonth === 11) {
+              onChangeMonth(calendarYear + 1, 0);
+            } else {
+              onChangeMonth(calendarYear, calendarMonth + 1);
+            }
           }}
           className={`flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-white/70 transition-colors ${isNextDisabled ? "cursor-not-allowed opacity-40" : "hover:bg-white/10"}`}
           aria-label="Next month"
@@ -231,16 +263,16 @@ function TransactionsCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-border-subtle bg-surface-secondary">
+      <div className="grid grid-cols-7 border-b border-zinc-200/80 bg-surface-secondary dark:border-border-subtle">
         {DAY_NAMES.map((d) => (
-          <div key={d} className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted">{d}</div>
+          <div key={d} className="border-r border-zinc-200/80 py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted last:border-r-0 dark:border-border-subtle">{d}</div>
         ))}
       </div>
 
       <div className="grid grid-cols-7">
         {cells.map((day, index) => {
           if (day === null) {
-            return <div key={`empty-${index}`} className="h-16 border-b border-r border-border-subtle/40 bg-surface-secondary/20" />;
+            return <div key={`empty-${index}`} className="h-16 border-b border-r border-zinc-200/80 bg-surface-secondary/20 dark:border-border-subtle" />;
           }
           const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const count = calendarData[dateStr] ?? 0;
@@ -257,7 +289,7 @@ function TransactionsCalendar({
                 if (isFuture) return;
                 onSelectDate(dateStr);
               }}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
@@ -273,7 +305,7 @@ function TransactionsCalendar({
         })}
       </div>
 
-      <div className="flex items-center gap-4 border-t border-border-subtle bg-surface-secondary/60 px-4 py-2.5">
+      <div className="flex items-center gap-4 border-t border-zinc-200/80 bg-surface-secondary/60 px-4 py-2.5 dark:border-border-subtle">
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
           <span className="text-[10px] font-bold uppercase text-text-muted">Has transactions</span>
@@ -289,13 +321,15 @@ function TransactionsCalendar({
 
 export default function PawnTransactionsPage() {
   const { selectedBranch, branches, isAllBranches } = useBranch();
+  const requiresBranchSelection = selectedBranch.id === ALL_BRANCHES_OPTION.id;
   const searchParams = useSearchParams();
   const highlightTransactionNo = searchParams.get("transactionNo");
   const shouldHighlight = searchParams.get("highlightTransaction") === "true";
   const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
-  const todayString = new Date().toISOString().split("T")[0];
+  const todayString = getPhCalendarDateString();
 
   const [transactions, setTransactions] = useState<TransactionRow[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [search, setSearch] = useState("");
   const [purposeFilter, setPurposeFilter] = useState<TransactionPurposeFilter>("All");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -336,6 +370,16 @@ export default function PawnTransactionsPage() {
     let active = true;
 
     async function fetchTransactions() {
+      if (requiresBranchSelection) {
+        if (active) {
+          setTransactions([]);
+          setAllTransactions([]);
+          setStats(EMPTY_STATS);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       setIsLoading(true);
 
       try {
@@ -376,7 +420,21 @@ export default function PawnTransactionsPage() {
           );
         }
 
-        const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
+        const endingBalance = (() => {
+          const serverEnding =
+            data.stats?.endingBalance != null
+              ? Number(data.stats.endingBalance)
+              : null;
+          const clientEnding = Number(
+            (
+              startingBalance +
+              Math.max(ledger.net, operationalCashTotals(data.transactions ?? []).net)
+            ).toFixed(2),
+          );
+          return serverEnding != null
+            ? Math.max(serverEnding, clientEnding)
+            : clientEnding;
+        })();
 
         const normalizedStats: TransactionStatsData = {
           ...EMPTY_STATS,
@@ -392,6 +450,18 @@ export default function PawnTransactionsPage() {
         setTransactions((data.transactions || []).map(toTransactionRow));
         setStats(normalizedStats);
       } catch (error) {
+        if (
+          error instanceof ApiError &&
+          error.statusCode === 403 &&
+          /select a branch|starting balance/i.test(error.message)
+        ) {
+          if (active) {
+            setTransactions([]);
+            setStats(EMPTY_STATS);
+          }
+          return;
+        }
+
         console.error("Failed to load transactions:", error);
         if (active) {
           setTransactions([]);
@@ -409,7 +479,43 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, selectedDate, isAllBranches]);
+  }, [requiresBranchSelection, selectedBranch.id, selectedDate, isAllBranches]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchCalendarTransactions() {
+      if (requiresBranchSelection) {
+        if (active) {
+          setAllTransactions([]);
+        }
+        return;
+      }
+
+      try {
+        const branchParam = isAllBranches
+          ? ""
+          : `branch=${encodeURIComponent(selectedBranch.id)}`;
+        const query = `${branchParam}${branchParam ? "&" : ""}range=all`;
+        const data = await api.get<TransactionsResponse>(`/transactions?${query}`);
+
+        if (active) {
+          setAllTransactions((data.transactions || []).map(toTransactionRow));
+        }
+      } catch (error) {
+        console.error("Failed to load transaction calendar data:", error);
+        if (active) {
+          setAllTransactions([]);
+        }
+      }
+    }
+
+    void fetchCalendarTransactions();
+
+    return () => {
+      active = false;
+    };
+  }, [requiresBranchSelection, selectedBranch.id, isAllBranches]);
 
   useEffect(() => {
     if (viewMode === "list") {
@@ -422,7 +528,6 @@ export default function PawnTransactionsPage() {
     if (shouldHighlight && highlightTransactionNo) {
       setSelectedDate(new Date().toISOString().split("T")[0]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shouldHighlight, highlightTransactionNo]);
 
   // Scroll to and highlight the target transaction row after data loads
@@ -459,13 +564,18 @@ export default function PawnTransactionsPage() {
   );
 
   // Build calendar data: count transactions per date for the visible month
-  const calendarData: Record<string, number> = {};
-  for (const tx of transactions) {
-    const [yearStr, monthStr] = tx.date.split("-");
-    if (Number(yearStr) === calendarYear && Number(monthStr) - 1 === calendarMonth) {
-      calendarData[tx.date] = (calendarData[tx.date] ?? 0) + 1;
+  const calendarData = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    for (const tx of allTransactions) {
+      const [yearStr, monthStr] = tx.date.split("-");
+      if (Number(yearStr) === calendarYear && Number(monthStr) - 1 === calendarMonth) {
+        counts[tx.date] = (counts[tx.date] ?? 0) + 1;
+      }
     }
-  }
+
+    return counts;
+  }, [allTransactions, calendarMonth, calendarYear]);
 
   function handleExportCSV() {
     if (filteredTransactions.length === 0) {
@@ -683,8 +793,14 @@ export default function PawnTransactionsPage() {
           </p>
         </div>
 
+        {requiresBranchSelection ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+            Select a branch to view pawn transactions.
+          </div>
+        ) : null}
+
         <BranchDaySessionToolbar
-          branchId={isAllBranches ? null : selectedBranch.id}
+          branchId={requiresBranchSelection || isAllBranches ? null : selectedBranch.id}
         />
         <TransactionStats data={stats} />
       </div>
@@ -717,7 +833,7 @@ export default function PawnTransactionsPage() {
         />
       </div>
 
-      {viewMode === "calendar" && (
+      {!requiresBranchSelection && viewMode === "calendar" && (
         <div className="print-hide">
           <TransactionsCalendar
             calendarData={calendarData}
@@ -737,6 +853,7 @@ export default function PawnTransactionsPage() {
         </div>
       )}
 
+      {!requiresBranchSelection ? (
       <div className="print-hide">
         <TransactionTable
           isLoading={isLoading}
@@ -748,8 +865,9 @@ export default function PawnTransactionsPage() {
           isToday={selectedDate === new Date().toISOString().split("T")[0]}
         />
       </div>
+      ) : null}
 
-      {totalPages > 1 ? (
+      {!requiresBranchSelection && totalPages > 1 ? (
         <div className="print-hide">
           <PaginationFooter
             currentPage={currentPage}

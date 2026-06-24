@@ -25,6 +25,10 @@ import { RequestFundsModal } from "@/app/admin/branch-finance/_components/reques
 import type { RequestFundsData } from "@/app/admin/branch-finance/_components/request-funds-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { formatPeso } from "@/lib/currency";
+import { ActionButton } from "@/components/shared/action-button";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
@@ -157,6 +161,12 @@ export default function EmployeeBranchFinancePage() {
 
   useEffect(() => {
     void loadFinanceData();
+  }, [loadFinanceData]);
+
+  useEffect(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
+      void loadFinanceData();
+    });
   }, [loadFinanceData]);
 
   const handleRequestFunds = useCallback(
@@ -411,7 +421,9 @@ export default function EmployeeBranchFinancePage() {
                         </p>
                         {request.notes ? (
                           <div className="mt-2 rounded-lg bg-surface-secondary/50 p-2 border border-border-subtle/50">
-                            <p className="text-[11px] italic text-text-muted leading-relaxed">"{request.notes}"</p>
+                            <p className="text-[11px] italic text-text-muted leading-relaxed">
+                              &ldquo;{request.notes}&rdquo;
+                            </p>
                           </div>
                         ) : null}
                         <div className="mt-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
@@ -593,17 +605,14 @@ export default function EmployeeBranchFinancePage() {
             </div>
 
             <div className="flex justify-end print:hidden mb-2">
-              <button
-                onClick={() => window.print()}
-                className="group flex items-center gap-2 rounded-xl border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-5 py-2.5 text-sm font-bold text-amber-400 transition-all hover:bg-emerald-800 dark:hover:bg-emerald-800 active:scale-95"
-              >
+              <ActionButton variant="primary" onClick={() => window.print()} size="md">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                   <rect width="12" height="8" x="6" y="14" />
                 </svg>
                 Print Ledger
-              </button>
+              </ActionButton>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `

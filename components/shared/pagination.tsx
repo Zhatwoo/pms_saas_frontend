@@ -1,10 +1,12 @@
 import { cn } from "@/lib/utils";
+import { ThemeButton } from "./theme-button";
 
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   mode?: "default" | "edge-pairs";
+  reverseOrder?: boolean;
 }
 
 export function Pagination({
@@ -12,6 +14,7 @@ export function Pagination({
   totalPages,
   onPageChange,
   mode = "edge-pairs",
+  reverseOrder = false,
 }: PaginationProps) {
   const pages: Array<number | "ellipsis"> = [];
 
@@ -42,16 +45,22 @@ export function Pagination({
     for (let i = 1; i <= totalPages; i++) pages.push(i);
   }
 
+  const displayPages = reverseOrder ? [...pages].reverse() : pages;
+  const previousLabel = reverseOrder ? "<" : "<";
+  const nextLabel = reverseOrder ? ">" : ">";
+
   return (
     <div className="flex items-center gap-1">
-      <button
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
+      <ThemeButton
+        onClick={() => onPageChange(reverseOrder ? Math.min(totalPages, currentPage + 1) : Math.max(1, currentPage - 1))}
+        disabled={reverseOrder ? currentPage === totalPages : currentPage === 1}
+        variant="ghost"
+        size="sm"
+        className="min-w-8 px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
       >
-        &lt;
-      </button>
-      {pages.map((p, index) =>
+        {previousLabel}
+      </ThemeButton>
+      {displayPages.map((p, index) =>
         p === "ellipsis" ? (
           <span
             key={`ellipsis-${index}`}
@@ -60,26 +69,30 @@ export function Pagination({
             ...
           </span>
         ) : (
-          <button
+          <ThemeButton
             key={p}
             onClick={() => onPageChange(p)}
-            className={`flex h-8 w-8 items-center justify-center rounded text-sm ${
+            size="sm"
+            variant={p === currentPage ? "primary" : "ghost"}
+            className={`h-8 min-w-10 px-3 font-mono tabular-nums text-sm ${
               p === currentPage
-                ? "bg-emerald-700 font-bold text-white"
+                ? "font-bold text-white"
                 : "text-text-secondary hover:bg-surface-hover"
             }`}
           >
             {p}
-          </button>
+          </ThemeButton>
         ),
       )}
-      <button
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="px-2 py-1 text-text-muted hover:text-text-primary disabled:opacity-30"
+      <ThemeButton
+        onClick={() => onPageChange(reverseOrder ? Math.max(1, currentPage - 1) : Math.min(totalPages, currentPage + 1))}
+        disabled={reverseOrder ? currentPage === 1 : currentPage === totalPages}
+        variant="ghost"
+        size="sm"
+        className="min-w-8 px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
       >
-        &gt;
-      </button>
+        {nextLabel}
+      </ThemeButton>
     </div>
   );
 }
@@ -97,6 +110,7 @@ export function PaginationFooter({
   itemsPerPage,
   onPageChange,
   mode = "edge-pairs",
+  reverseOrder = false,
   className,
 }: PaginationFooterProps) {
   const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
@@ -118,6 +132,7 @@ export function PaginationFooter({
         totalPages={totalPages}
         onPageChange={onPageChange}
         mode={mode}
+        reverseOrder={reverseOrder}
       />
     </div>
   );

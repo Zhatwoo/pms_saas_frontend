@@ -24,9 +24,11 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
-import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
+import { formatPeso } from "@/lib/currency";
+import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -166,9 +168,9 @@ function TransactionsCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-border-subtle bg-surface-secondary">
+      <div className="grid grid-cols-7 border-b border-zinc-200/80 bg-surface-secondary dark:border-border-subtle">
         {DAY_NAMES.map((dayName) => (
-          <div key={dayName} className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted">
+          <div key={dayName} className="border-r border-zinc-200/80 py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted last:border-r-0 dark:border-border-subtle">
             {dayName}
           </div>
         ))}
@@ -177,7 +179,7 @@ function TransactionsCalendar({
       <div className="grid grid-cols-7">
         {cells.map((day, index) => {
           if (day === null) {
-            return <div key={`empty-${index}`} className="h-16 border-b border-r border-border-subtle/40 bg-surface-secondary/20" />;
+            return <div key={`empty-${index}`} className="h-16 border-b border-r border-zinc-200/80 bg-surface-secondary/20 dark:border-border-subtle" />;
           }
 
           const dateString = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -190,7 +192,7 @@ function TransactionsCalendar({
               key={day}
               type="button"
               onClick={() => onSelectDate(dateString)}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
@@ -207,7 +209,7 @@ function TransactionsCalendar({
         })}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border-subtle bg-surface-secondary/60 px-4 py-2.5">
+      <div className="flex items-center justify-between border-t border-zinc-200/80 bg-surface-secondary/60 px-4 py-2.5 dark:border-border-subtle">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
@@ -240,9 +242,24 @@ interface ApiTransaction {
   pawn_amount?: number | string | null;
   storage_fee?: number | string | null;
   qr_code?: string | null;
+  id_photo?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+    id_presented?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
+  } | null;
 }
 
 interface PawnedItemJoin {
@@ -255,21 +272,58 @@ interface PawnedItemJoin {
   category?: string | null;
   memory_storage?: string | null;
   remarks?: string | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+    id_presented?: string | null;
+  } | null;
 }
 
 interface TransactionsResponse {
   transactions?: ApiTransaction[];
-  stats?: {
-    pawnedToday?: number;
-    buyBack?: number;
-    renewed?: number;
-    soldItem?: number;
-    redeemed?: number;
-    transfer?: number;
-    startingBalance?: number;
-    endingBalance?: number;
-    sessionOpenedAt?: string | null;
-  };
+  stats?: TransactionStatsResponse;
+}
+
+interface TransactionStatsResponse {
+  pawnedToday?: number;
+  buyBack?: number;
+  renewed?: number;
+  soldItem?: number;
+  redeemed?: number;
+  transfer?: number;
+  startingBalance?: number;
+  endingBalance?: number;
+  sessionOpenedAt?: string | null;
+}
+
+interface ReprintMoaData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  address: string;
+  contactNo: string;
+  unitCode: string;
+  unitName: string;
+  category: string;
+  serialNumber: string;
+  itemsIncluded: string;
+  condition: string;
+  remarks: string;
+  memory: string;
+  amount: string;
+  storageFee: string;
+  parkingFee: string;
+  purchasedDate: string;
+  idPresented: string;
+  branchName: string;
+  branchAddress: string;
+  branchPhone: string;
+  processedBy: string;
 }
 
 interface BranchFinanceSummary {
@@ -278,7 +332,7 @@ interface BranchFinanceSummary {
   currentBalance: number;
 }
 
-function normalizeStats(stats?: any) {
+function normalizeStats(stats?: TransactionStatsResponse) {
   return {
     pawnedToday: Number(stats?.pawnedToday ?? 0),
     buyBack: Number(stats?.buyBack ?? 0),
@@ -299,6 +353,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
 
   // Robustly extract QR code from nested item or root
   const qrCode = item?.qr_code || transaction.qr_code || undefined;
+  const customer = item?.customer ?? transaction.customer;
 
   return {
     transactionNo: transaction.transaction_no,
@@ -316,6 +371,16 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     unitCode: transaction.unit_code ?? "",
     pawn: String(transaction.pawn_amount ?? 0),
     storage: String(transaction.storage_fee ?? 0),
+    customerName: customer?.full_name ?? undefined,
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
+    customerAddress: customer?.address ?? undefined,
+    customerBarangay: customer?.barangay ?? undefined,
+    customerCity: customer?.city ?? undefined,
+    customerRegion: customer?.region ?? undefined,
+    customerPhone: customer?.contact_number ?? undefined,
+    customerMiddleName: customer?.middle_name ?? undefined,
+    idPresented: customer?.id_presented ?? undefined,
     qrCode: qrCode,
     serialNumber: item?.serial_number ?? undefined,
     itemsIncluded: item?.items_included ?? undefined,
@@ -326,6 +391,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
     details: transaction.details ?? undefined,
+    idPhoto: transaction.id_photo ?? undefined,
   };
 }
 
@@ -340,7 +406,7 @@ export default function SuperAdminPawnTransactionsPage() {
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
   const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
-  const [reprintData, setReprintData] = useState<any>(null);
+  const [reprintData, setReprintData] = useState<ReprintMoaData | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("calendar");
@@ -372,7 +438,7 @@ export default function SuperAdminPawnTransactionsPage() {
   const highlightedTransactionRef = useRef<string | null>(null);
 
   const fetchTransactions = useCallback(async () => {
-    setIsLoading(true);
+    // Note: We don't set isLoading(true) here anymore because this is now called sequentially by fetchAllData
     try {
       const data = await api.get<TransactionsResponse>(
         `/transactions?branch=${encodeURIComponent(selectedBranch.id)}&range=all`
@@ -382,8 +448,6 @@ export default function SuperAdminPawnTransactionsPage() {
       }
     } catch (error) {
       console.error("Failed to load transactions:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, [selectedBranch.id]);
 
@@ -426,7 +490,21 @@ export default function SuperAdminPawnTransactionsPage() {
         );
       }
 
-      const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
+      const endingBalance = (() => {
+        const serverEnding =
+          data.stats?.endingBalance != null
+            ? Number(data.stats.endingBalance)
+            : null;
+        const clientEnding = Number(
+          (
+            startingBalance +
+            Math.max(ledger.net, operationalCashTotals(data.transactions ?? []).net)
+          ).toFixed(2),
+        );
+        return serverEnding != null
+          ? Math.max(serverEnding, clientEnding)
+          : clientEnding;
+      })();
 
       setCurrentStats({
         ...normalizeStats(data.stats),
@@ -440,13 +518,26 @@ export default function SuperAdminPawnTransactionsPage() {
     }
   }, [selectedBranch.id, selectedDate]);
 
-  useEffect(() => {
-    void fetchTransactions();
-  }, [fetchTransactions]);
+  const fetchAllData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Execute sequentially to respect Supabase pool limits (pool_size: 15)
+      await fetchTransactions();
+      await fetchSelectedDateStats();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTransactions, fetchSelectedDateStats]);
 
   useEffect(() => {
-    void fetchSelectedDateStats();
-  }, [fetchSelectedDateStats]);
+    void fetchAllData();
+  }, [fetchAllData]);
+
+  useEffect(() => {
+    return subscribeToPawnTransactionNotifications(() => {
+      void fetchAllData();
+    });
+  }, [fetchAllData]);
 
   const fetchTransactionsRef = useRef(fetchTransactions);
   useEffect(() => {
@@ -596,33 +687,94 @@ export default function SuperAdminPawnTransactionsPage() {
     });
   };
 
-  const handleReprint = useCallback((transactionNo: string) => {
+  const handleReprint = useCallback(async (transactionNo: string) => {
     const tx = allTransactions.find(t => t.transactionNo === transactionNo);
     if (!tx) return;
 
+    const hasMissingField = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
+    const needsEnrichment =
+      hasMissingField(tx.serialNumber) ||
+      hasMissingField(tx.itemsIncluded) ||
+      hasMissingField(tx.condition) ||
+      hasMissingField(tx.memoryStorage) ||
+      hasMissingField(tx.customerAddress) ||
+      hasMissingField(tx.customerName) ||
+      hasMissingField(tx.createdByName);
+
+    let enriched: any = null;
+    let pawnSource: any = null;
+    if (tx.relatedPawnedItemId && needsEnrichment) {
+      try {
+        enriched = await api.get<any>(`/inventory/pawned/${tx.relatedPawnedItemId}`);
+      } catch {
+        enriched = null;
+      }
+    }
+    if (!enriched && tx.unitCode && needsEnrichment) {
+      try {
+        enriched = await api.get<any>(`/inventory/item/${encodeURIComponent(tx.unitCode)}`);
+      } catch {
+        enriched = null;
+      }
+    }
+    if (needsEnrichment) {
+      const params = tx.relatedPawnedItemId
+        ? `relatedPawnedItemId=${encodeURIComponent(tx.relatedPawnedItemId)}`
+        : tx.unitCode
+          ? `unitCode=${encodeURIComponent(tx.unitCode)}`
+          : "";
+      if (params) {
+        try {
+          pawnSource = await api.get<any>(`/transactions/pawn-source?${params}`);
+        } catch {
+          pawnSource = null;
+        }
+      }
+    }
+
+    const resolvedCustomerName = tx.customerName || enriched?.customerName || "WALK-IN CUSTOMER";
+    const names = resolvedCustomerName.split(" ");
+    const firstName = names[0] || "WALK-IN";
+    const middleName = tx.customerMiddleName || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
+    const lastName = names.length > 1 ? names[names.length - 1] : "";
+
+    // Join address components for the MOA
+    const fullAddress = [
+      tx.customerAddress || enriched?.customerAddress,
+      tx.customerBarangay,
+      tx.customerCity,
+      tx.customerRegion
+    ].filter(Boolean).join(", ");
+
     setReprintData({
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      address: "",
-      contactNo: "",
+      firstName,
+      middleName,
+      lastName,
+      address: fullAddress,
+      contactNo: tx.customerPhone || "",
       unitCode: tx.unitCode,
-      unitName: tx.unit,
+      unitName: tx.unit || enriched?.itemName || "",
       category: tx.category || "",
-      serialNumber: tx.serialNumber || "",
-      itemsIncluded: tx.itemsIncluded || "",
-      condition: tx.condition || "",
+      serialNumber: tx.serialNumber || enriched?.serialNumber || pawnSource?.pawned_item?.serial_number || "",
+      itemsIncluded: tx.itemsIncluded || enriched?.itemsIncluded || pawnSource?.pawned_item?.items_included || "",
+      condition: tx.condition || enriched?.condition || pawnSource?.pawned_item?.condition || "",
       remarks: tx.remarks || "",
-      memory: tx.memoryStorage || "",
+      memory: tx.memoryStorage || enriched?.memoryStorage || pawnSource?.pawned_item?.memory_storage || "",
       amount: String(tx.pawn ?? "0"),
       storageFee: String(tx.storage ?? "0"),
       parkingFee: "0",
       purchasedDate: tx.date,
-      idPresented: "",
+      idPresented: tx.idPresented || enriched?.customerIdPresented || "",
       branchName: selectedBranch.name,
       branchAddress: selectedBranch.location || "",
       branchPhone: selectedBranch.phone || "",
-      processedBy: user?.fullName || "",
+      processedBy:
+        tx.createdByName ||
+        enriched?.created_by_user?.full_name ||
+        pawnSource?.created_by_user?.full_name ||
+        tx.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() ||
+        user?.fullName ||
+        "AUTHORIZED PERSONNEL"
     });
     setIsMoaReprintOpen(true);
   }, [allTransactions, selectedBranch, user?.fullName]);
@@ -633,9 +785,127 @@ export default function SuperAdminPawnTransactionsPage() {
     window.dispatchEvent(new CustomEvent("transaction_created"));
   }, [fetchSelectedDateStats]);
 
+  const printLedgerTotals = useMemo(() => {
+    const cashIn = filteredTransactions.reduce(
+      (sum, tx) => sum + (Number(tx.cashIn) || 0),
+      0,
+    );
+    const cashOut = filteredTransactions.reduce(
+      (sum, tx) => sum + (Number(tx.cashOut) || 0),
+      0,
+    );
+    return { cashIn, cashOut, net: cashIn - cashOut };
+  }, [filteredTransactions]);
+
   return (
-    <div className="space-y-3 pb-4">
-      <div>
+    <div className="space-y-5 pb-6 printable-area">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page { size: auto; margin: 12mm; }
+          body:not(.printing-moa-active) * { visibility: hidden; }
+          body:not(.printing-moa-active) .printable-area,
+          body:not(.printing-moa-active) .printable-area * {
+            visibility: visible !important;
+          }
+          .printable-area {
+            position: relative !important;
+            display: block !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            color: black !important;
+          }
+          .print-hide { display: none !important; }
+        }
+      `}} />
+
+      <div id="print-ledger-section" className="hidden print:block mb-8">
+        <h1 className="text-xl font-bold text-black border-b border-black pb-2 mb-4">
+          Branch Financial Ledger
+        </h1>
+        <div className="text-sm text-black space-y-1 mb-4">
+          <p><strong>Branch:</strong> {selectedBranch.name}</p>
+          <p><strong>Date Generated:</strong> {new Date().toLocaleString()}</p>
+          <p><strong>From:</strong> {selectedDate}</p>
+          <p><strong>To:</strong> {selectedDate}</p>
+        </div>
+
+        <table className="w-full text-left text-sm border-collapse text-black print:text-[11px]">
+          <thead>
+            <tr className="bg-gray-100 border-y border-black">
+              <th className="p-2 font-bold whitespace-nowrap">Date</th>
+              <th className="p-2 font-bold whitespace-nowrap">Source</th>
+              <th className="p-2 font-bold">Item Name</th>
+              <th className="p-2 font-bold">Description</th>
+              <th className="p-2 font-bold text-right whitespace-nowrap">Cash In</th>
+              <th className="p-2 font-bold text-right whitespace-nowrap">Cash Out</th>
+              <th className="p-2 font-bold">Ref No.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTransactions.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                  No records found for the selected filters.
+                </td>
+              </tr>
+            ) : (
+              filteredTransactions.map((tx) => (
+                <tr key={tx.transactionNo} className="border-b border-gray-300">
+                  <td className="p-2 whitespace-nowrap">{tx.date} {tx.time || ""}</td>
+                  <td className="p-2 whitespace-nowrap">TXN</td>
+                  <td className="p-2 truncate max-w-[200px]">{tx.unitCode || tx.unit || "—"}</td>
+                  <td className="p-2 truncate max-w-[250px]">{tx.details || tx.purpose || "—"}</td>
+                  <td className="p-2 text-right font-mono">
+                    {(Number(tx.cashIn) || 0) > 0
+                      ? `+${formatPeso(Number(tx.cashIn))}`
+                      : ""}
+                  </td>
+                  <td className="p-2 text-right font-mono text-red-600">
+                    {(Number(tx.cashOut) || 0) > 0
+                      ? `-${formatPeso(Number(tx.cashOut))}`
+                      : ""}
+                  </td>
+                  <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{tx.transactionNo}</td>
+                </tr>
+              ))
+            )}
+            {filteredTransactions.length > 0 && (
+              <>
+                <tr className="border-b-2 border-black bg-gray-50 uppercase">
+                  <td colSpan={4} className="p-2 font-bold text-right">
+                    Total:
+                  </td>
+                  <td className="p-2 text-right font-bold font-mono">{formatPeso(printLedgerTotals.cashIn)}</td>
+                  <td className="p-2 text-right font-bold font-mono text-red-600">
+                    {printLedgerTotals.cashOut > 0
+                      ? `-${formatPeso(printLedgerTotals.cashOut)}`
+                      : formatPeso(0)}
+                  </td>
+                  <td />
+                </tr>
+                <tr className="border-b-2 border-black bg-white">
+                  <td colSpan={4} className="p-2 font-bold text-right normal-case">
+                    Net income (cash in − cash out):
+                  </td>
+                  <td
+                    colSpan={3}
+                    className={`p-2 text-right font-black font-mono normal-case ${
+                      printLedgerTotals.net >= 0 ? "text-emerald-700" : "text-red-600"
+                    }`}
+                  >
+                    {formatPeso(printLedgerTotals.net)}
+                  </td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="print-hide space-y-5">
+      <div className="rounded-xl border border-border-main bg-surface px-4 py-3 shadow-sm transition-colors duration-300">
         <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
           Branch transactions for the selected calendar date — list and calendar views (calendar counts reflect loaded history).
         </p>
@@ -651,9 +921,9 @@ export default function SuperAdminPawnTransactionsPage() {
 
       <TransactionStats data={currentStats} />
 
-      <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
-        <div className="flex flex-wrap items-end gap-4">
-          <div className="min-w-[240px] flex-1">
+      <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px_auto] xl:items-end">
+          <div className="min-w-0">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
               Search Transactions
             </label>
@@ -666,7 +936,7 @@ export default function SuperAdminPawnTransactionsPage() {
             />
           </div>
 
-          <div className="w-48">
+          <div className="w-full xl:w-56">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
               Purpose Filter
             </label>
@@ -691,7 +961,7 @@ export default function SuperAdminPawnTransactionsPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
             <ActionButton variant="outline" onClick={handleExportCSV}>
               <span className="flex items-center gap-1.5">
                 {downloadIcon}
@@ -752,7 +1022,7 @@ export default function SuperAdminPawnTransactionsPage() {
         title={`Transactions for ${formatSelectedDateLabel(selectedDate)}`}
       />
 
-      <div className="mt-4">
+      <div className="mt-5">
         <PaginationFooter
           currentPage={currentPage}
           totalPages={totalPages}
@@ -760,6 +1030,7 @@ export default function SuperAdminPawnTransactionsPage() {
           itemsPerPage={ITEMS_PER_PAGE}
           onPageChange={setCurrentPage}
         />
+      </div>
       </div>
 
       <TransactionDetailsModal

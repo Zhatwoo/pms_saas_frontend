@@ -1,23 +1,61 @@
 import type { ReactNode } from "react";
-
-const variants = {
-  primary: "bg-pawn-sidebar text-amber-400 border-transparent",
-  outline: "bg-surface text-text-primary border-border-main",
-  danger: "bg-red-50 text-red-600 border-red-300",
-  renew: "bg-yellow-100 text-orange-600 border-orange-600",
-  redeem: "bg-green-50 text-lime-700 border-lime-700",
-  buyback: "bg-sky-100 text-blue-800 border-blue-800",
-  pawn: "bg-surface-secondary text-emerald-800 border-emerald-700",
-  sales: "bg-purple-800/40 text-purple-800 border-purple-800",
-} as const;
+import { ThemeButton, type ThemeButtonVariant } from "./theme-button";
 
 interface ActionButtonProps {
   children: ReactNode;
-  variant?: keyof typeof variants;
+  variant?:
+    | "primary"
+    | "secondary"
+    | "outline"
+    | "ghost"
+    | "danger"
+    | "success"
+    | "warning"
+    | "info"
+    | "renew"
+    | "redeem"
+    | "buyback"
+    | "pawn"
+    | "sales";
   onClick?: () => void;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg" | "icon";
   className?: string;
   disabled?: boolean;
+  loading?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  fullWidth?: boolean;
+  title?: string;
+  type?: "button" | "submit" | "reset";
+}
+
+function mapVariant(variant: NonNullable<ActionButtonProps["variant"]>): ThemeButtonVariant {
+  switch (variant) {
+    case "secondary":
+      return "secondary";
+    case "outline":
+      return "outline";
+    case "ghost":
+      return "ghost";
+    case "danger":
+      return "danger";
+    case "success":
+      return "success";
+    case "warning":
+      return "warning";
+    case "info":
+      return "info";
+    case "renew":
+    case "redeem":
+    case "buyback":
+    case "sales":
+      return "warning";
+    case "pawn":
+      return "secondary";
+    case "primary":
+    default:
+      return "primary";
+  }
 }
 
 export function ActionButton({
@@ -27,17 +65,28 @@ export function ActionButton({
   size = "md",
   className = "",
   disabled = false,
+  loading = false,
+  leftIcon,
+  rightIcon,
+  fullWidth = false,
+  title,
+  type = "button",
 }: ActionButtonProps) {
   return (
-    <button
-      type="button"
+    <ThemeButton
+      type={type}
+      variant={mapVariant(variant)}
+      size={size}
       disabled={disabled}
+      loading={loading}
+      leftIcon={leftIcon}
+      rightIcon={rightIcon}
+      fullWidth={fullWidth}
+      title={title}
       onClick={disabled ? undefined : onClick}
-      className={`rounded border font-bold transition-opacity hover:opacity-80 ${variants[variant]} ${
-        size === "sm" ? "px-4 py-1.5 text-xs" : "min-h-[44px] px-5 py-2.5 text-sm"
-      } ${disabled ? "cursor-not-allowed opacity-50 hover:opacity-50" : ""} ${className}`}
+      className={className}
     >
       {children}
-    </button>
+    </ThemeButton>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import {
@@ -26,11 +27,15 @@ import {
   LedgerTypeFilter,
 } from "@/components/shared/finance-ledger-table";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { ActionButton } from "@/components/shared/action-button";
 import type {
   LedgerEntry,
   FinanceSummaryBreakdown,
 } from "@/components/shared/finance-ledger-table";
 import { formatPeso } from "@/lib/currency";
+import {
+  subscribeToFinanceRelevantNotifications,
+} from "@/lib/notification-stream";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -130,6 +135,7 @@ interface UserRecord {
 }
 
 export default function BranchFinancePage() {
+  const searchParams = useSearchParams();
   const { selectedBranch, isAllBranches, setSelectedBranch, branches: contextBranches } = useBranch();
 
   const [managers, setManagers] = useState<Manager[]>([]);
@@ -163,6 +169,16 @@ export default function BranchFinancePage() {
     setLedgerDateFrom(today);
     setLedgerDateTo(today);
   }, []);
+
+  useEffect(() => {
+    const branchId = searchParams.get("branch");
+    if (!branchId || contextBranches.length === 0) return;
+
+    const targetBranch = contextBranches.find((branch) => branch.id === branchId);
+    if (targetBranch) {
+      setSelectedBranch(targetBranch);
+    }
+  }, [contextBranches, searchParams, setSelectedBranch]);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -280,6 +296,12 @@ export default function BranchFinancePage() {
 
   useEffect(() => {
     void loadFinanceData();
+  }, [loadFinanceData]);
+
+  useEffect(() => {
+    return subscribeToFinanceRelevantNotifications(() => {
+      void loadFinanceData();
+    });
   }, [loadFinanceData]);
 
   useEffect(() => {
@@ -847,9 +869,10 @@ export default function BranchFinancePage() {
             </div>
 
             <div className="flex justify-end print:hidden mb-2">
-              <button
+              <ActionButton
+                variant="primary"
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800"
+                size="md"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
@@ -857,7 +880,7 @@ export default function BranchFinancePage() {
                   <rect width="12" height="8" x="6" y="14" />
                 </svg>
                 Print Ledger
-              </button>
+              </ActionButton>
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: `

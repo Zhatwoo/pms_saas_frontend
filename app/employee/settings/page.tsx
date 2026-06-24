@@ -1,12 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
-import { useTheme } from "@/contexts/theme-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
+import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
+import { DEFAULT_NOTIFICATION_SOUND } from "@/lib/notification-sounds";
 
 export default function EmployeeSettingsPage() {
   const { user, refreshProfile } = useAuth();
@@ -15,20 +17,10 @@ export default function EmployeeSettingsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [notificationSound, setNotificationSound] = useState(DEFAULT_NOTIFICATION_SOUND);
   const [isSaving, setIsSaving] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordRequests, setPasswordRequests] = useState<any[]>([]);
-  const [reviewingRequestId, setReviewingRequestId] = useState<string | null>(null);
-  const { theme, toggleTheme, isDark } = useTheme();
 
   const branchName = selectedBranch?.name || "Bgc Branch";
   const initials = fullName
@@ -44,6 +36,7 @@ export default function EmployeeSettingsPage() {
     if (user) {
       setFullName(user.fullName || "");
       setEmail(user.email || "");
+      setNotificationSound(user.notificationSound || DEFAULT_NOTIFICATION_SOUND);
     }
   }, [user]);
 
@@ -52,7 +45,7 @@ export default function EmployeeSettingsPage() {
     setIsSaving(true);
     setToast(null);
     try {
-      await api.patch("/auth/profile", { fullName });
+      await api.patch("/auth/profile", { fullName, notificationSound });
       await refreshProfile();
       setToast("Profile updated successfully!");
       setTimeout(() => setToast(null), 3000);
@@ -66,6 +59,7 @@ export default function EmployeeSettingsPage() {
   const handleDiscard = () => {
     setFullName(user?.fullName || "");
     setEmail(user?.email || "");
+    setNotificationSound(user?.notificationSound || DEFAULT_NOTIFICATION_SOUND);
     setToast(null);
   };
 
@@ -91,7 +85,7 @@ export default function EmployeeSettingsPage() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h3]:text-base [&_h4]:text-xl [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
       {toast && (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
           <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
@@ -101,7 +95,7 @@ export default function EmployeeSettingsPage() {
       )}
 
       <div className="flex gap-1 rounded-lg border border-border-main bg-surface p-1 max-w-fit overflow-hidden">
-        {["Profile", "Appearance", "Branch Config"].map((tab) => (
+        {["Profile", "Notifications", "Branch Config"].map((tab) => (
           <button
             key={tab}
             onClick={() => {
@@ -118,13 +112,13 @@ export default function EmployeeSettingsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
+      <div className="grid w-full grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 space-y-6">
           {activeTab === "Profile" && (
             <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
               <h3 className="text-base font-bold text-text-primary mb-4 pb-2 border-b border-border-main">My Account Profile</h3>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Full Name</label>
                     <input
@@ -155,46 +149,11 @@ export default function EmployeeSettingsPage() {
             </div>
           )}
 
-          {activeTab === "Appearance" && (
-            <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
-              <h3 className="text-base font-bold text-text-primary mb-4 pb-2 border-b border-border-main">Theme Preferences</h3>
-              <div className="space-y-4">
-                <p className="text-sm text-text-secondary">Choose how the application looks for you.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => { if (isDark) toggleTheme(); }}
-                    className={`flex-1 rounded-xl border-2 p-4 text-center transition-all ${
-                      !isDark
-                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30"
-                        : "border-border-main bg-surface hover:border-emerald-300"
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-                        <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                      </svg>
-                      <span className="text-sm font-bold text-text-primary">Light</span>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => { if (!isDark) toggleTheme(); }}
-                    className={`flex-1 rounded-xl border-2 p-4 text-center transition-all ${
-                      isDark
-                        ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30"
-                        : "border-border-main bg-surface hover:border-emerald-300"
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-400">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                      </svg>
-                      <span className="text-sm font-bold text-text-primary">Dark</span>
-                    </div>
-                  </button>
-                </div>
-                <p className="text-xs text-text-muted">Current theme: <span className="font-bold capitalize">{theme}</span></p>
-              </div>
-            </div>
+          {activeTab === "Notifications" && (
+            <NotificationSoundSettings
+              deferSave
+              onSoundChange={setNotificationSound}
+            />
           )}
 
           {activeTab === "Branch Config" && (
@@ -228,8 +187,13 @@ export default function EmployeeSettingsPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
-              disabled={isSaving || fullName === user?.fullName}
-              className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={
+                isSaving ||
+                (fullName === user?.fullName &&
+                  notificationSound ===
+                    (user?.notificationSound || DEFAULT_NOTIFICATION_SOUND))
+              }
+              className="rounded-lg bg-emerald-800 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-700 disabled:opacity-100"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
@@ -242,13 +206,16 @@ export default function EmployeeSettingsPage() {
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div className="rounded-xl border border-border-main bg-surface p-6 text-center shadow-sm">
             <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full border-4 border-emerald-50 bg-white dark:border-emerald-950/60 dark:bg-zinc-800">
               {user?.avatarUrl ? (
-                <img
+                <Image
                   src={user.avatarUrl}
                   alt="Profile avatar"
+                  width={80}
+                  height={80}
+                  unoptimized
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -261,7 +228,7 @@ export default function EmployeeSettingsPage() {
             <p className="mb-4 text-xs text-text-secondary">{branchName}</p>
             <button
               onClick={() => setIsAvatarModalOpen(true)}
-              className="w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900/70"
+              className="w-full rounded-lg border border-emerald-200 bg-emerald-100 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-200 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
             >
               Change Avatar
             </button>

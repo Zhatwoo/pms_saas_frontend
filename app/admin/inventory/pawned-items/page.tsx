@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Fragment } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { buildQrSheetDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
 import { useAuth } from "@/contexts/auth-context";
@@ -15,6 +16,24 @@ import { PawnedItemDetailsModal } from "@/components/shared/pawned-item-details-
 import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
+import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
+import { calculateGadgetInterest } from "@/lib/interest";
+
+const moaToastClassName =
+  "mx-auto flex min-w-[260px] items-center justify-center gap-2 rounded-xl border px-4 py-3 text-center shadow-xl backdrop-blur-sm sm:min-w-[320px]";
+
+const moaLoadingIcon = (
+  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+);
+
+const moaSuccessIcon = (
+  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  </span>
+);
+
 
 type PawnedStatus = "Active" | "Redeemed" | "Expired";
 type ViewMode = "list" | "calendar";
@@ -57,12 +76,11 @@ const pawnedStatusOptions = [
   { value: "all", label: "All" },
   { value: "Active", label: "Active" },
   { value: "Redeemed", label: "Redeemed" },
-  { value: "Expired", label: "Expired" },
 ];
 
 const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
-const toolbarFieldClass = "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
-const toolbarSelectClass = "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarFieldClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarSelectClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
@@ -125,10 +143,12 @@ function EditPawnedItemModal({
   item,
   onClose,
   onSaved,
+  categoriesList,
 }: {
   item: PawnedItem;
   onClose: () => void;
   onSaved: (updated: Partial<PawnedItem> & { id: string }) => void;
+  categoriesList: string[];
 }) {
   const [itemName, setItemName] = useState(item.itemName);
   const [category, setCategory] = useState(item.category);
@@ -181,9 +201,10 @@ function EditPawnedItemModal({
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
             >
-              {categoryOptions.filter((o) => o.value !== "all").map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+              {categoriesList.map((name) => (
+                <option key={name} value={name}>{name}</option>
               ))}
+              <option value="Others">Others</option>
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -217,6 +238,20 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   const isAdminOrSuperAdmin = userRole.toLowerCase().includes("admin");
   const canEdit = !viewOnly && isAdminOrSuperAdmin;
 
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  useEffect(() => {
+    async function load() {
+      const cats = await fetchCategories();
+      setCategoriesList(cats.map((c) => c.name));
+    }
+    load();
+  }, []);
+
+  const categoryOptions = [
+    { value: "all", label: "All" },
+    ...categoriesList.map((name) => ({ value: name, label: name })),
+  ];
+
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
@@ -237,6 +272,173 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const [selectedDate, setSelectedDate] = useState<string | null>(() => todayString);
+  const [calendarYear, setCalendarYear] = useState(today.getFullYear());
+  const [calendarMonth, setCalendarMonth] = useState(today.getMonth());
+  const [calendarData, setCalendarData] = useState<Record<string, number>>({});
+
+  const [isMoaModalOpen, setIsMoaModalOpen] = useState(false);
+  const [moaLoading, setMoaLoading] = useState(false);
+  const [moaReprintData, setMoaReprintData] = useState<{
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    address: string;
+    contactNo: string;
+    unitCode: string;
+    unitName: string;
+    category: string;
+    serialNumber: string;
+    itemsIncluded: string;
+    condition: string;
+    remarks: string;
+    memory: string;
+    amount: string;
+    storageFee: string;
+    purchasedDate: string;
+    idPresented: string;
+    branchName: string;
+    branchAddress?: string;
+    branchPhone?: string;
+    processedBy?: string;
+  } | null>(null);
+
+  const handleReprintMoa = async (id: string) => {
+    toast.loading("Loading Memorandum of Agreement (MOA)...", {
+      id: "fetch-moa",
+      icon: moaLoadingIcon,
+      className: `${moaToastClassName} border-zinc-300/70 bg-white/90 text-zinc-900`,
+    });
+    try {
+      const sourceItem = pawnedItems.find((item) => item.id === id);
+      let itemDetails: any;
+      let transactionFallback: any = null;
+      try {
+        itemDetails = await api.get<any>(`/inventory/pawned/${id}`);
+      } catch {
+        if (!sourceItem?.itemId) {
+          throw new Error("Missing item code for MOA reprint fallback.");
+        }
+        itemDetails = await api.get<any>(`/inventory/item/${encodeURIComponent(sourceItem.itemId)}`);
+      }
+
+      const isMissing = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
+      if (
+        isMissing(itemDetails?.items_included ?? itemDetails?.itemsIncluded) ||
+        isMissing(itemDetails?.condition) ||
+        isMissing(itemDetails?.memory_storage ?? itemDetails?.memoryStorage) ||
+        !itemDetails?.created_by_user?.full_name
+      ) {
+        const params = id
+          ? `relatedPawnedItemId=${encodeURIComponent(id)}`
+          : sourceItem?.itemId
+            ? `unitCode=${encodeURIComponent(sourceItem.itemId)}`
+            : "";
+        if (params) {
+          try {
+            transactionFallback = await api.get<any>(`/transactions/pawn-source?${params}`);
+          } catch {
+            transactionFallback = null;
+          }
+        }
+      }
+
+      if (!itemDetails) {
+        toast.error("Item details not found.", { id: "fetch-moa" });
+        return;
+      }
+      const customerDetails =
+        itemDetails.customer ??
+        itemDetails.customers ??
+        transactionFallback?.pawned_item?.customer ??
+        transactionFallback?.customer ??
+        null;
+      const customerFullName = customerDetails?.full_name || itemDetails.customerName || "WALK-IN CUSTOMER";
+      const purchasedDateValue = itemDetails.pawn_date || itemDetails.pawnDate || "";
+      const amountValue = Number(itemDetails.amount ?? 0);
+      const categoryValue = itemDetails.category || "---";
+      const unitCodeValue = itemDetails.item_id || itemDetails.itemId || "---";
+      const unitNameValue = itemDetails.item_name || itemDetails.itemName || "---";
+      const itemAddress =
+        [
+          customerDetails?.address ?? itemDetails.customerAddress,
+          customerDetails?.barangay,
+          customerDetails?.city,
+          customerDetails?.province ?? customerDetails?.region
+        ]
+          .filter(Boolean)
+          .join(", ") || "---";
+
+      const calculations = calculateGadgetInterest(
+        amountValue,
+        purchasedDateValue || new Date().toISOString().slice(0, 10),
+        categoryValue
+      );
+
+      const fullName = customerFullName;
+      const names = fullName.trim().split(" ");
+      const firstName = names[0] || "WALK-IN";
+      const middleName = customerDetails?.middle_name || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
+      const lastName = names.length > 1 ? names[names.length - 1] : "---";
+
+      let branchAddress = "";
+      let branchPhone = "";
+      try {
+        const branchList = await api.get<any[]>("/branches");
+        const match = branchList?.find((b: any) => b.name === itemDetails.branch);
+        if (match) {
+          branchAddress = match.location || "";
+          branchPhone = match.phone || "";
+        }
+      } catch (err) {
+        console.warn("Failed to fetch branches details", err);
+      }
+
+      setMoaReprintData({
+        firstName,
+        middleName,
+        lastName,
+        address: itemAddress,
+        contactNo: customerDetails?.contact_number || itemDetails.customerContact || "",
+        unitCode: unitCodeValue,
+        unitName: unitNameValue,
+        category: categoryValue,
+        serialNumber: itemDetails.serial_number || itemDetails.serialNumber || "---",
+        itemsIncluded:
+          itemDetails.items_included ||
+          itemDetails.itemsIncluded ||
+          transactionFallback?.pawned_item?.items_included ||
+          "---",
+        condition: itemDetails.condition || transactionFallback?.pawned_item?.condition || "---",
+        remarks: itemDetails.remarks || "---",
+        memory:
+          itemDetails.memory_storage ||
+          itemDetails.memoryStorage ||
+          transactionFallback?.pawned_item?.memory_storage ||
+          "---",
+        amount: String(amountValue),
+        storageFee: String(calculations.interestAmount),
+        purchasedDate: purchasedDateValue,
+        idPresented: customerDetails?.id_presented || itemDetails.customerIdPresented || "---",
+        branchName: itemDetails.branch || "",
+        branchAddress,
+        branchPhone,
+        processedBy:
+          itemDetails.created_by_user?.full_name ||
+          transactionFallback?.created_by_user?.full_name ||
+          itemDetails.createdByName ||
+          "AUTHORIZED PERSONNEL"
+      });
+      setIsMoaModalOpen(true);
+      toast.success("MOA loaded successfully!", {
+        id: "fetch-moa",
+        icon: moaSuccessIcon,
+        className: `${moaToastClassName} border-emerald-300/70 bg-emerald-100/90 text-emerald-900`,
+      });
+    } catch (err) {
+      console.error("Failed to load MOA reprint data", err);
+      toast.error("Failed to load MOA reprint details.", { id: "fetch-moa" });
+    }
+  };
 
   const handlePrintQr = useCallback((size: "small" | "large") => {
     const sizeCm = size === "small" ? "2cm" : "3cm";
@@ -274,7 +476,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
     );
   }, [pawnedItems]);
 
-  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id, selectedDate]);
+  useEffect(() => { setCurrentPage(1); }, [category, status, searchQuery, selectedBranch.id, selectedDate, viewMode]);
 
   useEffect(() => {
     async function fetchData() {
@@ -284,7 +486,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
         if (category !== "all") params.set("category", category);
         if (status !== "all") params.set("status", status);
         if (searchQuery) params.set("search", searchQuery);
-        if (selectedDate) params.set("date", selectedDate);
+        if (viewMode === "calendar" && selectedDate) params.set("date", selectedDate);
         if (!isAllBranches) params.set("branch", selectedBranch.id);
         params.set("page", String(currentPage));
         params.set("limit", String(itemsPerPage));
@@ -300,7 +502,26 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
       }
     }
     fetchData();
-  }, [category, status, searchQuery, selectedDate, currentPage, selectedBranch.id, isAllBranches]);
+  }, [category, status, searchQuery, selectedDate, currentPage, selectedBranch.id, isAllBranches, viewMode]);
+
+  useEffect(() => {
+    async function fetchCalendar() {
+      if (viewMode !== "calendar") return;
+
+      try {
+        const params = new URLSearchParams();
+        if (!isAllBranches) params.set("branch", selectedBranch.id);
+        params.set("month", `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}`);
+        const data = await api.get<Record<string, number>>(`/inventory/pawned-calendar?${params}`);
+        setCalendarData(data || {});
+      } catch (err) {
+        console.error("Calendar fetch error:", err);
+        setCalendarData({});
+      }
+    }
+
+    void fetchCalendar();
+  }, [calendarMonth, calendarYear, isAllBranches, selectedBranch.id, viewMode]);
 
   const handleSaveRemarks = useCallback(async (itemId: string, remarks: string) => {
     try {
@@ -326,38 +547,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
         </p>
       </div>
-      <div className={viewOnly ? "flex flex-wrap items-end justify-between gap-4 rounded-lg border border-border-main bg-surface p-5 shadow-lg shadow-black/20 backdrop-blur-sm" : "flex flex-wrap items-end justify-between gap-3 rounded-lg border border-border-main bg-surface p-4 shadow-lg shadow-black/20 backdrop-blur-sm"}>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <label className={toolbarLabelClass}>Search</label>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search items..."
-              className={viewOnly ? "h-10 w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500" : toolbarFieldClass}
-            />
-          </div>
-          {viewMode !== "calendar" && (
-            <div className="flex flex-col gap-1">
-              <label className={toolbarLabelClass}>Date</label>
-              <div className="relative flex items-center">
-                <input
-                  type="date"
-                  value={selectedDate || ""}
-                  max={todayString}
-                  onChange={(e) => setSelectedDate(e.target.value || null)}
-                  className={viewOnly ? "h-10 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 pr-8" : `${toolbarFieldClass} pr-8`}
-                />
-                {selectedDate && (
-                  <button type="button" onClick={() => setSelectedDate(null)} className="absolute right-2 text-text-muted hover:text-text-primary">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          <div className="flex flex-col gap-1">
+      <div className={viewOnly ? "flex flex-col items-start gap-4 rounded-lg border border-border-main bg-surface p-5 shadow-lg shadow-black/20 backdrop-blur-sm lg:flex-row lg:items-end lg:justify-between" : "flex flex-col items-start gap-3 rounded-lg border border-border-main bg-surface p-4 shadow-lg shadow-black/20 backdrop-blur-sm lg:flex-row lg:items-end lg:justify-between"}>
+        <div className="grid w-full grid-cols-3 items-end gap-3 lg:flex lg:w-auto lg:flex-wrap">
+          <div className="order-1 flex min-w-0 flex-col gap-1 lg:order-2">
             <label className={toolbarLabelClass}>Category</label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={toolbarSelectClass}>
               {categoryOptions.map((option) => (
@@ -367,7 +559,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="order-2 flex min-w-0 flex-col gap-1 lg:order-3">
             <label className={toolbarLabelClass}>Status</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)} className={toolbarSelectClass}>
               {pawnedStatusOptions.map((option) => (
@@ -377,47 +569,59 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               ))}
             </select>
           </div>
+          <div className="order-3 flex min-w-0 flex-col gap-1 lg:order-1">
+            <label className={toolbarLabelClass}>Search</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items..."
+              className={viewOnly ? "h-10 w-full rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 lg:w-56" : toolbarFieldClass}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center gap-3 lg:w-auto">
           {viewOnly ? (
             <>
-              <div className="relative">
-                <ActionButton
-                  variant="primary"
-                  className="border-emerald-700 bg-emerald-700 text-amber-400"
-                  onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {printerIcon}
-                    Print QR
-                  </span>
-                </ActionButton>
-                {isPrintQrMenuOpen && (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-32 overflow-hidden rounded-md border border-border-main bg-surface shadow-lg">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPrintQrMenuOpen(false);
-                        handlePrintQr("small");
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
-                    >
-                      Small
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPrintQrMenuOpen(false);
-                        handlePrintQr("large");
-                      }}
-                      className="w-full border-t border-border-subtle px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
-                    >
-                      Large
-                    </button>
-                  </div>
-                )}
-              </div>
+              {isAdminOrSuperAdmin && (
+                <div className="relative">
+                  <ActionButton
+                    variant="primary"
+                    className="border-emerald-700 bg-emerald-700 text-amber-400"
+                    onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      {printerIcon}
+                      Print QR
+                    </span>
+                  </ActionButton>
+                  {isPrintQrMenuOpen && (
+                    <div className="absolute left-0 top-full z-20 mt-2 w-32 overflow-hidden rounded-md border border-border-main bg-surface shadow-lg">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPrintQrMenuOpen(false);
+                          handlePrintQr("small");
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+                      >
+                        Small
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPrintQrMenuOpen(false);
+                          handlePrintQr("large");
+                        }}
+                        className="w-full border-t border-border-subtle px-3 py-2 text-left text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover"
+                      >
+                        Large
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex overflow-hidden rounded-md border border-border-main bg-surface">
                 <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
                   List
@@ -487,7 +691,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
 
       {viewMode === "calendar" && (
         <div className="mb-4">
-          <InventoryCalendar items={pawnedItems} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+          <InventoryCalendar
+            items={pawnedItems}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            calendarData={calendarData}
+            onVisibleMonthChange={(year, month) => {
+              setCalendarYear(year);
+              setCalendarMonth(month);
+            }}
+          />
         </div>
       )}
 
@@ -558,6 +771,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                             >
                               {eyeIcon}
                             </button>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleReprintMoa(item.id);
+                              }}
+                              title="View/Print MOA Slip"
+                              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                            >
+                              {printerIcon}
+                            </button>
                             {canEdit && (
                               <>
                                 <button 
@@ -567,19 +790,6 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                 >
                                   {editIcon}
                                 </button>
-                                {item.status === "Active" && (
-                                  <button
-                                    type="button"
-                                    title="Mark as Expired"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setConfirmIntent({ type: "expire", itemId: item.id });
-                                    }}
-                                    className="inline-flex items-center justify-center rounded-lg border border-orange-500/30 bg-orange-500/10 p-2 text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-500/20 dark:bg-orange-500/5 dark:text-orange-400 dark:hover:bg-orange-500/10"
-                                  >
-                                    {expireIcon}
-                                  </button>
-                                )}
                                 <button
                                   type="button"
                                   title="Delete Item"
@@ -647,6 +857,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onSaved={handleEditSaved}
+          categoriesList={categoriesList}
         />
       )}
 
@@ -688,6 +899,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               throw err;
             }
           }}
+        />
+      )}
+
+      {moaReprintData && (
+        <MoaModal
+          isOpen={isMoaModalOpen}
+          onClose={() => setIsMoaModalOpen(false)}
+          onConfirm={() => setIsMoaModalOpen(false)}
+          data={moaReprintData}
+          isLoading={moaLoading}
         />
       )}
     </div>

@@ -1,27 +1,28 @@
 "use client";
 
 import { useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
-import {
-  OpeningChecklistProvider,
-  useOpeningChecklist,
-} from "@/contexts/opening-checklist-context";
-import { OpeningChecklistWrapper } from "@/components/shared/opening-checklist-wrapper";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { OpeningChecklistGatePlaceholder } from "@/components/shared/opening-checklist-gate-placeholder";
 
 function EmployeeLayoutInner({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive } = useAuth();
+  const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive } = useAuth();  
   const { selectedBranch } = useBranch();
-  const { isOpeningChecklistReady } = useOpeningChecklist();
+  const { isComplete, isOpeningChecklistReady } = useOpeningChecklist();
+  const pathname = usePathname();
   const router = useRouter();
+
+  const allowModuleContent =
+    isComplete || Boolean(pathname?.includes("/incident-report"));
 
   const isLoading = isAuthLoading;
 
@@ -75,9 +76,9 @@ function EmployeeLayoutInner({
       onLogout={logout}
       branchName={selectedBranch.name}
       hideBranchSelector={true}
+      isRestricted={!allowModuleContent}
     >
-      <OpeningChecklistWrapper />
-      {children}
+      {allowModuleContent ? children : <OpeningChecklistGatePlaceholder />}
     </AppLayout>
   );
 }
@@ -87,9 +88,5 @@ export default function EmployeeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <OpeningChecklistProvider>
-      <EmployeeLayoutInner>{children}</EmployeeLayoutInner>
-    </OpeningChecklistProvider>
-  );
+  return <EmployeeLayoutInner>{children}</EmployeeLayoutInner>;
 }

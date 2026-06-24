@@ -98,7 +98,7 @@ export function AuditLogToolbar({
   }, [activePeriod, dailyDate, monthlyDate, onDateRangeChange, today, yearlyYear]);
 
   return (
-    <div className="flex flex-col gap-4 border-b border-border-subtle bg-surface-secondary/40 p-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-col gap-4 border-b border-border-subtle bg-surface-secondary/40 p-4 lg:flex-row lg:items-start lg:justify-between">
       <div className="relative w-full lg:max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
         <input
@@ -109,15 +109,15 @@ export function AuditLogToolbar({
         />
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           {activePeriod === "Daily" && (
             <input
               type="date"
               max={today}
               value={dailyDate}
               onChange={(event) => setDailyDate(event.target.value)}
-              className="h-10 rounded border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold"
+              className="h-10 w-full min-w-[9.5rem] rounded border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold sm:w-auto"
             />
           )}
           {activePeriod === "Monthly" && (
@@ -126,14 +126,14 @@ export function AuditLogToolbar({
               max={currentMonth}
               value={monthlyDate}
               onChange={(event) => setMonthlyDate(event.target.value)}
-              className="h-10 rounded border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold"
+              className="h-10 w-full min-w-[9.5rem] rounded border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold sm:w-auto"
             />
           )}
           {activePeriod === "Yearly" && (
             <select
               value={yearlyYear}
               onChange={(event) => setYearlyYear(event.target.value)}
-              className="h-10 rounded border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold"
+              className="h-10 w-full min-w-[9.5rem] rounded border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-pawn-gold focus:ring-1 focus:ring-pawn-gold sm:w-auto"
             >
               {years.map((year) => (
                 <option key={year} value={year}>
@@ -142,13 +142,13 @@ export function AuditLogToolbar({
               ))}
             </select>
           )}
-          <div className="flex flex-wrap gap-1 rounded border border-border-main bg-surface p-1">
+          <div className="flex min-w-0 flex-nowrap gap-1 overflow-x-auto rounded border border-border-main bg-surface p-1">
             {periods.map((period) => (
               <button
                 key={period}
                 type="button"
                 onClick={() => onPeriodChange(period)}
-                className={`h-8 rounded px-3 text-xs font-bold uppercase tracking-wide transition ${
+                className={`h-8 shrink-0 whitespace-nowrap rounded px-3 text-xs font-bold uppercase tracking-wide transition ${
                   activePeriod === period
                     ? "bg-emerald-700 text-white"
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"

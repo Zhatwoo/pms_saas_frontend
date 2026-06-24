@@ -2,11 +2,13 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
+import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { OpeningChecklistGatePlaceholder } from "@/components/shared/opening-checklist-gate-placeholder";
 
 export default function ProtectedLayout({
   children,
@@ -15,7 +17,12 @@ export default function ProtectedLayout({
 }) {
   const { user, logout, isLoading, isSessionExpiryActive } = useAuth();
   const { selectedBranch } = useBranch();
+  const { isComplete, isOpeningChecklistReady } = useOpeningChecklist();
+  const pathname = usePathname();
   const router = useRouter();
+
+  const allowModuleContent =
+    isComplete || Boolean(pathname?.includes("/incident-report"));
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -39,6 +46,10 @@ export default function ProtectedLayout({
     return null;
   }
 
+  if (!isOpeningChecklistReady) {
+    return null;
+  }
+
   const navGroups = getNavForRole(user.role);
   const initials = user.fullName
     ? user.fullName
@@ -59,8 +70,9 @@ export default function ProtectedLayout({
       onLogout={logout}
       branchName={selectedBranch.name}
       hideBranchSelector={false}
+      isRestricted={!allowModuleContent}
     >
-      {children}
+      {allowModuleContent ? children : <OpeningChecklistGatePlaceholder />}
     </AppLayout>
   );
 }

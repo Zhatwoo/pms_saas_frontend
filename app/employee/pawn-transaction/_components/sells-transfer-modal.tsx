@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
@@ -12,6 +12,8 @@ interface SellsTransferModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   branchName: string;
+  initialItem?: InitialInventoryItem;
+  compactTablet?: boolean;
 }
 
 interface InventoryItem {
@@ -26,11 +28,62 @@ interface InventoryItem {
   srp: string;
 }
 
-export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: SellsTransferModalProps) {
+interface InitialInventoryItem {
+  id: string;
+  unitId: string;
+  unit: string;
+  srp: string;
+  serialNumber?: string;
+  included?: string;
+  condition?: string;
+  memory?: string;
+  barcodeId?: string;
+}
+
+interface ForSaleApiItem {
+  id: string;
+  itemId?: string;
+  itemName?: string;
+  price?: number | string;
+}
+
+interface BranchApiItem {
+  id: string;
+  branch_name?: string;
+  name?: string;
+}
+
+interface CustomerResponse {
+  id?: string;
+}
+
+function normalizeInventoryItem(item: InitialInventoryItem): InventoryItem {
+  return {
+    id: item.id,
+    unitId: item.unitId,
+    unit: item.unit,
+    serialNumber: item.serialNumber || "---",
+    included: item.included || "---",
+    condition: item.condition || "---",
+    memory: item.memory || "---",
+    barcodeId: item.barcodeId || "---",
+    srp: item.srp,
+  };
+}
+
+function getBranchName(branch?: BranchApiItem) {
+  return branch?.branch_name || branch?.name || "Other Branch";
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, initialItem, compactTablet = false }: SellsTransferModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [branches, setBranches] = useState<{ id: string; branch_name: string }[]>([]);
+  const [branches, setBranches] = useState<BranchApiItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
@@ -53,6 +106,11 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
   const { selectedBranch } = useBranch();
   const [isConfirming, setIsConfirming] = useState(false);
   const isProcessingRef = useRef(false);
+  const initialItemId = initialItem?.id;
+  const initialItemUnitId = initialItem?.unitId;
+  const initialItemUnit = initialItem?.unit;
+  const initialItemSrp = initialItem?.srp;
+  const isItemLocked = Boolean(initialItem);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,12 +118,27 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
     const fetchItems = async () => {
       setIsLoading(true);
       try {
+        if (initialItem) {
+          const normalizedInitialItem = normalizeInventoryItem(initialItem);
+          setSelectedItem(normalizedInitialItem);
+          setItems([normalizedInitialItem]);
+          setSearchQuery("");
+          setForm(prev => ({
+            ...prev,
+            sellTransfer: "Sales",
+            targetBranchId: "",
+            priceSold: normalizedInitialItem.srp,
+            itemIncluded: normalizedInitialItem.included === "---" ? "" : normalizedInitialItem.included,
+          }));
+          return;
+        }
+
         const branchQ = selectedBranch?.id !== "__all__" ? `&branch=${selectedBranch.id}` : "";
-        const response = await api.get<{ items: any[] }>(`/inventory/for-sale?status=Available&search=${searchQuery}&limit=100${branchQ}`);
+        const response = await api.get<{ items: ForSaleApiItem[] }>(`/inventory/for-sale?status=Available&search=${searchQuery}&limit=100${branchQ}`);
         const mapped = (response.items || []).map(item => ({
           id: item.id,
           unitId: item.itemId || item.id,
-          unit: item.itemName,
+          unit: item.itemName || "Unnamed item",
           serialNumber: "---",
           included: "---",
           condition: "---",
@@ -73,6 +146,8 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
           barcodeId: "---",
           srp: String(item.price || 0)
         }));
+
+        setSelectedItem(null);
         setItems(mapped);
       } catch (err) {
         console.error("Failed to fetch inventory items:", err);
@@ -83,7 +158,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
 
     const fetchBranches = async () => {
       try {
-        const response = await api.get<{ id: string; branch_name: string }[]>("/branches");
+        const response = await api.get<BranchApiItem[]>("/branches");
         setBranches(Array.isArray(response) ? response : []);
       } catch (err) {
         console.error("Failed to fetch branches:", err);
@@ -93,7 +168,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
     const timeout = setTimeout(fetchItems, 300);
     fetchBranches();
     return () => clearTimeout(timeout);
-  }, [isOpen, searchQuery, selectedBranch]);
+  }, [isOpen, searchQuery, selectedBranch, initialItem, initialItemId, initialItemUnitId, initialItemUnit, initialItemSrp]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -134,7 +209,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
       if (form.sellTransfer === "Sales") {
         // 1. Create/Ensure Customer in Customer Management
         console.log("Creating customer record for buyer...");
-        const customer = await api.post<any>("/customers", {
+        const customer = await api.post<CustomerResponse>("/customers", {
           full_name: `${form.firstName} ${form.middleName ? form.middleName + ' ' : ''}${form.lastName}`,
           address: form.address,
           barangay: form.barangay,
@@ -155,11 +230,12 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
       } else {
         // TRANSFER LOGIC
         const targetBranch = branches.find(b => b.id === form.targetBranchId);
+        const targetBranchName = getBranchName(targetBranch);
         
         // 1. Update Branch in Inventory
         await api.put(`/inventory/for-sale/${selectedItem.id}`, {
           branch_id: form.targetBranchId,
-          branch: targetBranch?.branch_name
+          branch: targetBranchName
         });
 
         // 2. Create Transaction Log for Transfer
@@ -169,19 +245,19 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
           cash_out: 0,
           unit: selectedItem.unit,
           unit_code: selectedItem.unitId,
-          details: `Item transferred from ${branchName} to ${targetBranch?.branch_name || 'Other Branch'} | Included: ${form.itemIncluded} | Processed by: ${user?.fullName || 'Admin'}`,
+          details: `Item transferred from ${branchName} to ${targetBranchName} | Included: ${form.itemIncluded} | Processed by: ${user?.fullName || 'Admin'}`,
           branch: branchName
         });
 
-        toast.success(`Item transferred to ${targetBranch?.branch_name || 'target branch'} successfully!`);
+        toast.success(`Item transferred to ${targetBranchName} successfully!`);
       }
 
       if (onSuccess) onSuccess();
       onClose();
       toast.success("Item marked for sales transfer successfully!");
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      toast.error(error?.message || "Failed to process Sales/Transfer transaction.");
+      toast.error(getErrorMessage(error, "Failed to process Sales/Transfer transaction."));
     } finally {
       setIsConfirming(false);
       isProcessingRef.current = false;
@@ -194,7 +270,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className={`relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10 ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -211,7 +287,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                   {branchName}
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
-                  Sells / Transfer
+                  {isItemLocked ? "Sell Item" : "Sells / Transfer"}
                 </h1>
               </div>
             </div>
@@ -229,98 +305,142 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
           
           {/* Left Side: Inventory & Selection Details */}
-          <div className="w-full xl:w-[60%] border-r border-emerald-50 dark:border-border p-4 sm:p-6 xl:p-8 flex flex-col gap-8 bg-emerald-50/30 dark:bg-surface-secondary dark:bg-surface-secondary overflow-y-auto">
+          <div className="flex w-full flex-col gap-8 overflow-y-auto border-emerald-50 bg-emerald-50/30 p-4 dark:border-border dark:bg-surface-secondary sm:p-6 xl:w-[60%] xl:border-r xl:p-8">
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-6 bg-emerald-600 rounded-full" />
-                  <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Select Inventory Item</h3>
+                  <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">
+                    {isItemLocked ? "Selected Inventory Item" : "Select Inventory Item"}
+                  </h3>
                 </div>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="Search Unit ID / Serial..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full max-w-xs bg-white dark:bg-surface border border-emerald-100 dark:border-border-subtle rounded-xl px-4 py-2 text-xs font-bold focus:ring-4 ring-emerald-500/10 outline-none transition-all"
-                  />
-                  <div className="absolute right-3 top-2 text-emerald-200">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                {!isItemLocked && (
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="Search Unit ID / Serial..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full max-w-xs bg-white dark:bg-surface border border-emerald-100 dark:border-border-subtle rounded-xl px-4 py-2 text-xs font-bold focus:ring-4 ring-emerald-500/10 outline-none transition-all"
+                    />
+                    <div className="absolute right-3 top-2 text-emerald-200">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Inventory Table Container */}
-              <div className="rounded-2xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface overflow-hidden shadow-sm">
-                <div className="overflow-x-auto max-h-[350px]">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-emerald-50 z-10">
-                      <tr>
-                        {["UnitID", "Unit", "Serial #", "Included", "Condition", "Memory", "Barcode ID"].map((h) => (
-                          <th key={h} className="px-4 py-3 text-[10px] font-black text-emerald-900 uppercase tracking-widest border-b border-emerald-100 dark:border-border-subtle">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-emerald-50">
-                      {isLoading ? (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-16 text-center">
-                            <div className="flex flex-col items-center justify-center gap-3">
-                              <span className="anim-loading h-6 w-6 border-emerald-500/50 border-t-emerald-600 rounded-full" />
-                              <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-widest">Loading items...</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : items.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-8 text-center text-[10px] text-emerald-900 font-bold uppercase tracking-widest">
-                            No items available for sale.
-                          </td>
-                        </tr>
-                      ) : (
-                        items.map(item => (
-                          <tr 
-                            key={item.id} 
-                            onClick={() => setSelectedItem(item)}
-                            className={`cursor-pointer transition-colors group ${selectedItem?.id === item.id ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 dark:hover:bg-emerald-600/10'}`}
-                          >
-                            <td className={`px-4 py-3 text-xs font-black ${selectedItem?.id === item.id ? 'text-white' : 'text-emerald-700'}`}>{item.unitId}</td>
-                            <td className="px-4 py-3 text-xs font-bold leading-tight">{item.unit}</td>
-                            <td className="px-4 py-3 text-[10px] font-mono opacity-80">{item.serialNumber}</td>
-                            <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.included}</td>
-                            <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.condition}</td>
-                            <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.memory}</td>
-                            <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.barcodeId}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+              {isItemLocked && selectedItem ? (
+                <div className="rounded-2xl border border-border-main bg-surface p-4 shadow-lg shadow-black/10">
+                  <div className="flex flex-col gap-4 rounded-xl bg-emerald-900 p-4 text-white shadow-inner sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Ready to Sell</p>
+                      <p className="mt-1 text-xl font-black leading-tight text-white">{selectedItem.unit}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">{selectedItem.unitId}</p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-emerald-400">Sale Price</p>
+                      <p className="mt-1 text-2xl font-black text-white">&#8369; {Number(selectedItem.srp || 0).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-[10px] font-bold uppercase tracking-widest text-text-tertiary sm:grid-cols-4">
+                    <div>
+                      <p>Included</p>
+                      <p className="mt-1 text-xs text-text-primary">{selectedItem.included}</p>
+                    </div>
+                    <div>
+                      <p>Condition</p>
+                      <p className="mt-1 text-xs text-text-primary">{selectedItem.condition}</p>
+                    </div>
+                    <div>
+                      <p>Memory</p>
+                      <p className="mt-1 text-xs text-text-primary">{selectedItem.memory}</p>
+                    </div>
+                    <div>
+                      <p>Barcode ID</p>
+                      <p className="mt-1 text-xs text-text-primary">{selectedItem.barcodeId}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-2xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto max-h-[350px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 bg-emerald-50 z-10">
+                        <tr>
+                          {["UnitID", "Unit", "Serial #", "Included", "Condition", "Memory", "Barcode ID"].map((h) => (
+                            <th key={h} className="px-4 py-3 text-[10px] font-black text-emerald-900 uppercase tracking-widest border-b border-emerald-100 dark:border-border-subtle">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-emerald-50">
+                        {isLoading ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-16 text-center">
+                              <div className="flex flex-col items-center justify-center gap-3">
+                                <span className="anim-loading h-6 w-6 border-emerald-500/50 border-t-emerald-600 rounded-full" />
+                                <span className="text-[10px] text-emerald-900 font-bold uppercase tracking-widest">Loading items...</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : items.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="px-4 py-8 text-center text-[10px] text-emerald-900 font-bold uppercase tracking-widest">
+                              No items available for sale.
+                            </td>
+                          </tr>
+                        ) : (
+                          items.map(item => (
+                            <tr 
+                              key={item.id} 
+                              onClick={() => setSelectedItem(item)}
+                              className={`cursor-pointer transition-colors group ${selectedItem?.id === item.id ? 'bg-emerald-600 text-white' : 'hover:bg-emerald-50 dark:hover:bg-emerald-600/10'}`}
+                            >
+                              <td className={`px-4 py-3 text-xs font-black ${selectedItem?.id === item.id ? 'text-white' : 'text-emerald-700'}`}>{item.unitId}</td>
+                              <td className="px-4 py-3 text-xs font-bold leading-tight">{item.unit}</td>
+                              <td className="px-4 py-3 text-[10px] font-mono opacity-80">{item.serialNumber}</td>
+                              <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.included}</td>
+                              <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.condition}</td>
+                              <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.memory}</td>
+                              <td className="px-4 py-3 text-[10px] font-bold opacity-80">{item.barcodeId}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Selection Specifics */}
             <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
-               <div className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
-                    <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Transaction Details</h4>
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-emerald-400 rounded-full" />
+                  <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Transaction Details</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between group">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Status:</span>
+                    <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest">{form.status}</div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between group">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Status:</span>
-                      <div className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase tracking-widest">{form.status}</div>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 group">
-                      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">Sell / Transfer:</span>
-                      <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle dark:border-border-subtle" />
+                  <div className="flex items-center justify-between gap-4 group">
+                    <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">
+                      {isItemLocked ? "Transaction:" : "Sell / Transfer:"}
+                    </span>
+                    <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle dark:border-border-subtle" />
+                    {isItemLocked ? (
+                      <div className="min-w-[140px] rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-left text-xs font-black text-emerald-800 dark:border-border-subtle dark:bg-emerald-500/10 dark:text-emerald-300">
+                        Sell
+                      </div>
+                    ) : (
                       <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle dark:border-border-subtle bg-white dark:bg-surface dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
-                        <select 
+                        <select
                           name="sellTransfer"
                           value={form.sellTransfer}
                           onChange={handleChange}
@@ -330,65 +450,111 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                           <option value="Transfer">Transfer</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                        </div>
-                      </div>
-                    </div>
-                    <DetailInput label="Item Included" name="itemIncluded" value={form.itemIncluded} onChange={handleChange} placeholder={selectedItem?.included || "Specify items..."} />
-                    <div className="flex items-center justify-between pt-2 border-t border-dashed border-emerald-100 dark:border-border-subtle">
-                       <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">SRP:</span>
-                       <span className="text-lg font-black text-emerald-950 dark:text-white">₱ {Number(selectedItem?.srp || 0).toLocaleString()}</span>
-                    </div>
-                    {form.sellTransfer === "Sales" ? (
-                      <DetailInput label="Price Sold" name="priceSold" value={form.priceSold} onChange={handleChange} type="number" prefix="₱" highlight />
-                    ) : (
-                      <div className="flex items-center justify-between gap-4 group">
-                        <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">To Branch:</span>
-                        <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle" />
-                        <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
-                          <select 
-                            name="targetBranchId"
-                            value={form.targetBranchId}
-                            onChange={handleChange}
-                            className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
-                          >
-                            <option value="">— Select Branch —</option>
-                            {branches
-                              .filter(b => b.id !== selectedBranch?.id)
-                              .map(b => (
-                                <option key={b.id} value={b.id}>{b.branch_name}</option>
-                              ))
-                            }
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                          </div>
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
                         </div>
                       </div>
                     )}
                   </div>
+                  <DetailInput label="Item Included" name="itemIncluded" value={form.itemIncluded} onChange={handleChange} placeholder={selectedItem?.included || "Specify items..."} />
+                  <div className="flex items-center justify-between pt-2 border-t border-dashed border-emerald-100 dark:border-border-subtle">
+                    <span className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">SRP:</span>
+                    <span className="text-lg font-black text-emerald-950 dark:text-white">₱ {Number(selectedItem?.srp || 0).toLocaleString()}</span>
+                  </div>
+                  {form.sellTransfer === "Sales" ? (
+                    <DetailInput label="Price Sold" name="priceSold" value={form.priceSold} onChange={handleChange} type="number" prefix="₱" highlight />
+                  ) : (
+                    <div className="flex items-center justify-between gap-4 group">
+                      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">To Branch:</span>
+                      <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle" />
+                      <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle bg-white dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
+                        <select
+                          name="targetBranchId"
+                          value={form.targetBranchId}
+                          onChange={handleChange}
+                          className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
+                        >
+                          <option value="">— Select Branch —</option>
+                          {branches
+                            .filter((b) => b.id !== selectedBranch?.id)
+                            .map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {getBranchName(b)}
+                              </option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+               <div className="flex flex-col justify-between rounded-3xl bg-emerald-900 p-6 text-white shadow-xl shadow-emerald-900/20">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black uppercase tracking-tight text-emerald-950 dark:text-white">Buyer&apos;s Information</h3>
+                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Please fill in current details</p>
+                      </div>
+                    </div>
+                  </div>
                </div>
 
-               <div className="bg-emerald-900 rounded-3xl p-6 text-white flex flex-col justify-between shadow-xl shadow-emerald-900/20">
-                  <div className="space-y-2">
-                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Quick Summary</p>
-                     <p className="text-xl font-black leading-tight tracking-tight">{selectedItem?.unit || "Select an item..."}</p>
-                     <p className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{selectedItem?.unitId || "---"}</p>
+               {compactTablet && form.sellTransfer === "Sales" && (
+                 <div className="space-y-8 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 xl:hidden">
+                   <div className="space-y-2">
+                     <div className="flex items-center gap-3">
+                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                           <circle cx="12" cy="7" r="4" />
+                         </svg>
+                       </div>
+                       <div>
+                         <h3 className="text-lg font-black uppercase tracking-tight text-emerald-950 dark:text-white">Buyer&apos;s Information</h3>
+                         <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Please fill in current details</p>
+                       </div>
+                     </div>
+                   </div>
+
+                  <div className="grid gap-4 md:max-xl:gap-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
+                      <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
+                      <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} />
+                    </div>
+
+                    <PhilippineAddressFields
+                      value={{
+                        address: form.address,
+                        barangay: form.barangay,
+                        city: form.city,
+                        region: form.region,
+                      }}
+                      onFieldChange={(field, val) => setForm(prev => ({ ...prev, [field]: val }))}
+                    />
+
+                    <Input label="Contact Number" name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="09XX-XXX-XXXX" />
                   </div>
-                  <div className="pt-8 text-right border-t border-white/10 mt-8">
-                     <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">
-                       {form.sellTransfer === "Sales" ? "Total Transaction Value" : "Transfer Value (Market)"}
-                     </p>
-                     <p className="text-4xl font-black tracking-tighter">
-                       ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
-                     </p>
-                  </div>
-               </div>
+                </div>
+              )}
             </div>
           </div>
 
-           {/* Right Side: Information Panel */}
-          <div className="flex-1 p-4 sm:p-6 xl:p-8 overflow-y-auto">
+           {/* Right Side: Information Panel (desktop xl+) */}
+          <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 xl:p-8 ${compactTablet ? "hidden xl:block" : ""}`}>
             {form.sellTransfer === "Sales" ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
@@ -397,13 +563,13 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
                     <div>
-                      <h3 className="text-lg font-black text-emerald-950 dark:text-white uppercase tracking-tight">Buyer's Information</h3>
+                      <h3 className="text-lg font-black text-emerald-950 dark:text-white uppercase tracking-tight">Buyer&apos;s Information</h3>
                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Please fill in current details</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-6">
+                <div className={compactTablet ? "grid gap-4 md:max-xl:gap-4" : "grid gap-6"}>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
                     <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
@@ -431,7 +597,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                 <div className="space-y-2 max-w-sm">
                    <h3 className="text-2xl font-black text-emerald-950 dark:text-white uppercase tracking-tight">Internal Transfer</h3>
                    <p className="text-sm font-medium text-zinc-500 leading-relaxed">
-                     Moving an item between branches does not record any cash movement. 
+                     Moving an item between branches does not record any cash movement.
                      The item will be deducted from <strong>{branchName}</strong> and added to the target branch inventory.
                    </p>
                 </div>
@@ -444,7 +610,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
                    <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-zinc-400 uppercase">To:</span>
                       <span className="text-xs font-black text-emerald-600">
-                        {branches.find(b => b.id === form.targetBranchId)?.branch_name || "Select Destination..."}
+                        {form.targetBranchId ? getBranchName(branches.find((b) => b.id === form.targetBranchId)) : "Select Destination..."}
                       </span>
                    </div>
                 </div>
@@ -454,48 +620,60 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess }: S
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
+        <div className={`p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0 ${compactTablet ? "md:p-6 md:max-xl:gap-5" : ""}`}>
           <div className="flex items-center gap-8 w-full sm:w-auto">
-             <button 
-                onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 transition-colors"
-              >
-                Cancel Process
-              </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-40">
-                  <Input label="Password" name="password" value={form.password} onChange={handleChange} type="password" size="sm" bg="bg-slate-50" placeholder="••••••••" />
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 transition-colors"
+            >
+              Cancel Process
+            </button>
+            <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="w-40">
+                <div className="space-y-1.5 w-full">
+                  <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">Password</label>
+                  <input
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    type="password"
+                    className="w-full rounded-xl border-2 border-emerald-300 bg-white px-4 py-2 text-xs font-black text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none placeholder:text-zinc-300"
+                  />
                 </div>
               </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-             <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
-                  {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
-                </p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">
-                  ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
-                </p>
-             </div>
-              <button 
+            <div className="text-right">
+              <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+                {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
+              </p>
+              <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">
+                ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
+              </p>
+            </div>
+            <button
               disabled={!isFormValid || isConfirming}
               onClick={handleConfirmAction}
               className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isFormValid ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30' : 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed'}`}
-             >
-                {isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  <>
-                    Confirm & Print
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                  </>
-                )}
-             </button>
+            >
+              {isConfirming ? (
+                <div className="flex items-center gap-2">
+                  <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
+                  <span>Processing...</span>
+                </div>
+              ) : (
+                <>
+                  Confirm & Print
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M5 12h14m-7-7 7 7-7 7" />
+                  </svg>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

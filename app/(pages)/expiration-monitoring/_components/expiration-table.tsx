@@ -74,6 +74,12 @@ const sendIcon = (
   </svg>
 );
 
+const expireIcon = (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+);
+
 interface ExpirationTableProps {
   data?: ExpirationItemRow[];
   isLoading?: boolean;
@@ -81,7 +87,10 @@ interface ExpirationTableProps {
   sendingItemId?: string | null;
   onRenew?: (id: string, ticketNo: string) => void;
   renewingItemId?: string | null;
+  onExpire?: (id: string) => void;
+  expiringItemId?: string | null;
   canRenew?: boolean;
+  canExpire?: boolean;
   highlightTicketNo?: string | null;
 }
 
@@ -92,7 +101,10 @@ export function ExpirationTable({
   sendingItemId,
   onRenew,
   renewingItemId,
+  onExpire,
+  expiringItemId,
   canRenew = true,
+  canExpire = false,
   highlightTicketNo,
 }: ExpirationTableProps) {
   const [pulsing, setPulsing] = useState(true);
@@ -133,9 +145,10 @@ export function ExpirationTable({
           return <DaysRemainingBadge days={value} />;
         }
         if (key === "actions") {
+          const isOverdue = row.daysRemaining <= 0;
           return (
             <div className="flex items-center justify-center gap-2">
-              {canRenew ? (
+              {!isOverdue && canRenew ? (
                 <button
                   type="button"
                   onClick={() => onRenew?.(row.id, row.ticketNo)}
@@ -145,6 +158,22 @@ export function ExpirationTable({
                   {renewingItemId === row.id ? "Renewing..." : "Renew"}
                 </button>
               ) : null}
+              {isOverdue && canExpire && (
+                <button
+                  type="button"
+                  title="Mark as Expired"
+                  onClick={() => onExpire?.(row.id)}
+                  disabled={expiringItemId === row.id}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-orange-500/30 bg-orange-500/10 text-orange-600 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-orange-500/20 dark:bg-orange-500/5 dark:text-orange-400 dark:hover:bg-orange-500/10"
+                >
+                  {expiringItemId === row.id ? (
+                    <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : expireIcon}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => onSendEmail?.(row.id)}

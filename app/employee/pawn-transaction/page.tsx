@@ -25,9 +25,10 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { formatPeso } from "@/lib/currency";
-import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
@@ -177,9 +178,9 @@ function TransactionsCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-border-subtle bg-surface-secondary">
+      <div className="grid grid-cols-7 border-b border-zinc-200/80 bg-surface-secondary dark:border-border-subtle">
         {DAY_NAMES.map((dayName) => (
-          <div key={dayName} className="py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted">
+          <div key={dayName} className="border-r border-zinc-200/80 py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted last:border-r-0 dark:border-border-subtle">
             {dayName}
           </div>
         ))}
@@ -188,7 +189,7 @@ function TransactionsCalendar({
       <div className="grid grid-cols-7">
         {cells.map((day, index) => {
           if (day === null) {
-            return <div key={`empty-${index}`} className="h-16 border-b border-r border-border-subtle/40 bg-surface-secondary/20" />;
+            return <div key={`empty-${index}`} className="h-16 border-b border-r border-zinc-200/80 bg-surface-secondary/20 dark:border-border-subtle" />;
           }
 
           const dateString = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -206,7 +207,7 @@ function TransactionsCalendar({
                 if (isFuture) return;
                 onSelectDate(dateString);
               }}
-              className={`relative h-16 border-b border-r border-border-subtle/40 p-1.5 text-left transition-all ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
               <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
@@ -223,7 +224,7 @@ function TransactionsCalendar({
         })}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border-subtle bg-surface-secondary/60 px-4 py-2.5">
+      <div className="flex items-center justify-between border-t border-zinc-200/80 bg-surface-secondary/60 px-4 py-2.5 dark:border-border-subtle">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
@@ -242,6 +243,7 @@ function TransactionsCalendar({
 
 
 interface ApiTransaction {
+  id?: string;
   transaction_no: string;
   branch: string | null;
   voided_at?: string | null;
@@ -258,9 +260,23 @@ interface ApiTransaction {
   pawn_amount?: number | string | null;
   storage_fee?: number | string | null;
   qr_code?: string | null;
+  id_photo?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
+  customer?: {
+    full_name?: string | null;
+    address?: string | null;
+    barangay?: string | null;
+    city?: string | null;
+    region?: string | null;
+    contact_number?: string | null;
+    middle_name?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+    role?: string | null;
+  } | null;
 }
 
 interface TransactionsResponse {
@@ -274,6 +290,42 @@ interface BranchFinanceSummary {
   currentBalance: number;
 }
 
+/** Same-day reopen: use `todaySession.startedAt` so prior-shift txs are not counted twice. */
+interface BranchBusinessSessionPeek {
+  operationalCashAllowed?: boolean;
+  operationalCutoffAt?: string | null;
+  sealedTransactionIds?: string[];
+  systemEndingBalanceToday?: number | null;
+  todaySession?: {
+    startedAt?: string | null;
+    startingBalance?: number | null;
+  } | null;
+}
+
+interface ReprintMoaData {
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  address: string;
+  contactNo: string;
+  unitCode: string;
+  unitName: string;
+  category: string;
+  serialNumber: string;
+  itemsIncluded: string;
+  condition: string;
+  remarks: string;
+  memory: string;
+  amount: string;
+  storageFee: string;
+  purchasedDate: string;
+  idPresented: string;
+  branchName: string;
+  branchAddress: string;
+  branchPhone: string;
+  processedBy: string;
+}
+
 const DEFAULT_STATS = {
   pawnedToday: 0,
   buyBack: 0,
@@ -284,6 +336,7 @@ const DEFAULT_STATS = {
   startingBalance: 0,
   endingBalance: 0,
   sessionOpenedAt: null as string | null,
+  sealedTransactionIds: [] as string[],
 };
 
 function normalizeStats(stats?: Partial<typeof DEFAULT_STATS>) {
@@ -323,14 +376,17 @@ function resolvePawnedItem(raw: unknown): PawnedItemJoin | null {
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
-  const calculations = calculateGadgetInterest(pawnAmount, transaction.transaction_date);
+  const item = resolvePawnedItem(transaction.pawned_item);
+  const calculations = calculateGadgetInterest(
+    pawnAmount,
+    transaction.transaction_date,
+    item?.category || undefined,
+  );
 
   const isBuyBackAction = transaction.purpose === "Buy Back";
   const isPawnAction = transaction.purpose === "Pawn";
-
-  const item = resolvePawnedItem(transaction.pawned_item);
   // Support both object and array response for customer
-  const customerRaw = item?.customer;
+  const customerRaw = item?.customer ?? transaction.customer;
   const customer = Array.isArray(customerRaw) ? customerRaw[0] : customerRaw;
 
   return {
@@ -354,13 +410,15 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     pawn: String(transaction.pawn_amount ?? 0),
     storage: String(transaction.storage_fee ?? 0),
     customerName: customer?.full_name ?? undefined,
+    createdByName: transaction.created_by_user?.full_name ?? undefined,
+    createdByRole: transaction.created_by_user?.role ?? undefined,
     customerAddress: customer?.address ?? undefined,
     customerBarangay: customer?.barangay ?? undefined,
     customerCity: customer?.city ?? undefined,
     customerRegion: customer?.region ?? undefined,
     customerPhone: customer?.contact_number ?? undefined,
     customerMiddleName: customer?.middle_name ?? undefined,
-    idPresented: item?.id_presented ?? undefined,
+    idPresented: customer?.id_presented ?? undefined,
     qrCode: item?.qr_code || transaction.qr_code || undefined,
     serialNumber: item?.serial_number ?? undefined,
     itemsIncluded: item?.items_included ?? undefined,
@@ -371,6 +429,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
     details: transaction.details ?? undefined,
+    idPhoto: transaction.id_photo ?? undefined,
   };
 }
 
@@ -378,16 +437,47 @@ export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
   const { refreshOpeningChecklistFromServer } = useOpeningChecklist();
+  const [isCompactTablet, setIsCompactTablet] = useState(false);
+
+  useEffect(() => {
+    async function syncInterestRates() {
+      try {
+        const data = await api.get("/settings/interest_rates");
+        if (data && Array.isArray(data)) {
+          localStorage.setItem("interest_rates", JSON.stringify(data));
+        }
+      } catch (error) {
+        // fail silently
+      }
+    }
+    syncInterestRates();
+  }, []);
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(min-width: 768px) and (max-width: 1023px)");
+    const updateCompactTablet = () => setIsCompactTablet(mediaQuery.matches);
+
+    updateCompactTablet();
+    mediaQuery.addEventListener("change", updateCompactTablet);
+
+    return () => mediaQuery.removeEventListener("change", updateCompactTablet);
+  }, []);
+
   const [branchAdminName, setBranchAdminName] = useState("");
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const [hideRenewSidebar, setHideRenewSidebar] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
   const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
   const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
-  const [reprintData, setReprintData] = useState<any>(null);
+  const [reprintData, setReprintData] = useState<ReprintMoaData | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
@@ -397,18 +487,8 @@ export default function EmployeePawnTransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionRow | null>(null);
   const [isQRReplacementOpen, setIsQRReplacementOpen] = useState(false);
   const [qrReplacementData, setQrReplacementData] = useState<{ pawnedItemId: string; itemCode: string } | null>(null);
-  const [currentStats, setCurrentStats] = useState({
-    pawnedToday: 0,
-    buyBack: 0,
-    renewed: 0,
-    soldItem: 0,
-    redeemed: 0,
-    transfer: 0,
-    startingBalance: 0,
-    endingBalance: 0,
-  });
+  const [currentStats, setCurrentStats] = useState({ ...DEFAULT_STATS });
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
-  /** Rows for `selectedDate` from `/transactions?date=` (same source as stats cards). */
   const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedTransactionNo, setHighlightedTransactionNo] = useState<string | null>(null);
@@ -434,11 +514,10 @@ export default function EmployeePawnTransactionsPage() {
 
   const fetchTransactions = useCallback(async () => {
     if (!branchIdForApi) {
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    // Note: We don't set isLoading(true) here anymore because this is now called sequentially by fetchAllData
     try {
       const data = await api.get<TransactionsResponse>(
         `/transactions?branch=${encodeURIComponent(branchIdForApi)}&range=all`
@@ -448,8 +527,6 @@ export default function EmployeePawnTransactionsPage() {
       }
     } catch (error) {
       console.error("Failed to load transactions:", error);
-    } finally {
-      setIsLoading(false);
     }
   }, [branchIdForApi]);
 
@@ -474,12 +551,55 @@ export default function EmployeePawnTransactionsPage() {
         .get<BranchFinanceSummary[]>(summaryUrl)
         .catch(() => [] as BranchFinanceSummary[]);
 
+      const phToday = getPhCalendarDateString();
+      // Primary source: /transactions stats (always available alongside the tx list).
+      // It already carries sessionOpenedAt (= operational cutoff), sealedTransactionIds,
+      // and a server-computed startingBalance/endingBalance with sealed+cutoff applied.
+      let sessionOpenedAt = data.stats?.sessionOpenedAt ?? null;
+      let operationalCutoffAt: string | null = null;
+      let sessionStartingBalance: number | null = null;
+      let sealedTransactionIds: string[] = data.stats?.sealedTransactionIds ?? [];
+      // Server-computed ending from /transactions stats (starting + sealed-filtered net).
+      let serverEndingBalance: number | null =
+        data.stats?.endingBalance != null
+          ? Number(data.stats.endingBalance)
+          : null;
+      if (branchIdForApi !== "__all__" && selectedDate === phToday) {
+        try {
+          const session = await api.get<BranchBusinessSessionPeek>(
+            `/branch-finance/business-session?branch=${encodeURIComponent(branchIdForApi)}`,
+          );
+          if (session.operationalCashAllowed) {
+            operationalCutoffAt = session.operationalCutoffAt ?? null;
+            if (session.sealedTransactionIds) {
+              sealedTransactionIds = session.sealedTransactionIds;
+            }
+            if (session.todaySession?.startedAt) {
+              sessionOpenedAt = session.todaySession.startedAt;
+            }
+            if (session.todaySession?.startingBalance != null) {
+              sessionStartingBalance = Number(
+                session.todaySession.startingBalance,
+              );
+            }
+            if (session.systemEndingBalanceToday != null) {
+              serverEndingBalance = Number(session.systemEndingBalanceToday);
+            }
+          }
+        } catch {
+          // business-session is optional — /transactions stats already cover us.
+        }
+      }
+      // Effective cutoff = operationalCutoffAt (from session row) OR sessionOpenedAt
+      // (= /transactions cutoff fallback). Both mark the prior-shift boundary.
+      const effectiveCutoffIso = operationalCutoffAt ?? sessionOpenedAt;
       setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
 
-      const phToday = getPhCalendarDateString();
       const ledger = operationalCashTotalsForPawnEnding(
         data.transactions ?? [],
-        data.stats?.sessionOpenedAt ?? null,
+        sessionOpenedAt,
+        operationalCutoffAt,
+        sealedTransactionIds,
       );
 
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
@@ -489,21 +609,32 @@ export default function EmployeePawnTransactionsPage() {
           (sum, row) => sum + Number(row.startingBalance ?? 0),
           0,
         );
-      } else if (
-        selectedDate === phToday &&
-        financeSummary.length === 1
-      ) {
-        startingBalance = Number(
-          financeSummary[0].startingBalance ?? startingBalance,
-        );
+      } else if (selectedDate === phToday && branchIdForApi !== "__all__") {
+        if (sessionStartingBalance != null) {
+          startingBalance = sessionStartingBalance;
+        } else if (financeSummary.length === 1) {
+          startingBalance = Number(
+            financeSummary[0].startingBalance ?? startingBalance,
+          );
+        }
       }
 
-      const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
+      // Prefer server-computed ending balance; fall back to visible ledger rows.
+      const tableNet = Math.max(
+        ledger.net,
+        operationalCashTotals(data.transactions ?? []).net,
+      );
+      const clientEnding = Number((startingBalance + tableNet).toFixed(2));
+      const endingBalance =
+        serverEndingBalance != null
+          ? Math.max(serverEndingBalance, clientEnding)
+          : clientEnding;
 
       setCurrentStats({
         ...normalizeStats(data.stats),
         startingBalance,
         endingBalance,
+        sessionOpenedAt: effectiveCutoffIso,
       });
     } catch (error) {
       console.error("Failed to load selected date transaction stats:", error);
@@ -512,13 +643,26 @@ export default function EmployeePawnTransactionsPage() {
     }
   }, [branchIdForApi, selectedDate]);
 
-  useEffect(() => {
-    void fetchTransactions();
-  }, [fetchTransactions]);
+  const fetchAllData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      // Execute sequentially to respect Supabase pool limits (pool_size: 15)
+      await fetchTransactions();
+      await fetchSelectedDateStats();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTransactions, fetchSelectedDateStats]);
 
   useEffect(() => {
-    void fetchSelectedDateStats();
-  }, [fetchSelectedDateStats]);
+    void fetchAllData();
+  }, [fetchAllData]);
+
+  useEffect(() => {
+    return subscribeToPawnTransactionNotifications(() => {
+      void fetchAllData();
+    });
+  }, [fetchAllData]);
 
   useEffect(() => {
     const onVisible = () => {
@@ -624,6 +768,7 @@ export default function EmployeePawnTransactionsPage() {
   useEffect(() => {
     const transactionNo = searchParams.get("transactionNo");
     const shouldHighlight = searchParams.get("highlightTransaction") === "true";
+    const shouldOpenDetails = searchParams.get("openDetails") === "true";
 
     if (!transactionNo) {
       highlightedTransactionRef.current = null;
@@ -636,7 +781,11 @@ export default function EmployeePawnTransactionsPage() {
       return;
     }
 
-    setSelectedTransaction(matchingTransaction);
+    // Avoid unexpected modal popups from navigation params.
+    // Open details only when explicitly requested via `openDetails=true`.
+    if (shouldOpenDetails) {
+      setSelectedTransaction(matchingTransaction);
+    }
 
     if (shouldHighlight && highlightedTransactionRef.current !== transactionNo) {
       highlightedTransactionRef.current = transactionNo;
@@ -653,8 +802,10 @@ export default function EmployeePawnTransactionsPage() {
   useEffect(() => {
     const action = searchParams.get("action");
     const ticketNo = searchParams.get("ticketNo");
+    const hideSidebar = searchParams.get("hideSidebar") === "true";
     
     if (action === "renew" && ticketNo) {
+      setHideRenewSidebar(hideSidebar);
       setIsRenewModalOpen(true);
     }
   }, [searchParams]);
@@ -717,20 +868,62 @@ export default function EmployeePawnTransactionsPage() {
     });
   };
 
-  const handleReprint = useCallback((transactionNo: string) => {
+  const handleReprint = useCallback(async (transactionNo: string) => {
     const tx = allTransactions.find(t => t.transactionNo === transactionNo);
     if (!tx) return;
 
+    const hasMissingField = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
+    const needsEnrichment =
+      hasMissingField(tx.serialNumber) ||
+      hasMissingField(tx.itemsIncluded) ||
+      hasMissingField(tx.condition) ||
+      hasMissingField(tx.memoryStorage) ||
+      hasMissingField(tx.customerAddress) ||
+      hasMissingField(tx.customerName) ||
+      hasMissingField(tx.createdByName);
+
+    let enriched: any = null;
+    let pawnSource: any = null;
+    if (tx.relatedPawnedItemId && needsEnrichment) {
+      try {
+        enriched = await api.get<any>(`/inventory/pawned/${tx.relatedPawnedItemId}`);
+      } catch {
+        enriched = null;
+      }
+    }
+    if (!enriched && tx.unitCode && needsEnrichment) {
+      try {
+        enriched = await api.get<any>(`/inventory/item/${encodeURIComponent(tx.unitCode)}`);
+      } catch {
+        enriched = null;
+      }
+    }
+    if (needsEnrichment) {
+      const params = tx.relatedPawnedItemId
+        ? `relatedPawnedItemId=${encodeURIComponent(tx.relatedPawnedItemId)}`
+        : tx.unitCode
+          ? `unitCode=${encodeURIComponent(tx.unitCode)}`
+          : "";
+      if (params) {
+        try {
+          pawnSource = await api.get<any>(`/transactions/pawn-source?${params}`);
+        } catch {
+          pawnSource = null;
+        }
+      }
+    }
+
+    const resolvedCustomerName = tx.customerName || enriched?.customerName || "WALK-IN CUSTOMER";
     const branchInfo = branches.find(b => b.id === selectedBranch.id);
-    const fullName = tx.customerName || "WALK-IN CUSTOMER";
+    const fullName = resolvedCustomerName;
     const names = fullName.split(" ");
-    const firstName = names[0];
+    const firstName = names[0] || "WALK-IN";
     const middleName = tx.customerMiddleName || (names.length > 2 ? names.slice(1, -1).join(" ") : "");
     const lastName = names.length > 1 ? names[names.length - 1] : "";
 
     // Join address components for the MOA
     const fullAddress = [
-      tx.customerAddress,
+      tx.customerAddress || enriched?.customerAddress,
       tx.customerBarangay,
       tx.customerCity,
       tx.customerRegion
@@ -743,21 +936,28 @@ export default function EmployeePawnTransactionsPage() {
       address: fullAddress,
       contactNo: tx.customerPhone || "",
       unitCode: tx.unitCode,
-      unitName: tx.unit,
+      unitName: tx.unit || enriched?.itemName || "",
       category: tx.category || "",
-      serialNumber: tx.serialNumber || "",
-      itemsIncluded: tx.itemsIncluded || "",
-      condition: tx.condition || "",
-      memory: tx.memoryStorage || "",
+      serialNumber: tx.serialNumber || enriched?.serialNumber || pawnSource?.pawned_item?.serial_number || "",
+      itemsIncluded: tx.itemsIncluded || enriched?.itemsIncluded || pawnSource?.pawned_item?.items_included || "",
+      condition: tx.condition || enriched?.condition || pawnSource?.pawned_item?.condition || "",
+      memory: tx.memoryStorage || enriched?.memoryStorage || pawnSource?.pawned_item?.memory_storage || "",
       remarks: tx.remarks || "",
       amount: tx.pawn,
       storageFee: tx.storage,
       purchasedDate: tx.date,
-      idPresented: tx.idPresented || "",
+      idPresented: tx.idPresented || enriched?.customerIdPresented || "",
       branchName: selectedBranch.name,
       branchAddress: branchInfo?.location || "",
       branchPhone: branchInfo?.phone || "",
-      processedBy: tx.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() || user?.fullName || branchAdminName || "AUTHORIZED PERSONNEL"
+      processedBy:
+        tx.createdByName ||
+        enriched?.created_by_user?.full_name ||
+        pawnSource?.created_by_user?.full_name ||
+        tx.details?.match(/Processed [bB]y:\s*([A-Za-z\s]+)/)?.[1]?.trim() ||
+        user?.fullName ||
+        branchAdminName ||
+        "AUTHORIZED PERSONNEL"
     });
     setIsMoaReprintOpen(true);
   }, [allTransactions, selectedBranch, branches, user, branchAdminName]);
@@ -774,8 +974,12 @@ export default function EmployeePawnTransactionsPage() {
         @media print {
           @page { size: auto; margin: 15mm; }
           body { background: white !important; color: black !important; }
-          body * { visibility: hidden; }
-          .printable-area, .printable-area * { visibility: visible; }
+          /* Hide everything when printing, except when MOA modal print is active */
+          body:not(.printing-moa-active) * { visibility: hidden; }
+          body:not(.printing-moa-active) .printable-area,
+          body:not(.printing-moa-active) .printable-area * {
+            visibility: visible !important;
+          }
           .printable-area { 
             position: relative !important; 
             display: block !important; 
@@ -874,16 +1078,16 @@ export default function EmployeePawnTransactionsPage() {
                   <td className="border border-emerald-800/10 p-1 font-bold">{tx.purpose}</td>
                   <td className="border border-emerald-800/10 p-1">{tx.customerName || "Walk-in"}</td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn).toLocaleString()) : "-"}
+                    {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut).toLocaleString()) : "-"}
+                    {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.pawn !== "0" ? formatPeso(Number(tx.pawn).toLocaleString()) : "-"}
+                    {tx.pawn !== "0" ? formatPeso(Number(tx.pawn)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1 text-right">
-                    {tx.storage !== "0" ? formatPeso(Number(tx.storage).toLocaleString()) : "-"}
+                    {tx.storage !== "0" ? formatPeso(Number(tx.storage)) : "-"}
                   </td>
                   <td className="border border-emerald-800/10 p-1">{tx.unitCode || tx.unit || "-"}</td>
                 </tr>
@@ -1077,11 +1281,16 @@ export default function EmployeePawnTransactionsPage() {
 
       <RenewModal
         isOpen={isRenewModalOpen}
-        onClose={() => setIsRenewModalOpen(false)}
+        onClose={() => {
+          setIsRenewModalOpen(false);
+          setHideRenewSidebar(false);
+        }}
         onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
         branchId={resolvedBranchIdForModals}
         initialSearchCode={searchParams.get("action") === "renew" ? searchParams.get("ticketNo") || undefined : undefined}
+        hideSidebar={hideRenewSidebar}
+        compactTablet={isCompactTablet}
       />
 
       <NewPawnModal
@@ -1102,6 +1311,7 @@ export default function EmployeePawnTransactionsPage() {
         onSuccess={handleTransactionSuccess}
         branchId={resolvedBranchIdForModals}
         branchName={selectedBranch.name}
+        compactTablet={isCompactTablet}
       />
 
       {/* Buy Back Modal will handle Expired/For-Sale items */}
@@ -1118,6 +1328,7 @@ export default function EmployeePawnTransactionsPage() {
         onClose={() => setIsSalesTransferModalOpen(false)}
         onSuccess={handleTransactionSuccess}
         branchName={selectedBranch.name}
+        compactTablet={isCompactTablet}
       />
 
       <ReserveLayawayModal

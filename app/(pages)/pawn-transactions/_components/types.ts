@@ -27,7 +27,15 @@ export interface TransactionRow {
   purpose: PurposeType;
   details: string;
   customerName: string;
+  createdByName?: string;
+  createdByRole?: string;
   customerAddress: string;
+  customerBarangay?: string;
+  customerCity?: string;
+  customerRegion?: string;
+  customerPhone?: string;
+  customerMiddleName?: string;
+  idPresented?: string;
   date: string;
   time: string;
   buyBack: string;
@@ -52,6 +60,7 @@ export interface TransactionRow {
   remarks?: string;
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
+  idPhoto?: string;
 }
 
 export interface TransactionStatsData {

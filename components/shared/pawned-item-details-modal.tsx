@@ -101,7 +101,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const touchStartXRef = useRef<number | null>(null);
 
    const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
-   const canViewQr = userRole?.toLowerCase().includes("admin");
+   const canViewQr = userRole === "super_admin";
 
   useEffect(() => {
     if (isOpen && itemId) {
@@ -316,16 +316,16 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       )}
 
       <div 
-        className="relative w-[95vw] max-w-5xl bg-surface rounded-[2.5rem] shadow-2xl border border-white/20 overflow-hidden flex flex-col md:flex-row transition-all duration-500 scale-in-center print:hidden md:w-[90vw]"
+        className="relative flex max-h-[92vh] w-[95vw] max-w-5xl flex-col overflow-y-auto rounded-[2.5rem] border border-white/20 bg-surface shadow-2xl transition-all duration-500 scale-in-center print:hidden md:w-[90vw] lg:flex-row lg:overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full md:w-[320px] bg-emerald-950 p-5 flex flex-col text-white shrink-0 md:max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <div className="w-full shrink-0 bg-emerald-950 p-5 text-white lg:max-h-[90vh] lg:w-[320px] lg:overflow-y-auto lg:scrollbar-hide">
           <div className="flex flex-col gap-4 min-h-max">
             <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Identity Media</span></SectionTitle>
               {hasCustomerId ? (
-                <div className="grid w-full gap-3 md:grid-cols-2">
+                <div className="grid w-full gap-3 md:grid-cols-2 lg:grid-cols-1">
                   {identityMedia.map((media) => (
                     <button
                       key={media.label}
@@ -490,22 +490,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     )}
                   </>
                 ) : !canViewQr ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/60 bg-emerald-100/20 px-4 text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">QR Visible to Super Admin only</p>
-                    </div>
-                    {qrRequestStatus === "pending" ? (
-                      <span className="text-[10px] font-black text-amber-500 uppercase bg-amber-500/10 px-3 py-1 rounded-full">Request Pending</span>
-                    ) : qrRequestStatus === "approved" ? (
-                      <span className="text-[10px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-3 py-1 rounded-full">Request Approved</span>
-                    ) : (
-                      <button 
-                        onClick={() => setIsQrModalOpen(true)}
-                        className="px-6 py-2 bg-zinc-900 text-white text-[10px] font-black rounded-xl hover:bg-black transition-all shadow-lg active:scale-95"
-                      >
-                        REQUEST QR REPLACEMENT
-                      </button>
-                    )}
+                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/60 bg-emerald-100/20 px-4 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">QR Visible to Super Admin only</p>
                   </div>
                 ) : (
                   <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
@@ -518,7 +504,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         </div>
 
         {/* Right Section: Detailed Information */}
-        <div className="flex-1 p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide">
+        <div className="flex-1 p-5 md:p-8 lg:max-h-[90vh] lg:overflow-y-auto lg:p-12 lg:scrollbar-hide">
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-50">
                <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
@@ -536,7 +522,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
           ) : !item ? null : (
             <div className="space-y-10">
               {/* Header Info */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-border-main">
+              <div className="flex flex-col gap-6 border-b border-border-main pb-8 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-1">
                   <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Pawned Inventory Record</span>
                   <h2 className="text-4xl font-black text-text-primary tracking-tighter uppercase">{item.item_name}</h2>
@@ -553,7 +539,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
               </div>
 
               {/* Grid 1: Item specs */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 gap-5 md:grid-cols-4 md:gap-6 xl:gap-8">
                 <DetailItem label="Unit Code" value={item.item_id} highlight />
                 <DetailItem label="Pawn Date" value={item.pawn_date} />
                 <DetailItem label="Serial #" value={item.serial_number || "—"} />
@@ -676,7 +662,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         {/* Close Button Top-Right (Desktop) */}
         <button 
           onClick={onClose}
-          className="absolute top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all z-50 md:hidden lg:flex"
+          className="absolute right-4 top-4 z-50 flex rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-all hover:bg-white/20 md:right-6 md:top-6"
+          aria-label="Close pawned item details"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>

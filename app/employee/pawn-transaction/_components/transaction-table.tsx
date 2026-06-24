@@ -52,6 +52,8 @@ export interface TransactionRow {
   pawn: string;
   storage: string;
   customerName?: string;
+  createdByName?: string;
+  createdByRole?: string;
   customerAddress?: string;
   customerBarangay?: string;
   customerCity?: string;
@@ -70,11 +72,13 @@ export interface TransactionRow {
   relatedPawnedItemId?: string | null;
   relatedSaleItemId?: string | null;
   details?: string;
+  idPhoto?: string;
 }
 
 const columns = [
   { key: "transactionNo", label: "Transaction #" },
   { key: "purpose", label: "Purpose" },
+  { key: "customer", label: "Customer" },
   { key: "date", label: "Date" },
   { key: "time", label: "Time" },
   { key: "buyBack", label: "Buy Back", align: "right" as const },
@@ -122,6 +126,31 @@ function isHighlightedStorage(value: string): boolean {
 
 function formatMoney(value: string) {
   return formatPeso(value, { compactZero: true });
+}
+
+function formatRole(value?: string) {
+  if (!value) return "";
+  return value
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function isExecutorDisplayPurpose(purpose: PurposeType) {
+  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer";
+}
+
+function getCustomerColumnText(row: TransactionRow) {
+  if (isExecutorDisplayPurpose(row.purpose)) {
+    const executor = row.createdByName?.trim();
+    if (!executor) return "System";
+
+    const role = formatRole(row.createdByRole);
+    return role ? `${executor} (${role})` : executor;
+  }
+
+  return row.customerName?.trim() || "Walk-in Customer";
 }
 
 interface TransactionTableProps {
@@ -253,6 +282,9 @@ export function TransactionTable({
                       />
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
+                      {getCustomerColumnText(row)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
                       {row.date}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">
@@ -335,27 +367,6 @@ export function TransactionTable({
                             className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-emerald-50 hover:text-emerald-700"
                           >
                             {eyeIcon}
-                          </button>
-                        ) : null}
-                        {row.purpose === "Pawn" || row.purpose === "Renew" ? (
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onReprint?.(row.transactionNo);
-                            }}
-                            title="Reprint MOA Slip"
-                            className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
-                          >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" />
-                            </svg>
                           </button>
                         ) : null}
                       </div>

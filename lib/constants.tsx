@@ -11,6 +11,7 @@ import {
   SettingsIcon,
   AuditLogIcon,
   IncidentReportIcon,
+  DeviceIcon,
 } from "@/lib/icons";
 
 export const APP_NAME = "Pawnshop Management System";
@@ -51,7 +52,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Customers", href: "/customers", icon: <CustomersIcon /> },
       { label: "Reports", href: "/reports", icon: <ReportsIcon /> },
-      { label: "Incident Report", href: "/incident-report", icon: <IncidentReportIcon /> },
+      { label: "Incident Ticket", href: "/incident-report", icon: <IncidentReportIcon /> },
       {
         label: "Branch Management",
         href: "/branches",
@@ -62,6 +63,7 @@ const SUPERADMIN_NAV: NavGroup[] = [
         ],
       },
       { label: "Employee Management", href: "/users", icon: <UserManagementIcon /> },
+      { label: "Device Management", href: "/devices", icon: <DeviceIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
     ],
@@ -110,7 +112,7 @@ const ADMIN_NAV: NavGroup[] = [
         ],
       },
       { label: "Reports", href: "/admin/reports", icon: <ReportsIcon /> },
-      { label: "Incident Report", href: "/admin/incident-report", icon: <IncidentReportIcon /> },
+      { label: "Incident Ticket", href: "/admin/incident-report", icon: <IncidentReportIcon /> },
       { label: "Employee Management", href: "/admin/users", icon: <UserManagementIcon /> },
       { label: "Settings", href: "/admin/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/admin/audit-logs", icon: <AuditLogIcon /> },
@@ -146,7 +148,7 @@ const BRANCH_NAV: NavGroup[] = [
       },
       { label: "Expiration Monitoring", href: "/employee/expiration-monitoring", icon: <ExpirationIcon /> },
       { label: "Branch Finance", href: "/employee/branch-finance", icon: <ReportsIcon /> },
-      { label: "Incident Report", href: "/employee/incident-report", icon: <IncidentReportIcon /> },
+      { label: "Incident Ticket", href: "/employee/incident-report", icon: <IncidentReportIcon /> },
     ],
   },
   {
