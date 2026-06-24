@@ -7,7 +7,7 @@ import { ApiError, api } from "@/lib/api";
 import { ALL_BRANCHES_OPTION, useBranch } from "@/contexts/branch-context";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
-import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
 import { TransactionActions, type ViewMode } from "./_components/transaction-actions";
@@ -420,7 +420,21 @@ export default function PawnTransactionsPage() {
           );
         }
 
-        const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
+        const endingBalance = (() => {
+          const serverEnding =
+            data.stats?.endingBalance != null
+              ? Number(data.stats.endingBalance)
+              : null;
+          const clientEnding = Number(
+            (
+              startingBalance +
+              Math.max(ledger.net, operationalCashTotals(data.transactions ?? []).net)
+            ).toFixed(2),
+          );
+          return serverEnding != null
+            ? Math.max(serverEnding, clientEnding)
+            : clientEnding;
+        })();
 
         const normalizedStats: TransactionStatsData = {
           ...EMPTY_STATS,

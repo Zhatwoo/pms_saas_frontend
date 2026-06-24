@@ -25,12 +25,27 @@ const DEVICE_AUTH_CODES = new Set([
 
 function getDeviceAuthFailure(
   err: unknown,
-): { code?: string; message: string } | null {
+): { code?: string; message: string; autoRequested?: boolean } | null {
   if (err instanceof ApiError) {
     const code =
       typeof err.payload.code === "string" ? err.payload.code : undefined;
+    const autoRequested = err.payload.autoRequested === true;
+
     if (code && DEVICE_AUTH_CODES.has(code)) {
-      return { code, message: err.message };
+      return { code, message: err.message, autoRequested };
+    }
+
+    if (err.statusCode === 403) {
+      const msg = err.message;
+      if (
+        /device|unauthorized device|fingerprint|blocked|pending/i.test(msg)
+      ) {
+        return {
+          code: code ?? "UNKNOWN_DEVICE",
+          message: msg,
+          autoRequested,
+        };
+      }
     }
   }
 
@@ -187,7 +202,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
   };
 
   const handleDeviceAuthFailure = async (
-    failure: { code?: string; message: string },
+    failure: { code?: string; message: string; autoRequested?: boolean },
     fp: string,
   ) => {
     if (failure.code === "DEVICE_BLOCKED") {
@@ -196,7 +211,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
       return;
     }
 
-    if (failure.code === "DEVICE_PENDING") {
+    if (failure.code === "DEVICE_PENDING" || failure.autoRequested) {
       setView("request-sent");
       return;
     }
@@ -246,7 +261,17 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
       }
 
       const msg = err instanceof Error ? err.message : "Login failed";
-      setError(msg);
+      if (
+        err instanceof ApiError &&
+        err.statusCode === 401 &&
+        msg === "Unauthorized request"
+      ) {
+        setError(
+          "Invalid email or password, or your account is not yet approved. Device authorization only applies after your password is verified.",
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }

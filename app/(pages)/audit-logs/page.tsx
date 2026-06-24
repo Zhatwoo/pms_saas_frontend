@@ -647,7 +647,6 @@ const FAILURE_REASON_LABELS: Record<string, string> = {
   DEVICE_PENDING: "Device not yet authorized",
   MISSING_DEVICE_FINGERPRINT: "Device fingerprint missing",
   UNKNOWN_DEVICE: "Unauthorized device",
-  UNKNOWN_DEVICE: "Unrecognized device",
   OUTSIDE_BRANCH_NETWORK: "Outside branch network",
   OUTSIDE_NETWORK: "Outside allowed network",
 };
