@@ -24,7 +24,7 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
-import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { formatPeso } from "@/lib/currency";
@@ -490,7 +490,21 @@ export default function SuperAdminPawnTransactionsPage() {
         );
       }
 
-      const endingBalance = Number((startingBalance + ledger.net).toFixed(2));
+      const endingBalance = (() => {
+        const serverEnding =
+          data.stats?.endingBalance != null
+            ? Number(data.stats.endingBalance)
+            : null;
+        const clientEnding = Number(
+          (
+            startingBalance +
+            Math.max(ledger.net, operationalCashTotals(data.transactions ?? []).net)
+          ).toFixed(2),
+        );
+        return serverEnding != null
+          ? Math.max(serverEnding, clientEnding)
+          : clientEnding;
+      })();
 
       setCurrentStats({
         ...normalizeStats(data.stats),
