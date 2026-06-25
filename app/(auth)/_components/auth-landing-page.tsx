@@ -10,17 +10,22 @@ interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "HOW IT WORKS", "CATEGORIES", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
+const navItems = ["HOME", "HOW IT WORKS", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
 
 const sectionNavLabels: Record<string, string> = {
   home: "HOME",
   "how-it-works": "HOW IT WORKS",
-  categories: "CATEGORIES",
+  categories: "WHAT WE BUY",
   "why-us": "WHY US",
   "items-for-sale": "ITEMS FOR SALE",
   reviews: "REVIEWS",
   branches: "BRANCHES",
   "contact-us": "CONTACT US",
+};
+
+// Maps nav label text to a section ID when the label differs from the auto-generated id
+const navIdOverrides: Record<string, string> = {
+  "WHAT WE BUY": "categories",
 };
 
 type LegalModalType = "privacy" | "terms" | null;
@@ -259,9 +264,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [underlineLeft, setUnderlineLeft] = useState(0);
   const [underlineWidth, setUnderlineWidth] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [slideIndex, setSlideIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [publicBranches, setPublicBranches] = useState<PublicBranch[]>([]);
@@ -278,6 +285,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
   const prevReview = () => goToReview(reviewIndex - 1);
   const nextReview = () => goToReview(reviewIndex + 1);
+  const prevHeroSlide = () => setSlideIndex((prev) => (prev - 1 + 3) % 3);
+  const nextHeroSlide = () => setSlideIndex((prev) => (prev + 1) % 3);
   const branchCountLabel =
     publicBranches.length > 0
       ? `${publicBranches.length} ${publicBranches.length === 1 ? "Branch" : "Branches"}`
@@ -343,6 +352,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     const handleScrollSync = () => {
       const sections = document.querySelectorAll("section[id]");
       const { scrollY, innerHeight } = window;
+      setShowBackToTop(scrollY > innerHeight * 0.5);
       if (scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
         setActiveNavItem("CONTACT US"); return;
       }
@@ -363,29 +373,37 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
   }, [activeNavItem]);
 
+  // Auto-advance slideshow every 4 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSlideIndex((prev) => (prev + 1) % 3);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-white selection:bg-amber-300 selection:text-emerald-900">
+    <div className="min-h-screen bg-white selection:bg-brand-gold selection:text-brand-green">
       {/* Plain white background */}
 
       <div className="relative z-10">
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ NAV ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-emerald-900/90 backdrop-blur-sm">
+        <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-green">
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
             <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e, "home", "HOME")} />
 
             {/* Desktop nav links */}
             <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
               {navItems.map((item, index) => {
-                const id = item.toLowerCase().replace(/ /g, "-");
+                const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-amber-300" : "text-white hover:text-amber-300"}`}>
+                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-white hover:text-brand-gold"}`}>
                     {item}
                   </a>
                 );
               })}
-              <span className="absolute -bottom-1 h-0.5 bg-amber-300 transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
+              <span className="absolute -bottom-1 h-0.5 bg-brand-gold transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
             </div>
 
             {/* Right side: Login button + tablet dropdown + mobile hamburger */}
@@ -393,7 +411,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-lg bg-amber-400 px-3 py-2 text-xs font-black text-emerald-900 transition-colors hover:bg-amber-300 sm:px-4 sm:text-sm"
+                className="rounded-lg bg-brand-gold px-3 py-2 text-xs font-black text-brand-green transition-colors hover:bg-brand-gold sm:px-4 sm:text-sm"
               >
                 Login / Sign Up
               </button>
@@ -404,7 +422,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 onClick={() => setTabletMenuOpen((prev) => !prev)}
                 aria-label="Toggle tablet navigation"
                 aria-expanded={tabletMenuOpen}
-                className="hidden h-10 w-10 items-center justify-center rounded-lg text-amber-300 transition hover:bg-amber-300/10 md:flex lg:hidden"
+                className="hidden h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10 md:flex lg:hidden"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -438,22 +456,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 type="button"
                 aria-label="Close tablet navigation overlay"
                 onClick={() => setTabletMenuOpen(false)}
-                className="absolute inset-0 bg-emerald-950/55 backdrop-blur-sm"
+                className="absolute inset-0 bg-brand-green/55 backdrop-blur-sm"
               />
 
-              <aside className="absolute right-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-l border-white/10 bg-emerald-950 shadow-2xl shadow-black/40">
+              <aside className="absolute right-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-l border-white/10 bg-brand-green shadow-2xl shadow-black/40">
                 <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
                   <div className="flex items-center gap-3">
                     <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg" />
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400">JCLB PawnShop</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold">JCLB PawnShop</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setTabletMenuOpen(false)}
                     aria-label="Close tablet navigation"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-amber-300 transition hover:bg-white/10"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-brand-gold transition hover:bg-white/10"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -464,7 +482,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <div className="flex-1 overflow-y-auto px-4 py-5">
                   <div className="space-y-2">
                     {navItems.map((item, index) => {
-                      const id = item.toLowerCase().replace(/ /g, "-");
+                      const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
                       const isActive = activeNavItem === item;
                       return (
                         <a
@@ -479,11 +497,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                           }}
                           className={`group flex items-center gap-3 rounded-md border px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
                             isActive
-                              ? "border-amber-300 bg-amber-300/15 text-amber-300"
-                              : "border-transparent bg-transparent text-white/80 hover:border-amber-300/70 hover:bg-white/[0.03] hover:text-amber-300"
+                              ? "border-brand-gold bg-brand-gold/15 text-brand-gold"
+                              : "border-transparent bg-transparent text-white/80 hover:border-brand-gold/70 hover:bg-white/[0.03] hover:text-brand-gold"
                           }`}
                         >
-                          <span className={`h-2 w-2 rounded-full transition-colors ${isActive ? "bg-amber-300" : "bg-white/20 group-hover:bg-amber-300/70"}`} />
+                          <span className={`h-2 w-2 rounded-full transition-colors ${isActive ? "bg-brand-gold" : "bg-white/20 group-hover:bg-brand-gold/70"}`} />
                           <span>{item}</span>
                         </a>
                       );
@@ -498,9 +516,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
           {/* Mobile dropdown menu */}
           {mobileMenuOpen && (
-            <div className="border-t border-white/10 bg-emerald-900 px-4 pb-4 md:hidden">
+            <div className="border-t border-white/10 bg-brand-green px-4 pb-4 md:hidden">
               {navItems.map((item) => {
-                const id = item.toLowerCase().replace(/ /g, "-");
+                const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
                 return (
                   <a
                     key={item}
@@ -509,7 +527,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                       handleScroll(e, id, item);
                       setMobileMenuOpen(false);
                     }}
-                    className={`block py-3 text-sm font-bold tracking-wider transition-colors border-b border-white/10 last:border-0 ${activeNavItem === item ? "text-amber-300" : "text-white/80 hover:text-amber-300"}`}
+                    className={`block py-3 text-sm font-bold tracking-wider transition-colors border-b border-white/10 last:border-0 ${activeNavItem === item ? "text-brand-gold" : "text-white/80 hover:text-brand-gold"}`}
                   >
                     {item}
                   </a>
@@ -519,92 +537,66 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           )}
         </nav>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ HERO ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="home" className="relative overflow-hidden bg-white px-4 pt-24 pb-10 md:px-12 md:pt-28 md:pb-16">
-          <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-            <div className="z-10 flex-1 text-center lg:max-w-xl lg:text-left reveal-on-scroll">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-900 px-4 py-2 text-xs font-semibold text-amber-400 md:px-5 md:text-sm">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-black text-emerald-900">*</span>
-                TRUSTED BUY BACK SHOP FOR FILIPINO FAMILIES
-              </div>
-              <h1 className="text-4xl font-black leading-tight text-emerald-900 sm:text-5xl md:text-6xl lg:text-7xl">
-                <span className="block">Sell Your Items.</span>
-                <span className="block text-emerald-800">Get Paid Today.</span>
-              </h1>
-              <p className="mt-4 max-w-lg text-sm leading-relaxed text-emerald-900/70 sm:text-base md:text-lg mx-auto lg:mx-0">
-                JCLB Buy Back Shop provides honest, secure, and compassionate financial solutions that uplift lives and build lasting relationships within our community.
-              </p>
-              <div className="mt-6 flex flex-wrap justify-center gap-3 md:mt-8 md:gap-4 lg:justify-start">
-                <button type="button" onClick={handleContactUsClick}
-                  className="rounded-xl bg-emerald-900 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-emerald-800 hover:shadow-lg active:scale-95 md:px-8 md:py-4">
-                  CONTACT US
-                </button>
-                <a href="#how-it-works" onClick={(e) => handleScroll(e, "how-it-works", "HOW IT WORKS")}
-                  className="rounded-xl border-2 border-emerald-900 px-6 py-3 text-sm font-bold text-emerald-900 transition-all hover:bg-emerald-900 hover:text-white md:px-8 md:py-4">
-                  HOW IT WORKS
-                </a>
-              </div>
+        {/* ─── HERO ─── */}
+        <section id="home" className="group relative mt-16 bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)]">
+          {/* Navigation Arrows */}
+          <button 
+            onClick={prevHeroSlide} 
+            className="absolute left-4 lg:left-8 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/20 p-2 md:p-3 text-white/80 backdrop-blur-md transition-all hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100"
+            aria-label="Previous slide"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-6 w-6 md:h-8 md:w-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button 
+            onClick={nextHeroSlide} 
+            className="absolute right-4 lg:right-8 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/20 p-2 md:p-3 text-white/80 backdrop-blur-md transition-all hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100"
+            aria-label="Next slide"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-6 w-6 md:h-8 md:w-8">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
 
-              {/* Stats */}
-              <div className="mt-8 flex flex-wrap justify-center gap-6 border-t border-emerald-900/20 pt-6 md:mt-12 md:gap-10 md:pt-8 lg:justify-start">
-                {[
-                  { value: "100", unit: "%", label: "TRUSTED & LEGIT" },
-                  { value: "24", unit: "hrs", label: "QUICK PAYOUT" },
-                  { value: "500", unit: "+", label: "HAPPY SELLERS" },
-                ].map((stat) => (
-                  <div key={stat.label} className="text-center lg:text-left">
-                    <div className="flex items-end justify-center gap-1 lg:justify-start">
-                      <span className="text-3xl font-black text-emerald-900 sm:text-4xl md:text-5xl">{stat.value}</span>
-                      <span className="mb-1 text-lg font-bold text-emerald-900 sm:text-xl md:text-2xl">{stat.unit}</span>
-                    </div>
-                    <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-900">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Logo with rays + cloud glow ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â hidden on small mobile, visible from sm up */}
-            <div className="relative hidden flex-1 sm:flex lg:flex-[1.2] justify-center lg:justify-end lg:translate-x-16">
-              <div className="relative w-full flex justify-center lg:justify-end">
-                {/* Rotating rays */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-[80%] h-[80%] animate-[spin_20s_linear_infinite] opacity-30">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <div key={i} className="absolute inset-0 flex items-center justify-center"
-                        style={{ transform: `rotate(${i * 30}deg)` }}>
-                        <div className="w-1 bg-gradient-to-t from-transparent via-white to-transparent" style={{ height: "50%", transformOrigin: "bottom center" }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* Cloud glows */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="absolute w-[60%] h-[60%] rounded-full bg-white/70 blur-2xl animate-[logoOrbit_8s_ease-in-out_infinite]" />
-                  <div className="absolute w-[45%] h-[45%] rounded-full bg-white/50 blur-2xl animate-[logoOrbitReverse_6s_ease-in-out_infinite]" />
-                  <div className="absolute w-[50%] h-[50%] rounded-full bg-white/60 blur-3xl animate-[logoPulse_3s_ease-in-out_infinite]" />
-                </div>
-                <Image src="/logo.png" alt="JCLB" width={1000} height={1000}
-                  className="relative h-auto w-full max-w-[280px] drop-shadow-2xl sm:max-w-[400px] md:max-w-[500px] lg:max-w-[700px] xl:max-w-[900px] animate-slow-pulse" priority />
-              </div>
+          {/* Max-width container to ensure it doesn't get too massive on ultrawide, and object-contain to fit within viewport height */}
+          <div className="mx-auto w-full lg:w-[95%] xl:w-[90%] 2xl:w-[80%] overflow-hidden">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out items-center"
+              style={{ transform: `translateX(-${slideIndex * 100}%)` }}
+            >
+              {["one.png", "two.png", "three.png"].map((img, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={img}
+                  src={`/${img}`}
+                  alt=""
+                  className="w-full shrink-0 object-contain"
+                  style={{
+                    maxHeight: "calc(100vh - 4rem)",
+                    display: "block",
+                  }}
+                />
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ HOW IT WORKS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
+        {/* â†â† HOW IT WORKS â†â† */}
         <section id="how-it-works" className="bg-white px-4 py-20 md:px-12 md:py-32 lg:py-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <h2 className="text-3xl font-black text-emerald-900 md:text-4xl lg:text-5xl">
-              <span className="text-amber-400">3</span> Steps to Get Your Cash
+            <h2 className="text-3xl font-black text-brand-green md:text-4xl lg:text-5xl">
+              <span className="text-brand-gold">3</span> Steps to Get Your Cash
             </h2>
             <div className="mt-8 grid gap-4 md:mt-12 md:grid-cols-3 md:gap-6">
               {steps.map((item, index) => (
                 <div key={item.step}
-                  className="reveal-on-scroll flex flex-col rounded-2xl bg-emerald-900 p-6 text-white shadow-xl h-full md:p-8">
+                  className="reveal-on-scroll flex flex-col rounded-2xl bg-brand-green p-6 text-white shadow-xl h-full md:p-8">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
                       {item.icon}
                     </div>
-                    <span className="text-3xl font-black text-amber-400">{item.step}</span>
+                    <span className="text-3xl font-black text-brand-gold">{item.step}</span>
                   </div>
                   <h3 className="text-lg font-bold">{item.title}</h3>
                   <p className="mt-3 text-sm leading-relaxed text-white/75 flex-1">{item.desc}</p>
@@ -614,61 +606,49 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           </div>
         </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ CATEGORIES ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="categories" className="bg-emerald-900/90 px-4 py-16 md:px-12 md:py-24 lg:pt-32 lg:pb-32">
-          <div className="mx-auto flex max-w-6xl flex-col items-center text-center reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-amber-400">WHAT WE BUY</p>
-            <h2 className="mt-2 text-3xl font-black text-white md:text-4xl lg:text-5xl">
-              We Accept a <span className="text-amber-400">WIDE RANGE</span> of items
-            </h2>
-            <p className="mt-3 text-base text-white/70">
-              From the latest smartphones to vintage electronics - if it has value, <span className="text-amber-400">we want it.</span>
-            </p>
-            <div className="mt-8 grid w-full grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 justify-items-center">
-              {categories.map((cat) => (
-                <div key={cat.name}
-                  className="flex h-full w-full max-w-[220px] flex-col items-center rounded-2xl bg-emerald-50 p-4 text-center shadow-md transition-transform hover:scale-105 hover:shadow-xl md:p-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-900 text-emerald-100 mb-3 md:mb-4">
-                    {cat.icon}
-                  </div>
-                  <h3 className="text-xs font-black text-emerald-900 uppercase tracking-wide md:text-sm">{cat.name}</h3>
-                  <p className="mt-1 text-xs text-zinc-500">{cat.desc}</p>
-                </div>
-              ))}
-            </div>
+        {/* ─── CATEGORIES / ITEMS WE ACCEPT ─── */}
+        <section id="categories" className="bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] py-4 lg:py-8">
+          <div className="mx-auto w-full lg:w-[95%] xl:w-[90%] 2xl:w-[80%] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/itemsweaccept.png"
+              alt="Items We Accept"
+              className="w-full shrink-0 object-contain"
+              style={{ maxHeight: "calc(100vh - 4rem)", display: "block" }}
+            />
           </div>
         </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ WHY US ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
+        {/* â†â† WHY US â†â† */}
         <section id="why-us" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-28">
           <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:gap-12 reveal-on-scroll">
             <div className="flex-1">
-              <p className="text-sm font-bold uppercase tracking-widest text-amber-500">WHY CHOOSE US?</p>
-              <h2 className="mt-2 text-4xl font-black leading-tight text-emerald-900 md:text-5xl">
-                Fair Prices. Fast Cash.<br /><span className="text-emerald-700">ZERO HASSLE.</span>
+              <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">WHY CHOOSE US?</p>
+              <h2 className="mt-2 text-4xl font-black leading-tight text-brand-green md:text-5xl">
+                Fair Prices. Fast Cash.<br /><span className="text-brand-green/80">ZERO HASSLE.</span>
               </h2>
-              <div className="mt-8 rounded-2xl bg-emerald-900 p-8 shadow-2xl">
+              <div className="mt-8 rounded-2xl bg-brand-green p-8 shadow-2xl">
                 <p className="text-base leading-relaxed text-white">
                   We believe everyone deserves a fair price for their pre-loved items - no low-balling, no runarounds.
                 </p>
-                <p className="mt-4 text-xs text-amber-300">- JCLB Buy Back Shop Team</p>
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber-400 px-4 py-1.5">
-                  <span className="text-sm font-black text-emerald-900">5.0</span>
-                  <span className="text-[10px] font-bold text-emerald-900">CUSTOMER RATING</span>
+                <p className="mt-4 text-xs text-brand-gold">- JCLB Buy Back Shop Team</p>
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-gold px-4 py-1.5">
+                  <span className="text-sm font-black text-brand-green">5.0</span>
+                  <span className="text-[10px] font-bold text-brand-green">CUSTOMER RATING</span>
                 </div>
               </div>
             </div>
             <div className="flex flex-1 flex-col gap-4">
               {reasons.map((item) => (
                 <div key={item.title}
-                  className="flex items-start gap-4 rounded-xl bg-emerald-50/80 p-5 shadow-sm transition-colors hover:bg-emerald-50">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-900">
+                  className="flex items-start gap-4 rounded-xl bg-brand-green/8 p-5 shadow-sm transition-colors hover:bg-brand-green/10">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-green">
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} className="h-5 w-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold text-emerald-900">{item.title}</h3>
+                    <h3 className="font-bold text-brand-green">{item.title}</h3>
                     <p className="mt-0.5 text-sm text-zinc-500">{item.desc}</p>
                   </div>
                 </div>
@@ -683,13 +663,13 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-amber-500">CUSTOMER REVIEWS</p>
-            <h2 className="mt-2 text-3xl font-black text-emerald-900 md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">CUSTOMER REVIEWS</p>
+            <h2 className="mt-2 text-3xl font-black text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
 
             <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
               {/* Left arrow */}
               <button onClick={prevReview}
-                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95 md:h-12 md:w-12">
+                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white shadow-lg transition hover:bg-brand-green/90 active:scale-95 md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
@@ -697,17 +677,17 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
               {/* Mobile: single card */}
               <div className="flex-1 md:hidden">
-                <div className="rounded-2xl bg-emerald-900 p-5 text-white shadow-2xl">
+                <div className="rounded-2xl bg-brand-green p-5 text-white shadow-2xl">
                   <div className="flex gap-1 mb-3">
                     {[...Array(5)].map((_, si) => (
-                      <svg key={si} className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                      <svg key={si} className="h-4 w-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     ))}
                   </div>
                   <p className="text-sm leading-relaxed mb-4 text-white/90">&ldquo;{allReviews[reviewIndex].quote}&rdquo;</p>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-emerald-900">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-gold text-sm font-black text-brand-green">
                       {allReviews[reviewIndex].initials}
                     </div>
                     <div>
@@ -730,12 +710,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                       <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-2 transition-all duration-500 lg:px-4">
                         <div className={`h-full rounded-2xl p-4 shadow-lg transition-all duration-500 lg:p-6 ${
                           isCenter
-                            ? "bg-emerald-900 text-white scale-105 shadow-2xl z-10"
-                            : "bg-emerald-50/80 text-emerald-900 scale-95 opacity-50"
+                            ? "bg-brand-green text-white scale-105 shadow-2xl z-10"
+                            : "bg-brand-green/8 text-brand-green scale-95 opacity-50"
                         }`}>
                           <div className="flex gap-1 mb-4">
                             {[...Array(5)].map((_, si) => (
-                              <svg key={si} className="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                              <svg key={si} className="h-4 w-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                             ))}
@@ -744,11 +724,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                             &ldquo;{review.quote}&rdquo;
                           </p>
                           <div className="flex items-center gap-3">
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${isCenter ? "bg-amber-400 text-emerald-900" : "bg-emerald-900 text-white"}`}>
+                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${isCenter ? "bg-brand-gold text-brand-green" : "bg-brand-green text-white"}`}>
                               {review.initials}
                             </div>
                             <div className="min-w-0">
-                              <p className={`text-sm font-bold leading-tight ${isCenter ? "text-white" : "text-emerald-900"}`}>{review.name}</p>
+                              <p className={`text-sm font-bold leading-tight ${isCenter ? "text-white" : "text-brand-green"}`}>{review.name}</p>
                               <p className={`text-xs ${isCenter ? "text-white/60" : "text-zinc-400"}`}>{review.sold}</p>
                             </div>
                           </div>
@@ -761,7 +741,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
               {/* Right arrow */}
               <button onClick={nextReview}
-                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-900 text-white shadow-lg transition hover:bg-emerald-800 active:scale-95 md:h-12 md:w-12">
+                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white shadow-lg transition hover:bg-brand-green/90 active:scale-95 md:h-12 md:w-12">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
@@ -772,7 +752,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <div className="mt-4 flex justify-center gap-2 md:mt-6">
               {allReviews.map((_, i) => (
                 <button key={i} onClick={() => goToReview(i)}
-                  className={`h-2 rounded-full transition-all ${i === reviewIndex ? "w-6 bg-emerald-900" : "w-2 bg-emerald-900/30"}`} />
+                  className={`h-2 rounded-full transition-all ${i === reviewIndex ? "w-6 bg-brand-green" : "w-2 bg-brand-green/30"}`} />
               ))}
             </div>
           </div>
@@ -781,16 +761,16 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ BRANCH LOCATIONS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-amber-500">FIND US</p>
-            <h2 className="mt-2 text-4xl font-black text-emerald-900 md:text-5xl">Our Branch Locations</h2>
-            <p className="mt-3 text-base text-emerald-900/60">
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FIND US</p>
+            <h2 className="mt-2 text-4xl font-black text-brand-green md:text-5xl">Our Branch Locations</h2>
+            <p className="mt-3 text-base text-brand-green/60">
               {publicBranches.length > 0
                 ? `Visit us at any of our ${branchCountLabel.toLowerCase()}.`
                 : "Visit us at any available JCLB Buy Back Shop branch."}
             </p>
 
             {isLoadingBranches ? (
-              <div className="mt-10 rounded-2xl border border-emerald-100 bg-emerald-50 px-6 py-10 text-center text-sm font-bold text-emerald-900/60">
+              <div className="mt-10 rounded-2xl border border-brand-green/20 bg-brand-green/5 px-6 py-10 text-center text-sm font-bold text-brand-green/60">
                 Loading branch locations...
               </div>
             ) : branchLoadError ? (
@@ -798,20 +778,20 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 {branchLoadError}
               </div>
             ) : publicBranches.length === 0 ? (
-              <div className="mt-10 rounded-2xl border border-emerald-100 bg-emerald-50 px-6 py-10 text-center text-sm font-bold text-emerald-900/60">
+              <div className="mt-10 rounded-2xl border border-brand-green/20 bg-brand-green/5 px-6 py-10 text-center text-sm font-bold text-brand-green/60">
                 Branch locations will be posted soon.
               </div>
             ) : (
               <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {publicBranches.map((branch) => (
-                <div key={branch.id} className="rounded-2xl bg-emerald-900 overflow-hidden shadow-xl">
+                <div key={branch.id} className="rounded-2xl bg-brand-green overflow-hidden shadow-xl">
                   {/* Map placeholder */}
-                  <div className="relative h-40 bg-emerald-800 flex items-center justify-center">
+                  <div className="relative h-40 bg-brand-green/90 flex items-center justify-center">
                     <div className="absolute inset-0 opacity-20"
                       style={{ backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 20px,rgba(255,255,255,.1) 20px,rgba(255,255,255,.1) 21px),repeating-linear-gradient(90deg,transparent,transparent 20px,rgba(255,255,255,.1) 20px,rgba(255,255,255,.1) 21px)" }} />
                     <div className="relative flex flex-col items-center gap-2">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-400 shadow-lg">
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-emerald-900">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold shadow-lg">
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-brand-green">
                           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                         </svg>
                       </div>
@@ -822,19 +802,19 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     <h3 className="font-black text-white text-lg">{branch.name}</h3>
                     <div className="mt-3 space-y-2">
                       <div className="flex items-start gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 mt-0.5 text-amber-400">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 mt-0.5 text-brand-gold">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         {branch.location?.trim() || "Address will be announced soon."}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-amber-400">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-brand-gold">
                           <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                         </svg>
                         Branch hours may vary
                       </div>
                       <div className="flex items-center gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-amber-400">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-brand-gold">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
                         Contact through Facebook
@@ -844,7 +824,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.location?.trim() || branch.name)}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 block w-full rounded-xl bg-amber-400 py-2.5 text-center text-sm font-black text-emerald-900 transition-colors hover:bg-amber-300"
+                      className="mt-4 block w-full rounded-xl bg-brand-gold py-2.5 text-center text-sm font-black text-brand-green transition-colors hover:bg-brand-gold"
                     >
                       Get Directions
                     </a>
@@ -859,12 +839,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ CONTACT CTA ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <section
           id="contact-us"
-          className="border-y border-amber-200/70 bg-amber-100 px-6 py-20 md:px-12 md:py-28"
+          className="border-y border-brand-gold/30 bg-brand-gold/10 px-6 py-20 md:px-12 md:py-28"
         >
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-center gap-8 text-center reveal-on-scroll">
             <div>
-              <h2 className="text-4xl font-black text-emerald-900 md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
-              <p className="mt-3 text-xl font-medium text-emerald-800/75">
+              <h2 className="text-4xl font-black text-brand-green md:text-5xl">Ready to Turn Your Items Into Cash?</h2>
+              <p className="mt-3 text-xl font-medium text-brand-green/75">
                 It only takes a minute to start.
               </p>
             </div>
@@ -872,7 +852,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <footer className="bg-emerald-900 px-6 py-12 md:px-8 md:py-10 lg:px-16 lg:py-12">
+        <footer className="bg-brand-green px-6 py-12 md:px-8 md:py-10 lg:px-16 lg:py-12">
           <div className="mx-auto w-full max-w-7xl">
             <div className="grid grid-cols-1 gap-9 md:grid-cols-[1.15fr_0.9fr_1fr_1.35fr] md:gap-6 lg:gap-12">
               {/* Brand */}
@@ -880,20 +860,20 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <div className="flex items-center gap-3 mb-4">
                   <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg" />
                   <div>
-                    <p className="text-xs font-bold text-amber-400 uppercase tracking-widest">BUY BACK</p>
+                    <p className="text-xs font-bold text-brand-gold uppercase tracking-widest">BUY BACK</p>
                     <p className="text-xl font-black text-white leading-none">Pawnshop</p>
                   </div>
                 </div>
                 <p className="text-xs leading-relaxed text-white/50 lg:text-sm">
                   Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
-                  <span className="text-amber-400 font-bold">JCLB promise.</span>
+                  <span className="text-brand-gold font-bold">JCLB promise.</span>
                 </p>
               </div>
 
               {/* Quick Links */}
               <div className="w-full max-w-[280px] justify-self-start md:max-w-none md:justify-self-start lg:mx-auto lg:max-w-[240px] lg:justify-self-auto">
                 <div className="w-full">
-                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-amber-400 lg:text-xs">QUICK LINKS</p>
+                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">QUICK LINKS</p>
                   <ul className="space-y-2.5">
                     {[
                       { label: "How It Works", href: "#how-it-works" },
@@ -906,8 +886,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     ].map((link) => {
                       return (
                         <li key={link.label}>
-                          <a href={link.href} className="flex items-start gap-2 text-xs leading-snug text-white/60 transition-colors hover:text-amber-400 lg:text-sm">
-                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                          <a href={link.href} className="flex items-start gap-2 text-xs leading-snug text-white/60 transition-colors hover:text-brand-gold lg:text-sm">
+                            <span className="h-1.5 w-1.5 rounded-full bg-brand-gold shrink-0" />
                             {link.label}
                           </a>
                         </li>
@@ -917,10 +897,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 </div>
               </div>
 
-              {/* What We Buy */}
+              {/* Items We Accept */}
               <div className="w-full max-w-[320px] md:max-w-none lg:mx-auto lg:max-w-[240px]">
                 <div className="w-full">
-                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-amber-400 lg:text-xs">WHAT WE BUY</p>
+                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">Items We Accept</p>
                   <div className="flex max-w-[280px] flex-wrap gap-2">
                     {["Smartphones", "Laptops", "Gaming Consoles", "Cameras", "Tablets", "Watches"].map((item) => (
                       <span key={item} className="rounded-full border border-white/20 px-2.5 py-1 text-[11px] text-white/60 lg:px-3 lg:text-xs">
@@ -933,12 +913,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
               {/* Contact */}
               <div className="w-full max-w-[320px] justify-self-start md:max-w-none md:justify-self-start lg:mx-auto lg:justify-self-auto">
-                <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-amber-400 lg:text-xs">CONTACT US</p>
+                <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">CONTACT US</p>
                 <div className="space-y-2.5 lg:space-y-3">
                   {[
                     { icon: "f", label: "Facebook", sub: "JCLB Buy Back Shop", color: "bg-blue-600" },
                     { icon: "@", label: "Email Us", sub: "Compose with Gmail", color: "bg-red-500" },
-                    { icon: "pin", label: "Visit Us", sub: branchCountLabel, color: "bg-emerald-600" },
+                    { icon: "pin", label: "Visit Us", sub: branchCountLabel, color: "bg-brand-green/70" },
                   ].map((c) => (
                     <button
                       key={c.label}
@@ -980,7 +960,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               {/* Left: Badges */}
               <div className="flex flex-wrap justify-center gap-2.5 md:justify-start lg:gap-3">
                 {["100% Legit", "BSP Registered", "24hr Quick Payout"].map((badge) => (
-                  <span key={badge} className="rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 font-bold text-amber-400 whitespace-nowrap">
+                  <span key={badge} className="rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-bold text-brand-gold whitespace-nowrap">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4 4L19 6" />
                     </svg>
@@ -996,7 +976,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   <button
                     type="button"
                     onClick={() => setLegalModal("privacy")}
-                    className="font-bold text-amber-400/70 transition hover:text-amber-300 hover:underline"
+                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
                   >
                     Privacy Policy
                   </button>
@@ -1004,7 +984,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   <button
                     type="button"
                     onClick={() => setLegalModal("terms")}
-                    className="font-bold text-amber-400/70 transition hover:text-amber-300 hover:underline"
+                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
                   >
                     Terms of Service
                   </button>
@@ -1014,7 +994,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               {/* Right: Slogans */}
               <div className="flex flex-wrap items-center justify-center gap-3 px-2 text-center md:col-span-2 xl:col-span-1 xl:justify-end xl:text-right">
                 <span>Made with care for our customers</span>
-                <button type="button" onClick={onLoginClick} className="italic text-amber-400/60 transition hover:text-amber-300 hover:underline">
+                <button type="button" onClick={onLoginClick} className="italic text-brand-gold/60 transition hover:text-brand-gold hover:underline">
                   &ldquo;Madaling Kausap&rdquo;
                 </button>
               </div>
@@ -1045,19 +1025,19 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 </svg>
               </button>
 
-              <div className="relative overflow-hidden bg-emerald-800 px-6 pb-6 pt-7 text-white sm:px-8">
+              <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
                 <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
                 <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
                 <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">JCLB Buy Back Pawnshop</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">JCLB Buy Back Pawnshop</p>
                   <h3 id="landing-legal-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50/85">
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
                     {legalModalContent[legalModal].intro}
                   </p>
                 </div>
               </div>
 
-              <div className="relative bg-emerald-800">
+              <div className="relative bg-brand-green/90">
                 <div className="h-2 rounded-t-xl bg-stone-100" />
                 <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
               </div>
@@ -1067,11 +1047,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   {legalModalContent[legalModal].sections.map((section, index) => (
                     <section key={section.title} className="border-b border-zinc-200 pb-4 last:border-0 last:pb-0">
                       <div className="flex gap-3">
-                        <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-800 text-xs font-bold text-white">
+                        <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-green/90 text-xs font-bold text-white">
                           {index + 1}
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-emerald-950">{section.title}</h4>
+                          <h4 className="text-sm font-bold text-brand-green">{section.title}</h4>
                           <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
                         </div>
                       </div>
@@ -1084,7 +1064,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <button
                   type="button"
                   onClick={() => setLegalModal(null)}
-                  className="w-full bg-emerald-800 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+                  className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
                 >
                   I Understand
                 </button>
@@ -1116,19 +1096,19 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 </svg>
               </button>
 
-              <div className="relative overflow-hidden bg-emerald-800 px-6 pb-6 pt-7 text-white sm:px-8">
+              <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
                 <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
                 <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
                 <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">JCLB Buy Back Pawnshop</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">JCLB Buy Back Pawnshop</p>
                   <h3 id="branch-list-modal-title" className="mt-2 text-2xl font-bold">Available Branches</h3>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50/85">
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
                     Visit any active branch below for in-person appraisal, item drop-off, payment, renewal, redemption, or customer assistance.
                   </p>
                 </div>
               </div>
 
-              <div className="relative bg-emerald-800">
+              <div className="relative bg-brand-green/90">
                 <div className="h-2 rounded-t-xl bg-stone-100" />
                 <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
               </div>
@@ -1147,11 +1127,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     {publicBranches.map((branch) => (
                       <section key={branch.id} className="rounded-xl border border-zinc-200 bg-white px-4 py-4 shadow-sm">
                         <div className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-800 text-sm font-black text-white">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green/90 text-sm font-black text-white">
                             {branch.branch_code || branch.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-emerald-950">{branch.name}</h4>
+                            <h4 className="text-sm font-bold text-brand-green">{branch.name}</h4>
                             <p className="mt-1 text-sm leading-relaxed text-zinc-600">
                               {branch.location?.trim() || "Address will be announced soon."}
                             </p>
@@ -1167,7 +1147,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <button
                   type="button"
                   onClick={() => setBranchModalOpen(false)}
-                  className="w-full bg-emerald-800 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+                  className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
                 >
                   Close
                 </button>
@@ -1176,6 +1156,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           </div>
         )}
       </div>
+
+      {/* Back to top button */}
+      <button
+        type="button"
+        className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          setActiveNavItem("HOME");
+          window.history.pushState(null, "", "#home");
+        }}
+        aria-label="Back to top"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-6 w-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+        </svg>
+      </button>
     </div>
   );
 }

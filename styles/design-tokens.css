@@ -10,6 +10,11 @@
   --pawn-gold-light: #e0bc6a;
   --pawn-content: #f0f7f0;
   --pawn-section: #8aab8a;
+
+  /* ── Brand colors ── */
+  --brand-green: #0B5D3B;
+  --brand-gold: #D4AF37;
+
   /* Semantic surface tokens */
   --surface: #ffffff;
   --surface-secondary: #f9fafb;
@@ -91,6 +96,11 @@
   --color-emerald-surface: var(--emerald-surface);
   --color-emerald-border: var(--emerald-border);
   --color-emerald-text: var(--emerald-text);
+
+  /* ── Brand colors ── */
+  --color-brand-green: #0B5D3B;
+  --color-brand-gold: #D4AF37;
+
   --font-sans: var(--font-inter);
   --font-mono: var(--font-inter);
 }
