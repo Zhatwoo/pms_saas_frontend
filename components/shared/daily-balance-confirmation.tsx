@@ -58,8 +58,16 @@ export function DailyBalanceConfirmation({
     if (!isOpen) return;
 
     setIsSubmitting(false);
-    setConfirmedAmount("0.00");
-  }, [isOpen, type]);
+    setConfirmedAmount(
+      (Number(String(currentCash ?? "0").replace(/,/g, "")) || 0).toLocaleString(
+        "en-PH",
+        {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        },
+      ),
+    );
+  }, [isOpen, type, currentCash]);
 
   if (!isOpen) return null;
 

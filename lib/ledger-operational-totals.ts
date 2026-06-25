@@ -12,18 +12,6 @@ export type LedgerOperationalRow = {
   created_at?: string | Date | null;
 };
 
-function isFundTransferBookRow(row: LedgerOperationalRow): boolean {
-  if (row.voided_at != null && row.voided_at !== "") return false;
-  const unit = (row.unit ?? "").toLowerCase().trim();
-  const purpose = (row.purpose ?? "").toLowerCase().trim();
-  return (
-    unit === "fund_transfer" ||
-    unit === "fund_transfer_out" ||
-    purpose === "cash transfer" ||
-    purpose === "fund transfer"
-  );
-}
-
 function createdAtMs(value: string | Date | null | undefined): number {
   if (value == null) return 0;
   if (value instanceof Date) return value.getTime();
@@ -68,15 +56,7 @@ export function operationalCashTotalsForPawnEnding(
     if (p === "start" || p === "end") continue;
     if (tx.id && sealed.has(tx.id)) continue;
 
-    if (hasOpen && createdAtMs(tx.created_at) < effectiveMs) {
-      if (isFundTransferBookRow(tx)) {
-        const ci = Number(tx.cash_in ?? 0);
-        const co = Number(tx.cash_out ?? 0);
-        if (Number.isFinite(ci)) cashIn += ci;
-        if (Number.isFinite(co)) cashOut += co;
-      }
-      continue;
-    }
+    if (hasOpen && createdAtMs(tx.created_at) < effectiveMs) continue;
 
     const ci = Number(tx.cash_in ?? 0);
     const co = Number(tx.cash_out ?? 0);
