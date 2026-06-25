@@ -11,6 +11,22 @@ html {
   color-scheme: light;
 }
 
+/* Custom minimal scrollbar for the page */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(11, 93, 59, 0.25); /* brand-green with low opacity */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(11, 93, 59, 0.6);
+}
+
 html.dark {
   color-scheme: dark;
 }
@@ -77,6 +93,10 @@ html.theme-transitioning *::after {
   --pawn-content: #f0f7f0;
   --pawn-section: #8aab8a;
 
+  /* ── Brand colors ── */
+  --brand-green: #0B5D3B;
+  --brand-gold: #D4AF37;
+
   /* Semantic surface tokens */
   --surface: #ffffff;
   --surface-secondary: #f9fafb;
@@ -142,6 +162,10 @@ html.theme-transitioning *::after {
   --color-pawn-gold-light: var(--pawn-gold-light);
   --color-pawn-content: var(--pawn-content);
   --color-pawn-section: var(--pawn-section);
+
+  /* ── Brand colors ── */
+  --color-brand-green: var(--brand-green);
+  --color-brand-gold: var(--brand-gold);
 
   /* Semantic tokens */
   --color-surface: var(--surface);
