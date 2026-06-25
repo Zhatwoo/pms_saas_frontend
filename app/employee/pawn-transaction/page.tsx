@@ -25,7 +25,7 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { formatPeso } from "@/lib/currency";
-import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
@@ -620,14 +620,11 @@ export default function EmployeePawnTransactionsPage() {
       }
 
       // Prefer server-computed ending balance; fall back to visible ledger rows.
-      const tableNet = Math.max(
-        ledger.net,
-        operationalCashTotals(data.transactions ?? []).net,
-      );
+      const tableNet = ledger.net;
       const clientEnding = Number((startingBalance + tableNet).toFixed(2));
       const endingBalance =
         serverEndingBalance != null
-          ? Math.max(serverEndingBalance, clientEnding)
+          ? serverEndingBalance
           : clientEnding;
 
       setCurrentStats({

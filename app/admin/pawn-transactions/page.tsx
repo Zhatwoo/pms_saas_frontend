@@ -24,7 +24,7 @@ import { Role } from "@/types";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD } from "@/lib/time";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
-import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
+import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { formatPeso } from "@/lib/currency";
@@ -332,6 +332,16 @@ interface BranchFinanceSummary {
   currentBalance: number;
 }
 
+interface BranchBusinessSessionPeek {
+  operationalCashAllowed: boolean;
+  operationalCutoffAt?: string | null;
+  systemEndingBalanceToday?: number | null;
+  todaySession?: {
+    startingBalance?: number | null;
+    startedAt?: string | null;
+  } | null;
+}
+
 function normalizeStats(stats?: TransactionStatsResponse) {
   return {
     pawnedToday: Number(stats?.pawnedToday ?? 0),
@@ -469,9 +479,41 @@ export default function SuperAdminPawnTransactionsPage() {
       setSelectedDateLedgerRows((data.transactions ?? []).map(toTransactionRow));
 
       const phToday = getPhCalendarDateString();
+      let sessionStartingBalance: number | null = null;
+      let serverEndingBalance: number | null =
+        data.stats?.endingBalance != null
+          ? Number(data.stats.endingBalance)
+          : null;
+      let sessionOpenedAt = data.stats?.sessionOpenedAt ?? null;
+      let operationalCutoffAt: string | null = null;
+      if (selectedBranch.id !== "__all__" && selectedDate === phToday) {
+        try {
+          const session = await api.get<BranchBusinessSessionPeek>(
+            `/branch-finance/business-session?branch=${encodeURIComponent(selectedBranch.id)}`,
+          );
+          if (session.operationalCashAllowed) {
+            operationalCutoffAt = session.operationalCutoffAt ?? null;
+            if (session.todaySession?.startedAt) {
+              sessionOpenedAt = session.todaySession.startedAt;
+            }
+            if (session.todaySession?.startingBalance != null) {
+              sessionStartingBalance = Number(
+                session.todaySession.startingBalance,
+              );
+            }
+            if (session.systemEndingBalanceToday != null) {
+              serverEndingBalance = Number(session.systemEndingBalanceToday);
+            }
+          }
+        } catch {
+          // /transactions stats and finance summary are enough for non-open sessions.
+        }
+      }
+
       const ledger = operationalCashTotalsForPawnEnding(
         data.transactions ?? [],
-        data.stats?.sessionOpenedAt ?? null,
+        sessionOpenedAt,
+        operationalCutoffAt,
       );
 
       let startingBalance = Number(data.stats?.startingBalance ?? 0);
@@ -485,24 +527,20 @@ export default function SuperAdminPawnTransactionsPage() {
         selectedDate === phToday &&
         financeSummary.length === 1
       ) {
-        startingBalance = Number(
-          financeSummary[0].startingBalance ?? startingBalance,
-        );
+        startingBalance =
+          sessionStartingBalance ??
+          Number(financeSummary[0].startingBalance ?? startingBalance);
       }
 
       const endingBalance = (() => {
-        const serverEnding =
-          data.stats?.endingBalance != null
-            ? Number(data.stats.endingBalance)
-            : null;
         const clientEnding = Number(
           (
             startingBalance +
-            Math.max(ledger.net, operationalCashTotals(data.transactions ?? []).net)
+            ledger.net
           ).toFixed(2),
         );
-        return serverEnding != null
-          ? Math.max(serverEnding, clientEnding)
+        return serverEndingBalance != null
+          ? serverEndingBalance
           : clientEnding;
       })();
 
