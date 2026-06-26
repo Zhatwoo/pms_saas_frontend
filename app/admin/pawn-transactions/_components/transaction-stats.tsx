@@ -1,4 +1,4 @@
-import { StatCard } from "@/components/shared/stat-card";
+import { StatCard, ThreeDotLoader } from "@/components/shared/stat-card";
 
 const pawnedIcon = (
   <svg
@@ -94,9 +94,10 @@ export interface TransactionStatsData {
 
 interface TransactionStatsProps {
   data?: TransactionStatsData;
+  isLoading?: boolean;
 }
 
-export function TransactionStats({ data }: TransactionStatsProps) {
+export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
       <StatCard
@@ -106,6 +107,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={pawnedIcon}
         borderColor="bg-emerald-600"
         className="min-h-[160px] rounded-xl p-6"
+        loading={isLoading}
       />
       <StatCard
         label="Buy Back"
@@ -114,6 +116,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={buyBackIcon}
         borderColor="bg-blue-600"
         className="min-h-[160px] rounded-xl p-6"
+        loading={isLoading}
       />
       <StatCard
         label="Renewed"
@@ -122,6 +125,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={renewedIcon}
         borderColor="bg-amber-500"
         className="min-h-[160px] rounded-xl p-6"
+        loading={isLoading}
       />
       <StatCard
         label="Sold Item"
@@ -130,6 +134,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         icon={soldIcon}
         borderColor="bg-orange-500"
         className="min-h-[160px] rounded-xl p-6"
+        loading={isLoading}
       />
       <div className="flex min-h-[160px] flex-col justify-between rounded-xl border border-border-main bg-surface p-6 transition-colors duration-300">
         <div className="mb-3 h-1 w-full rounded-full bg-text-primary" />
@@ -140,9 +145,9 @@ export function TransactionStats({ data }: TransactionStatsProps) {
             <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               Start Balance
             </p>
-            <p className="mt-0.5 text-xl font-bold text-text-primary">
-              ₱ {data?.startingBalance?.toLocaleString() || "0"}
-            </p>
+            <div className="mt-0.5 text-xl font-bold text-text-primary h-[28px] flex items-center">
+              {isLoading ? <ThreeDotLoader /> : `₱ ${data?.startingBalance?.toLocaleString() || "0"}`}
+            </div>
           </div>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
             {balanceIcon}
@@ -157,9 +162,9 @@ export function TransactionStats({ data }: TransactionStatsProps) {
             <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               End Balance
             </p>
-            <p className="mt-0.5 text-xl font-bold text-emerald-600">
-              ₱ {data?.endingBalance?.toLocaleString() || "0"}
-            </p>
+            <div className="mt-0.5 text-xl font-bold text-emerald-600 h-[28px] flex items-center">
+              {isLoading ? <ThreeDotLoader /> : `₱ ${data?.endingBalance?.toLocaleString() || "0"}`}
+            </div>
           </div>
         </div>
       </div>
