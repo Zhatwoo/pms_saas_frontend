@@ -195,7 +195,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         onSuccess();
       }
       onClose();
-      toast.success("Item redeemed successfully!");
+      toast.success("Item bought back successfully!");
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
       setError(msg);
@@ -227,7 +227,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                   {branchName} | Active Pawn
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
-                  Redeem Pawn Ticket
+                  Buy Back Pawn Ticket
                 </h1>
               </div>
             </div>
@@ -235,7 +235,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             <button 
               onClick={onClose} 
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
-              aria-label="Close Redeem Pawn Ticket"
+              aria-label="Close Buy Back Pawn Ticket"
             >
               <X className="w-5 h-5" />
             </button>
@@ -282,7 +282,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <Package className="w-6 h-6 text-emerald-200" />
                   </div>
                   <p className="text-sm font-bold text-emerald-900/60">No active pawns found</p>
-                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be Redeemed</p>
+                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be Bought Back</p>
                 </div>
               ) : (
                 pawnedItems.map((item) => (
@@ -545,7 +545,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                    <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
                 ) : (
                    <>
-                     CONFIRM REDEMPTION
+                     CONFIRM BUY BACK
                      <ArrowRight className="w-5 h-5" />
                    </>
                 )}

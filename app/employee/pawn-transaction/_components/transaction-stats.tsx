@@ -130,7 +130,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
         loading={isLoading}
       />
       <StatCard
-        label="Redeem"
+        label="Buy Back"
         value={data?.redeemed || 0}
         subtitle="Claimed items"
         icon={redeemIcon}
@@ -138,7 +138,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
         loading={isLoading}
       />
       <StatCard
-        label="Buy Back"
+        label="Buy Out"
         value={data?.buyBack || 0}
         subtitle="Repurchased units"
         icon={buyBackIcon}
