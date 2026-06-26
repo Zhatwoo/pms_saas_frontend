@@ -269,6 +269,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isAtTop, setIsAtTop] = useState(true);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [publicBranches, setPublicBranches] = useState<PublicBranch[]>([]);
@@ -353,6 +354,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       const sections = document.querySelectorAll("section[id]");
       const { scrollY, innerHeight } = window;
       setShowBackToTop(scrollY > innerHeight * 0.5);
+      setIsAtTop(scrollY <= 10);
       if (scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
         setActiveNavItem("CONTACT US"); return;
       }
@@ -386,8 +388,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       {/* Plain white background */}
 
       <div className="relative z-10">
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ NAV ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-green">
+        {/* ─── NAV ─── */}
+        <nav className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-green transition-transform duration-300 ${isAtTop ? "translate-y-0" : "-translate-y-full"}`}>
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
             <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e, "home", "HOME")} />
 
@@ -538,29 +540,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </nav>
 
         {/* ─── HERO ─── */}
-        <section id="home" className="group relative mt-16 bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)]">
-          {/* Navigation Arrows */}
-          <button 
-            onClick={prevHeroSlide} 
-            className="absolute left-4 lg:left-8 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/20 p-2 md:p-3 text-white/80 backdrop-blur-md transition-all hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100"
-            aria-label="Previous slide"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-6 w-6 md:h-8 md:w-8">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button 
-            onClick={nextHeroSlide} 
-            className="absolute right-4 lg:right-8 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/20 p-2 md:p-3 text-white/80 backdrop-blur-md transition-all hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100"
-            aria-label="Next slide"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-6 w-6 md:h-8 md:w-8">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
-          {/* Max-width container to ensure it doesn't get too massive on ultrawide, and object-contain to fit within viewport height */}
-          <div className="mx-auto w-full lg:w-[95%] xl:w-[90%] 2xl:w-[80%] overflow-hidden">
+        <section id="home" className="group relative pt-16 bg-brand-green flex flex-col justify-center lg:min-h-screen">
+          {/* Full-width container */}
+          <div className="w-full overflow-hidden">
             <div 
               className="flex transition-transform duration-500 ease-in-out items-center"
               style={{ transform: `translateX(-${slideIndex * 100}%)` }}
@@ -571,9 +553,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   key={img}
                   src={`/${img}`}
                   alt=""
-                  className="w-full shrink-0 object-contain"
+                  className="w-full shrink-0 object-contain lg:object-fill lg:h-[calc(100vh-4rem)]"
                   style={{
-                    maxHeight: "calc(100vh - 4rem)",
                     display: "block",
                   }}
                 />
@@ -607,14 +588,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ─── CATEGORIES / ITEMS WE ACCEPT ─── */}
-        <section id="categories" className="bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] py-4 lg:py-8">
-          <div className="mx-auto w-full lg:w-[95%] xl:w-[90%] 2xl:w-[80%] overflow-hidden">
+        <section id="categories" className="bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] py-4 lg:py-8 lg:!scroll-mt-0">
+          {/* Full-width container */}
+          <div className="w-full overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/itemsweaccept.png"
               alt="Items We Accept"
               className="w-full shrink-0 object-contain"
-              style={{ maxHeight: "calc(100vh - 4rem)", display: "block" }}
+              style={{ display: "block" }}
             />
           </div>
         </section>
