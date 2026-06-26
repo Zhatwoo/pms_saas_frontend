@@ -29,9 +29,12 @@ interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
+const MANILA_TZ = "Asia/Manila";
+
 function formatTimeOnly(): string {
   const now = new Date();
   return now.toLocaleString("en-US", {
+    timeZone: MANILA_TZ,
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
@@ -42,6 +45,7 @@ function formatTimeOnly(): string {
 function formatDateTime(): string {
   const now = new Date();
   return now.toLocaleString("en-US", {
+    timeZone: MANILA_TZ,
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",

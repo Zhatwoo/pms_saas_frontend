@@ -11,8 +11,7 @@ import { MoaModal } from "./moa-modal";
 import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-request-modal";
 import { useAuth } from "@/contexts/auth-context";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
-import { formatDateToYMD } from "@/lib/time";
-import { getPhWallClockTimeString } from "@/lib/branch-calendar-date";
+import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -824,6 +823,7 @@ export function NewPawnModal({
     }
 
     try {
+      const transactionTimestamp = getTransactionDateTimeFields();
       const response = await api.post<CreatedPawnTicketResponse>('/pawn-tickets', {
         branchId,
         branchName,
@@ -859,8 +859,8 @@ export function NewPawnModal({
           pawnAmount: amountValue,
           storageFee: storageAmount,
           returnAmount: 0,
-          transactionDate: formatDateToYMD(),
-          transactionTime: getPhWallClockTimeString(),
+          transactionDate: transactionTimestamp.transaction_date,
+          transactionTime: transactionTimestamp.transaction_time,
           details: [form.itemsIncluded.trim(), form.idPresented, `Processed by: ${loggedInUserName || 'Employee'}`].filter(Boolean).join(' | '),
         },
       });

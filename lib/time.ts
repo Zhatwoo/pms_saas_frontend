@@ -1,3 +1,8 @@
+import {
+  getPhCalendarDateString,
+  getPhWallClockTimeString,
+} from "@/lib/branch-calendar-date";
+
 export function formatTimeWithAmPm(time: string): string {
   if (!time) return "";
 
@@ -6,18 +11,26 @@ export function formatTimeWithAmPm(time: string): string {
 
   const hour = Number(match[1]);
   const minute = match[2];
+  const second = match[3];
 
   if (Number.isNaN(hour) || hour < 0 || hour > 23) return time;
 
   const suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 || 12;
+  const secondPart = second ? `:${second}` : "";
 
-  return `${displayHour}:${minute} ${suffix}`;
+  return `${displayHour}:${minute}${secondPart} ${suffix}`;
 }
 
+/** PH business calendar date (YYYY-MM-DD), aligned with backend. */
 export function formatDateToYMD(date: Date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return getPhCalendarDateString(date);
+}
+
+/** Capture wall-clock date/time at transaction submit (Asia/Manila). */
+export function getTransactionDateTimeFields(date: Date = new Date()) {
+  return {
+    transaction_date: getPhCalendarDateString(date),
+    transaction_time: getPhWallClockTimeString(date),
+  };
 }
