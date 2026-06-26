@@ -29,6 +29,8 @@ import { ActionButton } from "@/components/shared/action-button";
 import {
   subscribeToFinanceRelevantNotifications,
 } from "@/lib/notification-stream";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { sortLedgerEntries } from "@/lib/ledger-sort";
 
 interface EmployeeDashboardResponse {
   currentBalance: number;
@@ -89,7 +91,6 @@ const TYPE_CONFIG: Record<string, { label: string; bgClass: string; dotClass: st
 
 interface UnifiedRow {
   id: string;
-  sortDate: string;
   displayDate: string;
   displayTime: string | null;
   source: "transaction" | "fund_request";
@@ -120,8 +121,7 @@ export default function EmployeeBranchFinancePage() {
   const [ledgerDateTo, setLedgerDateTo] = useState("");
 
   useEffect(() => {
-    const d = new Date();
-    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const today = getPhCalendarDateString();
     setLedgerDateFrom(today);
     setLedgerDateTo(today);
   }, []);
@@ -134,7 +134,7 @@ export default function EmployeeBranchFinancePage() {
   const loadFinanceData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    const today = new Date().toISOString().split("T")[0];
+    const today = getPhCalendarDateString();
     const ledgerDateFromQuery = ledgerDateFrom || today;
     const ledgerDateToQuery = ledgerDateTo || today;
     try {
@@ -249,17 +249,32 @@ export default function EmployeeBranchFinancePage() {
 
   // ── Ledger rows: transactions only (no fund requests to avoid double-counting) ──
   const unifiedRows = useMemo<UnifiedRow[]>(() => {
-    const rows: UnifiedRow[] = [];
+    let entries = ledgerEntries.filter((entry) => {
+      if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) return false;
+      if (ledgerDateFrom && entry.date < ledgerDateFrom) return false;
+      if (ledgerDateTo && entry.date > ledgerDateTo) return false;
+      return true;
+    });
 
-    for (const entry of ledgerEntries) {
-      if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) continue;
+    entries = sortLedgerEntries(entries, "asc");
+
+    if (ledgerSearch) {
+      const q = ledgerSearch.toLowerCase();
+      entries = entries.filter(
+        (entry) =>
+          entry.description.toLowerCase().includes(q) ||
+          (entry.itemName ?? "").toLowerCase().includes(q) ||
+          (entry.reference ?? "").toLowerCase().includes(q),
+      );
+    }
+
+    return entries.map((entry) => {
       const cfg = TYPE_CONFIG[entry.type] ?? TYPE_CONFIG.other;
-      rows.push({
+      return {
         id: `txn-${entry.id}`,
-        sortDate: entry.date + (entry.time ? `T${entry.time}` : "T00:00:00"),
         displayDate: fmtDate(entry.date),
         displayTime: entry.time,
-        source: "transaction",
+        source: "transaction" as const,
         typeBadge: (
           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.bgClass}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotClass}`} />
@@ -271,30 +286,7 @@ export default function EmployeeBranchFinancePage() {
         cashIn: entry.cashIn,
         cashOut: entry.cashOut,
         reference: entry.reference,
-      });
-    }
-
-    // Sort by date ascending (chronological)
-    rows.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
-
-    // Apply search filter
-    const searched = ledgerSearch
-      ? rows.filter((r) => {
-          const q = ledgerSearch.toLowerCase();
-          return (
-            r.description.toLowerCase().includes(q) ||
-            (r.itemName ?? "").toLowerCase().includes(q) ||
-            (r.reference ?? "").toLowerCase().includes(q)
-          );
-        })
-      : rows;
-
-    // Apply date filters
-    return searched.filter((r) => {
-      const d = r.sortDate.split("T")[0];
-      if (ledgerDateFrom && d < ledgerDateFrom) return false;
-      if (ledgerDateTo && d > ledgerDateTo) return false;
-      return true;
+      };
     });
   }, [ledgerEntries, ledgerTypeFilter, ledgerSearch, ledgerDateFrom, ledgerDateTo]);
 

@@ -7,8 +7,8 @@ export function OpeningChecklistGatePlaceholder() {
         Branch opening checklist required
       </p>
       <p className="max-w-md text-sm text-text-tertiary">
-        Confirm starting cash and complete the inventory audit using the prompt
-        above to access this module.
+        Kailangan munang mag-Start Day at kumpletuhin ang opening checklist
+        (starting cash at inventory audit) bago magamit ang module na ito.
       </p>
     </div>
   );

@@ -22,6 +22,7 @@ export interface LedgerEntry {
   id: string;
   date: string;
   time: string | null;
+  createdAt?: string | null;
   type: LedgerEntryType;
   description: string;
   itemName: string | null;

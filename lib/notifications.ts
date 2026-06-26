@@ -157,6 +157,15 @@ export function isPasswordRequestApiNotification(
   );
 }
 
+export function isBranchDayEndedApiNotification(
+  notification: Pick<ApiNotification, "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.notification_type === "BRANCH_DAY_ENDED" ||
+    notification.entity_type === "branch_day_end"
+  );
+}
+
 export function addRolePrefixToTargetUrl(targetUrl: string, role?: Role): string {
   if (!targetUrl.startsWith("/")) return targetUrl;
   if (targetUrl.startsWith("/admin/") || targetUrl.startsWith("/employee/")) {

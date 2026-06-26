@@ -28,10 +28,15 @@ export function BranchEndDayModal({
   useEffect(() => {
     if (isOpen) {
       setConfirmed(false);
-      setPhysicalInput("0.00");
+      setPhysicalInput(
+        systemEndingBalance.toLocaleString("en-PH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      );
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, systemEndingBalance]);
 
   if (!isOpen) return null;
 

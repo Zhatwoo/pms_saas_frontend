@@ -1,129 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { DailyBalanceConfirmation } from "./daily-balance-confirmation";
 import { InventoryAuditModal } from "./inventory-audit-modal";
-import { api, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { toast } from "sonner";
-
-/** Subset of `/branch-finance/business-session` used for operational gate only. */
-interface BusinessSessionGateApi {
-  operationalCashAllowed: boolean;
-  pendingStartingSession: {
-    suggestedStartingBalance: number;
-  } | null;
-  latestBalance?: {
-    startingBalance: number;
-    endingBalance: number;
-    date: string | null;
-  };
-}
-
-type DailyOpeningStatusApi = {
-  expectedStartingCash?: number;
-};
 
 /**
  * Branch-wide starting balance + checklist modal for employees (all routes, including pawn).
  */
 export function OpeningChecklistWrapper() {
+  const { user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isEmployee = user?.role === "employee";
   const {
     currentStep,
     isComplete,
     modulesAllowed,
+    isOpeningChecklistReady,
+    expectedStartingCash,
     openingChecklistModalHidden,
     hideOpeningChecklistModal,
-    resetOpeningChecklistModalHidden,
     completeCashOnHand,
     completeInventoryAudit,
-    refreshOpeningChecklistFromServer,
   } = useOpeningChecklist();
-  const [expectedCash, setExpectedCash] = useState("0");
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isLoadingExpectedAmount, setIsLoadingExpectedAmount] = useState(false);
 
   const isOnIncidentReportPage = Boolean(pathname?.includes("/incident-report"));
   const showStartingBalanceModal =
+    isEmployee &&
+    !modulesAllowed &&
     currentStep === "CASH_ON_HAND" &&
     !openingChecklistModalHidden &&
     !isOnIncidentReportPage;
 
-  useEffect(() => {
-    if (isOnIncidentReportPage) {
-      resetOpeningChecklistModalHidden();
-    }
-  }, [isOnIncidentReportPage, resetOpeningChecklistModalHidden]);
-
-  useEffect(() => {
-    if (currentStep !== "CASH_ON_HAND" || isComplete) return;
-
-    let cancelled = false;
-    setIsLoadingExpectedAmount(true);
-    (async () => {
-      try {
-        const [bizSession, opening] = await Promise.all([
-          api.get<BusinessSessionGateApi>("/branch-finance/business-session"),
-          api.get<DailyOpeningStatusApi>("/branch-finance/daily-opening/status").catch(
-            () => ({ expectedStartingCash: undefined } as DailyOpeningStatusApi),
-          ),
-        ]);
-        if (cancelled) return;
-
-        let resolved: number | null = null;
-        if (
-          opening?.expectedStartingCash != null &&
-          Number.isFinite(Number(opening.expectedStartingCash))
-        ) {
-          resolved = Number(opening.expectedStartingCash);
-        } else if (bizSession?.pendingStartingSession != null) {
-          const pending = Number(
-            bizSession.pendingStartingSession.suggestedStartingBalance ?? NaN,
-          );
-          if (Number.isFinite(pending)) {
-            resolved = pending;
-          }
-        }
-
-        if (
-          (resolved == null || resolved <= 0) &&
-          bizSession?.latestBalance != null
-        ) {
-          const fromLatest = Math.max(
-            Number(bizSession.latestBalance.startingBalance ?? 0),
-            Number(bizSession.latestBalance.endingBalance ?? 0),
-          );
-          if (Number.isFinite(fromLatest) && fromLatest > 0) {
-            resolved = fromLatest;
-          }
-        }
-
-        if (!cancelled) {
-          setExpectedCash(String(resolved ?? 0));
-          setIsLoadingExpectedAmount(false);
-        }
-
-        if (bizSession.operationalCashAllowed === true) {
-          await refreshOpeningChecklistFromServer();
-        }
-      } catch (e) {
-        console.warn(
-          "[OpeningChecklistWrapper] expected starting amount fetch failed",
-          e,
-        );
-        if (!cancelled) setIsLoadingExpectedAmount(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      setIsLoadingExpectedAmount(false);
-    };
-  }, [currentStep, isComplete, refreshOpeningChecklistFromServer]);
+  const expectedCash = String(
+    expectedStartingCash != null && Number.isFinite(expectedStartingCash)
+      ? expectedStartingCash
+      : 0,
+  );
 
   const redirectStartingMismatch = (
     expected: number,
@@ -192,6 +112,8 @@ export function OpeningChecklistWrapper() {
     }
   };
 
+  if (!isEmployee) return null;
+
   if (modulesAllowed && isComplete) return null;
 
   return (
@@ -213,10 +135,12 @@ export function OpeningChecklistWrapper() {
       <DailyBalanceConfirmation
         isOpen={showStartingBalanceModal}
         type="starting"
-        titleOverride="Branch starting balance"
-        subtitleOverride="Confirm physical cash on hand. Expected amount matches the branch book ending from the last closed day (or system suggestion)."
+        titleOverride="Start branch day"
+        subtitleOverride="Ilagay ang physical starting balance para sa branch ngayong petsa (Manila). Kailangan ito bago magamit ang system pagkatapos ng End Day."
         currentCash={expectedCash}
-        isLoadingExpectedAmount={isLoadingExpectedAmount}
+        isLoadingExpectedAmount={
+          showStartingBalanceModal && !isOpeningChecklistReady
+        }
         onConfirm={handleConfirm}
         onClose={() => {}}
       />

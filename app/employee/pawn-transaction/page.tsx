@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { TransactionActions, type FilterType, type ViewMode } from "./_components/transaction-actions";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable, type TransactionRow, type PurposeType } from "./_components/transaction-table";
@@ -436,22 +436,26 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
 export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
-  const { refreshOpeningChecklistFromServer } = useOpeningChecklist();
+  const { refreshOpeningChecklistFromServer, modulesAllowed } = useOpeningChecklist();
   const [isCompactTablet, setIsCompactTablet] = useState(false);
 
   useEffect(() => {
+    if (!modulesAllowed) {
+      return;
+    }
+
     async function syncInterestRates() {
       try {
         const data = await api.get("/settings/interest_rates");
         if (data && Array.isArray(data)) {
           localStorage.setItem("interest_rates", JSON.stringify(data));
         }
-      } catch (error) {
+      } catch {
         // fail silently
       }
     }
     syncInterestRates();
-  }, []);
+  }, [modulesAllowed]);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -513,7 +517,7 @@ export default function EmployeePawnTransactionsPage() {
   const resolvedBranchIdForModals = branchIdForApi || selectedBranch.id;
 
   const fetchTransactions = useCallback(async () => {
-    if (!branchIdForApi) {
+    if (!branchIdForApi || !modulesAllowed) {
       return;
     }
 
@@ -526,12 +530,15 @@ export default function EmployeePawnTransactionsPage() {
         setAllTransactions((data.transactions || []).map(toTransactionRow));
       }
     } catch (error) {
+      if (error instanceof ApiError && error.isOpeningChecklistBlocked) {
+        return;
+      }
       console.error("Failed to load transactions:", error);
     }
-  }, [branchIdForApi]);
+  }, [branchIdForApi, modulesAllowed]);
 
   const fetchSelectedDateStats = useCallback(async () => {
-    if (!branchIdForApi) {
+    if (!branchIdForApi || !modulesAllowed) {
       setSelectedDateLedgerRows([]);
       return;
     }
@@ -634,13 +641,21 @@ export default function EmployeePawnTransactionsPage() {
         sessionOpenedAt: effectiveCutoffIso,
       });
     } catch (error) {
+      if (error instanceof ApiError && error.isOpeningChecklistBlocked) {
+        setSelectedDateLedgerRows([]);
+        setCurrentStats(normalizeStats());
+        return;
+      }
       console.error("Failed to load selected date transaction stats:", error);
       setCurrentStats(normalizeStats());
       setSelectedDateLedgerRows([]);
     }
-  }, [branchIdForApi, selectedDate]);
+  }, [branchIdForApi, selectedDate, modulesAllowed]);
 
   const fetchAllData = useCallback(async () => {
+    if (!modulesAllowed) {
+      return;
+    }
     setIsLoading(true);
     try {
       // Execute sequentially to respect Supabase pool limits (pool_size: 15)
@@ -649,27 +664,33 @@ export default function EmployeePawnTransactionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchTransactions, fetchSelectedDateStats]);
+  }, [fetchTransactions, fetchSelectedDateStats, modulesAllowed]);
 
   useEffect(() => {
+    if (!modulesAllowed) {
+      return;
+    }
     void fetchAllData();
-  }, [fetchAllData]);
+  }, [fetchAllData, modulesAllowed]);
 
   useEffect(() => {
+    if (!modulesAllowed) {
+      return;
+    }
     return subscribeToPawnTransactionNotifications(() => {
       void fetchAllData();
     });
-  }, [fetchAllData]);
+  }, [fetchAllData, modulesAllowed]);
 
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== "visible") return;
-      if (!branchIdForApi) return;
+      if (!branchIdForApi || !modulesAllowed) return;
       void fetchSelectedDateStats();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [fetchSelectedDateStats, branchIdForApi]);
+  }, [fetchSelectedDateStats, branchIdForApi, modulesAllowed]);
 
   const fetchTransactionsRef = useRef(fetchTransactions);
   useEffect(() => {
@@ -700,14 +721,14 @@ export default function EmployeePawnTransactionsPage() {
   );
 
   useEffect(() => {
-    if (!branchIdForApi || branchIdForApi === "__all__") return;
+    if (!branchIdForApi || branchIdForApi === "__all__" || !modulesAllowed) return;
 
     const interval = window.setInterval(
       () => void fetchTransactionsRef.current(),
       60_000,
     );
     return () => window.clearInterval(interval);
-  }, [branchIdForApi]);
+  }, [branchIdForApi, modulesAllowed]);
 
   const filteredTransactions = useMemo(() => {
     let result = selectedDateTransactions;
@@ -1121,6 +1142,7 @@ export default function EmployeePawnTransactionsPage() {
         logoutAfterEndDay
         syncOpeningChecklist={refreshOpeningChecklistFromServer}
         onSessionChanged={() => {
+          if (!modulesAllowed) return;
           void fetchSelectedDateStats();
           void fetchTransactions();
         }}

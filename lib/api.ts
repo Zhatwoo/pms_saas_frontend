@@ -28,6 +28,13 @@ export class ApiError extends Error {
     this.payload = payload;
   }
 
+  get isOpeningChecklistBlocked(): boolean {
+    return (
+      this.statusCode === 403 &&
+      this.message.toLowerCase().includes("opening checklist")
+    );
+  }
+
   get insufficientFunds(): boolean {
     return this.payload.error === "INSUFFICIENT_FUNDS";
   }
@@ -324,10 +331,6 @@ class ApiClient {
       return { message: fallback, payload: emptyPayload };
     }
 
-    if (!suppressLogging) {
-      this.logApiIssue(status, path, errorData);
-    }
-
     let msg = "";
 
     const rawMsg = errorData.message;
@@ -362,6 +365,15 @@ class ApiClient {
       if (typeof errField === "string" && errField.trim()) {
         msg = errField.trim();
       }
+    }
+
+    const resolvedMessage = msg || fallback;
+    const isExpectedOpeningChecklist403 =
+      status === 403 &&
+      resolvedMessage.toLowerCase().includes("opening checklist");
+
+    if (!suppressLogging && !isExpectedOpeningChecklist403) {
+      this.logApiIssue(status, path, errorData);
     }
 
     if (!msg) {
