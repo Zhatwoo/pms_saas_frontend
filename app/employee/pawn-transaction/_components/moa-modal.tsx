@@ -218,66 +218,9 @@ export function MoaModal({
     if (!printRef.current) return;
 
     try {
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "0";
-      iframe.setAttribute("aria-hidden", "true");
-      document.body.appendChild(iframe);
-
-      const iframeDoc = iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        document.body.removeChild(iframe);
-        return;
-      }
-
-      iframeDoc.open();
-      iframeDoc.write(
-        `<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title></head>` +
-        `<body class="moa-print-document">${printRef.current.outerHTML}</body></html>`,
-      );
-      iframeDoc.close();
-
-      const stylesheetPromises: Promise<void>[] = [];
-      Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
-        try {
-          const clone = node.cloneNode(true) as HTMLLinkElement | HTMLStyleElement;
-          if (clone instanceof HTMLLinkElement) {
-            stylesheetPromises.push(new Promise((resolve) => {
-              clone.addEventListener("load", () => resolve(), { once: true });
-              clone.addEventListener("error", () => resolve(), { once: true });
-            }));
-          }
-          iframeDoc.head.appendChild(clone);
-        } catch {
-          // Ignore clone failures from browser-injected styles.
-        }
-      });
-
-      const printOverrides = iframeDoc.createElement("style");
-      printOverrides.textContent = `
-        @page { size: portrait; margin: 6mm; }
-        html, body { margin: 0; padding: 0; background: #fff; }
-        body.moa-print-document,
-        body.moa-print-document *,
-        body.moa-print-document:not(.printing-moa-active) *,
-        body.moa-print-document #moa-slip-printable,
-        body.moa-print-document #moa-slip-printable * {
-          visibility: visible !important;
-        }
-        #moa-slip-printable {
-          display: block !important;
-          margin: 0 auto;
-          padding: 0;
-          width: 100%;
-        }
-      `;
-      iframeDoc.head.appendChild(printOverrides);
-
-      const imagePromises = Array.from(iframeDoc.images).map((image) => {
+      document.documentElement.classList.add("printing-moa-active");
+      document.body.classList.add("printing-moa-active");
+      const imagePromises = Array.from(printRef.current.querySelectorAll("img")).map((image) => {
         if (image.complete) return Promise.resolve();
         return new Promise<void>((resolve) => {
           image.addEventListener("load", () => resolve(), { once: true });
@@ -285,29 +228,16 @@ export function MoaModal({
         });
       });
       const assetsReady = Promise.all([
-        ...stylesheetPromises,
         ...imagePromises,
-        iframeDoc.fonts?.ready ?? Promise.resolve(),
+        document.fonts?.ready ?? Promise.resolve(),
       ]);
       await Promise.race([
         assetsReady,
         new Promise<void>((resolve) => setTimeout(resolve, 2000)),
       ]);
 
-      const printWindow = iframe.contentWindow;
-      const doPrint = () => {
-        try {
-          printWindow?.focus();
-          printWindow?.print();
-        } finally {
-          setTimeout(() => {
-            try { document.body.removeChild(iframe); } catch {}
-          }, 800);
-        }
-      };
-
       requestAnimationFrame(() => {
-        requestAnimationFrame(doPrint);
+        requestAnimationFrame(() => window.print());
       });
     } catch (err) {
       console.error("Print failed:", err);
@@ -327,11 +257,14 @@ export function MoaModal({
 
   useEffect(() => {
     if (isOpen) {
+      document.documentElement.classList.add("printing-moa-active");
       document.body.classList.add("printing-moa-active");
     } else {
+      document.documentElement.classList.remove("printing-moa-active");
       document.body.classList.remove("printing-moa-active");
     }
     return () => {
+      document.documentElement.classList.remove("printing-moa-active");
       document.body.classList.remove("printing-moa-active");
     };
   }, [isOpen]);
