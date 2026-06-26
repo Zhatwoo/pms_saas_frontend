@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { formatDateToYMD } from "@/lib/time";
+import { getPhWallClockTimeString } from "@/lib/branch-calendar-date";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 
@@ -197,7 +198,7 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
       await api.post("/transactions", {
         purpose: "Reserve / Layaway",
         transaction_date: formatDateToYMD(),
-        transaction_time: new Date().toTimeString().slice(0, 8),
+        transaction_time: getPhWallClockTimeString(),
         branch_id: branchId,
         branch: branchName,
         cash_in: downpaymentValue,

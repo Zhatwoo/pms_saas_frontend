@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useOptionalOpeningChecklist } from "@/contexts/opening-checklist-context";
 import { DailyBalanceConfirmation } from "@/components/shared/daily-balance-confirmation";
 import { BranchEndDayModal } from "@/components/shared/branch-end-day-modal";
+import { BRANCH_DAY_ENDED_EVENT, BRANCH_DAY_END_LOGOUT_MESSAGE, broadcastBranchDayEndedForBranch } from "@/lib/branch-day-events";
 
 interface BusinessSessionApi {
   manilaCalendarDate: string;
@@ -41,6 +42,9 @@ function errorMessage(err: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
+/** Fired after a branch End Day completes — other tabs/employees refresh session state. */
+const BRANCH_END_TOOLBAR_COOLDOWN_MS = 8000;
+
 export function BranchDaySessionToolbar({
   branchId,
   onSessionChanged,
@@ -50,11 +54,10 @@ export function BranchDaySessionToolbar({
 }: BranchDaySessionToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { forceLogoutToLogin } = useAuth();
   /** Employee layout wraps `OpeningChecklistProvider`; admin/super-admin shells do not — skip gating then. */
   const openingChecklist = useOptionalOpeningChecklist();
   const currentStep = openingChecklist?.currentStep ?? "COMPLETED";
-  const isComplete = openingChecklist?.isComplete ?? true;
   const [session, setSession] = useState<BusinessSessionApi | null>(null);
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
@@ -62,6 +65,16 @@ export function BranchDaySessionToolbar({
   const [endOpen, setEndOpen] = useState(false);
   /** While refetching with Start modal open, avoid flashing EXPECTED to 0 before new session arrives. */
   const lastResolvedExpectedCash = useRef<string | null>(null);
+  const prevOperationalAllowedRef = useRef<boolean | null>(null);
+  const autoStartPromptedRef = useRef(false);
+  const startOpenRef = useRef(false);
+  const lastBranchEndToolbarSyncAtRef = useRef(0);
+  const lastLoadSessionAtRef = useRef(0);
+  const SESSION_LOAD_COOLDOWN_MS = 8000;
+  const loadSessionRef = useRef<() => Promise<void>>(async () => {});
+  const refreshChecklistRef = useRef<() => Promise<void>>(async () => {});
+  const resetModalHiddenRef = useRef<(() => void) | undefined>(undefined);
+  const openingChecklistActiveRef = useRef(false);
 
   const visible =
     typeof branchId === "string" &&
@@ -73,6 +86,18 @@ export function BranchDaySessionToolbar({
       setSession(null);
       return;
     }
+
+    const now = Date.now();
+    if (
+      openingChecklistActiveRef.current &&
+      openingChecklist != null &&
+      !openingChecklist.modulesAllowed &&
+      now - lastLoadSessionAtRef.current < SESSION_LOAD_COOLDOWN_MS
+    ) {
+      return;
+    }
+    lastLoadSessionAtRef.current = now;
+
     setLoading(true);
     setBanner(null);
     try {
@@ -87,7 +112,31 @@ export function BranchDaySessionToolbar({
     } finally {
       setLoading(false);
     }
-  }, [branchId, visible]);
+  }, [branchId, visible, openingChecklist?.modulesAllowed]);
+
+  useEffect(() => {
+    loadSessionRef.current = loadSession;
+  }, [loadSession]);
+
+  const refreshChecklistState = useCallback(async () => {
+    if (syncOpeningChecklist) {
+      await syncOpeningChecklist();
+      return;
+    }
+    await openingChecklist?.refreshOpeningChecklistFromServer?.();
+  }, [syncOpeningChecklist, openingChecklist?.refreshOpeningChecklistFromServer]);
+
+  useEffect(() => {
+    refreshChecklistRef.current = refreshChecklistState;
+  }, [refreshChecklistState]);
+
+  useEffect(() => {
+    resetModalHiddenRef.current = openingChecklist?.resetOpeningChecklistModalHidden;
+  }, [openingChecklist?.resetOpeningChecklistModalHidden]);
+
+  useEffect(() => {
+    openingChecklistActiveRef.current = openingChecklist != null;
+  }, [openingChecklist]);
 
   useEffect(() => {
     lastResolvedExpectedCash.current = null;
@@ -110,21 +159,94 @@ export function BranchDaySessionToolbar({
   }, [session, loading]);
 
   useEffect(() => {
+    if (
+      openingChecklistActiveRef.current &&
+      openingChecklist != null &&
+      !openingChecklist.modulesAllowed
+    ) {
+      return;
+    }
     void loadSession();
-  }, [loadSession]);
+  }, [loadSession, openingChecklist?.modulesAllowed]);
 
   useEffect(() => {
-    const onTxn = () => void loadSession();
+    const onTxn = () => void loadSessionRef.current();
     window.addEventListener("transaction_created", onTxn);
     return () => window.removeEventListener("transaction_created", onTxn);
-  }, [loadSession]);
+  }, []);
 
-  /** After end-day, snapshot is stale until refetch — reload when Start modal opens so EXPECTED matches last close. */
-  useEffect(() => {
-    if (startOpen && visible) {
-      void loadSession();
+  /** Admin-only: open toolbar Start modal after End Day (employees use OpeningChecklistWrapper). */
+  const promptStartDayAfterClose = useCallback(async () => {
+    await loadSessionRef.current();
+    await refreshChecklistRef.current();
+    resetModalHiddenRef.current?.();
+
+    if (openingChecklistActiveRef.current) {
+      return;
     }
-  }, [startOpen, visible, loadSession]);
+
+    setStartOpen(true);
+  }, []);
+
+  /** Reload expected amount once when Start modal opens. */
+  useEffect(() => {
+    if (startOpen && !startOpenRef.current && visible) {
+      void loadSessionRef.current();
+    }
+    startOpenRef.current = startOpen;
+  }, [startOpen, visible]);
+
+  /** Another employee ended the branch day — detected on session refresh. */
+  useEffect(() => {
+    if (!visible || loading || !session) return;
+
+    const wasOpen = prevOperationalAllowedRef.current;
+    const isOpen = session.operationalCashAllowed === true;
+
+    if (
+      wasOpen === true &&
+      !isOpen &&
+      !logoutAfterEndDay &&
+      !autoStartPromptedRef.current
+    ) {
+      autoStartPromptedRef.current = true;
+      window.dispatchEvent(new CustomEvent(BRANCH_DAY_ENDED_EVENT));
+    }
+
+    if (isOpen) {
+      autoStartPromptedRef.current = false;
+    }
+
+    prevOperationalAllowedRef.current = isOpen;
+  }, [visible, loading, session, logoutAfterEndDay]);
+
+  useEffect(() => {
+    const onBranchDayEnded = () => {
+      if (logoutAfterEndDay) return;
+
+      const now = Date.now();
+      if (now - lastBranchEndToolbarSyncAtRef.current < BRANCH_END_TOOLBAR_COOLDOWN_MS) {
+        return;
+      }
+      lastBranchEndToolbarSyncAtRef.current = now;
+
+      if (!autoStartPromptedRef.current) {
+        autoStartPromptedRef.current = true;
+      }
+
+      // Employee shell: context already syncs on End Day — skip duplicate business-session fetch.
+      if (openingChecklistActiveRef.current) {
+        return;
+      }
+
+      void promptStartDayAfterClose();
+    };
+
+    window.addEventListener(BRANCH_DAY_ENDED_EVENT, onBranchDayEnded);
+    return () => {
+      window.removeEventListener(BRANCH_DAY_ENDED_EVENT, onBranchDayEnded);
+    };
+  }, [logoutAfterEndDay, promptStartDayAfterClose]);
 
   const suggestedCash =
     session?.pendingStartingSession != null
@@ -206,11 +328,14 @@ export function BranchDaySessionToolbar({
       });
       setEndOpen(false);
       if (logoutAfterEndDay) {
-        logout();
+        if (branchId) {
+          broadcastBranchDayEndedForBranch(branchId);
+        }
+        forceLogoutToLogin(BRANCH_DAY_END_LOGOUT_MESSAGE);
         return;
       }
-      await loadSession();
-      onSessionChanged?.();
+      autoStartPromptedRef.current = true;
+      window.dispatchEvent(new CustomEvent(BRANCH_DAY_ENDED_EVENT));
     } catch (e: unknown) {
       setBanner(errorMessage(e));
       throw e;
@@ -222,7 +347,9 @@ export function BranchDaySessionToolbar({
   const open = session?.operationalCashAllowed === true;
   const needsStart = session != null && !session.operationalCashAllowed;
   const checklistHandlesStarting =
-    currentStep === "CASH_ON_HAND" && !isComplete;
+    openingChecklist != null &&
+    !openingChecklist.modulesAllowed &&
+    currentStep === "CASH_ON_HAND";
 
   return (
     <>

@@ -8,6 +8,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
 import { useOpeningChecklist } from "@/contexts/opening-checklist-context";
+import { useBranchDayEndAutoLogout } from "@/hooks/use-branch-day-end-auto-logout";
 import { OpeningChecklistGatePlaceholder } from "@/components/shared/opening-checklist-gate-placeholder";
 
 function EmployeeLayoutInner({
@@ -17,12 +18,14 @@ function EmployeeLayoutInner({
 }) {
   const { user, logout, isLoading: isAuthLoading, isSessionExpiryActive } = useAuth();  
   const { selectedBranch } = useBranch();
-  const { isComplete, isOpeningChecklistReady } = useOpeningChecklist();
+  const { modulesAllowed, isOpeningChecklistReady } = useOpeningChecklist();
   const pathname = usePathname();
   const router = useRouter();
 
+  useBranchDayEndAutoLogout();
+
   const allowModuleContent =
-    isComplete || Boolean(pathname?.includes("/incident-report"));
+    modulesAllowed || Boolean(pathname?.includes("/incident-report"));
 
   const isLoading = isAuthLoading;
 

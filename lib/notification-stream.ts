@@ -1,4 +1,5 @@
 import {
+  isBranchDayEndedApiNotification,
   isBranchTransferApiNotification,
   isExpirationAlertApiNotification,
   isFundTransferApiNotification,
@@ -126,4 +127,10 @@ export function subscribeToPasswordRequestNotifications(
   onChange: NotificationChangeHandler,
 ) {
   return subscribeToNotifications(onChange, isPasswordRequestApiNotification, 15_000);
+}
+
+export function subscribeToBranchDayEndedNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isBranchDayEndedApiNotification, 15_000);
 }

@@ -12,6 +12,7 @@ import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-re
 import { useAuth } from "@/contexts/auth-context";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 import { formatDateToYMD } from "@/lib/time";
+import { getPhWallClockTimeString } from "@/lib/branch-calendar-date";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -897,7 +898,7 @@ export function NewPawnModal({
           storageFee: storageAmount,
           returnAmount: 0,
           transactionDate: formatDateToYMD(),
-          transactionTime: new Date().toTimeString().slice(0, 8),
+          transactionTime: getPhWallClockTimeString(),
           details: [form.itemsIncluded.trim(), form.idPresented, `Processed by: ${loggedInUserName || 'Employee'}`].filter(Boolean).join(' | '),
         },
       });

@@ -36,6 +36,8 @@ import { formatPeso } from "@/lib/currency";
 import {
   subscribeToFinanceRelevantNotifications,
 } from "@/lib/notification-stream";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { sortLedgerEntries } from "@/lib/ledger-sort";
 
 interface DashboardSummary {
   view: "super_admin";
@@ -164,8 +166,7 @@ export default function BranchFinancePage() {
   const [ledgerDateTo, setLedgerDateTo] = useState("");
 
   useEffect(() => {
-    const d = new Date();
-    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const today = getPhCalendarDateString();
     setLedgerDateFrom(today);
     setLedgerDateTo(today);
   }, []);
@@ -190,7 +191,7 @@ export default function BranchFinancePage() {
     setError(null);
 
     const branchQuery = isAllBranches ? "" : `?branch=${selectedBranch.id}`;
-    const today = new Date().toISOString().split("T")[0];
+    const today = getPhCalendarDateString();
     const ledgerDateFromQuery = ledgerDateFrom || today;
     const ledgerDateToQuery = ledgerDateTo || today;
 
@@ -394,7 +395,7 @@ export default function BranchFinancePage() {
 
     // Include system-level expenses in the "Today" summary if viewing All Branches
     if (isAllBranches) {
-      const today = new Date().toISOString().split("T")[0];
+      const today = getPhCalendarDateString();
       const systemEntriesToday = ledgerEntries.filter(
         (e) => (!e.branchId || e.branchId === "null" || e.branchName?.includes("System")) && e.date === today
       );
@@ -408,33 +409,27 @@ export default function BranchFinancePage() {
   }, [financeSummaries, isAllBranches, selectedBranch.id, ledgerEntries]);
 
   const printLedgerRows = useMemo(() => {
-    const rows = ledgerEntries
-      .filter((entry) => {
-        if (!isAllBranches && entry.branchId !== selectedBranch.id) return false;
-        if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) return false;
-        if (ledgerDateFrom && entry.date < ledgerDateFrom) return false;
-        if (ledgerDateTo && entry.date > ledgerDateTo) return false;
-        if (ledgerSearch) {
-          const q = ledgerSearch.toLowerCase();
-          const haystack = [
-            entry.description ?? "",
-            entry.itemName ?? "",
-            entry.reference ?? "",
-            entry.branchName ?? "",
-          ]
-            .join(" ")
-            .toLowerCase();
-          if (!haystack.includes(q)) return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        const aKey = `${a.date}T${a.time ?? "00:00:00"}`;
-        const bKey = `${b.date}T${b.time ?? "00:00:00"}`;
-        return bKey.localeCompare(aKey);
-      });
+    const rows = ledgerEntries.filter((entry) => {
+      if (!isAllBranches && entry.branchId !== selectedBranch.id) return false;
+      if (ledgerTypeFilter !== "all" && entry.type !== ledgerTypeFilter) return false;
+      if (ledgerDateFrom && entry.date < ledgerDateFrom) return false;
+      if (ledgerDateTo && entry.date > ledgerDateTo) return false;
+      if (ledgerSearch) {
+        const q = ledgerSearch.toLowerCase();
+        const haystack = [
+          entry.description ?? "",
+          entry.itemName ?? "",
+          entry.reference ?? "",
+          entry.branchName ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
 
-    return rows;
+    return sortLedgerEntries(rows, "desc");
   }, [
     isAllBranches,
     ledgerDateFrom,

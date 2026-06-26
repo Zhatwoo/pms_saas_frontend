@@ -7,11 +7,13 @@ import {
   useEffect,
   useCallback,
   useRef,
+  useMemo,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./auth-context";
 import { ApiError, api } from "@/lib/api";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { BRANCH_DAY_ENDED_EVENT, BRANCH_DAY_END_LOGOUT_MESSAGE } from "@/lib/branch-day-events";
 import { toast } from "sonner";
 
 export type ChecklistStep = 
@@ -25,6 +27,7 @@ type DailyOpeningApiStatus = {
   checklistStep: ChecklistStep;
   modulesAllowed: boolean;
   startingCash?: number;
+  expectedStartingCash?: number;
 };
 
 function isOpeningChecklistRole(role?: string | null) {
@@ -48,6 +51,8 @@ interface OpeningChecklistContextValue {
   resetChecklist: () => void;
   /** Re-fetch daily opening from server (e.g. after end-of-day balance closes the session). */
   refreshOpeningChecklistFromServer: () => Promise<void>;
+  /** Server-computed expected starting cash when branch day needs to be opened. */
+  expectedStartingCash: number | null;
   debugSetInventoryAudit: () => void;
 }
 
@@ -57,19 +62,38 @@ const openingLoadPromiseByKey = new Map<string, Promise<DailyOpeningApiStatus>>(
 const openingLoadStartedAtByKey = new Map<string, number>();
 const OPENING_LOAD_COOLDOWN_MS = 5000;
 const OPENING_VISIBILITY_SYNC_COOLDOWN_MS = 30000;
+/** Detect another employee's End Day while this tab still thinks the branch is open. */
+const BRANCH_SESSION_POLL_MS = 30000;
+const BRANCH_END_SYNC_COOLDOWN_MS = 8000;
+
+type BusinessSessionPollApi = {
+  operationalCashAllowed: boolean;
+};
 
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, forceLogoutToLogin } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<ChecklistStep>("CASH_ON_HAND");
   const [isComplete, setIsComplete] = useState(false);
   const [modulesAllowed, setModulesAllowed] = useState(false);
   const [isOpeningChecklistReady, setIsOpeningChecklistReady] = useState(false);
   const [openingChecklistModalHidden, setOpeningChecklistModalHidden] = useState(false);
+  const [expectedStartingCash, setExpectedStartingCash] = useState<number | null>(null);
   const hasLoadedBranchDayRef = useRef<string | null>(null);
   const lastSyncedOpeningDateRef = useRef<string | null>(null);
   const isLoadingOpeningRef = useRef(false);
   const lastVisibilitySyncAtRef = useRef(0);
+  const lastBranchEndSyncAtRef = useRef(0);
+  const awaitingBranchStartRef = useRef(false);
+  const sessionPollInFlightRef = useRef(false);
+  const branchEndLogoutTriggeredRef = useRef(false);
+
+  const logoutEmployeeForBranchEndDay = useCallback(() => {
+    if (branchEndLogoutTriggeredRef.current) return;
+    if (user?.role !== "employee" || !user.branchId) return;
+    branchEndLogoutTriggeredRef.current = true;
+    forceLogoutToLogin(BRANCH_DAY_END_LOGOUT_MESSAGE);
+  }, [forceLogoutToLogin, user?.branchId, user?.role]);
 
   const applyServerStatus = useCallback((data: DailyOpeningApiStatus) => {
     lastSyncedOpeningDateRef.current = data.openingDate;
@@ -80,7 +104,16 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     const complete = step === "COMPLETED" && Boolean(data.modulesAllowed);
     setCurrentStep(step);
     setIsComplete(complete);
-    setModulesAllowed(complete);
+    setModulesAllowed(Boolean(data.modulesAllowed));
+    awaitingBranchStartRef.current =
+      !data.modulesAllowed &&
+      (step === "CASH_ON_HAND" || step === "INVENTORY_AUDIT");
+    setExpectedStartingCash(
+      data.expectedStartingCash != null &&
+        Number.isFinite(Number(data.expectedStartingCash))
+        ? Number(data.expectedStartingCash)
+        : null,
+    );
   }, []);
 
   const loadDailyOpeningForEmployee = useCallback(
@@ -209,6 +242,92 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     };
   }, [user, loadDailyOpeningForEmployee]);
 
+  /** Same-tab End Day — employees sign out; admins refresh checklist state only. */
+  useEffect(() => {
+    if (user?.role !== "employee" || !user.branchId) return;
+
+    const onBranchDayEnded = () => {
+      logoutEmployeeForBranchEndDay();
+    };
+
+    window.addEventListener(BRANCH_DAY_ENDED_EVENT, onBranchDayEnded);
+    return () => {
+      window.removeEventListener(BRANCH_DAY_ENDED_EVENT, onBranchDayEnded);
+    };
+  }, [logoutEmployeeForBranchEndDay, user]);
+
+  /** Admin-only: End Day in another tab refreshes opening checklist without logout. */
+  useEffect(() => {
+    if (user?.role !== "admin" || !user.branchId) return;
+
+    const onBranchDayEnded = () => {
+      const now = Date.now();
+      if (now - lastBranchEndSyncAtRef.current < BRANCH_END_SYNC_COOLDOWN_MS) {
+        return;
+      }
+      lastBranchEndSyncAtRef.current = now;
+      awaitingBranchStartRef.current = true;
+      hasLoadedBranchDayRef.current = null;
+      lastVisibilitySyncAtRef.current = 0;
+      openingLoadStartedAtByKey.delete(
+        `${user.branchId}:${getPhCalendarDateString()}`,
+      );
+      setOpeningChecklistModalHidden(false);
+      setIsComplete(false);
+      setModulesAllowed(false);
+      setCurrentStep("CASH_ON_HAND");
+      void loadDailyOpeningForEmployee({ preserveShell: true });
+    };
+
+    window.addEventListener(BRANCH_DAY_ENDED_EVENT, onBranchDayEnded);
+    return () => {
+      window.removeEventListener(BRANCH_DAY_ENDED_EVENT, onBranchDayEnded);
+    };
+  }, [user, loadDailyOpeningForEmployee]);
+
+  /**
+   * Employee-only: poll branch session while modules appear open — catches End Day
+   * from another employee without requiring tab focus or manual refresh.
+   */
+  useEffect(() => {
+    if (
+      user?.role !== "employee" ||
+      !user.branchId ||
+      !modulesAllowed ||
+      awaitingBranchStartRef.current
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const pollBranchSession = async () => {
+      if (sessionPollInFlightRef.current || cancelled) return;
+      sessionPollInFlightRef.current = true;
+      try {
+        const session = await api.get<BusinessSessionPollApi>(
+          "/branch-finance/business-session",
+        );
+        if (cancelled || session.operationalCashAllowed) return;
+
+        logoutEmployeeForBranchEndDay();
+      } catch {
+        /* ignore transient network errors */
+      } finally {
+        sessionPollInFlightRef.current = false;
+      }
+    };
+
+    const id = window.setInterval(() => {
+      void pollBranchSession();
+    }, BRANCH_SESSION_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [user, modulesAllowed, logoutEmployeeForBranchEndDay]);
+
   const refreshOpeningChecklistFromServer = useCallback(async () => {
     if (!user || !isOpeningChecklistRole(user.role) || !user.branchId) {
       return;
@@ -290,12 +409,16 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
 
   const completeInventoryAudit = useCallback(async () => {
     await api.post("/branch-finance/daily-opening/complete", {});
-    setCurrentStep("COMPLETED");
-    setIsComplete(true);
-    setModulesAllowed(true);
-  }, []);
+    awaitingBranchStartRef.current = false;
+    hasLoadedBranchDayRef.current = null;
+    openingLoadStartedAtByKey.delete(
+      `${user?.branchId ?? ""}:${getPhCalendarDateString()}`,
+    );
+    await loadDailyOpeningForEmployee({ preserveShell: true });
+  }, [user?.branchId, loadDailyOpeningForEmployee]);
 
   const resetChecklist = useCallback(() => {
+    awaitingBranchStartRef.current = false;
     setCurrentStep("CASH_ON_HAND");
     setIsComplete(false);
     setModulesAllowed(false);
@@ -309,23 +432,41 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
     setIsComplete(false);
   }, []);
 
+  const contextValue = useMemo(
+    () => ({
+      currentStep,
+      isComplete,
+      modulesAllowed,
+      isOpeningChecklistReady,
+      openingChecklistModalHidden,
+      hideOpeningChecklistModal,
+      resetOpeningChecklistModalHidden,
+      completeCashOnHand,
+      completeInventoryAudit,
+      resetChecklist,
+      refreshOpeningChecklistFromServer,
+      expectedStartingCash,
+      debugSetInventoryAudit,
+    }),
+    [
+      currentStep,
+      isComplete,
+      modulesAllowed,
+      isOpeningChecklistReady,
+      openingChecklistModalHidden,
+      hideOpeningChecklistModal,
+      resetOpeningChecklistModalHidden,
+      completeCashOnHand,
+      completeInventoryAudit,
+      resetChecklist,
+      refreshOpeningChecklistFromServer,
+      expectedStartingCash,
+      debugSetInventoryAudit,
+    ],
+  );
+
   return (
-    <OpeningChecklistContext.Provider
-      value={{
-        currentStep,
-        isComplete,
-        modulesAllowed,
-        isOpeningChecklistReady,
-        openingChecklistModalHidden,
-        hideOpeningChecklistModal,
-        resetOpeningChecklistModalHidden,
-        completeCashOnHand,
-        completeInventoryAudit,
-        resetChecklist,
-        refreshOpeningChecklistFromServer,
-        debugSetInventoryAudit,
-      }}
-    >
+    <OpeningChecklistContext.Provider value={contextValue}>
       {children}
     </OpeningChecklistContext.Provider>
   );

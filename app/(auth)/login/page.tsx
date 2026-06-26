@@ -22,6 +22,16 @@ function LoginExperience() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const hasShownSessionExpiredRef = useRef(false);
+  const hasShownNoticeRef = useRef(false);
+
+  useEffect(() => {
+    const notice = searchParams.get("notice");
+    if (!notice || hasShownNoticeRef.current) return;
+    hasShownNoticeRef.current = true;
+    setShowSignup(false);
+    setShowLogin(true);
+    toast.info(notice);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get("reason") !== SESSION_EXPIRED_REASON) return;
