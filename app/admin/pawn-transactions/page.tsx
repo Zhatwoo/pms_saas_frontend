@@ -957,7 +957,7 @@ export default function SuperAdminPawnTransactionsPage() {
         }}
       />
 
-      <TransactionStats data={currentStats} />
+      <TransactionStats data={currentStats} isLoading={isLoading} />
 
       <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px_auto] xl:items-end">

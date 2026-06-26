@@ -1148,7 +1148,7 @@ export default function EmployeePawnTransactionsPage() {
         }}
       />
 
-      <TransactionStats data={currentStats} />
+      <TransactionStats data={currentStats} isLoading={isLoading} />
 
       <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
         <div className="flex flex-wrap items-end gap-4">
