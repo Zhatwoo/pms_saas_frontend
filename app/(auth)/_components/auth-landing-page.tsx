@@ -270,6 +270,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
+  const [isNavVisible, setIsNavVisible] = useState(true);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [publicBranches, setPublicBranches] = useState<PublicBranch[]>([]);
@@ -355,6 +356,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       const { scrollY, innerHeight } = window;
       setShowBackToTop(scrollY > innerHeight * 0.5);
       setIsAtTop(scrollY <= 10);
+
+      // Hide nav on scroll down, show on scroll up
+      if (scrollY > lastScrollY.current + 10 && scrollY > 100) {
+        setIsNavVisible(false);
+      } else if (scrollY < lastScrollY.current - 10 || scrollY <= 50) {
+        setIsNavVisible(true);
+      }
+      lastScrollY.current = scrollY;
+
       if (scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
         setActiveNavItem("CONTACT US"); return;
       }
@@ -389,7 +399,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
       <div className="relative z-10">
         {/* ─── NAV ─── */}
-        <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-green">
+        <nav className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-green transition-transform duration-300 ease-in-out ${isNavVisible ? "translate-y-0" : "-translate-y-full"}`}>
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
             <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e, "home", "HOME")} />
 
