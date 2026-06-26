@@ -69,6 +69,7 @@ interface TransactionActionsProps {
   onAddTransaction?: () => void;
   onExportCSV?: () => void;
   onPrintReport?: () => void;
+  maxDate?: string;
 }
 
 export function TransactionActions({
@@ -83,6 +84,7 @@ export function TransactionActions({
   onAddTransaction,
   onExportCSV,
   onPrintReport,
+  maxDate,
 }: TransactionActionsProps) {
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm">
@@ -130,6 +132,7 @@ export function TransactionActions({
             <input
               type="date"
               value={dateFilter}
+              max={maxDate}
               onChange={(event) => onDateFilterChange?.(event.target.value)}
               className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
             />

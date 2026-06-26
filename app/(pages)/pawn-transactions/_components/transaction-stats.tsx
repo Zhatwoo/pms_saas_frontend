@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { StatCard } from "@/components/shared/stat-card";
+import { StatCard, ThreeDotLoader } from "@/components/shared/stat-card";
 import { useAuth } from "@/contexts/auth-context";
 import { api } from "@/lib/api";
 import type { TransactionStatsData } from "./types";
+import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 
 const pawnedIcon = (
   <svg
@@ -89,9 +90,13 @@ const balanceIcon = (
 
 interface TransactionStatsProps {
   data?: TransactionStatsData;
+  isLoading?: boolean;
+  selectedDate?: string;
 }
 
-export function TransactionStats({ data }: TransactionStatsProps) {
+export function TransactionStats({ data, isLoading = false, selectedDate }: TransactionStatsProps) {
+  const todayString = getPhCalendarDateString();
+  const isToday = !selectedDate || selectedDate === todayString;
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
   const [liveCompanyBalance, setLiveCompanyBalance] = useState<number | null>(null);
@@ -119,11 +124,12 @@ export function TransactionStats({ data }: TransactionStatsProps) {
       }`}
     >
       <StatCard
-        label="Pawned Today"
+        label={isToday ? "Pawned Today" : "Pawned Items"}
         value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
         borderColor="bg-emerald-600"
+        loading={isLoading}
       />
       <StatCard
         label="Buy Back"
@@ -131,6 +137,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         subtitle="Purchased today"
         icon={buyBackIcon}
         borderColor="bg-blue-600"
+        loading={isLoading}
       />
       <StatCard
         label="Renewed"
@@ -138,6 +145,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         subtitle="Contracts renewed"
         icon={renewedIcon}
         borderColor="bg-amber-500"
+        loading={isLoading}
       />
       <StatCard
         label="Sold Item"
@@ -145,6 +153,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
         subtitle="Units sold"
         icon={soldIcon}
         borderColor="bg-orange-500"
+        loading={isLoading}
       />
 
       {isSuperAdmin && (
@@ -158,7 +167,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
                 Start Balance
               </p>
               <p className="mt-0.5 text-xl font-bold text-text-primary">
-                ₱ {data?.startingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                {isLoading ? <ThreeDotLoader /> : <>₱ {data?.startingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>}
               </p>
             </div>
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
@@ -175,7 +184,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
                 End Balance (Range)
               </p>
               <p className="mt-0.5 text-xl font-bold text-emerald-600">
-                ₱ {data?.endingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                {isLoading ? <ThreeDotLoader /> : <>₱ {data?.endingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>}
               </p>
             </div>
           </div>
@@ -193,7 +202,7 @@ export function TransactionStats({ data }: TransactionStatsProps) {
                 Live Total Balance
               </p>
               <p className="mt-0.5 text-lg xl:text-xl font-bold text-yellow-500">
-                ₱ {liveCompanyBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                {isLoading ? <ThreeDotLoader /> : <>₱ {liveCompanyBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>}
               </p>
             </div>
           </div>

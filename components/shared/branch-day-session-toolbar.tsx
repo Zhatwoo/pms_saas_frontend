@@ -31,6 +31,8 @@ export interface BranchDaySessionToolbarProps {
   syncOpeningChecklist?: () => Promise<void>;
   /** Employee pawn: after successful End day, sign out and return to login. */
   logoutAfterEndDay?: boolean;
+  /** Hide Start/End Day action buttons (e.g. for super admin read-only view). */
+  hideActions?: boolean;
 }
 
 function errorMessage(err: unknown): string {
@@ -44,6 +46,7 @@ export function BranchDaySessionToolbar({
   onSessionChanged,
   syncOpeningChecklist,
   logoutAfterEndDay = false,
+  hideActions = false,
 }: BranchDaySessionToolbarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -240,6 +243,7 @@ export function BranchDaySessionToolbar({
             </p>
           
           </div>
+          {!hideActions && (
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -262,6 +266,7 @@ export function BranchDaySessionToolbar({
               End day
             </button>
           </div>
+          )}
         </div>
         {banner ? (
           <div className="mt-3 flex items-start justify-between gap-2 rounded-lg border border-red-300/50 bg-red-950/30 px-3 py-2 text-xs text-red-100">

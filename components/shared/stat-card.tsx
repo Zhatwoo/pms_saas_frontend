@@ -11,6 +11,30 @@ interface StatCardProps {
   className?: string;
   valueClassName?: string;
   onClick?: () => void;
+  loading?: boolean;
+}
+
+export function ThreeDotLoader() {
+  return (
+    <span className="inline-flex items-center gap-[5px] h-[1em]">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="inline-block h-[8px] w-[8px] rounded-full bg-text-tertiary"
+          style={{
+            animation: "dotBounce 1.2s ease-in-out infinite",
+            animationDelay: `${i * 0.15}s`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes dotBounce {
+          0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
+          40% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+    </span>
+  );
 }
 
 export function StatCard({
@@ -24,6 +48,7 @@ export function StatCard({
   className = "",
   valueClassName = "",
   onClick,
+  loading = false,
 }: StatCardProps) {
   return (
     <div
@@ -38,7 +63,9 @@ export function StatCard({
           <p className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
             {label}
           </p>
-          <p className={`mt-1 text-2xl font-bold text-text-primary sm:text-4xl ${valueClassName}`}>{value}</p>
+          <p className={`mt-1 text-2xl font-bold text-text-primary sm:text-4xl ${valueClassName}`}>
+            {loading ? <ThreeDotLoader /> : value}
+          </p>
         </div>
         {icon && (
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
