@@ -121,6 +121,7 @@ function createEmptyForm() {
     serialNumber: "",
     itemsIncluded: "",
     condition: "",
+    conditionSpecify: "",
     memory: "",
     memoryUnit: "GB",
     remarks: "",
@@ -400,6 +401,15 @@ export function NewPawnModal({
       return;
     }
 
+    if (name === "condition") {
+      setForm((prev) => ({
+        ...prev,
+        condition: value,
+        conditionSpecify: value === "Others" ? prev.conditionSpecify : "",
+      }));
+      return;
+    }
+
     if (type === "number" || name === "contactNo") {
       // Prevent non-numeric characters
       // For contactNo, we strip everything except digits.
@@ -536,6 +546,14 @@ export function NewPawnModal({
     }
 
     return form.category.trim();
+  };
+
+  const getResolvedCondition = () => {
+    if (form.condition === "Others") {
+      return form.conditionSpecify.trim();
+    }
+
+    return form.condition.trim();
   };
 
   const handleGenerateQR = () => {
@@ -767,6 +785,7 @@ export function NewPawnModal({
     const fullName = [form.firstName, form.middleName, form.lastName].filter(Boolean).join(" ").trim();
     const verificationMode = getVerificationMode(form.idPresented);
     const resolvedCategory = getResolvedCategory();
+    const resolvedCondition = getResolvedCondition();
 
     if (verificationMode === "no-id" && !form.profilePhoto) {
       setIsSaving(false);
@@ -844,7 +863,7 @@ export function NewPawnModal({
           category: resolvedCategory,
           serialNumber: form.serialNumber.trim(),
           itemsIncluded: form.itemsIncluded.trim(),
-          condition: form.condition,
+          condition: resolvedCondition,
           memoryStorage: form.memory.trim() ? `${form.memory.trim()} ${form.memoryUnit}` : "",
           remarks: persistedRemarks,
           amount: amountValue,
@@ -1359,7 +1378,17 @@ export function NewPawnModal({
                           <option value="Incomplete">Incomplete (Missing parts)</option>
                           <option value="Defective">Defective / Not working</option>
                         </optgroup>
+                        <option value="Others" className="font-bold">Others</option>
                       </select>
+                      {form.condition === "Others" && (
+                        <input
+                          name="conditionSpecify"
+                          value={form.conditionSpecify}
+                          onChange={handleChange}
+                          placeholder="Enter condition"
+                          className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        />
+                      )}
                     </div>
                     )}
                     {showUnitField("memory") && (
