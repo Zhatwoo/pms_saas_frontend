@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
@@ -82,12 +82,87 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Proof of buy back — camera capture
+  const [proofImage, setProofImage] = useState<string | null>(null);
+  const [showProofCamera, setShowProofCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState("");
+  const [isCameraStreaming, setIsCameraStreaming] = useState(false);
+  const proofVideoRef = useRef<HTMLVideoElement>(null);
+  const proofCanvasRef = useRef<HTMLCanvasElement>(null);
+  const proofStreamRef = useRef<MediaStream | null>(null);
+  const proofFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user?.fullName) {
       setAdminForm(prev => ({ ...prev, processedBy: user.fullName }));
     }
   }, [user]);
+
+  // Clear proof image when selected item changes
+  useEffect(() => {
+    setProofImage(null);
+    setCameraError("");
+  }, [selectedItem?.id]);
+
+  const openProofCamera = useCallback(async () => {
+    setCameraError("");
+    setShowProofCamera(true);
+    setIsCameraStreaming(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+      proofStreamRef.current = stream;
+      setCameraStream(stream);
+      if (proofVideoRef.current) {
+        proofVideoRef.current.srcObject = stream;
+        proofVideoRef.current.onloadedmetadata = () => {
+          proofVideoRef.current?.play().catch(() => undefined);
+          setIsCameraStreaming(true);
+        };
+      }
+    } catch {
+      setCameraError("Camera access denied or not available. Please upload an image file instead.");
+    }
+  }, []);
+
+  const stopProofCamera = useCallback(() => {
+    if (proofStreamRef.current) {
+      proofStreamRef.current.getTracks().forEach(t => t.stop());
+      proofStreamRef.current = null;
+    }
+    setCameraStream(null);
+    setIsCameraStreaming(false);
+  }, []);
+
+  const captureProofPhoto = useCallback(() => {
+    const video = proofVideoRef.current;
+    const canvas = proofCanvasRef.current;
+    if (!video || !canvas) return;
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      setProofImage(canvas.toDataURL("image/jpeg", 0.9));
+      stopProofCamera();
+      setShowProofCamera(false);
+    }
+  }, [stopProofCamera]);
+
+  const handleProofFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        setProofImage(ev.target.result as string);
+        stopProofCamera();
+        setShowProofCamera(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -164,6 +239,11 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
 
     if (!adminForm.password) {
       setError("Please enter password to verify.");
+      return;
+    }
+
+    if (!proofImage) {
+      setError("A proof of buy back photo is required before confirming.");
       return;
     }
 
@@ -391,6 +471,48 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     </div>
                   </div>
                 </div>
+
+                {/* Proof of Buy Back — Camera Capture */}
+                <div className="mb-8 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Back <span className="text-red-500">*</span></p>
+                  </div>
+                  {proofImage ? (
+                    <div className="relative group">
+                      <img src={proofImage} alt="Proof of buy back" className="w-full max-h-48 object-cover rounded-xl border border-emerald-200 shadow-sm" />
+                      <button
+                        type="button"
+                        onClick={() => setProofImage(null)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                        title="Retake photo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setProofImage(null); void openProofCamera(); }}
+                        className="mt-3 w-full py-2 rounded-xl border border-emerald-200 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-all"
+                      >
+                        Retake Photo
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void openProofCamera()}
+                      className="w-full flex flex-col items-center justify-center gap-3 py-8 rounded-xl border-2 border-dashed border-emerald-200 hover:border-emerald-400 bg-white dark:bg-surface hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all cursor-pointer"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">Open Camera</p>
+                        <p className="text-[10px] text-emerald-900/40 mt-1">Required — Proof of buy back transaction</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-12">
@@ -495,6 +617,40 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     </div>
                   </div>
                 </div>
+
+                {/* Proof of Buy Back — Camera Capture (compact tablet) */}
+                <div className="mb-5 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Back <span className="text-red-500">*</span></p>
+                  </div>
+                  {proofImage ? (
+                    <div className="relative group">
+                      <img src={proofImage} alt="Proof" className="w-full max-h-36 object-cover rounded-xl border border-emerald-200 shadow-sm" />
+                      <button
+                        type="button"
+                        onClick={() => { setProofImage(null); void openProofCamera(); }}
+                        className="mt-2 w-full py-2 rounded-xl border border-emerald-200 text-xs font-black text-emerald-600 hover:bg-emerald-50 transition-all"
+                      >
+                        Retake Photo
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void openProofCamera()}
+                      className="w-full flex items-center justify-center gap-3 py-5 rounded-xl border-2 border-dashed border-emerald-200 hover:border-emerald-400 bg-white dark:bg-surface hover:bg-emerald-50 transition-all"
+                    >
+                      <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs font-black text-emerald-700 dark:text-emerald-300">Open Camera</p>
+                        <p className="text-[10px] text-emerald-900/40">Required proof of buy back</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -517,10 +673,15 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <input 
                       type="password" 
                       placeholder="••••••••"
-                      className="h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted"
+                      className={`h-10 rounded-lg border bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted ${
+                        error && error.toLowerCase().includes('password')
+                          ? 'border-red-400 focus:border-red-500'
+                          : 'border-emerald-100 dark:border-border-subtle focus:border-emerald-500'
+                      }`}
                       value={adminForm.password}
-                      onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                      onChange={(e) => { setAdminForm({...adminForm, password: e.target.value}); setError(null); }}
                     />
+                    {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
                   </div>
                 </div>
               </div>
@@ -537,9 +698,9 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
               </div>
 
               <button 
-                disabled={isConfirming || !selectedItem}
+                disabled={isConfirming || !selectedItem || !proofImage}
                 onClick={handleConfirmRedeem}
-                className={`flex items-center justify-center gap-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${compactTablet ? "px-8 py-4" : "px-12 py-5"} ${isConfirming || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
+                className={`flex items-center justify-center gap-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${compactTablet ? "px-8 py-4" : "px-12 py-5"} ${isConfirming || !selectedItem || !proofImage ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
               >
                 {isConfirming ? (
                    <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
@@ -551,13 +712,6 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 )}
                            </button>
             </div>
-
-          {error && (
-            <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-[8px] font-bold uppercase tracking-widest animate-in slide-in-from-bottom-1 w-full">
-              <AlertCircle className="w-3 h-3 shrink-0" />
-              {error}
-            </div>
-          )}
         </div>
       </div>
       <QrScanner 
@@ -565,6 +719,97 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         onScan={handleQrScan} 
         onClose={() => setIsScannerOpen(false)} 
       />
+
+      {/* Buy Back Proof Camera Modal */}
+      {showProofCamera && (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-zinc-950 border border-emerald-500/20 shadow-2xl animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">Transaction Proof</p>
+                <h3 className="text-base font-black uppercase tracking-wider mt-0.5">Buy Back Proof Capture</h3>
+              </div>
+              <button
+                onClick={() => { stopProofCamera(); setShowProofCamera(false); }}
+                className="p-1 rounded-full text-zinc-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Camera view */}
+            <div className="p-5 flex flex-col items-center">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-900 border-2 border-emerald-500/20 shadow-inner flex items-center justify-center">
+                {cameraError ? (
+                  <div className="flex flex-col items-center justify-center p-6 text-center text-zinc-400">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-500 mb-3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <p className="text-xs font-bold text-zinc-500 mb-4 max-w-xs">{cameraError}</p>
+                    <button
+                      type="button"
+                      onClick={() => proofFileInputRef.current?.click()}
+                      className="px-4 py-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-black uppercase tracking-wider rounded-xl transition"
+                    >
+                      Upload Image File
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <video
+                      ref={proofVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
+                    {isCameraStreaming && (
+                      <>
+                        <span className="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
+                        <span className="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
+                        <span className="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
+                        <span className="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div className="w-full mt-5 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => proofFileInputRef.current?.click()}
+                  className="flex-1 py-3.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-black uppercase tracking-wider rounded-2xl transition"
+                >
+                  Upload File
+                </button>
+                {!cameraError && (
+                  <button
+                    type="button"
+                    onClick={captureProofPhoto}
+                    disabled={!isCameraStreaming}
+                    className="w-14 h-14 rounded-full bg-white border-4 border-emerald-500 flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-40"
+                    title="Capture proof photo"
+                  >
+                    <span className="w-10 h-10 rounded-full bg-emerald-600 block hover:bg-emerald-700 transition" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { stopProofCamera(); setShowProofCamera(false); }}
+                  className="flex-1 py-3.5 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-black uppercase tracking-wider rounded-2xl transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Hidden file input + canvas */}
+            <input ref={proofFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleProofFileUpload} />
+            <canvas ref={proofCanvasRef} className="hidden" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
