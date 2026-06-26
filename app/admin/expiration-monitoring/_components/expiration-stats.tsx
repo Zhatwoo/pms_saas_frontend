@@ -51,31 +51,35 @@ export function ExpirationStats({ data, isLoading }: ExpirationStatsProps) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Overdue"
-        value={isLoading ? "..." : (data?.overdue ?? 0)}
+        value={data?.overdue ?? 0}
         subtitle="Past maturity date"
         icon={warningIcon}
         borderColor="border-red-500"
+        loading={isLoading}
       />
       <StatCard
         label="3 Days"
-        value={isLoading ? "..." : (data?.threeDays ?? 0)}
+        value={data?.threeDays ?? 0}
         subtitle="Expiring within 3 Days"
         icon={boxIcon}
         borderColor="border-orange-500"
+        loading={isLoading}
       />
       <StatCard
         label="7 Days"
-        value={isLoading ? "..." : (data?.sevenDays ?? 0)}
+        value={data?.sevenDays ?? 0}
         subtitle="Expiring within 7 Days"
         icon={boxIcon}
         borderColor="border-yellow-500"
+        loading={isLoading}
       />
       <StatCard
         label="30 Days"
-        value={isLoading ? "..." : (data?.thirtyDays ?? 0)}
+        value={data?.thirtyDays ?? 0}
         subtitle="Expiring within 30 Days"
         icon={boxIcon}
         borderColor="border-green-500"
+        loading={isLoading}
       />
     </div>
   );
