@@ -123,6 +123,7 @@ function createEmptyForm() {
     itemsIncluded: "",
     condition: "",
     memory: "",
+    memoryUnit: "GB",
     remarks: "",
     amount: "",
     purchasedDate: getTodayDate(),
@@ -312,34 +313,6 @@ export function NewPawnModal({
 
   useEffect(() => {
     if (!isOpen || !branchId || branchId === "__all__") {
-      return;
-    }
-
-    let isActive = true;
-
-    const fetchNextSerialNumber = async () => {
-      try {
-        const { serialNumber } = await api.get<{ serialNumber: string }>("/pawn-tickets/next-serial-number");
-        if (isActive && serialNumber) {
-          setForm((prev) => ({ ...prev, serialNumber }));
-        }
-      } catch (error) {
-        console.error("Failed to fetch next serial number:", error);
-        if (isActive) {
-          setForm((prev) => ({ ...prev, serialNumber: "PENDING-SN-xxxxx" }));
-        }
-      }
-    };
-
-    void fetchNextSerialNumber();
-
-    return () => {
-      isActive = false;
-    };
-  }, [branchId, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || !branchId || branchId === "__all__") {
       setBranchCustomers([]);
       setCustomerBranchTransactions(new Set());
       setCustomerLookupError(null);
@@ -476,7 +449,6 @@ export function NewPawnModal({
     setForm((prev) => ({
       ...createEmptyForm(),
       unitCode: prev.unitCode,
-      serialNumber: prev.serialNumber,
       purchasedDate: getTodayDate(),
     }));
     setQrUrl(null);
@@ -571,7 +543,6 @@ export function NewPawnModal({
     // Required fields for QR generation
     const resolvedCategory = getResolvedCategory();
     const unitCodeReady = form.unitCode && !form.unitCode.startsWith("PENDING");
-    const serialNumberReady = form.serialNumber && !form.serialNumber.startsWith("PENDING");
     const requiredFields = {
       firstName: "First Name",
       lastName: "Last Name",
@@ -581,6 +552,7 @@ export function NewPawnModal({
       contactNo: "Contact Number",
       idPresented: "ID Type",
       unitName: "Unit Name",
+      serialNumber: "Serial Number",
       amount: "Loan Amount",
       purchasedDate: "Purchased Date"
     };
@@ -640,11 +612,6 @@ export function NewPawnModal({
       return;
     }
 
-    if (!serialNumberReady) {
-      setErrorMessage("Serial number is still generating. Please wait and try again.");
-      return;
-    }
-
     setErrorMessage(null);
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(form.unitCode)}`;
@@ -666,7 +633,6 @@ export function NewPawnModal({
 
     const resolvedCategory = getResolvedCategory();
     const unitCodeReady = form.unitCode && !form.unitCode.startsWith("PENDING");
-    const serialNumberReady = form.serialNumber && !form.serialNumber.startsWith("PENDING");
 
     // 1. Check all required fields - Customer
     const requiredFields = {
@@ -677,6 +643,7 @@ export function NewPawnModal({
       contactNo: "Contact Number",
       idPresented: "ID Type",
       unitName: "Unit Name",
+      serialNumber: "Serial Number",
       amount: "Loan Amount",
       purchasedDate: "Purchased Date"
     };
@@ -718,11 +685,6 @@ export function NewPawnModal({
 
     if (!unitCodeReady) {
       setErrorMessage("Unit code is still generating. Please wait and try again.");
-      return;
-    }
-
-    if (!serialNumberReady) {
-      setErrorMessage("Serial number is still generating. Please wait and try again.");
       return;
     }
 
@@ -883,7 +845,7 @@ export function NewPawnModal({
           serialNumber: form.serialNumber.trim(),
           itemsIncluded: form.itemsIncluded.trim(),
           condition: form.condition,
-          memoryStorage: form.memory.trim(),
+          memoryStorage: form.memory.trim() ? `${form.memory.trim()} ${form.memoryUnit}` : "",
           remarks: persistedRemarks,
           amount: amountValue,
           purchasedDate: form.purchasedDate,
@@ -1367,7 +1329,7 @@ export function NewPawnModal({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {showUnitField("serialNo") && (
-                      <Input label={activeMoaLabels.serialNo || "Serial Number"} name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
+                      <Input label={activeMoaLabels.serialNo || "Serial Number"} name="serialNumber" value={form.serialNumber} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="Serial number" />
                     )}
                     {showUnitField("itemsIncluded") && (
                       <Input label={activeMoaLabels.itemsIncluded || "Items Included"} name="itemsIncluded" value={form.itemsIncluded} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" />
@@ -1417,7 +1379,17 @@ export function NewPawnModal({
                           pattern="[0-9]*"
                           className="w-full bg-transparent px-4 py-3 text-xs font-black text-emerald-950 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                         />
-                        <span className="pr-4 text-zinc-400 font-bold text-xs">GB</span>
+                        <select
+                          name="memoryUnit"
+                          value={form.memoryUnit}
+                          onChange={handleChange}
+                          className="mr-2 rounded-lg border border-zinc-200 dark:border-border bg-white/70 dark:bg-surface px-2 py-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-300 outline-none transition-colors focus:border-emerald-500"
+                          aria-label="Memory unit"
+                        >
+                          <option value="MB">MB</option>
+                          <option value="GB">GB</option>
+                          <option value="TB">TB</option>
+                        </select>
                       </div>
                     </div>
                     )}
@@ -1659,6 +1631,7 @@ export function NewPawnModal({
             form.city,
             form.region,
           ].filter(Boolean).join(", "),
+          memory: form.memory.trim() ? `${form.memory.trim()} ${form.memoryUnit}` : "",
           storageFee: form.storageFeeAmount,
           parkingFee: form.parkingFeeAmount,
           customMoaValues: form.customMoaValues,
