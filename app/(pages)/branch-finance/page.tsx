@@ -37,6 +37,7 @@ import {
   subscribeToFinanceRelevantNotifications,
 } from "@/lib/notification-stream";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
+import { getTransactionDateTimeFields } from "@/lib/time";
 import { sortLedgerEntries } from "@/lib/ledger-sort";
 
 interface DashboardSummary {
@@ -533,6 +534,7 @@ export default function BranchFinancePage() {
       setIsSubmitting(true);
       try {
         await api.post("/transactions", {
+          ...getTransactionDateTimeFields(),
           purpose: "Expense",
           cash_out: data.amount,
           details: `System Expense: ${data.category}${data.notes ? ` - ${data.notes}` : ""}`,

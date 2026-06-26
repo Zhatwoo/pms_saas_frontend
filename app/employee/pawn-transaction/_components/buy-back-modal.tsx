@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { formatDateToYMD } from "@/lib/time";
+import { getTransactionDateTimeFields } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
 
@@ -174,8 +174,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
       // 2. Create Sale Transaction
       await api.post("/transactions", {
+        ...getTransactionDateTimeFields(),
         purpose: "Buy Back",
-        transaction_date: formatDateToYMD(),
         branch_id: branchId,
         branch: branchName,
         cash_in: price,

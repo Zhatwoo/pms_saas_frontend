@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
-import { formatDateToYMD } from "@/lib/time";
+import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { RenewalProofModal } from "@/components/shared/renewal-proof-modal";
@@ -194,8 +194,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     try {
       const cashIn = totalToPay; 
       await api.post("/transactions", {
+        ...getTransactionDateTimeFields(),
         purpose: isReappraiseActive ? "Reappraise" : "Renew",
-        transaction_date: formatDateToYMD(),
         branch_id: branchId,
         branch: branchName,
         cash_in: cashIn,

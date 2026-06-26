@@ -5,6 +5,7 @@ import { DataTable } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
 import type { Column } from "@/components/shared/data-table";
 import { buildPmsPrintDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
+import { formatTimeWithAmPm } from "@/lib/time";
 
 export type LedgerEntryType =
   | "pawn"
@@ -75,14 +76,7 @@ function fmtDate(d: string | null) {
 
 function fmtTime(t: string | null) {
   if (!t) return null;
-  const parts = t.split(":");
-  if (parts.length < 2) return t;
-  let h = parseInt(parts[0], 10);
-  const m = parts[1];
-  const ampm = h >= 12 ? "PM" : "AM";
-  if (h === 0) h = 12;
-  else if (h > 12) h -= 12;
-  return `${h}:${m} ${ampm}`;
+  return formatTimeWithAmPm(t);
 }
 
 const ITEMS_PER_PAGE = 15;

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useRef, type ChangeEvent } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
-import { formatDateToYMD } from "@/lib/time";
+import { getTransactionDateTimeFields } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { useAuth } from "@/contexts/auth-context";
@@ -175,8 +175,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
 
       // 2. Process Redemption (Transaction)
       await api.post("/transactions", {
+        ...getTransactionDateTimeFields(),
         purpose: "Redeem",
-        transaction_date: formatDateToYMD(),
         branch_id: branchId,
         branch: branchName,
         cash_in: interestCalc.totalAmount,

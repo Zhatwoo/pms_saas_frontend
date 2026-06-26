@@ -6,6 +6,7 @@ import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
+import { getTransactionDateTimeFields } from "@/lib/time";
 
 interface SellsTransferModalProps {
   isOpen: boolean;
@@ -240,6 +241,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
 
         // 2. Create Transaction Log for Transfer
         await api.post("/transactions", {
+          ...getTransactionDateTimeFields(),
           purpose: "Transfer Item",
           cash_in: 0,
           cash_out: 0,

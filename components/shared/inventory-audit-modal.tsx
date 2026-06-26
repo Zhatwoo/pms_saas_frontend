@@ -719,13 +719,16 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
         ? 100
         : 0;
 
-  const canComplete = Boolean(
+  const tallyComplete = Boolean(
     tally &&
       (tally.totalInSystem === 0 ||
         (tally.totalInSystem > 0 &&
           tally.missingInVault.length === 0 &&
           tally.extraInVault.length === 0)),
   );
+
+  const canComplete =
+    (checklistEmpty && !isLoadingChecklistItems) || tallyComplete;
 
   const completionLabel = isLoadingChecklistItems
     ? "Syncing checklist..."
