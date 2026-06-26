@@ -55,14 +55,14 @@ export function AppLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {mobileMenuOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar"
-          className="fixed inset-0 z-40 cursor-default bg-black/50 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+      <button
+        type="button"
+        aria-label="Close sidebar"
+        className={`fixed inset-0 z-40 cursor-default bg-black/50 lg:hidden transition-opacity duration-300 ${
+          mobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setMobileMenuOpen(false)}
+      />
       <div className="no-print">
         <Sidebar
           navGroups={navGroups}
@@ -78,7 +78,7 @@ export function AppLayout({
           disabled={isRestricted}
         />
       </div>
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
         <Header
           userInitials={userInitials}
           notificationCount={notificationCount}

@@ -9,6 +9,7 @@
 html {
   scroll-behavior: smooth;
   color-scheme: light;
+  overflow-x: hidden;
 }
 
 /* Custom minimal scrollbar for the page */
@@ -95,7 +96,7 @@ html.theme-transitioning *::after {
 
   /* ── Brand colors ── */
   --brand-green: #0B5D3B;
-  --brand-gold: #D4AF37;
+  --brand-gold: #E8C547;
 
   /* Semantic surface tokens */
   --surface: #ffffff;
@@ -196,6 +197,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter);
+  overflow-x: hidden;
   transition:
     background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
     color 0.45s cubic-bezier(0.4, 0, 0.2, 1);
