@@ -90,7 +90,7 @@ function NavItemComponent({
           >
             <span className="flex-shrink-0 text-pawn-gold">{item.icon}</span>
             {!collapsed && (
-              <span className="whitespace-nowrap">{item.label}</span>
+              <span className="truncate">{item.label}</span>
             )}
           </div>
           {!collapsed && (
@@ -178,7 +178,7 @@ function NavItemComponent({
       }`}
     >
       <span className="flex-shrink-0">{item.icon}</span>
-      {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+      {!collapsed && <span className="truncate">{item.label}</span>}
     </div>
   );
 
@@ -306,10 +306,10 @@ export function Sidebar({
         role={isMobileOpen ? "dialog" : undefined}
         aria-modal={isMobileOpen ? "true" : undefined}
         aria-label="Sidebar navigation"
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col overflow-hidden bg-pawn-sidebar text-white shadow-2xl transition-[transform,opacity,width] duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] lg:static lg:z-auto lg:h-screen lg:flex-none lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 flex-col overflow-hidden bg-pawn-sidebar text-white shadow-2xl transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:h-screen lg:flex-none lg:shadow-none lg:transition-[transform,width] lg:duration-100 lg:ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
           isMobileOpen
-            ? "translate-x-0 opacity-100 pointer-events-auto"
-            : "-translate-x-full opacity-0 pointer-events-none lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto"
+            ? "translate-x-0 pointer-events-auto"
+            : "-translate-x-full pointer-events-none lg:translate-x-0 lg:pointer-events-auto"
         } ${isCompact ? "lg:w-[72px]" : "lg:w-72"}`}
       >
         {/* Brand header */}

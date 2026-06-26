@@ -171,9 +171,9 @@ export function FeaturedSaleItems() {
   return (
     <section id="items-for-sale" className="scroll-mt-20 bg-emerald-900 px-4 py-16 md:px-12 md:py-24 lg:scroll-mt-32 lg:pt-32 lg:pb-48">
       <div className="mx-auto max-w-6xl reveal-on-scroll">
-        <p className="text-sm font-bold uppercase tracking-widest text-amber-500">Available Items for Sale</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Available Items for Sale</p>
         <h2 className="mt-2 text-3xl font-black text-white md:text-4xl lg:text-5xl">
-          Fresh Finds from <span className="text-amber-400">Our Branches</span>
+          Fresh Finds from <span className="text-brand-gold">Our Branches</span>
         </h2>
 
         <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -181,7 +181,7 @@ export function FeaturedSaleItems() {
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${selectedCategory === "all" ? "border-amber-400 bg-amber-400 text-emerald-950" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
+              className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${selectedCategory === "all" ? "border-brand-gold bg-brand-gold text-emerald-950" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
             >
               All
             </button>
@@ -196,7 +196,7 @@ export function FeaturedSaleItems() {
                   key={category}
                   type="button"
                   onClick={() => setSelectedCategory(category)}
-                  className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${normalizeCategory(selectedCategory) === normalizeCategory(category) ? "border-amber-400 bg-amber-400 text-emerald-950" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
+                  className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${normalizeCategory(selectedCategory) === normalizeCategory(category) ? "border-brand-gold bg-brand-gold text-emerald-950" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
                 >
                   {category} <span className="opacity-70">({count})</span>
                 </button>
@@ -208,7 +208,7 @@ export function FeaturedSaleItems() {
 
         <div className="mt-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-white/60">
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-brand-gold" />
             <span>{filteredItems.length} items found</span>
           </div>
 
@@ -279,7 +279,7 @@ export function FeaturedSaleItems() {
 
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-emerald-950/10 to-transparent" />
                     <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-amber-400 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950 shadow-lg">
+                      <span className="rounded-full bg-brand-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-950 shadow-lg">
                         {item.category}
                       </span>
                       <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-sm">
@@ -287,7 +287,7 @@ export function FeaturedSaleItems() {
                       </span>
                     </div>
                     <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-300/90">{item.branch}</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold/90">{item.branch}</p>
                       <h3 className="mt-1 line-clamp-2 text-lg font-black leading-tight">{item.itemName}</h3>
                     </div>
                   </div>
@@ -340,7 +340,7 @@ export function FeaturedSaleItems() {
                 key={index}
                 type="button"
                 onClick={() => setCurrentSlide(index)}
-                className={`h-2 rounded-full transition-all ${index === currentSlide ? "w-8 bg-amber-400" : "w-2 bg-emerald-300 hover:bg-emerald-400"}`}
+                className={`h-2 rounded-full transition-all ${index === currentSlide ? "w-8 bg-brand-gold" : "w-2 bg-emerald-300 hover:bg-emerald-400"}`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}

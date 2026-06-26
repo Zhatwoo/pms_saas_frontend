@@ -13,7 +13,7 @@
 
   /* ── Brand colors ── */
   --brand-green: #0B5D3B;
-  --brand-gold: #D4AF37;
+  --brand-gold: #E8C547;
 
   /* Semantic surface tokens */
   --surface: #ffffff;
@@ -99,7 +99,7 @@
 
   /* ── Brand colors ── */
   --color-brand-green: #0B5D3B;
-  --color-brand-gold: #D4AF37;
+  --color-brand-gold: #E8C547;
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-inter);

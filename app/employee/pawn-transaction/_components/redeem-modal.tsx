@@ -658,7 +658,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
 
         {/* Footer Actions */}
         <div className={`border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between shrink-0 ${compactTablet ? "gap-4 p-4 md:p-5 md:max-xl:gap-5" : "gap-8 p-8"}`}>
-          <div className="flex items-center gap-8 w-full sm:w-auto">
+          <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full sm:w-auto">
              <button 
                 onClick={onClose}
                 className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
@@ -687,7 +687,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
               </div>
           </div>
 
-          <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
+          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
              <div className="text-right">
                 <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
                   TOTAL LOAN AMOUNT
@@ -723,7 +723,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
       {/* Buy Back Proof Camera Modal */}
       {showProofCamera && (
         <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-zinc-950 border border-emerald-500/20 shadow-2xl animate-in zoom-in-95 duration-300">
+          <div className="relative w-full max-w-lg max-h-[95vh] overflow-y-auto rounded-3xl bg-white dark:bg-zinc-950 border border-emerald-500/20 shadow-2xl animate-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white flex items-center justify-between">
               <div>
