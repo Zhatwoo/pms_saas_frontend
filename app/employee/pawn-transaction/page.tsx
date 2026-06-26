@@ -849,7 +849,7 @@ export default function EmployeePawnTransactionsPage() {
 
   const handleExportCSV = useCallback(() => {
     if (filteredTransactions.length === 0) return;
-    const headers = ["Transaction #", "Purpose", "Date", "Time", "Buy Back", "Buy Out", "Sold", "Cash In", "Cash Out", "Return", "Unit", "Unit Code", "Pawn", "Storage"];
+    const headers = ["Transaction #", "Purpose", "Date", "Time", "Buy Out", "Buy Back", "Sold", "Cash In", "Cash Out", "Return", "Unit", "Unit Code", "Pawn", "Storage"];
     const rows = filteredTransactions.map((r) =>
       [r.transactionNo, r.purpose, r.date, r.time, r.buyBack, r.buyOut, r.sold, r.cashIn, r.cashOut, r.returnVal, r.unit, r.unitCode, r.pawn, r.storage].join(",")
     );
@@ -1051,7 +1051,7 @@ export default function EmployeePawnTransactionsPage() {
                 <td className="border border-emerald-800/20 p-2 text-right font-bold">{currentStats.pawnedToday}</td>
               </tr>
               <tr>
-                <td className="border border-emerald-800/20 p-2">Buy Back</td>
+                <td className="border border-emerald-800/20 p-2">Buy Out</td>
                 <td className="border border-emerald-800/20 p-2 text-right font-bold">{currentStats.buyBack}</td>
               </tr>
               <tr>
@@ -1180,8 +1180,8 @@ export default function EmployeePawnTransactionsPage() {
             <option value="All">All Purposes</option>
             <option value="Renew">Renew</option>
             <option value="Sells / Transfer">Sells / Transfer</option>
-            <option value="Redeem">Redeem</option>
-            <option value="Buy Back">Buy Back</option>
+            <option value="Redeem">Buy Back</option>
+            <option value="Buy Back">Buy Out</option>
             <option value="Reserve / Layaway">Reserve / Layaway</option>
             <option value="Pawn">Pawn</option>
             <option value="Start">Start</option>

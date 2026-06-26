@@ -207,7 +207,7 @@ export function TransactionActions({
               }`}
           >
             {redeemIcon}
-            Redeem
+            Buy Back
           </button>
 
           <button
@@ -221,7 +221,7 @@ export function TransactionActions({
               }`}
           >
             {cartIcon}
-            Buy Back
+            Buy Out
           </button>
 
           <button
