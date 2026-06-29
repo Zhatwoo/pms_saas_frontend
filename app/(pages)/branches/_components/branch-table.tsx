@@ -83,11 +83,8 @@ function ActionsButtons({
         title={`Terminate ${branchId}`}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 4 21 4 23 6 23 20a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6" />
-          <line x1="10" y1="11" x2="10" y2="17" />
-          <line x1="14" y1="11" x2="14" y2="17" />
-          <line x1="5" y1="4" x2="5" y2="2" />
-          <line x1="19" y1="4" x2="19" y2="2" />
+          <circle cx="12" cy="12" r="10" />
+          <line x1="8" y1="12" x2="16" y2="12" />
         </svg>
       </button>
     </div>
