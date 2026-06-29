@@ -4,6 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
 import { getInterestRateSchedule } from "@/lib/interest";
+import {
+  MOA_LEGAL_PAGE,
+  MOA_PRINT_CSS,
+  MOA_PRINT_SCREEN_CSS,
+  MOA_WATERMARK_CSS,
+} from "@/lib/print-templates";
+import { calculatePeriodicStorageFee } from "@/lib/interest";
 
 interface MoaModalProps {
   isOpen: boolean;
@@ -92,6 +99,65 @@ type MoaTemplate = {
   }>;
 };
 
+const MOA_PAGE_CLASS =
+  "moa-print-page mx-auto w-full min-w-0 flex-none space-y-4 overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md moa-paper-effect";
+const MOA_PAGE_STYLE = {
+  width: MOA_LEGAL_PAGE.screenWidthPx,
+  height: MOA_LEGAL_PAGE.screenHeightPx,
+  maxWidth: MOA_LEGAL_PAGE.screenWidthPx,
+  maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
+  padding: MOA_LEGAL_PAGE.padding,
+  boxSizing: "border-box" as const,
+};
+
+function MoaBranchHeader({
+  primary,
+  branchLine,
+  address,
+  phone,
+}: {
+  primary: string;
+  branchLine?: string;
+  address?: string;
+  phone?: string;
+}) {
+  return (
+    <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
+      <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">{primary}</p>
+      {branchLine ? (
+        <p className="text-[8px] font-bold uppercase tracking-wide text-zinc-600 leading-tight">{branchLine}</p>
+      ) : null}
+      {address ? (
+        <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{address}</p>
+      ) : null}
+      {phone ? (
+        <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{phone}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function MoaNamedSignatureLine({
+  name,
+  label,
+  className = "",
+}: {
+  name: string;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <div className={`text-center flex flex-col items-center ${className}`}>
+      <div className="w-full border-b border-zinc-400 min-h-6 flex items-end justify-center pb-0.5">
+        {name ? (
+          <span className="text-[8px] font-bold text-zinc-800 uppercase truncate max-w-full px-1">{name}</span>
+        ) : null}
+      </div>
+      <span className="text-[7px] uppercase font-bold text-zinc-500 mt-1">{label}</span>
+    </div>
+  );
+}
+
 function normalizeTermsText(rawText?: string) {
   const normalizedLines = (rawText ?? "")
     .split(/\r?\n/)
@@ -122,6 +188,53 @@ function parsePersistedMoaValues(remarks?: string) {
         ];
       }),
   );
+}
+
+function numberToWords(num: number): string {
+  const ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+  const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+  
+  if (num === 0) return "zero";
+  
+  const convertLessThanOneThousand = (n: number): string => {
+    if (n < 20) return ones[n];
+    const unit = n % 10;
+    const ten = Math.floor(n / 10) % 10;
+    const hundred = Math.floor(n / 100);
+    
+    let res = "";
+    if (hundred > 0) {
+      res += ones[hundred] + " hundred";
+      if (n % 100 > 0) res += " and ";
+    }
+    
+    if (ten >= 2) {
+      res += tens[ten];
+      if (unit > 0) res += "-" + ones[unit];
+    } else if (n % 100 > 0) {
+      res += ones[n % 100];
+    }
+    
+    return res;
+  };
+  
+  const thousands = Math.floor(num % 1000000 / 1000);
+  const millions = Math.floor(num % 1000000000 / 1000000);
+  const remaining = Math.floor(num % 1000);
+  
+  let result = "";
+  
+  if (millions > 0) {
+    result += convertLessThanOneThousand(millions) + " million ";
+  }
+  if (thousands > 0) {
+    result += convertLessThanOneThousand(thousands) + " thousand ";
+  }
+  if (remaining > 0) {
+    result += convertLessThanOneThousand(remaining);
+  }
+  
+  return result.trim().toUpperCase() + " PESOS ONLY";
 }
 
 export function MoaModal({
@@ -218,9 +331,61 @@ export function MoaModal({
     if (!printRef.current) return;
 
     try {
-      document.documentElement.classList.add("printing-moa-active");
-      document.body.classList.add("printing-moa-active");
-      const imagePromises = Array.from(printRef.current.querySelectorAll("img")).map((image) => {
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.setAttribute("aria-hidden", "true");
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        document.body.removeChild(iframe);
+        return;
+      }
+
+      iframeDoc.open();
+      iframeDoc.write(
+        `<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title></head>` +
+        `<body class="moa-print-document">${printRef.current.outerHTML}</body></html>`,
+      );
+      iframeDoc.close();
+
+      const stylesheetPromises: Promise<void>[] = [];
+      Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
+        try {
+          const clone = node.cloneNode(true) as HTMLLinkElement | HTMLStyleElement;
+          if (clone instanceof HTMLLinkElement) {
+            stylesheetPromises.push(new Promise((resolve) => {
+              clone.addEventListener("load", () => resolve(), { once: true });
+              clone.addEventListener("error", () => resolve(), { once: true });
+            }));
+          }
+          iframeDoc.head.appendChild(clone);
+        } catch {
+          // Ignore clone failures from browser-injected styles.
+        }
+      });
+
+      const printOverrides = iframeDoc.createElement("style");
+      printOverrides.textContent = `
+        ${MOA_PRINT_SCREEN_CSS}
+        body.moa-print-document,
+        body.moa-print-document *,
+        body.moa-print-document #moa-slip-printable,
+        body.moa-print-document #moa-slip-printable * {
+          visibility: visible !important;
+        }
+        @media print {
+          ${MOA_PRINT_CSS}
+        }
+      `;
+      iframeDoc.head.appendChild(printOverrides);
+
+      const imagePromises = Array.from(iframeDoc.images).map((image) => {
         if (image.complete) return Promise.resolve();
         return new Promise<void>((resolve) => {
           image.addEventListener("load", () => resolve(), { once: true });
@@ -277,7 +442,6 @@ export function MoaModal({
     .toUpperCase();
 
   const amount = Number(data.amount) || 0;
-  const storageFee = Number(data.storageFee) || 0;
   const persistedMoaValues = parsePersistedMoaValues(data.remarks);
   const parkingFee =
     Number(data.parkingFee)
@@ -288,12 +452,16 @@ export function MoaModal({
     .filter((line) => !line.startsWith("[MOA Fields] "))
     .join("\n")
     .trim();
-  const totalDue = amount + storageFee + parkingFee;
+  const storageFee =
+    amount > 0
+      ? calculatePeriodicStorageFee(amount, data.category)
+      : Number(data.storageFee) || 0;
+  const netProceeds = Math.max(0, amount - parkingFee);
   const financialValues: Record<FinancialFieldKey, string> = {
     amount: formatPeso(amount),
     storageFee: formatPeso(storageFee),
     parkingFee: formatPeso(parkingFee),
-    netProceeds: formatPeso(totalDue),
+    netProceeds: formatPeso(netProceeds),
   };
   const unitValues: Record<UnitFieldKey, string> = {
     brandModel: data.unitName || "---",
@@ -307,7 +475,7 @@ export function MoaModal({
     amount: "Amount:",
     storageFee: "Storage fee:",
     parkingFee: "Parking fee:",
-    netProceeds: "Total Due:",
+    netProceeds: "Net Proceeds:",
   };
   const unitLabelFallbacks: Record<UnitFieldKey, string> = {
     brandModel: "Brand and model:",
@@ -344,9 +512,23 @@ export function MoaModal({
   const gracePeriodEnd = addDays(baseDate, schedule[4]?.endDay ?? 34);
   const printableTermsLines = termsText.split(/\r?\n/).filter(Boolean);
 
-  const headerPrimary = shopInfo?.shopName || data.branchName || "JCLB BUY BACK SHOP";
-  const headerSecondary = shopInfo?.shopAddress || data.branchAddress || "Main Branch";
-  const headerPhone = shopInfo?.phoneNumber || data.branchPhone || "";
+  const brandName = shopInfo?.shopName || "JCLB BUY BACK SHOP";
+  const transactionBranch = data.branchName?.trim() || "";
+  const transactionAddress = data.branchAddress?.trim() || "";
+  const transactionPhone = data.branchPhone?.trim() || "";
+  const hasTransactionBranch = Boolean(
+    transactionBranch || transactionAddress || transactionPhone,
+  );
+  const headerPrimary = brandName;
+  const headerBranchLine = hasTransactionBranch ? transactionBranch : "";
+  const headerSecondary =
+    transactionAddress || (!hasTransactionBranch ? shopInfo?.shopAddress : "") || "";
+  const headerPhone =
+    transactionPhone || (!hasTransactionBranch ? shopInfo?.phoneNumber : "") || "";
+  const sellerSignatureLabel =
+    labels?.sellerSignature || "(Name and Signature of Seller)";
+  const representativeSignatureLabel =
+    labels?.representativeSignature || "(Name and Signature of Representative)";
 
   return (
     <div id="moa-modal-root" className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
@@ -382,239 +564,494 @@ export function MoaModal({
 
         {/* MOA Content - Matches Image 2 */}
         <div className="flex-1 overflow-y-auto">
-          <div id="moa-slip-printable" ref={printRef} className="max-w-full overflow-x-auto p-6 pb-10 space-y-5 text-[9px] text-zinc-800 leading-tight bg-white sm:text-[10px] moa-paper-effect">
-            {/* Title moved to the very top */}
-            <div className="text-center mb-4">
-              <h1 className="text-[18px] font-black uppercase tracking-[0.18em] text-emerald-900 underline">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h1>
-              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.22em] leading-none text-zinc-500">{headerPrimary}</p>
-              {(headerSecondary || headerPhone) && (
-                <div className="mt-1 flex flex-col items-center gap-0.5">
-                  {headerSecondary && (
-                    <p className="text-[8px] font-medium uppercase tracking-tight text-zinc-500">{headerSecondary}</p>
-                  )}
-                  {headerPhone && (
-                    <div className="flex items-center gap-1">
-                      <svg width="6" height="6" viewBox="0 0 24 24" fill="currentColor" className="text-zinc-400">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.28-2.28a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                      </svg>
-                      <p className="text-[8px] font-medium uppercase tracking-tight text-zinc-500">{headerPhone}</p>
+          <div id="moa-slip-printable" ref={printRef} className="max-w-full bg-white text-zinc-800 moa-paper-effect">
+            
+            {/* PAGE 1: SLIPS (Original & Customer Copy) */}
+            <div className={MOA_PAGE_CLASS} style={MOA_PAGE_STYLE}>
+              
+              {/* ORIGINAL COPY (Top Half) */}
+              <div className="space-y-2 relative moa-watermark pb-1">
+                {/* Centered shop header */}
+                <MoaBranchHeader
+                  primary={headerPrimary}
+                  branchLine={headerBranchLine}
+                  address={headerSecondary}
+                  phone={headerPhone}
+                />
+
+                {/* Row of copy label and unit code */}
+                <div className="flex items-center justify-between gap-3 pt-1 text-[9.5px]">
+                  <p className="font-bold italic">{labels?.originalCopy || "Original copy"}</p>
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
+                    <span className="w-20 border-b border-zinc-400 font-bold text-center">{data.unitCode || "---"}</span>
+                  </div>
+                </div>
+
+                {/* Centered Slip Title */}
+                <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5">
+                  {labels?.moaTitle || "Memorandum of Agreement Slip"}
+                </div>
+
+                {/* Dates & Maturity row */}
+                <div className="grid grid-cols-2 gap-8 border-b border-zinc-100 pb-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-24 font-semibold text-[8.5px] uppercase tracking-wider">{labels?.purchasedDate || "Purchased Date:"}</span>
+                      <span className="flex-1 border-b border-zinc-400 text-center">{data.purchasedDate || new Date().toLocaleDateString()}</span>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1 border-b border-zinc-100 pb-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-bold">{labels?.originalCopy || "Original copy"}</p>
-                <div className="flex items-center gap-1 text-[10px]">
-                  <span className="font-bold uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
-                  <span className="w-20 border-b border-zinc-400 font-bold">{data.unitCode || "---"}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-28 font-semibold text-[9px] uppercase tracking-wider">{labels?.purchasedDate || "Purchased Date:"}</span>
-                    <span className="flex-1 border-b border-zinc-400">{data.purchasedDate || new Date().toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-28 font-semibold text-[9px] uppercase tracking-wider">{labels?.idsPresented || "ID(s) Presented:"}</span>
-                    <span className="flex-1 border-b border-zinc-400">{data.idPresented || "No ID"}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
-                    <span className="whitespace-nowrap font-semibold text-[9px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
-                    <div className="grid min-w-0 justify-end grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
-                      <span className="contents whitespace-nowrap">
-                        <span className="text-[8px]">1st</span>
-                        <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[0]}</span>
-                      </span>
-                      <span className="contents whitespace-nowrap">
-                        <span className="text-[8px]">2nd</span>
-                        <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[1]}</span>
-                      </span>
-                      <span className="contents whitespace-nowrap">
-                        <span className="text-[8px]">3rd</span>
-                        <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[2]}</span>
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <span className="w-24 font-semibold text-[8.5px] uppercase tracking-wider">{labels?.idsPresented || "ID(s) Presented:"}</span>
+                      <span className="flex-1 border-b border-zinc-400 text-center">{data.idPresented || "No ID"}</span>
                     </div>
                   </div>
-                  <div className="grid min-w-0 grid-cols-[76px_minmax(0,1fr)] items-center gap-x-1">
-                    <span className="whitespace-nowrap font-semibold text-[9px] uppercase tracking-wider text-red-600">{labels?.expiryDate || "Expiry Date:"}</span>
-                    <span className="flex-1 border-b border-zinc-400 text-red-600 font-bold">{gracePeriodEnd}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            {/* Interest schedule removed to match global MOA template from settings (super admin)
-                Template-driven content from `/settings/moa_template` will be used instead. */}
-
-            <div className="space-y-2 px-2">
-              <p className="leading-5">
-                {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block max-w-full px-2 border-b border-zinc-500 font-bold min-w-[120px] sm:min-w-[200px] text-center break-words">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block max-w-full px-2 border-b border-zinc-500 font-medium min-w-[180px] sm:min-w-[400px] text-center break-words">{data.address.toUpperCase()}</span>, {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."}
-              </p>
-              <p className="leading-5">
-                {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">{formatPeso(amount)}</span> {labels?.plusText || "plus"} <span className="inline-block px-2 border-b border-zinc-500 font-bold min-w-[100px] text-center">{formatPeso(storageFee)}</span> {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block px-2 border-b border-zinc-500 min-w-[100px] text-center">₱0.00</span> {labels?.overdueText || "applies when overdue."}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 border-y border-zinc-200 py-4 px-3 bg-zinc-50/50">
-              <div className="space-y-3">
-                <h3 className="font-black text-[9px] uppercase underline tracking-wider text-emerald-900">{labels?.financialDetails || "Financial Details"}</h3>
-                <div className="space-y-1.5">
-                  {financialFields.map((field, index) => {
-                    const isTotal = field === "netProceeds";
-                    return (
-                      <div
-                        key={field}
-                        className={`grid grid-cols-[1fr_96px] items-center gap-2 ${
-                          isTotal && index > 0 ? "border-t border-zinc-200 pt-2" : ""
-                        }`}
-                      >
-                        <span className={`${isTotal ? "font-black text-emerald-800 text-[9px]" : "font-semibold text-zinc-500 text-[8px]"} uppercase`}>
-                          {labels?.[field] || financialLabelFallbacks[field]}
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[76px_1fr] items-center gap-x-1">
+                      <span className="whitespace-nowrap font-semibold text-[8.5px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
+                      <div className="grid grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                        <span className="contents whitespace-nowrap">
+                          <span className="text-[7.5px] text-zinc-500">1st</span>
+                          <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[0]}</span>
                         </span>
-                        <span className={`text-right tabular-nums ${isTotal ? "font-black text-emerald-800 text-lg" : "font-medium text-zinc-900"}`}>
-                          {financialValues[field]}
+                        <span className="contents whitespace-nowrap">
+                          <span className="text-[7.5px] text-zinc-500">2nd</span>
+                          <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[1]}</span>
+                        </span>
+                        <span className="contents whitespace-nowrap">
+                          <span className="text-[7.5px] text-zinc-500">3rd</span>
+                          <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[2]}</span>
                         </span>
                       </div>
-                    );
-                  })}
-                  {customFinancialFields.map((field) => (
-                    <div key={field.id} className="grid grid-cols-[1fr_96px] items-center gap-2">
-                      <span className="font-semibold uppercase text-zinc-500 text-[8px]">
-                        {field.label}:
-                      </span>
-                      <span className="h-4 border-b border-zinc-300 text-right text-zinc-900">
-                        {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
-                      </span>
                     </div>
-                  ))}
+                    <div className="grid grid-cols-[76px_1fr] items-center gap-x-1 text-red-600 font-bold">
+                      <span className="whitespace-nowrap font-semibold text-[8.5px] uppercase tracking-wider">{labels?.expiryDate || "Expiry Date:"}</span>
+                      <span className="flex-1 border-b border-zinc-400 text-center">{gracePeriodEnd}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <h3 className="font-black text-[9px] uppercase underline tracking-wider text-emerald-900">{labels?.unitDescription || "Unit Description"}</h3>
-                <div className="space-y-2">
-                  {unitFields.map((field) => (
-                    <div key={field} className="grid grid-cols-[80px_1fr] items-center gap-2">
-                      <span className="font-semibold uppercase text-zinc-500 text-[8px]">
-                        {labels?.[field] || unitLabelFallbacks[field]}
-                      </span>
-                      <span className="border-b border-zinc-300 text-zinc-900">
-                        {unitValues[field]}
-                      </span>
-                    </div>
-                  ))}
-                  {customUnitFields.map((field) => (
-                    <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-2">
-                      <span className="font-semibold uppercase text-zinc-500 text-[8px]">
-                        {field.label}:
-                      </span>
-                      <span className="h-4 border-b border-zinc-300 text-zinc-900">
-                        {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
-                      </span>
-                    </div>
-                  ))}
+                {/* Agreement text */}
+                <div className="space-y-1 leading-relaxed text-justify text-[9px] px-1 select-text">
+                  <div>
+                    {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[120px]">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block border-b border-zinc-500 font-medium px-1 text-center min-w-[180px]">{data.address.toUpperCase()}</span>. For the amount of <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[120px]">{amount > 0 ? numberToWords(amount) : "________________"}</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."} {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.plusText || "plus"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(storageFee)}</span>) {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[80px]">₱0.00</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">₱0.00</span>) {labels?.overdueText || "applies when overdue."} and you are given 5 days grace period (<span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[70px]">{gracePeriodEnd}</span>) my right to repurchase back the unit(s) described below is deemed waived.
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="space-y-3 pt-3">
-              <div className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3 text-[8px] font-black uppercase text-zinc-400 italic text-center`}>
-                <span>{labels?.dateHeader || "Date"}</span>
-                <span>{labels?.storageHeader || "Storage"}</span>
-                <span>{labels?.periodHeader || "Period"}</span>
-                {showInterestRate && <span>{labels?.interestRateHeader || "Interest Rate"}</span>}
-                <span>{labels?.extendHeader || "Extend"}</span>
-                <span>{labels?.signHeader || "Sign"}</span>
-              </div>
-              {(extensionRows.length > 0
-                ? extensionRows
-                : [
-                    { period: "1st Period" },
-                    { period: "2nd Period" },
-                    { period: "3rd Period" },
-                  ]
-              ).map((row, idx) => {
-                const scheduleItem = schedule[idx + 1];
-                return (
-                  <div key={idx} className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3`}>
-                    <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
-                      {maturityDates[idx] || ""}
+                {/* Unit description grid */}
+                <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
+                  <h3 className="font-bold text-center underline text-[9.5px]">{labels?.unitDescription || "Unit Description"}</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
+                    {/* Left column: Financial */}
+                    <div className="space-y-1">
+                      {financialFields.map((field, index) => {
+                        const isTotal = field === "netProceeds";
+                        return (
+                          <div key={field} className="grid grid-cols-[80px_1fr] items-center gap-1">
+                            <span className="font-semibold text-zinc-500 uppercase text-[8px]">
+                              {labels?.[field] || financialLabelFallbacks[field]}
+                            </span>
+                            <span className={`border-b border-zinc-300 w-[100px] inline-block text-center ${isTotal ? "font-bold text-emerald-800" : "text-zinc-900"}`}>
+                              {financialValues[field]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {customFinancialFields.map((field) => (
+                        <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
+                          <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                          <span className="border-b border-zinc-300 w-[100px] inline-block text-center text-zinc-900">
+                            {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="h-5 border-b border-zinc-300 bg-white/50">{row.storage ?? ""}</div>
-                    <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-zinc-50 font-bold text-zinc-500">
-                      {row.period ?? `${idx + 1}${idx === 0 ? 'st' : idx === 1 ? 'nd' : 'rd'} Period`}
+
+                    {/* Right column: Unit details */}
+                    <div className="space-y-1">
+                      {unitFields.map((field) => (
+                        <div key={field} className="grid grid-cols-[92px_1fr] items-center gap-1">
+                          <span className="font-semibold text-zinc-500 uppercase text-[8px]">
+                            {labels?.[field] || unitLabelFallbacks[field]}
+                          </span>
+                          <span className="border-b border-zinc-300 w-[120px] inline-block text-center text-zinc-900">
+                            {unitValues[field]}
+                          </span>
+                        </div>
+                      ))}
+                      {customUnitFields.map((field) => (
+                        <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
+                          <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                          <span className="border-b border-zinc-300 w-[120px] inline-block text-center text-zinc-900">
+                            {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    {showInterestRate && (
-                      <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
-                        {scheduleItem ? `${scheduleItem.percentage}%` : "—"}
+                  </div>
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-2 gap-12 pt-3 text-center">
+                  <div className="flex flex-col items-center">
+                    <span className="inline-block border-b border-zinc-400 w-[180px] h-4 text-center">{fullName}</span>
+                    <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="inline-block border-b border-zinc-400 w-[180px] h-4 text-center">{data.processedBy || ""}</span>
+                    <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
+                  </div>
+                </div>
+
+                {/* Renewal Rows */}
+                <div className="py-2 space-y-1 border-t border-zinc-100">
+                  {(extensionRows.length > 0
+                    ? extensionRows
+                    : [
+                        { period: "1st Period" },
+                        { period: "2nd Period" },
+                        { period: "3rd Period" },
+                      ]
+                  ).map((row, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-2 text-[8.5px] font-semibold text-zinc-600">
+                      <div className="flex items-center gap-1">
+                        <span>Date:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{maturityDates[idx] || ""}</span>
                       </div>
-                    )}
-                    <div className="h-5 border-b border-zinc-300 bg-white/50">{row.extend ?? ""}</div>
-                    <div className="h-5 border-b border-zinc-300 bg-white/50">{row.sign ?? ""}</div>
-                  </div>
-                );
-              })}
-              <div className={`grid ${showInterestRate ? 'grid-cols-6' : 'grid-cols-5'} gap-3`}>
-                <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-white/30 font-bold text-zinc-900">
-                  {gracePeriodEnd}
+                      <div className="flex items-center gap-1">
+                        <span>Storage:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.storage || ""}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Period:</span>
+                        <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Extend:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.extend || ""}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Sign:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.sign || ""}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="h-5 border-b border-zinc-300 bg-white/50"></div>
-                <div className="flex h-5 items-center justify-center border-b border-zinc-300 font-black text-[7px] uppercase text-zinc-400">{labels?.gracePeriodHeader || "GRACE PERIOD"}</div>
-                {showInterestRate && (
-                  <div className="flex h-5 items-center justify-center border-b border-zinc-300 bg-emerald-50 font-black text-emerald-700">
-                    {schedule[4] ? `${schedule[4].percentage}%` : "—"}
+
+                {/* Advise Banner */}
+                <div className="text-center font-bold text-[8.5px] uppercase pt-1 border-t border-zinc-100 select-text">
+                  <div className="block w-full text-center text-[8.5px] font-bold uppercase text-zinc-700 outline-none">
+                    {labels?.adviseText || "SELLER IS ADVISED TO READ AND UNDERSTAND THE TERMS AND CONDITIONS ON THE REVERSE SIDE HEREOF"}
                   </div>
-                )}
-                <div className="h-5 border-b border-zinc-300"></div>
-                <div className="h-5 border-b border-zinc-300"></div>
+                </div>
+              </div>
+
+              {/* Middle Cut Guide */}
+              <div className="relative my-4 flex items-center justify-center border-t border-dashed border-zinc-400 py-1 select-none pointer-events-none no-print">
+                <span className="absolute bg-white px-2 text-[8px] font-bold text-zinc-400 tracking-wider">
+                  ✂ - - - - - - - - - - - - - - - - - - - - - - - CUT HERE - - - - - - - - - - - - - - - - - - - - - - - ✂
+                </span>
+              </div>
+
+              {/* CUSTOMER COPY (Bottom Half) */}
+              <div className="space-y-2 pt-2 relative moa-watermark pb-1">
+                {/* Centered shop header */}
+                <MoaBranchHeader
+                  primary={headerPrimary}
+                  branchLine={headerBranchLine}
+                  address={headerSecondary}
+                  phone={headerPhone}
+                />
+
+                {/* Row of copy label and unit code */}
+                <div className="flex items-center justify-between gap-3 pt-1 text-[9.5px]">
+                  <p className="font-bold italic">Customer copy</p>
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold uppercase tracking-wider">{labels?.unitCode || "UNIT CODE:"}</span>
+                    <span className="w-20 border-b border-zinc-400 font-bold text-center">{data.unitCode || "---"}</span>
+                  </div>
+                </div>
+
+                {/* Centered Slip Title */}
+                <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5">
+                  {labels?.moaTitle || "Memorandum of Agreement Slip"}
+                </div>
+
+                {/* Dates & Maturity row */}
+                <div className="grid grid-cols-2 gap-8 border-b border-zinc-100 pb-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-24 font-semibold text-[8.5px] uppercase tracking-wider">{labels?.purchasedDate || "Purchased Date:"}</span>
+                      <span className="flex-1 border-b border-zinc-400 text-center">{data.purchasedDate || new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-24 font-semibold text-[8.5px] uppercase tracking-wider">{labels?.idsPresented || "ID(s) Presented:"}</span>
+                      <span className="flex-1 border-b border-zinc-400 text-center">{data.idPresented || "No ID"}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[76px_1fr] items-center gap-x-1">
+                      <span className="whitespace-nowrap font-semibold text-[8.5px] uppercase tracking-wider">{labels?.maturityDate || "Maturity Date:"}</span>
+                      <div className="grid grid-cols-[auto_48px_auto_48px_auto_48px] items-center gap-x-1">
+                        <span className="contents whitespace-nowrap">
+                          <span className="text-[7.5px] text-zinc-500">1st</span>
+                          <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[0]}</span>
+                        </span>
+                        <span className="contents whitespace-nowrap">
+                          <span className="text-[7.5px] text-zinc-500">2nd</span>
+                          <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[1]}</span>
+                        </span>
+                        <span className="contents whitespace-nowrap">
+                          <span className="text-[7.5px] text-zinc-500">3rd</span>
+                          <span className="w-12 border-b border-zinc-400 text-center">{maturityDates[2]}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-[76px_1fr] items-center gap-x-1 text-red-600 font-bold">
+                      <span className="whitespace-nowrap font-semibold text-[8.5px] uppercase tracking-wider">{labels?.expiryDate || "Expiry Date:"}</span>
+                      <span className="flex-1 border-b border-zinc-400 text-center">{gracePeriodEnd}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Agreement text */}
+                <div className="space-y-1 leading-relaxed text-justify text-[9px] px-1 select-text">
+                  <div>
+                    {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[120px]">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block border-b border-zinc-500 font-medium px-1 text-center min-w-[180px]">{data.address.toUpperCase()}</span>. For the amount of <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[120px]">{amount > 0 ? numberToWords(amount) : "________________"}</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."} {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.plusText || "plus"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(storageFee)}</span>) {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[80px]">₱0.00</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">₱0.00</span>) {labels?.overdueText || "applies when overdue."} and you are given 5 days grace period (<span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[70px]">{gracePeriodEnd}</span>) my right to repurchase back the unit(s) described below is deemed waived.
+                  </div>
+                </div>
+
+                {/* Unit description grid */}
+                <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
+                  <h3 className="font-bold text-center underline text-[9.5px]">{labels?.unitDescription || "Unit Description"}</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
+                    {/* Left column: Financial */}
+                    <div className="space-y-1">
+                      {financialFields.map((field, index) => {
+                        const isTotal = field === "netProceeds";
+                        return (
+                          <div key={field} className="grid grid-cols-[80px_1fr] items-center gap-1">
+                            <span className="font-semibold text-zinc-500 uppercase text-[8px]">
+                              {labels?.[field] || financialLabelFallbacks[field]}
+                            </span>
+                            <span className={`border-b border-zinc-300 w-[100px] inline-block text-center ${isTotal ? "font-bold text-emerald-800" : "text-zinc-900"}`}>
+                              {financialValues[field]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {customFinancialFields.map((field) => (
+                        <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
+                          <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                          <span className="border-b border-zinc-300 w-[100px] inline-block text-center text-zinc-900">
+                            {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Right column: Unit details */}
+                    <div className="space-y-1">
+                      {unitFields.map((field) => (
+                        <div key={field} className="grid grid-cols-[92px_1fr] items-center gap-1">
+                          <span className="font-semibold text-zinc-500 uppercase text-[8px]">
+                            {labels?.[field] || unitLabelFallbacks[field]}
+                          </span>
+                          <span className="border-b border-zinc-300 w-[120px] inline-block text-center text-zinc-900">
+                            {unitValues[field]}
+                          </span>
+                        </div>
+                      ))}
+                      {customUnitFields.map((field) => (
+                        <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
+                          <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                          <span className="border-b border-zinc-300 w-[120px] inline-block text-center text-zinc-900">
+                            {data.customMoaValues?.[field.id] || persistedMoaValues[field.label] || ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-2 gap-12 pt-3 text-center">
+                  <div className="flex flex-col items-center">
+                    <span className="inline-block border-b border-zinc-400 w-[180px] h-4 text-center">{fullName}</span>
+                    <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="inline-block border-b border-zinc-400 w-[180px] h-4 text-center">{data.processedBy || ""}</span>
+                    <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
+                  </div>
+                </div>
+
+                {/* Renewal Rows */}
+                <div className="py-2 space-y-1 border-t border-zinc-100">
+                  {(extensionRows.length > 0
+                    ? extensionRows
+                    : [
+                        { period: "1st Period" },
+                        { period: "2nd Period" },
+                        { period: "3rd Period" },
+                      ]
+                  ).map((row, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-2 text-[8.5px] font-semibold text-zinc-600">
+                      <div className="flex items-center gap-1">
+                        <span>Date:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{maturityDates[idx] || ""}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Storage:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.storage || ""}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Period:</span>
+                        <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Extend:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.extend || ""}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span>Sign:</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.sign || ""}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Advise Banner */}
+                <div className="text-center font-bold text-[8.5px] uppercase pt-1 border-t border-zinc-100 select-text">
+                  <div className="block w-full text-center text-[8.5px] font-bold uppercase text-zinc-700 outline-none">
+                    {labels?.adviseText || "SELLER IS ADVISED TO READ AND UNDERSTAND THE TERMS AND CONDITIONS ON THE REVERSE SIDE HEREOF"}
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="moa-bottom-block max-w-full overflow-x-hidden space-y-2 pt-4 pb-2">
-              {/* Seller advised banner - full width */}
-              <div className="w-full border border-emerald-300 bg-emerald-50 p-2 text-center text-[7px] font-black uppercase tracking-widest text-emerald-800 italic leading-[1.25]">
-                {labels?.adviseText || "SELLER IS ADVISED TO READ AND UNDERSTAND THE TERMS AND CONDITIONS ON THE REVERSE SIDE HEREOF"}
-              </div>
+            {/* PAGE 2: TERMS AND CONDITIONS */}
+            <div className={MOA_PAGE_CLASS} style={MOA_PAGE_STYLE}>
+              
+              {/* Top Copy (Original terms) */}
+              <div className="space-y-3 relative moa-watermark pb-2">
+                <h2 className="text-center font-bold uppercase text-[11px] select-text">
+                  {labels?.termsHeading || "Terms and Conditions"}
+                </h2>
+                
+                <p className="text-justify leading-relaxed text-[8.5px] text-zinc-700">
+                  You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.
+                </p>
 
-              {/* Terms and Conditions - full width, centered */}
-              <div className="w-full space-y-1 pt-1.5">
-                <h4 className="text-center font-black uppercase underline tracking-tighter text-[10px] text-zinc-900">{labels?.termsHeading || "Terms and Conditions"}</h4>
-                <div className="rounded border border-zinc-200 bg-white/80 p-1 text-[7px] leading-tight text-zinc-700">
-                  <ol className="space-y-0 pl-2">
-                    {printableTermsLines.map((line) => (
-                      <li key={line} className="list-decimal">
-                        {line.replace(/^\d+\.\s*/, "")}
-                      </li>
-                    ))}
-                  </ol>
+                <div className="whitespace-pre-wrap rounded-sm border border-zinc-200 bg-zinc-50/10 p-3 text-[8.5px] leading-relaxed text-zinc-800">
+                  {printableTermsLines.map((line, lIdx) => (
+                    <div key={lIdx} className="mb-0.5 flex items-start gap-1">
+                      <span className="font-bold shrink-0">{lIdx + 1}.</span>
+                      <span>{line.replace(/^\d+\.\s*/, "")}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
 
-              {/* Signatures - 2 Columns */}
-              <div className="moa-signatures grid grid-cols-2 gap-12 pt-8 pb-4">
-                <div className="flex flex-col text-center space-y-2">
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-emerald-900 invisible select-none" aria-hidden="true">
-                    I HEREBY AUTHORIZED
-                  </span>
-                  <div className="h-8 w-full border-b-2 border-zinc-800"></div>
-                  <p className="font-black uppercase text-[8px] tracking-widest">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
-                </div>
-                <div className="flex flex-col text-center space-y-2">
-                  <p className="font-black uppercase text-[9px] text-emerald-900 tracking-widest">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</p>
-                  <div className="h-8 w-full border-b-2 border-zinc-800 flex items-end justify-center pb-0.5">
-                    {data.processedBy && (
-                      <span className="font-bold text-[10px] uppercase tracking-wider text-zinc-900">{data.processedBy}</span>
-                    )}
+                <p className="italic font-bold text-zinc-800 text-[8.5px]">
+                  I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
+                </p>
+
+                {/* Signatures block */}
+                <div className="grid grid-cols-[1.2fr_1.5fr] gap-8 pt-4 items-end">
+                  <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
+
+                  <div className="text-center flex flex-col items-center space-y-3">
+                    <span className="font-bold uppercase text-[8.5px] text-emerald-900 block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
+                    <span className="text-[7.5px] text-zinc-500 block leading-tight">Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.</span>
+
+                    <MoaNamedSignatureLine
+                      name={data.processedBy || ""}
+                      label={representativeSignatureLabel}
+                      className="w-full"
+                    />
+
+                    <MoaNamedSignatureLine
+                      name={fullName}
+                      label={sellerSignatureLabel}
+                      className="w-full"
+                    />
                   </div>
-                  <p className="font-black uppercase text-[8px] tracking-widest">{labels?.representativeSignature || "(Name and Signature of Representative)"}</p>
+                </div>
+
+                {/* Received Section */}
+                <div className="pt-4 space-y-3 border-t border-zinc-100">
+                  <p className="text-[8px] leading-tight text-zinc-800 font-medium">
+                    Received the article(s) in the same condition when sold and repurchased back.<br />
+                    (Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)
+                  </p>
+                  <div className="w-1/2">
+                    <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Middle Cut Guide */}
+              <div className="relative my-6 flex items-center justify-center border-t border-dashed border-zinc-400 py-1 select-none pointer-events-none no-print">
+                <span className="absolute bg-white px-2 text-[8px] font-bold text-zinc-400 tracking-wider">
+                  ✂ - - - - - - - - - - - - - - - - - - - - - - - CUT HERE - - - - - - - - - - - - - - - - - - - - - - - ✂
+                </span>
+              </div>
+
+              {/* Bottom Copy (Customer terms) */}
+              <div className="space-y-3 pt-2 relative moa-watermark pb-2">
+                <h2 className="text-center font-bold uppercase text-[11px] select-text">
+                  {labels?.termsHeading || "Terms and Conditions"}
+                </h2>
+                
+                <p className="text-justify leading-relaxed text-[8.5px] text-zinc-700">
+                  You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.
+                </p>
+
+                <div className="whitespace-pre-wrap rounded-sm border border-zinc-200 bg-zinc-50/10 p-3 text-[8.5px] leading-relaxed text-zinc-800">
+                  {printableTermsLines.map((line, lIdx) => (
+                    <div key={lIdx} className="mb-0.5 flex items-start gap-1">
+                      <span className="font-bold shrink-0">{lIdx + 1}.</span>
+                      <span>{line.replace(/^\d+\.\s*/, "")}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="italic font-bold text-zinc-800 text-[8.5px]">
+                  I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
+                </p>
+
+                {/* Signatures block */}
+                <div className="grid grid-cols-[1.2fr_1.5fr] gap-8 pt-4 items-end">
+                  <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
+
+                  <div className="text-center flex flex-col items-center space-y-3">
+                    <span className="font-bold uppercase text-[8.5px] text-emerald-900 block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
+                    <span className="text-[7.5px] text-zinc-500 block leading-tight">Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.</span>
+
+                    <MoaNamedSignatureLine
+                      name={data.processedBy || ""}
+                      label={representativeSignatureLabel}
+                      className="w-full"
+                    />
+
+                    <MoaNamedSignatureLine
+                      name={fullName}
+                      label={sellerSignatureLabel}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Received Section */}
+                <div className="pt-4 space-y-3 border-t border-zinc-100">
+                  <p className="text-[8px] leading-tight text-zinc-800 font-medium">
+                    Received the article(s) in the same condition when sold and repurchased back.<br />
+                    (Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)
+                  </p>
+                  <div className="w-1/2">
+                    <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -691,9 +1128,12 @@ export function MoaModal({
         .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
 
+        ${MOA_WATERMARK_CSS}
+
         @media print {
-          @page { size: portrait; margin: 0; }
+          ${MOA_PRINT_CSS}
           .no-print { display: none !important; }
+          .no-print * { display: none !important; }
 
           html.printing-moa-active,
           body.printing-moa-active {
@@ -737,7 +1177,7 @@ export function MoaModal({
           #moa-modal-root .flex-1.overflow-y-auto {
             position: static !important;
             display: block !important;
-            width: 100% !important;
+            width: auto !important;
             max-width: none !important;
             height: auto !important;
             max-height: none !important;
@@ -751,10 +1191,6 @@ export function MoaModal({
           }
 
           #moa-slip-printable {
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 6mm 4mm 6mm !important;
-            background: #fff !important;
             font-size: 9.5px !important;
             line-height: 1.15 !important;
           }
@@ -764,22 +1200,6 @@ export function MoaModal({
           #moa-slip-printable .text-center { text-align: center !important; }
           #moa-slip-printable .justify-between { justify-content: space-between !important; }
           #moa-slip-printable .items-center { align-items: center !important; }
-
-          #moa-slip-printable .mb-4 { margin-bottom: 6px !important; }
-          #moa-slip-printable .space-y-5 > * + * { margin-top: 8px !important; }
-          #moa-slip-printable .space-y-3 > * + * { margin-top: 6px !important; }
-          #moa-slip-printable .space-y-2 > * + * { margin-top: 4px !important; }
-          #moa-slip-printable .moa-bottom-block { margin-top: 8px !important; }
-          #moa-slip-printable .moa-signatures {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 2rem !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-          #moa-slip-printable .moa-signatures .h-8 { height: 18px !important; }
-          #moa-slip-printable .moa-signatures .pt-8 { padding-top: 10px !important; }
-          #moa-slip-printable .moa-signatures .pb-4 { padding-bottom: 0 !important; }
 
           #moa-slip-printable .text-zinc-300,
           #moa-slip-printable .text-zinc-400,

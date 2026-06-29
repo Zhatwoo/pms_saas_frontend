@@ -279,8 +279,140 @@ export function buildQrSheetDocument(params: { sheetTitle: string; cardsHtml: st
 </html>`;
 }
 
-/** MOA modal: `@page` rule (single source of truth with `PMS_PRINT_BASE_CSS`). */
-export const MOA_PRINT_PAGE_RULE_CSS = `@page { size: portrait; margin: 10mm; }`;
+/** Legal MOA slip dimensions (8.5 × 14 in). */
+export const MOA_LEGAL_PAGE = {
+  width: "8.5in",
+  height: "14in",
+  padding: "0.35in 0.4in",
+  screenWidthPx: 816,
+  screenHeightPx: 1344,
+} as const;
+
+/** MOA modal: `@page` rule — Legal portrait, zero margin (content carries its own padding). */
+export const MOA_PRINT_PAGE_RULE_CSS = `@page { size: 8.5in 14in portrait; margin: 0; }`;
+
+/** JCLB diagonal watermark — shared by settings preview, MOA modal, and print iframe. */
+export const MOA_WATERMARK_CSS = `
+  .moa-watermark {
+    position: relative;
+  }
+  .moa-watermark::before {
+    content: "JCLB";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    font-size: 120px;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.035) !important;
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: 0.1em;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .moa-watermark > * {
+    position: relative;
+    z-index: 1;
+  }
+`;
+
+/** Screen layout so the on-page preview matches the printed Legal sheet. */
+export const MOA_PRINT_SCREEN_CSS = `
+  ${MOA_WATERMARK_CSS}
+  body.moa-print-document {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  #moa-slip-printable {
+    display: block !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    width: ${MOA_LEGAL_PAGE.width} !important;
+    max-width: ${MOA_LEGAL_PAGE.width} !important;
+    background: #fff !important;
+  }
+  #moa-slip-printable .moa-print-page {
+    box-sizing: border-box !important;
+    width: ${MOA_LEGAL_PAGE.width} !important;
+    height: ${MOA_LEGAL_PAGE.height} !important;
+    max-width: ${MOA_LEGAL_PAGE.width} !important;
+    max-height: ${MOA_LEGAL_PAGE.height} !important;
+    min-height: ${MOA_LEGAL_PAGE.height} !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: ${MOA_LEGAL_PAGE.padding} !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    background: #fff !important;
+    position: relative !important;
+  }
+  #moa-slip-printable .moa-print-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+  #moa-slip-printable .no-print,
+  #moa-slip-printable .no-print * {
+    display: none !important;
+  }
+`;
+
+/** Shared `@media print` rules for MOA slips (settings page + modal iframe). */
+export const MOA_PRINT_CSS = `
+  ${MOA_WATERMARK_CSS}
+  ${MOA_PRINT_PAGE_RULE_CSS}
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #moa-slip-printable,
+  #moa-preview-page1,
+  #moa-preview-page2 {
+    display: block !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    width: ${MOA_LEGAL_PAGE.width} !important;
+    max-width: ${MOA_LEGAL_PAGE.width} !important;
+    background: #fff !important;
+  }
+  .moa-print-page,
+  #moa-preview-page1,
+  #moa-preview-page2 {
+    box-sizing: border-box !important;
+    width: ${MOA_LEGAL_PAGE.width} !important;
+    height: ${MOA_LEGAL_PAGE.height} !important;
+    max-width: ${MOA_LEGAL_PAGE.width} !important;
+    max-height: ${MOA_LEGAL_PAGE.height} !important;
+    min-height: unset !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: ${MOA_LEGAL_PAGE.padding} !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    background: #fff !important;
+    position: relative !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .moa-print-page:last-child,
+  #moa-preview-page2:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+  .break-before-page {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+`;
 
 /** MOA modal: exact color on root when printing. */
 export const MOA_BODY_PRINT_COLOR_SNIPPET = `print-color-adjust: exact !important;
