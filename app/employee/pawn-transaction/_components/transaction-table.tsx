@@ -33,6 +33,7 @@ export type PurposeType =
   | "Pawn"
   | "Fund Transfer"
   | "Cash Transfer"
+  | "Transfer Item"
   | "Buy Out";
 
 export interface TransactionRow {
@@ -109,6 +110,7 @@ const purposeVariant: Record<
   Pawn: "purple",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
+  "Transfer Item": "blue",
   "Buy Out": "purple",
   "Reappraise": "blue",
   "Redeem": "green",
@@ -138,7 +140,7 @@ function formatRole(value?: string) {
 }
 
 function isExecutorDisplayPurpose(purpose: PurposeType) {
-  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer";
+  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer" || purpose === "Transfer Item";
 }
 
 function getCustomerColumnText(row: TransactionRow) {

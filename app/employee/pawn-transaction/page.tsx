@@ -1179,7 +1179,7 @@ export default function EmployeePawnTransactionsPage() {
           >
             <option value="All">All Purposes</option>
             <option value="Renew">Renew</option>
-            <option value="Sells / Transfer">Sells / Transfer</option>
+            <option value="Sells / Transfer">Sells</option>
             <option value="Redeem">Buy Back</option>
             <option value="Buy Back">Buy Out</option>
             <option value="Reserve / Layaway">Reserve / Layaway</option>
