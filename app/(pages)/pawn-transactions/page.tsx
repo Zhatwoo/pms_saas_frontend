@@ -364,6 +364,7 @@ export default function PawnTransactionsPage() {
     branchName: string;
     branchAddress?: string;
     branchPhone?: string;
+    processedBy?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -661,6 +662,7 @@ export default function PawnTransactionsPage() {
         branchName: branchInfo?.name || transaction.branch,
         branchAddress: branchInfo?.location || "",
         branchPhone: branchInfo?.phone || "",
+        processedBy: transaction.createdByName || "AUTHORIZED PERSONNEL",
       });
       setIsMoaReprintOpen(true);
     },

@@ -146,6 +146,17 @@ export function getInterestRateSchedule(category?: string): InterestRateSchedule
   ];
 }
 
+/** Periodic storage fee shown on MOA (rate after initial period, typically every 10 days). */
+export function calculatePeriodicStorageFee(amount: number, category?: string): number {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return 0;
+  }
+
+  const group = findInterestRateGroup(category);
+  const config = group ? normalizeGroup(group) : DEFAULT_INTEREST_GROUP;
+  return Number((amount * (config.day10 / 100)).toFixed(2));
+}
+
 export function calculateGadgetInterest(
   amount: number,
   pawnDate: string | Date | null,

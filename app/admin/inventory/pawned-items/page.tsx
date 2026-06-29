@@ -17,7 +17,7 @@ import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
-import { calculateGadgetInterest } from "@/lib/interest";
+import { calculatePeriodicStorageFee } from "@/lib/interest";
 
 const moaToastClassName =
   "mx-auto flex min-w-[260px] items-center justify-center gap-2 rounded-xl border px-4 py-3 text-center shadow-xl backdrop-blur-sm sm:min-w-[320px]";
@@ -368,11 +368,6 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           .filter(Boolean)
           .join(", ") || "---";
 
-      const calculations = calculateGadgetInterest(
-        amountValue,
-        purchasedDateValue || new Date().toISOString().slice(0, 10),
-        categoryValue
-      );
 
       const fullName = customerFullName;
       const names = fullName.trim().split(" ");
@@ -387,7 +382,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
         const match = branchList?.find((b: any) => b.name === itemDetails.branch);
         if (match) {
           branchAddress = match.location || "";
-          branchPhone = match.phone || "";
+          branchPhone = match.contact_number || match.contactNumber || match.phone || "";
         }
       } catch (err) {
         console.warn("Failed to fetch branches details", err);
@@ -416,7 +411,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           transactionFallback?.pawned_item?.memory_storage ||
           "---",
         amount: String(amountValue),
-        storageFee: String(calculations.interestAmount),
+        storageFee: String(calculatePeriodicStorageFee(amountValue, categoryValue)),
         purchasedDate: purchasedDateValue,
         idPresented: customerDetails?.id_presented || itemDetails.customerIdPresented || "---",
         branchName: itemDetails.branch || "",

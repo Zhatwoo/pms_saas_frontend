@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
@@ -12,6 +12,7 @@ import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-re
 import { useAuth } from "@/contexts/auth-context";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
+import { calculatePeriodicStorageFee } from "@/lib/interest";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -125,8 +126,6 @@ function createEmptyForm() {
     remarks: "",
     amount: "",
     purchasedDate: getTodayDate(),
-    storageFee: false,
-    storageFeeAmount: "",
     parkingFeeAmount: "",
     customMoaValues: {} as Record<string, string>,
     profilePhoto: null as string | null,
@@ -226,6 +225,9 @@ export function NewPawnModal({
         setCategoriesList(filtered.map(c => c.name));
         setDefaultMoaFieldConfig(moaTemplate);
         setCategoryMoaFieldConfigs(moaTemplate.category_templates ?? {});
+        if (rates && Array.isArray(rates) && typeof window !== "undefined") {
+          localStorage.setItem("interest_rates", JSON.stringify(rates));
+        }
       } catch (err) {
         console.error("Error loading categories inside new-pawn-modal:", err);
       }
@@ -566,6 +568,21 @@ export function NewPawnModal({
     return form.category.trim();
   };
 
+  const resolvedCategory = useMemo(() => getResolvedCategory(), [
+    form.category,
+    form.categorySpecify,
+  ]);
+  const principalAmount = Number(form.amount) || 0;
+  const parkingFeeAmount = Number(form.parkingFeeAmount) || 0;
+  const computedStorageFee = useMemo(
+    () => calculatePeriodicStorageFee(principalAmount, resolvedCategory || undefined),
+    [principalAmount, resolvedCategory],
+  );
+  const computedNetProceeds = useMemo(
+    () => Math.max(0, principalAmount - parkingFeeAmount),
+    [principalAmount, parkingFeeAmount],
+  );
+
   const handleGenerateQR = () => {
     // Required fields for QR generation
     const resolvedCategory = getResolvedCategory();
@@ -780,7 +797,7 @@ export function NewPawnModal({
     setErrorMessage(null);
 
     const amountValue = Number(form.amount || 0);
-    const storageAmount = form.storageFee ? Number(form.storageFeeAmount || 0) : 0;
+    const storageAmount = 0;
     const extraMoaValues = [
       ...(showFinancialField("parkingFee") && form.parkingFeeAmount
         ? [{ label: "Parking fee", value: form.parkingFeeAmount }]
@@ -845,7 +862,7 @@ export function NewPawnModal({
       return;
     }
 
-    const loanForCashCheck = Number(form.amount || 0);
+    const loanForCashCheck = computedNetProceeds;
     if (
       branchCashAvailable !== null &&
       !branchCashLoading &&
@@ -1462,11 +1479,7 @@ export function NewPawnModal({
                       <Input
                         label={activeMoaLabels.netProceeds || "Net Proceeds"}
                         name="netProceeds"
-                        value={String(
-                          (Number(form.amount) || 0)
-                          + (form.storageFee ? Number(form.storageFeeAmount) || 0 : 0)
-                          + (Number(form.parkingFeeAmount) || 0),
-                        )}
+                        value={String(computedNetProceeds)}
                         onChange={() => undefined}
                         type="number"
                         bg="bg-zinc-200"
@@ -1478,26 +1491,17 @@ export function NewPawnModal({
 
                   {showFinancialField("storageFee") && (
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 dark:border-border-subtle mt-2">
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex items-center cursor-pointer">
-                        <input
-                          id="storageFeeModal"
-                          name="storageFee"
-                          type="checkbox"
-                          checked={form.storageFee}
-                          onChange={handleChange}
-                          className="w-6 h-6 rounded-lg accent-emerald-600 cursor-pointer"
-                        />
-                      </div>
-                  <label htmlFor="storageFeeModal" className="text-xs md:text-sm font-black text-emerald-900 uppercase tracking-tight md:tracking-wide cursor-pointer">
-                    {activeMoaLabels.storageFee || "Apply Storage Fee"}
-                  </label>
+                    <div>
+                      <p className="text-xs md:text-sm font-black text-emerald-900 uppercase tracking-tight md:tracking-wide">
+                        {activeMoaLabels.storageFee || "Storage Fee"}
+                      </p>
+                      <p className="mt-0.5 text-[10px] font-semibold text-emerald-700/80">
+                        Auto-computed from principal (every 10 days · MOA only)
+                      </p>
                     </div>
-                    {form.storageFee && (
-                      <div className="w-24 md:w-32">
-                        <Input label="" name="storageFeeAmount" value={form.storageFeeAmount} onChange={handleChange} type="number" placeholder="0.00" prefix="₱" size="sm" />
-                      </div>
-                    )}
+                    <p className="text-sm md:text-base font-black text-emerald-900">
+                      {formatPeso(computedStorageFee)}
+                    </p>
                   </div>
                   )}
                 </div>
@@ -1630,7 +1634,7 @@ export function NewPawnModal({
         onClose={() => setIsMoaOpen(false)}
         onConfirm={handleConfirmMoa}
         confirmDisabled={(() => {
-          const loan = Number(form.amount || 0);
+          const loan = computedNetProceeds;
           return (
             branchCashAvailable !== null &&
             !branchCashLoading &&
@@ -1639,7 +1643,7 @@ export function NewPawnModal({
           );
         })()}
         confirmDisabledReason={(() => {
-          const loan = Number(form.amount || 0);
+          const loan = computedNetProceeds;
           if (
             branchCashAvailable === null ||
             branchCashLoading ||
@@ -1648,7 +1652,7 @@ export function NewPawnModal({
           ) {
             return undefined;
           }
-          return `Recorded branch cash is ${formatPeso(branchCashAvailable)}. This loan needs ${formatPeso(loan)} in vault cash — reduce the loan or add cash before confirming.`;
+          return `Recorded branch cash is ${formatPeso(branchCashAvailable)}. This payout needs ${formatPeso(loan)} in vault cash — reduce the loan or add cash before confirming.`;
         })()}
         data={{
           ...form,
@@ -1659,7 +1663,7 @@ export function NewPawnModal({
             form.city,
             form.region,
           ].filter(Boolean).join(", "),
-          storageFee: form.storageFeeAmount,
+          storageFee: String(computedStorageFee),
           parkingFee: form.parkingFeeAmount,
           customMoaValues: form.customMoaValues,
           idPresented: form.idPresented || "",
