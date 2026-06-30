@@ -412,7 +412,75 @@ export const MOA_PRINT_CSS = `
   .no-print * {
     display: none !important;
   }
+  .moa-print-page .space-y-2 > * + * { margin-top: 0.35rem !important; }
+  .moa-print-page .space-y-3 > * + * { margin-top: 0.45rem !important; }
+  .moa-print-page .space-y-4 > * + * { margin-top: 0.5rem !important; }
+  .moa-print-page .grid { display: grid !important; }
+  .moa-print-page .flex { display: flex !important; }
+  .moa-print-page .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .moa-print-page .text-center { text-align: center !important; }
+  .moa-print-page .text-justify { text-align: justify !important; }
+  .moa-print-page .justify-between { justify-content: space-between !important; }
+  .moa-print-page .items-center { align-items: center !important; }
+  .moa-print-page .items-end { align-items: flex-end !important; }
+  .moa-print-page .font-bold { font-weight: 700 !important; }
+  .moa-print-page .uppercase { text-transform: uppercase !important; }
+  .moa-print-page .italic { font-style: italic !important; }
+  .moa-print-page .border-b { border-bottom: 1px solid #a1a1aa !important; }
+  .moa-print-page .border-y { border-top: 1px solid #e4e4e7 !important; border-bottom: 1px solid #e4e4e7 !important; }
+  .moa-print-page .border-t { border-top: 1px solid #e4e4e7 !important; }
+  .moa-print-page:nth-child(2) {
+    font-size: 8.5px !important;
+    line-height: 1.12 !important;
+  }
+  .moa-print-page:nth-child(2) .space-y-3 > * + * { margin-top: 0.3rem !important; }
+  .moa-print-page:nth-child(2) .pt-4 { padding-top: 0.35rem !important; }
+  .moa-print-page:nth-child(2) .my-6 { margin-top: 0.35rem !important; margin-bottom: 0.35rem !important; }
 `;
+
+/** Minimal layout CSS for MOA slip iframe print (Tailwind-independent). */
+export const MOA_PRINT_LAYOUT_CSS = `
+  ${MOA_WATERMARK_CSS}
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #moa-slip-printable {
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+    width: ${MOA_LEGAL_PAGE.width};
+    background: #fff;
+    color: #18181b;
+    font-size: 9.5px;
+    line-height: 1.15;
+  }
+`;
+
+export function buildMoaSlipPrintHtml(slipHtml: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MOA Slip</title>
+  <style>
+    ${MOA_PRINT_LAYOUT_CSS}
+    ${MOA_PRINT_SCREEN_CSS}
+    @media print {
+      ${MOA_PRINT_CSS}
+    }
+  </style>
+</head>
+<body class="moa-print-document">
+  ${slipHtml}
+</body>
+</html>`;
+}
 
 /** MOA modal: exact color on root when printing. */
 export const MOA_BODY_PRINT_COLOR_SNIPPET = `print-color-adjust: exact !important;

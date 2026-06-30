@@ -7,8 +7,8 @@ import { getInterestRateSchedule } from "@/lib/interest";
 import {
   MOA_LEGAL_PAGE,
   MOA_PRINT_CSS,
-  MOA_PRINT_SCREEN_CSS,
   MOA_WATERMARK_CSS,
+  buildMoaSlipPrintHtml,
 } from "@/lib/print-templates";
 import { calculatePeriodicStorageFee } from "@/lib/interest";
 
@@ -330,28 +330,35 @@ export function MoaModal({
   const handlePrint = async () => {
     if (!printRef.current) return;
 
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
+
+    const cleanup = () => {
+      try {
+        document.body.removeChild(iframe);
+      } catch {
+        // iframe already removed
+      }
+    };
+
     try {
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "0";
-      iframe.setAttribute("aria-hidden", "true");
       document.body.appendChild(iframe);
 
       const iframeDoc = iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        document.body.removeChild(iframe);
+      const printWindow = iframe.contentWindow;
+      if (!iframeDoc || !printWindow) {
+        cleanup();
         return;
       }
 
       iframeDoc.open();
-      iframeDoc.write(
-        `<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title></head>` +
-        `<body class="moa-print-document">${printRef.current.outerHTML}</body></html>`,
-      );
+      iframeDoc.write(buildMoaSlipPrintHtml(printRef.current.outerHTML));
       iframeDoc.close();
 
       const stylesheetPromises: Promise<void>[] = [];
@@ -370,43 +377,26 @@ export function MoaModal({
         }
       });
 
-      const printOverrides = iframeDoc.createElement("style");
-      printOverrides.textContent = `
-        ${MOA_PRINT_SCREEN_CSS}
-        body.moa-print-document,
-        body.moa-print-document *,
-        body.moa-print-document #moa-slip-printable,
-        body.moa-print-document #moa-slip-printable * {
-          visibility: visible !important;
-        }
-        @media print {
-          ${MOA_PRINT_CSS}
-        }
-      `;
-      iframeDoc.head.appendChild(printOverrides);
-
-      const imagePromises = Array.from(iframeDoc.images).map((image) => {
-        if (image.complete) return Promise.resolve();
-        return new Promise<void>((resolve) => {
-          image.addEventListener("load", () => resolve(), { once: true });
-          image.addEventListener("error", () => resolve(), { once: true });
-        });
-      });
-      const assetsReady = Promise.all([
-        ...imagePromises,
-        document.fonts?.ready ?? Promise.resolve(),
-      ]);
       await Promise.race([
-        assetsReady,
+        Promise.all([...stylesheetPromises, document.fonts?.ready ?? Promise.resolve()]),
         new Promise<void>((resolve) => setTimeout(resolve, 2000)),
       ]);
 
+      if ("onafterprint" in printWindow) {
+        printWindow.onafterprint = cleanup;
+      } else {
+        setTimeout(cleanup, 1000);
+      }
+
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => window.print());
+        requestAnimationFrame(() => {
+          printWindow.focus();
+          printWindow.print();
+        });
       });
     } catch (err) {
       console.error("Print failed:", err);
-      window.print();
+      cleanup();
     }
   };
 
