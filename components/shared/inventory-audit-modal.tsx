@@ -36,6 +36,7 @@ interface ScannedItemDetails {
   scanSerialNumber?: string;
   itemPhotos?: string[];
   item_photos?: string[];
+  type?: "PAWNED" | "SALE" | "TRANSFER";
 }
 
 interface ParsedScan {
@@ -83,7 +84,7 @@ interface ChecklistInventoryItem {
   itemName: string;
   category: string;
   status: string;
-  source: "pawned" | "sale";
+  source: "pawned" | "sale" | "transfer";
 }
 
 type ZXingDecodeResult = {
@@ -94,6 +95,8 @@ type ZXingControls = Awaited<ReturnType<BrowserQRCodeReader["decodeFromConstrain
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
+  Available: "green",
+  "Transfer Pending": "orange",
   Redeemed: "blue",
   Expired: "red",
 };
@@ -391,7 +394,15 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       const fetchedSerialNumber = typeof data.serialNumber === "string" ? data.serialNumber.trim() : "";
       const resolvedSerialNumber = fetchedSerialNumber || parsed.serialNumber;
 
-      if (String(data.status || "").toLowerCase() !== "active") {
+      const normalizedStatus = String(data.status || "").trim().toLowerCase();
+      const isAuditableInventoryItem =
+        normalizedStatus === "active" ||
+        normalizedStatus === "available" ||
+        normalizedStatus === "transfer pending" ||
+        data.type === "SALE" ||
+        data.type === "TRANSFER";
+
+      if (!isAuditableInventoryItem) {
         setScanStage("failed");
         setRejectedScanItem({
           ...data,
@@ -400,7 +411,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           scanSerialNumber: parsed.serialNumber,
         });
         setPendingItem(null);
-        setError("Only active pawned items are accepted.");
+        setError("Only active pawned, available sale, or pending transfer items are accepted.");
         return;
       }
 
@@ -636,9 +647,18 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           limit: "50",
         });
 
-        const [pawnedData, saleData] = await Promise.all([
+        const [pawnedData, saleData, transferData] = await Promise.all([
           api.get<{ items?: ActivePawnedInventoryItem[] }>(`/inventory/pawned?${pawnedParams.toString()}`),
           api.get<{ items?: SaleInventoryItem[] }>(`/inventory/for-sale?${saleParams.toString()}`),
+          api.get<{
+            transfers?: Array<{
+              id: string;
+              itemId: string;
+              itemName: string;
+              targetBranchId: string;
+              status: string;
+            }>;
+          }>(`/inventory/transfers?branch=${encodeURIComponent(branchId)}`),
         ]);
 
         const combinedItems: ChecklistInventoryItem[] = [
@@ -658,6 +678,16 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             status: item.status || "Available",
             source: "sale" as const,
           }))),
+          ...((Array.isArray(transferData.transfers) ? transferData.transfers : [])
+            .filter((item) => item.status === "pending" && item.targetBranchId === branchId)
+            .map((item) => ({
+              id: item.id,
+              itemId: item.itemId,
+              itemName: item.itemName,
+              category: "Transfer Item",
+              status: "Transfer Pending",
+              source: "transfer" as const,
+            }))),
         ];
 
         const uniqueItems = Array.from(
@@ -702,22 +732,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const visibleChecklistItems = checklistItems.filter(
     (item) => !verifiedChecklistIds.has(String(item.itemId || "").trim().toUpperCase()),
   );
-  const pawnedChecklistItems = visibleChecklistItems.filter((item) => item.source === "pawned");
-  const saleChecklistItems = visibleChecklistItems.filter((item) => item.source === "sale");
   const checklistEmpty = !isLoadingChecklistItems && checklistItems.length === 0;
-  const checklistFullyVerified =
-    !isLoadingChecklistItems &&
-    (checklistEmpty || visibleChecklistItems.length === 0);
   const checklistVerifiedCount = activeChecklistItems.length - visibleChecklistItems.length;
-  const checklistTitle = "Checklist items";
-  const checklistCountLabel = "to check";
   const checklistTotalCount = checklistItems.length;
-  const checklistProgressPercent =
-    checklistTotalCount > 0
-      ? Math.min(100, Math.round((checklistVerifiedCount / checklistTotalCount) * 100))
-      : checklistEmpty
-        ? 100
-        : 0;
 
   const tallyComplete = Boolean(
     tally &&
@@ -840,7 +857,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
                 <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Branch inventory QR scan</h2>
                 <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 lg:text-sm">
-                  The camera opens automatically so you can scan each pawned item QR code before starting the day.
+                  The camera opens automatically so you can scan pawned, sale, and transfer item QR codes before starting the day.
                 </p>
               </div>
 
@@ -891,7 +908,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         </div>
                         <h4 className="text-lg font-black tracking-tight text-zinc-900 uppercase dark:text-zinc-100">Empty Inventory</h4>
                         <p className="mt-2 max-w-xs text-xs font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300">
-                          No pawned items or items for sale found for this branch. You can complete the audit immediately.
+                          No pawned, sale, or transfer items found for this branch. You can complete the audit immediately.
                         </p>
                       </div>
                     )}
@@ -1257,7 +1274,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                   <p className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
-                    Access to inventory tools stays locked until every pawned item and every item for sale is verified.
+                    Access to inventory tools stays locked until every pawned, sale, and transfer item is verified.
                   </p>
                 </div>
               )}
@@ -1277,7 +1294,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 {activeCompletionBlocked
                   ? isLoadingChecklistItems || isCheckingTally
                     ? "Syncing inventory checklist..."
-                    : "Verify every pawned item and every item for sale before finishing."
+                    : "Verify every pawned, sale, and transfer item before finishing."
                   : checklistEmpty
                     ? "No inventory items to verify. You can complete the checklist."
                     : "All items verified. You can complete the checklist."}

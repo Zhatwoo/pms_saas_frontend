@@ -60,6 +60,7 @@ const purposeVariant: Record<
   "Reserve / Layaway": "orange",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
+  "Transfer Item": "blue",
 };
 
 function formatAmount(value: string) {
@@ -81,7 +82,7 @@ function formatRole(value?: string) {
 }
 
 function isExecutorDisplayPurpose(purpose: PurposeType) {
-  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer";
+  return purpose === "Start" || purpose === "End" || purpose === "Fund Transfer" || purpose === "Cash Transfer" || purpose === "Transfer Item";
 }
 
 function getCustomerColumnText(row: TransactionRow) {

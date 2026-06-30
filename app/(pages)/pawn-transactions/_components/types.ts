@@ -10,7 +10,8 @@ export type PurposeType =
   | "Sold Item"
   | "Reserve / Layaway"
   | "Fund Transfer"
-  | "Cash Transfer";
+  | "Cash Transfer"
+  | "Transfer Item";
 
 export type TransactionPurposeFilter = "All" | PurposeType;
 
@@ -84,4 +85,5 @@ export const PURPOSE_OPTIONS: PurposeType[] = [
   "Reserve / Layaway",
   "Fund Transfer",
   "Cash Transfer",
+  "Transfer Item",
 ];
