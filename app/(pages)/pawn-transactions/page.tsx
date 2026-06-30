@@ -37,7 +37,8 @@ type ApiPurpose =
   | "Sale"
   | "Pawn"
   | "Fund Transfer"
-  | "Cash Transfer";
+  | "Cash Transfer"
+  | "Transfer Item";
 
 interface ApiTransaction {
   id?: string;

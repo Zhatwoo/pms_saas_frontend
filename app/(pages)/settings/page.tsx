@@ -146,6 +146,9 @@ function normalizeMoaTerms(value?: string | null) {
   return trimmed;
 }
 
+const MOA_SETTINGS_PAPER_CLASS =
+  "moa-print-page moa-paper-effect moa-settings-paper mx-auto min-h-[1344px] w-full max-w-[816px] min-w-0 flex-none space-y-4 overflow-y-auto overflow-x-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md";
+
 export default function SettingsPage() {
   const { user, refreshProfile } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
@@ -395,15 +398,24 @@ export default function SettingsPage() {
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
   const resolvedTermsText = normalizeMoaTerms(termsText);
 
-  // Uncontrolled ref for the Terms editor — avoids cursor-jump on every keystroke
+  // Uncontrolled refs for terms editors — avoids cursor-jump on every keystroke
   const termsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (termsRef.current) {
-      if (termsRef.current.innerText !== resolvedTermsText) {
-        termsRef.current.innerText = resolvedTermsText;
-      }
+  const termsPreambleRef = useRef<HTMLDivElement>(null);
+  const termsEditingRef = useRef(false);
+  const termsPreambleEditingRef = useRef(false);
+
+  const syncTermsEditorFromState = () => {
+    if (termsRef.current && !termsEditingRef.current) {
+      termsRef.current.innerText = normalizeMoaTerms(termsText);
     }
-  }, [activeTab, resolvedTermsText]);
+    if (termsPreambleRef.current && !termsPreambleEditingRef.current) {
+      termsPreambleRef.current.innerText = topLabels.termsPreamble;
+    }
+  };
+
+  useEffect(() => {
+    syncTermsEditorFromState();
+  }, [activeTab, selectedMoaCategory, termsText, topLabels.termsPreamble]);
 
   // Line widths state — keyed by fieldKey, persisted with MOA template save
   const [lineWidths, setLineWidths] = useState<Record<string, number>>({});
@@ -1083,7 +1095,7 @@ export default function SettingsPage() {
                     <div className="flex flex-col gap-6 flex-1 max-w-[816px]">
                       {/* PAGE 1: SLIPS (Original & Customer Copy) */}
                       <div
-                        className="moa-print-page moa-paper-effect moa-settings-paper mx-auto h-[1344px] max-h-[1344px] w-full max-w-[816px] min-w-0 flex-none space-y-4 overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md"
+                        className={MOA_SETTINGS_PAPER_CLASS}
                         style={{ padding: MOA_LEGAL_PAGE.padding, boxSizing: "border-box" }}
                       >
 
@@ -1463,7 +1475,7 @@ export default function SettingsPage() {
 
                       {/* PAGE 2: TERMS AND CONDITIONS */}
                       <div
-                        className="moa-print-page moa-paper-effect moa-settings-paper mx-auto h-[1344px] max-h-[1344px] w-full max-w-[816px] min-w-0 flex-none space-y-4 overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md"
+                        className={MOA_SETTINGS_PAPER_CLASS}
                         style={{ padding: MOA_LEGAL_PAGE.padding, boxSizing: "border-box" }}
                       >
 
@@ -1481,23 +1493,40 @@ export default function SettingsPage() {
                           </h2>
 
                           <div
+                            ref={termsPreambleRef}
                             contentEditable={canEditMoa}
                             suppressContentEditableWarning
-                            onInput={(e) => updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "")}
+                            onFocus={() => {
+                              termsPreambleEditingRef.current = true;
+                            }}
+                            onInput={(e) => {
+                              termsPreambleEditingRef.current = true;
+                              updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "");
+                            }}
+                            onBlur={(e) => {
+                              termsPreambleEditingRef.current = false;
+                              updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "");
+                            }}
                             className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-700 text-justify outline-none select-text"
-                          >
-                            {topLabels.termsPreamble}
-                          </div>
+                          />
 
                           <div
                             ref={termsRef}
                             contentEditable={canEditMoa}
                             suppressContentEditableWarning
-                            onInput={(e) => setTermsText(e.currentTarget.innerText ?? "")}
+                            onFocus={() => {
+                              termsEditingRef.current = true;
+                            }}
+                            onInput={(e) => {
+                              termsEditingRef.current = true;
+                              setTermsText(e.currentTarget.innerText ?? "");
+                            }}
+                            onBlur={(e) => {
+                              termsEditingRef.current = false;
+                              setTermsText(e.currentTarget.innerText ?? "");
+                            }}
                             className="min-h-[120px] whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify outline-none select-text py-1"
-                          >
-                            {resolvedTermsText}
-                          </div>
+                          />
 
                           <p className="italic font-bold text-zinc-800 text-[9px]">
                             I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
@@ -1892,9 +1921,18 @@ export default function SettingsPage() {
           color-scheme: light !important;
         }
         .moa-print-page.moa-paper-effect {
-          overflow: hidden !important;
-          max-height: ${MOA_LEGAL_PAGE.height} !important;
-          height: ${MOA_LEGAL_PAGE.height} !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          min-height: ${MOA_LEGAL_PAGE.height} !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+        @media print {
+          .moa-print-page.moa-paper-effect {
+            overflow: hidden !important;
+            height: ${MOA_LEGAL_PAGE.height} !important;
+            max-height: ${MOA_LEGAL_PAGE.height} !important;
+          }
         }
         .moa-settings-paper,
         .moa-settings-paper * {
