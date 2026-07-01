@@ -29,6 +29,7 @@ import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { formatPeso } from "@/lib/currency";
 import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
+import { usePendingItemTransferSummary } from "@/hooks/use-pending-item-transfer-summary";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -434,6 +435,8 @@ export default function SuperAdminPawnTransactionsPage() {
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
   const [isItemTransferModalOpen, setIsItemTransferModalOpen] = useState(false);
+  const { summary: pendingTransferSummary, refresh: refreshPendingTransferSummary } =
+    usePendingItemTransferSummary(selectedBranch.id);
   const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
   const [reprintData, setReprintData] = useState<ReprintMoaData | null>(null);
@@ -843,6 +846,19 @@ export default function SuperAdminPawnTransactionsPage() {
     window.dispatchEvent(new CustomEvent("transaction_created"));
   }, [fetchSelectedDateStats]);
 
+  const handleTransferSuccess = useCallback(() => {
+    handleTransactionSuccess();
+    void refreshPendingTransferSummary();
+    window.dispatchEvent(new CustomEvent("pms:inventory-transfer-updated"));
+  }, [handleTransactionSuccess, refreshPendingTransferSummary]);
+
+  useEffect(() => {
+    if (searchParams.get("itemTransfer") !== "receive") {
+      return;
+    }
+    setIsItemTransferModalOpen(true);
+  }, [searchParams]);
+
   const printLedgerTotals = useMemo(() => {
     const cashIn = filteredTransactions.reduce(
       (sum, tx) => sum + (Number(tx.cashIn) || 0),
@@ -1020,14 +1036,32 @@ export default function SuperAdminPawnTransactionsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            {pendingTransferSummary.needsReceipt && selectedBranch.id !== "__all__" ? (
+              <div className="w-full rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 xl:w-auto">
+                {pendingTransferSummary.incomingCount} item
+                {pendingTransferSummary.incomingCount === 1 ? "" : "s"} waiting to be received at{" "}
+                {selectedBranch.name}.
+              </div>
+            ) : null}
             <ActionButton
               variant="primary"
-              className="border-purple-700 bg-purple-700 text-white"
+              className={`relative border-purple-700 bg-purple-700 text-white ${
+                pendingTransferSummary.needsReceipt
+                  ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-surface dark:ring-offset-zinc-950"
+                  : ""
+              }`}
               onClick={() => setIsItemTransferModalOpen(true)}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="relative flex items-center gap-1.5">
                 {transferIcon}
                 Transfer Item
+                {pendingTransferSummary.incomingCount > 0 ? (
+                  <span className="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-black text-zinc-900 shadow-sm">
+                    {pendingTransferSummary.incomingCount > 9
+                      ? "9+"
+                      : pendingTransferSummary.incomingCount}
+                  </span>
+                ) : null}
               </span>
             </ActionButton>
             <ActionButton variant="outline" onClick={handleExportCSV}>
@@ -1183,10 +1217,11 @@ export default function SuperAdminPawnTransactionsPage() {
       <ItemTransferModal
         isOpen={isItemTransferModalOpen}
         onClose={() => setIsItemTransferModalOpen(false)}
-        onSuccess={handleTransactionSuccess}
+        onSuccess={handleTransferSuccess}
         branchId={selectedBranch.id}
         branchName={selectedBranch.name}
         branches={branches}
+        incomingPendingCount={pendingTransferSummary.incomingCount}
       />
 
       <ReserveLayawayModal

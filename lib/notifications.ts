@@ -148,6 +148,24 @@ export function isBranchTransferApiNotification(
   );
 }
 
+export function isInventoryTransferNotification(
+  notification: Pick<HeaderNotification, "notificationType" | "entityType">,
+): boolean {
+  return (
+    notification.notificationType === "INVENTORY_ITEM_TRANSFER" ||
+    notification.entityType === "inventory_transfer"
+  );
+}
+
+export function isInventoryTransferApiNotification(
+  notification: Pick<ApiNotification, "notification_type" | "entity_type">,
+): boolean {
+  return (
+    notification.notification_type === "INVENTORY_ITEM_TRANSFER" ||
+    notification.entity_type === "inventory_transfer"
+  );
+}
+
 export function isPasswordRequestApiNotification(
   notification: Pick<ApiNotification, "notification_type" | "entity_type">,
 ): boolean {

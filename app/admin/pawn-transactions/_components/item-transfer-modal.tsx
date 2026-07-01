@@ -12,6 +12,7 @@ interface ItemTransferModalProps {
   branchId: string;
   branchName: string;
   branches: BranchOption[];
+  incomingPendingCount?: number;
 }
 
 interface SaleItem {
@@ -82,6 +83,7 @@ export function ItemTransferModal({
   branchId,
   branchName,
   branches,
+  incomingPendingCount = 0,
 }: ItemTransferModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -334,8 +336,17 @@ export function ItemTransferModal({
           </div>
 
           <div className="min-h-0 overflow-y-auto p-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-500">Pending Receipts</p>
-            <h3 className="mt-1 text-sm font-bold text-text-primary">Confirm items received by the destination branch</h3>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-500">Pending Receipts</p>
+                <h3 className="mt-1 text-sm font-bold text-text-primary">Confirm items received by the destination branch</h3>
+              </div>
+              {incomingPendingCount > 0 ? (
+                <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black uppercase text-zinc-900">
+                  {incomingPendingCount} to receive
+                </span>
+              ) : null}
+            </div>
 
             <div className="mt-4 space-y-3">
               {pendingTransfers.length === 0 ? (

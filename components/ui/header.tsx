@@ -14,6 +14,7 @@ import {
   type HeaderNotification,
   isBranchTransferNotification,
   isFundTransferNotification,
+  isInventoryTransferNotification,
   mapNotification,
   type NotificationTab,
 } from "@/lib/notifications";
@@ -232,6 +233,14 @@ export function Header({
           if (isBranchTransferNotification(next)) {
             window.dispatchEvent(
               new CustomEvent("pms:branch-transfer-notification", {
+                detail: next,
+              }),
+            );
+          }
+
+          if (isInventoryTransferNotification(next)) {
+            window.dispatchEvent(
+              new CustomEvent("pms:inventory-transfer-notification", {
                 detail: next,
               }),
             );
