@@ -62,29 +62,13 @@ interface InventoryTally {
   extraInVault: string[];
 }
 
-interface ActivePawnedInventoryItem {
-  id: string;
-  itemId: string;
-  itemName: string;
-  category: string;
-  status?: string;
-}
-
-interface SaleInventoryItem {
-  id: string;
-  itemId: string;
-  itemName: string;
-  category: string;
-  status?: string;
-}
-
 interface ChecklistInventoryItem {
-  id: string;
+  id?: string;
   itemId: string;
   itemName: string;
   category: string;
   status: string;
-  source: "pawned" | "sale" | "transfer";
+  source: "pawned" | "sale";
 }
 
 type ZXingDecodeResult = {
@@ -390,7 +374,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
     setError("");
 
     try {
-      const data = await api.get<ScannedItemDetails>(`/inventory/item/${encodeURIComponent(cleanItemId)}`);
+      const data = await api.get<ScannedItemDetails>(
+        `/inventory/item/${encodeURIComponent(cleanItemId)}?opening_audit=1`,
+      );
       const fetchedSerialNumber = typeof data.serialNumber === "string" ? data.serialNumber.trim() : "";
       const resolvedSerialNumber = fetchedSerialNumber || parsed.serialNumber;
 
@@ -398,9 +384,8 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       const isAuditableInventoryItem =
         normalizedStatus === "active" ||
         normalizedStatus === "available" ||
-        normalizedStatus === "transfer pending" ||
         data.type === "SALE" ||
-        data.type === "TRANSFER";
+        data.type === "PAWNED";
 
       if (!isAuditableInventoryItem) {
         setScanStage("failed");
@@ -411,7 +396,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           scanSerialNumber: parsed.serialNumber,
         });
         setPendingItem(null);
-        setError("Only active pawned, available sale, or pending transfer items are accepted.");
+        setError(
+          "Only available sale items and active pawn items within 7 days of maturity are accepted.",
+        );
         return;
       }
 
@@ -633,65 +620,12 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
       setIsLoadingChecklistItems(true);
 
       try {
-        const pawnedParams = new URLSearchParams({
-          branch: branchId,
-          status: "Active",
-          page: "1",
-          limit: "50",
-        });
-
-        const saleParams = new URLSearchParams({
-          branch: branchId,
-          status: "Available",
-          page: "1",
-          limit: "50",
-        });
-
-        const [pawnedData, saleData, transferData] = await Promise.all([
-          api.get<{ items?: ActivePawnedInventoryItem[] }>(`/inventory/pawned?${pawnedParams.toString()}`),
-          api.get<{ items?: SaleInventoryItem[] }>(`/inventory/for-sale?${saleParams.toString()}`),
-          api.get<{
-            transfers?: Array<{
-              id: string;
-              itemId: string;
-              itemName: string;
-              targetBranchId: string;
-              status: string;
-            }>;
-          }>(`/inventory/transfers?branch=${encodeURIComponent(branchId)}`),
-        ]);
-
-        const combinedItems: ChecklistInventoryItem[] = [
-          ...((Array.isArray(pawnedData.items) ? pawnedData.items : []).map((item) => ({
-            id: item.id,
-            itemId: item.itemId,
-            itemName: item.itemName,
-            category: item.category,
-            status: item.status || "Active",
-            source: "pawned" as const,
-          }))),
-          ...((Array.isArray(saleData.items) ? saleData.items : []).map((item) => ({
-            id: item.id,
-            itemId: item.itemId,
-            itemName: item.itemName,
-            category: item.category,
-            status: item.status || "Available",
-            source: "sale" as const,
-          }))),
-          ...((Array.isArray(transferData.transfers) ? transferData.transfers : [])
-            .filter((item) => item.status === "pending" && item.targetBranchId === branchId)
-            .map((item) => ({
-              id: item.id,
-              itemId: item.itemId,
-              itemName: item.itemName,
-              category: "Transfer Item",
-              status: "Transfer Pending",
-              source: "transfer" as const,
-            }))),
-        ];
+        const checklistData = await api.get<{ items?: ChecklistInventoryItem[] }>(
+          `/inventory/opening-audit/checklist?branch=${encodeURIComponent(branchId)}`,
+        );
 
         const uniqueItems = Array.from(
-          combinedItems.reduce((map, item) => {
+          (Array.isArray(checklistData.items) ? checklistData.items : []).reduce((map, item) => {
             const normalizedId = String(item.itemId || "").trim().toUpperCase();
             if (!normalizedId || map.has(normalizedId)) {
               return map;
@@ -735,17 +669,27 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
   const checklistEmpty = !isLoadingChecklistItems && checklistItems.length === 0;
   const checklistVerifiedCount = activeChecklistItems.length - visibleChecklistItems.length;
   const checklistTotalCount = checklistItems.length;
+  const verifiedScanCount = scannedItems.length;
+  const itemsToVerifyCount = Math.max(
+    checklistTotalCount,
+    tally?.totalInSystem ?? 0,
+  );
+  const hasItemsToVerify = itemsToVerifyCount > 0;
 
   const tallyComplete = Boolean(
     tally &&
-      (tally.totalInSystem === 0 ||
-        (tally.totalInSystem > 0 &&
-          tally.missingInVault.length === 0 &&
-          tally.extraInVault.length === 0)),
+      tally.totalInSystem > 0 &&
+      tally.missingInVault.length === 0 &&
+      tally.extraInVault.length === 0,
   );
 
   const canComplete =
-    (checklistEmpty && !isLoadingChecklistItems) || tallyComplete;
+    branchReady &&
+    !isLoadingChecklistItems &&
+  (
+    (!hasItemsToVerify && (tally == null || tally.totalInSystem === 0)) ||
+    (hasItemsToVerify && verifiedScanCount > 0 && tallyComplete)
+  );
 
   const completionLabel = isLoadingChecklistItems
     ? "Syncing checklist..."
@@ -857,7 +801,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
                 <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Branch inventory QR scan</h2>
                 <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 lg:text-sm">
-                  The camera opens automatically so you can scan pawned, sale, and transfer item QR codes before starting the day.
+                  Scan available sale items and active pawn items within 7 days of maturity before starting the day.
                 </p>
               </div>
 
@@ -896,7 +840,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       <span>{scanStageLabel}</span>
                     </div>
 
-                    {(checklistEmpty || (tally != null && tally.totalInSystem === 0)) &&
+                    {(checklistEmpty && (tally == null || tally.totalInSystem === 0)) &&
                       !isCheckingTally &&
                       !isLoadingChecklistItems && (
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 p-8 text-center animate-in fade-in duration-500 dark:bg-zinc-900/90">
@@ -908,7 +852,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         </div>
                         <h4 className="text-lg font-black tracking-tight text-zinc-900 uppercase dark:text-zinc-100">Empty Inventory</h4>
                         <p className="mt-2 max-w-xs text-xs font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300">
-                          No pawned, sale, or transfer items found for this branch. You can complete the audit immediately.
+                          No sale items or near-maturity pawn items need verification today. You can complete the audit immediately.
                         </p>
                       </div>
                     )}
@@ -1274,7 +1218,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                   <p className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
-                    Access to inventory tools stays locked until every pawned, sale, and transfer item is verified.
+                    Access to inventory tools stays locked until every required sale item and near-maturity pawn item is verified.
                   </p>
                 </div>
               )}
@@ -1294,7 +1238,9 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 {activeCompletionBlocked
                   ? isLoadingChecklistItems || isCheckingTally
                     ? "Syncing inventory checklist..."
-                    : "Verify every pawned, sale, and transfer item before finishing."
+                    : hasItemsToVerify && verifiedScanCount === 0
+                      ? "Scan at least one required item before finishing."
+                      : "Verify every required sale and near-maturity pawn item before finishing."
                   : checklistEmpty
                     ? "No inventory items to verify. You can complete the checklist."
                     : "All items verified. You can complete the checklist."}
