@@ -253,10 +253,33 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
       // 1. Verify Password
       await api.post("/auth/verify-password", { password: adminForm.password });
 
-      // 2. Process Redemption (Transaction)
+      // 2. Upload buyback proof image to Supabase
+      console.log('[REDEEM MODAL] Uploading buyback proof...');
+      const { uploadBuybackProof } = await import("@/lib/fund-transfer-storage");
+      
+      // Convert base64 data URL to File object (without fetch to avoid CSP issues)
+      const base64Data = proofImage.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+      const proofFile = new File([blob], `buyback_proof_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      
+      const buybackProofUrl = await uploadBuybackProof({
+        file: proofFile,
+        transactionNo: `BU-${Date.now()}`, // Generate transaction number
+        branchId: branchId
+      });
+      
+      console.log('[REDEEM MODAL] Proof uploaded successfully:', buybackProofUrl);
+
+      // 3. Process Buy Back (Transaction) with buyback_proof URL
       await api.post("/transactions", {
         ...getTransactionDateTimeFields(),
-        purpose: "Redeem",
+        purpose: "Buy Back",
         branch_id: branchId,
         branch: branchName,
         cash_in: interestCalc.totalAmount,
@@ -266,7 +289,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         pawn_amount: Number(selectedItem.amount),
         storage_fee: interestCalc.interestAmount,
         details: `Redeemed by ${selectedItem.name} | Days: ${interestCalc.daysPassed} | Processed by: ${adminForm.processedBy || 'Admin'}`,
-        related_pawned_item_id: selectedItem.id
+        related_pawned_item_id: selectedItem.id,
+        buyback_proof: buybackProofUrl
       });
 
       await api.patch(`/inventory/pawned/${selectedItem.id}`, { status: 'Redeemed' });
@@ -275,7 +299,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         onSuccess();
       }
       onClose();
-      toast.success("Item bought back successfully!");
+      toast.success("Item redeemed successfully!");
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
       setError(msg);
@@ -362,7 +386,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <Package className="w-6 h-6 text-emerald-200" />
                   </div>
                   <p className="text-sm font-bold text-emerald-900/60">No active pawns found</p>
-                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be Bought Back</p>
+                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be Redeemed</p>
                 </div>
               ) : (
                 pawnedItems.map((item) => (

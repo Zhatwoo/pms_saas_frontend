@@ -550,6 +550,15 @@ export function NewPawnModal({
     return form.category.trim();
   };
 
+  const getResolvedCondition = () => {
+    if (form.condition === "Others") {
+      const specify = form.conditionSpecify.trim();
+      return specify ? `Others - ${specify}` : "";
+    }
+
+    return form.condition.trim();
+  };
+
   const resolvedCategory = useMemo(() => getResolvedCategory(), [
     form.category,
     form.categorySpecify,
@@ -1368,36 +1377,38 @@ export function NewPawnModal({
                     {showUnitField("condition") && (
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">{activeMoaLabels.condition || "Condition"}</label>
-                      <select
-                        name="condition"
-                        value={form.condition}
-                        onChange={handleChange}
-                        className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
-                      >
-                        <option value="">Select Condition</option>
-                        <optgroup label="Working">
-                          <option value="Brand New">Brand New (Sealed)</option>
-                          <option value="Like New">Like New (No scratches)</option>
-                          <option value="Good">Good (Minor wear)</option>
-                          <option value="Fair">Fair (Visible scratches)</option>
-                          <option value="Poor">Poor (Heavy wear/dents)</option>
-                        </optgroup>
-                        <optgroup label="Issues">
-                          <option value="For Repair">For Repair</option>
-                          <option value="Incomplete">Incomplete (Missing parts)</option>
-                          <option value="Defective">Defective / Not working</option>
-                        </optgroup>
-                        <option value="Others" className="font-bold">Others</option>
-                      </select>
-                      {form.condition === "Others" && (
-                        <input
-                          name="conditionSpecify"
-                          value={form.conditionSpecify}
+                      <div className="flex gap-2">
+                        <select
+                          name="condition"
+                          value={form.condition}
                           onChange={handleChange}
-                          placeholder="Enter condition"
-                          className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                        />
-                      )}
+                          className={`${form.condition === "Others" ? "w-1/2" : "w-full"} rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
+                        >
+                          <option value="">Select Condition</option>
+                          <optgroup label="Working">
+                            <option value="Brand New">Brand New (Sealed)</option>
+                            <option value="Like New">Like New (No scratches)</option>
+                            <option value="Good">Good (Minor wear)</option>
+                            <option value="Fair">Fair (Visible scratches)</option>
+                            <option value="Poor">Poor (Heavy wear/dents)</option>
+                          </optgroup>
+                          <optgroup label="Issues">
+                            <option value="For Repair">For Repair</option>
+                            <option value="Incomplete">Incomplete (Missing parts)</option>
+                            <option value="Defective">Defective / Not working</option>
+                          </optgroup>
+                          <option value="Others" className="font-bold">Others (Please specify)</option>
+                        </select>
+                        {form.condition === "Others" && (
+                          <input
+                            name="conditionSpecify"
+                            value={form.conditionSpecify}
+                            onChange={handleChange}
+                            placeholder="Specify condition"
+                            className="w-1/2 rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                          />
+                        )}
+                      </div>
                     </div>
                     )}
                     {showUnitField("memory") && (

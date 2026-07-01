@@ -304,7 +304,7 @@ export const MOA_WATERMARK_CSS = `
     transform: translate(-50%, -50%) rotate(-25deg);
     font-size: 120px;
     font-weight: 900;
-    color: rgba(0, 0, 0, 0.035) !important;
+    color: rgba(0, 0, 0, 0.06) !important;
     z-index: 0;
     pointer-events: none;
     user-select: none;
@@ -316,11 +316,105 @@ export const MOA_WATERMARK_CSS = `
     position: relative;
     z-index: 1;
   }
+  @media print {
+    .moa-watermark::before {
+      color: rgba(0, 0, 0, 0.14) !important;
+      -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.1);
+      paint-order: stroke fill;
+    }
+  }
+`;
+
+/** Cut-here divider between original and customer copies — must print. */
+export const MOA_CUT_GUIDE_CSS = `
+  .moa-cut-guide {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding: 0.25rem 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    pointer-events: none;
+    user-select: none;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .moa-slip-halves > .moa-cut-guide {
+    grid-column: 1 / -1 !important;
+    justify-self: stretch !important;
+    align-self: center !important;
+  }
+  .moa-cut-guide__line {
+    display: block !important;
+    flex: 1 1 0% !important;
+    min-width: 0.75rem !important;
+    height: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    border-top: 1px dashed #a1a1aa !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .moa-cut-guide__text {
+    display: block !important;
+    flex: 0 0 auto !important;
+    background: #fff !important;
+    padding: 0 0.25rem !important;
+    margin: 0 !important;
+    font-size: 8px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    color: #71717a !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @media print {
+    .moa-cut-guide__line {
+      border-top-color: #52525b !important;
+    }
+    .moa-cut-guide__text {
+      color: #3f3f46 !important;
+      background: #fff !important;
+    }
+  }
+`;
+
+/** Split slip page into equal top/bottom halves with cut line at vertical center. */
+export const MOA_SLIP_HALVES_CSS = `
+  .moa-print-page.moa-slip-sheet {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  .moa-slip-halves {
+    display: grid !important;
+    grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    width: 100% !important;
+  }
+  .moa-slip-half {
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
 `;
 
 /** Screen layout so the on-page preview matches the printed Legal sheet. */
 export const MOA_PRINT_SCREEN_CSS = `
   ${MOA_WATERMARK_CSS}
+  ${MOA_CUT_GUIDE_CSS}
+  ${MOA_SLIP_HALVES_CSS}
   body.moa-print-document {
     margin: 0 !important;
     padding: 0 !important;
@@ -362,6 +456,8 @@ export const MOA_PRINT_SCREEN_CSS = `
 /** Shared `@media print` rules for MOA slips (settings page + modal iframe). */
 export const MOA_PRINT_CSS = `
   ${MOA_WATERMARK_CSS}
+  ${MOA_CUT_GUIDE_CSS}
+  ${MOA_SLIP_HALVES_CSS}
   ${MOA_PRINT_PAGE_RULE_CSS}
   html, body {
     margin: 0 !important;
@@ -412,7 +508,80 @@ export const MOA_PRINT_CSS = `
   .no-print * {
     display: none !important;
   }
+  .moa-print-page .space-y-2 > * + * { margin-top: 0.35rem !important; }
+  .moa-print-page .space-y-3 > * + * { margin-top: 0.45rem !important; }
+  .moa-print-page .space-y-4 > * + * { margin-top: 0.5rem !important; }
+  .moa-print-page .grid { display: grid !important; }
+  .moa-print-page .flex { display: flex !important; }
+  .moa-print-page .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .moa-print-page .text-center { text-align: center !important; }
+  .moa-print-page .text-justify { text-align: justify !important; }
+  .moa-print-page .justify-between { justify-content: space-between !important; }
+  .moa-print-page .items-center { align-items: center !important; }
+  .moa-print-page .items-end { align-items: flex-end !important; }
+  .moa-print-page .font-bold { font-weight: 700 !important; }
+  .moa-print-page .uppercase { text-transform: uppercase !important; }
+  .moa-print-page .italic { font-style: italic !important; }
+  .moa-print-page .border-b { border-bottom: 1px solid #a1a1aa !important; }
+  .moa-print-page .border-y { border-top: 1px solid #e4e4e7 !important; border-bottom: 1px solid #e4e4e7 !important; }
+  .moa-print-page .border-t { border-top: 1px solid #e4e4e7 !important; }
+  .moa-print-page .moa-cut-guide { display: flex !important; width: 100% !important; }
+  .moa-print-page .moa-cut-guide__line { flex: 1 1 0% !important; border-top: 1px dashed #52525b !important; }
+  .moa-print-page .moa-cut-guide__text { flex: 0 0 auto !important; background: #fff !important; }
+  .moa-print-page:nth-child(2) {
+    font-size: 8.5px !important;
+    line-height: 1.12 !important;
+  }
+  .moa-print-page:nth-child(2) .space-y-3 > * + * { margin-top: 0.3rem !important; }
+  .moa-print-page:nth-child(2) .pt-4 { padding-top: 0.35rem !important; }
+  .moa-print-page:nth-child(2) .my-6 { margin-top: 0.35rem !important; margin-bottom: 0.35rem !important; }
 `;
+
+/** Minimal layout CSS for MOA slip iframe print (Tailwind-independent). */
+export const MOA_PRINT_LAYOUT_CSS = `
+  ${MOA_WATERMARK_CSS}
+  ${MOA_CUT_GUIDE_CSS}
+  ${MOA_SLIP_HALVES_CSS}
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #moa-slip-printable {
+    display: block;
+    margin: 0 auto;
+    padding: 0;
+    width: ${MOA_LEGAL_PAGE.width};
+    background: #fff;
+    color: #18181b;
+    font-size: 9.5px;
+    line-height: 1.15;
+  }
+`;
+
+export function buildMoaSlipPrintHtml(slipHtml: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MOA Slip</title>
+  <style>
+    ${MOA_PRINT_LAYOUT_CSS}
+    ${MOA_PRINT_SCREEN_CSS}
+    @media print {
+      ${MOA_PRINT_CSS}
+    }
+  </style>
+</head>
+<body class="moa-print-document">
+  ${slipHtml}
+</body>
+</html>`;
+}
 
 /** MOA modal: exact color on root when printing. */
 export const MOA_BODY_PRINT_COLOR_SNIPPET = `print-color-adjust: exact !important;

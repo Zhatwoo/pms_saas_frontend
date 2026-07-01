@@ -22,6 +22,40 @@ export async function uploadFundTransferProof(params: {
   return result.proofUrl;
 }
 
+export async function uploadBuybackProof(params: {
+  file: File;
+  transactionNo: string;
+  branchId?: string | null;
+}): Promise<string> {
+  console.log('[BUYBACK PROOF UPLOAD] Starting upload...', {
+    fileName: params.file.name,
+    fileSize: params.file.size,
+    fileType: params.file.type,
+    transactionNo: params.transactionNo,
+    branchId: params.branchId
+  });
+
+  const fileData = await prepareProofFileData(params.file);
+  console.log('[BUYBACK PROOF UPLOAD] File data prepared, length:', fileData.length);
+
+  console.log('[BUYBACK PROOF UPLOAD] Calling API endpoint...');
+  const result = await api.post<{ proofUrl: string }>("/transactions/buyback-proof-upload", {
+    transactionNo: params.transactionNo,
+    fileName: params.file.name,
+    branchId: params.branchId ?? undefined,
+    fileData,
+  });
+
+  console.log('[BUYBACK PROOF UPLOAD] API response:', result);
+
+  if (!result.proofUrl) {
+    throw new Error("Buyback proof upload did not return a public URL.");
+  }
+
+  console.log('[BUYBACK PROOF UPLOAD] Success! URL:', result.proofUrl);
+  return result.proofUrl;
+}
+
 async function prepareProofFileData(file: File): Promise<string> {
   if (file.size <= 4_000_000 && file.type !== "image/png") {
     return fileToDataUrl(file);

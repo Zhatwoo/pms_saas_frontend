@@ -62,8 +62,27 @@ const TYPE_CONFIG: Record<
   other: { label: "Other", bgClass: "bg-slate-500/15 text-slate-300", dotClass: "bg-slate-400" },
 };
 
-function fmt(n: number) {
-  return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function fmt(n: number | null | undefined) {
+  const value = Number(n ?? 0);
+  const safe = Number.isFinite(value) ? value : 0;
+  return `₱${safe.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+
+function normalizeFinanceBreakdown(
+  breakdown?: Partial<FinanceSummaryBreakdown> | null,
+): FinanceSummaryBreakdown {
+  return {
+    pawnOut: Number(breakdown?.pawnOut ?? 0) || 0,
+    redeemIn: Number(breakdown?.redeemIn ?? 0) || 0,
+    buyBackIn: Number(breakdown?.buyBackIn ?? 0) || 0,
+    renewalIn: Number(breakdown?.renewalIn ?? 0) || 0,
+    saleIn: Number(breakdown?.saleIn ?? 0) || 0,
+    fundTransferIn: Number(breakdown?.fundTransferIn ?? 0) || 0,
+    fundTransferOut: Number(breakdown?.fundTransferOut ?? 0) || 0,
+    startBalance: Number(breakdown?.startBalance ?? 0) || 0,
+    other: Number(breakdown?.other ?? 0) || 0,
+  };
 }
 
 function fmtDate(d: string | null) {
@@ -458,6 +477,8 @@ const BREAKDOWN_ITEMS: {
 ];
 
 export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: FinanceSummaryCardsProps) {
+  const safeBreakdown = normalizeFinanceBreakdown(breakdown);
+
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
       {todayCashIn != null && (
@@ -489,8 +510,8 @@ export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: Fi
         </div>
       )}
       {BREAKDOWN_ITEMS.map((item) => {
-        const val = breakdown[item.key];
-        if (val === 0) return null;
+        const val = safeBreakdown[item.key];
+        if (!Number.isFinite(val) || val === 0) return null;
 
         return (
           <div

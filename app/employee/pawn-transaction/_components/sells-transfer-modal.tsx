@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, type ChangeEvent } from "react";
-import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
-import { getTransactionDateTimeFields } from "@/lib/time";
 
 interface SellsTransferModalProps {
   isOpen: boolean;
@@ -84,7 +82,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
-  const [branches, setBranches] = useState<BranchApiItem[]>([]);
+  const [branches] = useState<BranchApiItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
@@ -103,7 +101,6 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
     password: "",
   });
 
-  const { user } = useAuth();
   const { selectedBranch } = useBranch();
   const [isConfirming, setIsConfirming] = useState(false);
   const isProcessingRef = useRef(false);
@@ -126,8 +123,6 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
           setSearchQuery("");
           setForm(prev => ({
             ...prev,
-            sellTransfer: "Sales",
-            targetBranchId: "",
             priceSold: normalizedInitialItem.srp,
             itemIncluded: normalizedInitialItem.included === "---" ? "" : normalizedInitialItem.included,
           }));
@@ -157,17 +152,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
       }
     };
 
-    const fetchBranches = async () => {
-      try {
-        const response = await api.get<BranchApiItem[]>("/branches");
-        setBranches(Array.isArray(response) ? response : []);
-      } catch (err) {
-        console.error("Failed to fetch branches:", err);
-      }
-    };
-
     const timeout = setTimeout(fetchItems, 300);
-    fetchBranches();
     return () => clearTimeout(timeout);
   }, [isOpen, searchQuery, selectedBranch, initialItem, initialItemId, initialItemUnitId, initialItemUnit, initialItemSrp]);
 
@@ -191,10 +176,14 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
   const isFormValid = Boolean(
     selectedItem &&
     form.password &&
-    (form.sellTransfer === "Sales" 
-      ? (form.firstName && form.lastName && form.address && form.barangay && form.city && form.region && form.contactNo && form.priceSold)
-      : (form.targetBranchId)
-    )
+    form.firstName &&
+    form.lastName &&
+    form.address &&
+    form.barangay &&
+    form.city &&
+    form.region &&
+    form.contactNo &&
+    form.priceSold
   );
 
   const handleConfirmAction = async () => {
@@ -207,59 +196,31 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
       // Verify Password
       await api.post("/auth/verify-password", { password: form.password });
  
-      if (form.sellTransfer === "Sales") {
-        // 1. Create/Ensure Customer in Customer Management
-        console.log("Creating customer record for buyer...");
-        const customer = await api.post<CustomerResponse>("/customers", {
-          full_name: `${form.firstName} ${form.middleName ? form.middleName + ' ' : ''}${form.lastName}`,
-          address: form.address,
-          barangay: form.barangay,
-          city: form.city,
-          region: form.region,
-          contact_number: form.contactNo,
-          branch_id: selectedBranch?.id !== "__all__" ? selectedBranch?.id : undefined
-        });
+      console.log("Creating customer record for buyer...");
+      const customer = await api.post<CustomerResponse>("/customers", {
+        full_name: `${form.firstName} ${form.middleName ? form.middleName + ' ' : ''}${form.lastName}`,
+        address: form.address,
+        barangay: form.barangay,
+        city: form.city,
+        region: form.region,
+        contact_number: form.contactNo,
+        branch_id: selectedBranch?.id !== "__all__" ? selectedBranch?.id : undefined
+      });
 
-        // 2. Mark as Sold (Backend handles transaction creation for Sold Item)
-        await api.post(`/inventory/for-sale/${selectedItem.id}/mark-sold`, {
-          sold_price: Number(form.priceSold || 0),
-          branch_id: selectedBranch?.id,
-          customer_id: customer?.id // Pass the linked customer ID
-        });
+      await api.post(`/inventory/for-sale/${selectedItem.id}/mark-sold`, {
+        sold_price: Number(form.priceSold || 0),
+        branch_id: selectedBranch?.id,
+        customer_id: customer?.id
+      });
 
-        toast.success("Item marked as sold successfully!");
-      } else {
-        // TRANSFER LOGIC
-        const targetBranch = branches.find(b => b.id === form.targetBranchId);
-        const targetBranchName = getBranchName(targetBranch);
-        
-        // 1. Update Branch in Inventory
-        await api.put(`/inventory/for-sale/${selectedItem.id}`, {
-          branch_id: form.targetBranchId,
-          branch: targetBranchName
-        });
-
-        // 2. Create Transaction Log for Transfer
-        await api.post("/transactions", {
-          ...getTransactionDateTimeFields(),
-          purpose: "Transfer Item",
-          cash_in: 0,
-          cash_out: 0,
-          unit: selectedItem.unit,
-          unit_code: selectedItem.unitId,
-          details: `Item transferred from ${branchName} to ${targetBranchName} | Included: ${form.itemIncluded} | Processed by: ${user?.fullName || 'Admin'}`,
-          branch: branchName
-        });
-
-        toast.success(`Item transferred to ${targetBranchName} successfully!`);
-      }
+      toast.success("Item marked as sold successfully!");
 
       if (onSuccess) onSuccess();
       onClose();
-      toast.success("Item marked for sales transfer successfully!");
+      toast.success("Sale transaction completed successfully!");
     } catch (error) {
       console.error(error);
-      toast.error(getErrorMessage(error, "Failed to process Sales/Transfer transaction."));
+      toast.error(getErrorMessage(error, "Failed to process sale transaction."));
     } finally {
       setIsConfirming(false);
       isProcessingRef.current = false;
@@ -289,7 +250,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                   {branchName}
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
-                  {isItemLocked ? "Sell Item" : "Sells / Transfer"}
+                  {isItemLocked ? "Sell Item" : "Sells"}
                 </h1>
               </div>
             </div>
@@ -433,31 +394,12 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                   </div>
                   <div className="flex items-center justify-between gap-4 group">
                     <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter shrink-0">
-                      {isItemLocked ? "Transaction:" : "Sell / Transfer:"}
+                      Transaction:
                     </span>
                     <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle dark:border-border-subtle" />
-                    {isItemLocked ? (
-                      <div className="min-w-[140px] rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-left text-xs font-black text-emerald-800 dark:border-border-subtle dark:bg-emerald-500/10 dark:text-emerald-300">
-                        Sell
-                      </div>
-                    ) : (
-                      <div className="relative flex items-center rounded-xl border border-emerald-100 dark:border-border-subtle dark:border-border-subtle bg-white dark:bg-surface dark:bg-surface transition-all focus-within:ring-4 ring-emerald-500/10 min-w-[140px]">
-                        <select
-                          name="sellTransfer"
-                          value={form.sellTransfer}
-                          onChange={handleChange}
-                          className="w-full bg-transparent border-none text-left text-xs font-black text-emerald-950 dark:text-white dark:text-white pl-4 pr-8 py-2 cursor-pointer appearance-none outline-none focus:ring-0"
-                        >
-                          <option value="Sales">Sell</option>
-                          <option value="Transfer">Transfer</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-emerald-600">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
+                    <div className="min-w-[140px] rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2 text-left text-xs font-black text-emerald-800 dark:border-border-subtle dark:bg-emerald-500/10 dark:text-emerald-300">
+                      Sell
+                    </div>
                   </div>
                   <DetailInput label="Item Included" name="itemIncluded" value={form.itemIncluded} onChange={handleChange} placeholder={selectedItem?.included || "Specify items..."} />
                   <div className="flex items-center justify-between pt-2 border-t border-dashed border-emerald-100 dark:border-border-subtle">

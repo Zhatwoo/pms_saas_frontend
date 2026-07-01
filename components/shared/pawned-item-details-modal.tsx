@@ -83,7 +83,7 @@ function DetailItem({ label, value, highlight = false }: { label: string; value:
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
-  Redeemed: "blue",
+  "Redeemed": "blue",
   Expired: "red",
 };
 
@@ -99,6 +99,10 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [isRequestingQr, setIsRequestingQr] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
+  
+  // State for buyback transaction proof
+  const [buybackTransaction, setBuybackTransaction] = useState<{ buyback_proof: string | null } | null>(null);
+  const [buybackProofPreview, setBuybackProofPreview] = useState<{ src: string; title: string } | null>(null);
 
    const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
    const canViewQr = userRole === "super_admin";
@@ -121,10 +125,38 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       setItem(data);
       setRemarks(data.remarks || "");
       await fetchQrRequestStatus(data.id);
+      
+      // Fetch related buyback transaction if item is redeemed
+      if (data.status === "Redeemed") {
+        await fetchBuybackTransaction(data.id);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to fetch item details.");
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const fetchBuybackTransaction = async (pawnedItemId: string) => {
+    try {
+      // Fetch transactions related to this pawned item
+      const response = await api.get<any>(`/transactions?range=all`);
+      
+      if (response && response.transactions) {
+        // Find the buyback transaction for this pawned item
+        const buybackTx = response.transactions.find(
+          (tx: any) => tx.related_pawned_item_id === pawnedItemId && tx.purpose === "Buy Back"
+        );
+        
+        if (buybackTx && buybackTx.buyback_proof) {
+          setBuybackTransaction({ buyback_proof: buybackTx.buyback_proof });
+        } else {
+          setBuybackTransaction(null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch buyback transaction", err);
+      setBuybackTransaction(null);
     }
   };
 
@@ -625,6 +657,29 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                  </div>
               </div>
 
+              {/* Buyback Transaction Proof */}
+              {item.status === "Redeemed" && buybackTransaction?.buyback_proof && (
+                <div className="space-y-6">
+                  <SectionTitle>Buyback Transaction Proof</SectionTitle>
+                  <div className="rounded-[2rem] bg-surface-secondary border border-border-main p-8 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setBuybackProofPreview({ src: buybackTransaction.buyback_proof!, title: "Buyback Transaction Proof" })}
+                      className="group relative overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl hover:border-emerald-600 transition-all"
+                    >
+                      <img
+                        src={buybackTransaction.buyback_proof}
+                        alt="Buyback Transaction Proof"
+                        className="max-h-[200px] w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                      <div className="absolute left-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                        Expand
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Quick Actions Footer */}
               <div className="pt-8 border-t border-border-subtle flex items-center justify-between">
                  <p className="text-[10px] font-bold text-text-tertiary italic">Last updated: {item.created_at?.split('T')[0] || "—"}</p>
@@ -703,6 +758,45 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
           <div className="flex max-h-[calc(90vh-72px)] items-center justify-center bg-zinc-950 p-4">
             <Image src={preview.src} alt={preview.title} width={1600} height={1200} unoptimized className="max-h-[calc(90vh-120px)] w-full object-contain" />
+          </div>
+        </div>
+      </div>
+    )}
+    
+    {/* Buyback Proof Preview Lightbox */}
+    {buybackProofPreview && (
+      <div 
+        className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-md" 
+        onClick={() => setBuybackProofPreview(null)}
+      >
+        <div 
+          className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-surface shadow-2xl" 
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Proof Preview</p>
+              <h3 className="mt-1 text-lg font-black text-text-primary">{buybackProofPreview.title}</h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBuybackProofPreview(null)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover"
+              aria-label="Close image preview"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex max-h-[calc(90vh-72px)] items-center justify-center bg-zinc-950 p-4">
+            <img 
+              src={buybackProofPreview.src} 
+              alt={buybackProofPreview.title} 
+              className="max-h-[calc(90vh-120px)] w-full object-contain" 
+            />
           </div>
         </div>
       </div>

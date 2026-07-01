@@ -4,6 +4,7 @@ import {
   isExpirationAlertApiNotification,
   isFundTransferApiNotification,
   isIncidentReportApiNotification,
+  isInventoryTransferApiNotification,
   isPawnTransactionApiNotification,
   isPasswordRequestApiNotification,
   type ApiNotification,
@@ -121,6 +122,12 @@ export function subscribeToBranchTransferNotifications(
   onChange: NotificationChangeHandler,
 ) {
   return subscribeToNotifications(onChange, isBranchTransferApiNotification);
+}
+
+export function subscribeToInventoryTransferNotifications(
+  onChange: NotificationChangeHandler,
+) {
+  return subscribeToNotifications(onChange, isInventoryTransferApiNotification);
 }
 
 export function subscribeToPasswordRequestNotifications(

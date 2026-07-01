@@ -193,7 +193,7 @@ export function TransactionActions({
               }`}
           >
             {salesIcon}
-            Sells / Transfer
+            Sells
           </button>
 
           <button

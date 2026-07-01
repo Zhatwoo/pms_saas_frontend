@@ -11,9 +11,9 @@ import { RenewModal } from "@/app/employee/pawn-transaction/_components/renew-mo
 import { NewPawnModal } from "@/app/employee/pawn-transaction/_components/new-pawn-modal";
 import { RedeemModal } from "@/app/employee/pawn-transaction/_components/redeem-modal";
 import { BuyBackModal } from "@/app/employee/pawn-transaction/_components/buy-back-modal";
-import { SellsTransferModal } from "@/app/employee/pawn-transaction/_components/sells-transfer-modal";
 import { ReserveLayawayModal } from "@/app/employee/pawn-transaction/_components/reserve-layaway-modal";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
+import { ItemTransferModal } from "./_components/item-transfer-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { TransactionDetailsModal } from "@/components/shared/transaction-details-modal";
 import { useBranch } from "@/contexts/branch-context";
@@ -29,6 +29,7 @@ import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { BranchDaySessionToolbar } from "@/components/shared/branch-day-session-toolbar";
 import { formatPeso } from "@/lib/currency";
 import { subscribeToPawnTransactionNotifications } from "@/lib/notification-stream";
+import { usePendingItemTransferSummary } from "@/hooks/use-pending-item-transfer-summary";
 
 // Use shared `PurposeType` and `FilterType` imported from components
 const filterToPurpose: Record<FilterType, PurposeType | null> = {
@@ -75,6 +76,24 @@ const printerIcon = (
     <path d="M6 9V2h12v7" />
     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
     <rect x="6" y="14" width="12" height="8" />
+  </svg>
+);
+
+const transferIcon = (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M16 3h5v5" />
+    <path d="M4 20 21 3" />
+    <path d="M21 16v5h-5" />
+    <path d="m15 15 6 6" />
   </svg>
 );
 
@@ -243,6 +262,7 @@ interface ApiTransaction {
   storage_fee?: number | string | null;
   qr_code?: string | null;
   id_photo?: string | null;
+  buyback_proof?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
@@ -402,18 +422,21 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
     details: transaction.details ?? undefined,
     idPhoto: transaction.id_photo ?? undefined,
+    buyback_proof: transaction.buyback_proof ?? undefined,
   };
 }
 
 export default function SuperAdminPawnTransactionsPage() {
-  const { selectedBranch } = useBranch();
+  const { selectedBranch, branches } = useBranch();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
   const [isBuyBackModalOpen, setIsBuyBackModalOpen] = useState(false);
-  const [isSalesTransferModalOpen, setIsSalesTransferModalOpen] = useState(false);
+  const [isItemTransferModalOpen, setIsItemTransferModalOpen] = useState(false);
+  const { summary: pendingTransferSummary, refresh: refreshPendingTransferSummary } =
+    usePendingItemTransferSummary(selectedBranch.id);
   const [isReserveLayawayModalOpen, setIsReserveLayawayModalOpen] = useState(false);
   const [isMoaReprintOpen, setIsMoaReprintOpen] = useState(false);
   const [reprintData, setReprintData] = useState<ReprintMoaData | null>(null);
@@ -823,6 +846,19 @@ export default function SuperAdminPawnTransactionsPage() {
     window.dispatchEvent(new CustomEvent("transaction_created"));
   }, [fetchSelectedDateStats]);
 
+  const handleTransferSuccess = useCallback(() => {
+    handleTransactionSuccess();
+    void refreshPendingTransferSummary();
+    window.dispatchEvent(new CustomEvent("pms:inventory-transfer-updated"));
+  }, [handleTransactionSuccess, refreshPendingTransferSummary]);
+
+  useEffect(() => {
+    if (searchParams.get("itemTransfer") !== "receive") {
+      return;
+    }
+    setIsItemTransferModalOpen(true);
+  }, [searchParams]);
+
   const printLedgerTotals = useMemo(() => {
     const cashIn = filteredTransactions.reduce(
       (sum, tx) => sum + (Number(tx.cashIn) || 0),
@@ -988,7 +1024,7 @@ export default function SuperAdminPawnTransactionsPage() {
             >
               <option value="All">All Purposes</option>
               <option value="Renew">Renew</option>
-              <option value="Sells / Transfer">Sells / Transfer</option>
+              <option value="Sells / Transfer">Sells</option>
               <option value="Redeem">Redeem</option>
               <option value="Buy Back">Buy Back</option>
               <option value="Reserve / Layaway">Reserve / Layaway</option>
@@ -1000,6 +1036,34 @@ export default function SuperAdminPawnTransactionsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            {pendingTransferSummary.needsReceipt && selectedBranch.id !== "__all__" ? (
+              <div className="w-full rounded-xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 xl:w-auto">
+                {pendingTransferSummary.incomingCount} item
+                {pendingTransferSummary.incomingCount === 1 ? "" : "s"} waiting to be received at{" "}
+                {selectedBranch.name}.
+              </div>
+            ) : null}
+            <ActionButton
+              variant="primary"
+              className={`relative border-purple-700 bg-purple-700 text-white ${
+                pendingTransferSummary.needsReceipt
+                  ? "ring-2 ring-amber-400 ring-offset-2 ring-offset-surface dark:ring-offset-zinc-950"
+                  : ""
+              }`}
+              onClick={() => setIsItemTransferModalOpen(true)}
+            >
+              <span className="relative flex items-center gap-1.5">
+                {transferIcon}
+                Transfer Item
+                {pendingTransferSummary.incomingCount > 0 ? (
+                  <span className="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-black text-zinc-900 shadow-sm">
+                    {pendingTransferSummary.incomingCount > 9
+                      ? "9+"
+                      : pendingTransferSummary.incomingCount}
+                  </span>
+                ) : null}
+              </span>
+            </ActionButton>
             <ActionButton variant="outline" onClick={handleExportCSV}>
               <span className="flex items-center gap-1.5">
                 {downloadIcon}
@@ -1150,11 +1214,14 @@ export default function SuperAdminPawnTransactionsPage() {
         branchName={selectedBranch.name}
       />
 
-      <SellsTransferModal
-        isOpen={isSalesTransferModalOpen}
-        onClose={() => setIsSalesTransferModalOpen(false)}
-        onSuccess={handleTransactionSuccess}
+      <ItemTransferModal
+        isOpen={isItemTransferModalOpen}
+        onClose={() => setIsItemTransferModalOpen(false)}
+        onSuccess={handleTransferSuccess}
+        branchId={selectedBranch.id}
         branchName={selectedBranch.name}
+        branches={branches}
+        incomingPendingCount={pendingTransferSummary.incomingCount}
       />
 
       <ReserveLayawayModal

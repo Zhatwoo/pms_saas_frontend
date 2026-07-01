@@ -7,10 +7,13 @@ import { getInterestRateSchedule } from "@/lib/interest";
 import {
   MOA_LEGAL_PAGE,
   MOA_PRINT_CSS,
-  MOA_PRINT_SCREEN_CSS,
   MOA_WATERMARK_CSS,
+  MOA_CUT_GUIDE_CSS,
+  MOA_SLIP_HALVES_CSS,
+  buildMoaSlipPrintHtml,
 } from "@/lib/print-templates";
 import { calculatePeriodicStorageFee } from "@/lib/interest";
+import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 
 interface MoaModalProps {
   isOpen: boolean;
@@ -330,28 +333,35 @@ export function MoaModal({
   const handlePrint = async () => {
     if (!printRef.current) return;
 
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
+
+    const cleanup = () => {
+      try {
+        document.body.removeChild(iframe);
+      } catch {
+        // iframe already removed
+      }
+    };
+
     try {
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "0";
-      iframe.setAttribute("aria-hidden", "true");
       document.body.appendChild(iframe);
 
       const iframeDoc = iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        document.body.removeChild(iframe);
+      const printWindow = iframe.contentWindow;
+      if (!iframeDoc || !printWindow) {
+        cleanup();
         return;
       }
 
       iframeDoc.open();
-      iframeDoc.write(
-        `<!doctype html><html><head><meta charset="utf-8"><title>MOA Slip</title></head>` +
-        `<body class="moa-print-document">${printRef.current.outerHTML}</body></html>`,
-      );
+      iframeDoc.write(buildMoaSlipPrintHtml(printRef.current.outerHTML));
       iframeDoc.close();
 
       const stylesheetPromises: Promise<void>[] = [];
@@ -370,43 +380,26 @@ export function MoaModal({
         }
       });
 
-      const printOverrides = iframeDoc.createElement("style");
-      printOverrides.textContent = `
-        ${MOA_PRINT_SCREEN_CSS}
-        body.moa-print-document,
-        body.moa-print-document *,
-        body.moa-print-document #moa-slip-printable,
-        body.moa-print-document #moa-slip-printable * {
-          visibility: visible !important;
-        }
-        @media print {
-          ${MOA_PRINT_CSS}
-        }
-      `;
-      iframeDoc.head.appendChild(printOverrides);
-
-      const imagePromises = Array.from(iframeDoc.images).map((image) => {
-        if (image.complete) return Promise.resolve();
-        return new Promise<void>((resolve) => {
-          image.addEventListener("load", () => resolve(), { once: true });
-          image.addEventListener("error", () => resolve(), { once: true });
-        });
-      });
-      const assetsReady = Promise.all([
-        ...imagePromises,
-        document.fonts?.ready ?? Promise.resolve(),
-      ]);
       await Promise.race([
-        assetsReady,
+        Promise.all([...stylesheetPromises, document.fonts?.ready ?? Promise.resolve()]),
         new Promise<void>((resolve) => setTimeout(resolve, 2000)),
       ]);
 
+      if ("onafterprint" in printWindow) {
+        printWindow.onafterprint = cleanup;
+      } else {
+        setTimeout(cleanup, 1000);
+      }
+
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => window.print());
+        requestAnimationFrame(() => {
+          printWindow.focus();
+          printWindow.print();
+        });
       });
     } catch (err) {
       console.error("Print failed:", err);
-      window.print();
+      cleanup();
     }
   };
 
@@ -567,9 +560,11 @@ export function MoaModal({
           <div id="moa-slip-printable" ref={printRef} className="max-w-full bg-white text-zinc-800 moa-paper-effect">
             
             {/* PAGE 1: SLIPS (Original & Customer Copy) */}
-            <div className={MOA_PAGE_CLASS} style={MOA_PAGE_STYLE}>
-              
+            <div className={`${MOA_PAGE_CLASS} moa-slip-sheet`} style={MOA_PAGE_STYLE}>
+              <div className="moa-slip-halves">
+
               {/* ORIGINAL COPY (Top Half) */}
+              <div className="moa-slip-half">
               <div className="space-y-2 relative moa-watermark pb-1">
                 {/* Centered shop header */}
                 <MoaBranchHeader
@@ -745,16 +740,14 @@ export function MoaModal({
                   </div>
                 </div>
               </div>
-
-              {/* Middle Cut Guide */}
-              <div className="relative my-4 flex items-center justify-center border-t border-dashed border-zinc-400 py-1 select-none pointer-events-none no-print">
-                <span className="absolute bg-white px-2 text-[8px] font-bold text-zinc-400 tracking-wider">
-                  ✂ - - - - - - - - - - - - - - - - - - - - - - - CUT HERE - - - - - - - - - - - - - - - - - - - - - - - ✂
-                </span>
               </div>
 
+              {/* Middle Cut Guide */}
+              <MoaCutGuide />
+
               {/* CUSTOMER COPY (Bottom Half) */}
-              <div className="space-y-2 pt-2 relative moa-watermark pb-1">
+              <div className="moa-slip-half">
+              <div className="space-y-2 relative moa-watermark pb-1">
                 {/* Centered shop header */}
                 <MoaBranchHeader
                   primary={headerPrimary}
@@ -929,12 +922,16 @@ export function MoaModal({
                   </div>
                 </div>
               </div>
+              </div>
+              </div>
             </div>
 
             {/* PAGE 2: TERMS AND CONDITIONS */}
-            <div className={MOA_PAGE_CLASS} style={MOA_PAGE_STYLE}>
+            <div className={`${MOA_PAGE_CLASS} moa-slip-sheet`} style={MOA_PAGE_STYLE}>
+              <div className="moa-slip-halves">
               
               {/* Top Copy (Original terms) */}
+              <div className="moa-slip-half">
               <div className="space-y-3 relative moa-watermark pb-2">
                 <h2 className="text-center font-bold uppercase text-[11px] select-text">
                   {labels?.termsHeading || "Terms and Conditions"}
@@ -990,16 +987,14 @@ export function MoaModal({
                   </div>
                 </div>
               </div>
-
-              {/* Middle Cut Guide */}
-              <div className="relative my-6 flex items-center justify-center border-t border-dashed border-zinc-400 py-1 select-none pointer-events-none no-print">
-                <span className="absolute bg-white px-2 text-[8px] font-bold text-zinc-400 tracking-wider">
-                  ✂ - - - - - - - - - - - - - - - - - - - - - - - CUT HERE - - - - - - - - - - - - - - - - - - - - - - - ✂
-                </span>
               </div>
 
+              {/* Middle Cut Guide */}
+              <MoaCutGuide />
+
               {/* Bottom Copy (Customer terms) */}
-              <div className="space-y-3 pt-2 relative moa-watermark pb-2">
+              <div className="moa-slip-half">
+              <div className="space-y-3 relative moa-watermark pb-2">
                 <h2 className="text-center font-bold uppercase text-[11px] select-text">
                   {labels?.termsHeading || "Terms and Conditions"}
                 </h2>
@@ -1053,6 +1048,8 @@ export function MoaModal({
                     <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
                   </div>
                 </div>
+              </div>
+              </div>
               </div>
             </div>
           </div>
@@ -1129,6 +1126,8 @@ export function MoaModal({
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
 
         ${MOA_WATERMARK_CSS}
+        ${MOA_CUT_GUIDE_CSS}
+        ${MOA_SLIP_HALVES_CSS}
 
         @media print {
           ${MOA_PRINT_CSS}

@@ -261,6 +261,7 @@ interface ApiTransaction {
   storage_fee?: number | string | null;
   qr_code?: string | null;
   id_photo?: string | null;
+  buyback_proof?: string | null;
   related_pawned_item_id?: string | null;
   related_sale_item_id?: string | null;
   pawned_item?: PawnedItemJoin | PawnedItemJoin[] | null;
@@ -430,6 +431,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
     details: transaction.details ?? undefined,
     idPhoto: transaction.id_photo ?? undefined,
+    buyback_proof: transaction.buyback_proof ?? undefined,
   };
 }
 
@@ -1179,7 +1181,7 @@ export default function EmployeePawnTransactionsPage() {
           >
             <option value="All">All Purposes</option>
             <option value="Renew">Renew</option>
-            <option value="Sells / Transfer">Sells / Transfer</option>
+            <option value="Sells / Transfer">Sells</option>
             <option value="Redeem">Buy Back</option>
             <option value="Buy Back">Buy Out</option>
             <option value="Reserve / Layaway">Reserve / Layaway</option>

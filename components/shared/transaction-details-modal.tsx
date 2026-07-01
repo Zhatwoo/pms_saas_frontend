@@ -1,7 +1,7 @@
 "use client";
 
 import { StatusBadge } from "./status-badge";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { useAuth } from "@/contexts/auth-context";
 import { formatPeso } from "@/lib/currency";
@@ -64,6 +64,10 @@ export function TransactionDetailsModal({
   useFocusTrap(modalRef, isOpen);
   const { user } = useAuth();
   const isAdminOrSuperAdmin = user?.role === "super_admin";
+  
+  // State for buyback proof preview
+  const [buybackProofPreview, setBuybackProofPreview] = useState<{ src: string; title: string } | null>(null);
+  
   const modalAriaProps = {
     role: "dialog",
     "aria-modal": "true",
@@ -71,6 +75,9 @@ export function TransactionDetailsModal({
   } as const;
 
   if (!isOpen || !transaction) return null;
+
+  // Check if buyback proof should be displayed (only for Buy Back transactions)
+  const shouldShowBuybackProof = transaction.buyback_proof && transaction.purpose === "Buy Back";
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-xl" {...modalAriaProps} ref={modalRef}>
@@ -142,13 +149,22 @@ export function TransactionDetailsModal({
           />
         </div>
 
-        <div className={`grid gap-4 px-6 pb-6 ${transaction.idPhoto ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
-          <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
-              Security Identity
-            </p>
-            {isAdminOrSuperAdmin ? (
-              (transaction.qrCode || transaction.qr_code) ? (
+        <div className={`grid gap-4 px-6 pb-6 ${
+          isAdminOrSuperAdmin 
+            ? (shouldShowBuybackProof 
+                ? (transaction.idPhoto ? "lg:grid-cols-3" : "lg:grid-cols-2") 
+                : (transaction.idPhoto ? "lg:grid-cols-2" : "lg:grid-cols-1"))
+            : (shouldShowBuybackProof 
+                ? (transaction.idPhoto ? "lg:grid-cols-2" : "lg:grid-cols-1")
+                : (transaction.idPhoto ? "lg:grid-cols-1" : ""))
+        }`}>
+          {/* Security Identity - Admin/SuperAdmin Only */}
+          {isAdminOrSuperAdmin && (
+            <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
+                Security Identity
+              </p>
+              {(transaction.qrCode || transaction.qr_code) ? (
                 <div className="mt-4 flex flex-col items-center">
                   <img
                     src={transaction.qrCode || transaction.qr_code}
@@ -160,23 +176,28 @@ export function TransactionDetailsModal({
                 <p className="mt-3 text-sm text-zinc-400">
                   No QR code security record available.
                 </p>
-              )
-            ) : (
-              <div className="mt-6 flex flex-col items-center justify-center py-12">
-                <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-500 bg-emerald-500/10">
-                  <div className="text-center">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
-                      QR Visible to
-                    </p>
-                    <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-600 dark:text-emerald-400">
-                      Admin & Super Admin Only
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
+          {/* Buyback Proof - Replaces QR for Employees, Additional section for Admin */}
+          {shouldShowBuybackProof && (
+            <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm flex flex-col">
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
+                Buyback Proof
+              </p>
+              <div className="mt-4 flex-1 flex flex-col items-center justify-center">
+                <img
+                  src={transaction.buyback_proof!}
+                  alt="Buyback Proof"
+                  className="max-h-[300px] w-auto rounded-2xl object-contain shadow-lg border border-border-main cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => setBuybackProofPreview({ src: transaction.buyback_proof!, title: "Buyback Transaction Proof" })}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Renewal MOA Proof */}
           {transaction.idPhoto && (
             <div className="rounded-3xl border border-border-main bg-surface p-5 shadow-sm flex flex-col">
               <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">
@@ -193,6 +214,45 @@ export function TransactionDetailsModal({
           )}
         </div>
       </div>
+
+      {/* Buyback Proof Preview Lightbox */}
+      {buybackProofPreview && (
+        <div 
+          className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-md" 
+          onClick={() => setBuybackProofPreview(null)}
+        >
+          <div 
+            className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-surface shadow-2xl" 
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Proof Preview</p>
+                <h3 className="mt-1 text-lg font-black text-text-primary">{buybackProofPreview.title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBuybackProofPreview(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover"
+                aria-label="Close image preview"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex max-h-[calc(90vh-72px)] items-center justify-center bg-zinc-950 p-4">
+              <img 
+                src={buybackProofPreview.src} 
+                alt={buybackProofPreview.title} 
+                className="max-h-[calc(90vh-120px)] w-full object-contain" 
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

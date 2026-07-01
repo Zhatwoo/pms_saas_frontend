@@ -9,7 +9,8 @@ import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
 import { fetchCategories } from "@/lib/categories";
-import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_WATERMARK_CSS } from "@/lib/print-templates";
+import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_WATERMARK_CSS, MOA_CUT_GUIDE_CSS, MOA_SLIP_HALVES_CSS } from "@/lib/print-templates";
+import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
 
@@ -1095,11 +1096,19 @@ export default function SettingsPage() {
                     <div className="flex flex-col gap-6 flex-1 max-w-[816px]">
                       {/* PAGE 1: SLIPS (Original & Customer Copy) */}
                       <div
-                        className={MOA_SETTINGS_PAPER_CLASS}
-                        style={{ padding: MOA_LEGAL_PAGE.padding, boxSizing: "border-box" }}
+                        className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
+                        style={{
+                          padding: MOA_LEGAL_PAGE.padding,
+                          boxSizing: "border-box",
+                          height: MOA_LEGAL_PAGE.screenHeightPx,
+                          maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
+                          overflow: "hidden",
+                        }}
                       >
+                        <div className="moa-slip-halves">
 
                         {/* ORIGINAL COPY (Top Half) */}
+                        <div className="moa-slip-half">
                         <div className="space-y-2 relative moa-watermark pb-1">
                           {/* Row 1: Branch Info (centered) */}
                           <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
@@ -1292,16 +1301,14 @@ export default function SettingsPage() {
                             />
                           </div>
                         </div>
-
-                        {/* Middle Cut Guide */}
-                        <div className="relative my-4 flex items-center justify-center border-t border-dashed border-zinc-400 py-1 select-none pointer-events-none">
-                          <span className="absolute bg-white px-2 text-[8px] font-bold text-zinc-400 tracking-wider">
-                            ✂ - - - - - - - - - - - - - - - - - - - - - - - CUT HERE - - - - - - - - - - - - - - - - - - - - - - - ✂
-                          </span>
                         </div>
 
+                        {/* Middle Cut Guide */}
+                        <MoaCutGuide />
+
                         {/* CUSTOMER COPY (Bottom Half) */}
-                        <div className="space-y-2 pt-2 relative moa-watermark pb-1">
+                        <div className="moa-slip-half">
+                        <div className="space-y-2 relative moa-watermark pb-1">
                           {/* Row 1: Branch Info (centered) */}
                           <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
                             <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
@@ -1471,15 +1478,25 @@ export default function SettingsPage() {
                             </div>
                           </div>
                         </div>
+                        </div>
+                        </div>
                       </div>
 
                       {/* PAGE 2: TERMS AND CONDITIONS */}
                       <div
-                        className={MOA_SETTINGS_PAPER_CLASS}
-                        style={{ padding: MOA_LEGAL_PAGE.padding, boxSizing: "border-box" }}
+                        className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
+                        style={{
+                          padding: MOA_LEGAL_PAGE.padding,
+                          boxSizing: "border-box",
+                          height: MOA_LEGAL_PAGE.screenHeightPx,
+                          maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
+                          overflow: "hidden",
+                        }}
                       >
+                        <div className="moa-slip-halves">
 
                         {/* Top Copy (Original terms) */}
+                        <div className="moa-slip-half">
                         <div className="space-y-3 relative moa-watermark pb-2">
                           <h2 className="text-center font-bold uppercase text-[11px] select-text">
                             <input
@@ -1567,16 +1584,14 @@ export default function SettingsPage() {
                             </div>
                           </div>
                         </div>
-
-                        {/* Middle Cut Guide */}
-                        <div className="relative my-6 flex items-center justify-center border-t border-dashed border-zinc-400 py-1 select-none pointer-events-none">
-                          <span className="absolute bg-white px-2 text-[8px] font-bold text-zinc-400 tracking-wider">
-                            ✂ - - - - - - - - - - - - - - - - - - - - - - - CUT HERE - - - - - - - - - - - - - - - - - - - - - - - ✂
-                          </span>
                         </div>
 
+                        {/* Middle Cut Guide */}
+                        <MoaCutGuide />
+
                         {/* Bottom Copy (Customer terms) */}
-                        <div className="space-y-3 pt-2 relative moa-watermark pb-2">
+                        <div className="moa-slip-half">
+                        <div className="space-y-3 relative moa-watermark pb-2">
                           <h2 className="text-center font-bold uppercase text-[11px] text-zinc-800 leading-none">
                             {topLabels.termsHeading}
                           </h2>
@@ -1629,6 +1644,8 @@ export default function SettingsPage() {
                               <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Seller)</span>
                             </div>
                           </div>
+                        </div>
+                        </div>
                         </div>
                       </div>
                     </div>
@@ -1920,6 +1937,11 @@ export default function SettingsPage() {
           color: #18181b !important;
           color-scheme: light !important;
         }
+        .moa-print-page.moa-slip-sheet.moa-paper-effect {
+          overflow: hidden !important;
+          height: ${MOA_LEGAL_PAGE.height} !important;
+          max-height: ${MOA_LEGAL_PAGE.height} !important;
+        }
         .moa-print-page.moa-paper-effect {
           overflow-y: auto !important;
           overflow-x: hidden !important;
@@ -1971,6 +1993,8 @@ export default function SettingsPage() {
         .moa-paper-effect input { color: #18181b !important; }
         .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
         ${MOA_WATERMARK_CSS}
+        ${MOA_CUT_GUIDE_CSS}
+        ${MOA_SLIP_HALVES_CSS}
       `}</style>
 
       
