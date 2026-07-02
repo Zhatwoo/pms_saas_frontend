@@ -22,7 +22,7 @@ interface ContractTrendsChartProps {
 
 export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
   return (
-    <div className="rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
+    <div className="min-w-0 min-h-0 rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
@@ -44,8 +44,15 @@ export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
         </div>
       </div>
 
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-64 min-w-0 min-h-0">
+        <div className="h-full min-w-0 min-h-0" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={0}
+            minHeight={0}
+            style={{ minWidth: 0, minHeight: 0 }}
+          >
           <BarChart
             data={data}
             margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
@@ -84,7 +91,8 @@ export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
               radius={[4, 4, 0, 0]}
             />
           </BarChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
