@@ -88,6 +88,7 @@ export function Header({
   const router = useRouter();
   const [time, setTime] = useState("");
   const [timeOnly, setTimeOnly] = useState("");
+  const [dateOnly, setDateOnly] = useState("");
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<NotificationTab>("All");
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
@@ -182,9 +183,11 @@ export function Header({
   useEffect(() => {
     setTime(formatDateTime());
     setTimeOnly(formatTimeOnly());
+    setDateOnly(formatDateOnly());
     const clockInterval = setInterval(() => {
       setTime(formatDateTime());
       setTimeOnly(formatTimeOnly());
+      setDateOnly(formatDateOnly());
     }, 1000);
 
     void fetchNotifications();
@@ -289,6 +292,16 @@ export function Header({
       window.removeEventListener("keydown", enableSoundAfterInteraction);
     };
   }, [enableNotificationSound, fetchNotifications, playNotificationSound]);
+
+  function formatDateOnly(): string {
+    const now = new Date();
+    return now.toLocaleString("en-US", {
+      timeZone: MANILA_TZ,
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {
@@ -475,8 +488,8 @@ export function Header({
   );
 
   return (
-    <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border-main bg-header-bg px-4 py-3 md:px-6 md:py-4 transition-colors duration-300">
-      {/* Left section: hamburger + title + branch label */}
+    <header className="grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border-main bg-header-bg px-4 py-3 md:px-6 md:py-4 transition-colors duration-300">
+      {/* Left: hamburger only */}
       <div className="flex min-w-0 items-center gap-2 md:gap-4">
         {onMenuToggle && (
           <button
@@ -488,32 +501,25 @@ export function Header({
             <MenuIcon />
           </button>
         )}
-        <h1 className="max-w-[9rem] truncate text-xs font-bold leading-tight text-text-primary sm:max-w-[10rem] sm:text-sm md:max-w-[12rem] md:text-sm lg:max-w-none lg:text-base xl:text-lg">
+        {/* Page title: show beside burger on mobile and keep on desktop/tablet */}
+        <h1 className="block max-w-[9rem] truncate text-xs font-bold leading-tight text-text-primary sm:max-w-[10rem] sm:text-sm md:max-w-[12rem] md:text-sm lg:max-w-none lg:text-base xl:text-lg">
           {title}
         </h1>
-        {branchName && (
-          <div className="hidden lg:flex items-center gap-4 min-w-0">
-            <span className="h-6 w-px bg-border-main shrink-0" />
-            <span className="text-base font-semibold truncate" style={{color: 'var(--emerald-text)'}}>
-              {branchName}
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* Center section: clock — hidden on mobile, time-only on tablet, full on desktop */}
-      <div className="hidden md:flex items-center justify-center gap-2 rounded-full border border-border-main px-3 py-2 text-sm text-text-tertiary lg:px-4 lg:text-base">
-        <ClockIcon />
-        <span className="hidden lg:inline min-w-[180px] text-center">{time}</span>
-        <span className="lg:hidden">{timeOnly}</span>
+      {/* Center: title and clock */}
+      <div className="flex min-w-0 flex-col items-center justify-center gap-1">
+        <div className="hidden md:flex items-center justify-center gap-2 rounded-full border border-border-main px-2.5 py-1.5 text-sm text-text-tertiary lg:px-4 lg:text-base">
+          <ClockIcon />
+          <span className="hidden lg:inline min-w-[180px] text-center">{time}</span>
+          <span className="md:inline lg:hidden text-center">{dateOnly} · {timeOnly}</span>
+        </div>
       </div>
 
-      {/* Right section: branch selector, notifications, theme toggle, avatar */}
+      {/* Right: branch selector, notifications, theme toggle, avatar (aligned to far right) */}
       <div className="flex shrink-0 items-center justify-end gap-1 md:gap-2 lg:gap-3">
-        {/* Branch Selector – superadmin only */}
         {!hideBranchSelector && !isCustomerDetailPage && <BranchSelectorDropdown />}
 
-        {/* Notifications */}
         <div className="relative" ref={notificationRef}>
           <button
             type="button"
@@ -521,7 +527,7 @@ export function Header({
               enableNotificationSound();
               setIsNotificationOpen((prev) => !prev);
             }}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface-hover hover:text-text-primary"
             aria-label="Open notifications"
           >
             <BellIcon />
@@ -539,36 +545,28 @@ export function Header({
               </div>
 
               <div className="mb-3 grid grid-cols-4 gap-1 rounded-lg border border-border-main bg-surface-subtle p-1">
-                {(["All", "Transactions", "Alerts", "Requests"] as NotificationTab[]).map(
-                  (tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setActiveTab(tab)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        activeTab === tab
-                          ? "bg-pawn-sidebar text-white"
-                          : "text-text-secondary hover:bg-surface-hover"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ),
-                )}
+                {(["All", "Transactions", "Alerts", "Requests"] as NotificationTab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      activeTab === tab ? "bg-pawn-sidebar text-white" : "text-text-secondary hover:bg-surface-hover"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
 
               <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
                 <div>
-                  <p className="mb-1 text-xs font-bold uppercase tracking-wide text-text-tertiary">
-                    Recent
-                  </p>
+                  <p className="mb-1 text-xs font-bold uppercase tracking-wide text-text-tertiary">Recent</p>
                   <div className="space-y-2">
                     {recentNotifications.length > 0 ? (
                       recentNotifications.map(renderNotificationRow)
                     ) : (
-                      <p className="rounded-md border border-dashed border-border-main px-3 py-2 text-sm text-text-tertiary">
-                        No notifications.
-                      </p>
+                      <p className="rounded-md border border-dashed border-border-main px-3 py-2 text-sm text-text-tertiary">No notifications.</p>
                     )}
                   </div>
                 </div>
@@ -594,24 +592,15 @@ export function Header({
           )}
         </div>
 
-        {/* Theme Toggle */}
-        <ThemeToggle />
+        <div className="block">
+          <ThemeToggle />
+        </div>
 
-        {/* User Avatar */}
-        <div className="h-11 w-11 overflow-hidden rounded-full bg-pawn-sidebar">
+        <div className="hidden md:flex h-9 w-9 overflow-hidden rounded-full bg-pawn-sidebar">
           {user?.avatarUrl ? (
-            <Image
-              src={user.avatarUrl}
-              alt="User avatar"
-              width={44}
-              height={44}
-              unoptimized
-              className="h-full w-full object-cover"
-            />
+            <Image src={user.avatarUrl} alt="User avatar" width={44} height={44} unoptimized className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-base font-semibold text-white">
-              {resolvedInitials}
-            </div>
+            <div className="flex h-full w-full items-center justify-center text-base font-semibold text-white">{resolvedInitials}</div>
           )}
         </div>
       </div>
