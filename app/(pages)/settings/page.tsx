@@ -759,13 +759,13 @@ export default function SettingsPage() {
 
   return (
     <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
-      <div className="flex w-full gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
+      <div className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
         {["Profile", "Notifications", "Shop", "Manage Categories", "MOA"].map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            className={`whitespace-nowrap rounded-md px-6 py-2 font-bold transition-all ${activeTab === tab
+            className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[10px] font-bold transition-all sm:px-6 sm:py-2 sm:text-sm ${activeTab === tab
                 ? "bg-emerald-700 text-white shadow-sm"
                 : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
