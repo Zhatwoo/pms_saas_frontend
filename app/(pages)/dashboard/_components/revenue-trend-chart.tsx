@@ -22,14 +22,21 @@ interface RevenueTrendChartProps {
 
 export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
   return (
-    <div className="rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
+    <div className="min-w-0 min-h-0 rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-text-primary">Revenue Trend</h3>
         <p className="text-xs text-text-tertiary">Monthly revenue performance</p>
       </div>
 
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-64 min-w-0 min-h-0">
+        <div className="h-full min-w-0 min-h-0" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+            minWidth={0}
+            minHeight={0}
+            style={{ minWidth: 0, minHeight: 0 }}
+          >
           <LineChart
             data={data}
             margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
@@ -66,7 +73,8 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
               activeDot={{ r: 6, fill: "#1a472a", strokeWidth: 0 }}
             />
           </LineChart>
-        </ResponsiveContainer>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

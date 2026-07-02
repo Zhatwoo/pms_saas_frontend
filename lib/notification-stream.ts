@@ -15,20 +15,17 @@ type NotificationChangeHandler = (notification?: ApiNotification) => void;
 type NotificationPredicate = (notification: ApiNotification) => boolean;
 
 export function getNotificationStreamUrl() {
+  // Browser: always use same-origin proxy so httpOnly auth cookies are sent.
+  // Direct NEXT_PUBLIC_BACKEND_URL breaks auth when frontend and backend are on different origins (LAN Docker dev).
+  if (typeof window !== "undefined") {
+    return "/api/notifications/stream";
+  }
+
   const configured =
     process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL;
 
   if (configured) {
     return `${configured.replace(/\/$/, "")}/api/notifications/stream`;
-  }
-
-  if (typeof window === "undefined") {
-    return "/api/notifications/stream";
-  }
-
-  const { protocol, hostname } = window.location;
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return `${protocol}//${hostname}:4000/api/notifications/stream`;
   }
 
   return "/api/notifications/stream";
