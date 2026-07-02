@@ -140,13 +140,13 @@ export function TransactionActions({
         ) : null}
 
         {/* Actions */}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
           <ActionButton
             variant="outline"
             onClick={onExportCSV}
-            className="h-11 border-emerald-600 bg-emerald-50 text-emerald-700"
+            className="w-full sm:w-auto h-11 border-emerald-600 bg-emerald-50 text-emerald-700"
           >
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center justify-center gap-1.5">
               {downloadIcon}
               Export CSV
             </span>
@@ -154,32 +154,32 @@ export function TransactionActions({
           <ActionButton
             variant="primary"
             onClick={onPrintReport}
-            className="h-11 border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400"
+            className="w-full sm:w-auto h-11 border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400"
           >
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center justify-center gap-1.5">
               {printerIcon}
               Print Report
             </span>
           </ActionButton>
-          <div className="flex rounded-md border border-border-main overflow-hidden">
+          <div className="w-full flex flex-wrap items-stretch gap-2 rounded-md border border-border-main overflow-hidden sm:w-auto">
             <button
               type="button"
               onClick={() => onViewModeChange?.("list")}
-              className={`h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+              className={`flex-1 min-w-[120px] h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
             >
               List
             </button>
             <button
               type="button"
               onClick={() => onViewModeChange?.("calendar")}
-              className={`h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+              className={`flex-1 min-w-[120px] h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
             >
               Calendar
             </button>
           </div>
           {onAddTransaction ? (
-            <ActionButton variant="primary" onClick={onAddTransaction} className="h-11">
-              <span className="flex items-center gap-1.5">
+            <ActionButton variant="primary" onClick={onAddTransaction} className="w-full sm:w-auto h-11">
+              <span className="flex items-center justify-center gap-1.5">
                 {plusIcon}
                 Add Transaction
               </span>
