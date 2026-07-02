@@ -184,6 +184,15 @@ export function isBranchDayEndedApiNotification(
   );
 }
 
+export function isDeviceAuthorizationApiNotification(
+  notification: Pick<ApiNotification, "category" | "entity_type">,
+): boolean {
+  return (
+    notification.category === "Requests" &&
+    notification.entity_type === "system"
+  );
+}
+
 export function addRolePrefixToTargetUrl(targetUrl: string, role?: Role): string {
   if (!targetUrl.startsWith("/")) return targetUrl;
   if (targetUrl.startsWith("/admin/") || targetUrl.startsWith("/employee/")) {
