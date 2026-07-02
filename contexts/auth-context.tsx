@@ -10,7 +10,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import type { User } from "@/types";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import { normalizeUser } from "@/lib/auth";
 import { SessionExpiredModal } from "@/components/ui/session-expired-modal";
 
@@ -164,7 +164,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       clearSession(false);
-      console.warn("[AuthContext] Failed to refresh profile:", err);
+      const isExpectedUnauthorizedRefresh =
+        err instanceof ApiError &&
+        err.statusCode === 401 &&
+        options?.suppressSessionExpired;
+      if (!isExpectedUnauthorizedRefresh) {
+        console.warn("[AuthContext] Failed to refresh profile:", err);
+      }
     } finally {
       isRefreshingRef.current = false;
     }
