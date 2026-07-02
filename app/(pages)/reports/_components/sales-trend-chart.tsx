@@ -108,16 +108,9 @@ export function SalesTrendChart({
           </div>
         ) : (
           <>
-            <div className="h-64 min-w-0 min-h-0">
-              <div className="h-full min-w-0 min-h-0" style={{ minWidth: 0, minHeight: 0 }}>
-                <ResponsiveContainer
-                  width="100%"
-                  height="100%"
-                  minWidth={0}
-                  minHeight={0}
-                  style={{ minWidth: 0, minHeight: 0 }}
-                >
-                  <ComposedChart
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
                   data={chartData}
                   margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
                 >
