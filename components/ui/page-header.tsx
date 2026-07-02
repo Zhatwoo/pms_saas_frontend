@@ -9,10 +9,10 @@ export function PageHeader({ title, description }: PageHeaderProps) {
   return (
     <div className="mb-6">
       {title && (
-        <h2 className="text-xl font-semibold text-zinc-900">{title}</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-zinc-900">{title}</h2>
       )}
       {description && (
-        <p className="mt-1 text-base text-zinc-500">{description}</p>
+        <p className="mt-1 text-sm sm:text-base text-zinc-500">{description}</p>
       )}
     </div>
   );

@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err) {
       if (isAuthRefreshGraceActive()) {
-        console.warn("[AuthContext] Profile refresh paused while auth cookie is being refreshed.");
+        console.debug("[AuthContext] Profile refresh paused while auth cookie is being refreshed.");
         return;
       }
       clearSession(false);

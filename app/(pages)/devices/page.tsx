@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { ActionButton } from "@/components/shared/action-button";
+import { subscribeToDeviceAuthorizationNotifications } from "@/lib/notification-stream";
+import { DeleteDeviceModal } from "./_components/delete-device-modal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -356,6 +358,7 @@ export default function DevicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [authorizeTarget, setAuthorizeTarget] = useState<Device | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
 
   const isSuperAdmin = user?.role === "super_admin";
 
@@ -377,6 +380,19 @@ export default function DevicesPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Subscribe to real-time device authorization notifications
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    
+    const unsubscribe = subscribeToDeviceAuthorizationNotifications(() => {
+      void load();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isSuperAdmin, load]);
+
   const handleBlock = async (id: string) => {
     if (!confirm("Block this device? It will be immediately denied login access.")) return;
     try {
@@ -389,10 +405,10 @@ export default function DevicesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this device permanently?")) return;
     try {
       await api.delete(`/devices/${id}`);
       toast.success("Device removed");
+      setDeleteTarget(null);
       load();
     } catch {
       toast.error("Failed to remove device");
@@ -629,7 +645,7 @@ export default function DevicesPage() {
                         </button>
                       )}
                       <button
-                        onClick={() => handleDelete(device.id)}
+                        onClick={() => setDeleteTarget(device)}
                         className="rounded bg-surface-secondary px-3 py-1 text-xs font-semibold text-text-secondary hover:bg-surface-hover"
                       >
                         Remove
@@ -748,7 +764,7 @@ export default function DevicesPage() {
                               </button>
                             )}
                             <button
-                              onClick={() => handleDelete(device.id)}
+                              onClick={() => setDeleteTarget(device)}
                               className="rounded bg-surface-secondary px-2 py-1 text-xs font-semibold text-text-secondary hover:bg-surface-hover"
                             >
                               Remove
@@ -780,6 +796,18 @@ export default function DevicesPage() {
           employees={employees}
           onClose={() => setAuthorizeTarget(null)}
           onSuccess={load}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteDeviceModal
+          isOpen={true}
+          deviceName={deleteTarget.device_name ?? deleteTarget.deviceName}
+          employeeName={deleteTarget.employee?.full_name ?? null}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            await handleDelete(deleteTarget.id);
+          }}
         />
       )}
     </div>

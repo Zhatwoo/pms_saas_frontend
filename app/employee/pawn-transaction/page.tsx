@@ -1191,35 +1191,35 @@ export default function EmployeePawnTransactionsPage() {
             <option value="Sold Item">Sold Item</option>
           </select>
         </div>
-          <div className="flex items-center gap-2">
-            <ActionButton variant="outline" onClick={handleExportCSV}>
-              <span className="flex items-center gap-1.5">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <ActionButton variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto">
+              <span className="flex items-center justify-center gap-1.5">
                 {downloadIcon}
                 Export CSV
               </span>
             </ActionButton>
             <ActionButton
               variant="primary"
-              className="border-emerald-700 bg-emerald-700 text-amber-400"
+              className="w-full sm:w-auto border-emerald-700 bg-emerald-700 text-amber-400"
               onClick={handlePrintReport}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center justify-center gap-1.5">
                 {printerIcon}
                 Print Report
               </span>
             </ActionButton>
-            <div className="inline-flex items-center rounded-xl border border-border-main bg-surface-secondary p-1">
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border-main bg-surface-secondary p-1">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
+                className={`min-w-[90px] rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
               >
                 List
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("calendar")}
-                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
+                className={`min-w-[90px] rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
               >
                 Calendar
               </button>
