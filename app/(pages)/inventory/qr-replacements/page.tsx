@@ -218,128 +218,130 @@ export default function QrReplacementRequestsPage() {
 
       {/* Table Section */}
       <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
-        <table className="w-full text-sm text-left">
-          <thead>
-            <tr className="bg-[#064e3b] text-[#fbbf24] uppercase text-[10px] font-bold tracking-[0.1em]">
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Branch</th>
-              <th className="px-4 py-3">Item ID</th>
-              <th className="px-4 py-3">Item Name</th>
-              <th className="px-4 py-3">Reason</th>
-              <th className="px-4 py-3">Proof</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Requested By</th>
-              <th className="px-4 py-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-subtle">
-            {isLoading ? (
-              <tr>
-                <td colSpan={9} className="py-20 text-center">
-                  <LoadingSpinnerLabel text="Loading requests..." />
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-sm text-left">
+            <thead>
+              <tr className="bg-[#064e3b] text-[#fbbf24] uppercase text-[10px] font-bold tracking-[0.1em]">
+                <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                <th className="px-4 py-3 whitespace-nowrap">Branch</th>
+                <th className="px-4 py-3 whitespace-nowrap">Item ID</th>
+                <th className="px-4 py-3 whitespace-nowrap">Item Name</th>
+                <th className="px-4 py-3 whitespace-nowrap">Reason</th>
+                <th className="px-4 py-3 whitespace-nowrap">Proof</th>
+                <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                <th className="px-4 py-3 whitespace-nowrap">Requested By</th>
+                <th className="px-4 py-3 text-center whitespace-nowrap">Actions</th>
               </tr>
-            ) : paginatedRequests.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="py-20 text-center text-text-tertiary italic">
-                  No matching QR replacement requests found.
-                </td>
-              </tr>
-            ) : (
-              paginatedRequests.map((req) => {
-                const details = parseRequestDetails(req.details);
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="py-20 text-center">
+                    <LoadingSpinnerLabel text="Loading requests..." />
+                  </td>
+                </tr>
+              ) : paginatedRequests.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-20 text-center text-text-tertiary italic">
+                    No matching QR replacement requests found.
+                  </td>
+                </tr>
+              ) : (
+                paginatedRequests.map((req) => {
+                  const details = parseRequestDetails(req.details);
 
-                return (
-                  <tr key={req.id} className="hover:bg-surface-hover/50 transition-colors group">
-                    <td className="px-4 py-4 whitespace-nowrap text-[11px] font-medium text-text-secondary">
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-[11px] font-bold text-text-secondary">
-                      {req.branchName}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                      {details.itemId}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-[11px] text-text-secondary">
-                      {details.itemName}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="text-[10px] font-bold text-text-secondary uppercase">{details.reason}</span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      {details.proofPhoto ? (
-                        <ActionButton
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => window.open(details.proofPhoto, '_blank')}
-                          className="h-8 w-8 rounded-lg border border-border-subtle overflow-hidden shadow-sm"
-                          title="View Proof"
-                        >
-                          <img src={details.proofPhoto} className="h-full w-full object-cover" />
-                        </ActionButton>
-                      ) : (
-                        <span className="text-[10px] text-text-tertiary">No Proof</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${
-                        details.requestStatus === "pending" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
-                        details.requestStatus === "approved" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
-                        "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                      }`}>
-                        {details.requestStatus}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-text-primary">{req.userFullName}</span>
-                        <span className="text-[9px] font-bold uppercase text-text-tertiary">{req.userRole}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-center">
-                      <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {details.requestStatus === "pending" ? (
-                          <>
-                            <ActionButton
-                              variant="success"
-                              size="icon"
-                              disabled={isProcessing === req.id}
-                              onClick={() => handleReview(req.id, "approve", details)}
-                              className="h-7 w-7 rounded-lg shadow-md active:scale-90"
-                              title="Approve & Print"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-                            </ActionButton>
-                            <ActionButton
-                              variant="danger"
-                              size="icon"
-                              disabled={isProcessing === req.id}
-                              onClick={() => handleReview(req.id, "reject")}
-                              className="h-7 w-7 rounded-lg shadow-md active:scale-90"
-                              title="Reject"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                            </ActionButton>
-                          </>
-                        ) : (
-                            <ActionButton
-                              variant="success"
-                              size="icon"
-                              onClick={() => handlePrint(details.itemId, details.qrCode)}
-                              className="h-7 w-7 rounded-lg active:scale-90"
-                              title="Re-print QR"
-                            >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+                  return (
+                    <tr key={req.id} className="hover:bg-surface-hover/50 transition-colors group">
+                      <td className="px-4 py-4 whitespace-nowrap text-[11px] font-medium text-text-secondary">
+                        {new Date(req.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-[11px] font-bold text-text-secondary">
+                        {req.branchName}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        {details.itemId}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-[11px] text-text-secondary">
+                        {details.itemName}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase">{details.reason}</span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {details.proofPhoto ? (
+                          <ActionButton
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => window.open(details.proofPhoto, '_blank')}
+                            className="h-8 w-8 rounded-lg border border-border-subtle overflow-hidden shadow-sm"
+                            title="View Proof"
+                          >
+                            <img src={details.proofPhoto} className="h-full w-full object-cover" />
                           </ActionButton>
+                        ) : (
+                          <span className="text-[10px] text-text-tertiary">No Proof</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${
+                          details.requestStatus === "pending" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+                          details.requestStatus === "approved" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                          "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                        }`}>
+                          {details.requestStatus}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-text-primary">{req.userFullName}</span>
+                          <span className="text-[9px] font-bold uppercase text-text-tertiary">{req.userRole}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {details.requestStatus === "pending" ? (
+                            <>
+                              <ActionButton
+                                variant="success"
+                                size="icon"
+                                disabled={isProcessing === req.id}
+                                onClick={() => handleReview(req.id, "approve", details)}
+                                className="h-7 w-7 rounded-lg shadow-md active:scale-90"
+                                title="Approve & Print"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                              </ActionButton>
+                              <ActionButton
+                                variant="danger"
+                                size="icon"
+                                disabled={isProcessing === req.id}
+                                onClick={() => handleReview(req.id, "reject")}
+                                className="h-7 w-7 rounded-lg shadow-md active:scale-90"
+                                title="Reject"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                              </ActionButton>
+                            </>
+                          ) : (
+                              <ActionButton
+                                variant="success"
+                                size="icon"
+                                onClick={() => handlePrint(details.itemId, details.qrCode)}
+                                className="h-7 w-7 rounded-lg active:scale-90"
+                                title="Re-print QR"
+                              >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+                            </ActionButton>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <PaginationFooter

@@ -332,28 +332,29 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
-                <Undo2 className="w-6 h-6" />
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-3 sm:px-6 sm:py-5 text-white shrink-0 relative z-10">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+              <div className="shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+                <Undo2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
-                  {branchName} | Active Pawn
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300/90 dark:text-emerald-400 truncate">
+                  <span className="truncate">{branchName}</span>
+                  <span className="hidden sm:inline"> | Active Pawn</span>
                 </p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                <h1 className="mt-0.5 text-sm sm:text-2xl font-black tracking-tight text-white leading-none truncate">
                   Buy Out Pawn Ticket
                 </h1>
               </div>
             </div>
-            
-            <button 
-              onClick={onClose} 
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+
+            <button
+              onClick={onClose}
+              className="shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
               aria-label="Close Buy Out Pawn Ticket"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
@@ -693,61 +694,62 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         </div>
 
         {/* Footer Actions */}
-        <div className={`border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between shrink-0 ${compactTablet ? "gap-4 p-4 md:p-5 md:max-xl:gap-5" : "gap-8 p-8"}`}>
-          <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full sm:w-auto">
-             <button 
-                onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-              >
-                Cancel Process
-              </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-40">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
-                    <input 
-                      type="password" 
-                      placeholder="••••••••"
-                      className={`h-10 rounded-lg border bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted ${
-                        error && error.toLowerCase().includes('password')
-                          ? 'border-red-400 focus:border-red-500'
-                          : 'border-emerald-100 dark:border-border-subtle focus:border-emerald-500'
-                      }`}
-                      value={adminForm.password}
-                      onChange={(e) => { setAdminForm({...adminForm, password: e.target.value}); setError(null); }}
-                    />
-                    {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
-                  </div>
-                </div>
-              </div>
-          </div>
+        <div className={`border-t border-emerald-50 bg-white dark:bg-surface shrink-0 ${compactTablet ? "" : ""}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 gap-0 sm:gap-4">
 
-          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-             <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+            {/* Row 1 (mobile) / Left (sm+): Cancel + Divider + Password */}
+            <div className="flex items-center gap-3 sm:gap-5">
+              <button
+                onClick={onClose}
+                className="shrink-0 text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200 whitespace-nowrap"
+              >
+                Cancel
+              </button>
+              <div className="h-7 w-px bg-zinc-100 dark:bg-surface-hover shrink-0" />
+              <div className="flex-1 sm:flex-none">
+                <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400 mb-1">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className={`h-9 w-full sm:w-32 rounded-lg border bg-slate-50 dark:bg-surface-secondary px-3 text-xs text-text-primary outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted ${
+                    error && error.toLowerCase().includes('password')
+                      ? 'border-red-400 focus:border-red-500'
+                      : 'border-emerald-100 dark:border-border-subtle focus:border-emerald-500'
+                  }`}
+                  value={adminForm.password}
+                  onChange={(e) => { setAdminForm({...adminForm, password: e.target.value}); setError(null); }}
+                />
+              </div>
+            </div>
+
+            {/* Row 2 (mobile) / Right (sm+): Total + Button */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
+              <div className="text-left sm:text-right">
+                <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.15em] leading-none mb-0.5">
                   TOTAL LOAN AMOUNT
                 </p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
+                <p className="text-base sm:text-2xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
                   ₱ {interestCalc.totalAmount.toLocaleString()}
                 </p>
               </div>
 
-              <button 
+              <button
                 disabled={isConfirming || !selectedItem || !proofImage}
                 onClick={handleConfirmRedeem}
-                className={`flex items-center justify-center gap-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${compactTablet ? "px-8 py-4" : "px-12 py-5"} ${isConfirming || !selectedItem || !proofImage ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
+                className={`shrink-0 flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 sm:px-6 sm:py-3 text-[10px] font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isConfirming || !selectedItem || !proofImage ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30'}`}
               >
                 {isConfirming ? (
-                   <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
+                  <span className="anim-loading h-3.5 w-3.5 border-emerald-950/30 border-t-emerald-950 rounded-full" />
                 ) : (
-                   <>
-                     CONFIRM BUY OUT
-                     <ArrowRight className="w-5 h-5" />
-                   </>
+                  <>
+                    CONFIRM BUY OUT
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
                 )}
-                           </button>
+              </button>
             </div>
+          </div>
+          {error && <p className="px-4 pb-3 text-[10px] font-semibold text-red-600">{error}</p>}
         </div>
       </div>
       <QrScanner 
