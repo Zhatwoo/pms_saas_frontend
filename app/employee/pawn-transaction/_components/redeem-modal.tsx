@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
+import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 import { getTransactionDateTimeFields } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
@@ -63,6 +64,7 @@ interface PawnedSearchItem {
   storageFee: string;
   contactNumber: string;
   status: string;
+  interestRateSnapshot?: unknown;
 }
 
 export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, compactTablet = false }: RedeemModalProps) {
@@ -192,7 +194,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             amount: String(item.amount || 0),
             storageFee: "0", 
             contactNumber: customerData?.contact_number || "---",
-            status: item.status
+            status: item.status,
+            interestRateSnapshot: item.interestRateSnapshot ?? item.interest_rate_snapshot ?? null,
           };
         });
         
@@ -229,7 +232,16 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
 
   const interestCalc = useMemo(() => {
     if (!selectedItem) return { percentage: 0, interestAmount: 0, totalAmount: 0, daysPassed: 0 };
-    return calculateGadgetInterest(Number(selectedItem.amount), selectedItem.purchasedDate, selectedItem.category);
+    const contractRate = getContractInterestRateGroup(
+      selectedItem.category,
+      selectedItem.interestRateSnapshot,
+    );
+    return calculateGadgetInterest(
+      Number(selectedItem.amount),
+      selectedItem.purchasedDate,
+      selectedItem.category,
+      contractRate ?? undefined,
+    );
   }, [selectedItem]);
 
   const handleConfirmRedeem = async () => {
@@ -243,7 +255,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
     }
 
     if (!proofImage) {
-      setError("A proof of buy back photo is required before confirming.");
+      setError("A proof of buy out photo is required before confirming.");
       return;
     }
 
@@ -276,10 +288,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
       
       console.log('[REDEEM MODAL] Proof uploaded successfully:', buybackProofUrl);
 
-      // 3. Process Buy Back (Transaction) with buyback_proof URL
+      // 3. Process Buy Out (full settlement) with buyback_proof URL
       await api.post("/transactions", {
         ...getTransactionDateTimeFields(),
-        purpose: "Buy Back",
+        purpose: "Buy Out",
         branch_id: branchId,
         branch: branchName,
         cash_in: interestCalc.totalAmount,
@@ -288,7 +300,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         unit_code: selectedItem.unitCode,
         pawn_amount: Number(selectedItem.amount),
         storage_fee: interestCalc.interestAmount,
-        details: `Redeemed by ${selectedItem.name} | Days: ${interestCalc.daysPassed} | Processed by: ${adminForm.processedBy || 'Admin'}`,
+        details: `Bought out by ${selectedItem.name} | Days: ${interestCalc.daysPassed} | Processed by: ${adminForm.processedBy || 'Admin'}`,
         related_pawned_item_id: selectedItem.id,
         buyback_proof: buybackProofUrl
       });
@@ -299,7 +311,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         onSuccess();
       }
       onClose();
-      toast.success("Item redeemed successfully!");
+      toast.success("Item bought out successfully!");
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
       setError(msg);
@@ -331,7 +343,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                   {branchName} | Active Pawn
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
-                  Buy Back Pawn Ticket
+                  Buy Out Pawn Ticket
                 </h1>
               </div>
             </div>
@@ -339,7 +351,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             <button 
               onClick={onClose} 
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
-              aria-label="Close Buy Back Pawn Ticket"
+              aria-label="Close Buy Out Pawn Ticket"
             >
               <X className="w-5 h-5" />
             </button>
@@ -386,7 +398,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <Package className="w-6 h-6 text-emerald-200" />
                   </div>
                   <p className="text-sm font-bold text-emerald-900/60">No active pawns found</p>
-                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be Redeemed</p>
+                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be bought out</p>
                 </div>
               ) : (
                 pawnedItems.map((item) => (
@@ -500,7 +512,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 <div className="mb-8 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Back <span className="text-red-500">*</span></p>
+                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Out <span className="text-red-500">*</span></p>
                   </div>
                   {proofImage ? (
                     <div className="relative group">
@@ -646,7 +658,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 <div className="mb-5 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Back <span className="text-red-500">*</span></p>
+                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Out <span className="text-red-500">*</span></p>
                   </div>
                   {proofImage ? (
                     <div className="relative group">
@@ -730,7 +742,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                    <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
                 ) : (
                    <>
-                     CONFIRM BUY BACK
+                     CONFIRM BUY OUT
                      <ArrowRight className="w-5 h-5" />
                    </>
                 )}
@@ -752,7 +764,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">Transaction Proof</p>
-                <h3 className="text-base font-black uppercase tracking-wider mt-0.5">Buy Back Proof Capture</h3>
+                <h3 className="text-base font-black uppercase tracking-wider mt-0.5">Buy Out Proof Capture</h3>
               </div>
               <button
                 onClick={() => { stopProofCamera(); setShowProofCamera(false); }}

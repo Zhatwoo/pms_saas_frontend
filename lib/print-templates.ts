@@ -279,17 +279,17 @@ export function buildQrSheetDocument(params: { sheetTitle: string; cardsHtml: st
 </html>`;
 }
 
-/** Legal MOA slip dimensions (8.5 × 14 in). */
+/** Long bond MOA slip dimensions (8.5 × 13 in). */
 export const MOA_LEGAL_PAGE = {
   width: "8.5in",
-  height: "14in",
-  padding: "0.35in 0.4in",
+  height: "13in",
+  padding: "0.15in 0.32in",
   screenWidthPx: 816,
-  screenHeightPx: 1344,
+  screenHeightPx: 1248,
 } as const;
 
-/** MOA modal: `@page` rule — Legal portrait, zero margin (content carries its own padding). */
-export const MOA_PRINT_PAGE_RULE_CSS = `@page { size: 8.5in 14in portrait; margin: 0; }`;
+/** MOA: `@page` rule — 8.5 × 13 portrait, zero margin (content carries its own padding). */
+export const MOA_PRINT_PAGE_RULE_CSS = `@page { size: 8.5in 13in portrait; margin: 0; }`;
 
 /** JCLB diagonal watermark — shared by settings preview, MOA modal, and print iframe. */
 export const MOA_WATERMARK_CSS = `
@@ -396,9 +396,9 @@ export const MOA_SLIP_HALVES_CSS = `
   .moa-slip-halves {
     display: grid !important;
     grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) !important;
-    flex: 1 1 0% !important;
+    flex: 1 1 auto !important;
     min-height: 0 !important;
-    height: 0 !important;
+    height: 100% !important;
     width: 100% !important;
   }
   .moa-slip-half {
@@ -408,6 +408,213 @@ export const MOA_SLIP_HALVES_CSS = `
     flex-direction: column;
     justify-content: flex-start;
   }
+  .moa-slip-half > .moa-slip-copy,
+  .moa-slip-half > .moa-terms-copy {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .moa-slip-copy,
+  .moa-terms-copy {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  .moa-slip-body,
+  .moa-terms-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  .moa-slip-footer,
+  .moa-terms-footer {
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+    margin-top: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  .moa-slip-advise {
+    font-size: 7px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    line-height: 1.06 !important;
+    letter-spacing: 0.02em !important;
+    color: #3f3f46 !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .moa-slip-renewal-row {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    column-gap: 0.12rem !important;
+  }
+  .moa-signature-line {
+    display: block !important;
+    width: 100% !important;
+    min-height: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-bottom: 1.5px solid #27272a !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .moa-signature-line.flex,
+  .moa-signature-line[class*="flex"] {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+  }
+  .moa-terms-signatures .moa-signature-line,
+  .moa-terms-received .moa-signature-line {
+    min-height: 22px !important;
+    height: 22px !important;
+    border-bottom-width: 1.5px !important;
+    border-bottom-color: #27272a !important;
+  }
+  .moa-signature-block {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+  .moa-signature-label {
+    display: block !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+    font-size: 6.5px !important;
+    line-height: 1.1 !important;
+    margin-top: 0.08rem !important;
+    text-align: center !important;
+  }
+`;
+
+/** Tailwind classes for a visible MOA signature underline (screen + print). */
+export const MOA_SIGNATURE_LINE_CLASS =
+  "moa-signature-line w-full shrink-0 min-h-[20px] border-b border-zinc-700";
+
+/** Compact typography/spacing for MOA slip halves on 8.5 × 13 in paper. */
+export const MOA_SLIP_COMPACT_CSS = `
+  .moa-print-page.moa-slip-sheet {
+    font-size: 11.5px !important;
+    line-height: 1.32 !important;
+  }
+  .moa-slip-half .moa-slip-copy,
+  .moa-slip-half .moa-slip-copy .moa-slip-body {
+    font-size: 11.5px !important;
+    line-height: 1.32 !important;
+  }
+  .moa-slip-copy > * + * { margin-top: 0 !important; }
+  .moa-slip-body.space-y-0\\.5 > * + * { margin-top: 0.2rem !important; }
+  .moa-slip-copy .space-y-1 > * + * { margin-top: 0.24rem !important; }
+  .moa-slip-copy .space-y-2 > * + * { margin-top: 0.34rem !important; }
+  .moa-slip-copy .gap-8 { gap: 0.6rem !important; }
+  .moa-slip-copy .gap-12 { gap: 0.85rem !important; }
+  .moa-slip-copy .gap-4 { gap: 0.38rem !important; }
+  .moa-slip-copy .gap-x-8 { column-gap: 0.6rem !important; }
+  .moa-slip-copy .gap-y-1\\.5 { row-gap: 0.2rem !important; }
+  .moa-slip-copy .py-2, .moa-slip-copy .my-2 { margin-top: 0.22rem !important; margin-bottom: 0.22rem !important; padding-top: 0.22rem !important; padding-bottom: 0.22rem !important; }
+  .moa-slip-copy .pt-3 { padding-top: 0.34rem !important; }
+  .moa-slip-copy .pb-2 { padding-bottom: 0.22rem !important; }
+  .moa-slip-copy .text-\\[12px\\] { font-size: 15px !important; }
+  .moa-slip-copy .text-\\[11px\\] { font-size: 13.5px !important; }
+  .moa-slip-copy .text-\\[9\\.5px\\] { font-size: 12px !important; }
+  .moa-slip-copy .text-\\[9px\\] { font-size: 11.5px !important; }
+  .moa-slip-copy .text-\\[8\\.5px\\] { font-size: 11px !important; }
+  .moa-slip-copy .text-\\[8px\\] { font-size: 10.5px !important; }
+  .moa-slip-copy .text-\\[7px\\] { font-size: 9px !important; }
+  .moa-slip-copy .moa-watermark::before { font-size: 78px !important; }
+  .moa-cut-guide { padding: 0.22rem 0 !important; }
+  .moa-cut-guide__text { font-size: 9px !important; }
+  .moa-slip-footer { font-size: 11px !important; line-height: 1.32 !important; }
+`;
+
+/** Force identical font sizing for the agreement paragraph across BOTH the
+ *  Original and Customer copies (text + fill-in blanks). Placed AFTER the
+ *  compact rules wherever it is included so it wins equal-specificity ties. */
+export const MOA_AGREEMENT_TEXT_CSS = `
+  .moa-slip-copy .moa-agreement-text,
+  .moa-slip-copy .moa-agreement-text * {
+    font-size: 11.5px !important;
+    line-height: 1.4 !important;
+  }
+`;
+
+/** Compact layout for MOA terms halves on 8.5 × 13 in paper. */
+export const MOA_TERMS_COMPACT_CSS = `
+  .moa-slip-half .moa-terms-copy,
+  .moa-slip-half .moa-terms-copy .moa-terms-body {
+    font-size: 10px !important;
+    line-height: 1.34 !important;
+  }
+  .moa-terms-copy .space-y-1\\.5 > * + * { margin-top: 0.2rem !important; }
+  .moa-terms-copy .space-y-3 > * + * { margin-top: 0.28rem !important; }
+  .moa-terms-copy .p-3 { padding: 0.4rem !important; }
+  .moa-terms-copy .pt-4 { padding-top: 0.38rem !important; }
+  .moa-terms-copy .text-\\[11px\\] { font-size: 12.5px !important; }
+  .moa-terms-copy .text-\\[9px\\] { font-size: 10.5px !important; }
+  .moa-terms-copy .text-\\[8\\.5px\\] { font-size: 10px !important; }
+  .moa-terms-copy .text-\\[8px\\] { font-size: 9.5px !important; }
+  .moa-terms-copy .text-\\[7\\.5px\\] { font-size: 9px !important; }
+  .moa-terms-signatures { padding-top: 0.4rem !important; row-gap: 0.45rem !important; column-gap: 0.6rem !important; }
+  .moa-terms-received { padding-top: 0.38rem !important; }
+  .moa-terms-received .space-y-3 > * + * { margin-top: 0.22rem !important; }
+  .moa-terms-body .min-h-\\[120px\\] { min-height: 0 !important; }
+`;
+
+/** Terms page signature grid. */
+export const MOA_TERMS_SIGNATURES_CSS = `
+  .moa-terms-signatures {
+    display: grid !important;
+    grid-template-columns: 1.2fr 1.5fr !important;
+    column-gap: 0.5rem !important;
+    row-gap: 0.2rem !important;
+    padding-top: 0.12rem !important;
+    align-items: start !important;
+  }
+  .moa-terms-signatures .moa-signature-block {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 82% !important;
+    max-width: 82% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .moa-terms-signatures .moa-signature-block + .moa-signature-block {
+    margin-top: 0.12rem !important;
+  }
+  .moa-terms-signatures .moa-signature-label,
+  .moa-terms-received .moa-signature-label {
+    text-transform: none !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+  }
+  .moa-terms-received .moa-signature-block {
+    width: 50% !important;
+    max-width: 50% !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
 `;
 
 /** Screen layout so the on-page preview matches the printed Legal sheet. */
@@ -415,6 +622,10 @@ export const MOA_PRINT_SCREEN_CSS = `
   ${MOA_WATERMARK_CSS}
   ${MOA_CUT_GUIDE_CSS}
   ${MOA_SLIP_HALVES_CSS}
+  ${MOA_SLIP_COMPACT_CSS}
+  ${MOA_TERMS_COMPACT_CSS}
+  ${MOA_TERMS_SIGNATURES_CSS}
+  ${MOA_AGREEMENT_TEXT_CSS}
   body.moa-print-document {
     margin: 0 !important;
     padding: 0 !important;
@@ -458,6 +669,10 @@ export const MOA_PRINT_CSS = `
   ${MOA_WATERMARK_CSS}
   ${MOA_CUT_GUIDE_CSS}
   ${MOA_SLIP_HALVES_CSS}
+  ${MOA_SLIP_COMPACT_CSS}
+  ${MOA_TERMS_COMPACT_CSS}
+  ${MOA_TERMS_SIGNATURES_CSS}
+  ${MOA_AGREEMENT_TEXT_CSS}
   ${MOA_PRINT_PAGE_RULE_CSS}
   html, body {
     margin: 0 !important;
@@ -508,9 +723,6 @@ export const MOA_PRINT_CSS = `
   .no-print * {
     display: none !important;
   }
-  .moa-print-page .space-y-2 > * + * { margin-top: 0.35rem !important; }
-  .moa-print-page .space-y-3 > * + * { margin-top: 0.45rem !important; }
-  .moa-print-page .space-y-4 > * + * { margin-top: 0.5rem !important; }
   .moa-print-page .grid { display: grid !important; }
   .moa-print-page .flex { display: flex !important; }
   .moa-print-page .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
@@ -518,13 +730,53 @@ export const MOA_PRINT_CSS = `
   .moa-print-page .text-justify { text-align: justify !important; }
   .moa-print-page .justify-between { justify-content: space-between !important; }
   .moa-print-page .items-center { align-items: center !important; }
+  .moa-print-page .items-start { align-items: flex-start !important; }
   .moa-print-page .items-end { align-items: flex-end !important; }
   .moa-print-page .font-bold { font-weight: 700 !important; }
   .moa-print-page .uppercase { text-transform: uppercase !important; }
   .moa-print-page .italic { font-style: italic !important; }
+  .moa-print-page .underline { text-decoration: underline !important; }
+  .moa-print-page .whitespace-nowrap { white-space: nowrap !important; }
   .moa-print-page .border-b { border-bottom: 1px solid #a1a1aa !important; }
   .moa-print-page .border-y { border-top: 1px solid #e4e4e7 !important; border-bottom: 1px solid #e4e4e7 !important; }
   .moa-print-page .border-t { border-top: 1px solid #e4e4e7 !important; }
+  /* --- Tailwind utility fallbacks (iframe print has no Tailwind) --- */
+  /* Reset default browser margins on typographic tags — without Tailwind's
+     Preflight these inflate the slip spacing dramatically. */
+  .moa-print-page p,
+  .moa-print-page h1,
+  .moa-print-page h2,
+  .moa-print-page h3,
+  .moa-print-page h4 { margin: 0 !important; }
+  .moa-print-page .flex-col { flex-direction: column !important; }
+  .moa-print-page .flex-1 { flex: 1 1 0% !important; }
+  .moa-print-page .shrink-0 { flex-shrink: 0 !important; }
+  .moa-print-page .block { display: block !important; }
+  .moa-print-page .inline-block { display: inline-block !important; }
+  .moa-print-page .contents { display: contents !important; }
+  .moa-print-page .grid-cols-\\[80px_1fr\\] { grid-template-columns: 80px 1fr !important; }
+  .moa-print-page .grid-cols-\\[92px_1fr\\] { grid-template-columns: 92px 1fr !important; }
+  .moa-print-page .grid-cols-\\[76px_1fr\\] { grid-template-columns: 76px 1fr !important; }
+  .moa-print-page .grid-cols-\\[auto_48px_auto_48px_auto_48px\\] { grid-template-columns: auto 48px auto 48px auto 48px !important; }
+  .moa-print-page .w-\\[60px\\] { width: 60px !important; }
+  .moa-print-page .w-\\[100px\\] { width: 100px !important; }
+  .moa-print-page .w-\\[120px\\] { width: 120px !important; }
+  .moa-print-page .w-\\[180px\\] { width: 180px !important; }
+  .moa-print-page .w-12 { width: 3rem !important; }
+  .moa-print-page .w-16 { width: 4rem !important; }
+  .moa-print-page .w-20 { width: 5rem !important; }
+  .moa-print-page .w-24 { width: 6rem !important; }
+  .moa-print-page .w-full { width: 100% !important; }
+  .moa-print-page .h-4 { height: 1rem !important; }
+  .moa-print-page .gap-1 { gap: 0.25rem !important; }
+  .moa-print-page .gap-2 { gap: 0.5rem !important; }
+  .moa-print-page .gap-3 { gap: 0.75rem !important; }
+  .moa-print-page .gap-x-1 { column-gap: 0.25rem !important; }
+  .moa-print-page .px-1 { padding-left: 0.25rem !important; padding-right: 0.25rem !important; }
+  .moa-print-page .px-3 { padding-left: 0.6rem !important; padding-right: 0.6rem !important; }
+  .moa-print-page .pt-1 { padding-top: 0.15rem !important; }
+  .moa-print-page .py-0\\.5 { padding-top: 0.06rem !important; padding-bottom: 0.06rem !important; }
+  .moa-print-page .mt-0\\.5 { margin-top: 0.1rem !important; }
   .moa-print-page .moa-cut-guide { display: flex !important; width: 100% !important; }
   .moa-print-page .moa-cut-guide__line { flex: 1 1 0% !important; border-top: 1px dashed #52525b !important; }
   .moa-print-page .moa-cut-guide__text { flex: 0 0 auto !important; background: #fff !important; }
@@ -542,6 +794,10 @@ export const MOA_PRINT_LAYOUT_CSS = `
   ${MOA_WATERMARK_CSS}
   ${MOA_CUT_GUIDE_CSS}
   ${MOA_SLIP_HALVES_CSS}
+  ${MOA_SLIP_COMPACT_CSS}
+  ${MOA_TERMS_COMPACT_CSS}
+  ${MOA_TERMS_SIGNATURES_CSS}
+  ${MOA_AGREEMENT_TEXT_CSS}
   *, *::before, *::after { box-sizing: border-box; }
   html, body {
     margin: 0;

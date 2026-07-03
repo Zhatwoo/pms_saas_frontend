@@ -12,7 +12,7 @@ import { QRReplacementRequestModal } from "@/components/shared/qr-replacement-re
 import { useAuth } from "@/contexts/auth-context";
 import { PhilippineAddressFields } from "@/components/shared/philippine-address-fields";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
-import { calculatePeriodicStorageFee } from "@/lib/interest";
+import { calculatePeriodicStorageFee, setInterestRatesCache, type InterestRateGroup } from "@/lib/interest";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -227,8 +227,8 @@ export function NewPawnModal({
         setCategoriesList(filtered.map(c => c.name));
         setDefaultMoaFieldConfig(moaTemplate);
         setCategoryMoaFieldConfigs(moaTemplate.category_templates ?? {});
-        if (rates && Array.isArray(rates) && typeof window !== "undefined") {
-          localStorage.setItem("interest_rates", JSON.stringify(rates));
+        if (rates && Array.isArray(rates)) {
+          setInterestRatesCache(rates as InterestRateGroup[]);
         }
       } catch (err) {
         console.error("Error loading categories inside new-pawn-modal:", err);
@@ -237,6 +237,14 @@ export function NewPawnModal({
     if (isOpen) {
       loadCats();
     }
+
+    const handleMoaTemplateUpdated = () => {
+      if (isOpen) {
+        void loadCats();
+      }
+    };
+    window.addEventListener("moa-template-updated", handleMoaTemplateUpdated);
+    return () => window.removeEventListener("moa-template-updated", handleMoaTemplateUpdated);
   }, [isOpen]);
 
   const resolvedMoaCategory =
@@ -778,7 +786,7 @@ export function NewPawnModal({
     setErrorMessage(null);
 
     const amountValue = Number(form.amount || 0);
-    const storageAmount = 0;
+    const storageAmount = computedStorageFee;
     const extraMoaValues = [
       ...(showFinancialField("parkingFee") && form.parkingFeeAmount
         ? [{ label: "Parking fee", value: form.parkingFeeAmount }]

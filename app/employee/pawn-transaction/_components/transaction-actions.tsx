@@ -198,16 +198,16 @@ export function TransactionActions({
 
           <button
             onClick={() => {
-              onFilterChange?.("Redeem");
+              onFilterChange?.("Buy Out");
               onRedeem?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 ${activeFilter === "Redeem"
+            className={`flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 ${activeFilter === "Buy Out" || activeFilter === "Redeem"
                 ? "ring-2 ring-sky-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
               }`}
           >
             {redeemIcon}
-            Buy Back
+            Buy Out
           </button>
 
           <button
@@ -221,7 +221,7 @@ export function TransactionActions({
               }`}
           >
             {cartIcon}
-            Buy Out
+            Buy Back
           </button>
 
           <button

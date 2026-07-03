@@ -47,19 +47,40 @@ const DEFAULT_INTEREST_GROUP: InterestRateGroup = {
   gracePeriodStart: 31,
 };
 
-function parseInterestRatesFromStorage(): InterestRateGroup[] {
-  if (typeof window === "undefined") return [];
+/** In-memory session cache — populated from shop_settings via API (see InterestRatesProvider). */
+let interestRatesMemoryCache: InterestRateGroup[] = [];
 
-  try {
-    const stored = localStorage.getItem("interest_rates");
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch (error) {
-    console.warn("Failed to parse stored interest rates", error);
-    return [];
+export function setInterestRatesCache(rates: InterestRateGroup[]): void {
+  interestRatesMemoryCache = Array.isArray(rates) ? rates : [];
+}
+
+export function getInterestRateGroups(): InterestRateGroup[] {
+  return interestRatesMemoryCache;
+}
+
+export function hasInterestRatesCache(): boolean {
+  return interestRatesMemoryCache.length > 0;
+}
+
+export function notifyInterestRatesUpdated(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("interest-rates-updated"));
   }
+}
+
+/** @deprecated Use InterestRatesProvider.refresh() — kept for gradual migration. */
+export async function syncInterestRatesFromApi(
+  fetcher: () => Promise<unknown>,
+): Promise<InterestRateGroup[]> {
+  try {
+    const data = await fetcher();
+    if (Array.isArray(data)) {
+      setInterestRatesCache(data as InterestRateGroup[]);
+    }
+  } catch {
+    // keep existing cache on failure
+  }
+  return getInterestRateGroups();
 }
 
 function categoryNamesMatch(cat1: string, cat2: string): boolean {
@@ -93,10 +114,42 @@ function categoryNamesMatch(cat1: string, cat2: string): boolean {
 
 export function findInterestRateGroup(category?: string): InterestRateGroup | null {
   if (!category) return null;
-  const groups = parseInterestRatesFromStorage();
-  return groups.find((group) => 
-    group.categories?.some((cat: string) => categoryNamesMatch(cat, category))
-  ) ?? null;
+  const groups = getInterestRateGroups();
+  const matched =
+    groups.find((group) =>
+      group.categories?.some((cat: string) => categoryNamesMatch(cat, category)),
+    ) ?? null;
+
+  if (matched) return matched;
+
+  const defaultMatch = DEFAULT_INTEREST_GROUP.categories.some((cat) =>
+    categoryNamesMatch(cat, category),
+  );
+  return defaultMatch ? DEFAULT_INTEREST_GROUP : null;
+}
+
+export function parseInterestRateSnapshot(value: unknown): InterestRateGroup | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const group = value as InterestRateGroup;
+  if (
+    typeof group.first5Days !== "number" ||
+    typeof group.day10 !== "number"
+  ) {
+    return null;
+  }
+  return group;
+}
+
+function resolveActiveInterestGroup(
+  category?: string,
+  rateGroupOverride?: InterestRateGroup | null,
+): InterestRateGroup | null {
+  if (rateGroupOverride) {
+    return normalizeGroup(rateGroupOverride);
+  }
+  return findInterestRateGroup(category);
 }
 
 function normalizeGroup(group: InterestRateGroup): InterestRateGroup {
@@ -113,8 +166,11 @@ function normalizeGroup(group: InterestRateGroup): InterestRateGroup {
   };
 }
 
-export function getInterestRateSchedule(category?: string): InterestRateScheduleItem[] {
-  const group = findInterestRateGroup(category);
+export function getInterestRateSchedule(
+  category?: string,
+  rateGroupOverride?: InterestRateGroup | null,
+): InterestRateScheduleItem[] {
+  const group = resolveActiveInterestGroup(category, rateGroupOverride);
   const config = group ? normalizeGroup(group) : DEFAULT_INTEREST_GROUP;
 
   const limit1 = config.first5DaysLimit ?? 5;
@@ -146,21 +202,44 @@ export function getInterestRateSchedule(category?: string): InterestRateSchedule
   ];
 }
 
-/** Periodic storage fee shown on MOA (rate after initial period, typically every 10 days). */
-export function calculatePeriodicStorageFee(amount: number, category?: string): number {
+export function calculatePeriodicStorageFee(
+  amount: number,
+  category?: string,
+  rateGroupOverride?: InterestRateGroup | null,
+): number {
   if (!Number.isFinite(amount) || amount <= 0) {
     return 0;
   }
 
-  const group = findInterestRateGroup(category);
+  const group = resolveActiveInterestGroup(category, rateGroupOverride);
   const config = group ? normalizeGroup(group) : DEFAULT_INTEREST_GROUP;
   return Number((amount * (config.day10 / 100)).toFixed(2));
+}
+
+/** Resolve category + pawn date from a transaction row for consistent interest display. */
+export function calculateTransactionGadgetInterest(
+  pawnAmount: number,
+  options: {
+    transactionDate?: string | null;
+    pawnDate?: string | null;
+    category?: string | null;
+    rateGroup?: InterestRateGroup | null;
+  },
+) {
+  const date = options.pawnDate || options.transactionDate || null;
+  return calculateGadgetInterest(
+    pawnAmount,
+    date,
+    options.category?.trim() || undefined,
+    options.rateGroup ?? undefined,
+  );
 }
 
 export function calculateGadgetInterest(
   amount: number,
   pawnDate: string | Date | null,
   category?: string,
+  rateGroupOverride?: InterestRateGroup,
 ) {
   if (!pawnDate) {
     return {
@@ -182,7 +261,7 @@ export function calculateGadgetInterest(
   let daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
   if (daysPassed < 0) daysPassed = 0;
 
-  const activeGroup = findInterestRateGroup(category);
+  const activeGroup = resolveActiveInterestGroup(category, rateGroupOverride);
 
   let percentage = 5;
   let isExpired = false;
