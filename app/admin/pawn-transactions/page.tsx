@@ -21,7 +21,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
-import { calculateGadgetInterest } from "@/lib/interest";
+import { useInterestRates } from "@/contexts/interest-rates-context";
+import {
+  getTransactionInterestPercentage,
+  isLegacyBuyBackRepurchase,
+  isLegacyBuyOutTransaction,
+  resolvePawnedItemJoin,
+} from "@/lib/pawn-transaction-mapper";
 import { formatDateToYMD } from "@/lib/time";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
@@ -36,7 +42,7 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
   "Sells / Transfer": "Sold Item",
-  "Redeem": "Redeem",
+  "Redeem": "Buy Out",
   "Buy Back": "Buy Back",
   "Reserve / Layaway": "Reserve / Layaway",
   "Pawn": "Pawn",
@@ -290,6 +296,8 @@ interface PawnedItemJoin {
   items_included?: string | null;
   condition?: string | null;
   category?: string | null;
+  pawn_date?: string | null;
+  interest_rate_snapshot?: unknown;
   memory_storage?: string | null;
   remarks?: string | null;
   customer?: {
@@ -376,26 +384,45 @@ function normalizeStats(stats?: TransactionStatsResponse) {
 }
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
-  const item =
-    Array.isArray(transaction.pawned_item)
-      ? transaction.pawned_item[0]
-      : transaction.pawned_item;
+  const item = resolvePawnedItemJoin(transaction.pawned_item);
+  const pawnAmount = Number(transaction.pawn_amount || 0);
+  const isBuyBackRepurchase = isLegacyBuyBackRepurchase(
+    transaction.purpose,
+    transaction.details,
+  );
+  const isBuyOutAction = isLegacyBuyOutTransaction(
+    transaction.purpose,
+    transaction.details,
+  );
+  const isPawnAction = transaction.purpose === "Pawn";
 
-  // Robustly extract QR code from nested item or root
   const qrCode = item?.qr_code || transaction.qr_code || undefined;
   const customer = item?.customer ?? transaction.customer;
+  const percentage = getTransactionInterestPercentage({
+    pawnAmount,
+    purpose: transaction.purpose,
+    details: transaction.details,
+    transactionDate: transaction.transaction_date,
+    pawnDate: item?.pawn_date,
+    category: item?.category,
+    storageFee: transaction.storage_fee,
+    interestRateSnapshot: item?.interest_rate_snapshot,
+  });
 
   return {
     transactionNo: transaction.transaction_no,
     purpose: (transaction.purpose ?? "") as PurposeType,
-    buyBack: String(transaction.cash_out ?? 0),
-    percentage: "0",
-    buyOut: String(transaction.cash_out ?? 0),
-    sold: String(transaction.cash_out ?? 0),
+    buyBack: isBuyBackRepurchase ? String(transaction.cash_in ?? 0) : "0",
+    percentage,
+    buyOut: isBuyOutAction ? String(transaction.cash_in ?? 0) : "0",
+    sold: transaction.purpose === "Sold Item" ? String(transaction.cash_in ?? 0) : "0",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
-    cashIn: String(transaction.cash_in ?? 0),
-    cashOut: String(transaction.cash_out ?? 0),
+    cashIn: isPawnAction ? "0" : String(transaction.cash_in ?? 0),
+    cashOut:
+      isBuyOutAction || isBuyBackRepurchase || transaction.purpose === "Sold Item"
+        ? "0"
+        : String(transaction.cash_out ?? 0),
     returnVal: String(transaction.return_amount ?? 0),
     unit: item?.description ?? transaction.unit ?? "",
     unitCode: transaction.unit_code ?? "",
@@ -429,6 +456,7 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
 export default function SuperAdminPawnTransactionsPage() {
   const { selectedBranch, branches } = useBranch();
   const { user } = useAuth();
+  const { isReady: interestRatesReady } = useInterestRates();
   const searchParams = useSearchParams();
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isNewPawnModalOpen, setIsNewPawnModalOpen] = useState(false);
@@ -580,6 +608,9 @@ export default function SuperAdminPawnTransactionsPage() {
   }, [selectedBranch.id, selectedDate]);
 
   const fetchAllData = useCallback(async () => {
+    if (!interestRatesReady) {
+      return;
+    }
     setIsLoading(true);
     try {
       // Execute sequentially to respect Supabase pool limits (pool_size: 15)
@@ -588,11 +619,12 @@ export default function SuperAdminPawnTransactionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchTransactions, fetchSelectedDateStats]);
+  }, [fetchTransactions, fetchSelectedDateStats, interestRatesReady]);
 
   useEffect(() => {
+    if (!interestRatesReady) return;
     void fetchAllData();
-  }, [fetchAllData]);
+  }, [fetchAllData, interestRatesReady]);
 
   useEffect(() => {
     return subscribeToPawnTransactionNotifications(() => {

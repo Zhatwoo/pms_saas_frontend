@@ -3,16 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
-import { getInterestRateSchedule } from "@/lib/interest";
+import {
+  calculatePeriodicStorageFee,
+  getInterestRateSchedule,
+  setInterestRatesCache,
+  type InterestRateGroup,
+} from "@/lib/interest";
 import {
   MOA_LEGAL_PAGE,
   MOA_PRINT_CSS,
-  MOA_WATERMARK_CSS,
-  MOA_CUT_GUIDE_CSS,
-  MOA_SLIP_HALVES_CSS,
+  MOA_PRINT_SCREEN_CSS,
+  MOA_SIGNATURE_LINE_CLASS,
   buildMoaSlipPrintHtml,
 } from "@/lib/print-templates";
-import { calculatePeriodicStorageFee } from "@/lib/interest";
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 
 interface MoaModalProps {
@@ -103,7 +106,7 @@ type MoaTemplate = {
 };
 
 const MOA_PAGE_CLASS =
-  "moa-print-page mx-auto w-full min-w-0 flex-none space-y-4 overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md moa-paper-effect";
+  "moa-print-page mx-auto w-full min-w-0 flex-none overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md moa-paper-effect";
 const MOA_PAGE_STYLE = {
   width: MOA_LEGAL_PAGE.screenWidthPx,
   height: MOA_LEGAL_PAGE.screenHeightPx,
@@ -150,16 +153,33 @@ function MoaNamedSignatureLine({
   className?: string;
 }) {
   return (
-    <div className={`text-center flex flex-col items-center ${className}`}>
-      <div className="w-full border-b border-zinc-400 min-h-6 flex items-end justify-center pb-0.5">
+    <div className={`moa-signature-block text-center shrink-0 ${className}`}>
+      <div className={MOA_SIGNATURE_LINE_CLASS}>
         {name ? (
-          <span className="text-[8px] font-bold text-zinc-800 uppercase truncate max-w-full px-1">{name}</span>
-        ) : null}
+          <span className="text-[8px] font-bold text-zinc-800 uppercase truncate max-w-full px-1 leading-none">{name}</span>
+        ) : (
+          <span className="inline-block w-full" aria-hidden="true" />
+        )}
       </div>
-      <span className="text-[7px] uppercase font-bold text-zinc-500 mt-1">{label}</span>
+      <span className="moa-signature-label uppercase font-bold text-zinc-500">{label}</span>
     </div>
   );
 }
+
+const DEFAULT_TERMS_PREAMBLE =
+  'You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.';
+
+const DEFAULT_TERMS_DECLARATION =
+  "I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.";
+
+const DEFAULT_AUTHORIZED_SUBTEXT =
+  "Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.";
+
+const DEFAULT_TERMS_RECEIVED_TEXT =
+  "Received the article(s) in the same condition when sold and repurchased back.";
+
+const DEFAULT_TERMS_RECEIVED_PRESENCE =
+  "(Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)";
 
 function normalizeTermsText(rawText?: string) {
   const normalizedLines = (rawText ?? "")
@@ -263,72 +283,107 @@ export function MoaModal({
     phoneNumber?: string;
   } | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
+  const templateFetchRef = useRef(0);
+
+  const applyMoaTemplate = (moaTemplate: MoaTemplate, category: string) => {
+    const categoryKey = Object.keys(moaTemplate.category_templates ?? {}).find(
+      (item) => item.trim().toLowerCase() === category.trim().toLowerCase(),
+    );
+    const categoryTemplate = categoryKey
+      ? moaTemplate.category_templates?.[categoryKey]
+      : undefined;
+
+    setTermsText(normalizeTermsText(categoryTemplate?.terms_text ?? moaTemplate.terms_text));
+    setLabels({ ...moaTemplate.labels, ...(categoryTemplate?.labels ?? {}) });
+    setExtensionRows(categoryTemplate?.extensionRows ?? moaTemplate.extensionRows ?? []);
+    setFinancialFields(
+      categoryTemplate?.financialFields
+      ?? moaTemplate.financialFields
+      ?? DEFAULT_FINANCIAL_FIELDS,
+    );
+    setUnitFields(
+      categoryTemplate?.unitFields
+      ?? moaTemplate.unitFields
+      ?? DEFAULT_UNIT_FIELDS,
+    );
+    setCustomFinancialFields(
+      categoryTemplate?.customFinancialFields
+      ?? moaTemplate.customFinancialFields
+      ?? [],
+    );
+    setCustomUnitFields(
+      categoryTemplate?.customUnitFields
+      ?? moaTemplate.customUnitFields
+      ?? [],
+    );
+  };
 
   useEffect(() => {
-    if (isOpen) {
-      async function fetchTemplateAndInterestRates() {
-        try {
-          const [moaTemplate, interestRates, generalSettings] = await Promise.all([
-            api.get<MoaTemplate>(`/settings/moa_template`),
-            api.get<unknown[]>(`/settings/interest_rates`),
-            api.get<{ shopInfo?: { shopName?: string; shopAddress?: string; phoneNumber?: string } }>(`/settings/general`),
-          ]);
+    if (!isOpen) return;
 
-          if (moaTemplate) {
-            const categoryKey = Object.keys(moaTemplate.category_templates ?? {}).find(
-              (category) => category.trim().toLowerCase() === data.category.trim().toLowerCase(),
-            );
-            const categoryTemplate = categoryKey
-              ? moaTemplate.category_templates?.[categoryKey]
-              : undefined;
+    let cancelled = false;
+    const fetchId = ++templateFetchRef.current;
 
-            setTermsText(normalizeTermsText(categoryTemplate?.terms_text ?? moaTemplate.terms_text));
-            setLabels({ ...moaTemplate.labels, ...(categoryTemplate?.labels ?? {}) });
-            setExtensionRows(categoryTemplate?.extensionRows ?? moaTemplate.extensionRows ?? []);
-            setFinancialFields(
-              categoryTemplate?.financialFields
-              ?? moaTemplate.financialFields
-              ?? DEFAULT_FINANCIAL_FIELDS,
-            );
-            setUnitFields(
-              categoryTemplate?.unitFields
-              ?? moaTemplate.unitFields
-              ?? DEFAULT_UNIT_FIELDS,
-            );
-            setCustomFinancialFields(
-              categoryTemplate?.customFinancialFields
-              ?? moaTemplate.customFinancialFields
-              ?? [],
-            );
-            setCustomUnitFields(
-              categoryTemplate?.customUnitFields
-              ?? moaTemplate.customUnitFields
-              ?? [],
-            );
-          }
+    async function fetchTemplateAndInterestRates() {
+      try {
+        const [moaTemplate, interestRates, generalSettings] = await Promise.all([
+          api.get<MoaTemplate>(`/settings/moa_template?t=${Date.now()}`, {
+            cache: "no-store",
+          }),
+          api.get<unknown[]>(`/settings/interest_rates`),
+          api.get<{ shopInfo?: { shopName?: string; shopAddress?: string; phoneNumber?: string } }>(`/settings/general`),
+        ]);
 
-          if (Array.isArray(interestRates) && typeof window !== "undefined") {
-            localStorage.setItem("interest_rates", JSON.stringify(interestRates));
-          }
-          if (generalSettings?.shopInfo) {
-            setShopInfo(generalSettings.shopInfo);
-          }
-        } catch (error) {
-          console.error("Failed to fetch MOA template and/or interest rates:", error);
+        if (cancelled || fetchId !== templateFetchRef.current) return;
+
+        if (moaTemplate) {
+          applyMoaTemplate(moaTemplate, data.category);
         }
+
+        if (Array.isArray(interestRates)) {
+          setInterestRatesCache(interestRates as InterestRateGroup[]);
+        }
+        if (generalSettings?.shopInfo) {
+          setShopInfo(generalSettings.shopInfo);
+        }
+      } catch (error) {
+        console.error("Failed to fetch MOA template and/or interest rates:", error);
       }
-      fetchTemplateAndInterestRates();
     }
+
+    fetchTemplateAndInterestRates();
+
+    const handleTemplateUpdated = () => {
+      void fetchTemplateAndInterestRates();
+    };
+    window.addEventListener("moa-template-updated", handleTemplateUpdated);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("moa-template-updated", handleTemplateUpdated);
+    };
   }, [data.category, isOpen]);
 
   useEffect(() => {
-    if (isOpen && autoPrint && labels) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, autoPrint, labels]);
+    if (!isOpen || !autoPrint || !labels) return;
+
+    let cancelled = false;
+    const tryPrint = (attempt = 0) => {
+      if (cancelled) return;
+      const pageCount = printRef.current?.querySelectorAll(".moa-print-page").length ?? 0;
+      if (pageCount >= 2 || attempt >= 8) {
+        void handlePrint();
+        return;
+      }
+      setTimeout(() => tryPrint(attempt + 1), 200);
+    };
+
+    const timer = setTimeout(() => tryPrint(), 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isOpen, autoPrint, labels, termsText]);
 
   const handlePrint = async () => {
     if (!printRef.current) return;
@@ -353,8 +408,8 @@ export function MoaModal({
     try {
       document.body.appendChild(iframe);
 
-      const iframeDoc = iframe.contentWindow?.document;
       const printWindow = iframe.contentWindow;
+      const iframeDoc = printWindow?.document;
       if (!iframeDoc || !printWindow) {
         cleanup();
         return;
@@ -364,26 +419,22 @@ export function MoaModal({
       iframeDoc.write(buildMoaSlipPrintHtml(printRef.current.outerHTML));
       iframeDoc.close();
 
-      const stylesheetPromises: Promise<void>[] = [];
-      Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).forEach((node) => {
-        try {
-          const clone = node.cloneNode(true) as HTMLLinkElement | HTMLStyleElement;
-          if (clone instanceof HTMLLinkElement) {
-            stylesheetPromises.push(new Promise((resolve) => {
-              clone.addEventListener("load", () => resolve(), { once: true });
-              clone.addEventListener("error", () => resolve(), { once: true });
-            }));
-          }
-          iframeDoc.head.appendChild(clone);
-        } catch {
-          // Ignore clone failures from browser-injected styles.
+      await new Promise<void>((resolve) => {
+        const done = () => resolve();
+        if (iframeDoc.readyState === "complete") {
+          done();
+          return;
         }
+        iframe.onload = () => done();
+        setTimeout(done, 500);
       });
 
-      await Promise.race([
-        Promise.all([...stylesheetPromises, document.fonts?.ready ?? Promise.resolve()]),
-        new Promise<void>((resolve) => setTimeout(resolve, 2000)),
-      ]);
+      if (document.fonts?.ready) {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise<void>((resolve) => setTimeout(resolve, 1000)),
+        ]);
+      }
 
       if ("onafterprint" in printWindow) {
         printWindow.onafterprint = cleanup;
@@ -445,10 +496,13 @@ export function MoaModal({
     .filter((line) => !line.startsWith("[MOA Fields] "))
     .join("\n")
     .trim();
+  const savedStorageFee = Number(data.storageFee) || 0;
   const storageFee =
-    amount > 0
-      ? calculatePeriodicStorageFee(amount, data.category)
-      : Number(data.storageFee) || 0;
+    savedStorageFee > 0
+      ? savedStorageFee
+      : amount > 0
+        ? calculatePeriodicStorageFee(amount, data.category)
+        : 0;
   const netProceeds = Math.max(0, amount - parkingFee);
   const financialValues: Record<FinancialFieldKey, string> = {
     amount: formatPeso(amount),
@@ -480,7 +534,6 @@ export function MoaModal({
   };
 
   const schedule = getInterestRateSchedule(data.category);
-  const showInterestRate = !!labels?.interestRateHeader;
 
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
   const formatCompactDate = (date: Date) => {
@@ -522,6 +575,11 @@ export function MoaModal({
     labels?.sellerSignature || "(Name and Signature of Seller)";
   const representativeSignatureLabel =
     labels?.representativeSignature || "(Name and Signature of Representative)";
+  const termsPreamble = labels?.termsPreamble || DEFAULT_TERMS_PREAMBLE;
+  const termsDeclaration = labels?.termsDeclaration || DEFAULT_TERMS_DECLARATION;
+  const authorizedSubtext = labels?.authorizedSubtext || DEFAULT_AUTHORIZED_SUBTEXT;
+  const termsReceivedText = labels?.termsReceivedText || DEFAULT_TERMS_RECEIVED_TEXT;
+  const termsReceivedPresence = labels?.termsReceivedPresence || DEFAULT_TERMS_RECEIVED_PRESENCE;
 
   return (
     <div id="moa-modal-root" className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
@@ -565,7 +623,8 @@ export function MoaModal({
 
               {/* ORIGINAL COPY (Top Half) */}
               <div className="moa-slip-half">
-              <div className="space-y-2 relative moa-watermark pb-1">
+              <div className="moa-slip-copy relative moa-watermark">
+              <div className="moa-slip-body space-y-0.5">
                 {/* Centered shop header */}
                 <MoaBranchHeader
                   primary={headerPrimary}
@@ -627,7 +686,7 @@ export function MoaModal({
                 </div>
 
                 {/* Agreement text */}
-                <div className="space-y-1 leading-relaxed text-justify text-[9px] px-1 select-text">
+                <div className="moa-agreement-text space-y-1 leading-relaxed text-justify text-[9px] px-1 select-text">
                   <div>
                     {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[120px]">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block border-b border-zinc-500 font-medium px-1 text-center min-w-[180px]">{data.address.toUpperCase()}</span>. For the amount of <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[120px]">{amount > 0 ? numberToWords(amount) : "________________"}</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."} {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.plusText || "plus"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(storageFee)}</span>) {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[80px]">₱0.00</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">₱0.00</span>) {labels?.overdueText || "applies when overdue."} and you are given 5 days grace period (<span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[70px]">{gracePeriodEnd}</span>) my right to repurchase back the unit(s) described below is deemed waived.
                   </div>
@@ -686,8 +745,10 @@ export function MoaModal({
                   </div>
                 </div>
 
+                </div>
+                <div className="moa-slip-footer space-y-0.5">
                 {/* Signatures */}
-                <div className="grid grid-cols-2 gap-12 pt-3 text-center">
+                <div className="grid grid-cols-2 gap-12 pt-1 text-center">
                   <div className="flex flex-col items-center">
                     <span className="inline-block border-b border-zinc-400 w-[180px] h-4 text-center">{fullName}</span>
                     <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
@@ -715,11 +776,12 @@ export function MoaModal({
                       </div>
                       <div className="flex items-center gap-1">
                         <span>Storage:</span>
-                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.storage || ""}</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.storage || formatPeso(storageFee)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span>Period:</span>
                         <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.periodValue || ""}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span>Extend:</span>
@@ -741,13 +803,15 @@ export function MoaModal({
                 </div>
               </div>
               </div>
+              </div>
 
               {/* Middle Cut Guide */}
               <MoaCutGuide />
 
               {/* CUSTOMER COPY (Bottom Half) */}
               <div className="moa-slip-half">
-              <div className="space-y-2 relative moa-watermark pb-1">
+              <div className="moa-slip-copy relative moa-watermark">
+              <div className="moa-slip-body space-y-0.5">
                 {/* Centered shop header */}
                 <MoaBranchHeader
                   primary={headerPrimary}
@@ -809,7 +873,7 @@ export function MoaModal({
                 </div>
 
                 {/* Agreement text */}
-                <div className="space-y-1 leading-relaxed text-justify text-[9px] px-1 select-text">
+                <div className="moa-agreement-text space-y-1 leading-relaxed text-justify text-[9px] px-1 select-text">
                   <div>
                     {labels?.customerIntro || "I, Mr./Mrs."} <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[120px]">{fullName}</span>, {labels?.legalAgeResident || "of legal age and a resident of"} <span className="inline-block border-b border-zinc-500 font-medium px-1 text-center min-w-[180px]">{data.address.toUpperCase()}</span>. For the amount of <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[120px]">{amount > 0 ? numberToWords(amount) : "________________"}</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.agreementText || "agree to transfer and convey by way of sale with a right to repurchase back."} {labels?.repayIntro || "If I have repurchased the above unit, I shall pay the amount of"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(amount)}</span>) {labels?.plusText || "plus"} (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">{formatPeso(storageFee)}</span>) {labels?.storageFeeText || "every 10 days as storage fee. Penalty amounting to"} <span className="inline-block border-b border-zinc-500 px-1 text-center min-w-[80px]">₱0.00</span> (P <span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[60px]">₱0.00</span>) {labels?.overdueText || "applies when overdue."} and you are given 5 days grace period (<span className="inline-block border-b border-zinc-500 font-bold px-1 text-center min-w-[70px]">{gracePeriodEnd}</span>) my right to repurchase back the unit(s) described below is deemed waived.
                   </div>
@@ -868,8 +932,10 @@ export function MoaModal({
                   </div>
                 </div>
 
+                </div>
+                <div className="moa-slip-footer space-y-0.5">
                 {/* Signatures */}
-                <div className="grid grid-cols-2 gap-12 pt-3 text-center">
+                <div className="grid grid-cols-2 gap-12 pt-1 text-center">
                   <div className="flex flex-col items-center">
                     <span className="inline-block border-b border-zinc-400 w-[180px] h-4 text-center">{fullName}</span>
                     <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{labels?.sellerSignature || "(Name and Signature of Seller)"}</p>
@@ -897,11 +963,12 @@ export function MoaModal({
                       </div>
                       <div className="flex items-center gap-1">
                         <span>Storage:</span>
-                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.storage || ""}</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.storage || formatPeso(storageFee)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span>Period:</span>
                         <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
+                        <span className="inline-block border-b border-zinc-400 w-[60px] h-4 text-center">{row.periodValue || ""}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <span>Extend:</span>
@@ -925,6 +992,7 @@ export function MoaModal({
               </div>
               </div>
             </div>
+            </div>
 
             {/* PAGE 2: TERMS AND CONDITIONS */}
             <div className={`${MOA_PAGE_CLASS} moa-slip-sheet`} style={MOA_PAGE_STYLE}>
@@ -932,16 +1000,17 @@ export function MoaModal({
               
               {/* Top Copy (Original terms) */}
               <div className="moa-slip-half">
-              <div className="space-y-3 relative moa-watermark pb-2">
+              <div className="moa-terms-copy relative moa-watermark">
+              <div className="moa-terms-body space-y-1.5">
                 <h2 className="text-center font-bold uppercase text-[11px] select-text">
                   {labels?.termsHeading || "Terms and Conditions"}
                 </h2>
                 
                 <p className="text-justify leading-relaxed text-[8.5px] text-zinc-700">
-                  You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.
+                  {termsPreamble}
                 </p>
 
-                <div className="whitespace-pre-wrap rounded-sm border border-zinc-200 bg-zinc-50/10 p-3 text-[8.5px] leading-relaxed text-zinc-800">
+                <div className="whitespace-pre-wrap text-[8.5px] leading-relaxed text-zinc-800">
                   {printableTermsLines.map((line, lIdx) => (
                     <div key={lIdx} className="mb-0.5 flex items-start gap-1">
                       <span className="font-bold shrink-0">{lIdx + 1}.</span>
@@ -950,17 +1019,19 @@ export function MoaModal({
                   ))}
                 </div>
 
-                <p className="italic font-bold text-zinc-800 text-[8.5px]">
-                  I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
+                <p className="italic font-bold text-zinc-800 text-[8.5px] text-center">
+                  {termsDeclaration}
                 </p>
 
+                </div>
+                <div className="moa-terms-footer">
                 {/* Signatures block */}
-                <div className="grid grid-cols-[1.2fr_1.5fr] gap-8 pt-4 items-end">
+                <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
                   <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
 
-                  <div className="text-center flex flex-col items-center space-y-3">
+                  <div className="text-center flex flex-col items-center space-y-1.5">
                     <span className="font-bold uppercase text-[8.5px] text-emerald-900 block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
-                    <span className="text-[7.5px] text-zinc-500 block leading-tight">Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.</span>
+                    <span className="text-[7.5px] text-zinc-500 block leading-tight">{authorizedSubtext}</span>
 
                     <MoaNamedSignatureLine
                       name={data.processedBy || ""}
@@ -977,14 +1048,15 @@ export function MoaModal({
                 </div>
 
                 {/* Received Section */}
-                <div className="pt-4 space-y-3 border-t border-zinc-100">
-                  <p className="text-[8px] leading-tight text-zinc-800 font-medium">
-                    Received the article(s) in the same condition when sold and repurchased back.<br />
-                    (Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)
+                <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
+                  <p className="text-[8px] leading-tight text-zinc-800 font-medium text-left">
+                    {termsReceivedText}<br />
+                    {termsReceivedPresence}
                   </p>
                   <div className="w-1/2">
-                    <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
+                    <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} className="w-full" />
                   </div>
+                </div>
                 </div>
               </div>
               </div>
@@ -994,16 +1066,17 @@ export function MoaModal({
 
               {/* Bottom Copy (Customer terms) */}
               <div className="moa-slip-half">
-              <div className="space-y-3 relative moa-watermark pb-2">
+              <div className="moa-terms-copy relative moa-watermark">
+              <div className="moa-terms-body space-y-1.5">
                 <h2 className="text-center font-bold uppercase text-[11px] select-text">
                   {labels?.termsHeading || "Terms and Conditions"}
                 </h2>
                 
                 <p className="text-justify leading-relaxed text-[8.5px] text-zinc-700">
-                  You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.
+                  {termsPreamble}
                 </p>
 
-                <div className="whitespace-pre-wrap rounded-sm border border-zinc-200 bg-zinc-50/10 p-3 text-[8.5px] leading-relaxed text-zinc-800">
+                <div className="whitespace-pre-wrap text-[8.5px] leading-relaxed text-zinc-800">
                   {printableTermsLines.map((line, lIdx) => (
                     <div key={lIdx} className="mb-0.5 flex items-start gap-1">
                       <span className="font-bold shrink-0">{lIdx + 1}.</span>
@@ -1012,17 +1085,19 @@ export function MoaModal({
                   ))}
                 </div>
 
-                <p className="italic font-bold text-zinc-800 text-[8.5px]">
-                  I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
+                <p className="italic font-bold text-zinc-800 text-[8.5px] text-center">
+                  {termsDeclaration}
                 </p>
 
+                </div>
+                <div className="moa-terms-footer">
                 {/* Signatures block */}
-                <div className="grid grid-cols-[1.2fr_1.5fr] gap-8 pt-4 items-end">
+                <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
                   <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
 
-                  <div className="text-center flex flex-col items-center space-y-3">
+                  <div className="text-center flex flex-col items-center space-y-1.5">
                     <span className="font-bold uppercase text-[8.5px] text-emerald-900 block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
-                    <span className="text-[7.5px] text-zinc-500 block leading-tight">Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.</span>
+                    <span className="text-[7.5px] text-zinc-500 block leading-tight">{authorizedSubtext}</span>
 
                     <MoaNamedSignatureLine
                       name={data.processedBy || ""}
@@ -1039,14 +1114,15 @@ export function MoaModal({
                 </div>
 
                 {/* Received Section */}
-                <div className="pt-4 space-y-3 border-t border-zinc-100">
-                  <p className="text-[8px] leading-tight text-zinc-800 font-medium">
-                    Received the article(s) in the same condition when sold and repurchased back.<br />
-                    (Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)
+                <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
+                  <p className="text-[8px] leading-tight text-zinc-800 font-medium text-left">
+                    {termsReceivedText}<br />
+                    {termsReceivedPresence}
                   </p>
                   <div className="w-1/2">
-                    <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
+                    <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} className="w-full" />
                   </div>
+                </div>
                 </div>
               </div>
               </div>
@@ -1125,9 +1201,7 @@ export function MoaModal({
         .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
 
-        ${MOA_WATERMARK_CSS}
-        ${MOA_CUT_GUIDE_CSS}
-        ${MOA_SLIP_HALVES_CSS}
+        ${MOA_PRINT_SCREEN_CSS}
 
         @media print {
           ${MOA_PRINT_CSS}

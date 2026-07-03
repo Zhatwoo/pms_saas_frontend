@@ -9,7 +9,7 @@ import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
 import { fetchCategories } from "@/lib/categories";
-import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_WATERMARK_CSS, MOA_CUT_GUIDE_CSS, MOA_SLIP_HALVES_CSS } from "@/lib/print-templates";
+import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_PRINT_SCREEN_CSS, MOA_SIGNATURE_LINE_CLASS } from "@/lib/print-templates";
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
@@ -148,7 +148,7 @@ function normalizeMoaTerms(value?: string | null) {
 }
 
 const MOA_SETTINGS_PAPER_CLASS =
-  "moa-print-page moa-paper-effect moa-settings-paper mx-auto min-h-[1344px] w-full max-w-[816px] min-w-0 flex-none space-y-4 overflow-y-auto overflow-x-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md";
+  "moa-print-page moa-paper-effect moa-settings-paper mx-auto w-full max-w-[816px] min-w-0 flex-none overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md";
 
 export default function SettingsPage() {
   const { user, refreshProfile } = useAuth();
@@ -230,6 +230,14 @@ export default function SettingsPage() {
     sellerSignature: "(Name, signature and contact number of Seller)",
     authorizedText: "I HEREBY AUTHORIZED",
     representativeSignature: "(JCLB Representative)",
+    termsDeclaration:
+      "I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.",
+    authorizedSubtext:
+      "Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.",
+    termsReceivedText:
+      "Received the article(s) in the same condition when sold and repurchased back.",
+    termsReceivedPresence:
+      "(Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)",
   });
   const [extensionRows, setExtensionRows] = useState<ExtensionRow[]>([
     { date: "", storage: "", period: "1st Period", periodValue: "", extend: "", sign: "" },
@@ -441,11 +449,11 @@ export default function SettingsPage() {
       className="inline-flex items-end justify-center border-b border-zinc-400 align-bottom mx-0.5 px-0.5 leading-none overflow-hidden"
       style={{
         width: lineWidths[fieldKey] ?? defaultWidth,
-        height: '14px',
+        height: '12px',
         minWidth: 48,
       }}
     >
-      <span className="truncate text-[10px] m-0 p-0">{value}</span>
+      <span className="truncate text-[9px] m-0 p-0">{value}</span>
     </span>
   );
 
@@ -658,6 +666,7 @@ export default function SettingsPage() {
       setDefaultMoaTemplate(nextDefaultTemplate);
       setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
+      window.dispatchEvent(new CustomEvent("moa-template-updated"));
     } catch (error) {
       console.error("Failed to save MOA template:", error);
       alert("Failed to save MOA template. Please try again.");
@@ -679,21 +688,27 @@ export default function SettingsPage() {
           : { [selectedMoaCategory]: currentTemplate }),
       };
 
-      // `moa_template` is a global setting; saving here applies to all branches.
+      // Broadcast to production + development via the existing MOA save endpoint.
       await api.post(`/settings/moa_template`, {
         ...nextDefaultTemplate,
         category_templates: nextCategoryTemplates,
+        broadcastToAllEnvironments: true,
       });
 
       setDefaultMoaTemplate(nextDefaultTemplate);
       setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
       setSendStatus("sent");
+      window.dispatchEvent(new CustomEvent("moa-template-updated"));
       setTimeout(() => setSendStatus("idle"), 2500);
     } catch (error) {
       console.error("Failed to send to all branches:", error);
       setSendStatus("idle");
-      alert("Failed to send to all branches. Your changes might not have been saved.");
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to send to all branches. Your changes might not have been saved.";
+      alert(message);
     }
   };
 
@@ -718,6 +733,7 @@ export default function SettingsPage() {
   const renderEditableLabel = (
     field: keyof typeof topLabels,
     className: string,
+    keySuffix = "",
   ) => {
     const isInline = className.split(" ").includes("inline");
     const hasExplicitWidth = className.split(" ").some((c) => /^w-/.test(c));
@@ -725,11 +741,12 @@ export default function SettingsPage() {
       .split(" ")
       .filter((part) => part !== "inline")
       .join(" ");
+    const fieldKey = `${selectedMoaCategory}-${String(field)}${keySuffix}`;
 
     if (isInline) {
       return (
         <span
-          key={`${selectedMoaCategory}-${field}`}
+          key={fieldKey}
           contentEditable={canEditMoa}
           suppressContentEditableWarning
           onBlur={(e) => {
@@ -747,6 +764,7 @@ export default function SettingsPage() {
 
     return (
       <input
+        key={fieldKey}
         value={topLabels[field]}
         onChange={(e) => updateTopLabel(field, e.target.value)}
         readOnly={!canEditMoa}
@@ -1100,6 +1118,7 @@ export default function SettingsPage() {
                         style={{
                           padding: MOA_LEGAL_PAGE.padding,
                           boxSizing: "border-box",
+                          width: MOA_LEGAL_PAGE.screenWidthPx,
                           height: MOA_LEGAL_PAGE.screenHeightPx,
                           maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
                           overflow: "hidden",
@@ -1109,7 +1128,8 @@ export default function SettingsPage() {
 
                         {/* ORIGINAL COPY (Top Half) */}
                         <div className="moa-slip-half">
-                        <div className="space-y-2 relative moa-watermark pb-1">
+                        <div className="moa-slip-copy relative moa-watermark">
+                        <div className="moa-slip-body space-y-0.5">
                           {/* Row 1: Branch Info (centered) */}
                           <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
                             <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
@@ -1183,7 +1203,7 @@ export default function SettingsPage() {
                           </div>
 
                           {/* Agreement Paragraph */}
-                          <div className="space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
+                          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
                             <div>
                               {renderEditableLabel("customerIntro", "inline")} {RL("customerName", moaFields.customerName, (v) => updateMoaField("customerName", v), 180)} {renderEditableLabel("legalAgeResident", "inline")} {RL("customerAddress", moaFields.customerAddress, (v) => updateMoaField("customerAddress", v), 220)}. For the amount of {RL("amountInWords", moaFields.principalAmount || "", (v) => updateMoaField("principalAmount", v), 130)} (P {RL("amountInFigures", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("agreementText", "inline")} for THIRTY (30) days from the date of purchase. {renderEditableLabel("repayIntro", "inline")} (P {RL("repurchaseAmount", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("plusText", "inline")} (P {RL("storageFeeValue", moaFields.storageFee || "", (v) => updateMoaField("storageFee", v), 80)}) {renderEditableLabel("storageFeeText", "inline")} {RL("penaltyAmountText", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 80)} (P {RL("penaltyAmount", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 60)}) and you are given 5 days grace period ({RL("gracePeriod", moaFields.expiryDate || "", (v) => updateMoaField("expiryDate", v), 100)}) my right to repurchase back the unit(s) described below is deemed waived.
                             </div>
@@ -1248,8 +1268,10 @@ export default function SettingsPage() {
                             </div>
                           </div>
 
+                          </div>
+                          <div className="moa-slip-footer space-y-0.5">
                           {/* Signatures */}
-                          <div className="grid grid-cols-2 gap-12 pt-3 text-center">
+                          <div className="grid grid-cols-2 gap-12 pt-1 text-center">
                             <div className="flex flex-col items-center">
                               {RL("sellerName", moaFields.sellerName, (v) => updateMoaField("sellerName", v), 180)}
                               <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{renderEditableLabel("sellerSignature", "inline")}</p>
@@ -1302,13 +1324,15 @@ export default function SettingsPage() {
                           </div>
                         </div>
                         </div>
+                        </div>
 
                         {/* Middle Cut Guide */}
                         <MoaCutGuide />
 
                         {/* CUSTOMER COPY (Bottom Half) */}
                         <div className="moa-slip-half">
-                        <div className="space-y-2 relative moa-watermark pb-1">
+                        <div className="moa-slip-copy relative moa-watermark">
+                        <div className="moa-slip-body space-y-0.5">
                           {/* Row 1: Branch Info (centered) */}
                           <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
                             <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
@@ -1375,7 +1399,7 @@ export default function SettingsPage() {
                           </div>
 
                           {/* Agreement Paragraph */}
-                          <div className="space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
+                          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
                             <p>
                               {topLabels.customerIntro} {CL("customerName", moaFields.customerName, 180)} {topLabels.legalAgeResident} {CL("customerAddress", moaFields.customerAddress, 220)}. For the amount of {CL("amountInWords", moaFields.principalAmount || "", 130)} (P {CL("amountInFigures", moaFields.amount || "", 80)}) {topLabels.agreementText} for THIRTY (30) days from the date of purchase. {topLabels.repayIntro} (P {CL("repurchaseAmount", moaFields.amount || "", 80)}) {topLabels.plusText} (P {CL("storageFeeValue", moaFields.storageFee || "", 80)}) {topLabels.storageFeeText} {CL("penaltyAmountText", moaFields.penaltyAmount || "", 80)} (P {CL("penaltyAmount", moaFields.penaltyAmount || "", 60)}) and you are given 5 days grace period ({CL("gracePeriod", moaFields.expiryDate || "", 100)}) my right to repurchase back the unit(s) described below is deemed waived.
                             </p>
@@ -1430,8 +1454,10 @@ export default function SettingsPage() {
                             </div>
                           </div>
 
+                          </div>
+                          <div className="moa-slip-footer space-y-0.5">
                           {/* Signatures */}
-                          <div className="grid grid-cols-2 gap-12 pt-3 text-center">
+                          <div className="grid grid-cols-2 gap-12 pt-1 text-center">
                             <div className="flex flex-col items-center">
                               {CL("sellerName", moaFields.sellerName, 180)}
                               <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{topLabels.sellerSignature}</p>
@@ -1480,6 +1506,7 @@ export default function SettingsPage() {
                         </div>
                         </div>
                         </div>
+                        </div>
                       </div>
 
                       {/* PAGE 2: TERMS AND CONDITIONS */}
@@ -1488,6 +1515,7 @@ export default function SettingsPage() {
                         style={{
                           padding: MOA_LEGAL_PAGE.padding,
                           boxSizing: "border-box",
+                          width: MOA_LEGAL_PAGE.screenWidthPx,
                           height: MOA_LEGAL_PAGE.screenHeightPx,
                           maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
                           overflow: "hidden",
@@ -1497,7 +1525,8 @@ export default function SettingsPage() {
 
                         {/* Top Copy (Original terms) */}
                         <div className="moa-slip-half">
-                        <div className="space-y-3 relative moa-watermark pb-2">
+                        <div className="moa-terms-copy relative moa-watermark">
+                        <div className="moa-terms-body space-y-1.5">
                           <h2 className="text-center font-bold uppercase text-[11px] select-text">
                             <input
                               value={topLabels.termsHeading}
@@ -1542,47 +1571,53 @@ export default function SettingsPage() {
                               termsEditingRef.current = false;
                               setTermsText(e.currentTarget.innerText ?? "");
                             }}
-                            className="min-h-[120px] whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify outline-none select-text py-1"
+                            className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify outline-none select-text py-1"
                           />
 
-                          <p className="italic font-bold text-zinc-800 text-[9px]">
-                            I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
+                          <p className="italic font-bold text-zinc-800 text-[9px] text-center">
+                            {renderEditableLabel("termsDeclaration", "italic font-bold text-zinc-800 text-[9px] text-center block w-full")}
                           </p>
 
+                          </div>
+                          <div className="moa-terms-footer">
                           {/* Signatures block */}
-                          <div className="grid grid-cols-[1.2fr_1.5fr] gap-8 pt-4 items-end">
-                            <div className="text-center flex flex-col items-center">
-                              <div className="w-full border-b border-zinc-400 h-6"></div>
-                              <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1">(Name and signature of Seller)</span>
+                          <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
+                            <div className="moa-signature-block text-center">
+                              <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                              {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-left")}
                             </div>
 
-                            <div className="text-center flex flex-col items-center space-y-3">
-                              <span className="font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide">{topLabels.authorizedText}</span>
-                              <span className="text-[7.5px] text-zinc-500 block leading-tight">Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.</span>
+                            <div className="text-center flex flex-col items-center space-y-1.5">
+                              {renderEditableLabel("authorizedText", "font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide text-center w-full")}
+                              {renderEditableLabel("authorizedSubtext", "text-[7.5px] text-zinc-500 block leading-tight text-center w-full")}
 
-                              <div className="w-full">
-                                <div className="w-full border-b border-zinc-400 h-6"></div>
-                                <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Representative)</span>
+                              <div className="moa-signature-block w-full">
+                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                {renderEditableLabel("representativeSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]")}
                               </div>
 
-                              <div className="w-full">
-                                <div className="w-full border-b border-zinc-400 h-6"></div>
-                                <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Seller)</span>
+                              <div className="moa-signature-block w-full">
+                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-right")}
                               </div>
                             </div>
                           </div>
 
                           {/* Received Section */}
-                          <div className="pt-4 space-y-3 border-t border-zinc-100">
-                            <p className="text-[8.5px] leading-tight text-zinc-800 font-medium">
-                              Received the article(s) in the same condition when sold and repurchased back.<br />
-                              (Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)
-                            </p>
+                          <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
+                            <div className="text-[8.5px] leading-tight text-zinc-800 font-medium text-left">
+                              {renderEditableLabel("termsReceivedText", "text-[8.5px] leading-tight text-zinc-800 font-medium text-left block w-full")}
+                              <br />
+                              {renderEditableLabel("termsReceivedPresence", "text-[8.5px] leading-tight text-zinc-800 font-medium text-left block w-full")}
+                            </div>
                             <div className="w-1/2">
-                              <div className="w-full border-b border-zinc-400 h-6"></div>
-                              <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Seller)</span>
+                              <div className="moa-signature-block w-full">
+                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-received")}
+                              </div>
                             </div>
                           </div>
+                        </div>
                         </div>
                         </div>
 
@@ -1591,7 +1626,8 @@ export default function SettingsPage() {
 
                         {/* Bottom Copy (Customer terms) */}
                         <div className="moa-slip-half">
-                        <div className="space-y-3 relative moa-watermark pb-2">
+                        <div className="moa-terms-copy relative moa-watermark">
+                        <div className="moa-terms-body space-y-1.5">
                           <h2 className="text-center font-bold uppercase text-[11px] text-zinc-800 leading-none">
                             {topLabels.termsHeading}
                           </h2>
@@ -1602,48 +1638,53 @@ export default function SettingsPage() {
                             {topLabels.termsPreamble}
                           </div>
 
-                          <div className="min-h-[120px] whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify py-1">
+                          <div className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify py-1">
                             {resolvedTermsText}
                           </div>
 
-                          <p className="italic font-bold text-zinc-800 text-[9px]">
-                            I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.
+                          <p className="italic font-bold text-zinc-800 text-[9px] text-center">
+                            {topLabels.termsDeclaration}
                           </p>
 
+                          </div>
+                          <div className="moa-terms-footer">
                           {/* Signatures block */}
-                          <div className="grid grid-cols-[1.2fr_1.5fr] gap-8 pt-4 items-end">
-                            <div className="text-center flex flex-col items-center">
-                              <div className="w-full border-b border-zinc-400 h-6"></div>
-                              <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1">(Name and signature of Seller)</span>
+                          <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
+                            <div className="moa-signature-block text-center">
+                              <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                              <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.sellerSignature}</span>
                             </div>
 
-                            <div className="text-center flex flex-col items-center space-y-3">
+                            <div className="text-center flex flex-col items-center space-y-1.5">
                               <span className="font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide">{topLabels.authorizedText}</span>
-                              <span className="text-[7.5px] text-zinc-500 block leading-tight">Whose name and signature appears below to repurchase my item(s) covered by this MOA in my behalf.</span>
+                              <span className="text-[7.5px] text-zinc-500 block leading-tight">{topLabels.authorizedSubtext}</span>
 
-                              <div className="w-full">
-                                <div className="w-full border-b border-zinc-400 h-6"></div>
-                                <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Representative)</span>
+                              <div className="moa-signature-block w-full">
+                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.representativeSignature}</span>
                               </div>
 
-                              <div className="w-full">
-                                <div className="w-full border-b border-zinc-400 h-6"></div>
-                                <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Seller)</span>
+                              <div className="moa-signature-block w-full">
+                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.sellerSignature}</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Received Section */}
-                          <div className="pt-4 space-y-3 border-t border-zinc-100">
-                            <p className="text-[8.5px] leading-tight text-zinc-800 font-medium">
-                              Received the article(s) in the same condition when sold and repurchased back.<br />
-                              (Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)
+                          <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
+                            <p className="text-[8.5px] leading-tight text-zinc-800 font-medium text-left">
+                              {topLabels.termsReceivedText}<br />
+                              {topLabels.termsReceivedPresence}
                             </p>
                             <div className="w-1/2">
-                              <div className="w-full border-b border-zinc-400 h-6"></div>
-                              <span className="text-[7.5px] uppercase font-bold text-zinc-500 mt-1 block">(Name and signature of Seller)</span>
+                              <div className="moa-signature-block w-full">
+                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                <span className="moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]">{topLabels.sellerSignature}</span>
+                              </div>
                             </div>
                           </div>
+                        </div>
                         </div>
                         </div>
                         </div>
@@ -1939,22 +1980,16 @@ export default function SettingsPage() {
         }
         .moa-print-page.moa-slip-sheet.moa-paper-effect {
           overflow: hidden !important;
+          width: ${MOA_LEGAL_PAGE.width} !important;
           height: ${MOA_LEGAL_PAGE.height} !important;
           max-height: ${MOA_LEGAL_PAGE.height} !important;
-        }
-        .moa-print-page.moa-paper-effect {
-          overflow-y: auto !important;
-          overflow-x: hidden !important;
           min-height: ${MOA_LEGAL_PAGE.height} !important;
-          height: auto !important;
-          max-height: none !important;
         }
-        @media print {
-          .moa-print-page.moa-paper-effect {
-            overflow: hidden !important;
-            height: ${MOA_LEGAL_PAGE.height} !important;
-            max-height: ${MOA_LEGAL_PAGE.height} !important;
-          }
+        .moa-settings-paper.moa-slip-sheet {
+          overflow: hidden !important;
+          height: ${MOA_LEGAL_PAGE.screenHeightPx}px !important;
+          max-height: ${MOA_LEGAL_PAGE.screenHeightPx}px !important;
+          min-height: ${MOA_LEGAL_PAGE.screenHeightPx}px !important;
         }
         .moa-settings-paper,
         .moa-settings-paper * {
@@ -1970,8 +2005,18 @@ export default function SettingsPage() {
         }
         .moa-paper-effect input {
           min-width: 0;
-          font-size: 10px !important;
-          line-height: 1.5 !important;
+          font-size: 9px !important;
+          line-height: 1.2 !important;
+        }
+        /* Force identical sizing for both Original & Customer agreement paragraphs
+           (text + fill-in blanks). 3-class selector beats compact/input overrides. */
+        .moa-settings-paper .moa-slip-copy .moa-agreement-text,
+        .moa-settings-paper .moa-slip-copy .moa-agreement-text * {
+          font-size: 8px !important;
+          line-height: 1.3 !important;
+        }
+        .moa-settings-paper .moa-slip-copy .moa-agreement-text input {
+          height: auto !important;
         }
         .moa-paper-effect .moa-title-input {
           font-size: 14px !important;
@@ -1992,9 +2037,14 @@ export default function SettingsPage() {
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
         .moa-paper-effect input { color: #18181b !important; }
         .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
-        ${MOA_WATERMARK_CSS}
-        ${MOA_CUT_GUIDE_CSS}
-        ${MOA_SLIP_HALVES_CSS}
+        .moa-paper-effect .moa-signature-line {
+          display: block !important;
+          min-height: 22px !important;
+          height: 22px !important;
+          border-bottom: 1.5px solid #27272a !important;
+          flex-shrink: 0 !important;
+        }
+        ${MOA_PRINT_SCREEN_CSS}
       `}</style>
 
       
