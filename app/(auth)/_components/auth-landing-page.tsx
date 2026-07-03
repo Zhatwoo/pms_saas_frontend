@@ -2,9 +2,23 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import dynamic from 'next/dynamic';
 import { AnimatedGradient } from "@/components/shared/animated-gradient";
 import { api } from "@/lib/api";
 import { FeaturedSaleItems } from "./featured-sale-items";
+
+// Lazy-load BranchMap component (Requirements: 12.1)
+const BranchMap = dynamic(
+  () => import('@/components/branch-map').then(mod => ({ default: mod.BranchMap })),
+  {
+    ssr: false, // Critical: Leaflet requires browser window
+    loading: () => (
+      <div className="h-40 w-full flex items-center justify-center bg-brand-green/10">
+        <span className="text-sm text-brand-green/60">Loading map...</span>
+      </div>
+    )
+  }
+);
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
@@ -321,6 +335,24 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prevent scrolling when mobile or tablet menu is open
+  useEffect(() => {
+    if (mobileMenuOpen || tabletMenuOpen) {
+      // Store scroll position
+      const scrollY = window.scrollY;
+      document.body.setAttribute('data-scroll-lock', scrollY.toString());
+      
+      // Add styles to prevent scrolling
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '0px'; // Prevent layout shift from scrollbar
+    } else {
+      // Restore scrolling
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      document.body.removeAttribute('data-scroll-lock');
+    }
+  }, [mobileMenuOpen, tabletMenuOpen]);
+
   // For seamless sliding, we wrap the reviews
   const extendedReviews = [
     allReviews[allReviews.length - 1],
@@ -330,12 +362,31 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
   const handleScroll = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => {
     e.preventDefault();
-    setActiveNavItem(item);
+    e.stopPropagation();
+    
     const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!element) return;
+    
+    // Update active nav item immediately
+    setActiveNavItem(item);
+    
+    // Close the menu
+    setMobileMenuOpen(false);
+    setTabletMenuOpen(false);
+    
+    // Small delay to let menu start closing, then scroll
+    setTimeout(() => {
+      const offset = 64; // Header height
+      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+      const offsetPosition = elementPosition - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+      
       window.history.pushState(null, "", `#${id}`);
-    }
+    }, 50);
   };
 
   const handleContactUsClick = () => {
@@ -365,16 +416,23 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       }
       lastScrollY.current = scrollY;
 
-      if (scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
-        setActiveNavItem("CONTACT US"); return;
-      }
+      // Check if we're in any section
+      let foundSection = false;
       sections.forEach((section) => {
         const rect = section.getBoundingClientRect();
         if (rect.top <= 120 && rect.bottom >= 100) {
           const mapped = sectionNavLabels[section.id];
-          if (mapped) setActiveNavItem(mapped);
+          if (mapped) {
+            setActiveNavItem(mapped);
+            foundSection = true;
+          }
         }
       });
+      
+      // Only set CONTACT US if we're actually at the bottom and no other section was found
+      if (!foundSection && scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
+        setActiveNavItem("CONTACT US");
+      }
     };
     window.addEventListener("scroll", handleScrollSync);
     return () => { window.removeEventListener("scroll", handleScrollSync); };
@@ -399,9 +457,49 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
       <div className="relative z-10">
         {/* ─── NAV ─── */}
-        <nav className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-green transition-transform duration-300 ease-in-out ${isNavVisible ? "translate-y-0" : "-translate-y-full"}`}>
+        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-white/10 bg-brand-green transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
-            <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg cursor-pointer" onClick={(e) => handleScroll(e, "home", "HOME")} />
+            {/* Logo - Desktop only (lg and up) */}
+            <Image 
+              src="/logo.png" 
+              alt="JCLB" 
+              width={48} 
+              height={48} 
+              className="hidden lg:block rounded-lg cursor-pointer" 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleScroll(e, "home", "HOME");
+              }} 
+            />
+            
+            {/* Burger menu icon - Mobile and Tablet only (below lg) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Show navbar when opening menu
+                setIsNavVisible(true);
+                // Toggle appropriate menu based on screen size
+                if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+                  setTabletMenuOpen((prev) => !prev);
+                } else {
+                  setMobileMenuOpen((prev) => !prev);
+                }
+              }}
+              aria-label="Toggle menu"
+              className="flex lg:hidden h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10"
+            >
+              {(mobileMenuOpen || tabletMenuOpen) ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
 
             {/* Desktop nav links */}
             <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
@@ -428,61 +526,38 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 Login / Sign Up
               </button>
 
-              {/* Tablet dropdown button - Menu Icon */}
-              <button
-                type="button"
-                onClick={() => setTabletMenuOpen((prev) => !prev)}
-                aria-label="Toggle tablet navigation"
-                aria-expanded={tabletMenuOpen}
-                className="hidden h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10 md:flex lg:hidden"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
+              {/* Removed redundant buttons - now using unified burger menu on left */}
 
               {/* Hamburger ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mobile only */}
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen((prev) => !prev)}
-                aria-label="Toggle menu"
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:bg-white/10 md:hidden"
-              >
-                {mobileMenuOpen ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                )}
-              </button>
             </div>
           </div>
 
           {/* Tablet side panel menu */}
           <div className={`fixed inset-0 z-[70] hidden md:block lg:hidden ${tabletMenuOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
-            <button
-              type="button"
-              aria-label="Close tablet navigation overlay"
+            {/* Backdrop blur overlay - positioned to exclude header from blur */}
+            <div 
+              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${
+                tabletMenuOpen ? "opacity-100" : "opacity-0"
+              }`}
+              style={{ clipPath: 'polygon(0 4rem, 100% 4rem, 100% 100%, 0 100%)' }}
               onClick={() => setTabletMenuOpen(false)}
-              className={`absolute inset-0 bg-brand-green/55 backdrop-blur-sm transition-opacity duration-500 ${tabletMenuOpen ? "opacity-100" : "opacity-0"}`}
+              aria-hidden="true"
             />
 
-            <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-white/10 bg-brand-green shadow-2xl shadow-black/40 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+            <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg" />
+                    <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg shadow-lg" />
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold">JCLB PawnShop</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">JCLB PawnShop</p>
+                      <p className="text-[8px] font-semibold text-white/60 tracking-wider">Buy Back Shop</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setTabletMenuOpen(false)}
                     aria-label="Close tablet navigation"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-brand-gold transition hover:bg-white/10"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-gold/30 bg-brand-gold/10 text-brand-gold transition-all duration-200 hover:bg-brand-gold hover:text-brand-green hover:scale-110 hover:rotate-90 active:scale-95"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -490,7 +565,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-4 py-5">
+                <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
                   <div className="space-y-2">
                     {navItems.map((item, index) => {
                       const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
@@ -504,15 +579,14 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                           href={`#${id}`}
                           onClick={(e) => {
                             handleScroll(e, id, item);
-                            setTabletMenuOpen(false);
                           }}
-                          className={`group flex items-center gap-3 rounded-md border px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
+                          className={`group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
                             isActive
-                              ? "border-brand-gold bg-brand-gold/15 text-brand-gold"
-                              : "border-transparent bg-transparent text-white/80 hover:border-brand-gold/70 hover:bg-white/[0.03] hover:text-brand-gold"
+                              ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
+                              : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
                           }`}
                         >
-                          <span className={`h-2 w-2 rounded-full transition-colors ${isActive ? "bg-brand-gold" : "bg-white/20 group-hover:bg-brand-gold/70"}`} />
+                          <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
                           <span>{item}</span>
                         </a>
                       );
@@ -520,31 +594,37 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   </div>
                 </div>
 
-                <div className="border-t border-white/10 p-4" />
+                <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
+                  <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 JCLB Buy Back Shop</p>
+                </div>
               </aside>
             </div>
 
           {/* Mobile drawer menu */}
           <div className={`fixed inset-0 z-[70] md:hidden ${mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
-            <button
-              type="button"
-              aria-label="Close mobile navigation overlay"
+            {/* Backdrop blur overlay - positioned to exclude header from blur */}
+            <div 
+              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${
+                mobileMenuOpen ? "opacity-100" : "opacity-0"
+              }`}
+              style={{ clipPath: 'polygon(0 4rem, 100% 4rem, 100% 100%, 0 100%)' }}
               onClick={() => setMobileMenuOpen(false)}
-              className={`absolute inset-0 bg-brand-green/55 backdrop-blur-sm transition-opacity duration-500 ${mobileMenuOpen ? "opacity-100" : "opacity-0"}`}
+              aria-hidden="true"
             />
             
-            <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-white/10 bg-brand-green shadow-2xl shadow-black/40 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+            <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+              <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg" />
+                  <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg shadow-lg" />
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold">JCLB PawnShop</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">JCLB PawnShop</p>
+                    <p className="text-[8px] font-semibold text-white/60 tracking-wider">Buy Back Shop</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-brand-gold transition hover:bg-white/10"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-gold/30 bg-brand-gold/10 text-brand-gold transition-all duration-200 hover:bg-brand-gold hover:text-brand-green hover:scale-110 hover:rotate-90 active:scale-95"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -552,7 +632,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-4 py-5">
+              <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
                 <div className="space-y-2">
                   {navItems.map((item) => {
                     const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
@@ -563,20 +643,23 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                         href={`#${id}`}
                         onClick={(e) => {
                           handleScroll(e, id, item);
-                          setMobileMenuOpen(false);
                         }}
-                        className={`group flex items-center gap-3 rounded-md border px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
+                        className={`group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
                           isActive
-                            ? "border-brand-gold bg-brand-gold/15 text-brand-gold"
-                            : "border-transparent bg-transparent text-white/80 hover:border-brand-gold/70 hover:bg-white/[0.03] hover:text-brand-gold"
+                            ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
+                            : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
                         }`}
                       >
-                        <span className={`h-2 w-2 rounded-full transition-colors ${isActive ? "bg-brand-gold" : "bg-white/20 group-hover:bg-brand-gold/70"}`} />
+                        <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
                         <span>{item}</span>
                       </a>
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
+                <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 JCLB Buy Back Shop</p>
               </div>
             </aside>
           </div>
@@ -810,19 +893,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {publicBranches.map((branch) => (
                 <div key={branch.id} className="rounded-2xl bg-brand-green overflow-hidden shadow-xl">
-                  {/* Map placeholder */}
-                  <div className="relative h-40 bg-brand-green/90 flex items-center justify-center">
-                    <div className="absolute inset-0 opacity-20"
-                      style={{ backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 20px,rgba(255,255,255,.1) 20px,rgba(255,255,255,.1) 21px),repeating-linear-gradient(90deg,transparent,transparent 20px,rgba(255,255,255,.1) 20px,rgba(255,255,255,.1) 21px)" }} />
-                    <div className="relative flex flex-col items-center gap-2">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold shadow-lg">
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-brand-green">
-                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                        </svg>
-                      </div>
-                      <span className="text-xs font-bold text-white/70 uppercase tracking-widest">View on Map</span>
-                    </div>
-                  </div>
+                  {/* Interactive map with geocoding (Requirements: 9.1, 9.2) */}
+                  <BranchMap 
+                    branchName={branch.name}
+                    location={branch.location}
+                    branchId={branch.id}
+                  />
                   <div className="p-5">
                     <h3 className="font-black text-white text-lg">{branch.name}</h3>
                     <div className="mt-3 space-y-2">
