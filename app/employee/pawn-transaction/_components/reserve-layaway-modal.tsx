@@ -203,8 +203,23 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
         cash_out: 0,
         unit: selectedItem.itemName,
         unit_code: selectedItem.itemId,
-        details: detailsObject,
+        details: JSON.stringify(detailsObject),
         related_sale_item_id: selectedItem.id,
+        layaway: {
+          customerFirstName: form.firstName.trim(),
+          customerMiddleName: form.middleName.trim() || null,
+          customerLastName: form.lastName.trim(),
+          customerFullName: customerName,
+          customerContactNumber: form.contactNo.trim(),
+          customerAddress: form.address.trim(),
+          itemName: selectedItem.itemName,
+          itemCode: selectedItem.itemId,
+          itemPrice: selectedPrice,
+          downpayment: downpaymentValue,
+          remainingBalance,
+          terms: form.terms.trim(),
+          processedByName: user?.fullName || "Admin",
+        },
       });
 
       onSuccess?.();

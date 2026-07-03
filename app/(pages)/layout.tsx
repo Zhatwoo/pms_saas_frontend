@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/ui/app-layout";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
-import { api } from "@/lib/api";
 
 export default function ProtectedLayout({
   children,
@@ -15,18 +14,6 @@ export default function ProtectedLayout({
 }) {
   const { user, logout, isLoading, isSessionExpiryActive } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      api.get("/settings/interest_rates")
-        .then((data) => {
-          if (data && Array.isArray(data)) {
-            localStorage.setItem("interest_rates", JSON.stringify(data));
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user]);
 
   useEffect(() => {
     // Only redirect if definitively not logged in

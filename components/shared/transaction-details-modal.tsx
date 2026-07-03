@@ -76,8 +76,10 @@ export function TransactionDetailsModal({
 
   if (!isOpen || !transaction) return null;
 
-  // Check if buyback proof should be displayed (only for Buy Back transactions)
-  const shouldShowBuybackProof = transaction.buyback_proof && transaction.purpose === "Buy Back";
+  // Proof for buy out (full settlement) or buy back (repurchase)
+  const shouldShowBuybackProof =
+    transaction.buyback_proof &&
+    (transaction.purpose === "Buy Back" || transaction.purpose === "Buy Out");
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-xl" {...modalAriaProps} ref={modalRef}>

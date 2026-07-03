@@ -105,6 +105,7 @@ const balanceIcon = <span className="text-lg font-black leading-none">₱</span>
 export interface TransactionStatsData {
   pawnedToday: number;
   buyBack: number;
+  buyOut?: number;
   renewed: number;
   soldItem: number;
   redeemed?: number;
@@ -130,15 +131,15 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
         loading={isLoading}
       />
       <StatCard
-        label="Buy Back"
-        value={data?.redeemed || 0}
-        subtitle="Claimed items"
+        label="Buy Out"
+        value={data?.buyOut ?? data?.redeemed ?? 0}
+        subtitle="Full settlement / redeemed"
         icon={redeemIcon}
         borderColor="bg-blue-500"
         loading={isLoading}
       />
       <StatCard
-        label="Buy Out"
+        label="Buy Back"
         value={data?.buyBack || 0}
         subtitle="Repurchased units"
         icon={buyBackIcon}
