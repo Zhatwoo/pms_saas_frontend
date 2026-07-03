@@ -607,23 +607,23 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* â†â† HOW IT WORKS â†â† */}
-        <section id="how-it-works" className="bg-white px-4 py-20 md:px-12 md:py-32 lg:py-48">
+        <section id="how-it-works" className="bg-white px-3 py-12 sm:px-6 sm:py-20 md:px-12 md:py-32 lg:py-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <h2 className="text-3xl font-black text-brand-green md:text-4xl lg:text-5xl">
+            <h2 className="text-xl font-black text-brand-green sm:text-3xl md:text-4xl lg:text-5xl">
               <span className="text-brand-gold">3</span> Steps to Get Your Cash
             </h2>
-            <div className="mt-8 grid gap-4 md:mt-12 md:grid-cols-3 md:gap-6">
+            <div className="mt-4 grid gap-2.5 sm:mt-8 sm:gap-4 sm:grid-cols-2 md:mt-12 md:grid-cols-3 md:gap-6">
               {steps.map((item, index) => (
                 <div key={item.step}
-                  className="reveal-on-scroll flex flex-col rounded-2xl bg-brand-green p-6 text-white shadow-xl h-full md:p-8">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                  className="reveal-on-scroll flex flex-col rounded-lg bg-brand-green p-3 text-white shadow-xl h-full sm:rounded-2xl sm:p-5 md:p-8">
+                  <div className="flex items-center gap-2 mb-2.5 sm:gap-4 sm:mb-4">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white sm:h-12 sm:w-12 sm:rounded-xl">
                       {item.icon}
                     </div>
-                    <span className="text-3xl font-black text-brand-gold">{item.step}</span>
+                    <span className="text-xl font-black text-brand-gold sm:text-3xl">{item.step}</span>
                   </div>
-                  <h3 className="text-lg font-bold">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-white/75 flex-1">{item.desc}</p>
+                  <h3 className="text-sm font-bold sm:text-lg">{item.title}</h3>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-white/75 flex-1 sm:mt-3 sm:text-sm">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -875,69 +875,29 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <footer className="bg-brand-green px-6 py-12 md:px-8 md:py-10 lg:px-16 lg:py-12">
+        <footer className="bg-brand-green px-6 pt-10 pb-0 md:px-8 md:pt-12 md:pb-0 lg:px-16 lg:pt-14 lg:pb-0">
           <div className="mx-auto w-full max-w-7xl">
-            <div className="grid grid-cols-1 gap-9 md:grid-cols-[1.15fr_0.9fr_1fr_1.35fr] md:gap-6 lg:gap-12">
-              {/* Brand */}
-              <div className="w-full max-w-[320px] md:max-w-none lg:mx-auto lg:max-w-[280px]">
-                <div className="flex items-center gap-3 mb-4">
+            {/* Brand & Contact - Side by side on large screens */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-8 mb-6 md:mb-8">
+              {/* Brand - Centered on mobile, left-aligned on desktop */}
+              <div className="flex flex-col items-center text-center lg:items-start lg:text-left mb-6 lg:mb-0 lg:flex-1">
+                <div className="flex items-center gap-3 mb-3">
                   <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg" />
                   <div>
-                    <p className="text-xs font-bold text-brand-gold uppercase tracking-widest">BUY BACK</p>
+                    <p className="text-xs font-bold text-brand-gold uppercase tracking-widest">JCLB BUY BACK</p>
                     <p className="text-xl font-black text-white leading-none">Pawnshop</p>
                   </div>
                 </div>
-                <p className="text-xs leading-relaxed text-white/50 lg:text-sm">
+                <p className="text-xs leading-relaxed text-white/50 lg:text-sm max-w-md">
                   Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
                   <span className="text-brand-gold font-bold">JCLB promise.</span>
                 </p>
               </div>
 
-              {/* Quick Links */}
-              <div className="w-full max-w-[280px] justify-self-start md:max-w-none md:justify-self-start lg:mx-auto lg:max-w-[240px] lg:justify-self-auto">
-                <div className="w-full">
-                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">QUICK LINKS</p>
-                  <ul className="space-y-2.5">
-                    {[
-                      { label: "How It Works", href: "#how-it-works" },
-                      { label: "What We Buy", href: "#categories" },
-                      { label: "Items For Sale", href: "#items-for-sale" },
-                      { label: "Why Choose Us", href: "#why-us" },
-                      { label: "Reviews", href: "#reviews" },
-                      { label: "Branches", href: "#branches" },
-                      { label: "Contact Us", href: "#contact-us" },
-                    ].map((link) => {
-                      return (
-                        <li key={link.label}>
-                          <a href={link.href} className="flex items-start gap-2 text-xs leading-snug text-white/60 transition-colors hover:text-brand-gold lg:text-sm">
-                            <span className="h-1.5 w-1.5 rounded-full bg-brand-gold shrink-0" />
-                            {link.label}
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Items We Accept */}
-              <div className="w-full max-w-[320px] md:max-w-none lg:mx-auto lg:max-w-[240px]">
-                <div className="w-full">
-                  <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">Items We Accept</p>
-                  <div className="flex max-w-[280px] flex-wrap gap-2">
-                    {["Smartphones", "Laptops", "Gaming Consoles", "Cameras", "Tablets", "Watches"].map((item) => (
-                      <span key={item} className="rounded-full border border-white/20 px-2.5 py-1 text-[11px] text-white/60 lg:px-3 lg:text-xs">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact */}
-              <div className="w-full max-w-[320px] justify-self-start md:max-w-none md:justify-self-start lg:mx-auto lg:justify-self-auto">
-                <p className="mb-4 text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">CONTACT US</p>
-                <div className="space-y-2.5 lg:space-y-3">
+            {/* Contact - Horizontal Cards */}
+            <div className="lg:flex-1 lg:max-w-xl">
+              <p className="mb-3 text-center lg:text-left text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">CONTACT US</p>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-1 lg:gap-2">
                   {[
                     { icon: "f", label: "Facebook", sub: "JCLB Buy Back Shop", color: "bg-blue-600" },
                     { icon: "@", label: "Email Us", sub: "Compose with Gmail", color: "bg-red-500" },
@@ -957,11 +917,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                         }
                         void openBranchModal();
                       }}
-                      className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition-colors hover:bg-white/10 lg:gap-3 lg:px-4 lg:py-3"
+                      className="flex w-full items-center gap-2 lg:gap-2.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 lg:px-3 lg:py-2.5 text-left transition-colors hover:bg-white/10"
                     >
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.color} text-white text-sm font-black lg:h-9 lg:w-9`}>
+                      <div className={`flex h-7 w-7 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-md ${c.color} text-white text-xs font-black`}>
                         {c.icon === "pin" ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-5 w-5">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4 lg:h-[18px] lg:w-[18px]">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
                             <circle cx="12" cy="10" r="2.5" />
                           </svg>
@@ -969,9 +929,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                           c.icon
                         )}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold text-white lg:text-sm">{c.label}</p>
-                        <p className="break-words text-[11px] text-white/50 lg:text-xs">{c.sub}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] lg:text-xs font-bold text-white">{c.label}</p>
+                        <p className="break-words text-[10px] lg:text-[11px] text-white/50">{c.sub}</p>
                       </div>
                     </button>
                   ))}
@@ -979,21 +939,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
             </div>
 
-            <div className="mt-10 grid grid-cols-1 items-center gap-5 border-t border-white/10 pt-7 text-xs text-white/40 md:grid-cols-2 xl:grid-cols-[minmax(420px,1fr)_minmax(320px,auto)_minmax(420px,1fr)]">
-              {/* Left: Badges */}
-              <div className="flex flex-wrap justify-center gap-2.5 md:justify-start lg:gap-3">
-                {["100% Legit", "BSP Registered", "24hr Quick Payout"].map((badge) => (
-                  <span key={badge} className="rounded-full border border-brand-gold/30 bg-brand-gold/10 px-4 py-1.5 font-bold text-brand-gold whitespace-nowrap">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4 4L19 6" />
-                    </svg>
-                    {badge}
-                  </span>
-                ))}
-              </div>
-
-              {/* Middle: Copyright */}
-              <div className="justify-self-center px-2 text-center md:justify-self-end md:text-right xl:justify-self-center xl:text-center">
+            <div className="mt-6 grid grid-cols-1 items-center justify-center gap-5 border-t border-white/10 pt-5 pb-0 text-xs text-white/40">
+              {/* Copyright */}
+              <div className="text-center">
                 <span>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</span>
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
                   <button
@@ -1013,16 +961,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   </button>
                 </div>
               </div>
-
-              {/* Right: Slogans */}
-              <div className="flex flex-wrap items-center justify-center gap-3 px-2 text-center md:col-span-2 xl:col-span-1 xl:justify-end xl:text-right">
-                <span>Made with care for our customers</span>
-                <button type="button" onClick={onLoginClick} className="italic text-brand-gold/60 transition hover:text-brand-gold hover:underline">
-                  &ldquo;Madaling Kausap&rdquo;
-                </button>
-              </div>
             </div>
-          </div>
+             </div>
+         
         </footer>
 
         {legalModal && (

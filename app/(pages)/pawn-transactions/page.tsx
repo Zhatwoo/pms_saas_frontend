@@ -5,7 +5,13 @@ import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
 import { ApiError, api } from "@/lib/api";
 import { useBranch } from "@/contexts/branch-context";
-import { calculateGadgetInterest } from "@/lib/interest";
+import { useInterestRates } from "@/contexts/interest-rates-context";
+import {
+  getTransactionInterestPercentage,
+  isLegacyBuyBackRepurchase,
+  isLegacyBuyOutTransaction,
+  resolvePawnedItemJoin,
+} from "@/lib/pawn-transaction-mapper";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { operationalCashTotalsForPawnEnding, operationalCashTotals } from "@/lib/ledger-operational-totals";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -69,6 +75,8 @@ interface ApiTransaction {
     items_included?: string | null;
     condition?: string | null;
     category?: string | null;
+    pawn_date?: string | null;
+    interest_rate_snapshot?: unknown;
     memory_storage?: string | null;
     remarks?: string | null;
     customer?: {
@@ -81,7 +89,27 @@ interface ApiTransaction {
       middle_name?: string | null;
       id_presented?: string | null;
     } | null;
-  } | null;
+  } | Array<{
+    qr_code?: string | null;
+    serial_number?: string | null;
+    items_included?: string | null;
+    condition?: string | null;
+    category?: string | null;
+    pawn_date?: string | null;
+    interest_rate_snapshot?: unknown;
+    memory_storage?: string | null;
+    remarks?: string | null;
+    customer?: {
+      full_name?: string | null;
+      address?: string | null;
+      barangay?: string | null;
+      city?: string | null;
+      region?: string | null;
+      contact_number?: string | null;
+      middle_name?: string | null;
+      id_presented?: string | null;
+    } | null;
+  }> | null;
   customer?: {
     full_name?: string | null;
     address?: string | null;
@@ -125,13 +153,27 @@ function toAmountString(value: number | string | null | undefined) {
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
-  const isBuyBackAction = transaction.purpose === "Buy Back";
-  const isPawnAction = transaction.purpose === "Pawn";
-  const customer = transaction.pawned_item?.customer ?? transaction.customer;
-  const calculations = calculateGadgetInterest(
-    pawnAmount,
-    transaction.transaction_date,
+  const item = resolvePawnedItemJoin(transaction.pawned_item);
+  const isBuyBackRepurchase = isLegacyBuyBackRepurchase(
+    transaction.purpose,
+    transaction.details,
   );
+  const isBuyOutAction = isLegacyBuyOutTransaction(
+    transaction.purpose,
+    transaction.details,
+  );
+  const isPawnAction = transaction.purpose === "Pawn";
+  const customer = item?.customer ?? transaction.customer;
+  const percentage = getTransactionInterestPercentage({
+    pawnAmount,
+    purpose: transaction.purpose,
+    details: transaction.details,
+    transactionDate: transaction.transaction_date,
+    pawnDate: item?.pawn_date,
+    category: item?.category,
+    storageFee: transaction.storage_fee,
+    interestRateSnapshot: item?.interest_rate_snapshot,
+  });
 
   return {
     id: transaction.id ?? transaction.transaction_no,
@@ -155,20 +197,17 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     idPresented: customer?.id_presented ?? undefined,
     date: transaction.transaction_date,
     time: transaction.transaction_time,
-    buyBack: isBuyBackAction ? toAmountString(transaction.cash_in) : "0",
-    percentage:
-      isBuyBackAction || isPawnAction ? String(calculations.percentage) : "0",
-    buyOut:
-      transaction.purpose === "Buy Out"
-        ? toAmountString(transaction.cash_out)
-        : "0",
+    buyBack: isBuyBackRepurchase ? toAmountString(transaction.cash_in) : "0",
+    percentage,
+    buyOut: isBuyOutAction ? toAmountString(transaction.cash_in) : "0",
     sold:
       transaction.purpose === "Sold Item" || transaction.purpose === "Sale"
         ? toAmountString(transaction.cash_in)
         : "0",
     cashIn: isPawnAction ? "0" : toAmountString(transaction.cash_in),
     cashOut:
-      isBuyBackAction ||
+      isBuyOutAction ||
+      isBuyBackRepurchase ||
       transaction.purpose === "Sold Item" ||
       transaction.purpose === "Sale"
         ? "0"
@@ -178,14 +217,14 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
     unitCode: transaction.unit_code ?? "",
     pawn: toAmountString(transaction.pawn_amount),
     storage: toAmountString(transaction.storage_fee),
-    notes: transaction.pawned_item?.remarks ?? transaction.details ?? "",
-    qrCode: transaction.pawned_item?.qr_code || transaction.qr_code || undefined,
-    serialNumber: transaction.pawned_item?.serial_number ?? undefined,
-    itemsIncluded: transaction.pawned_item?.items_included ?? undefined,
-    condition: transaction.pawned_item?.condition ?? undefined,
-    category: transaction.pawned_item?.category ?? undefined,
-    memoryStorage: transaction.pawned_item?.memory_storage ?? undefined,
-    remarks: transaction.pawned_item?.remarks ?? undefined,
+    notes: item?.remarks ?? transaction.details ?? "",
+    qrCode: item?.qr_code || transaction.qr_code || undefined,
+    serialNumber: item?.serial_number ?? undefined,
+    itemsIncluded: item?.items_included ?? undefined,
+    condition: item?.condition ?? undefined,
+    category: item?.category ?? undefined,
+    memoryStorage: item?.memory_storage ?? undefined,
+    remarks: item?.remarks ?? undefined,
     relatedPawnedItemId: transaction.related_pawned_item_id ?? undefined,
     relatedSaleItemId: transaction.related_sale_item_id ?? undefined,
     idPhoto: transaction.id_photo ?? undefined,
@@ -326,6 +365,7 @@ function TransactionsCalendar({
 
 export default function PawnTransactionsPage() {
   const { selectedBranch, branches, isAllBranches, canSwitchBranch } = useBranch();
+  const { isReady: interestRatesReady } = useInterestRates();
 
   const searchParams = useSearchParams();
   const highlightTransactionNo = searchParams.get("transactionNo");
@@ -373,6 +413,8 @@ export default function PawnTransactionsPage() {
   } | null>(null);
 
   useEffect(() => {
+    if (!interestRatesReady) return;
+
     let active = true;
 
     async function fetchTransactions() {
@@ -477,9 +519,11 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, selectedDate, isAllBranches]);
+  }, [selectedBranch.id, selectedDate, isAllBranches, interestRatesReady]);
 
   useEffect(() => {
+    if (!interestRatesReady) return;
+
     let active = true;
 
     async function fetchCalendarTransactions() {
@@ -508,7 +552,7 @@ export default function PawnTransactionsPage() {
     return () => {
       active = false;
     };
-  }, [selectedBranch.id, isAllBranches]);
+  }, [selectedBranch.id, isAllBranches, interestRatesReady]);
 
   useEffect(() => {
     if (viewMode === "list") {

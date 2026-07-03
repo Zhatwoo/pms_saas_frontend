@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
+import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
 import { QrScanner } from "@/components/shared/qr-scanner";
@@ -90,6 +91,7 @@ interface PawnItemDetails {
   purchasedDate: string;
   expirationDate: string;
   amount: number;
+  interestRateSnapshot?: unknown;
 }
 
 export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, initialSearchCode, hideSidebar, compactTablet = false }: RenewModalProps) {
@@ -116,7 +118,16 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   // Interest Computation based on selected item
   const interestCalc = useMemo(() => {
     if (!selectedItem) return { percentage: 0, interestAmount: 0, totalAmount: 0, daysPassed: 0 };
-    return calculateGadgetInterest(selectedItem.amount, selectedItem.purchasedDate, selectedItem.category);
+    const contractRate = getContractInterestRateGroup(
+      selectedItem.category,
+      selectedItem.interestRateSnapshot,
+    );
+    return calculateGadgetInterest(
+      selectedItem.amount,
+      selectedItem.purchasedDate,
+      selectedItem.category,
+      contractRate ?? undefined,
+    );
   }, [selectedItem]);
 
   const totalToPay = isReappraiseActive ? newPrincipal : (interestCalc.interestAmount * itemsRenewed);
@@ -154,7 +165,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           parkingFee: "0.00",
           purchasedDate: item.pawnDate || item.created_at || "---",
           expirationDate: "---",
-          amount: Number(item.amount || 0)
+          amount: Number(item.amount || 0),
+          interestRateSnapshot: item.interestRateSnapshot ?? item.interest_rate_snapshot ?? null,
         };
         setSelectedItem(details);
         setNewPrincipal(details.amount);

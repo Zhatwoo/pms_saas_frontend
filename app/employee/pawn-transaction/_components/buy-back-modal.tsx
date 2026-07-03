@@ -218,7 +218,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
     const price = Number(buyBackPrice);
     if (!buyBackPrice || isNaN(price) || price <= 0) {
-      setError("Please enter a valid Buy Out (Repurchase) price.");
+      setError("Please enter a valid Buy Back (Repurchase) price.");
       return;
     }
 
@@ -279,7 +279,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
         onSuccess();
       }
       onClose();
-      toast.success("Item bought out successfully!");
+      toast.success("Item bought back successfully!");
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
       setError(msg);
@@ -311,7 +311,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                   {branchName} | Expired Inventory
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
-                  Buy Out / Repurchase
+                  Buy Back / Repurchase
                 </h1>
               </div>
             </div>
@@ -319,7 +319,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
             <button 
               onClick={onClose} 
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
-              aria-label="Close Buy Out modal"
+              aria-label="Close Buy Back modal"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
@@ -409,7 +409,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
               <div className="p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
                   <div className="space-y-2">
-                    <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Expiration Buy Out</p>
+                    <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Expiration Buy Back</p>
                     <h2 className="text-4xl font-black text-zinc-950 dark:text-white tracking-tighter leading-none">
                       {selectedItem.itemName}
                     </h2>
@@ -438,7 +438,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
                   <DetailSection title="Repurchase Agreement" icon={dollarIcon}>
                     <div className="p-4 bg-zinc-50 dark:bg-surface-secondary rounded-xl space-y-4">
-                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Agreed Buy Out Price</p>
+                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Agreed Buy Back Price</p>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-zinc-400">₱</span>
                         <input 
@@ -576,7 +576,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                           </div>
                         ) : (
                           <>
-                            Finalize Buy Out
+                            Finalize Buy Back
                             {arrowRightIcon}
                           </>
                         )}
@@ -592,7 +592,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 </div>
                 <h3 className="text-2xl font-black text-zinc-300 uppercase tracking-tight">Select Item to Repurchase</h3>
                 <p className="text-zinc-400 font-bold max-w-xs mt-2 leading-relaxed italic">
-                  &quot;Only items with Expired or For Sale status are eligible for a Buy Out arrangement.&quot;
+                  &quot;Only items with Expired or For Sale status are eligible for a Buy Back arrangement.&quot;
                 </p>
               </div>
             )}
