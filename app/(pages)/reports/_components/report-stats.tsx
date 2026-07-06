@@ -17,7 +17,7 @@ interface ReportStatsProps {
 
 export function ReportStats({ data, showBranchStats = true }: ReportStatsProps) {
   return (
-    <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${showBranchStats ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
+    <div className={`grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 ${showBranchStats ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
       <StatCard
         label="TOTAL SALES TODAY"
         value={data ? formatPeso(data.totalSalesToday) : "₱ 0"}

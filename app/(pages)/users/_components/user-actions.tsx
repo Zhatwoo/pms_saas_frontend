@@ -106,9 +106,9 @@ export function UserActions({
     : baseRoleTabs;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
+    <div className="w-full min-w-0 overflow-hidden rounded-lg border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
+      <div className="flex w-full min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 md:flex-row md:items-center">
           {/* Search Field */}
           <div className="relative w-full md:max-w-xs">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
@@ -147,18 +147,28 @@ export function UserActions({
         </div>
 
         {/* Global Actions */}
-        <div className="flex items-center gap-2 border-t border-border-main pt-4 xl:border-none xl:pt-0">
-          <ActionButton variant="outline" className="h-11 flex-1 xl:flex-none border-emerald-600 bg-emerald-50 text-emerald-700" onClick={onExportUsers}>
-            <span className="flex items-center justify-center gap-1.5">
+        <div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-main pt-4 sm:flex-row sm:items-stretch xl:w-auto xl:flex-none xl:border-none xl:pt-0">
+          <ActionButton
+            variant="outline"
+            fullWidth
+            className="h-11 min-w-0 border-emerald-600 bg-emerald-50 text-emerald-700 sm:flex-1 xl:flex-none"
+            onClick={onExportUsers}
+          >
+            <span className="flex min-w-0 items-center justify-center gap-1.5">
               {downloadIcon}
-              Export CSV
+              <span className="truncate">Export CSV</span>
             </span>
           </ActionButton>
           {canCreateUser && (
-            <ActionButton variant="primary" onClick={onCreateUser} className="h-11 flex-1 xl:flex-none">
-              <span className="flex items-center justify-center gap-1.5">
+            <ActionButton
+              variant="primary"
+              fullWidth
+              onClick={onCreateUser}
+              className="h-11 min-w-0 sm:flex-1 xl:flex-none"
+            >
+              <span className="flex min-w-0 items-center justify-center gap-1.5">
                 {plusIcon}
-                Create User
+                <span className="truncate">Create User</span>
               </span>
             </ActionButton>
           )}

@@ -42,6 +42,7 @@ const purposeVariant: Record<
   "Reserve / Layaway": "orange",
   "Fund Transfer": "blue",
   "Cash Transfer": "blue",
+  "Transfer Item": "blue",
 };
 
 function InfoBlock({ label, value }: { label: string; value: string }) {

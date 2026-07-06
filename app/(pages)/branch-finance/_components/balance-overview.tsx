@@ -97,19 +97,19 @@ function SingleBranchCard({
   return (
     <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3 md:px-6 md:pt-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 md:h-10 md:w-10 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
+      <div className="flex flex-col gap-3 px-4 pt-5 pb-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
             <WalletIcon />
           </div>
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-white">{branchName}</h2>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-white md:text-xl">{branchName}</h2>
             <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
               Balance Overview
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm">
+        <div className="flex w-fit items-center gap-1.5 self-start rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm sm:self-auto">
           <ClockIcon />
           <span className="text-[10px] text-emerald-300">
             {fmtDate(lastUpdated)}
@@ -118,13 +118,13 @@ function SingleBranchCard({
       </div>
 
       {/* Current Balance (hero) */}
-      <div className="px-5 py-4 md:px-6 flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-end sm:justify-between md:px-6">
+        <div className="min-w-0">
           <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
             Current Balance
           </p>
-          <div className="flex items-end gap-3">
-            <span className="text-4xl font-extrabold tracking-tight text-amber-400">
+          <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+            <span className="text-3xl font-extrabold tracking-tight text-amber-400 sm:text-4xl">
               {fmt(currentBalance)}
             </span>
             <span
@@ -141,12 +141,11 @@ function SingleBranchCard({
           </div>
         </div>
 
-        {/* Action Buttons beside balance */}
         {onAddFunds && (
-          <div className="flex items-center gap-2">
-              <button
+          <div className="w-full shrink-0 sm:w-auto">
+            <button
               onClick={onAddFunds}
-              className="flex items-center gap-2 rounded-lg bg-emerald-500/20 border border-emerald-500/50 px-5 py-2.5 text-sm md:px-6 md:py-3 md:text-base font-bold text-white transition-colors hover:bg-emerald-500/30"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30 sm:w-auto md:px-6 md:py-3 md:text-base"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -159,7 +158,7 @@ function SingleBranchCard({
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 px-6 md:px-6 pb-6">
+      <div className="grid grid-cols-1 gap-4 px-4 pb-6 sm:grid-cols-3 md:px-6">
         <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
           <p className="text-xs font-medium uppercase text-emerald-400/70">Starting</p>
           <p className="mt-0.5 text-base font-bold text-white">{fmt(startingBalance)}</p>
@@ -200,32 +199,32 @@ function AggregateBranchCard({
     <div className="space-y-4">
       {/* Overview Banner */}
       <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
-        <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
+        <div className="flex flex-col gap-3 px-4 pt-5 pb-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
               <WalletIcon />
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">All Branches Overview</h2>
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-white sm:text-xl">All Branches Overview</h2>
               <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
                 Combined Balance
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm">
+          <div className="flex w-fit items-center gap-1.5 self-start rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm sm:self-auto">
             <span className="text-[10px] font-bold text-emerald-300">
               {totalBranches} Active Branches
             </span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4">
-          <div>
+        <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+          <div className="min-w-0">
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
               Total Overall Sales / Balance
             </p>
-            <div className="flex items-end gap-3">
-              <span className="text-4xl font-extrabold tracking-tight text-amber-400">
+            <div className="flex flex-wrap items-end gap-2 sm:gap-3">
+              <span className="text-3xl font-extrabold tracking-tight text-amber-400 sm:text-4xl">
                 {fmt(totalCurrent)}
               </span>
             </div>
@@ -236,11 +235,11 @@ function AggregateBranchCard({
             )}
           </div>
 
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:items-end">
             {onAddFunds && (
               <button
                 onClick={onAddFunds}
-                className="flex items-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30 sm:w-auto sm:px-5 sm:py-2"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -252,7 +251,7 @@ function AggregateBranchCard({
             {onAddSystemExpense && (
               <button
                 onClick={onAddSystemExpense}
-                className="flex items-center gap-2 rounded-lg border border-red-500/50 bg-red-500/20 px-5 py-2 text-sm font-bold text-red-100 transition-colors hover:bg-red-500/30"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/50 bg-red-500/20 px-4 py-2.5 text-sm font-bold text-red-100 transition-colors hover:bg-red-500/30 sm:w-auto sm:px-5 sm:py-2"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2v20" />
