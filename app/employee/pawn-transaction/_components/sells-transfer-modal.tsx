@@ -237,30 +237,30 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-3 sm:px-6 sm:py-5 text-white shrink-0 relative z-10">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+              <div className="shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><polyline points="16 11 18 13 22 9" />
                 </svg>
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300/90 dark:text-emerald-400 truncate">
                   {branchName}
                 </p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                <h1 className="mt-0.5 text-sm sm:text-2xl font-black tracking-tight text-white leading-none truncate">
                   {isItemLocked ? "Sell Item" : "Sells"}
                 </h1>
               </div>
             </div>
-            
-            <button 
-              onClick={onClose} 
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+
+            <button
+              onClick={onClose}
+              className="shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
               aria-label="Close Sells Transfer modal"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
@@ -268,13 +268,13 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
         </div>
 
         {/* Content Area */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:flex-row xl:overflow-hidden">
           
           {/* Left Side: Inventory & Selection Details */}
-          <div className="flex w-full flex-col gap-8 overflow-y-auto border-emerald-50 bg-emerald-50/30 p-4 dark:border-border dark:bg-surface-secondary sm:p-6 xl:w-[60%] xl:border-r xl:p-8">
+          <div className="flex w-full flex-col gap-8 border-emerald-50 bg-emerald-50/30 p-4 dark:border-border dark:bg-surface-secondary sm:p-6 xl:w-[60%] xl:overflow-y-auto xl:border-r xl:p-8">
             
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-6 bg-emerald-600 rounded-full" />
                   <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">
@@ -288,7 +288,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                       placeholder="Search Unit ID / Serial..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full max-w-xs bg-white dark:bg-surface border border-emerald-100 dark:border-border-subtle rounded-xl px-4 py-2 text-xs font-bold focus:ring-4 ring-emerald-500/10 outline-none transition-all"
+                      className="w-full sm:max-w-xs bg-white dark:bg-surface border border-emerald-100 dark:border-border-subtle rounded-xl px-4 py-2 text-xs font-bold focus:ring-4 ring-emerald-500/10 outline-none transition-all"
                     />
                     <div className="absolute right-3 top-2 text-emerald-200">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -439,7 +439,9 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                 </div>
               </div>
 
-               <div className="flex flex-col justify-between rounded-3xl bg-emerald-900 p-6 text-white shadow-xl shadow-emerald-900/20">
+              {/* Buyer's Information — always visible on mobile, inside left panel */}
+              {form.sellTransfer === "Sales" && (
+                <div className="space-y-6 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 xl:hidden">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
@@ -454,26 +456,8 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                       </div>
                     </div>
                   </div>
-               </div>
 
-               {compactTablet && form.sellTransfer === "Sales" && (
-                 <div className="space-y-8 rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm shadow-emerald-900/5 dark:border-white/5 dark:bg-black/20 xl:hidden">
-                   <div className="space-y-2">
-                     <div className="flex items-center gap-3">
-                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                           <circle cx="12" cy="7" r="4" />
-                         </svg>
-                       </div>
-                       <div>
-                         <h3 className="text-lg font-black uppercase tracking-tight text-emerald-950 dark:text-white">Buyer&apos;s Information</h3>
-                         <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Please fill in current details</p>
-                       </div>
-                     </div>
-                   </div>
-
-                  <div className="grid gap-4 md:max-xl:gap-4">
+                  <div className="grid gap-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} />
                       <Input label="Middle Name" name="middleName" value={form.middleName} onChange={handleChange} />
@@ -497,8 +481,8 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
             </div>
           </div>
 
-           {/* Right Side: Information Panel (desktop xl+) */}
-          <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 xl:p-8 ${compactTablet ? "hidden xl:block" : ""}`}>
+           {/* Right Side: Buyer's Information Panel (desktop xl+ only) */}
+          <div className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 xl:p-8 hidden xl:block`}>
             {form.sellTransfer === "Sales" ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
@@ -564,60 +548,63 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
         </div>
 
         {/* Footer Actions */}
-        <div className={`p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0 ${compactTablet ? "md:p-6 md:max-xl:gap-5" : ""}`}>
-          <div className="flex items-center gap-8 w-full sm:w-auto">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 transition-colors"
-            >
-              Cancel Process
-            </button>
-            <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-            <div className="flex flex-col sm:flex-row gap-6">
-              <div className="w-40">
-                <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">Password</label>
-                  <input
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="••••••••"
-                    type="password"
-                    className="w-full rounded-xl border-2 border-emerald-300 bg-white px-4 py-2 text-xs font-black text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none placeholder:text-zinc-300"
-                  />
-                </div>
+        <div className={`border-t border-emerald-50 bg-white dark:bg-surface shrink-0 ${compactTablet ? "md:px-6" : ""}`}>
+          {/* Mobile: stacked rows. sm+: single row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0 sm:gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+
+            {/* Row 1 (mobile) / Left (sm+): Cancel + Divider + Password */}
+            <div className="flex items-center gap-3 sm:gap-5">
+              <button
+                onClick={onClose}
+                className="shrink-0 text-[9px] font-black text-zinc-400 uppercase tracking-[0.15em] hover:text-zinc-800 transition-colors whitespace-nowrap"
+              >
+                Cancel
+              </button>
+              <div className="h-7 w-px bg-zinc-100 dark:bg-surface-hover shrink-0" />
+              <div className="flex-1 sm:flex-none">
+                <label className="block text-[9px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1 mb-1">Password</label>
+                <input
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  type="password"
+                  className="w-full sm:w-32 rounded-xl border-2 border-emerald-300 bg-white px-3 py-1.5 text-xs font-black text-emerald-950 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none placeholder:text-zinc-300"
+                />
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-            <div className="text-right">
-              <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
-                {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
-              </p>
-              <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter">
-                ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
-              </p>
+            {/* Row 2 (mobile) / Right (sm+): Sale Price + Confirm button */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-emerald-50 mt-0">
+              <div className="text-left sm:text-right">
+                <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.15em] leading-none mb-0.5">
+                  {form.sellTransfer === "Sales" ? "Sale Price" : "SRP Value"}
+                </p>
+                <p className="text-sm sm:text-lg lg:text-2xl font-black text-emerald-950 dark:text-white tracking-tighter">
+                  ₱ {Number(form.sellTransfer === "Sales" ? form.priceSold : (selectedItem?.srp || 0)).toLocaleString()}
+                </p>
+              </div>
+              <button
+                disabled={!isFormValid || isConfirming}
+                onClick={handleConfirmAction}
+                className={`shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isFormValid ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30' : 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed'}`}
+              >
+                {isConfirming ? (
+                  <div className="flex items-center gap-1.5">
+                    <span className="anim-loading h-3.5 w-3.5 border-white/30 border-t-white rounded-full" />
+                    <span>Processing...</span>
+                  </div>
+                ) : (
+                  <>
+                    Confirm &amp; Print
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M5 12h14m-7-7 7 7-7 7" />
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
-            <button
-              disabled={!isFormValid || isConfirming}
-              onClick={handleConfirmAction}
-              className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isFormValid ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30' : 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed'}`}
-            >
-              {isConfirming ? (
-                <div className="flex items-center gap-2">
-                  <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
-                  <span>Processing...</span>
-                </div>
-              ) : (
-                <>
-                  Confirm & Print
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <path d="M5 12h14m-7-7 7 7-7 7" />
-                  </svg>
-                </>
-              )}
-            </button>
+
           </div>
         </div>
       </div>
