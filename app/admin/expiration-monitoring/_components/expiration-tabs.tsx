@@ -20,20 +20,22 @@ export function ExpirationTabs({ activeTab, onTabChange, counts }: ExpirationTab
   ];
 
   return (
-    <div className="inline-flex gap-1 rounded-lg bg-zinc-100 dark:bg-surface-secondary p-1">
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          onClick={() => onTabChange(tab.key)}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            tab.key === activeTab
-              ? "bg-emerald-700 text-amber-400 shadow-sm"
-              : "text-zinc-600 dark:text-text-secondary hover:bg-zinc-200 dark:hover:bg-surface-hover"
-          }`}
-        >
-          {tab.label} ({tab.count})
-        </button>
-      ))}
+    <div className="w-full overflow-x-auto scrollbar-hide">
+      <div className="grid w-full min-w-0 grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-surface-secondary sm:inline-flex sm:w-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => onTabChange(tab.key)}
+            className={`rounded-md px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:py-2 sm:text-sm ${
+              tab.key === activeTab
+                ? "bg-emerald-700 text-amber-400 shadow-sm"
+                : "text-zinc-600 dark:text-text-secondary hover:bg-zinc-200 dark:hover:bg-surface-hover"
+            }`}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

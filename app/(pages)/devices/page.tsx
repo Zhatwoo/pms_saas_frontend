@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { ActionButton } from "@/components/shared/action-button";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { subscribeToDeviceAuthorizationNotifications } from "@/lib/notification-stream";
 import { DeleteDeviceModal } from "./_components/delete-device-modal";
 
@@ -359,6 +360,7 @@ export default function DevicesPage() {
   const [authorizeTarget, setAuthorizeTarget] = useState<Device | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Device | null>(null);
+  const [blockTarget, setBlockTarget] = useState<Device | null>(null);
 
   const isSuperAdmin = user?.role === "super_admin";
 
@@ -394,7 +396,6 @@ export default function DevicesPage() {
   }, [isSuperAdmin, load]);
 
   const handleBlock = async (id: string) => {
-    if (!confirm("Block this device? It will be immediately denied login access.")) return;
     try {
       await api.patch(`/devices/${id}/block`, {});
       toast.success("Device blocked");
@@ -468,11 +469,11 @@ export default function DevicesPage() {
   };
 
   return (
-    <div className="space-y-6 p-6 text-text-primary">
+    <div className="w-full min-w-0 max-w-full space-y-4 text-text-primary sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">Device Management</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-text-primary sm:text-2xl">Device Management</h1>
           <p className="mt-1 text-sm text-text-tertiary">
             Manage authorized devices for {isAllBranches ? "all branches" : selectedBranch.name}
           </p>
@@ -482,6 +483,8 @@ export default function DevicesPage() {
             variant="success"
             onClick={() => setShowAddModal(true)}
             size="md"
+            fullWidth
+            className="w-full shrink-0 sm:w-auto"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -581,57 +584,61 @@ export default function DevicesPage() {
               const createdAt = device.created_at ?? device.createdAt;
 
               return (
-                <div key={device.id} className="rounded-2xl border border-border-main bg-surface p-4 shadow-sm">
+                <div key={device.id} className="overflow-hidden rounded-2xl border border-border-main bg-surface p-4 shadow-sm">
                   <div className="flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-base font-semibold text-text-primary truncate">{name}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-base font-semibold text-text-primary">{name}</div>
                         <div className="text-xs text-text-tertiary">{type}</div>
                       </div>
                       <StatusBadge status={device.status} />
                     </div>
 
-                    <div className="grid gap-2 text-xs text-text-tertiary">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-text-secondary">Fingerprint</span>
-                        <span className="font-mono truncate">{fp ? `${fp.slice(0, 18)}…` : "—"}</span>
+                    <div className="grid gap-3 text-xs text-text-tertiary">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-secondary">Fingerprint</p>
+                        <p className="mt-0.5 break-all font-mono text-[11px] leading-5 text-text-tertiary">
+                          {fp ? `${fp.slice(0, 18)}…` : "—"}
+                        </p>
                       </div>
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="font-semibold text-text-secondary">Registered To</span>
-                        <div className="text-right">
-                          <div className="font-medium text-text-secondary truncate">{device.employee?.full_name ?? "—"}</div>
-                          {device.employee?.email && (
-                            <div className="text-[10px] text-text-tertiary">{device.employee.email}</div>
-                          )}
-                        </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-secondary">Registered To</p>
+                        <p className="mt-0.5 font-medium text-text-secondary">{device.employee?.full_name ?? "—"}</p>
+                        {device.employee?.email && (
+                          <p className="mt-0.5 break-all text-[11px] leading-5 text-text-tertiary">
+                            {device.employee.email}
+                          </p>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-text-secondary">Branch</span>
-                        <span>{getDeviceBranchName(device) ?? "—"}</span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-secondary">Branch</p>
+                        <p className="mt-0.5 text-text-tertiary">{getDeviceBranchName(device) ?? "—"}</p>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-text-secondary">Last login</span>
-                        <span>{lastLogin ? new Date(lastLogin).toLocaleString() : "Never"}</span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-secondary">Last login</p>
+                        <p className="mt-0.5 break-words text-text-tertiary">
+                          {lastLogin ? new Date(lastLogin).toLocaleString() : "Never"}
+                        </p>
                       </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold text-text-secondary">IP</span>
-                        <span className="font-mono truncate">{ip ?? "—"}</span>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-secondary">IP</p>
+                        <p className="mt-0.5 break-all font-mono text-text-tertiary">{ip ?? "—"}</p>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:flex-wrap">
                       {device.status === "PENDING" && (
                         <button
                           onClick={() => setAuthorizeTarget(device)}
-                          className="rounded bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                          className="w-full rounded bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 min-[420px]:w-auto min-[420px]:py-1"
                         >
                           Authorize
                         </button>
                       )}
                       {device.status === "AUTHORIZED" && (
                         <button
-                          onClick={() => handleBlock(device.id)}
-                          className="rounded bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+                          onClick={() => setBlockTarget(device)}
+                          className="w-full rounded bg-red-100 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-200 min-[420px]:w-auto min-[420px]:py-1"
                         >
                           Block
                         </button>
@@ -639,14 +646,14 @@ export default function DevicesPage() {
                       {device.status === "BLOCKED" && (
                         <button
                           onClick={() => handleUnblock(device.id)}
-                          className="rounded bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200"
+                          className="w-full rounded bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 min-[420px]:w-auto min-[420px]:py-1"
                         >
                           Unblock
                         </button>
                       )}
                       <button
                         onClick={() => setDeleteTarget(device)}
-                        className="rounded bg-surface-secondary px-3 py-1 text-xs font-semibold text-text-secondary hover:bg-surface-hover"
+                        className="w-full rounded bg-surface-secondary px-3 py-2 text-xs font-semibold text-text-secondary hover:bg-surface-hover min-[420px]:w-auto min-[420px]:py-1"
                       >
                         Remove
                       </button>
@@ -749,7 +756,7 @@ export default function DevicesPage() {
                             )}
                             {device.status === "AUTHORIZED" && (
                               <button
-                                onClick={() => handleBlock(device.id)}
+                                onClick={() => setBlockTarget(device)}
                                 className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30"
                               >
                                 Block
@@ -810,6 +817,19 @@ export default function DevicesPage() {
           }}
         />
       )}
+
+      <ConfirmActionModal
+        isOpen={blockTarget !== null}
+        title="Block this device?"
+        message="It will be immediately denied login access."
+        confirmLabel="Block Device"
+        variant="warning"
+        onClose={() => setBlockTarget(null)}
+        onConfirm={async () => {
+          if (!blockTarget) return;
+          await handleBlock(blockTarget.id);
+        }}
+      />
     </div>
   );
 }

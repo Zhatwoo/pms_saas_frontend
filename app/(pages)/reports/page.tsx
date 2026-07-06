@@ -313,10 +313,10 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="w-full min-w-0 max-w-full space-y-5">
       {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="w-full min-w-0 sm:flex-1">
           <DateFilterSelector
             periods={periods}
             activePeriod={activePeriod}
@@ -331,6 +331,7 @@ export default function ReportsPage() {
           onClick={handleDownloadPDF}
           variant="success"
           leftIcon={downloadIcon}
+          className="w-full shrink-0 sm:w-auto"
         >
           Download PDF
         </ActionButton>
@@ -352,9 +353,11 @@ export default function ReportsPage() {
           <ReportStats data={reportData?.stats} showBranchStats={isAllBranches} />
 
           {/* Side by side: branch table + chart */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} title={branchSalesTitle} />
-            <div id="sales-trend-chart">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+            <div className="min-w-0">
+              <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} title={branchSalesTitle} />
+            </div>
+            <div id="sales-trend-chart" className="min-w-0 w-full">
               <SalesTrendChart
                 data={reportData?.salesTrend}
                 summary={reportData?.trendSummary}
