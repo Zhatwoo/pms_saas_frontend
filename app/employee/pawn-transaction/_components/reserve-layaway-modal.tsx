@@ -28,25 +28,16 @@ function Search({ className }: { className?: string }) {
 
 function ShieldCheck({ className }: { className?: string }) {
   return (
-    <svg className={className} width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       <polyline points="9 12 11 14 15 10" />
     </svg>
   );
 }
 
-function Wallet({ className }: { className?: string }) {
-  return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="6" width="20" height="12" rx="2" />
-      <path d="M16 10h4" />
-    </svg>
-  );
-}
-
 function Clock({ className }: { className?: string }) {
   return (
-    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <polyline points="12 6 12 12 16 14" />
     </svg>
@@ -266,47 +257,51 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div
-        className="relative z-10 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background dark:shadow-black/40"
+        className="relative z-10 flex h-[95vh] sm:h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background dark:shadow-black/40"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner">
-                <Tag />
+        {/* Header */}
+        <div className="shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-3 sm:px-6 sm:py-5 text-white">
+          <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+                <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner shrink-0">
+                  <Tag />
+                </div>
+                <div className="min-w-0 overflow-hidden">
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300/90 truncate">
+                    <span className="truncate">{branchName}</span>
+                    <span className="hidden sm:inline"> | Available Inventory</span>
+                  </p>
+                  <h1 className="mt-0.5 text-sm sm:text-xl font-black leading-none tracking-tight text-white truncate">
+                    Reserve / Layaway
+                  </h1>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
-                  {branchName} | Available Inventory
-                </p>
-                <h1 className="mt-1 text-2xl font-black leading-none tracking-tight text-white">
-                  Reserve / Layaway
-                </h1>
-              </div>
-            </div>
 
             <button
               onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+              className="shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white"
               aria-label="Close Reserve / Layaway modal"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
-          <div className="flex w-full shrink-0 flex-col border-r border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary lg:w-[420px]">
-            <div className="space-y-4 p-6">
-              <div className="flex items-center gap-3">
-                <Search className="text-emerald-600/40 dark:text-emerald-400/40" />
-                <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
+        {/* Content — single scroll on mobile, side-by-side on lg+ */}
+        <div className="flex flex-1 overflow-y-auto flex-col lg:flex-row lg:overflow-hidden">
+
+          {/* Left: Item search panel */}
+          <div className="flex w-full shrink-0 flex-col border-b border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary lg:w-[380px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
+            <div className="space-y-3 p-4 sm:p-5">
+              <div className="flex items-center gap-2">
+                <Search className="text-emerald-600/40 dark:text-emerald-400/40 shrink-0" />
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
                   Search Available Item
                 </h3>
               </div>
@@ -317,27 +312,26 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
                   placeholder="Name, Unit Code, Price..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-12 w-full rounded-xl border-2 border-emerald-100 bg-white pl-12 pr-4 text-sm font-medium outline-none transition-all focus:border-emerald-500 dark:border-border-subtle dark:bg-surface dark:text-white"
+                  className="h-10 w-full rounded-xl border-2 border-emerald-100 bg-white pl-10 pr-4 text-xs font-medium outline-none transition-all focus:border-emerald-500 dark:border-border-subtle dark:bg-surface dark:text-white"
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200 transition-colors group-focus-within:text-emerald-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-200 transition-colors group-focus-within:text-emerald-500" />
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+            {/* Item list — limited height on mobile to avoid pushing content off screen */}
+            <div className="max-h-52 lg:max-h-none lg:flex-1 overflow-y-auto px-3 pb-4 sm:px-4">
               {isLoading ? (
-                <div className="flex h-40 flex-col items-center justify-center gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-50 border-t-transparent dark:border-border0" />
+                <div className="flex h-24 flex-col items-center justify-center gap-2">
+                  <div className="h-6 w-6 animate-spin rounded-full border-4 border-emerald-50 border-t-transparent" />
                   <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-900/40 dark:text-emerald-400">
-                    Loading available items...
+                    Loading...
                   </p>
                 </div>
               ) : items.length === 0 ? (
-                <div className="flex h-40 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-100 bg-white p-6 text-center shadow-sm dark:border-border-subtle dark:bg-surface">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-200">
-                    <Tag className="h-5 w-5" />
-                  </div>
-                  <p className="text-sm font-bold text-emerald-900/60 dark:text-zinc-200">No available items found</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-tighter text-emerald-900/30 dark:text-zinc-400">
+                <div className="flex h-24 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-100 bg-white p-4 text-center shadow-sm dark:border-border-subtle dark:bg-surface">
+                  <Tag className="h-5 w-5 text-emerald-200 mb-2" />
+                  <p className="text-xs font-bold text-emerald-900/60 dark:text-zinc-200">No available items found</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-tighter text-emerald-900/30 dark:text-zinc-400">
                     Try a different unit code or item name
                   </p>
                 </div>
@@ -349,19 +343,19 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
                       setSelectedItem(item);
                       setForm((prev) => ({ ...prev, downpayment: prev.downpayment || String(Math.round(item.price * 0.2)) }));
                     }}
-                    className={`mb-3 w-full rounded-2xl border p-4 text-left transition-all ${
+                    className={`mb-2 w-full rounded-xl border p-3 text-left transition-all ${
                       selectedItem?.id === item.id
-                        ? "border-emerald-500 bg-emerald-50 shadow-lg shadow-emerald-500/10 dark:bg-emerald-950/40"
+                        ? "border-emerald-500 bg-emerald-50 shadow-md shadow-emerald-500/10 dark:bg-emerald-950/40"
                         : "border-emerald-100 bg-white hover:border-emerald-200 hover:bg-emerald-50/50 dark:border-border-subtle dark:bg-surface dark:hover:bg-surface-secondary"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-xs font-black uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{item.itemId}</p>
-                        <h4 className="mt-1 truncate text-sm font-bold text-zinc-900 dark:text-white">{item.itemName}</h4>
-                        <p className="mt-1 line-clamp-2 text-[11px] text-zinc-500 dark:text-zinc-400">{item.description || "No description available."}</p>
+                        <p className="text-[10px] font-black uppercase tracking-wide text-emerald-700 dark:text-emerald-400">{item.itemId}</p>
+                        <h4 className="mt-0.5 truncate text-xs font-bold text-zinc-900 dark:text-white">{item.itemName}</h4>
+                        <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-500 dark:text-zinc-400">{item.description || "No description available."}</p>
                       </div>
-                      <div className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <div className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
                         {formatCurrency(item.price)}
                       </div>
                     </div>
@@ -371,129 +365,140 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-surface-secondary">
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-              <div className="flex items-start justify-between gap-4 border-b border-zinc-200 pb-4 dark:border-border-subtle">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700/70 dark:text-emerald-400">Reserve Details</p>
-                  <h2 className="mt-1 text-xl font-black text-zinc-900 dark:text-white">
+          {/* Right: Details + Form */}
+          <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6">
+
+              {/* Item header */}
+              <div className="flex items-start justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-border-subtle">
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-700/70 dark:text-emerald-400">Reserve Details</p>
+                  <h2 className="mt-0.5 text-sm sm:text-base font-black text-zinc-900 dark:text-white truncate">
                     {selectedItem ? selectedItem.itemName : "Select an item to start"}
                   </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 dark:text-zinc-300">
+                  <p className="mt-1 text-[11px] leading-5 text-zinc-500 dark:text-zinc-300">
                     Reservation with partial payment. The item stays on hold until the balance is fully settled.
                   </p>
                 </div>
-                <div className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <div className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300 whitespace-nowrap">
                   {selectedStatusChip}
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-border-subtle dark:bg-surface">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Item Price</p>
-                  <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{selectedItem ? formatCurrency(selectedPrice) : "₱0.00"}</p>
-                </div>
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-border-subtle dark:bg-surface">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Downpayment</p>
-                  <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{formatCurrency(downpaymentValue || 0)}</p>
-                </div>
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-border-subtle dark:bg-surface">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Remaining Balance</p>
-                  <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{selectedItem ? formatCurrency(remainingBalance) : "₱0.00"}</p>
-                </div>
-                <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-border-subtle dark:bg-surface">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Hold Status</p>
-                  <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">Reserved</p>
-                </div>
+              {/* Stat cards */}
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {[
+                  { label: "Item Price", value: selectedItem ? formatCurrency(selectedPrice) : "₱0.00" },
+                  { label: "Downpayment", value: formatCurrency(downpaymentValue || 0) },
+                  { label: "Remaining", value: selectedItem ? formatCurrency(remainingBalance) : "₱0.00" },
+                  { label: "Hold Status", value: "Reserved" },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 dark:border-border-subtle dark:bg-surface">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">{label}</p>
+                    <p className="mt-1 text-sm font-black text-zinc-900 dark:text-white">{value}</p>
+                  </div>
+                ))}
               </div>
 
-              <div className="mt-5 rounded-3xl border border-zinc-100 bg-zinc-50 p-5 dark:border-border-subtle dark:bg-surface">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="text-emerald-600" />
-                  <h3 className="text-sm font-black uppercase tracking-[0.28em] text-zinc-700 dark:text-zinc-200">Layaway Rules</h3>
+              {/* Layaway rules */}
+              <div className="mt-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 sm:p-4 dark:border-border-subtle dark:bg-surface">
+                <div className="flex items-center gap-2 mb-3">
+                  <ShieldCheck className="text-emerald-600 shrink-0" />
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-700 dark:text-zinc-200">Layaway Rules</h3>
                 </div>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[
                     { title: "RESERVED", note: "Item is held for the customer." },
-                    { title: "PARTIALLY_PAID", note: "Downpayment has been recorded." },
+                    { title: "PARTIALLY PAID", note: "Downpayment has been recorded." },
                     { title: "COMPLETED", note: "Full balance has been paid." },
                     { title: "CANCELLED", note: "Reservation was not completed." },
                   ].map((rule) => (
-                    <div key={rule.title} className="rounded-2xl border border-white bg-white p-4 shadow-sm dark:border-border-subtle dark:bg-surface-secondary">
-                      <p className="text-xs font-black text-emerald-700 dark:text-emerald-400">{rule.title}</p>
-                      <p className="mt-2 text-[11px] leading-5 text-zinc-500 dark:text-zinc-300">{rule.note}</p>
+                    <div key={rule.title} className="rounded-xl border border-white bg-white p-2.5 shadow-sm dark:border-border-subtle dark:bg-surface-secondary">
+                      <p className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 uppercase">{rule.title}</p>
+                      <p className="mt-1 text-[10px] leading-4 text-zinc-500 dark:text-zinc-300">{rule.note}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-5 xl:grid-cols-2">
-                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-border-subtle dark:bg-surface">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Customer Information</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="First name" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
-                    <input name="middleName" value={form.middleName} onChange={handleChange} placeholder="Middle name" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
-                    <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last name" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+              {/* Customer + Payment forms */}
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                {/* Customer Info */}
+                <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-border-subtle dark:bg-surface">
+                  <p className="text-[9px] font-black uppercase tracking-[0.24em] text-zinc-400 mb-3">Customer Information</p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="First name" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+                    <input name="middleName" value={form.middleName} onChange={handleChange} placeholder="Middle name" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+                    <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Last name" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
                   </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <input name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="Contact number" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
-                    <input name="terms" value={form.terms} onChange={handleChange} placeholder="Terms e.g. 30 days" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    <input name="contactNo" value={form.contactNo} onChange={handleChange} placeholder="Contact number" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+                    <input name="terms" value={form.terms} onChange={handleChange} placeholder="Terms e.g. 30 days" className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
                   </div>
-                  <textarea name="address" value={form.address} onChange={handleChange} placeholder="Customer address" rows={4} className="mt-3 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+                  <textarea name="address" value={form.address} onChange={handleChange} placeholder="Customer address" rows={3} className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
                 </div>
 
-                <div className="rounded-3xl border border-zinc-100 bg-white p-5 shadow-sm dark:border-border-subtle dark:bg-surface">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400">Payment & Approval</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {/* Payment & Approval */}
+                <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-border-subtle dark:bg-surface">
+                  <p className="text-[9px] font-black uppercase tracking-[0.24em] text-zinc-400 mb-3">Payment &amp; Approval</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-300">Downpayment</label>
-                      <input name="downpayment" value={form.downpayment} onChange={handleChange} type="number" min="0" step="0.01" placeholder="0.00" className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
+                      <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-300">Downpayment</label>
+                      <input name="downpayment" value={form.downpayment} onChange={handleChange} type="number" min="0" step="0.01" placeholder="0.00" className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs outline-none focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white" />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-300">Remaining Balance</label>
-                      <div className="flex h-[46px] items-center rounded-xl border border-zinc-200 bg-zinc-100 px-3 text-sm font-black text-zinc-900 dark:border-border-subtle dark:bg-surface-secondary dark:text-white">
+                      <label className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-300">Remaining Balance</label>
+                      <div className="flex h-[34px] items-center rounded-xl border border-zinc-200 bg-zinc-100 px-3 text-xs font-black text-zinc-900 dark:border-border-subtle dark:bg-surface-secondary dark:text-white">
                         {selectedItem ? formatCurrency(remainingBalance) : "₱0.00"}
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-3 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 dark:border-border-subtle dark:bg-surface-secondary">
+                  <div className="mt-3 rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-3 dark:border-border-subtle dark:bg-surface-secondary">
                     <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                      <Clock className="text-emerald-600" />
-                      <p className="text-sm font-bold">This item is held until the customer pays the full balance.</p>
+                      <Clock className="text-emerald-600 shrink-0" />
+                      <p className="text-[11px] font-bold">Item held until full balance is paid.</p>
                     </div>
-                    <p className="mt-2 text-[11px] leading-5 text-zinc-500 dark:text-zinc-300">
-                      Reserve / Layaway records the downpayment first. The item should remain on hold until the layaway is fully settled.
+                    <p className="mt-1.5 text-[10px] leading-4 text-zinc-500 dark:text-zinc-300">
+                      Records the downpayment first. The item stays on hold until the layaway is fully settled.
                     </p>
                   </div>
-
                 </div>
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-zinc-100 bg-zinc-50 p-5 dark:border-border-subtle dark:bg-surface">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-xs text-zinc-500 dark:text-zinc-300">
-                  <span className="font-black uppercase tracking-[0.24em] text-zinc-400">Content summary:</span> Hold the item, record a downpayment, and keep the balance visible until completion.
-                </div>
+            {/* Footer */}
+            <div className="shrink-0 border-t border-zinc-100 bg-zinc-50 dark:border-border-subtle dark:bg-surface">
+              <div className="px-4 py-3 sm:px-5">
+                {/* Row 1: Password + Cancel */}
                 <div className="flex items-end gap-3">
-                  <div className="w-52">
+                  <div className="flex-1 min-w-0">
                     <label className="mb-1 block text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
-                    <input name="password" value={form.password} onChange={handleChange} type="password" placeholder="••••••••" className="h-10 w-full rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted" />
+                    <input
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-9 w-full rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-xs text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted"
+                    />
                   </div>
-                  <button onClick={onClose} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-border-subtle dark:bg-surface-secondary dark:text-zinc-200">
+                  <button
+                    onClick={onClose}
+                    className="shrink-0 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-border-subtle dark:bg-surface-secondary dark:text-zinc-200"
+                  >
                     Cancel
                   </button>
                   <button
                     onClick={handleConfirmRequest}
                     disabled={isConfirming || !selectedItem || !isFormValid}
-                    className="rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="shrink-0 rounded-xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
                   >
                     {isConfirming ? "Processing..." : "Create Reserve / Layaway"}
                   </button>
                 </div>
+                {error && <p className="mt-2 text-[10px] font-semibold text-rose-600">{error}</p>}
               </div>
-              {error && <p className="mt-3 text-xs font-semibold text-rose-600">{error}</p>}
             </div>
           </div>
         </div>

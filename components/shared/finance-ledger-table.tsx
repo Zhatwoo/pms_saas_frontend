@@ -480,7 +480,7 @@ export function FinanceSummaryCards({ breakdown, todayCashIn, todayCashOut }: Fi
   const safeBreakdown = normalizeFinanceBreakdown(breakdown);
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
+    <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
       {todayCashIn != null && (
         <div className="group relative overflow-hidden rounded-xl border border-emerald-500/30 bg-emerald-50/50 p-4 transition-all hover:shadow-md dark:bg-emerald-900/10">
           <div className="flex items-center justify-between">
@@ -553,13 +553,17 @@ const TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-export function LedgerTypeFilter({ value, onChange }: LedgerTypeFilterProps) {
+export function LedgerTypeFilter({
+  value,
+  onChange,
+  className = "",
+}: LedgerTypeFilterProps & { className?: string }) {
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-lg border border-border-main bg-surface pl-3 pr-8 py-2 text-sm font-medium text-text-primary focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 focus:outline-none transition-all cursor-pointer"
+        className="w-full appearance-none rounded-lg border border-border-main bg-surface py-2.5 pl-3 pr-8 text-sm font-medium text-text-primary transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 cursor-pointer"
       >
         {TYPE_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -574,4 +578,118 @@ export function LedgerTypeFilter({ value, onChange }: LedgerTypeFilterProps) {
       </div>
     </div>
   );
+}
+
+/* ── Ledger filters bar ──────────────────────────── */
+
+interface LedgerFiltersBarProps {
+  search: string;
+  onSearchChange: (value: string) => void;
+  typeFilter: string;
+  onTypeFilterChange: (value: string) => void;
+  dateFrom: string;
+  onDateFromChange: (value: string) => void;
+  dateTo: string;
+  onDateToChange: (value: string) => void;
+  onClear: () => void;
+  hasActiveFilters: boolean;
+  searchPlaceholder?: string;
+  variant?: "default" | "elevated";
+}
+
+export function LedgerFiltersBar({
+  search,
+  onSearchChange,
+  typeFilter,
+  onTypeFilterChange,
+  dateFrom,
+  onDateFromChange,
+  dateTo,
+  onDateToChange,
+  onClear,
+  hasActiveFilters,
+  searchPlaceholder = "Search ledger...",
+  variant = "default",
+}: LedgerFiltersBarProps) {
+  const inputClass =
+    "w-full rounded-xl border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all";
+
+  const searchInput = (
+    <div className="relative w-full min-w-0">
+      {variant === "elevated" ? (
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <svg className="h-4 w-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+      ) : null}
+      <input
+        type="text"
+        placeholder={searchPlaceholder}
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className={
+          variant === "elevated"
+            ? "w-full rounded-xl border border-border-main bg-surface py-2.5 pl-10 pr-4 text-sm font-medium text-text-primary placeholder:text-text-tertiary focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+            : `${inputClass} placeholder:text-text-muted`
+        }
+      />
+    </div>
+  );
+
+  const filters = (
+    <div className="grid w-full min-w-0 grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_repeat(2,minmax(0,11rem))] lg:items-end">
+      <LedgerTypeFilter value={typeFilter} onChange={onTypeFilterChange} className="w-full min-w-0 min-[480px]:col-span-2 lg:col-span-1" />
+
+      <div className="relative w-full min-w-0">
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => onDateFromChange(e.target.value)}
+          className={inputClass}
+        />
+        <div className={`pointer-events-none absolute -top-2 left-3 px-1 text-[9px] font-black uppercase text-text-tertiary ${variant === "elevated" ? "bg-surface/50" : "bg-surface"}`}>
+          From
+        </div>
+      </div>
+
+      <div className="relative w-full min-w-0">
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => onDateToChange(e.target.value)}
+          className={inputClass}
+        />
+        <div className={`pointer-events-none absolute -top-2 left-3 px-1 text-[9px] font-black uppercase text-text-tertiary ${variant === "elevated" ? "bg-surface/50" : "bg-surface"}`}>
+          To
+        </div>
+      </div>
+    </div>
+  );
+
+  const content = (
+    <div className="flex w-full min-w-0 flex-col gap-3">
+      {searchInput}
+      {filters}
+      {hasActiveFilters ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="self-start text-xs font-bold text-red-500 hover:underline dark:text-red-300"
+        >
+          Clear Filters
+        </button>
+      ) : null}
+    </div>
+  );
+
+  if (variant === "elevated") {
+    return (
+      <div className="w-full min-w-0 rounded-2xl border border-border-main bg-surface/50 p-4 shadow-sm backdrop-blur-sm">
+        {content}
+      </div>
+    );
+  }
+
+  return content;
 }

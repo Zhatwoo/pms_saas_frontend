@@ -87,7 +87,7 @@ export function SalesTrendChart({
   }, [data, activePeriod]);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+    <div className="min-w-0 w-full overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center justify-between bg-emerald-900 px-4 py-3">
         <h3 className="text-sm font-bold text-pawn-gold">
@@ -183,7 +183,7 @@ export function SalesTrendChart({
 
             {/* Summary */}
             {summary && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-text-tertiary">
+              <div className="mt-3 flex flex-col gap-1 text-xs text-text-tertiary sm:flex-row sm:items-center sm:gap-2">
                 <span>
                   14-day average:{" "}
                   <span className="font-semibold text-zinc-700">

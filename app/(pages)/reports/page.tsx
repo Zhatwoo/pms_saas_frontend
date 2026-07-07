@@ -58,7 +58,12 @@ interface ReportData {
   };
   dailyReport: {
     date: string;
+    fromDate?: string;
+    toDate?: string;
+    isRange?: boolean;
     openingBalance: number;
+    closingBalance?: number | null;
+    periodNetChange?: number | null;
     totalSales: number;
     totalCashOut: number;
     netTotal: number;
@@ -73,7 +78,14 @@ function normalizeReportPayload(raw: unknown): ReportData | null {
   const dailyReport: ReportData["dailyReport"] = dr
     ? {
         date: String(dr.date ?? ""),
+        fromDate: dr.fromDate != null ? String(dr.fromDate) : undefined,
+        toDate: dr.toDate != null ? String(dr.toDate) : undefined,
+        isRange: Boolean(dr.isRange),
         openingBalance: Number(dr.openingBalance ?? 0),
+        closingBalance:
+          dr.closingBalance != null ? Number(dr.closingBalance) : null,
+        periodNetChange:
+          dr.periodNetChange != null ? Number(dr.periodNetChange) : null,
         totalSales: Number(dr.totalSales ?? 0),
         netTotal: Number(dr.netTotal ?? 0),
         totalCashOut: Number(
@@ -107,6 +119,8 @@ export default function ReportsPage() {
   const { selectedBranch, isAllBranches } = useBranch();
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function fetchReport() {
       setIsLoading(true);
       setError(null);
@@ -116,18 +130,32 @@ export default function ReportsPage() {
         params.set("period", activePeriod.toLowerCase());
         if (startDate) params.set("startDate", startDate);
         if (endDate) params.set("endDate", endDate);
-        const data = await api.get<unknown>(`/reports/system?${params}`);
+        const data = await api.get<unknown>(`/reports/system?${params}`, { signal: controller.signal });
         setReportData(normalizeReportPayload(data));
       } catch (err) {
+        if (
+          (err instanceof DOMException && err.name === "AbortError") ||
+          (err as { name?: string })?.name === "AbortError" ||
+          (err as { message?: string })?.message?.includes("aborted")
+        ) {
+          // Request was cancelled by AbortController — do nothing
+          return;
+        }
         const msg = err instanceof Error ? err.message : "Failed to load reports.";
         console.error("Failed to load reports:", err);
         setError(msg);
       } finally {
-        setIsLoading(false);
-        setHasLoadedData(true);
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+          setHasLoadedData(true);
+        }
       }
     }
     fetchReport();
+
+    return () => {
+      controller.abort();
+    };
   }, [selectedBranch.id, isAllBranches, activePeriod, startDate, endDate]);
 
   const getSelectionLabel = () => {
@@ -182,12 +210,28 @@ export default function ReportsPage() {
         )
         .join("");
 
-      const dailyRows = [
-        ["Opening Balance", formatPeso(reportData.dailyReport.openingBalance)],
-        ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
-        ["Total Cash Out", formatPeso(reportData.dailyReport.totalCashOut)],
-        ["Net Total", formatPeso(reportData.dailyReport.netTotal)],
-      ]
+      const dailyRows = (
+        reportData.dailyReport.isRange
+          ? [
+              ["Opening Balance (Period Start)", formatPeso(reportData.dailyReport.openingBalance)],
+              ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
+              ["Total Cash Out", formatPeso(reportData.dailyReport.totalCashOut)],
+              [
+                "Closing Balance (Period End)",
+                formatPeso(reportData.dailyReport.closingBalance ?? 0),
+              ],
+              [
+                "Period Net Change",
+                formatPeso(reportData.dailyReport.periodNetChange ?? 0),
+              ],
+            ]
+          : [
+              ["Opening Balance", formatPeso(reportData.dailyReport.openingBalance)],
+              ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
+              ["Total Cash Out", formatPeso(reportData.dailyReport.totalCashOut)],
+              ["Net Total", formatPeso(reportData.dailyReport.netTotal)],
+            ]
+      )
         .map(
           ([label, value]) => `
             <tr>
@@ -313,10 +357,10 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="w-full min-w-0 max-w-full space-y-5">
       {/* Header row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="w-full min-w-0 sm:flex-1">
           <DateFilterSelector
             periods={periods}
             activePeriod={activePeriod}
@@ -331,6 +375,7 @@ export default function ReportsPage() {
           onClick={handleDownloadPDF}
           variant="success"
           leftIcon={downloadIcon}
+          className="w-full shrink-0 sm:w-auto"
         >
           Download PDF
         </ActionButton>
@@ -348,25 +393,38 @@ export default function ReportsPage() {
           </button>
         </div>
       ) : (
-        <>
-          <ReportStats data={reportData?.stats} showBranchStats={isAllBranches} />
-
-          {/* Side by side: branch table + chart */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} title={branchSalesTitle} />
-            <div id="sales-trend-chart">
-              <SalesTrendChart
-                data={reportData?.salesTrend}
-                summary={reportData?.trendSummary}
-                todaySales={reportData?.stats?.totalSalesToday ?? 0}
-                activePeriod={activePeriod}
-                selectionLabel={selectionLabel}
-              />
+        <div className="relative">
+          {isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-surface/60 backdrop-blur-[2px]">
+              <LoadingSpinnerLabel text="Updating..." className="text-sm font-medium text-text-tertiary" />
             </div>
-          </div>
+          )}
+          <div className={`space-y-5 transition-opacity duration-200 ${isLoading ? "opacity-50 pointer-events-none" : "opacity-100"}`}>
+            <ReportStats data={reportData?.stats} showBranchStats={isAllBranches} />
 
-          <DailyReportSection data={reportData?.dailyReport} date={selectionLabel} />
-        </>
+            {/* Side by side: branch table + chart */}
+            <div className="grid w-full min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className="min-w-0">
+                <BranchSalesTable data={reportData?.branchSales} date={selectionLabel} title={branchSalesTitle} />
+              </div>
+              <div id="sales-trend-chart" className="min-w-0 w-full">
+                <SalesTrendChart
+                  data={reportData?.salesTrend}
+                  summary={reportData?.trendSummary}
+                  todaySales={reportData?.stats?.totalSalesToday ?? 0}
+                  activePeriod={activePeriod}
+                  selectionLabel={selectionLabel}
+                />
+              </div>
+            </div>
+
+            <DailyReportSection
+              data={reportData?.dailyReport}
+              date={selectionLabel}
+              period={activePeriod}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

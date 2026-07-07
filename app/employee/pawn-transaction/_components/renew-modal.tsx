@@ -315,17 +315,17 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       <div className={`relative z-10 flex h-[calc(100dvh-1rem)] w-[92vw] max-w-[1200px] min-h-0 flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-2rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}>
         
         {/* Top Floating Header */}
-        <div className={`relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
-          <div className="flex items-start justify-between gap-3 md:gap-4">
-            <div className={`flex items-center gap-3 ${compactTablet ? "md:gap-3" : "md:gap-4"}`}>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner ${compactTablet ? "md:h-11 md:w-11" : "md:h-12 md:w-12"}`}>
-                <RotateCcw className="w-6 h-6" />
+        <div className={`relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-3 sm:px-5 sm:py-4 text-white ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+              <div className={`shrink-0 flex items-center justify-center rounded-xl sm:rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner w-8 h-8 sm:w-11 sm:h-11 ${compactTablet ? "md:w-11 md:h-11" : "md:w-12 md:h-12"}`}>
+                <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+              <div className="min-w-0 overflow-hidden">
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300/90 dark:text-emerald-400 truncate">
                   {branchName}
                 </p>
-                <h1 className={`mt-1 font-black tracking-tight leading-none text-white ${compactTablet ? "text-lg md:text-xl" : "text-xl md:text-2xl"}`}>
+                <h1 className={`mt-0.5 font-black tracking-tight leading-none text-white truncate ${compactTablet ? "text-sm sm:text-lg md:text-xl" : "text-sm sm:text-xl md:text-2xl"}`}>
                   Renew Transaction
                 </h1>
               </div>
@@ -362,12 +362,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                 </div>
               )}
 
-              <button 
-                onClick={onClose} 
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
+              <button
+                onClick={onClose}
+                className="shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
                 aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
@@ -680,38 +680,37 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
         {/* Footer Actions */}
-        <div className={`shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 ${compactTablet ? "lg:p-6" : "lg:p-8"}`}>
-              <div className={`flex flex-col gap-4 ${compactTablet ? "md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
-            <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:gap-4" : "sm:flex-row sm:items-center sm:gap-4 lg:gap-8"}`}>
+        <div className={`shrink-0 border-t border-emerald-50 bg-white dark:bg-surface ${compactTablet ? "" : ""}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5 gap-0 sm:gap-4">
+
+            {/* Row 1 (mobile) / Left (sm+): Cancel + Divider + Password */}
+            <div className="flex items-center gap-3 sm:gap-5">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200"
+                className="shrink-0 text-[9px] font-black uppercase tracking-[0.15em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200 whitespace-nowrap"
               >
-                Cancel Process
+                Cancel
               </button>
-
-              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover md:block" />
-
-              <div className={`w-full ${compactTablet ? "md:w-40" : "sm:w-40"}`}>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="h-10 rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary"
-                    value={adminForm.password}
-                    onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
-                  />
-                </div>
+              <div className="h-7 w-px bg-zinc-100 dark:bg-surface-hover shrink-0" />
+              <div className="flex-1 sm:flex-none">
+                <label className="block text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400 mb-1">Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-9 w-full sm:w-32 rounded-lg border border-emerald-100 bg-slate-50 px-3 text-xs text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary"
+                  value={adminForm.password}
+                  onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                />
               </div>
             </div>
 
-            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 md:border-t-0 md:pt-0 ${compactTablet ? "md:w-auto md:gap-4" : "lg:gap-6"}`}>
-              <div className="text-right">
-                <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
+            {/* Row 2 (mobile) / Right (sm+): Total + Button */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
+              <div className="text-left sm:text-right">
+                <p className="text-[8px] font-black uppercase leading-none tracking-[0.15em] text-emerald-900/40 dark:text-emerald-400 mb-0.5">
                   TOTAL PAYMENT
                 </p>
-                <p className={`font-black leading-none tracking-tighter text-emerald-950 dark:text-white ${compactTablet ? "text-2xl md:text-[2rem]" : "text-3xl"}`}>
+                <p className="text-base sm:text-2xl font-black leading-none tracking-tighter text-emerald-950 dark:text-white">
                   ₱ {totalToPay.toLocaleString()}
                 </p>
               </div>
@@ -722,14 +721,14 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                 className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "md:px-8 md:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
               >
                 {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <span className="anim-loading h-5 w-5 rounded-full border-t-white border-white/30" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="anim-loading h-3.5 w-3.5 rounded-full border-t-white border-white/30" />
                     <span>Processing...</span>
                   </div>
                 ) : (
                   <>
                     {isReappraiseActive ? "PROCESS REAPPRAISAL" : "PROCESS RENEWAL"}
-                    <ArrowRight className="w-5 h-5" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
               </button>
@@ -738,7 +737,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           </div>
 
           {error && (
-            <div className="mt-4 flex w-full items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-[8px] font-bold uppercase tracking-widest text-red-400 animate-in slide-in-from-bottom-1">
+            <div className="mx-4 mb-3 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-[8px] font-bold uppercase tracking-widest text-red-400 animate-in slide-in-from-bottom-1">
               <AlertCircle className="w-3 h-3 shrink-0" />
               {error}
             </div>
