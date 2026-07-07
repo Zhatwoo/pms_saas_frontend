@@ -15,7 +15,7 @@ export function FilterSelect({
 }: FilterSelectProps) {
   const selectClassName =
     size === "lg"
-      ? "h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+      ? "h-10 w-full sm:w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
       : "h-9 rounded-md border border-border-main bg-surface-secondary px-3 text-xs text-text-primary outline-none transition-colors focus:border-emerald-500";
 
   return (
