@@ -7,6 +7,12 @@ import { getTransactionDateTimeFields } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { uploadBuybackProof } from "@/lib/fund-transfer-storage";
+import {
+  isTransactionPasswordError,
+  TRANSACTION_PASSWORD_VERIFY_MESSAGE,
+  transactionPasswordErrorClass,
+  transactionPasswordInputClass,
+} from "@/lib/transaction-password";
 
 /* ── Inline SVG Icons ── */
 
@@ -223,7 +229,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
     }
 
     if (!adminForm.password) {
-      setError("Please enter password to verify.");
+      setError(TRANSACTION_PASSWORD_VERIFY_MESSAGE);
       return;
     }
 
@@ -292,6 +298,9 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
   if (!isOpen) return null;
 
+  const passwordFieldError = isTransactionPasswordError(error) ? error : null;
+  const formError = error && !passwordFieldError ? error : null;
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
@@ -300,29 +309,28 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-3 sm:px-6 sm:py-5 text-white shrink-0 relative z-10">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0 overflow-hidden">
-              <div className="shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
                 {tagIcon}
               </div>
-              <div className="min-w-0 overflow-hidden">
-                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-amber-300/90 dark:text-emerald-400 truncate">
-                  <span className="truncate">{branchName}</span>
-                  <span className="hidden sm:inline"> | Expired Inventory</span>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                  {branchName} | Expired Inventory
                 </p>
-                <h1 className="mt-0.5 text-sm sm:text-2xl font-black tracking-tight text-white leading-none truncate">
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
                   Buy Back / Repurchase
                 </h1>
               </div>
             </div>
-
-            <button
-              onClick={onClose}
-              className="shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+            
+            <button 
+              onClick={onClose} 
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
               aria-label="Close Buy Back modal"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
@@ -482,10 +490,19 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                           <input 
                             type="password"
                             placeholder="••••••••"
-                            className="w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium"
+                            className={transactionPasswordInputClass(
+                              Boolean(passwordFieldError),
+                              "w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium",
+                            )}
                             value={adminForm.password}
-                            onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                            onChange={(e) => {
+                              setAdminForm({...adminForm, password: e.target.value});
+                              if (passwordFieldError) setError(null);
+                            }}
                           />
+                          {passwordFieldError && (
+                            <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
+                          )}
                         </div>
                       </div>
 
@@ -544,10 +561,10 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                         </p>
                       </div>
 
-                      {error && (
+                      {formError && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
                           <span className="text-red-500">{alertIcon(20)}</span>
-                          <p className="text-xs font-bold text-red-200">{error}</p>
+                          <p className="text-xs font-bold text-red-200">{formError}</p>
                         </div>
                       )}
                     </div>

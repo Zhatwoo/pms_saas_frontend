@@ -7,6 +7,12 @@ import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
 import { RenewalProofModal } from "@/components/shared/renewal-proof-modal";
+import {
+  isTransactionPasswordError,
+  TRANSACTION_PASSWORD_VERIFY_MESSAGE,
+  transactionPasswordErrorClass,
+  transactionPasswordInputClass,
+} from "@/lib/transaction-password";
 
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
@@ -213,7 +219,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     if (isProcessingRef.current) return;
     if (!selectedItem) return;
     if (!adminForm.password) {
-      setError("Authorization required.");
+      setError(TRANSACTION_PASSWORD_VERIFY_MESSAGE);
       return;
     }
 
@@ -260,6 +266,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
 
   if (!isOpen) return null;
+
+  const passwordFieldError = isTransactionPasswordError(error) ? error : null;
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
@@ -339,11 +347,11 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
             </div>
 
             {/* Right Action Panel */}
-            <div className="w-full xl:w-[340px] bg-emerald-900 p-6 flex flex-col gap-4 shrink-0 overflow-hidden">
+            <div className="flex w-full shrink-0 flex-col gap-4 bg-emerald-900 p-6 xl:w-[340px]">
                <div className="space-y-3">
                   <SectionHeader title="Transaction Type" icon={Tag} isDark />
                   
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 [&>button]:min-w-0">
                     <ActionToggle 
                       label="Renew" 
                       isActive={isRenewActive} 
@@ -368,7 +376,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                <div className="space-y-3">
                   <SectionHeader title="Period Settings" icon={Calendar} isDark />
                   
-                  <div className="flex items-center justify-between bg-white dark:bg-emerald-950/50 px-4 py-2.5 rounded-xl shadow-lg">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100/80 bg-white px-4 py-2.5 shadow-lg dark:border-white/10 dark:bg-emerald-950/50">
                     <div className="space-y-0.5">
                       <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Items Renewed</p>
                       <p className="text-[7px] font-bold text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-tighter">Extend Multiplier</p>
@@ -443,17 +451,26 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                     <input 
                       type="password" 
                       placeholder="••••••••"
-                      className="h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted"
+                      className={transactionPasswordInputClass(
+                        Boolean(passwordFieldError),
+                        "h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted",
+                      )}
                       value={adminForm.password}
-                      onChange={(e) => setAdminForm({...adminForm, password: e.target.value})}
+                      onChange={(e) => {
+                        setAdminForm({...adminForm, password: e.target.value});
+                        if (passwordFieldError) setError(null);
+                      }}
                     />
+                    {passwordFieldError && (
+                      <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
+                    )}
                   </div>
                 </div>
               </div>
           </div>
 
-          <div className="flex items-center gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-             <div className="text-right">
+          <div className="flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-6 sm:mt-0 sm:w-auto sm:border-t-0 sm:pt-0">
+             <div className="text-right shrink-0">
                 <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
                   TOTAL PAYMENT
                 </p>
@@ -478,13 +495,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               </button>
             </div>
           </div>
-
-          {error && (
-            <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400 text-[8px] font-bold uppercase tracking-widest animate-in slide-in-from-bottom-1">
-              <AlertCircle className="w-3 h-3 shrink-0" />
-              {error}
-            </div>
-          )}
         </div>
         <RenewalProofModal
           isOpen={isProofModalOpen}
@@ -528,18 +538,19 @@ function StaticDetailRow({ label, value }: { label: string, value: string | numb
 function ActionToggle({ label, isActive, onClick, sub }: { label: string, isActive: boolean, onClick: () => void, sub?: string }) {
   return (
     <button 
+      type="button"
       onClick={onClick}
-      className={`relative p-3 rounded-2xl border-2 transition-all text-left flex flex-col gap-0.5 overflow-hidden group ${
+      className={`relative flex min-w-0 flex-col gap-0.5 rounded-2xl p-3 text-left transition-all group ${
         isActive 
-          ? 'bg-emerald-50 dark:bg-emerald-600/40 border-emerald-400 shadow-xl' 
-          : 'bg-white/10 dark:bg-surface/5 border-transparent dark:border-white/5 text-emerald-100/40 dark:text-white/40 hover:border-emerald-200 dark:hover:bg-white/5'
+          ? "border-2 border-emerald-400 bg-emerald-50 shadow-lg dark:border-emerald-300 dark:bg-emerald-600/40" 
+          : "border border-white/10 bg-white/10 text-emerald-100/40 hover:border-emerald-200/60 dark:border-white/10 dark:bg-surface/5 dark:text-white/40 dark:hover:bg-white/5"
       }`}
     >
-      <div className={`w-3 h-3 rounded-full border-2 mb-1 flex items-center justify-center ${isActive ? 'border-emerald-600 dark:border-white' : 'border-current'}`}>
-        {isActive && <div className="w-1 h-1 rounded-full bg-emerald-600 dark:bg-white" />}
+      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? "border-emerald-600 dark:border-white" : "border-current"}`}>
+        {isActive && <div className="h-1 w-1 rounded-full bg-emerald-600 dark:bg-white" />}
       </div>
-      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? 'text-emerald-950 dark:text-white' : 'text-current'}`}>{label}</p>
-      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? 'text-emerald-600/60 dark:text-white/60' : 'text-current'}`}>{sub}</p>}
+      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? "text-emerald-950 dark:text-white" : "text-current"}`}>{label}</p>
+      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? "text-emerald-600/60 dark:text-white/60" : "text-current"}`}>{sub}</p>}
     </button>
   );
 }
