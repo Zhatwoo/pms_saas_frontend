@@ -64,15 +64,15 @@ export function TransactionConfirmModal({
               <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             </svg>
           </div>
-          <h3 id="transaction-confirm-title" className="mt-4 text-base font-black text-zinc-900 dark:text-white">
+          <h3 id="transaction-confirm-title" className="mt-4 text-base font-black text-text-primary">
             {title}
           </h3>
-          <p className="mt-2 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{message}</p>
+          <p className="mt-2 text-xs leading-relaxed text-text-tertiary">{message}</p>
           {details.length > 0 ? (
-            <div className="mt-4 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-xs text-zinc-700 dark:border-border-subtle dark:bg-surface-secondary dark:text-zinc-200">
+            <div className="mt-4 w-full rounded-xl border border-border-main bg-surface-secondary px-4 py-3 text-left text-xs text-text-secondary">
               {details.map((row) => (
                 <p key={row.label} className={row.label === details[0]?.label ? "" : "mt-1"}>
-                  <span className="font-bold text-zinc-500 dark:text-zinc-400">{row.label}:</span> {row.value}
+                  <span className="font-bold text-text-tertiary">{row.label}:</span> {row.value}
                 </p>
               ))}
             </div>
@@ -83,7 +83,7 @@ export function TransactionConfirmModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-black text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-border-subtle dark:bg-surface-secondary dark:text-zinc-200 dark:hover:bg-surface-hover"
+            className="flex-1 rounded-xl border border-border-main bg-surface px-4 py-2.5 text-xs font-black text-text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -91,7 +91,7 @@ export function TransactionConfirmModal({
             type="button"
             onClick={() => void onConfirm()}
             disabled={isLoading}
-            className="flex-1 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-700/20 transition-colors hover:bg-emerald-800 disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-700/20 transition-colors hover:bg-emerald-800 disabled:bg-text-muted disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>

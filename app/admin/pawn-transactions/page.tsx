@@ -952,7 +952,7 @@ export default function SuperAdminPawnTransactionsPage() {
           <tbody>
             {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                <td colSpan={7} className="p-4 text-center italic text-text-muted border-b border-black">
                   No records found for the selected filters.
                 </td>
               </tr>
@@ -973,7 +973,7 @@ export default function SuperAdminPawnTransactionsPage() {
                       ? `-${formatPeso(Number(tx.cashOut))}`
                       : ""}
                   </td>
-                  <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{tx.transactionNo}</td>
+                  <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-text-secondary">{tx.transactionNo}</td>
                 </tr>
               ))
             )}
