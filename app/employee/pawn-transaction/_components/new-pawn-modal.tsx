@@ -1050,12 +1050,12 @@ export function NewPawnModal({
                 </div>
 
                 {selectedCustomer && customerMode === "new" && (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
+                  <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Loaded branch customer</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-400">Loaded branch customer</p>
                         <p className="mt-1 text-sm font-black text-emerald-950 dark:text-white">{selectedCustomer.full_name}</p>
-                        <p className="mt-0.5 text-xs font-medium text-emerald-800/70">This contract will reuse the selected branch record.</p>
+                        <p className="mt-0.5 text-xs font-medium text-emerald-800/70 dark:text-emerald-300/70">This contract will reuse the selected branch record.</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
