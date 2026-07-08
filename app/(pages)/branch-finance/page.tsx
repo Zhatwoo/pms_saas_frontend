@@ -905,7 +905,7 @@ export default function BranchFinancePage() {
                 <tbody>
                   {printLedgerRows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                      <td colSpan={7} className="p-4 text-center italic text-text-muted border-b border-black">
                         No records found for the selected filters.
                       </td>
                     </tr>
@@ -918,7 +918,7 @@ export default function BranchFinancePage() {
                         <td className="p-2 truncate max-w-[250px]">{row.description || "—"}</td>
                         <td className="p-2 text-right font-mono">{row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
                         <td className="p-2 text-right font-mono text-red-600">{row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
-                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{row.reference || "—"}</td>
+                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-text-secondary">{row.reference || "—"}</td>
                       </tr>
                     ))
                   )}
