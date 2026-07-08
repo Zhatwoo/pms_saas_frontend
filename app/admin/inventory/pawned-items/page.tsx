@@ -17,7 +17,11 @@ import { InventoryAuditModal } from "@/components/shared/inventory-audit-modal";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { MoaModal } from "@/app/employee/pawn-transaction/_components/moa-modal";
-import { calculatePeriodicStorageFee } from "@/lib/interest";
+import {
+  calculatePeriodicStorageFee,
+  calculateTransactionGadgetInterest,
+} from "@/lib/interest";
+import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 
 const moaToastClassName =
   "mx-auto flex min-w-[260px] items-center justify-center gap-2 rounded-xl border px-4 py-3 text-center shadow-xl backdrop-blur-sm sm:min-w-[320px]";
@@ -62,6 +66,8 @@ interface PawnedItem {
   items_included?: string;
   serial_number?: string;
   amount: number;
+  interestRateSnapshot?: unknown;
+  interest_rate_snapshot?: unknown;
 }
 
 const categoryOptions = [
@@ -137,6 +143,20 @@ function RenewalDetails({ renewals }: { renewals: Renewal[] }) {
       ))}
     </div>
   );
+}
+
+function getPawnedItemInterestRatePercent(item: PawnedItem) {
+  const contractRate = getContractInterestRateGroup(
+    item.category,
+    item.interestRateSnapshot ?? item.interest_rate_snapshot,
+  );
+  const interest = calculateTransactionGadgetInterest(item.amount, {
+    pawnDate: item.pawnDate,
+    category: item.category,
+    rateGroup: contractRate,
+  });
+
+  return Number.isFinite(interest.percentage) ? interest.percentage : 0;
 }
 
 function EditPawnedItemModal({
@@ -237,6 +257,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   console.log("Current User Role:", userRole);
   const isAdminOrSuperAdmin = userRole.toLowerCase().includes("admin");
   const canEdit = !viewOnly && isAdminOrSuperAdmin;
+  const tableColumnCount = isAdminOrSuperAdmin ? 11 : 10;
 
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   useEffect(() => {
@@ -701,20 +722,20 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
 
       <div className={viewOnly ? "overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300" : "overflow-hidden rounded-lg border border-border-main bg-surface shadow-sm"}>
           <div className="overflow-x-auto">
-            <table className={viewOnly ? "min-w-[1320px] w-full text-sm" : "w-full text-sm"}>
+            <table className={viewOnly ? "min-w-[1420px] w-full text-sm" : "w-full text-sm"}>
               <thead>
                 <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
-                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", "Renewals", "Remarks", isAdminOrSuperAdmin ? "QR" : null, "Actions"]
+                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Interest Rate %", "Status", "Renewals", "Remarks", isAdminOrSuperAdmin ? "QR" : null, "Actions"]
                     .filter((h): h is string => h !== null)
                     .map((h) => (
-                      <th key={h} className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide dark:text-inherit ${h === "Renewals" || h === "Actions" || h === "QR" ? "text-center" : "text-left"}`}>{h}</th>
+                      <th key={h} className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide dark:text-inherit ${h === "Interest Rate %" || h === "Renewals" || h === "Actions" || h === "QR" ? "text-center" : "text-left"}`}>{h}</th>
                     ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr className="bg-surface">
-                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
+                    <td colSpan={tableColumnCount} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500">
                       <div className="flex items-center justify-center">
                         <LoadingSpinnerLabel text="Loading pawned items..." className="text-base font-medium text-text-tertiary" />
                       </div>
@@ -722,7 +743,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                   </tr>
                 ) : pawnedItems.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500 bg-surface">
+                    <td colSpan={tableColumnCount} className="py-8 text-center text-sm text-zinc-400 dark:text-zinc-500 bg-surface">
                       {viewMode === "calendar" && selectedDate ? "No items on this day" : "No pawned items found"}
                     </td>
                   </tr>
@@ -735,6 +756,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary dark:text-zinc-400">{item.category}</td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary dark:text-zinc-400">{item.branch}</td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary dark:text-zinc-400">{item.pawnDate}</td>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-center text-sm font-black text-emerald-700 dark:text-emerald-400">
+                          {getPawnedItemInterestRatePercent(item)}%
+                        </td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2 sm:px-4 sm:py-3 text-center">
                           <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={viewOnly ? "mx-auto inline-flex text-sm font-bold text-emerald-700 hover:underline dark:text-emerald-400" : "mx-auto inline-flex text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-400"}>
@@ -803,7 +827,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                       </tr>
                       {expandedRow === item.itemId && (
                         <tr className="bg-amber-50/50 dark:bg-amber-900/20">
-                          <td colSpan={isAdminOrSuperAdmin ? 10 : 9} className="px-6 py-3 border-t border-amber-100 text-center dark:border-amber-800/30">
+                          <td colSpan={tableColumnCount} className="px-6 py-3 border-t border-amber-100 text-center dark:border-amber-800/30">
                             <RenewalDetails renewals={item.renewals} />
                           </td>
                         </tr>

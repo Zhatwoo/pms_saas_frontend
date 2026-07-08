@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import { publishInterestRatesSaved } from "@/contexts/interest-rates-context";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { fetchCategories } from "@/lib/categories";
@@ -165,15 +166,6 @@ export function InterestRatesSettings() {
 
   // Fetch groups on mount
   useEffect(() => {
-    const persistInterestRatesLocally = (nextGroups: InterestRateGroup[]) => {
-      if (typeof window === "undefined") return;
-      try {
-        localStorage.setItem("interest_rates", JSON.stringify(nextGroups));
-      } catch (storageError) {
-        console.warn("Unable to persist interest rates locally", storageError);
-      }
-    };
-
     async function loadInterestRates() {
       setIsLoading(true);
       try {
@@ -192,15 +184,12 @@ export function InterestRatesSettings() {
             isExpanded: g.isExpanded ?? true
           }));
           setGroups(normalizedGroups);
-          persistInterestRatesLocally(normalizedGroups);
         } else {
           setGroups(DEFAULT_GUEST_GROUPS);
-          persistInterestRatesLocally(DEFAULT_GUEST_GROUPS);
         }
       } catch {
         console.warn("No custom interest rates found, loading defaults.");
         setGroups(DEFAULT_GUEST_GROUPS);
-        persistInterestRatesLocally(DEFAULT_GUEST_GROUPS);
       } finally {
         setIsLoading(false);
       }
@@ -478,9 +467,7 @@ export function InterestRatesSettings() {
     }));
     try {
       await api.post("/settings/interest_rates", cleanedGroups);
-      if (typeof window !== "undefined") {
-        localStorage.setItem("interest_rates", JSON.stringify(cleanedGroups));
-      }
+      publishInterestRatesSaved(cleanedGroups);
       setGroups(cleanedGroups);
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);

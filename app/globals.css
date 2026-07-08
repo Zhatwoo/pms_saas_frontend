@@ -353,8 +353,8 @@ section[id] {
     transform: translateY(0);
   }
   100% {
-    opacity: 0;
-    transform: translateY(-150px);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -368,7 +368,21 @@ section[id] {
     view-timeline-name: --item-reveal;
     animation: scroll-reveal linear both;
     animation-timeline: --item-reveal;
-    animation-range: entry 0% exit 100%;
+    animation-range: entry 0% cover 40%;
+  }
+  
+  /* Mobile and Tablet optimization - simpler animation */
+  @media (max-width: 1023px) {
+    .reveal-on-scroll {
+      animation-range: entry 0% cover 30%;
+    }
+  }
+  
+  /* Mobile S, M, L - even simpler */
+  @media (max-width: 767px) {
+    .reveal-on-scroll {
+      animation-range: entry 0% cover 20%;
+    }
   }
 }
 

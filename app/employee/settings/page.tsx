@@ -94,15 +94,15 @@ export default function EmployeeSettingsPage() {
         </div>
       )}
 
-      <div className="flex gap-1 rounded-lg border border-border-main bg-surface p-1 max-w-fit overflow-hidden">
-        {["Profile", "Notifications", "Branch Config"].map((tab) => (
+      <div className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
+        {['Profile', 'Notifications', 'Branch Config'].map((tab) => (
           <button
             key={tab}
             onClick={() => {
               setActiveTab(tab);
               setToast(null);
             }}
-            className={`px-6 py-2 text-xs font-bold transition-all rounded-md ${activeTab === tab
+            className={`shrink-0 px-6 py-2 text-xs font-bold transition-all rounded-md whitespace-nowrap ${activeTab === tab
                 ? "bg-emerald-700 text-white shadow-sm"
                 : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
@@ -112,7 +112,7 @@ export default function EmployeeSettingsPage() {
         ))}
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className={`grid w-full gap-6 ${activeTab === "Profile" ? "xl:grid-cols-[minmax(0,1fr)_360px]" : "grid-cols-1"}`}>
         <div className="min-w-0 space-y-6">
           {activeTab === "Profile" && (
             <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
@@ -160,7 +160,7 @@ export default function EmployeeSettingsPage() {
             <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
               <h3 className="text-base font-bold text-emerald-800 mb-4 pb-2 border-b">Current Location: {branchName}</h3>
               <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 gap-y-4">
                   <div>
                     <label className="text-[10px] font-bold uppercase text-text-muted tracking-wide">Opening Time</label>
                     <p className="text-sm text-text-primary pt-1">08:00 AM</p>
@@ -169,7 +169,7 @@ export default function EmployeeSettingsPage() {
                     <label className="text-[10px] font-bold uppercase text-text-muted tracking-wide">Closing Time</label>
                     <p className="text-sm text-text-primary pt-1">06:00 PM</p>
                   </div>
-                  <div className="bg-emerald-50/50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 col-span-2">
+                  <div className="bg-emerald-50/50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 sm:col-span-2">
                     <p className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wide mb-1 flex items-center gap-1.5">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                       Security Restriction
@@ -206,35 +206,37 @@ export default function EmployeeSettingsPage() {
           </div>
         </div>
 
-        <div className="min-w-0 space-y-6">
-          <div className="rounded-xl border border-border-main bg-surface p-6 text-center shadow-sm">
-            <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full border-4 border-emerald-50 bg-white dark:border-emerald-950/60 dark:bg-zinc-800">
-              {user?.avatarUrl ? (
-                <Image
-                  src={user.avatarUrl}
-                  alt="Profile avatar"
-                  width={80}
-                  height={80}
-                  unoptimized
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-emerald-950 dark:text-zinc-50">
-                  {initials}
-                </div>
-              )}
+        {activeTab === "Profile" && (
+          <div className="min-w-0 space-y-6">
+            <div className="rounded-xl border border-border-main bg-surface p-6 text-center shadow-sm">
+              <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full border-4 border-emerald-50 bg-white dark:border-emerald-950/60 dark:bg-zinc-800">
+                {user?.avatarUrl ? (
+                  <Image
+                    src={user.avatarUrl}
+                    alt="Profile avatar"
+                    width={80}
+                    height={80}
+                    unoptimized
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-emerald-950 dark:text-zinc-50">
+                    {initials}
+                  </div>
+                )}
+              </div>
+              <h4 className="truncate px-2 text-lg font-bold text-text-primary">{fullName || "Employee"}</h4>
+              <p className="mb-4 text-xs text-text-secondary">{branchName}</p>
+              <button
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="w-full rounded-lg border border-emerald-200 bg-emerald-100 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-200 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
+              >
+                Change Avatar
+              </button>
+              <PasswordChangeRequestCard />
             </div>
-            <h4 className="truncate px-2 text-lg font-bold text-text-primary">{fullName || "Employee"}</h4>
-            <p className="mb-4 text-xs text-text-secondary">{branchName}</p>
-            <button
-              onClick={() => setIsAvatarModalOpen(true)}
-              className="w-full rounded-lg border border-emerald-200 bg-emerald-100 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-200 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
-            >
-              Change Avatar
-            </button>
-            <PasswordChangeRequestCard />
           </div>
-        </div>
+        )}
       </div>
 
       <AvatarPickerModal

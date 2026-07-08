@@ -199,7 +199,7 @@ export function TransactionStats({ data, isLoading = false, selectedDate }: Tran
             </div>
             <div>
               <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-emerald-200">
-                Live Total Balance
+                Live Total Balance For All Branches
               </p>
               <p className="mt-0.5 text-lg xl:text-xl font-bold text-yellow-500">
                 {isLoading ? <ThreeDotLoader /> : <>₱ {liveCompanyBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>}

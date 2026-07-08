@@ -68,6 +68,7 @@ const BRANCH_END_SYNC_COOLDOWN_MS = 8000;
 
 type BusinessSessionPollApi = {
   operationalCashAllowed: boolean;
+  todaySession?: { status: string } | null;
 };
 
 export function OpeningChecklistProvider({ children }: { children: React.ReactNode }) {
@@ -310,7 +311,11 @@ export function OpeningChecklistProvider({ children }: { children: React.ReactNo
         );
         if (cancelled || session.operationalCashAllowed) return;
 
-        logoutEmployeeForBranchEndDay();
+        // Log out only when today's session was explicitly closed (End Day),
+        // not when the branch simply has not started today yet.
+        if (session.todaySession?.status === "CLOSED") {
+          logoutEmployeeForBranchEndDay();
+        }
       } catch {
         /* ignore transient network errors */
       } finally {

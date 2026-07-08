@@ -7,14 +7,14 @@ import {
   BRANCH_DAY_END_STORAGE_KEY,
 } from "@/lib/branch-day-events";
 import { subscribeToBranchDayEndedNotifications } from "@/lib/notification-stream";
-import type { ApiNotification } from "@/lib/notifications";
+import { isBranchDayEndedApiNotification, type ApiNotification } from "@/lib/notifications";
 
 function matchesEmployeeBranch(
   userBranchId: string | null | undefined,
-  notification?: ApiNotification | null,
+  notification: ApiNotification,
 ): boolean {
   if (!userBranchId) return false;
-  if (!notification?.branch_id) return true;
+  if (!notification.branch_id) return true;
   return notification.branch_id === userBranchId;
 }
 
@@ -36,6 +36,7 @@ export function useBranchDayEndAutoLogout() {
     if (user?.role !== "employee" || !user.branchId) return;
 
     return subscribeToBranchDayEndedNotifications((notification) => {
+      if (!notification || !isBranchDayEndedApiNotification(notification)) return;
       if (!matchesEmployeeBranch(user.branchId, notification)) return;
       triggerLogout();
     });

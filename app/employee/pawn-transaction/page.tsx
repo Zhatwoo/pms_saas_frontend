@@ -22,7 +22,13 @@ import { useAuth } from "@/contexts/auth-context";
 import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 import { QrScanner } from "@/components/shared/qr-scanner";
 import { Role } from "@/types";
-import { calculateGadgetInterest } from "@/lib/interest";
+import { useInterestRates } from "@/contexts/interest-rates-context";
+import {
+  getTransactionInterestPercentage,
+  isLegacyBuyBackRepurchase,
+  isLegacyBuyOutTransaction,
+  resolvePawnedItemJoin,
+} from "@/lib/pawn-transaction-mapper";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
 import { formatPeso } from "@/lib/currency";
 import { operationalCashTotalsForPawnEnding } from "@/lib/ledger-operational-totals";
@@ -37,13 +43,13 @@ const filterToPurpose: Record<FilterType, PurposeType | null> = {
   "All": null,
   "Renew": "Renew",
   "Sells / Transfer": "Sold Item",
-  "Redeem": "Redeem",
+  "Buy Out": "Buy Out",
   "Buy Back": "Buy Back",
   "Reserve / Layaway": "Reserve / Layaway",
   "Pawn": "Pawn",
   "Start": "Start",
-  "Buy Out": "Buy Out",
   "Sold Item": "Sold Item",
+  "Redeem": "Buy Out",
 };
 
 const downloadIcon = (
@@ -355,6 +361,8 @@ interface PawnedItemJoin {
   items_included?: string | null;
   condition?: string | null;
   category?: string | null;
+  pawn_date?: string | null;
+  interest_rate_snapshot?: unknown;
   memory_storage?: string | null;
   remarks?: string | null;
   id_presented?: string | null;
@@ -370,22 +378,32 @@ interface PawnedItemJoin {
 }
 
 function resolvePawnedItem(raw: unknown): PawnedItemJoin | null {
-  if (!raw) return null;
-  if (Array.isArray(raw)) return raw[0] ?? null;
-  return raw as PawnedItemJoin;
+  return resolvePawnedItemJoin(raw as PawnedItemJoin | PawnedItemJoin[] | null);
 }
 
 function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   const pawnAmount = Number(transaction.pawn_amount || 0);
   const item = resolvePawnedItem(transaction.pawned_item);
-  const calculations = calculateGadgetInterest(
-    pawnAmount,
-    transaction.transaction_date,
-    item?.category || undefined,
+  const isBuyBackRepurchase = isLegacyBuyBackRepurchase(
+    transaction.purpose,
+    transaction.details,
   );
-
-  const isBuyBackAction = transaction.purpose === "Buy Back";
+  const isBuyOutAction = isLegacyBuyOutTransaction(
+    transaction.purpose,
+    transaction.details,
+  );
   const isPawnAction = transaction.purpose === "Pawn";
+  const percentage = getTransactionInterestPercentage({
+    pawnAmount,
+    purpose: transaction.purpose,
+    details: transaction.details,
+    transactionDate: transaction.transaction_date,
+    pawnDate: item?.pawn_date,
+    category: item?.category,
+    storageFee: transaction.storage_fee,
+    interestRateSnapshot: item?.interest_rate_snapshot,
+  });
+
   // Support both object and array response for customer
   const customerRaw = item?.customer ?? transaction.customer;
   const customer = Array.isArray(customerRaw) ? customerRaw[0] : customerRaw;
@@ -393,16 +411,16 @@ function toTransactionRow(transaction: ApiTransaction): TransactionRow {
   return {
     transactionNo: transaction.transaction_no,
     purpose: transaction.purpose as PurposeType,
-    buyBack: isBuyBackAction
+    buyBack: isBuyBackRepurchase
       ? String(transaction.cash_in ?? 0)
       : "0",
-    percentage: isBuyBackAction || isPawnAction ? String(calculations.percentage) : "0",
-    buyOut: "0",
+    percentage,
+    buyOut: isBuyOutAction ? String(transaction.cash_in ?? 0) : "0",
     sold: transaction.purpose === "Sold Item" ? String(transaction.cash_in ?? 0) : "0",
     date: transaction.transaction_date,
     time: transaction.transaction_time,
     cashIn: isPawnAction ? "0" : String(transaction.cash_in ?? 0),
-    cashOut: (isBuyBackAction || transaction.purpose === "Sold Item")
+    cashOut: (isBuyOutAction || isBuyBackRepurchase || transaction.purpose === "Sold Item")
       ? "0"
       : String(transaction.cash_out ?? 0),
     returnVal: String(transaction.return_amount ?? 0),
@@ -439,26 +457,9 @@ export default function EmployeePawnTransactionsPage() {
   const { selectedBranch, branches, canSwitchBranch } = useBranch();
   const { user } = useAuth();
   const { refreshOpeningChecklistFromServer, modulesAllowed } = useOpeningChecklist();
-  const [isCompactTablet, setIsCompactTablet] = useState(false);
-
-  useEffect(() => {
-    if (!modulesAllowed) {
-      return;
-    }
-
-    async function syncInterestRates() {
-      try {
-        const data = await api.get("/settings/interest_rates");
-        if (data && Array.isArray(data)) {
-          localStorage.setItem("interest_rates", JSON.stringify(data));
-        }
-      } catch {
-        // fail silently
-      }
-    }
-    syncInterestRates();
-  }, [modulesAllowed]);
+  const { isReady: interestRatesReady } = useInterestRates();
   const searchParams = useSearchParams();
+  const [isCompactTablet, setIsCompactTablet] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -655,7 +656,7 @@ export default function EmployeePawnTransactionsPage() {
   }, [branchIdForApi, selectedDate, modulesAllowed]);
 
   const fetchAllData = useCallback(async () => {
-    if (!modulesAllowed) {
+    if (!modulesAllowed || !interestRatesReady) {
       return;
     }
     setIsLoading(true);
@@ -666,14 +667,14 @@ export default function EmployeePawnTransactionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchTransactions, fetchSelectedDateStats, modulesAllowed]);
+  }, [fetchTransactions, fetchSelectedDateStats, modulesAllowed, interestRatesReady]);
 
   useEffect(() => {
-    if (!modulesAllowed) {
+    if (!modulesAllowed || !interestRatesReady) {
       return;
     }
     void fetchAllData();
-  }, [fetchAllData, modulesAllowed]);
+  }, [fetchAllData, modulesAllowed, interestRatesReady]);
 
   useEffect(() => {
     if (!modulesAllowed) {
@@ -738,7 +739,17 @@ export default function EmployeePawnTransactionsPage() {
     if (activeFilter !== "All") {
       const targetPurpose = filterToPurpose[activeFilter];
       if (targetPurpose) {
-        result = result.filter((t) => t.purpose === targetPurpose);
+        if (activeFilter === "Buy Out") {
+          result = result.filter((t) =>
+            isLegacyBuyOutTransaction(t.purpose, t.details),
+          );
+        } else if (activeFilter === "Buy Back") {
+          result = result.filter((t) =>
+            isLegacyBuyBackRepurchase(t.purpose, t.details),
+          );
+        } else {
+          result = result.filter((t) => t.purpose === targetPurpose);
+        }
       }
     }
 
@@ -1182,44 +1193,43 @@ export default function EmployeePawnTransactionsPage() {
             <option value="All">All Purposes</option>
             <option value="Renew">Renew</option>
             <option value="Sells / Transfer">Sells</option>
-            <option value="Redeem">Buy Back</option>
-            <option value="Buy Back">Buy Out</option>
+            <option value="Buy Out">Buy Out</option>
+            <option value="Buy Back">Buy Back</option>
             <option value="Reserve / Layaway">Reserve / Layaway</option>
             <option value="Pawn">Pawn</option>
             <option value="Start">Start</option>
-            <option value="Buy Out">Buy Out</option>
             <option value="Sold Item">Sold Item</option>
           </select>
         </div>
-          <div className="flex items-center gap-2">
-            <ActionButton variant="outline" onClick={handleExportCSV}>
-              <span className="flex items-center gap-1.5">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <ActionButton variant="outline" onClick={handleExportCSV} className="w-full sm:w-auto">
+              <span className="flex items-center justify-center gap-1.5">
                 {downloadIcon}
                 Export CSV
               </span>
             </ActionButton>
             <ActionButton
               variant="primary"
-              className="border-emerald-700 bg-emerald-700 text-amber-400"
+              className="w-full sm:w-auto border-emerald-700 bg-emerald-700 text-amber-400"
               onClick={handlePrintReport}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center justify-center gap-1.5">
                 {printerIcon}
                 Print Report
               </span>
             </ActionButton>
-            <div className="inline-flex items-center rounded-xl border border-border-main bg-surface-secondary p-1">
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border-main bg-surface-secondary p-1">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
+                className={`min-w-[90px] rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
               >
                 List
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("calendar")}
-                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
+                className={`min-w-[90px] rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
               >
                 Calendar
               </button>
@@ -1335,7 +1345,7 @@ export default function EmployeePawnTransactionsPage() {
         compactTablet={isCompactTablet}
       />
 
-      {/* Buy Back Modal will handle Expired/For-Sale items */}
+      {/* Buy Back Modal handles Expired/For-Sale repurchase items */}
       <BuyBackModal
         isOpen={isBuyBackModalOpen}
         onClose={() => setIsBuyBackModalOpen(false)}
