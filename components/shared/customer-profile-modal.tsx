@@ -32,13 +32,13 @@ type PreviewState = {
 };
 
 const overlayClass =
-  "fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-md";
+  "fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-4 backdrop-blur-md";
 
 const modalClass =
-  "w-[95vw] max-w-6xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl anim-modal-enter md:w-[90vw]";
+  "my-auto flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl anim-modal-enter sm:rounded-[2rem]";
 
 const cardClass =
-  "rounded-[1.5rem] border border-border-main bg-surface-secondary/90 p-5 shadow-sm backdrop-blur";
+  "rounded-[1.5rem] border border-border-main bg-surface-secondary/90 p-4 sm:p-5 shadow-sm backdrop-blur";
 
 const isVisualUrl = (value: string | null | undefined) =>
   Boolean(value) && (/^https?:\/\//i.test(value as string) || /^data:image\//i.test(value as string));
@@ -65,19 +65,19 @@ function formatMatchLabel(customer: CustomerDetail) {
 
 function PreviewModal({ src, title, onClose }: PreviewState & { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 px-4 py-8 backdrop-blur-md" onClick={onClose}>
-      <div className="anim-modal-enter relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/80 p-3 sm:p-4 backdrop-blur-md" onClick={onClose}>
+      <div className="anim-modal-enter my-auto flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-surface shadow-2xl sm:rounded-[2rem]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex shrink-0 items-center justify-between border-b border-border-main px-4 py-4 sm:px-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Identity Preview</p>
             <h3 className="mt-1 text-lg font-black text-text-primary">{title}</h3>
           </div>
-          <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover" aria-label="Close image preview">
+          <button type="button" onClick={onClose} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover" aria-label="Close image preview">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
           </button>
         </div>
-        <div className="flex max-h-[calc(90vh-72px)] items-center justify-center bg-zinc-950 p-4">
-          <img src={src} alt={title} className="max-h-[calc(90vh-120px)] w-full object-contain" />
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto bg-zinc-950 p-2 sm:p-4">
+          <img src={src} alt={title} className="max-h-full w-full object-contain" />
         </div>
       </div>
     </div>
@@ -262,12 +262,12 @@ export function ViewCustomerModal({
         <div className={modalClass} onClick={(e) => e.stopPropagation()}>
 
           {/* ── Header ── */}
-          <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+          <div className="shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 sm:px-6 sm:py-5 text-white">
             <div className="relative flex items-start justify-center">
               <div className="text-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-300/90">Customer Profile</p>
-                <h2 className="mt-1 text-2xl font-black tracking-tight">{customer.name}</h2>
-                <p className="mt-1 text-sm text-emerald-50/80">{customer.branch} · Registered {customer.createdAt}</p>
+                <h2 className="mt-1 text-xl sm:text-2xl font-black tracking-tight">{customer.name}</h2>
+                <p className="mt-1 text-xs sm:text-sm text-emerald-50/80">{customer.branch} · Registered {customer.createdAt}</p>
               </div>
               <button
                 type="button"
@@ -281,15 +281,15 @@ export function ViewCustomerModal({
           </div>
 
           {/* ── Body ── */}
-          <div className="grid gap-6 px-6 py-6 xl:grid-cols-[1.02fr_0.98fr]">
+          <div className="grid min-h-0 flex-1 overflow-y-auto gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:grid-cols-[1.02fr_0.98fr]">
 
             {/* Left column */}
             <div className="space-y-5">
               <div className={cardClass}>
                 <div className="flex flex-col items-center text-center">
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Profile Overview</p>
-                  <h3 className="mt-1 text-xl font-black text-text-primary">{customer.name}</h3>
-                  <p className="mt-1 text-sm text-text-secondary">{customer.email}</p>
+                  <h3 className="mt-1 text-lg sm:text-xl font-black text-text-primary">{customer.name}</h3>
+                  <p className="mt-1 text-xs sm:text-sm text-text-secondary">{customer.email}</p>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <SummaryPill label="Contact" value={customer.phone} />
@@ -302,7 +302,7 @@ export function ViewCustomerModal({
               <div className={cardClass}>
                 <div className="flex flex-col items-center text-center">
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Identity Media</p>
-                  <h3 className="mt-1 text-lg font-black text-text-primary">{showIdGallery ? "ID front and back" : "Captured image"}</h3>
+                  <h3 className="mt-1 text-base sm:text-lg font-black text-text-primary">{showIdGallery ? "ID front and back" : "Captured image"}</h3>
                   <span className="mt-1 inline-block rounded-full border border-border-main bg-surface px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-text-secondary">
                     {showIdGallery ? "Preview ready" : "Profile image"}
                   </span>
@@ -343,7 +343,7 @@ export function ViewCustomerModal({
               <div className={cardClass}>
                 <div className="flex flex-col items-center text-center">
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Customer Profile</p>
-                  <h3 className="mt-1 text-lg font-black text-text-primary">Record details</h3>
+                  <h3 className="mt-1 text-base sm:text-lg font-black text-text-primary">Record details</h3>
                 </div>
 
                 {reviewNotes && (
@@ -357,7 +357,7 @@ export function ViewCustomerModal({
                       </span>
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">Employee Note</p>
-                        <p className="mt-1 text-sm leading-6 text-amber-950">{reviewNotes}</p>
+                        <p className="mt-1 text-xs sm:text-sm leading-relaxed sm:leading-6 text-amber-950">{reviewNotes}</p>
                       </div>
                     </div>
                   </div>
@@ -371,7 +371,7 @@ export function ViewCustomerModal({
                     <EditableField label="Email Address" value={fields.email} editing={isEditing} highlighted={highlightedField === "email"} onChange={(v) => setField("email", v)} />
                     <div className="space-y-1.5">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Customer ID</p>
-                      <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">{customer.id || "—"}</div>
+                      <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words">{customer.id || "—"}</div>
                     </div>
                   </div>
 
@@ -390,25 +390,25 @@ export function ViewCustomerModal({
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-1.5 md:col-span-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Address</p>
-                        <div className="min-h-[3.5rem] rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words whitespace-pre-line">
+                        <div className="min-h-[3.5rem] rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words whitespace-pre-line">
                           {[fields.address, fields.barangay, fields.city, fields.region].filter(Boolean).join(", ") || "—"}
                         </div>
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Barangay</p>
-                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">{fields.barangay || "—"}</div>
+                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words">{fields.barangay || "—"}</div>
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">City / Municipality</p>
-                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">{fields.city || "—"}</div>
+                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words">{fields.city || "—"}</div>
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Region</p>
-                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">{fields.region || "—"}</div>
+                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words">{fields.region || "—"}</div>
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Branch Reference</p>
-                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-sm font-semibold text-text-primary break-words">{customer.branch || "—"}</div>
+                        <div className="rounded-2xl border border-border-main bg-surface px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words">{customer.branch || "—"}</div>
                       </div>
                     </div>
                   )}
@@ -445,11 +445,11 @@ export function ViewCustomerModal({
 
               <div className={cardClass}>
                 <p className="text-center text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Profile Guidance</p>
-                <p className="mt-2 text-sm leading-6 text-text-secondary">
+                <p className="mt-2 text-xs sm:text-sm leading-relaxed sm:leading-6 text-text-secondary">
                   Use the exact full name spelling when searching or linking a customer. This profile will combine transactions only when the match is deliberate and verified.
                 </p>
                 {matchWarning && (
-                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{matchWarning}</div>
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs sm:text-sm text-amber-900">{matchWarning}</div>
                 )}
               </div>
             </div>
@@ -457,7 +457,7 @@ export function ViewCustomerModal({
 
           {/* ── Footer ── */}
           {canRequestEdit && (
-            <div className="border-t border-border-main px-6 py-4 flex justify-end bg-surface">
+            <div className="flex shrink-0 justify-end border-t border-border-main bg-surface px-4 py-4 sm:px-6">
               <button
                 type="button"
                 onClick={() => setIsRequestOpen(true)}
@@ -511,10 +511,10 @@ function EditableField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full rounded-2xl border bg-input-bg px-3 py-2.5 text-sm font-semibold text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 ${highlighted ? "border-amber-400 ring-2 ring-amber-400/20" : "border-input-border"}`}
+          className={`w-full rounded-2xl border bg-input-bg px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 ${highlighted ? "border-amber-400 ring-2 ring-amber-400/20" : "border-input-border"}`}
         />
       ) : (
-        <div className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold text-text-primary break-words ${highlighted ? "border-amber-400 bg-amber-50" : "border-border-main bg-surface"}`}>
+        <div className={`rounded-2xl border px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words ${highlighted ? "border-amber-400 bg-amber-50" : "border-border-main bg-surface"}`}>
           {value || "—"}
         </div>
       )}
@@ -526,7 +526,7 @@ function SummaryPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border-main bg-surface px-3 py-3">
       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-text-primary">{value || "—"}</p>
+      <p className="mt-1 text-xs sm:text-sm font-semibold text-text-primary">{value || "—"}</p>
     </div>
   );
 }
