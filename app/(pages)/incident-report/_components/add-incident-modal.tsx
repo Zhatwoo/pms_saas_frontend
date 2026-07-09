@@ -79,7 +79,7 @@ export function AddIncidentModal({
                 setFormState((current) => ({ ...current, title: event.target.value }))
               }
               placeholder="Short incident title"
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
             />
           </label>
 
@@ -93,7 +93,7 @@ export function AddIncidentModal({
                   category: event.target.value as IncidentCategory,
                 }))
               }
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
             >
               {categoryOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -112,7 +112,7 @@ export function AddIncidentModal({
               }
               rows={4}
               placeholder="Describe what happened and why the ticket needs attention."
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
             />
           </label>
 
@@ -126,7 +126,7 @@ export function AddIncidentModal({
                   priority: event.target.value as IncidentPriority,
                 }))
               }
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
             >
               {priorityOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -148,7 +148,7 @@ export function AddIncidentModal({
                 }))
               }
               disabled={!canSelectBranch}
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
             >
               {branches.map((branch) => (
                 <option key={branch.id} value={branch.id}>
@@ -166,7 +166,7 @@ export function AddIncidentModal({
                 onChange={(event) =>
                   setFormState((current) => ({ ...current, userId: event.target.value }))
                 }
-                className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+                className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
               >
                 <option value="">Use current user</option>
                 {users.filter((record) => record.id).map((record) => (
@@ -189,7 +189,7 @@ export function AddIncidentModal({
                 setFormState((current) => ({ ...current, amountImpact: event.target.value }))
               }
               placeholder="0.00"
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
             />
           </label>
 
@@ -205,7 +205,7 @@ export function AddIncidentModal({
                 }))
               }
               placeholder="Ticket no., transaction no., inventory reference, or note"
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
             />
           </label>
 
