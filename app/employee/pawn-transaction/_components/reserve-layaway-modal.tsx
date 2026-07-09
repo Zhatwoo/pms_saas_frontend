@@ -288,10 +288,10 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div
-        className="relative z-10 flex h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background dark:shadow-black/40"
+        className="relative z-10 flex h-[calc(100dvh-2rem)] min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background dark:shadow-black/40 sm:h-[90vh]"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+        <div className="relative z-30 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner">
@@ -320,11 +320,10 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
-          <div className="flex w-full shrink-0 flex-col border-r border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary lg:w-[420px]">
-            <div className="space-y-4 p-6">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+          <div className={`flex min-h-0 w-full flex-col border-r border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary lg:w-[420px] lg:shrink-0 ${selectedItem ? "max-lg:hidden" : "flex-1"}`}>
+            <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-border dark:bg-surface-secondary sm:p-6">
               <div className="flex items-center gap-3">
-                <Search className="text-emerald-600/40 dark:text-emerald-400/40" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
                   Search Available Item
                 </h3>
@@ -342,7 +341,7 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
               {isLoading ? (
                 <div className="flex h-40 flex-col items-center justify-center gap-3">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-50 border-t-transparent dark:border-border0" />
@@ -390,8 +389,17 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-surface-secondary">
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <div className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-surface-secondary ${selectedItem ? "flex" : "hidden lg:flex"}`}>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+              {selectedItem && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedItem(null)}
+                  className="mb-4 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40 lg:hidden"
+                >
+                  ← Change Item
+                </button>
+              )}
               <div className="flex items-start justify-between gap-4 border-b border-zinc-200 pb-4 dark:border-border-subtle">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700/70 dark:text-emerald-400">Reserve Details</p>
@@ -490,7 +498,7 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-zinc-100 bg-zinc-50 p-5 dark:border-border-subtle dark:bg-surface">
+            <div className="relative z-30 shrink-0 border-t border-zinc-100 bg-zinc-50 p-4 dark:border-border-subtle dark:bg-surface sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-zinc-500 dark:text-zinc-300">
                   <span className="font-black uppercase tracking-[0.24em] text-zinc-400">Content summary:</span> Hold the item, record a downpayment, and keep the balance visible until completion.

@@ -432,7 +432,6 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
           >
             <div className="space-y-4 p-4 sm:p-5 xl:p-6">
               <div className="mb-2 flex items-center gap-3">
-                <Search className="h-5 w-5 text-emerald-600/60 dark:text-emerald-400" />
                 <h3 className="text-xs font-black uppercase tracking-wider text-emerald-800/70 dark:text-emerald-300">Search Active Pawn</h3>
               </div>
               
