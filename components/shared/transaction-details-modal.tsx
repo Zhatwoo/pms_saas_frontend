@@ -175,7 +175,7 @@ export function TransactionDetailsModal({
                   />
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-zinc-400">
+                <p className="mt-3 text-sm text-text-muted">
                   No QR code security record available.
                 </p>
               )}

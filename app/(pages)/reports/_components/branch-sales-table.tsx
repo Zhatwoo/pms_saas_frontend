@@ -33,13 +33,14 @@ export function BranchSalesTable({ data = [], date, title = "Per-Branch Sales" }
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
       <div className="bg-emerald-900 px-4 py-3">
-        <h3 className="text-base font-bold text-pawn-gold">
+        <h3 className="text-sm font-bold text-pawn-gold sm:text-base">
           {title} &mdash; {date || "Today"}
         </h3>
       </div>
 
       {/* Table */}
-      <table className="w-full text-base">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[32rem] text-base">
         <thead>
           <tr className="border-b border-border-main bg-surface-secondary">
             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-text-tertiary">
@@ -112,6 +113,7 @@ export function BranchSalesTable({ data = [], date, title = "Per-Branch Sales" }
           </tfoot>
         )}
       </table>
+      </div>
     </div>
   );
 }

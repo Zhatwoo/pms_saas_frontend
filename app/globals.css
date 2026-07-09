@@ -137,10 +137,10 @@ html.theme-transitioning *::after {
   --surface-raised: #1e2330;
   --border: #2a2f3d;
   --border-subtle: #222738;
-  --text-primary: #e4e4e7;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #71717a;
-  --text-muted: #52525b;
+  --text-primary: #ffffff;
+  --text-secondary: #f4f4f5;
+  --text-tertiary: #d4d4d8;
+  --text-muted: #a1a1aa;
   --text-inverse: #18181b;
   --input-bg: #1a1f2b;
   --input-border: #2e3447;

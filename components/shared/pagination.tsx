@@ -50,13 +50,13 @@ export function Pagination({
   const nextLabel = reverseOrder ? ">" : ">";
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-0.5 sm:gap-1">
       <ThemeButton
         onClick={() => onPageChange(reverseOrder ? Math.min(totalPages, currentPage + 1) : Math.max(1, currentPage - 1))}
         disabled={reverseOrder ? currentPage === totalPages : currentPage === 1}
         variant="ghost"
         size="sm"
-        className="min-w-8 px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
+        className="h-7 sm:h-8 min-w-7 sm:min-w-8 px-1.5 sm:px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
       >
         {previousLabel}
       </ThemeButton>
@@ -64,7 +64,7 @@ export function Pagination({
         p === "ellipsis" ? (
           <span
             key={`ellipsis-${index}`}
-            className="flex h-8 min-w-8 items-center justify-center px-1 text-text-muted"
+            className="flex h-7 sm:h-8 min-w-7 sm:min-w-8 items-center justify-center px-1 text-xs sm:text-sm text-text-muted"
           >
             ...
           </span>
@@ -74,7 +74,7 @@ export function Pagination({
             onClick={() => onPageChange(p)}
             size="sm"
             variant={p === currentPage ? "primary" : "ghost"}
-            className={`h-8 min-w-10 px-3 font-mono tabular-nums text-sm ${
+            className={`h-7 sm:h-8 min-w-8 sm:min-w-10 px-2 sm:px-3 font-mono tabular-nums text-xs sm:text-sm ${
               p === currentPage
                 ? "font-bold text-white"
                 : "text-text-secondary hover:bg-surface-hover"
@@ -89,7 +89,7 @@ export function Pagination({
         disabled={reverseOrder ? currentPage === 1 : currentPage === totalPages}
         variant="ghost"
         size="sm"
-        className="min-w-8 px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
+        className="h-7 sm:h-8 min-w-7 sm:min-w-8 px-1.5 sm:px-2 text-text-muted hover:text-text-primary disabled:opacity-30"
       >
         {nextLabel}
       </ThemeButton>
@@ -119,12 +119,12 @@ export function PaginationFooter({
   return (
     <div
       className={cn(
-        "border-t border-border-subtle bg-surface-secondary/50 p-4",
-        "flex flex-col gap-3 md:flex-row md:items-center md:justify-between",
+        "border-t border-border-subtle bg-surface-secondary/50 p-3 sm:p-4",
+        "flex flex-row items-center justify-between gap-2 md:gap-3",
         className,
       )}
     >
-      <span className="text-xs font-bold uppercase tracking-widest text-text-tertiary">
+      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest text-text-tertiary">
         SHOWING {startItem}-{endItem} OF {totalItems} RECORDS
       </span>
       <Pagination

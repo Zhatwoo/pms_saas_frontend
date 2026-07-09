@@ -8,7 +8,15 @@ import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 import { getTransactionDateTimeFields } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
+import { TransactionConfirmModal } from "@/components/shared/transaction-confirm-modal";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  isTransactionPasswordError,
+  TRANSACTION_PASSWORD_VERIFY_MESSAGE,
+  transactionPasswordErrorClass,
+  transactionPasswordInputClass,
+} from "@/lib/transaction-password";
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -34,6 +42,15 @@ function Undo2({ className }: { className?: string }) {
 }
 function QrCode({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/></svg>);
+}
+function Menu({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
 }
 function AlertCircle({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>);
@@ -83,7 +100,10 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
   const [pawnedItems, setPawnedItems] = useState<PawnedSearchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMobileItemList, setShowMobileItemList] = useState(true);
   // Proof of buy back — camera capture
   const [proofImage, setProofImage] = useState<string | null>(null);
   const [showProofCamera, setShowProofCamera] = useState(false);
@@ -100,6 +120,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
       setAdminForm(prev => ({ ...prev, processedBy: user.fullName }));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setShowMobileItemList(true);
+    setIsCancelConfirmOpen(false);
+  }, [isOpen]);
 
   // Clear proof image when selected item changes
   useEffect(() => {
@@ -244,13 +270,30 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
     );
   }, [selectedItem]);
 
+  const handleConfirmRedeemRequest = () => {
+    if (!selectedItem) return;
+    setError(null);
+
+    if (!adminForm.password) {
+      setError(TRANSACTION_PASSWORD_VERIFY_MESSAGE);
+      return;
+    }
+
+    if (!proofImage) {
+      setError("A proof of buy out photo is required before confirming.");
+      return;
+    }
+
+    setIsConfirmOpen(true);
+  };
+
   const handleConfirmRedeem = async () => {
     if (isProcessingRef.current) return;
     if (!selectedItem) return;
     setError(null);
 
     if (!adminForm.password) {
-      setError("Please enter password to verify.");
+      setError(TRANSACTION_PASSWORD_VERIFY_MESSAGE);
       return;
     }
 
@@ -312,10 +355,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
       }
       onClose();
       toast.success("Item bought out successfully!");
+      setIsConfirmOpen(false);
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
+      setIsConfirmOpen(false);
     } finally {
       setIsConfirming(false);
       isProcessingRef.current = false;
@@ -324,103 +369,126 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
 
   if (!isOpen) return null;
 
+  const passwordFieldError = isTransactionPasswordError(error) ? error : null;
+  const proofFieldError = error && !passwordFieldError ? error : null;
+  const hideMobileSidebar = Boolean(selectedItem && !showMobileItemList);
+
+  const handleSelectItem = (item: PawnedSearchItem) => {
+    setSelectedItem(item);
+    setShowMobileItemList(false);
+  };
+
+  const handleOpenMobileItemList = () => {
+    setShowMobileItemList(true);
+  };
+
+  const handleRequestClose = () => {
+    if (isConfirming) return;
+    setIsCancelConfirmOpen(true);
+  };
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={handleRequestClose} />
       <div 
-        className={`relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10 ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}
+        className={`relative z-10 flex h-[calc(100dvh-2rem)] max-h-[100dvh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-3rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "lg:h-[90vh]"}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
-                <Undo2 className="w-6 h-6" />
+        <div className="relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-6 sm:py-5">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner sm:h-12 sm:w-12">
+                <Undo2 className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+              <div className="min-w-0">
+                <p className="truncate text-[9px] font-black uppercase tracking-[0.22em] text-amber-300/90 sm:text-[10px] sm:tracking-[0.28em] dark:text-emerald-400">
                   {branchName} | Active Pawn
                 </p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
+                <h1 className="mt-1 text-lg font-black leading-none tracking-tight text-white sm:text-2xl">
                   Buy Out Pawn Ticket
                 </h1>
               </div>
             </div>
-            
-            <button 
-              onClick={onClose} 
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
-              aria-label="Close Buy Out Pawn Ticket"
-            >
-              <X className="w-5 h-5" />
-            </button>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <button 
+                onClick={handleRequestClose} 
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+                aria-label="Close Buy Out Pawn Ticket"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className={`flex min-h-0 flex-1 flex-col xl:flex-row ${compactTablet ? "overflow-y-auto" : "overflow-hidden"}`}>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className="flex w-full shrink-0 flex-col border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary xl:w-[400px] xl:border-r">
-            <div className={`space-y-4 p-4 ${compactTablet ? "md:p-5" : "md:p-6"}`}>
-              <div className="flex items-center gap-3 mb-2">
-                <Search className="w-5 h-5 text-emerald-600/40" />
-                <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Active Pawn</h3>
+          <div
+            className={`w-full shrink-0 flex-col border-b border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary xl:flex xl:w-[min(400px,36%)] xl:border-b-0 xl:border-r ${
+              hideMobileSidebar ? "hidden" : "flex min-h-0 flex-1"
+            }`}
+          >
+            <div className="space-y-4 p-4 sm:p-5 xl:p-6">
+              <div className="mb-2 flex items-center gap-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-emerald-800/70 dark:text-emerald-300">Search Active Pawn</h3>
               </div>
               
-              <div className="relative group">
+              <div className="group relative">
                 <input 
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-500 transition-all text-sm font-medium shadow-sm"
+                  className="h-11 w-full rounded-xl border-2 border-emerald-100 bg-white px-4 pl-12 text-sm font-medium text-text-primary shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-border-subtle dark:bg-surface-secondary dark:text-white dark:placeholder:text-zinc-500 sm:h-12"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-200 group-focus-within:text-emerald-500 transition-colors" />
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-400 transition-colors group-focus-within:text-emerald-500 dark:text-emerald-500" />
                 <button
                   onClick={() => setIsScannerOpen(true)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all active:scale-95 border border-emerald-100"
+                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50 text-emerald-600 transition-all hover:bg-emerald-100 active:scale-95 dark:border-border-subtle dark:bg-surface dark:text-emerald-400 dark:hover:bg-surface-hover"
                   title="Scan QR Code"
                 >
-                  <QrCode className="w-4 h-4" />
+                  <QrCode className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className={`overflow-y-auto px-4 pb-6 scrollbar-hide ${compactTablet ? "max-h-[210px] md:max-xl:max-h-[230px]" : "flex-1"}`}>
+            <div className="scrollbar-hide min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:pb-6">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase">Linking to Database...</p>
+                  <p className="text-[10px] font-bold uppercase text-emerald-800/70 dark:text-emerald-300">Linking to Database...</p>
                 </div>
               ) : pawnedItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white dark:bg-surface rounded-2xl border-2 border-dashed border-emerald-100 dark:border-border-subtle shadow-sm">
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-3">
-                    <Package className="w-6 h-6 text-emerald-200" />
+                <div className="flex h-40 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-100 bg-white p-6 text-center shadow-sm dark:border-border-subtle dark:bg-surface">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/60">
+                    <Package className="h-6 w-6 text-emerald-400 dark:text-emerald-500" />
                   </div>
-                  <p className="text-sm font-bold text-emerald-900/60">No active pawns found</p>
-                  <p className="text-[10px] text-emerald-900/30 uppercase mt-1 tracking-tighter">Only Active items can be bought out</p>
+                  <p className="text-sm font-bold text-emerald-900/70 dark:text-zinc-200">No active pawns found</p>
+                  <p className="mt-1 text-[10px] font-bold uppercase tracking-tighter text-emerald-900/45 dark:text-zinc-400">Only Active items can be bought out</p>
                 </div>
               ) : (
                 pawnedItems.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => setSelectedItem(item)}
-                    className={`w-full p-4 mb-3 rounded-2xl border-2 transition-all flex flex-col gap-2 text-left relative group ${
+                    onClick={() => handleSelectItem(item)}
+                    className={`group relative mb-3 flex w-full flex-col gap-2 rounded-2xl border-2 p-4 text-left transition-all ${
                       selectedItem?.id === item.id 
-                        ? 'bg-emerald-50 dark:bg-emerald-600/20 border-emerald-400 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5' 
-                        : 'bg-white dark:bg-surface/5 border-transparent hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-600/10 hover:shadow-lg'
+                        ? 'border-emerald-400 bg-emerald-50 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5 dark:bg-emerald-600/20' 
+                        : 'border-transparent bg-white hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-lg dark:bg-surface/40 dark:hover:border-emerald-500/30 dark:hover:bg-emerald-600/10'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.unitCode}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">{item.unitCode}</p>
                       <span className="bg-emerald-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm shadow-emerald-600/20">
                         {item.status}
                       </span>
                     </div>
                     <h4 className="font-black text-emerald-950 dark:text-white leading-tight pr-8">{item.unit}</h4>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-emerald-50 dark:border-border">
-                      <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 capitalize">{item.name}</p>
-                      <p className="font-black text-emerald-600 dark:text-emerald-400 text-xs">₱ {Number(item.amount).toLocaleString()}</p>
+                    <div className="mt-2 flex items-center justify-between border-t border-emerald-50 pt-2 dark:border-border-subtle">
+                      <p className="text-[10px] font-bold capitalize text-emerald-800/70 dark:text-zinc-300">{item.name}</p>
+                      <p className="text-xs font-black text-emerald-700 dark:text-emerald-300">₱ {Number(item.amount).toLocaleString()}</p>
                     </div>
                   </button>
                 ))
@@ -429,7 +497,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
           </div>
 
           {/* Right Side: Details & Computation (desktop xl+) */}
-          <div className={`min-h-0 flex-1 overflow-y-auto bg-white scrollbar-hide dark:bg-surface ${compactTablet ? "hidden xl:block" : ""}`}>
+          <div className="hidden min-h-0 flex-1 overflow-y-auto bg-white scrollbar-hide dark:bg-surface xl:block">
             {selectedItem ? (
               <div className="animate-in fade-in slide-in-from-right-4 p-4 duration-300 sm:p-6 xl:p-12">
                 <div className="space-y-1 mb-8">
@@ -437,7 +505,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                   <h2 className="text-4xl font-black text-emerald-950 dark:text-white dark:text-white tracking-tighter leading-none">
                     {selectedItem.unit}
                   </h2>
-                  <p className="text-emerald-900/40 dark:text-emerald-400 font-bold flex items-center gap-2">
+                  <p className="text-emerald-800/70 dark:text-emerald-300 font-bold flex items-center gap-2">
                     {selectedItem.name} • {selectedItem.contactNumber}
                   </p>
                 </div>
@@ -447,12 +515,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
                     <DetailRow 
                       label="Maturity Interest" 
-                      value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
+                      value={<span className="text-emerald-700 dark:text-emerald-300">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
                     />
                     <DetailRow label="Purchased Date" value={selectedItem.purchasedDate} />
                     <DetailRow 
                       label="Days Since Pawn" 
-                      value={<span className="text-emerald-600">{interestCalc.daysPassed} Days</span>} 
+                      value={<span className="text-emerald-700 dark:text-emerald-300">{interestCalc.daysPassed} Days</span>} 
                     />
                     <DetailRow label="Category" value={selectedItem.category} />
                     <DetailRow label="Unit Code" value={selectedItem.unitCode} />
@@ -486,21 +554,21 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                   <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                   <div className="relative z-10 flex flex-col xl:flex-row items-center justify-between gap-6">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Computation Summary</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/70 dark:text-emerald-300">Computation Summary</p>
                       <div className="flex items-center gap-3">
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Principal</p>
+                          <p className="text-[9px] font-black uppercase text-emerald-800/65 dark:text-zinc-300">Principal</p>
                           <p className="text-xl font-black text-emerald-900 dark:text-white">{formatPeso(Number(selectedItem.amount))}</p>
                         </div>
-                        <div className="h-8 w-px bg-emerald-200" />
+                        <div className="h-8 w-px bg-emerald-200 dark:bg-emerald-800" />
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Interest ({interestCalc.percentage}%)</p>
+                          <p className="text-[9px] font-black uppercase text-emerald-800/65 dark:text-zinc-300">Interest ({interestCalc.percentage}%)</p>
                           <p className="text-xl font-black text-emerald-900 dark:text-white">{formatPeso(interestCalc.interestAmount)}</p>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Total Amount Due</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/70 dark:text-emerald-300">Total Amount Due</p>
                       <p className="text-5xl font-black text-emerald-950 dark:text-emerald-400 tracking-tighter">
                         ₱ {interestCalc.totalAmount.toLocaleString()}
                       </p>
@@ -512,7 +580,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 <div className="mb-8 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Out <span className="text-red-500">*</span></p>
+                    <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-800/75 dark:text-emerald-300">Proof of Buy Out <span className="text-red-500">*</span></p>
                   </div>
                   {proofImage ? (
                     <div className="relative group">
@@ -544,48 +612,42 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-black text-emerald-700 dark:text-emerald-300">Open Camera</p>
-                        <p className="text-[10px] text-emerald-900/40 mt-1">Required — Proof of buy back transaction</p>
+                        <p className="text-[10px] text-emerald-800/70 dark:text-zinc-400 mt-1">Required — Proof of buy back transaction</p>
                       </div>
                     </button>
                   )}
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center p-12">
-                <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mb-6">
-                  <Undo2 className="w-12 h-12 text-emerald-200" />
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center sm:p-12">
+                <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50 dark:bg-emerald-950/50">
+                  <Undo2 className="h-12 w-12 text-emerald-400 dark:text-emerald-500" />
                 </div>
-                <h3 className="text-2xl font-black text-emerald-950 dark:text-white dark:text-white uppercase tracking-tight italic">Scan or Search Item</h3>
-                <p className="text-emerald-900/30 font-bold max-w-xs mt-2 leading-relaxed">
-                  "Only active items within the loan period are eligible for redemption."
+                <h3 className="text-xl font-black uppercase italic tracking-tight text-emerald-950 dark:text-white sm:text-2xl">Scan or Search Item</h3>
+                <p className="mt-2 max-w-xs font-bold leading-relaxed text-emerald-800/60 dark:text-zinc-400">
+                  Only active items within the loan period are eligible for redemption.
                 </p>
               </div>
             )}
           </div>
 
-          {compactTablet && !selectedItem && (
-            <div className="flex flex-1 flex-col items-center justify-center border-t border-emerald-50 bg-white p-8 text-center dark:bg-surface xl:hidden">
-              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-50">
-                <Undo2 className="h-12 w-12 text-emerald-200" />
-              </div>
-              <h3 className="text-2xl font-black uppercase italic tracking-tight text-emerald-950 dark:text-white">
-                Scan or Search Item
-              </h3>
-              <p className="mt-2 max-w-xs font-bold leading-relaxed text-emerald-900/30">
-                Only active items within the loan period are eligible for redemption.
-              </p>
-            </div>
-          )}
-
-          {compactTablet && selectedItem && (
-            <div className="w-full shrink-0 border-t border-emerald-50 bg-white px-4 pb-4 pt-4 dark:bg-surface xl:hidden">
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="space-y-1 mb-5">
+          {selectedItem && !showMobileItemList && (
+            <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto border-t border-emerald-50 bg-white dark:border-border-subtle dark:bg-surface xl:hidden">
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 p-4 duration-300 sm:px-5 sm:pb-4 sm:pt-4">
+                <button
+                  type="button"
+                  onClick={handleOpenMobileItemList}
+                  className="mb-1 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40"
+                >
+                  <Menu className="h-4 w-4" />
+                  Change Item
+                </button>
+                <div className="mb-5 space-y-1">
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Redemption Preview</p>
                   <h2 className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none md:max-xl:text-[2.15rem]">
                     {selectedItem.unit}
                   </h2>
-                  <p className="text-emerald-900/40 dark:text-emerald-400 font-bold flex items-center gap-2">
+                  <p className="text-emerald-800/70 dark:text-emerald-300 font-bold flex items-center gap-2">
                     {selectedItem.name} • {selectedItem.contactNumber}
                   </p>
                 </div>
@@ -595,12 +657,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                     <DetailRow label="Principal Amount" value={formatPeso(Number(selectedItem.amount))} />
                     <DetailRow 
                       label="Maturity Interest" 
-                      value={<span className="text-emerald-600">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
+                      value={<span className="text-emerald-700 dark:text-emerald-300">₱ {interestCalc.interestAmount.toLocaleString()} ({interestCalc.percentage}%)</span>} 
                     />
                     <DetailRow label="Purchased Date" value={selectedItem.purchasedDate} />
                     <DetailRow 
                       label="Days Since Pawn" 
-                      value={<span className="text-emerald-600">{interestCalc.daysPassed} Days</span>} 
+                      value={<span className="text-emerald-700 dark:text-emerald-300">{interestCalc.daysPassed} Days</span>} 
                     />
                     <DetailRow label="Category" value={selectedItem.category} />
                     <DetailRow label="Unit Code" value={selectedItem.unitCode} />
@@ -632,21 +694,21 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                   <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-100/50 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
                   <div className="relative z-10 flex flex-col gap-4">
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Computation Summary</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/70 dark:text-emerald-300">Computation Summary</p>
                       <div className="flex items-center gap-3">
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Principal</p>
+                          <p className="text-[9px] font-black uppercase text-emerald-800/65 dark:text-zinc-300">Principal</p>
                           <p className="text-lg font-black text-emerald-900 dark:text-white md:max-xl:text-[1.05rem]">{formatPeso(Number(selectedItem.amount))}</p>
                         </div>
-                        <div className="h-8 w-px bg-emerald-200" />
+                        <div className="h-8 w-px bg-emerald-200 dark:bg-emerald-800" />
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-emerald-900/30 dark:text-emerald-400 uppercase">Interest ({interestCalc.percentage}%)</p>
+                          <p className="text-[9px] font-black uppercase text-emerald-800/65 dark:text-zinc-300">Interest ({interestCalc.percentage}%)</p>
                           <p className="text-lg font-black text-emerald-900 dark:text-white md:max-xl:text-[1.05rem]">{formatPeso(interestCalc.interestAmount)}</p>
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Total Amount Due</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800/70 dark:text-emerald-300">Total Amount Due</p>
                       <p className="text-4xl font-black text-emerald-950 dark:text-emerald-400 tracking-tighter md:max-xl:text-[2.25rem]">
                         ₱ {interestCalc.totalAmount.toLocaleString()}
                       </p>
@@ -658,7 +720,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                 <div className="mb-5 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/10 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    <p className="text-[10px] font-black text-emerald-900/60 dark:text-emerald-400 uppercase tracking-[2px]">Proof of Buy Out <span className="text-red-500">*</span></p>
+                    <p className="text-[10px] font-black uppercase tracking-[2px] text-emerald-800/75 dark:text-emerald-300">Proof of Buy Out <span className="text-red-500">*</span></p>
                   </div>
                   {proofImage ? (
                     <div className="relative group">
@@ -682,9 +744,12 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
                       </div>
                       <div className="text-left">
                         <p className="text-xs font-black text-emerald-700 dark:text-emerald-300">Open Camera</p>
-                        <p className="text-[10px] text-emerald-900/40">Required proof of buy back</p>
+                        <p className="text-[10px] text-emerald-800/70 dark:text-zinc-400">Required proof of buy back</p>
                       </div>
                     </button>
+                  )}
+                  {proofFieldError && (
+                    <p className="mt-2 text-[10px] font-semibold text-red-500 sm:text-xs">{proofFieldError}</p>
                   )}
                 </div>
               </div>
@@ -693,67 +758,91 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
         </div>
 
         {/* Footer Actions */}
-        <div className={`border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between shrink-0 ${compactTablet ? "gap-4 p-4 md:p-5 md:max-xl:gap-5" : "gap-8 p-8"}`}>
-          <div className="flex items-center justify-between sm:justify-start gap-4 sm:gap-8 w-full sm:w-auto">
-             <button 
-                onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-              >
-                Cancel Process
-              </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-40">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
-                    <input 
-                      type="password" 
-                      placeholder="••••••••"
-                      className={`h-10 rounded-lg border bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted ${
-                        error && error.toLowerCase().includes('password')
-                          ? 'border-red-400 focus:border-red-500'
-                          : 'border-emerald-100 dark:border-border-subtle focus:border-emerald-500'
-                      }`}
-                      value={adminForm.password}
-                      onChange={(e) => { setAdminForm({...adminForm, password: e.target.value}); setError(null); }}
-                    />
-                    {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
-                  </div>
+        <div className="shrink-0 border-t border-emerald-50 bg-white dark:border-border-subtle dark:bg-surface">
+          <div className={`flex items-end gap-2 p-3 sm:gap-4 sm:p-5 ${compactTablet ? "md:gap-5 xl:p-6" : "lg:gap-6 lg:p-6 xl:p-8"}`}>
+            <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
+              <div className="w-[min(38%,8.5rem)] shrink-0 sm:w-44">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-800/70 dark:text-emerald-300">Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    className={transactionPasswordInputClass(
+                      Boolean(passwordFieldError),
+                      "h-10 w-full rounded-lg border bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary border-emerald-100",
+                    )}
+                    value={adminForm.password}
+                    onChange={(e) => { setAdminForm({ ...adminForm, password: e.target.value }); setError(null); }}
+                  />
+                  {passwordFieldError && (
+                    <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
+                  )}
                 </div>
               </div>
-          </div>
 
-          <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 w-full sm:w-auto mt-4 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 border-emerald-50">
-             <div className="text-right">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+              <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
+
+              <div className="min-w-0 shrink-0 text-left">
+                <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-800/70 dark:text-emerald-300">
                   TOTAL LOAN AMOUNT
                 </p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
+                <p className="text-xl font-black leading-none tracking-tighter text-emerald-950 dark:text-white sm:text-2xl md:text-3xl">
                   ₱ {interestCalc.totalAmount.toLocaleString()}
                 </p>
               </div>
-
-              <button 
-                disabled={isConfirming || !selectedItem || !proofImage}
-                onClick={handleConfirmRedeem}
-                className={`flex items-center justify-center gap-3 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${compactTablet ? "px-8 py-4" : "px-12 py-5"} ${isConfirming || !selectedItem || !proofImage ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
-              >
-                {isConfirming ? (
-                   <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
-                ) : (
-                   <>
-                     CONFIRM BUY OUT
-                     <ArrowRight className="w-5 h-5" />
-                   </>
-                )}
-                           </button>
             </div>
+
+            <button
+              disabled={isConfirming || !selectedItem || !proofImage}
+              onClick={handleConfirmRedeemRequest}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-[0.98] sm:gap-3 sm:rounded-2xl sm:px-8 sm:py-4 sm:text-sm sm:tracking-wider ${compactTablet ? "md:px-8" : "sm:px-10 md:px-12 md:py-5"} ${isConfirming || !selectedItem || !proofImage ? "cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover" : "bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700"}`}
+            >
+              {isConfirming ? (
+                <span className="anim-loading h-4 w-4 rounded-full border-emerald-950/30 border-t-emerald-950" />
+              ) : (
+                <>
+                  CONFIRM BUY OUT
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
       <QrScanner 
         isOpen={isScannerOpen} 
         onScan={handleQrScan} 
         onClose={() => setIsScannerOpen(false)} 
+      />
+      <ConfirmActionModal
+        isOpen={isCancelConfirmOpen}
+        title="Cancel buy out?"
+        message="Are you sure you want to cancel this buy out transaction? Your progress will not be saved."
+        confirmLabel="Yes, Cancel"
+        cancelLabel="Continue"
+        variant="warning"
+        zIndexClass="z-[210]"
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={async () => {
+          onClose();
+        }}
+      />
+      <TransactionConfirmModal
+        isOpen={isConfirmOpen}
+        title="Confirm buy out?"
+        message="This will permanently settle the pawn, record the buy out transaction, and mark the item as redeemed."
+        details={selectedItem ? [
+          { label: "Customer", value: selectedItem.name },
+          { label: "Unit", value: selectedItem.unit },
+          { label: "Unit Code", value: selectedItem.unitCode },
+          { label: "Total Amount", value: `₱ ${interestCalc.totalAmount.toLocaleString()}` },
+        ] : []}
+        confirmLabel="Yes, Confirm Buy Out"
+        isLoading={isConfirming}
+        onClose={() => {
+          if (!isConfirming) setIsConfirmOpen(false);
+        }}
+        onConfirm={handleConfirmRedeem}
       />
 
       {/* Buy Back Proof Camera Modal */}
@@ -869,10 +958,10 @@ function DetailSection({ title, icon: Icon, children }: { title: string, icon: a
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-1">
-        <Icon className="w-4 h-4 text-emerald-600/40" />
-        <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">{title}</h4>
+        <Icon className="h-4 w-4 text-emerald-600/70 dark:text-emerald-400" />
+        <h4 className="text-[10px] font-black uppercase tracking-[2px] text-emerald-800/70 dark:text-emerald-300">{title}</h4>
       </div>
-      <div className="divide-y divide-emerald-50 border-t border-emerald-50 dark:border-border">
+      <div className="divide-y divide-emerald-50 border-t border-emerald-50 dark:divide-border-subtle dark:border-border-subtle">
         {children}
       </div>
     </div>
@@ -881,9 +970,9 @@ function DetailSection({ title, icon: Icon, children }: { title: string, icon: a
 
 function DetailRow({ label, value }: { label: string, value: string | React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-3 px-1">
-      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter">{label}</span>
-      <span className="text-xs font-black text-emerald-950 dark:text-white dark:text-white">{value}</span>
+    <div className="flex items-center justify-between gap-3 py-3 px-1">
+      <span className="text-[10px] font-bold uppercase tracking-tighter text-emerald-800/70 dark:text-zinc-300">{label}</span>
+      <span className="text-right text-xs font-black text-emerald-950 dark:text-white">{value}</span>
     </div>
   );
 }

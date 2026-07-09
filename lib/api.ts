@@ -160,6 +160,10 @@ class ApiClient {
         }
         break;
       } catch (networkErr) {
+        // Re-throw AbortError as-is so callers can detect cancellation
+        if (networkErr instanceof DOMException && networkErr.name === "AbortError") {
+          throw networkErr;
+        }
         const msg =
           networkErr instanceof Error ? networkErr.message : String(networkErr);
         console.warn(`[API] Network error for ${path}:`, msg);
@@ -409,6 +413,12 @@ class ApiClient {
   }
 
   get<T>(path: string, options?: ApiRequestInit) {
+    // Skip deduplication when a signal is provided (e.g. AbortController)
+    // so each cancellable request is treated independently.
+    if (options?.signal) {
+      return this.fetch<T>(path, { ...options, method: "GET" });
+    }
+
     const key = JSON.stringify({
       path,
       headers: options?.headers ?? null,

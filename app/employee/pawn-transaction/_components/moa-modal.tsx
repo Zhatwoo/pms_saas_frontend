@@ -53,6 +53,8 @@ interface MoaModalProps {
   };
   isLoading: boolean;
   autoPrint?: boolean;
+  /** finalize = new pawn (no header X; Save & Finalize). view = reprint/view only (header X; no Save). */
+  mode?: "finalize" | "view";
 }
 
 type MoaLabels = Record<string, string>;
@@ -267,9 +269,12 @@ export function MoaModal({
   data,
   isLoading,
   autoPrint,
+  mode = "finalize",
   confirmDisabled = false,
   confirmDisabledReason,
 }: MoaModalProps) {
+  const isFinalizeMode = mode === "finalize";
+  const isViewMode = mode === "view";
   const [termsText, setTermsText] = useState("");
   const [labels, setLabels] = useState<MoaLabels | null>(null);
   const [extensionRows, setExtensionRows] = useState<MoaExtensionRow[]>([]);
@@ -284,6 +289,13 @@ export function MoaModal({
   } | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const templateFetchRef = useRef(0);
+  const [isFinalizeConfirmOpen, setIsFinalizeConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsFinalizeConfirmOpen(false);
+    }
+  }, [isOpen]);
 
   const applyMoaTemplate = (moaTemplate: MoaTemplate, category: string) => {
     const categoryKey = Object.keys(moaTemplate.category_templates ?? {}).find(
@@ -580,10 +592,24 @@ export function MoaModal({
   const authorizedSubtext = labels?.authorizedSubtext || DEFAULT_AUTHORIZED_SUBTEXT;
   const termsReceivedText = labels?.termsReceivedText || DEFAULT_TERMS_RECEIVED_TEXT;
   const termsReceivedPresence = labels?.termsReceivedPresence || DEFAULT_TERMS_RECEIVED_PRESENCE;
+  const customerFullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(" ").trim() || "Customer";
+
+  const handleFinalizeRequest = () => {
+    if (isLoading || confirmDisabled) return;
+    setIsFinalizeConfirmOpen(true);
+  };
+
+  const handleFinalizeConfirm = () => {
+    if (isLoading || confirmDisabled) return;
+    void onConfirm();
+  };
 
   return (
     <div id="moa-modal-root" className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print"
+        onClick={isViewMode ? onClose : undefined}
+      />
       <div
         className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10 light moa-paper-effect"
         onClick={(e) => e.stopPropagation()}
@@ -594,12 +620,16 @@ export function MoaModal({
             <div>
               <h2 className="text-xl font-black tracking-tight text-white leading-none">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            </button>
+            {isViewMode ? (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            ) : null}
           </div>
         )}
 
@@ -1135,45 +1165,60 @@ export function MoaModal({
         {!autoPrint && (
           <div className="sticky bottom-0 bg-white border-t border-zinc-200 px-8 py-4 flex justify-between items-center z-10 no-print">
             <div className="min-w-0 pr-4">
-              <p className="text-[10px] text-zinc-400 font-medium italic">
-                Review carefully. Finalizing will generate the ticket and store record permanently.
-              </p>
-              {confirmDisabled && confirmDisabledReason ? (
-                <p className="mt-2 text-[11px] font-semibold text-amber-800" role="alert">
-                  {confirmDisabledReason}
+              {isFinalizeMode ? (
+                <>
+                  <p className="text-[10px] text-zinc-400 font-medium italic">
+                    Review carefully. Finalizing will generate the ticket and store record permanently.
+                  </p>
+                  {confirmDisabled && confirmDisabledReason ? (
+                    <p className="mt-2 text-[11px] font-semibold text-amber-800" role="alert">
+                      {confirmDisabledReason}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-[10px] text-zinc-400 font-medium italic">
+                  View or print the memorandum of agreement slip.
                 </p>
-              ) : null}
+              )}
             </div>
             <div className="flex gap-4 shrink-0">
+              {isFinalizeMode ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isLoading}
+                  className="px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  Back to Form
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95"
+                >
+                  Close
+                </button>
+              )}
               <button
-                onClick={onClose}
-                disabled={isLoading}
-                className="px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95 disabled:opacity-50"
-              >
-                Back to Form
-              </button>
-              <button
+                type="button"
                 onClick={handlePrint}
                 className="px-6 py-2.5 text-xs font-black text-white bg-zinc-800 rounded-xl hover:bg-black transition-all active:scale-95 flex items-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" /></svg>
                 Print / PDF
               </button>
-              <button
-                type="button"
-                onClick={onConfirm}
-                disabled={isLoading || confirmDisabled}
-                className="px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <>
-                    <span className="anim-loading h-4 w-4 border-white/30 border-t-white rounded-full" />
-                    Saving Record...
-                  </>
-                ) : (
-                  "Save & Finalize Transaction"
-                )}
-              </button>
+              {isFinalizeMode ? (
+                <button
+                  type="button"
+                  onClick={handleFinalizeRequest}
+                  disabled={isLoading || confirmDisabled}
+                  className="px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed"
+                >
+                  Save & Finalize Transaction
+                </button>
+              ) : null}
             </div>
           </div>
         )}
@@ -1290,6 +1335,79 @@ export function MoaModal({
         }
         `}</style>
       </div>
+
+      {isFinalizeMode && isFinalizeConfirmOpen ? (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 no-print">
+          <div
+            className="absolute inset-0 bg-emerald-950/50 backdrop-blur-sm"
+            onClick={() => {
+              if (!isLoading) setIsFinalizeConfirmOpen(false);
+            }}
+          />
+          <div
+            className="relative z-10 w-full max-w-md rounded-2xl border border-emerald-200 bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center px-6 pt-6 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-emerald-700"
+                >
+                  <path d="M12 9v4" />
+                  <path d="M12 17h.01" />
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                </svg>
+              </div>
+              <h3 className="mt-4 text-base font-black text-zinc-900">
+                Finalize this pawn transaction?
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                This will permanently save the pawn record, generate the ticket, and update branch inventory.
+                Please confirm the details below before continuing.
+              </p>
+              <div className="mt-4 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-xs text-zinc-700">
+                <p><span className="font-bold text-zinc-500">Customer:</span> {customerFullName}</p>
+                <p className="mt-1"><span className="font-bold text-zinc-500">Unit:</span> {data.unitName || "—"}</p>
+                <p className="mt-1"><span className="font-bold text-zinc-500">Unit Code:</span> {data.unitCode || "—"}</p>
+                <p className="mt-1"><span className="font-bold text-zinc-500">Pawn Amount:</span> {formatPeso(Number(data.amount || 0))}</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-3 px-6 py-5">
+              <button
+                type="button"
+                onClick={() => setIsFinalizeConfirmOpen(false)}
+                disabled={isLoading}
+                className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-black text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleFinalizeConfirm}
+                disabled={isLoading || confirmDisabled}
+                className="flex-1 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-700/20 transition-colors hover:bg-emerald-800 disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="anim-loading h-4 w-4 border-white/30 border-t-white rounded-full" />
+                    Saving...
+                  </>
+                ) : (
+                  "Yes, Finalize"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -256,8 +256,9 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   const userRole = user?.role || "employee";
   console.log("Current User Role:", userRole);
   const isAdminOrSuperAdmin = userRole.toLowerCase().includes("admin");
+  const isSuperAdmin = userRole === "super_admin";
   const canEdit = !viewOnly && isAdminOrSuperAdmin;
-  const tableColumnCount = isAdminOrSuperAdmin ? 11 : 10;
+  const tableColumnCount = isSuperAdmin ? 11 : 10;
 
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   useEffect(() => {
@@ -600,7 +601,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
         <div className="flex w-full items-center gap-3 lg:w-auto">
           {viewOnly ? (
             <>
-              {isAdminOrSuperAdmin && (
+              {isSuperAdmin && (
                 <div className="relative">
                   <ActionButton
                     variant="primary"
@@ -725,7 +726,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
             <table className={viewOnly ? "min-w-[1420px] w-full text-sm" : "w-full text-sm"}>
               <thead>
                 <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
-                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Interest Rate %", "Status", "Renewals", "Remarks", isAdminOrSuperAdmin ? "QR" : null, "Actions"]
+                  {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Interest Rate %", "Status", "Renewals", "Remarks", isSuperAdmin ? "QR" : null, "Actions"]
                     .filter((h): h is string => h !== null)
                     .map((h) => (
                       <th key={h} className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide dark:text-inherit ${h === "Interest Rate %" || h === "Renewals" || h === "Actions" || h === "QR" ? "text-center" : "text-left"}`}>{h}</th>
@@ -766,7 +767,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                           </button>
                         </td>
                         <td className={viewOnly ? "px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary max-w-[180px] truncate dark:text-zinc-400" : "px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary max-w-[180px] truncate dark:text-zinc-400"} title={item.remarks}>{item.remarks || "—"}</td>
-                        {isAdminOrSuperAdmin && (
+                        {isSuperAdmin && (
                           <td className="px-3 py-2 sm:px-4 sm:py-3 text-center">
                             {(item.qrCode || item.qr_code) ? (
                               <div className="flex justify-center">
@@ -928,6 +929,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           onConfirm={() => setIsMoaModalOpen(false)}
           data={moaReprintData}
           isLoading={moaLoading}
+          mode="view"
         />
       )}
     </div>

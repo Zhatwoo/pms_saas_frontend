@@ -285,7 +285,7 @@ export function PhilippineAddressFields({
   return (
     <div className="space-y-4 rounded-[1.35rem] border border-border-main bg-surface-secondary p-4">
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">
+        <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">
           Street / Subdivision / Compound
         </label>
         <input
@@ -300,7 +300,7 @@ export function PhilippineAddressFields({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Region</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">Region</label>
           <select value={regionCode} onChange={handleRegionChange} disabled={disabled} className={`${fieldClass} ${highlightedField === "region" ? highlightClasses : ""}`}>
             <option value="">Select region</option>
             {regions.map((r) => <option key={r.code} value={r.code}>{toOption(r)}</option>)}
@@ -308,7 +308,7 @@ export function PhilippineAddressFields({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Province / District</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">Province / District</label>
           <select value={provinceCode} onChange={handleProvinceChange} disabled={provinceFieldDisabled} className={`${fieldClass} ${highlightedField === "address" ? highlightClasses : highlightedField === "region" ? highlightClasses : ""}`}>
             <option value="">{addressMode === "region" ? "No province for this region" : "Select province"}</option>
             {provinces.map((p) => <option key={p.code} value={p.code}>{toOption(p)}</option>)}
@@ -323,7 +323,7 @@ export function PhilippineAddressFields({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">City / Municipality</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">City / Municipality</label>
           <select value={cityCode} onChange={handleCityChange} disabled={cityFieldDisabled} className={`${fieldClass} ${highlightedField === "city" ? highlightClasses : ""}`}>
             <option value="">Select city / municipality</option>
             {value.city && !cities.some((c) => c.name === value.city) && (
@@ -334,7 +334,7 @@ export function PhilippineAddressFields({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-text-tertiary">Barangay</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">Barangay</label>
           <select value={barangayCode} onChange={handleBarangayChange} disabled={disabled || !cityCode} className={`${fieldClass} ${highlightedField === "barangay" ? highlightClasses : ""}`}>
             <option value="">Select barangay</option>
             {value.barangay && !barangays.some((b) => b.name === value.barangay) && (
@@ -345,7 +345,7 @@ export function PhilippineAddressFields({
         </div>
       </div>
 
-      {error && <p className="text-xs font-medium text-amber-700">{error}</p>}
+      {error && <p className="text-xs font-medium text-amber-700 dark:text-amber-300">{error}</p>}
     </div>
   );
 }

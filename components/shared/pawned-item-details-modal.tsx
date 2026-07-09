@@ -64,7 +64,7 @@ interface PawnedItemDetailsModalProps {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-6 w-full text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/70">
+    <h3 className="mb-6 w-full text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/80 dark:text-emerald-400">
       {children}
     </h3>
   );
@@ -96,7 +96,6 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [itemPhotoIndex, setItemPhotoIndex] = useState(0);
   const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
   const [qrRequestStatus, setQrRequestStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
-  const [isRequestingQr, setIsRequestingQr] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
   
@@ -106,6 +105,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
    const canEdit = userRole === "super_admin" || userRole === "admin" || userRole === "employee";
    const canViewQr = userRole === "super_admin";
+   const canRequestQrReplacement =
+     userRole === "employee" || userRole === "admin" || userRole === "super_admin";
 
   useEffect(() => {
     if (isOpen && itemId) {
@@ -174,20 +175,6 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       }
     } catch (err) {
       console.error("Failed to fetch QR status", err);
-    }
-  };
-
-  const handleRequestQrReplacement = async (reason: "Damaged" | "Lost" | "Torn") => {
-    if (!item) return;
-    setIsRequestingQr(true);
-    try {
-      await api.post(`/inventory/pawned/${item.id}/qr-replacement-request`, { reason });
-      toast.success("QR replacement request submitted.");
-      await fetchQrRequestStatus(item.id);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit request.");
-    } finally {
-      setIsRequestingQr(false);
     }
   };
 
@@ -277,8 +264,6 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
           `${typeof window !== 'undefined' ? window.location.origin : ''}/view-ticket/${encodeURIComponent(item.item_id || '')}`
         )}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`
     : null;
-
-  console.log("Detailed Item QR Data:", { qrCode: item?.qrCode, qr_code: item?.qr_code, qrVisual });
 
   if (!isOpen) return null;
 
@@ -506,7 +491,17 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
             <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Security Identity</span></SectionTitle>
-              <div className="flex w-full flex-col items-center justify-center gap-4">
+              <div className="flex w-full flex-col items-center justify-center gap-3">
+                {canRequestQrReplacement ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsQrModalOpen(true)}
+                    disabled={qrRequestStatus === "pending"}
+                    className="w-full rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100 transition-all hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {qrRequestStatus === "pending" ? "QR Replacement Pending" : "QR Replacement"}
+                  </button>
+                ) : null}
                 {canViewQr && qrVisual ? (
                   <>
                     <Image
@@ -522,8 +517,8 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     )}
                   </>
                 ) : !canViewQr ? (
-                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/60 bg-emerald-100/20 px-4 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/80">QR Visible to Super Admin only</p>
+                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/70 bg-emerald-100/20 px-4 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100">QR Visible to Super Admin only</p>
                   </div>
                 ) : (
                   <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
@@ -601,27 +596,26 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
               {/* Remarks Section */}
               <div className="space-y-4">
-                <SectionTitle>Inventory Remarks & Investigations</SectionTitle>
+                <SectionTitle>Inventory Remarks &amp; Investigations</SectionTitle>
                 {canEdit ? (
                   <div className="space-y-3">
                     <textarea 
                       value={remarks}
                       onChange={(e) => setRemarks(e.target.value)}
                       placeholder="Add internal notes about the item condition or specific investigations..."
-                      className="w-full min-h-[120px] rounded-3xl border border-border-main bg-surface-secondary p-6 text-sm font-medium text-text-primary outline-none focus:border-emerald-500"
+                      className="w-full min-h-[120px] rounded-3xl border border-border-main bg-surface-secondary p-6 text-sm font-medium text-text-primary placeholder:text-text-tertiary outline-none focus:border-emerald-500 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                     />
-                    {onSaveRemarks && (
-                      <div className="flex justify-end">
-                        <button 
-                          onClick={handleSaveRemarks}
-                          disabled={isSaving || remarks === item.remarks}
-                          className="rounded-2xl bg-emerald-600 dark:bg-emerald-500 px-8 py-3 text-xs font-black text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 disabled:opacity-30 transition-all flex items-center gap-2"
-                        >
-                          {isSaving && <div className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
-                          {isSaving ? "SAVING..." : "UPDATE REMARKS"}
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex justify-end">
+                      <button 
+                        type="button"
+                        onClick={handleSaveRemarks}
+                        disabled={isSaving || !onSaveRemarks || remarks === (item.remarks || "")}
+                        className="rounded-2xl bg-emerald-600 px-8 py-3 text-xs font-black text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-40 transition-all flex items-center gap-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                      >
+                        {isSaving && <div className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
+                        {isSaving ? "SAVING..." : "UPDATE REMARKS"}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="rounded-3xl bg-surface-secondary p-6 border border-border-main">
@@ -650,8 +644,11 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                         </div>
                       ))
                     ) : (
-                      <div className="py-10 text-center opacity-30 border-2 border-dashed border-border-main rounded-[2rem]">
-                         <p className="text-[10px] font-black uppercase tracking-widest">Original Pawn Cycle (No Renewals)</p>
+                      <div className="rounded-[2rem] border-2 border-dashed border-border-main bg-surface-secondary py-10 text-center dark:border-zinc-600 dark:bg-zinc-900/40">
+                         <p className="text-[11px] font-black uppercase tracking-widest text-text-secondary dark:text-zinc-300">Original Pawn Cycle (No Renewals)</p>
+                         <p className="mt-3 text-[10px] font-bold text-text-tertiary dark:text-zinc-400">
+                           Last updated: {item.created_at?.split("T")[0] || item.pawn_date || "—"}
+                         </p>
                       </div>
                     )}
                  </div>
@@ -682,11 +679,12 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
               {/* Quick Actions Footer */}
               <div className="pt-8 border-t border-border-subtle flex items-center justify-between">
-                 <p className="text-[10px] font-bold text-text-tertiary italic">Last updated: {item.created_at?.split('T')[0] || "—"}</p>
+                 <p className="text-[10px] font-bold text-text-tertiary italic dark:text-zinc-400">Last updated: {item.created_at?.split('T')[0] || item.pawn_date || "—"}</p>
                  <div className="flex gap-4">
                     <button 
+                      type="button"
                       onClick={onClose}
-                      className="px-8 py-4 rounded-2xl border border-border-main text-xs font-black text-text-secondary hover:bg-surface-secondary active:scale-95 transition-all"
+                      className="px-8 py-4 rounded-2xl border-2 border-zinc-300 bg-zinc-100 text-xs font-black uppercase tracking-wider text-zinc-800 shadow-sm hover:bg-zinc-200 active:scale-95 transition-all dark:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                     >
                       CLOSE RECORD
                     </button>

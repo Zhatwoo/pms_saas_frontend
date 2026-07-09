@@ -15,7 +15,7 @@ import { FinanceQueueSection } from "@/components/shared/finance-queue-section";
 import { ConfirmFundModal } from "@/app/admin/branch-finance/_components/confirm-fund-modal";
 import {
   FinanceSummaryCards,
-  LedgerTypeFilter,
+  LedgerFiltersBar,
 } from "@/components/shared/finance-ledger-table";
 import type {
   LedgerEntry,
@@ -303,7 +303,7 @@ export default function EmployeeBranchFinancePage() {
   }, [branchSummary, dashboard?.currentBalance, finance?.currentBalance]);
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 max-w-full space-y-4 sm:space-y-6">
       {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
           <div className="rounded-xl border border-emerald-500/20 bg-surface-secondary px-5 py-3 text-sm font-semibold text-emerald-300 shadow-xl shadow-black/20">
@@ -312,15 +312,13 @@ export default function EmployeeBranchFinancePage() {
         </div>
       ) : null}
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="mt-1 text-sm text-text-tertiary">
-            Request additional funds from Super Admin and confirm incoming or outgoing transfers in real time.
-          </p>
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <p className="min-w-0 text-sm text-text-tertiary">
+          Request additional funds from Super Admin and confirm incoming or outgoing transfers in real time.
+        </p>
         <button
           onClick={() => setRequestModalOpen(true)}
-          className="group relative flex items-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-blue-900/20 transition-all hover:bg-blue-700 hover:shadow-blue-900/40 active:scale-95"
+          className="group relative flex w-full shrink-0 items-center justify-center gap-2 overflow-hidden rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-blue-900/20 transition-all hover:bg-blue-700 hover:shadow-blue-900/40 active:scale-95 sm:w-auto"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -342,28 +340,28 @@ export default function EmployeeBranchFinancePage() {
         </div>
       ) : dashboard ? (
         <div className="space-y-6 transition-opacity duration-200">
-          <div className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 p-6 shadow-2xl transition-all hover:shadow-emerald-900/20">
+          <div className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 p-4 shadow-2xl transition-all hover:shadow-emerald-900/20 sm:p-6">
             <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5 blur-3xl transition-all group-hover:bg-white/10" />
             <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-emerald-400/5 blur-3xl" />
             
-            <div className="relative flex items-center justify-between">
-              <div>
+            <div className="relative flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <h2 className="text-sm font-black uppercase tracking-widest text-emerald-400/80">
+                  <div className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 animate-pulse" />
+                  <h2 className="truncate text-xs font-black uppercase tracking-widest text-emerald-400/80 sm:text-sm">
                     {finance?.name ?? dashboard?.branch?.name ?? "Branch Balance"}
                   </h2>
                 </div>
-                <p className="mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl">
+                <p className="mt-2 break-words text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
                   {formatCurrency(resolvedCurrentBalance)}
                 </p>
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-emerald-400">
+                <div className="mt-4 flex items-start gap-2">
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-emerald-400">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                     </svg>
                   </div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/60">
+                  <p className="text-[10px] font-bold uppercase leading-relaxed tracking-wider text-emerald-400/60">
                     Last sync: {formatFinanceDate(finance?.lastUpdated)}
                   </p>
                 </div>
@@ -397,8 +395,8 @@ export default function EmployeeBranchFinancePage() {
                 queues.pendingReview.map((request) => (
                   <div key={request.id} className="group relative overflow-hidden rounded-xl border border-blue-500/20 bg-surface p-4 shadow-sm transition-all hover:border-blue-500/40 hover:shadow-md">
                     <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-blue-500/5 transition-all group-hover:bg-blue-500/10" />
-                    <div className="relative flex items-start justify-between gap-4">
-                      <div className="flex-1">
+                    <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black text-text-primary">
                             {request.requestNo}
@@ -425,7 +423,7 @@ export default function EmployeeBranchFinancePage() {
                           Requested {formatFinanceDate(request.createdAt)}
                         </div>
                       </div>
-                      <span className="shrink-0 rounded-full bg-blue-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-400 border border-blue-500/20">
+                      <span className="w-fit shrink-0 self-start rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-400 sm:self-auto">
                         Reviewing
                       </span>
                     </div>
@@ -455,8 +453,8 @@ export default function EmployeeBranchFinancePage() {
                   return (
                     <div key={request.id} className="group relative overflow-hidden rounded-xl border border-orange-500/20 bg-surface p-4 shadow-sm transition-all hover:border-orange-500/40 hover:shadow-md">
                       <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-orange-500/5 transition-all group-hover:bg-orange-500/10" />
-                      <div className="relative flex items-start justify-between gap-4">
-                        <div className="flex-1">
+                      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-text-primary">
                               {request.requestNo}
@@ -491,7 +489,7 @@ export default function EmployeeBranchFinancePage() {
                           type="button"
                           onClick={() => handleConfirmRequestClick(request)}
                           disabled={isSubmitting}
-                          className="shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700 hover:shadow-emerald-900/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700 hover:shadow-emerald-900/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           {getConfirmationLabel(request)}
                         </button>
@@ -509,15 +507,15 @@ export default function EmployeeBranchFinancePage() {
 
           {/* ── Unified Branch Finance Ledger ── */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 shadow-inner">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 shadow-inner">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                     <line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="text-base font-black tracking-tight text-text-primary">Branch Finance Ledger</h2>
                   <div className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
@@ -527,7 +525,7 @@ export default function EmployeeBranchFinancePage() {
                   </div>
                 </div>
               </div>
-              <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-tighter text-indigo-400">
+              <span className="w-fit shrink-0 self-start rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-tighter text-indigo-400 sm:self-auto">
                 View Only
               </span>
             </div>
@@ -540,64 +538,29 @@ export default function EmployeeBranchFinancePage() {
               />
             )}
 
-            <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-border-main bg-surface/50 p-4 backdrop-blur-sm shadow-sm">
-              <div className="relative flex-1 min-w-[240px]">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <svg className="w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search ledger..."
-                  value={ledgerSearch}
-                  onChange={(e) => setLedgerSearch(e.target.value)}
-                  className="w-full rounded-xl border border-border-main bg-surface pl-10 pr-4 py-2.5 text-sm font-medium text-text-primary placeholder:text-text-tertiary focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all"
-                />
-              </div>
-              
-              <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
-              
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={ledgerDateFrom}
-                    onChange={(e) => setLedgerDateFrom(e.target.value)}
-                    className="rounded-xl border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all"
-                  />
-                  <div className="absolute -top-2 left-3 bg-surface px-1 text-[9px] font-black uppercase text-text-tertiary">From</div>
-                </div>
-                <div className="text-text-tertiary">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/></svg>
-                </div>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={ledgerDateTo}
-                    onChange={(e) => setLedgerDateTo(e.target.value)}
-                    className="rounded-xl border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all"
-                  />
-                  <div className="absolute -top-2 left-3 bg-surface px-1 text-[9px] font-black uppercase text-text-tertiary">To</div>
-                </div>
-              </div>
-              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) && (
-                <button
-                  onClick={() => {
-                    setLedgerSearch("");
-                    setLedgerTypeFilter("all");
-                    setLedgerDateFrom("");
-                    setLedgerDateTo("");
-                  }}
-                  className="text-xs font-bold text-red-300 hover:underline"
-                >
-                  Clear Filters
-                </button>
+            <LedgerFiltersBar
+              variant="elevated"
+              search={ledgerSearch}
+              onSearchChange={setLedgerSearch}
+              typeFilter={ledgerTypeFilter}
+              onTypeFilterChange={setLedgerTypeFilter}
+              dateFrom={ledgerDateFrom}
+              onDateFromChange={setLedgerDateFrom}
+              dateTo={ledgerDateTo}
+              onDateToChange={setLedgerDateTo}
+              hasActiveFilters={Boolean(
+                ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo,
               )}
-            </div>
+              onClear={() => {
+                setLedgerSearch("");
+                setLedgerTypeFilter("all");
+                setLedgerDateFrom("");
+                setLedgerDateTo("");
+              }}
+            />
 
-            <div className="flex justify-end print:hidden mb-2">
-              <ActionButton variant="primary" onClick={() => window.print()} size="md">
+            <div className="mb-2 flex justify-stretch print:hidden sm:justify-end">
+              <ActionButton variant="primary" onClick={() => window.print()} size="md" className="w-full sm:w-auto">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -662,7 +625,7 @@ export default function EmployeeBranchFinancePage() {
                 <tbody>
                   {unifiedRows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                      <td colSpan={7} className="p-4 text-center italic text-text-muted border-b border-black">
                         No records found for the selected filters.
                       </td>
                     </tr>
@@ -675,7 +638,7 @@ export default function EmployeeBranchFinancePage() {
                         <td className="p-2 truncate max-w-[250px]">{row.description || "—"}</td>
                         <td className="p-2 text-right font-mono">{row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
                         <td className="p-2 text-right font-mono text-red-600">{row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
-                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{row.reference || "—"}</td>
+                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-text-secondary">{row.reference || "—"}</td>
                       </tr>
                     ))
                   )}
@@ -712,8 +675,75 @@ export default function EmployeeBranchFinancePage() {
               </table>
             </div>
 
-            {/* Unified table */}
-            <div className="print:hidden overflow-hidden rounded-2xl border border-border-main bg-surface shadow-sm">
+            {/* Unified table — mobile cards */}
+            <div className="print:hidden lg:hidden">
+              {unifiedRows.length === 0 ? (
+                <div className="rounded-2xl border border-border-main bg-surface px-4 py-12 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="rounded-full bg-surface-secondary p-3">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-tertiary">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                    </div>
+                    <span className="text-sm font-medium text-text-tertiary">No financial records found</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="divide-y divide-border-subtle overflow-hidden rounded-2xl border border-border-main bg-surface shadow-sm">
+                  {unifiedRows.map((row) => (
+                    <div key={row.id} className="space-y-3 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-text-primary">{row.displayDate}</p>
+                          <p className="text-[10px] font-medium uppercase tracking-tighter text-text-tertiary">
+                            {row.displayTime || "12:00 AM"}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="inline-flex items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-2 py-1 text-[9px] font-black text-indigo-500">
+                            TXN
+                          </span>
+                          {row.typeBadge}
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Item</p>
+                        <p className="mt-0.5 break-words text-sm font-bold text-text-primary">{row.itemName || "—"}</p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Details</p>
+                        <p className="mt-0.5 break-words text-sm leading-relaxed text-text-secondary">{row.description || "—"}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Cash In</p>
+                          <p className={`mt-1 text-sm font-black ${row.cashIn > 0 ? "text-emerald-600" : "text-text-tertiary/40"}`}>
+                            {row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Cash Out</p>
+                          <p className={`mt-1 text-sm font-black ${row.cashOut > 0 ? "text-red-600" : "text-text-tertiary/40"}`}>
+                            {row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Reference</p>
+                        <p className="mt-0.5 break-all font-mono text-[11px] text-text-tertiary">{row.reference || "—"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Unified table — desktop */}
+            <div className="hidden overflow-hidden rounded-2xl border border-border-main bg-surface shadow-sm print:hidden lg:block">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[900px] text-sm">
                   <thead>

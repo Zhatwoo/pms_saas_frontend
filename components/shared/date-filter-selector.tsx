@@ -113,25 +113,25 @@ export function DateFilterSelector({
   }, []);
 
   return (
-    <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
       {/* Dynamic Picker rendering on the left */}
-      <div className="flex shrink-0 items-center">
+      <div className="flex w-full shrink-0 items-center sm:w-auto">
         {activePeriod.toLowerCase() === "daily" && (
           <input
             type="date"
             max={getTodayString()}
             value={dailyDate}
             onChange={(e) => setDailyDate(e.target.value)}
-            className="h-11 w-[10.5rem] rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            className="h-11 w-full rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold sm:w-[10.5rem]"
           />
         )}
         
         {activePeriod.toLowerCase() === "weekly" && (
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setIsWeeklyOpen(!isWeeklyOpen)}
-              className="flex h-11 min-w-[13.5rem] items-center justify-between rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+              className="flex h-11 w-full min-w-0 items-center justify-between rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold sm:min-w-[13.5rem]"
             >
               <span>{weeks.find((w) => w.id === weeklyId)?.label}</span>
               <svg className="ml-2 h-4 w-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -169,7 +169,7 @@ export function DateFilterSelector({
             max={getCurrentMonthString()}
             value={monthlyDate}
             onChange={(e) => setMonthlyDate(e.target.value)}
-            className="h-11 w-[10.5rem] rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            className="h-11 w-full rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold sm:w-[10.5rem]"
           />
         )}
 
@@ -177,7 +177,7 @@ export function DateFilterSelector({
           <select
             value={yearlyYear}
             onChange={(e) => setYearlyYear(e.target.value)}
-            className="h-11 w-[10.5rem] rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            className="h-11 w-full rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold sm:w-[10.5rem]"
           >
             {years.map((year) => (
               <option key={year} value={year}>

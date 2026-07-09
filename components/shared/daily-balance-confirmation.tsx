@@ -162,19 +162,19 @@ export function DailyBalanceConfirmation({
 
   return (
     <>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md">
-        <div className="w-full max-w-md scale-in-center rounded-2xl bg-surface p-6 shadow-2xl border border-border-main">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-700 text-amber-400">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+        <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto scale-in-center rounded-2xl border border-border-main bg-surface p-4 shadow-2xl sm:p-6">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-amber-400">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-text-primary capitalize">
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold capitalize text-text-primary sm:text-xl">
               {titleOverride ?? `${type} Cash Confirmation`}
             </h2>
-            <p className="text-xs text-text-tertiary">
+            <p className="mt-1 text-xs leading-relaxed text-text-tertiary">
               {subtitleOverride ??
                 "Please verify the physical cash on hand before proceeding."}
             </p>
@@ -182,42 +182,55 @@ export function DailyBalanceConfirmation({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl bg-surface-secondary p-4 border border-border-subtle">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2 block">Expected Amount</label>
-            <p className="text-2xl font-black text-amber-400">
+          <div className="rounded-xl border border-border-subtle bg-surface-secondary p-4 text-center">
+            <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-text-muted">
+              Expected Amount
+            </label>
+            <p className="text-2xl font-black text-amber-400 sm:text-3xl">
               {formatPeso(
                 Number(String(currentCash ?? "0").replace(/,/g, "")) || 0,
               )}
             </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-text-secondary">Actual Physical Cash</label>
+          <div className="space-y-2 text-center sm:text-left">
+            <label className="text-xs font-bold text-text-secondary">
+              Actual Physical Cash
+            </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-text-muted">₱</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-text-muted">
+                ₱
+              </span>
               <input
                 type="text"
+                inputMode="decimal"
                 value={confirmedAmount}
                 onChange={handleInputChange}
                 disabled={isSubmitting}
-                className="w-full rounded-xl border-2 border-border-main bg-surface py-4 pl-10 pr-4 text-xl font-black text-amber-400 outline-none focus:border-emerald-500 transition-all disabled:opacity-50"
+                className="w-full rounded-xl border-2 border-border-main bg-surface py-3.5 pl-10 pr-4 text-center text-xl font-black text-amber-400 outline-none transition-all focus:border-emerald-500 disabled:opacity-50 sm:py-4 sm:text-left"
               />
             </div>
           </div>
 
-          <div className="rounded-lg bg-amber-50 p-3 border border-amber-200">
-            <p className="text-[10px] text-amber-800 font-medium leading-relaxed">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center sm:text-left">
+            <p className="text-[10px] font-medium leading-relaxed text-amber-800">
               <span className="font-bold">Note:</span> Any discrepancy will be logged and flagged for management review. Ensure all coins and bills are counted.
             </p>
           </div>
         </div>
 
-          <div className={`mt-8 ${type === "starting" ? "grid grid-cols-2 gap-3" : "flex gap-3"}`}>
+          <div
+            className={`mt-6 sm:mt-8 ${
+              type === "starting"
+                ? "grid grid-cols-1 gap-3 sm:grid-cols-2"
+                : "flex flex-col gap-3 sm:flex-row"
+            }`}
+          >
           {type === "starting" && (
             <button
               type="button"
               onClick={handleIncidentReport}
-              className="rounded-xl border border-red-600 bg-red-600 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-colors hover:bg-red-700 disabled:opacity-50"
+              className="w-full rounded-xl border border-red-600 bg-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition-colors hover:bg-red-700 disabled:opacity-50 sm:py-3"
             >
               Incident Report
             </button>
@@ -226,7 +239,7 @@ export function DailyBalanceConfirmation({
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 rounded-xl border border-border-main py-3 text-sm font-bold text-text-secondary hover:bg-surface-hover transition-colors disabled:opacity-50"
+              className="w-full rounded-xl border border-border-main py-3.5 text-sm font-bold text-text-secondary transition-colors hover:bg-surface-hover disabled:opacity-50 sm:flex-1 sm:py-3"
             >
               Cancel
             </button>
@@ -234,7 +247,9 @@ export function DailyBalanceConfirmation({
           <button
             onClick={handleConfirm}
             disabled={isSubmitting || !confirmedAmount || isLoadingExpectedAmount || isStartingBelowExpected}
-            className={`${type !== "starting" ? "flex-1" : "w-full"} rounded-xl py-3 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full rounded-xl py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:py-3 ${
+              type !== "starting" ? "sm:flex-1" : ""
+            } ${
               type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
             }`}
           >
@@ -243,7 +258,7 @@ export function DailyBalanceConfirmation({
           </div>
 
         {type === "starting" && isStartingBelowExpected ? (
-          <p className="mt-3 text-xs font-semibold text-red-600">
+          <p className="mt-3 text-center text-xs font-semibold text-red-600 sm:text-left">
             Actual physical cash must be equal to or higher than the expected amount before you can proceed.
           </p>
         ) : null}

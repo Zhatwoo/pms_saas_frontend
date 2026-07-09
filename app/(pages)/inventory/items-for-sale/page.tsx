@@ -360,15 +360,15 @@ export default function ItemsForSalePage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={user?.role === 'super_admin' ? 8 : 7} className="py-8 text-center text-base text-zinc-400">
+                  <td colSpan={user?.role === 'super_admin' ? 8 : 7} className="py-8 text-center text-base text-text-tertiary">
                     <div className="flex items-center justify-center">
-                      <LoadingSpinnerLabel text="Loading..." className="text-base text-zinc-400" />
+                      <LoadingSpinnerLabel text="Loading..." className="text-base text-text-tertiary" />
                     </div>
                   </td>
                 </tr>
               ) : saleItems.length === 0 ? (
                 <tr>
-                  <td colSpan={user?.role === 'super_admin' ? 8 : 7} className="py-8 text-center text-base text-zinc-400">
+                  <td colSpan={user?.role === 'super_admin' ? 8 : 7} className="py-8 text-center text-base text-text-tertiary">
                     {viewMode === "calendar" && selectedDate ? "No items on this day" : "No items for sale found"}
                   </td>
                 </tr>

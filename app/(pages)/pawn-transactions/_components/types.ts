@@ -2,10 +2,10 @@ export type PurposeType =
   | "Start"
   | "End"
   | "Pawn"
+  | "Redeem"
   | "Buy Back"
   | "Renew"
   | "Reappraise"
-  | "Buy Back"
   | "Buy Out"
   | "Sold Item"
   | "Reserve / Layaway"
@@ -78,8 +78,10 @@ export const PURPOSE_OPTIONS: PurposeType[] = [
   "Start",
   "End",
   "Pawn",
+  "Redeem",
   "Buy Back",
   "Renew",
+  "Reappraise",
   "Buy Out",
   "Sold Item",
   "Reserve / Layaway",

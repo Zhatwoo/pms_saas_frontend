@@ -8,7 +8,15 @@ import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
 import { QrScanner } from "@/components/shared/qr-scanner";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { RenewalProofModal } from "@/components/shared/renewal-proof-modal";
+import { TransactionConfirmModal } from "@/components/shared/transaction-confirm-modal";
+import {
+  isTransactionPasswordError,
+  TRANSACTION_PASSWORD_VERIFY_MESSAGE,
+  transactionPasswordErrorClass,
+  transactionPasswordInputClass,
+} from "@/lib/transaction-password";
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -62,6 +70,15 @@ function TrendingUp({ className }: { className?: string }) {
 function Package({ className }: { className?: string }) {
   return (<svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>);
 }
+function Menu({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
+  );
+}
 
 interface RenewModalProps {
   isOpen: boolean;
@@ -109,10 +126,13 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
   const [sidebarSearch, setSidebarSearch] = useState("");
+  const [showMobileItemList, setShowMobileItemList] = useState(true);
   const isProcessingRef = useRef(false);
 
   // Interest Computation based on selected item
@@ -170,6 +190,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         };
         setSelectedItem(details);
         setNewPrincipal(details.amount);
+        setShowMobileItemList(false);
       } else {
         setError("Item not found. Please verify the Unit Code.");
         setSelectedItem(null);
@@ -239,11 +260,21 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     }
   };
 
+  const handleProceedRequest = () => {
+    if (!selectedItem) return;
+    if (!adminForm.password) {
+      setError(TRANSACTION_PASSWORD_VERIFY_MESSAGE);
+      return;
+    }
+    setError(null);
+    setIsConfirmOpen(true);
+  };
+
   const handleProceed = async () => {
     if (isProcessingRef.current) return;
     if (!selectedItem) return;
     if (!adminForm.password) {
-      setError("Authorization required.");
+      setError(TRANSACTION_PASSWORD_VERIFY_MESSAGE);
       return;
     }
 
@@ -252,11 +283,13 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     try {
       await api.post("/auth/verify-password", { password: adminForm.password });
       if (!isReappraiseActive) {
+        setIsConfirmOpen(false);
         setIsProofModalOpen(true);
         setIsLoading(false);
         isProcessingRef.current = false;
       } else {
         await executeTransaction(null);
+        setIsConfirmOpen(false);
       }
     } catch (err: any) {
       const msg = err.message || "Failed to process transaction.";
@@ -264,6 +297,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       toast.error(msg);
       setIsLoading(false);
       isProcessingRef.current = false;
+      setIsConfirmOpen(false);
     }
   };
 
@@ -284,8 +318,12 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       setIsRenewActive(true);
       setIsReappraiseActive(false);
       setItemsRenewed(1);
+      setIsConfirmOpen(false);
+      setIsCancelConfirmOpen(false);
     }
     if (isOpen) {
+      setIsCancelConfirmOpen(false);
+      setShowMobileItemList(true);
       fetchInventory();
     }
   }, [isOpen, initialSearchCode]);
@@ -293,13 +331,31 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   if (!isOpen) return null;
 
+  const passwordFieldError = isTransactionPasswordError(error) ? error : null;
+
+  const handleRequestClose = () => {
+    if (isLoading) return;
+    setIsCancelConfirmOpen(true);
+  };
+
+  const handleSelectItem = (item: any) => {
+    void triggerSearch(item.itemId, item);
+    setShowMobileItemList(false);
+  };
+
+  const handleOpenMobileItemList = () => {
+    setShowMobileItemList(true);
+  };
+
+  const hideMobileSidebar = Boolean(selectedItem && !showMobileItemList);
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 md:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={handleRequestClose} />
       <div className={`relative z-10 flex h-[calc(100dvh-1rem)] w-[92vw] max-w-[1200px] min-h-0 flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-2rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}>
         
         {/* Top Floating Header */}
-        <div className={`relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
+        <div className={`relative z-30 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
           <div className="flex items-start justify-between gap-3 md:gap-4">
             <div className={`flex items-center gap-3 ${compactTablet ? "md:gap-3" : "md:gap-4"}`}>
               <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner ${compactTablet ? "md:h-11 md:w-11" : "md:h-12 md:w-12"}`}>
@@ -347,7 +403,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               )}
 
               <button 
-                onClick={onClose} 
+                onClick={handleRequestClose} 
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
                 aria-label="Close"
               >
@@ -358,12 +414,11 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
           {compactTablet && (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden md:max-xl:grid md:max-xl:grid-cols-[300px_minmax(0,1fr)]">
-              {!hideSidebar && (
+            <div className={`flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden ${hideMobileSidebar ? "" : "md:max-xl:grid md:max-xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
+              {!hideSidebar && !hideMobileSidebar && (
                 <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[300px]">
-                  <div className="space-y-3 p-4 md:p-4">
+                  <div className="sticky top-0 z-20 shrink-0 space-y-3 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-white/5 dark:bg-[#0c0f14] md:p-4">
                     <div className="flex items-center gap-2.5">
-                      <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
                     </div>
                     <div className="relative group">
@@ -387,7 +442,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                       .map((item) => (
                         <div
                           key={item.id}
-                          onClick={() => triggerSearch(item.itemId, item)}
+                          onClick={() => handleSelectItem(item)}
                           className={`cursor-pointer group rounded-2xl border transition-all ${compactTablet ? "p-3 md:max-xl:p-3" : "p-4"} ${
                             selectedItem?.id === item.id
                               ? "border-emerald-500 bg-emerald-500/10 shadow-lg"
@@ -411,8 +466,18 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                 </aside>
               )}
 
-              <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-emerald-50/20 dark:bg-surface-secondary">
+              <section className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-emerald-50/20 dark:bg-surface-secondary ${selectedItem && showMobileItemList ? "max-md:hidden md:max-xl:flex" : "flex"}`}>
                 <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5 md:max-xl:p-4 scrollbar-hide">
+                  {hideMobileSidebar && (
+                    <button
+                      type="button"
+                      onClick={handleOpenMobileItemList}
+                      className="mb-3 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40 xl:hidden"
+                    >
+                      <Menu className="h-4 w-4" />
+                      Change Item
+                    </button>
+                  )}
                   <div className="rounded-2xl border border-emerald-100 bg-white/85 p-4 shadow-lg shadow-emerald-900/5 backdrop-blur-sm dark:border-white/5 dark:bg-black/20">
                     <SectionHeader title="Loan & Item Identity" icon={Info} />
                     <div className="mt-4 grid min-w-0 gap-3 md:max-xl:grid-cols-2">
@@ -458,7 +523,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                   <div className="mt-4 rounded-2xl border border-white/5 bg-emerald-900 p-4 shadow-lg shadow-emerald-900/10">
                     <SectionHeader title="Transaction Type" icon={Tag} isDark />
 
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2 [&>button]:min-w-0">
                       <ActionToggle
                         label="Renew"
                         isActive={isRenewActive}
@@ -485,7 +550,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                   <div className="mt-4 rounded-2xl border border-white/5 bg-emerald-900 p-4 shadow-lg shadow-emerald-900/10">
                     <SectionHeader title="Period Settings" icon={Calendar} isDark />
 
-                    <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 dark:bg-emerald-950/50">
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-emerald-100/80 bg-white px-4 py-3 dark:border-white/10 dark:bg-emerald-950/50">
                       <div className="space-y-0.5">
                         <p className="text-[8px] font-black uppercase tracking-widest text-emerald-900/40 dark:text-emerald-400">Items Renewed</p>
                         <p className="text-[7px] font-bold uppercase tracking-tighter text-emerald-600/60 dark:text-emerald-400/60">Extend Multiplier</p>
@@ -518,10 +583,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           <div className={compactTablet ? "hidden xl:flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row" : "flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row"}>
           {/* Left Sidebar: Active Inventory List */}
           {!hideSidebar && (
-            <div className={`flex w-full flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 ${compactTablet ? "lg:w-64 xl:w-72" : "lg:w-72"}`}>
-              <div className={`space-y-4 p-4 ${compactTablet ? "md:p-4" : "md:p-5"}`}>
+            <div className={`w-full flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 ${hideMobileSidebar ? "hidden xl:flex" : "flex"} ${compactTablet ? "lg:w-64 xl:w-72" : "lg:w-72"}`}>
+              <div className={`sticky top-0 z-20 shrink-0 space-y-4 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-white/5 dark:bg-[#0c0f14] ${compactTablet ? "md:p-4" : "md:p-5"}`}>
                   <div className="flex items-center gap-2.5">
-                    <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
                   </div>
                   <div className="relative group">
@@ -545,7 +609,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                     .map((item) => (
                       <div 
                         key={item.id}
-                        onClick={() => triggerSearch(item.itemId, item)}
+                        onClick={() => handleSelectItem(item)}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer group ${
                           selectedItem?.id === item.id 
                             ? 'bg-emerald-500/10 border-emerald-500 shadow-lg' 
@@ -568,9 +632,19 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           )}
 
           {/* Main Info Area */}
-          <div className={`flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto bg-emerald-50/20 p-4 scrollbar-hide sm:p-6 dark:bg-surface-secondary ${compactTablet ? "lg:flex-row lg:gap-6 lg:p-6" : "lg:flex-row lg:gap-8 lg:p-8"}`}>
+          <div className={`min-h-0 flex-1 flex-col gap-6 overflow-y-auto bg-emerald-50/20 p-4 scrollbar-hide sm:p-6 dark:bg-surface-secondary ${hideMobileSidebar ? "flex" : "hidden xl:flex"} ${compactTablet ? "lg:flex-row lg:gap-6 lg:p-6" : "lg:flex-row lg:gap-8 lg:p-8"}`}>
             {/* Left Column: Specs */}
-            <div className="flex-1 space-y-5 flex flex-col">
+            <div className="flex flex-1 flex-col space-y-5">
+              {hideMobileSidebar && (
+                <button
+                  type="button"
+                  onClick={handleOpenMobileItemList}
+                  className="inline-flex items-center gap-2 self-start rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40 xl:hidden"
+                >
+                  <Menu className="h-4 w-4" />
+                  Change Item
+                </button>
+              )}
               <SectionHeader title="Loan & Item Identity" icon={Info} />
               
               <div className="space-y-3 px-1">
@@ -607,11 +681,11 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
             </div>
 
             {/* Right Action Panel */}
-            <div className={`w-full shrink-0 overflow-hidden bg-emerald-900 p-5 flex flex-col gap-4 ${compactTablet ? "lg:w-[300px] xl:w-[320px]" : "lg:w-[320px] xl:w-[340px]"}`}>
+            <div className={`flex w-full shrink-0 flex-col gap-4 bg-emerald-900 p-5 ${compactTablet ? "lg:w-[300px] xl:w-[320px]" : "lg:w-[320px] xl:w-[340px]"}`}>
                <div className="space-y-3">
                   <SectionHeader title="Transaction Type" icon={Tag} isDark />
                   
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2 [&>button]:min-w-0">
                     <ActionToggle 
                       label="Renew" 
                       isActive={isRenewActive} 
@@ -636,7 +710,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                <div className="space-y-3">
                   <SectionHeader title="Period Settings" icon={Calendar} isDark />
                   
-                  <div className="flex items-center justify-between bg-white dark:bg-emerald-950/50 px-4 py-2.5 rounded-xl shadow-lg">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100/80 bg-white px-4 py-2.5 shadow-lg dark:border-white/10 dark:bg-emerald-950/50">
                     <div className="space-y-0.5">
                       <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Items Renewed</p>
                       <p className="text-[7px] font-bold text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-tighter">Extend Multiplier</p>
@@ -664,69 +738,61 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
         {/* Footer Actions */}
-        <div className={`shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 ${compactTablet ? "lg:p-6" : "lg:p-8"}`}>
-              <div className={`flex flex-col gap-4 ${compactTablet ? "md:grid md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:gap-5" : "lg:flex-row lg:items-center lg:justify-between lg:gap-8"}`}>
-            <div className={`flex flex-col gap-4 ${compactTablet ? "md:flex-row md:items-center md:gap-4" : "sm:flex-row sm:items-center sm:gap-4 lg:gap-8"}`}>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200"
-              >
-                Cancel Process
-              </button>
-
-              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover md:block" />
-
-              <div className={`w-full ${compactTablet ? "md:w-40" : "sm:w-40"}`}>
+        <div className={`relative z-30 shrink-0 border-t border-emerald-50 bg-white dark:border-border-subtle dark:bg-surface ${compactTablet ? "xl:p-6" : "lg:p-6 xl:p-8"}`}>
+          <div className={`flex items-end gap-2 p-3 sm:gap-4 sm:p-5 ${compactTablet ? "md:gap-5" : "lg:gap-6"}`}>
+            <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
+              <div className={`w-[min(38%,8.5rem)] shrink-0 ${compactTablet ? "md:w-40" : "sm:w-40"}`}>
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
                   <input
                     type="password"
                     placeholder="••••••••"
-                    className="h-10 rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary"
+                    className={transactionPasswordInputClass(
+                      Boolean(passwordFieldError),
+                      "h-10 w-full rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary",
+                    )}
                     value={adminForm.password}
-                    onChange={(e) => setAdminForm({ ...adminForm, password: e.target.value })}
+                    onChange={(e) => {
+                      setAdminForm({ ...adminForm, password: e.target.value });
+                      if (passwordFieldError) setError(null);
+                    }}
                   />
+                  {passwordFieldError && (
+                    <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className={`flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-4 md:border-t-0 md:pt-0 ${compactTablet ? "md:w-auto md:gap-4" : "lg:gap-6"}`}>
-              <div className="text-right">
+              <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
+
+              <div className="min-w-0 shrink-0 text-left">
                 <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
                   TOTAL PAYMENT
                 </p>
-                <p className={`font-black leading-none tracking-tighter text-emerald-950 dark:text-white ${compactTablet ? "text-2xl md:text-[2rem]" : "text-3xl"}`}>
+                <p className={`font-black leading-none tracking-tighter text-emerald-950 dark:text-white ${compactTablet ? "text-xl sm:text-2xl md:text-[2rem]" : "text-xl sm:text-2xl md:text-3xl"}`}>
                   ₱ {totalToPay.toLocaleString()}
                 </p>
               </div>
-
-              <button
-                disabled={isLoading || !selectedItem}
-                onClick={handleProceed}
-                className={`flex items-center justify-center gap-3 rounded-2xl px-8 py-4 text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] sm:px-10 ${compactTablet ? "md:px-8 md:py-4" : "lg:px-12 lg:py-5"} ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <span className="anim-loading h-5 w-5 rounded-full border-t-white border-white/30" />
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  <>
-                    {isReappraiseActive ? "PROCESS REAPPRAISAL" : "PROCESS RENEWAL"}
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
             </div>
 
+            <button
+              disabled={isLoading || !selectedItem}
+              onClick={handleProceedRequest}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-[0.98] sm:gap-3 sm:rounded-2xl sm:px-8 sm:py-4 sm:text-sm sm:tracking-wider ${compactTablet ? "md:px-8" : "sm:px-10 md:px-12 md:py-5"} ${isLoading || !selectedItem ? "cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover" : "bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700"}`}
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="anim-loading h-4 w-4 rounded-full border-white/30 border-t-white sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">Processing...</span>
+                </div>
+              ) : (
+                <>
+                  {isReappraiseActive ? "PROCESS REAPPRAISAL" : "PROCESS RENEWAL"}
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                </>
+              )}
+            </button>
           </div>
-
-          {error && (
-            <div className="mt-4 flex w-full items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-2 text-[8px] font-bold uppercase tracking-widest text-red-400 animate-in slide-in-from-bottom-1">
-              <AlertCircle className="w-3 h-3 shrink-0" />
-              {error}
-            </div>
-          )}
         </div>
       </div>
       <QrScanner 
@@ -739,6 +805,40 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         onClose={() => setIsProofModalOpen(false)}
         onConfirm={executeTransaction}
         isLoading={isLoading}
+      />
+      <ConfirmActionModal
+        isOpen={isCancelConfirmOpen}
+        title="Cancel renewal?"
+        message="Are you sure you want to cancel this renewal transaction? Your progress will not be saved."
+        confirmLabel="Yes, Cancel"
+        cancelLabel="Continue"
+        variant="warning"
+        zIndexClass="z-[210]"
+        onClose={() => setIsCancelConfirmOpen(false)}
+        onConfirm={async () => {
+          onClose();
+        }}
+      />
+      <TransactionConfirmModal
+        isOpen={isConfirmOpen}
+        title={isReappraiseActive ? "Confirm reappraisal?" : "Confirm renewal?"}
+        message={
+          isReappraiseActive
+            ? "This will update the pawn principal and record a reappraisal transaction permanently."
+            : "This will record the renewal payment and update the pawn contract permanently."
+        }
+        details={selectedItem ? [
+          { label: "Customer", value: selectedItem.name },
+          { label: "Unit", value: selectedItem.unit },
+          { label: "Unit Code", value: selectedItem.unitCode },
+          { label: "Total Payment", value: `₱ ${totalToPay.toLocaleString()}` },
+        ] : []}
+        confirmLabel={isReappraiseActive ? "Yes, Process Reappraisal" : "Yes, Process Renewal"}
+        isLoading={isLoading}
+        onClose={() => {
+          if (!isLoading) setIsConfirmOpen(false);
+        }}
+        onConfirm={handleProceed}
       />
     </div>
   );
@@ -802,18 +902,21 @@ function TabletDetailRow({ label, value }: { label: string; value: string | numb
 function ActionToggle({ label, isActive, onClick, sub, compact = false }: { label: string, isActive: boolean, onClick: () => void, sub?: string, compact?: boolean }) {
   return (
     <button 
+      type="button"
       onClick={onClick}
-      className={`relative flex flex-col gap-0.5 overflow-hidden rounded-2xl border-2 text-left transition-all group ${compact ? "p-2.5" : "p-3"} ${
+      className={`relative flex min-w-0 flex-col gap-0.5 rounded-2xl text-left transition-all group ${
+        compact ? "p-2.5" : "p-3"
+      } ${
         isActive 
-          ? 'bg-emerald-50 dark:bg-emerald-600/40 border-emerald-400 shadow-xl' 
-          : 'bg-white/10 dark:bg-surface/5 border-transparent dark:border-white/5 text-emerald-100/40 dark:text-white/40 hover:border-emerald-200 dark:hover:bg-white/5'
+          ? "border-2 border-emerald-400 bg-emerald-50 shadow-lg dark:border-emerald-300 dark:bg-emerald-600/40" 
+          : "border border-white/10 bg-white/10 text-emerald-100/40 hover:border-emerald-200/60 dark:border-white/10 dark:bg-surface/5 dark:text-white/40 dark:hover:bg-white/5"
       }`}
     >
-      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? 'border-emerald-600 dark:border-white' : 'border-current'}`}>
+      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? "border-emerald-600 dark:border-white" : "border-current"}`}>
         {isActive && <div className="h-1 w-1 rounded-full bg-emerald-600 dark:bg-white" />}
       </div>
-      <p className={`font-black uppercase tracking-tight ${compact ? "text-[9px]" : "text-[10px]"} ${isActive ? 'text-emerald-950 dark:text-white' : 'text-current'}`}>{label}</p>
-      {sub && <p className={`font-bold leading-none ${compact ? "text-[7px]" : "text-[8px]"} ${isActive ? 'text-emerald-600/60 dark:text-white/60' : 'text-current'}`}>{sub}</p>}
+      <p className={`font-black uppercase tracking-tight ${compact ? "text-[9px]" : "text-[10px]"} ${isActive ? "text-emerald-950 dark:text-white" : "text-current"}`}>{label}</p>
+      {sub && <p className={`font-bold leading-none ${compact ? "text-[7px]" : "text-[8px]"} ${isActive ? "text-emerald-600/60 dark:text-white/60" : "text-current"}`}>{sub}</p>}
     </button>
   );
 }

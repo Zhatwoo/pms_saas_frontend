@@ -689,6 +689,7 @@ export default function AuditLogsPage() {
   const [userDirectory, setUserDirectory] = useState<Map<string, string>>(new Map());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("All Logs");
+  const [actionFilter, setActionFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
   // Login logs state
@@ -922,15 +923,26 @@ export default function AuditLogsPage() {
     ? ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer", "Login Logs"]
     : ["All Logs", "Transaction Logs", "Fund Transfer", "Item Transfer"];
 
-  const filteredLogs = useMemo(() => {
+  const logsForActiveTab = useMemo(() => {
     let result = enrichedLogs;
+    if (filterType === "Transaction Logs") result = result.filter((l) => l.logType === "TRANSACTION");
+    if (filterType === "Fund Transfer") result = result.filter((l) => l.logType === "FUND TRANSFER");
+    if (filterType === "Item Transfer") result = result.filter((l) => l.logType === "ITEM TRANSFER");
+    return result;
+  }, [enrichedLogs, filterType]);
+
+  const availableActions = useMemo(() => {
+    const badges = new Set(logsForActiveTab.map((log) => log.actionBadge));
+    return Array.from(badges).sort();
+  }, [logsForActiveTab]);
+
+  const filteredLogs = useMemo(() => {
+    let result = logsForActiveTab;
     if (canSwitchBranch && activeBranchId) {
       result = result.filter(l => l.branchId === activeBranchId);
     }
-    if (filterType !== "All Logs") {
-      if (filterType === "Transaction Logs") result = result.filter(l => l.logType === "TRANSACTION");
-      if (filterType === "Fund Transfer") result = result.filter(l => l.logType === "FUND TRANSFER");
-      if (filterType === "Item Transfer") result = result.filter(l => l.logType === "ITEM TRANSFER");
+    if (actionFilter !== "all") {
+      result = result.filter((l) => l.actionBadge === actionFilter);
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
@@ -938,13 +950,24 @@ export default function AuditLogsPage() {
         (l) =>
           l.userFullName.toLowerCase().includes(q) ||
           l.action.toLowerCase().includes(q) ||
+          l.actionBadge.toLowerCase().includes(q) ||
           (l.details && l.details.toLowerCase().includes(q))
       );
     }
     return result;
-  }, [activeBranchId, canSwitchBranch, enrichedLogs, searchQuery, filterType]);
+  }, [actionFilter, activeBranchId, canSwitchBranch, logsForActiveTab, searchQuery]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType, activeBranchId]);
+  useEffect(() => {
+    setActionFilter("all");
+  }, [filterType]);
+
+  useEffect(() => {
+    if (actionFilter !== "all" && !availableActions.includes(actionFilter)) {
+      setActionFilter("all");
+    }
+  }, [actionFilter, availableActions]);
+
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType, actionFilter, activeBranchId]);
 
   const totalItems = filteredLogs.length;
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -1314,10 +1337,19 @@ export default function AuditLogsPage() {
               </select>
             )}
 
-            <button className="h-11 w-full rounded-lg border border-input-border bg-input-bg px-5 py-2.5 text-sm font-medium text-text-primary hover:bg-surface-hover transition-colors flex items-center justify-center gap-2 sm:w-auto">
-              All Actions
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-            </button>
+            <select
+              value={actionFilter}
+              onChange={(e) => setActionFilter(e.target.value)}
+              className="h-11 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500 sm:w-auto"
+              aria-label="Filter by action"
+            >
+              <option value="all">All Actions</option>
+              {availableActions.map((action) => (
+                <option key={action} value={action}>
+                  {action}
+                </option>
+              ))}
+            </select>
 
             <div className="h-11 flex items-center">
               <DateFilterSelector

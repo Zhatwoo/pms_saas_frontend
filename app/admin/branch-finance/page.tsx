@@ -19,7 +19,7 @@ import { RequestExpensesModal } from "./_components/request-expenses-modal";
 import type { RequestExpensesData } from "./_components/request-expenses-modal";
 import {
   FinanceSummaryCards,
-  LedgerTypeFilter,
+  LedgerFiltersBar,
 } from "@/components/shared/finance-ledger-table";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import type {
@@ -566,44 +566,29 @@ export default function AdminBranchFinancePage() {
               />
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="text"
-                placeholder="Search..."
-                value={ledgerSearch}
-                onChange={(e) => setLedgerSearch(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
-              />
-              <LedgerTypeFilter value={ledgerTypeFilter} onChange={setLedgerTypeFilter} />
-              <input
-                type="date"
-                value={ledgerDateFrom}
-                onChange={(e) => setLedgerDateFrom(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-              />
-              <input
-                type="date"
-                value={ledgerDateTo}
-                onChange={(e) => setLedgerDateTo(e.target.value)}
-                className="rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
-              />
-              {(ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo) ? (
-                <button
-                  onClick={() => {
-                    setLedgerSearch("");
-                    setLedgerTypeFilter("all");
-                    setLedgerDateFrom("");
-                    setLedgerDateTo("");
-                  }}
-                  className="text-xs font-bold text-red-600 hover:underline"
-                >
-                  Clear Filters
-                </button>
-              ) : null}
-            </div>
+            <LedgerFiltersBar
+              search={ledgerSearch}
+              onSearchChange={setLedgerSearch}
+              typeFilter={ledgerTypeFilter}
+              onTypeFilterChange={setLedgerTypeFilter}
+              dateFrom={ledgerDateFrom}
+              onDateFromChange={setLedgerDateFrom}
+              dateTo={ledgerDateTo}
+              onDateToChange={setLedgerDateTo}
+              hasActiveFilters={Boolean(
+                ledgerSearch || ledgerTypeFilter !== "all" || ledgerDateFrom || ledgerDateTo,
+              )}
+              onClear={() => {
+                setLedgerSearch("");
+                setLedgerTypeFilter("all");
+                setLedgerDateFrom("");
+                setLedgerDateTo("");
+              }}
+              searchPlaceholder="Search..."
+            />
 
-            <div className="flex justify-end print:hidden mb-2">
-              <ActionButton variant="primary" onClick={() => window.print()} size="md">
+            <div className="mb-2 flex justify-stretch print:hidden sm:justify-end">
+              <ActionButton variant="primary" onClick={() => window.print()} size="md" className="w-full sm:w-auto">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -654,7 +639,7 @@ export default function AdminBranchFinancePage() {
                 <tbody>
                   {unifiedRows.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-4 text-center italic text-gray-500 border-b border-black">
+                      <td colSpan={7} className="p-4 text-center italic text-text-muted border-b border-black">
                         No records found for the selected filters.
                       </td>
                     </tr>
@@ -667,7 +652,7 @@ export default function AdminBranchFinancePage() {
                         <td className="p-2 truncate max-w-[250px]">{row.description || "—"}</td>
                         <td className="p-2 text-right font-mono">{row.cashIn > 0 ? `+₱${row.cashIn.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
                         <td className="p-2 text-right font-mono text-red-600">{row.cashOut > 0 ? `-₱${row.cashOut.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</td>
-                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-gray-700">{row.reference || "—"}</td>
+                        <td className="p-2 font-mono text-[10px] truncate max-w-[120px] text-text-secondary">{row.reference || "—"}</td>
                       </tr>
                     ))
                   )}

@@ -34,10 +34,13 @@ export interface SaleCalendarDayData {
   sold?: number;
 }
 
-function resolveDayCount(value: number | SaleCalendarDayData | undefined): number {
-  if (value == null) return 0;
-  if (typeof value === "number") return value;
-  return (Number(value.available) || 0) + (Number(value.sold) || 0);
+function resolveCounts(value: number | SaleCalendarDayData | undefined): { available: number; sold: number } {
+  if (value == null) return { available: 0, sold: 0 };
+  if (typeof value === "number") return { available: value, sold: 0 };
+  return {
+    available: Number(value.available) || 0,
+    sold: Number(value.sold) || 0,
+  };
 }
 
 interface SaleCalendarProps {
@@ -86,6 +89,18 @@ export function SaleCalendar({
         </button>
       </div>
 
+      {/* Legend */}
+      <div className="flex items-center gap-4 border-b border-zinc-200/80 bg-surface-secondary/60 px-4 py-1.5 dark:border-border-subtle">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-amber-400" />
+          <span className="text-[10px] font-bold text-text-muted">Sold</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-1.5 w-4 rounded-full bg-emerald-500/70" />
+          <span className="text-[10px] font-bold text-text-muted">Available</span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-7 border-b border-zinc-200/80 bg-surface-secondary dark:border-border-subtle">
         {DAY_NAMES.map((day) => (
           <div key={day} className="border-r border-zinc-200/80 py-2 text-center text-[10px] font-black uppercase tracking-widest text-text-muted last:border-r-0 dark:border-border-subtle">
@@ -101,20 +116,26 @@ export function SaleCalendar({
           }
 
           const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const count = resolveDayCount(calendarData[dateStr]);
+          const { available, sold } = resolveCounts(calendarData[dateStr]);
           const isToday = today.getFullYear() === calendarYear && today.getMonth() === calendarMonth && today.getDate() === day;
           const isSelected = selectedDate === dateStr;
           const isFutureDate = dateStr > todayString;
-          const highlightClass = isToday
-            ? "bg-yellow-500/10 ring-2 ring-inset ring-yellow-400"
-            : isSelected
-              ? "bg-emerald-500/10 ring-2 ring-inset ring-emerald-500"
-              : "";
-          const dayTextClass = isToday
-            ? "text-yellow-400"
-            : isSelected
-              ? "text-emerald-400"
-              : count > 0
+          const hasSold = sold > 0;
+          const hasAvailable = available > 0;
+
+          const highlightClass = isSelected
+            ? "bg-amber-500/10 ring-1 sm:ring-2 ring-inset ring-amber-400"
+            : isToday
+              ? "bg-yellow-500/10 ring-1 sm:ring-2 ring-inset ring-yellow-400"
+              : hasSold
+                ? "bg-amber-500/5"
+                : "";
+
+          const dayTextClass = isSelected
+            ? "text-amber-400"
+            : isToday
+              ? "text-yellow-400"
+              : hasSold || hasAvailable
                 ? "text-text-primary"
                 : "text-text-muted";
 
@@ -124,17 +145,29 @@ export function SaleCalendar({
               type="button"
               disabled={isFutureDate}
               onClick={isFutureDate ? undefined : () => onSelectDate(isSelected ? null : dateStr)}
-              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle ${isFutureDate ? "cursor-not-allowed opacity-45" : "hover:bg-emerald-50/10"} ${highlightClass} ${isToday ? "ring-1 ring-inset ring-yellow-400" : ""}`}
+              className={`relative h-14 sm:h-16 md:h-20 border-b border-r border-zinc-200/80 p-1 sm:p-1.5 text-left transition-all dark:border-border-subtle ${isFutureDate ? "cursor-not-allowed opacity-45" : "hover:bg-amber-50/10"} ${highlightClass} ${isToday && !isSelected ? "ring-1 ring-inset ring-yellow-400" : ""}`}
             >
-              <span className={`text-xs font-bold leading-none ${dayTextClass}`}>
+              <span className={`text-[10px] sm:text-xs font-bold leading-none ${dayTextClass}`}>
                 {day}
               </span>
-              {count > 0 && (
-                <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center gap-1">
-                  <div className="h-1 flex-1 rounded-full bg-emerald-500/60" />
-                  <span className="text-[9px] font-black leading-none text-emerald-400">{count}</span>
-                </div>
-              )}
+
+              {/* Bottom indicators */}
+              <div className="absolute bottom-1 sm:bottom-1.5 left-1 sm:left-1.5 right-1 sm:right-1.5 flex flex-col gap-0.5">
+                {hasSold && (
+                  <div className="flex items-center gap-0.5 sm:gap-1 overflow-hidden">
+                    <div className="h-1 w-1 sm:h-1.5 sm:w-1.5 shrink-0 rounded-full bg-amber-400" />
+                    <span className="text-[8px] sm:text-[9px] font-black leading-none text-amber-400 truncate">
+                      {sold} <span className="hidden sm:inline">sold</span>
+                    </span>
+                  </div>
+                )}
+                {hasAvailable && (
+                  <div className="flex items-center gap-0.5 sm:gap-1 overflow-hidden">
+                    <div className="h-1 flex-1 rounded-full bg-emerald-500/60" />
+                    <span className="text-[8px] sm:text-[9px] font-black leading-none text-emerald-400">{available}</span>
+                  </div>
+                )}
+              </div>
             </button>
           );
         })}

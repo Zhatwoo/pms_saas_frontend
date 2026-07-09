@@ -1377,7 +1377,7 @@ export default function EmployeePawnTransactionsPage() {
           onConfirm={() => setIsMoaReprintOpen(false)}
           data={reprintData}
           isLoading={false}
-          autoPrint={true}
+          mode="view"
         />
       )}
 

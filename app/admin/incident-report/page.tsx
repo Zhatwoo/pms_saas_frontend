@@ -73,35 +73,35 @@ function getCategoryLabel(value: IncidentCategory) {
 function getPriorityBadgeClasses(priority: IncidentPriority) {
   switch (priority) {
     case "critical":
-      return "bg-red-100 text-red-700 border-red-200";
+      return "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/30";
     case "high":
-      return "bg-orange-100 text-orange-700 border-orange-200";
+      return "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-900/30";
     case "medium":
-      return "bg-amber-100 text-amber-700 border-amber-200";
+      return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/30";
     case "low":
-      return "bg-slate-100 text-slate-700 border-slate-200";
+      return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/40";
   }
 }
 
 function getStatusBadgeClasses(status: IncidentStatus) {
   switch (status) {
     case "open":
-      return "bg-red-100 text-red-700 border-red-200";
+      return "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/30";
     case "pending_review":
-      return "bg-blue-100 text-blue-700 border-blue-200";
+      return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/30";
     case "escalated":
-      return "bg-violet-100 text-violet-700 border-violet-200";
+      return "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900/30";
     case "resolved":
-      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/30";
     case "reopened":
-      return "bg-amber-100 text-amber-700 border-amber-200";
+      return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/30";
   }
 }
 
 function getSourceBadgeClasses(source: IncidentSource) {
   return source === "auto"
-    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-    : "bg-slate-100 text-slate-700 border-slate-200";
+    ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/30"
+    : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700/40";
 }
 
 function getUserName(record: UserRecord | null | undefined) {
@@ -557,13 +557,13 @@ export default function AdminIncidentReportPage() {
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search ticket, branch, user, or transaction reference..."
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none sm:col-span-2 xl:col-span-1"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none sm:col-span-2 xl:col-span-1"
           />
 
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Status</option>
             {statusOptions.map((option) => (
@@ -576,7 +576,7 @@ export default function AdminIncidentReportPage() {
           <select
             value={priorityFilter}
             onChange={(event) => setPriorityFilter(event.target.value)}
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Priority</option>
             {priorityOptions.map((option) => (
@@ -589,7 +589,7 @@ export default function AdminIncidentReportPage() {
           <select
             value={sourceFilter}
             onChange={(event) => setSourceFilter(event.target.value)}
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Source</option>
             <option value="auto">Auto</option>
@@ -599,7 +599,7 @@ export default function AdminIncidentReportPage() {
           <select
             value={categoryFilter}
             onChange={(event) => setCategoryFilter(event.target.value)}
-            className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
           >
             <option value="all">All Categories</option>
             {categoryOptions.map((option) => (
@@ -818,20 +818,21 @@ export default function AdminIncidentReportPage() {
         )}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-xl border border-border-main bg-surface shadow-sm xl:block">
+      <div className="hidden overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20 xl:block">
+        <div className="overflow-x-auto">
         <table className="w-full min-w-[1180px] text-sm">
           <thead>
-            <tr className="border-b border-border-subtle text-left text-xs uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3">Ticket</th>
-              <th className="px-4 py-3">Incident</th>
-              <th className="px-4 py-3">User Involved</th>
-              <th className="px-4 py-3">Branch</th>
-              <th className="px-4 py-3">Money Impact</th>
-              <th className="px-4 py-3">Reported</th>
-              <th className="px-4 py-3">Assigned To</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Source</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+            <tr className="bg-emerald-900 text-amber-400">
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Ticket</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Incident</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">User Involved</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Branch</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Money Impact</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Reported</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Assigned To</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Status</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Source</th>
+              <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-bold uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -866,7 +867,7 @@ export default function AdminIncidentReportPage() {
                 return (
                   <tr
                     key={ticket.id}
-                    className="border-b border-border-subtle align-top transition-colors hover:bg-surface-secondary/50"
+                    className="border-t border-border-subtle align-top transition-colors bg-surface-secondary hover:bg-emerald-surface/60"
                   >
                     <td className="px-4 py-4">
                       <p className="font-semibold text-text-primary">{ticket.ticket_no}</p>
@@ -1004,6 +1005,7 @@ export default function AdminIncidentReportPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {isCreateModalOpen ? (

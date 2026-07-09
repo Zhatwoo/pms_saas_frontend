@@ -58,6 +58,8 @@ interface InventoryTally {
     itemId: string;
     itemName: string;
     category: string;
+    source?: string;
+    daysLeft?: number | null;
   }>;
   extraInVault: string[];
 }
@@ -772,11 +774,11 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
 
   const rootWrapperClass = embedded
     ? "relative w-full h-full"
-    : "fixed inset-0 z-[100] flex items-center justify-center bg-black/65 px-3 py-3 backdrop-blur-xl lg:px-6 lg:py-6";
+    : "fixed inset-0 z-[100] flex items-stretch justify-center bg-black/65 p-0 backdrop-blur-xl sm:items-center sm:p-3 lg:px-6 lg:py-6";
 
   const innerContainerClass = embedded
     ? "relative h-full w-full overflow-auto rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl"
-    : "relative h-[88vh] w-full max-w-[1440px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-surface shadow-2xl";
+    : "relative h-[100dvh] max-h-[100dvh] w-full max-w-[1440px] overflow-hidden rounded-none border border-white/10 bg-surface shadow-2xl sm:h-[92dvh] sm:max-h-[92dvh] sm:rounded-[1.75rem]";
 
   return (
     <div className={rootWrapperClass} {...rootWrapperProps} ref={modalRef}>
@@ -795,35 +797,35 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           </button>
         )}
         <div className="flex h-full flex-col overflow-y-auto lg:grid lg:min-h-0 lg:grid-cols-[1.25fr_.88fr] lg:overflow-hidden">
-          <section className="relative flex flex-col bg-white p-4 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 lg:min-h-0 lg:overflow-hidden lg:p-6 shrink-0 lg:shrink">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-700/70">Opening Workflow</p>
-                <h2 className="mt-2 text-2xl font-black leading-tight lg:text-3xl">Branch inventory QR scan</h2>
-                <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 lg:text-sm">
+          <section className="relative flex shrink-0 flex-col bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 sm:p-4 lg:min-h-0 lg:shrink lg:overflow-hidden lg:p-6">
+            <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:text-left">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.32em] text-emerald-700/70 sm:tracking-[0.4em]">Opening Workflow</p>
+                <h2 className="mt-2 text-xl font-black leading-tight sm:text-2xl lg:text-3xl">Branch inventory QR scan</h2>
+                <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:text-left lg:text-sm">
                   Scan available sale items and active pawn items within 7 days of maturity before starting the day.
                 </p>
               </div>
 
-              <div className="rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-zinc-800 dark:text-emerald-300 lg:px-4 lg:text-xs">
+              <div className="shrink-0 rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-zinc-800 dark:text-emerald-300 sm:px-4 sm:text-xs">
                 {scannedItems.length} Verified
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-300 lg:mt-5 lg:text-xs">
+            <div className="mt-3 flex items-center justify-center gap-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500 dark:text-zinc-300 sm:mt-4 sm:justify-start sm:tracking-[0.28em] lg:mt-5 lg:text-xs">
               <span
                 className={`h-2.5 w-2.5 rounded-full ${cameraState === "ready" ? "bg-emerald-500 animate-pulse" : cameraState === "loading" ? "bg-amber-400 animate-pulse" : cameraState === "unsupported" ? "bg-sky-400" : "bg-rose-400"}`}
               />
               <span>{cameraStatusLabel}</span>
             </div>
 
-            <div className="relative mt-4 overflow-hidden rounded-[1.5rem] border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 lg:mt-5">
-              <div className="relative aspect-[16/10] w-full lg:aspect-[16/9]">
+            <div className="relative mt-3 overflow-hidden rounded-2xl border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 sm:mt-4 sm:rounded-[1.5rem] lg:mt-5">
+              <div className="relative aspect-[4/3] w-full sm:aspect-[16/10] lg:aspect-[16/9]">
                 <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
                 <div className="absolute inset-0 bg-black/8" />
 
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className={`animate-scan-glow relative h-[76%] w-auto aspect-square rounded-[1.75rem] border bg-transparent shadow-[0_0_0_9999px_rgba(255,255,255,0.08)] ${scanStage === "failed" ? "border-rose-300/80" : scanStage === "duplicate" ? "border-amber-300/80" : "border-emerald-300/90"}`}>
+                <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+                  <div className={`animate-scan-glow relative h-[72%] w-auto max-w-[88%] aspect-square rounded-2xl border bg-transparent shadow-[0_0_0_9999px_rgba(255,255,255,0.08)] sm:h-[76%] sm:max-w-none sm:rounded-[1.75rem] ${scanStage === "failed" ? "border-rose-300/80" : scanStage === "duplicate" ? "border-amber-300/80" : "border-emerald-300/90"}`}>
                     <span className={`absolute left-0 top-0 h-8 w-8 -translate-x-1 -translate-y-1 rounded-tl-[1.5rem] border-l-2 border-t-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
                     <span className={`absolute right-0 top-0 h-8 w-8 translate-x-1 -translate-y-1 rounded-tr-[1.5rem] border-r-2 border-t-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
                     <span className={`absolute bottom-0 left-0 h-8 w-8 -translate-x-1 translate-y-1 rounded-bl-[1.5rem] border-b-2 border-l-2 ${scanStage === "failed" ? "border-rose-300" : scanStage === "duplicate" ? "border-amber-300" : "border-emerald-300"}`} />
@@ -835,7 +837,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       />
                     )}
 
-                    <div className="absolute inset-x-6 top-6 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-950/55">
+                    <div className="absolute inset-x-3 top-3 hidden items-center justify-between text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-950/55 sm:inset-x-6 sm:top-6 sm:flex sm:tracking-[0.28em]">
                       <span>QR Scan Window</span>
                       <span>{scanStageLabel}</span>
                     </div>
@@ -843,15 +845,15 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     {(checklistEmpty && (tally == null || tally.totalInSystem === 0)) &&
                       !isCheckingTally &&
                       !isLoadingChecklistItems && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 p-8 text-center animate-in fade-in duration-500 dark:bg-zinc-900/90">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/92 p-4 text-center animate-in fade-in duration-500 dark:bg-zinc-900/92 sm:p-8">
+                        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 sm:mb-4 sm:h-16 sm:w-16">
                           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                             <polyline points="22 4 12 14.01 9 11.01" />
                           </svg>
                         </div>
-                        <h4 className="text-lg font-black tracking-tight text-zinc-900 uppercase dark:text-zinc-100">Empty Inventory</h4>
-                        <p className="mt-2 max-w-xs text-xs font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300">
+                        <h4 className="text-base font-black uppercase tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-lg">Empty Inventory</h4>
+                        <p className="mt-2 max-w-xs text-[11px] font-semibold leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-xs">
                           No sale items or near-maturity pawn items need verification today. You can complete the audit immediately.
                         </p>
                       </div>
@@ -859,10 +861,10 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   </div>
                 </div>
 
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <div className="mx-auto max-w-lg px-1 text-center text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">
-                    <p className="text-sm font-bold">{cameraMessage}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.28em] text-white/60">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent p-3 sm:p-5">
+                  <div className="mx-auto max-w-lg px-1 text-center text-white">
+                    <p className="text-xs font-bold sm:text-sm">{cameraMessage}</p>
+                    <p className="mt-1 hidden text-[10px] uppercase tracking-[0.24em] text-white/70 sm:block sm:tracking-[0.28em]">
                       Keep the QR code inside the frame until the item card appears.
                     </p>
                   </div>
@@ -910,24 +912,25 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
             </div>
           </section>
 
-          <aside className="flex flex-col bg-gradient-to-b from-white to-zinc-50 p-4 dark:from-zinc-900 dark:to-zinc-950 lg:h-full lg:min-h-0 lg:overflow-y-auto scrollbar-hide lg:p-6 shrink-0 lg:shrink">
-            <div className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 lg:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Manual fallback</p>
-                  <h3 className="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100 lg:text-xl">Scan or type an item code</h3>
-                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-300 lg:text-sm">
+          <aside className="flex shrink-0 flex-col bg-gradient-to-b from-white to-zinc-50 p-3 dark:from-zinc-900 dark:to-zinc-950 sm:p-4 lg:h-full lg:min-h-0 lg:shrink lg:overflow-y-auto lg:p-6 scrollbar-hide">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:rounded-3xl sm:p-4 lg:p-5">
+              <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400 sm:tracking-[0.28em]">Manual fallback</p>
+                  <h3 className="mt-1 text-base font-black text-zinc-900 dark:text-zinc-100 sm:text-lg lg:text-xl">Scan or type an item code</h3>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500 dark:text-zinc-300 sm:text-left lg:text-sm">
                     The QR payload is parsed automatically. If needed, paste the code value from the QR data string.
                   </p>
                 </div>
-                <div className="inline-flex min-w-max items-center whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                <div className="inline-flex min-w-max items-center whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 sm:tracking-[0.16em]">
                   Auto scan first
                 </div>
               </div>
 
               <form onSubmit={handleManualScan} className="mt-4">
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600">
+                <div className="flex flex-col gap-2 sm:relative">
+                  <div className="relative">
+                    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 7V5a2 2 0 0 1 2-2h2" />
                       <path d="M17 3h2a2 2 0 0 1 2 2v2" />
@@ -936,40 +939,41 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       <line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
                   </div>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    placeholder="Code: 10-jclb-11543 | Item: oppo a94 | Serial: ..."
-                    value={currentScan}
-                    onChange={(event) => setCurrentScan(event.target.value)}
-                    disabled={isLoading}
-                    className={`w-full rounded-2xl border-2 ${error ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30" : "border-emerald-200 bg-white dark:border-emerald-700 dark:bg-zinc-900"} py-4 pl-12 pr-32 text-sm font-bold text-zinc-900 outline-none transition-all focus:border-emerald-500 dark:text-zinc-100 dark:placeholder:text-zinc-500`}
-                  />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      placeholder="Item code or QR payload"
+                      value={currentScan}
+                      onChange={(event) => setCurrentScan(event.target.value)}
+                      disabled={isLoading}
+                      className={`w-full rounded-2xl border-2 ${error ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30" : "border-emerald-200 bg-white dark:border-emerald-700 dark:bg-zinc-900"} py-3.5 pl-12 pr-4 text-sm font-bold text-zinc-900 outline-none transition-all focus:border-emerald-500 dark:text-zinc-100 dark:placeholder:text-zinc-500 sm:py-4 sm:pr-32`}
+                    />
+                  </div>
                   <button
                     type="submit"
                     disabled={isLoading || !currentScan.trim()}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl bg-zinc-900 px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-black disabled:opacity-50"
+                    className="w-full rounded-xl bg-zinc-900 px-5 py-3 text-xs font-bold text-white transition-all hover:bg-black disabled:opacity-50 sm:absolute sm:right-3 sm:top-1/2 sm:w-auto sm:-translate-y-1/2 sm:py-2.5"
                   >
                     {isLoading ? "Scanning..." : "Scan Item"}
                   </button>
                 </div>
-                {error && <p className="mt-2 text-[10px] font-bold italic text-rose-600">{error}</p>}
+                {error && <p className="mt-2 text-center text-[10px] font-bold italic text-rose-600 sm:text-left">{error}</p>}
               </form>
             </div>
 
-            <div className="mt-4 rounded-3xl border border-zinc-100 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 lg:mt-5 lg:p-5">
-              <div className="flex items-start justify-between gap-3">
+            <div className="mt-3 rounded-2xl border border-zinc-100 bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:mt-4 sm:rounded-3xl sm:p-4 lg:mt-5 lg:p-5">
+              <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:text-left">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Checklist progress</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-zinc-400 sm:tracking-[0.28em]">Checklist progress</p>
                   <h4 className="mt-1 text-base font-black text-zinc-900 dark:text-zinc-100 lg:text-lg">{completionLabel}</h4>
                 </div>
                 <StatusBadge label={cameraStatusLabel} variant={statusVariant[pendingItem?.status || ""] || "blue"} />
               </div>
 
-              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-                <div className="flex items-center justify-between gap-3 text-xs font-bold text-zinc-600 dark:text-zinc-300">
-                  <span>{tallySummary}</span>
-                  <span>{isCheckingTally ? "Syncing" : canComplete ? "Ready" : "Locked"}</span>
+              <div className="mt-4 rounded-2xl border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900 sm:p-4">
+                <div className="flex flex-col items-center gap-1 text-center text-xs font-bold text-zinc-600 dark:text-zinc-300 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+                  <span className="break-words">{tallySummary}</span>
+                  <span className="shrink-0">{isCheckingTally ? "Syncing" : canComplete ? "Ready" : "Locked"}</span>
                 </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
                   <div
@@ -982,22 +986,22 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     }}
                   />
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                <div className="mt-3 grid grid-cols-1 gap-2 text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500 sm:grid-cols-3 sm:tracking-[0.2em]">
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{scannedItems.length}</div>
+                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 sm:text-sm">{scannedItems.length}</div>
                     Verified
                   </div>
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.totalInSystem ?? "-"}</div>
+                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 sm:text-sm">{tally?.totalInSystem ?? "-"}</div>
                     In branch
                   </div>
                   <div className="rounded-xl bg-zinc-50 p-3 text-center dark:bg-zinc-800">
-                    <div className="text-sm font-black text-zinc-900 dark:text-zinc-100">{tally?.missingInVault?.length ?? "-"}</div>
+                    <div className="text-base font-black text-zinc-900 dark:text-zinc-100 sm:text-sm">{tally?.missingInVault?.length ?? "-"}</div>
                     Missing
                   </div>
                 </div>
                 <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
                     <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Missing items</p>
                     <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">
                       {tally?.missingItems?.length ?? 0} not yet scanned
@@ -1009,7 +1013,18 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         <div key={item.itemId} className="group relative rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                              <p className="flex items-center gap-2 text-sm font-black text-zinc-900 dark:text-zinc-100">
+                                <span>{item.itemName}</span>
+                                {item.daysLeft != null ? (
+                                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${item.daysLeft >= 5 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : item.daysLeft >= 2 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                                    {item.daysLeft <= 0 ? 'Expired' : `${item.daysLeft} Day${item.daysLeft !== 1 ? 's' : ''} Left`}
+                                  </span>
+                                ) : (
+                                  <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+                                    For Sale
+                                  </span>
+                                )}
+                              </p>
                               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">{item.category}</p>
                             </div>
                             <div className="ml-3 flex items-center gap-2 opacity-0 group-hover:opacity-100">
@@ -1124,8 +1139,8 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               )}
             </div>
 
-            <div className="mt-5 flex min-h-[24rem] flex-1 flex-col overflow-hidden rounded-3xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-              <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-700">
+            <div className="mt-4 flex min-h-[10rem] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900 sm:mt-5 sm:min-h-[16rem] sm:rounded-3xl lg:min-h-[24rem]">
+              <div className="flex flex-col items-center gap-2 border-b border-zinc-100 px-4 py-3 text-center dark:border-zinc-700 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4 sm:text-left">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Verified items</p>
                   <h4 className="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">{scannedItems.length} accounted for</h4>
@@ -1161,7 +1176,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       }}
                       className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50/40 active:scale-[0.99] cursor-pointer dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-emerald-600 dark:hover:bg-emerald-900/30"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
                           {item.originalPhoto ? (
                             <Image
@@ -1183,15 +1198,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                           )}
                         </div>
 
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{item.itemId}</p>
                           <p className="mt-1 truncate text-xs font-semibold text-zinc-500 dark:text-zinc-400">{item.itemName}</p>
                           <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">Serial: {item.serialNumber || "—"}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">{scannedItems.length - index}</div>
+                      <div className="flex shrink-0 items-center">
                         <button
                           aria-label="View verified item"
                           onClick={(e) => { e.stopPropagation(); setSelectedVerifiedItem(item); }}
@@ -1209,7 +1223,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               </div>
             </div>
 
-            <div className="mt-5 shrink-0 rounded-3xl border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="mt-4 shrink-0 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900 sm:mt-5 sm:rounded-3xl sm:p-5">
               {!checklistEmpty && (
                 <div className="flex items-start gap-3 text-amber-600 dark:text-amber-500">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
