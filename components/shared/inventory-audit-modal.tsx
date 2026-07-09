@@ -58,6 +58,8 @@ interface InventoryTally {
     itemId: string;
     itemName: string;
     category: string;
+    source?: string;
+    daysLeft?: number | null;
   }>;
   extraInVault: string[];
 }
@@ -1011,7 +1013,18 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         <div key={item.itemId} className="group relative rounded-2xl border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-600 dark:bg-zinc-800">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-black text-zinc-900 dark:text-zinc-100">{item.itemName}</p>
+                              <p className="flex items-center gap-2 text-sm font-black text-zinc-900 dark:text-zinc-100">
+                                <span>{item.itemName}</span>
+                                {item.daysLeft != null ? (
+                                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${item.daysLeft >= 5 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : item.daysLeft >= 2 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}`}>
+                                    {item.daysLeft <= 0 ? 'Expired' : `${item.daysLeft} Day${item.daysLeft !== 1 ? 's' : ''} Left`}
+                                  </span>
+                                ) : (
+                                  <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+                                    For Sale
+                                  </span>
+                                )}
+                              </p>
                               <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">{item.category}</p>
                             </div>
                             <div className="ml-3 flex items-center gap-2 opacity-0 group-hover:opacity-100">
