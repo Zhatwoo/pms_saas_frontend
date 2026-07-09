@@ -896,7 +896,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   {/* Interactive map with geocoding (Requirements: 9.1, 9.2) */}
                   <BranchMap 
                     branchName={branch.name}
-                    location={branch.location}
+                    location={branch.location ?? null}
                     branchId={branch.id}
                   />
                   <div className="p-5">
