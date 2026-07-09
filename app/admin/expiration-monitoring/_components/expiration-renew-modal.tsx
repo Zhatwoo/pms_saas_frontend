@@ -518,6 +518,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           isLoading={isLoading}
         />
       </div>
+    </div>
   );
 }
 

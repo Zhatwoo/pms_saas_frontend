@@ -375,7 +375,6 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               {!hideSidebar && (
                 <div className={`hidden md:flex items-center gap-2 rounded-2xl border border-white/5 bg-black/20 p-1.5 ${compactTablet ? "pr-3" : "pr-4"}`}>
                   <div className={`relative group/search flex-1 ${compactTablet ? "min-w-[220px]" : "min-w-[280px]"}`}>
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
                     <input 
                       type="text" 
                       placeholder="Type Full Unit Code..."
