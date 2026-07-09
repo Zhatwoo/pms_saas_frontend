@@ -192,7 +192,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
       <div>
-        <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
+        <p className="text-sm text-emerald-900/60 dark:text-zinc-300">
           Inventory of expired pawn items and direct purchases currently available for retail sale.
         </p>
       </div>
@@ -202,7 +202,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
           <FilterSelect label="Category" options={categoryOptions} value={category} onChange={setCategory} size="lg" />
           <FilterSelect label="Status" options={saleStatusOptions} value={status} onChange={setStatus} size="lg" />
           <div className="flex flex-col gap-1">
-            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-wide text-zinc-500" : "text-[10px] font-bold uppercase tracking-wide text-zinc-500"}>Search</label>
+            <label className={viewOnly ? "text-[11px] font-bold uppercase tracking-wide text-text-muted" : "text-[10px] font-bold uppercase tracking-wide text-text-muted"}>Search</label>
             <input
               type="text"
               value={searchQuery}
@@ -321,7 +321,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
+                    <td colSpan={8} className="py-8 text-center text-sm text-text-tertiary">
                       <div className="flex items-center justify-center">
                         <LoadingSpinnerLabel text="Loading..." className="text-base font-medium text-text-tertiary" />
                       </div>
@@ -329,7 +329,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                   </tr>
                 ) : saleItems.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
+                    <td colSpan={8} className="py-8 text-center text-sm text-text-tertiary">
                       {selectedDate ? "No items on this day" : "No items for sale found"}
                     </td>
                   </tr>
@@ -411,7 +411,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
+                  <td colSpan={8} className="py-8 text-center text-sm text-text-tertiary">
                     <div className="flex items-center justify-center">
                         <LoadingSpinnerLabel text="Loading..." className="text-base font-medium text-text-tertiary" />
                     </div>
@@ -419,7 +419,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                 </tr>
               ) : saleItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm text-zinc-400">
+                  <td colSpan={8} className="py-8 text-center text-sm text-text-tertiary">
                     {saleViewMode === "history" ? "No sold items in history" : "No items for sale found"}
                   </td>
                 </tr>
