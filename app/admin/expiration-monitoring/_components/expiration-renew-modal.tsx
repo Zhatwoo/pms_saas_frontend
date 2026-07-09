@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
+import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { RenewalProofModal } from "@/components/shared/renewal-proof-modal";
 import {
   isTransactionPasswordError,
@@ -111,6 +112,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
 
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isProcessingRef = useRef(false);
@@ -260,6 +262,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       setIsRenewActive(true);
       setIsReappraiseActive(false);
       setItemsRenewed(1);
+      setIsCancelConfirmOpen(false);
+    } else if (isOpen) {
+      setIsCancelConfirmOpen(false);
     }
   }, [isOpen, initialSearchCode]);
 
@@ -269,9 +274,14 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   const passwordFieldError = isTransactionPasswordError(error) ? error : null;
 
+  const handleRequestClose = () => {
+    if (isLoading) return;
+    setIsCancelConfirmOpen(true);
+  };
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={handleRequestClose} />
       <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
         
         {/* Top Floating Header */}
@@ -294,7 +304,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
             <div className="flex items-center gap-4">
 
               <button 
-                onClick={onClose} 
+                onClick={handleRequestClose} 
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/20"
                 aria-label="Close"
               >
@@ -435,67 +445,72 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col sm:flex-row items-center justify-between gap-8 shrink-0">
-          <div className="flex items-center gap-8 w-full sm:w-auto">
-             <button 
-                onClick={onClose}
-                className="px-4 py-2 text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-              >
-                Cancel Process
-              </button>
-              <div className="h-10 w-px bg-zinc-100 dark:bg-surface-hover hidden sm:block" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="w-40">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Password</label>
-                    <input 
-                      type="password" 
-                      placeholder="••••••••"
-                      className={transactionPasswordInputClass(
-                        Boolean(passwordFieldError),
-                        "h-10 rounded-lg border border-emerald-100 dark:border-border-subtle bg-slate-50 dark:bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-text-muted",
-                      )}
-                      value={adminForm.password}
-                      onChange={(e) => {
-                        setAdminForm({...adminForm, password: e.target.value});
-                        if (passwordFieldError) setError(null);
-                      }}
-                    />
-                    {passwordFieldError && (
-                      <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
+        <div className="shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 lg:p-8">
+          <div className="flex items-end gap-2 sm:gap-4 lg:gap-6">
+            <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
+              <div className="w-[min(38%,8.5rem)] shrink-0 sm:w-40">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••"
+                    className={transactionPasswordInputClass(
+                      Boolean(passwordFieldError),
+                      "h-10 w-full rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary",
                     )}
-                  </div>
+                    value={adminForm.password}
+                    onChange={(e) => {
+                      setAdminForm({...adminForm, password: e.target.value});
+                      if (passwordFieldError) setError(null);
+                    }}
+                  />
+                  {passwordFieldError && (
+                    <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
+                  )}
                 </div>
               </div>
-          </div>
 
-          <div className="flex w-full items-center justify-between gap-4 border-t border-emerald-50 pt-6 sm:mt-0 sm:w-auto sm:border-t-0 sm:pt-0">
-             <div className="text-right shrink-0">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em] leading-none mb-1">
+              <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
+
+              <div className="min-w-0 shrink-0 text-left">
+                <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
                   TOTAL PAYMENT
                 </p>
-                <p className="text-3xl font-black text-emerald-950 dark:text-white tracking-tighter leading-none">
+                <p className="text-xl font-black leading-none tracking-tighter text-emerald-950 dark:text-white sm:text-2xl md:text-3xl">
                   ₱ {totalToPay.toLocaleString()}
                 </p>
               </div>
-
-              <button 
-                disabled={isLoading || !selectedItem}
-                onClick={handleProceed}
-                className={`flex items-center justify-center gap-3 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-wider transition-all active:scale-[0.98] ${isLoading || !selectedItem ? 'bg-zinc-100 dark:bg-surface-hover text-zinc-300 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30'}`}
-              >
-                {isLoading ? (
-                   <span className="anim-loading h-4 w-4 border-emerald-950/30 border-t-emerald-950 rounded-full" />
-                ) : (
-                   <>
-                     {isReappraiseActive ? "PROCESS REAPPRAISAL" : "PROCESS RENEWAL"}
-                     <ArrowRight className="w-5 h-5" />
-                   </>
-                )}
-              </button>
             </div>
+
+            <button 
+              disabled={isLoading || !selectedItem}
+              onClick={handleProceed}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-[0.98] sm:gap-3 sm:rounded-2xl sm:px-10 sm:py-4 sm:text-sm sm:tracking-wider md:px-12 md:py-5 ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
+            >
+              {isLoading ? (
+                 <span className="anim-loading h-4 w-4 rounded-full border-emerald-950/30 border-t-emerald-950" />
+              ) : (
+                 <>
+                   {isReappraiseActive ? "PROCESS REAPPRAISAL" : "PROCESS RENEWAL"}
+                   <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                 </>
+              )}
+            </button>
           </div>
         </div>
+        <ConfirmActionModal
+          isOpen={isCancelConfirmOpen}
+          title="Cancel renewal?"
+          message="Are you sure you want to cancel this renewal transaction? Your progress will not be saved."
+          confirmLabel="Yes, Cancel"
+          cancelLabel="Continue"
+          variant="warning"
+          zIndexClass="z-[210]"
+          onClose={() => setIsCancelConfirmOpen(false)}
+          onConfirm={async () => {
+            onClose();
+          }}
+        />
         <RenewalProofModal
           isOpen={isProofModalOpen}
           onClose={() => setIsProofModalOpen(false)}

@@ -1532,21 +1532,12 @@ export function NewPawnModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-3 sm:p-4 md:p-5 lg:p-6 border-t border-emerald-50 bg-white dark:bg-surface flex flex-col gap-4 shrink-0">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:gap-6 lg:w-auto lg:flex-1">
-              <button 
-                onClick={handleReset}
-                className="self-start px-4 py-2 text-sm font-black text-zinc-400 uppercase tracking-widest hover:text-zinc-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <div className="hidden h-10 w-px bg-zinc-100 dark:bg-surface-hover sm:block" />
-
-              {/* Password — entered by the logged-in employee */}
-              <div className="w-full min-w-0 space-y-1.5 sm:max-w-[18rem] lg:max-w-[20rem]">
-                <label className="ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase tracking-[0.12em] leading-none text-emerald-900/40 dark:text-emerald-400 md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
-                  <span className="whitespace-nowrap">Security Password Verification</span>
+        <div className="shrink-0 border-t border-emerald-50 bg-white p-3 dark:bg-surface sm:p-4 md:p-5 lg:p-6">
+          <div className="flex items-end gap-2 sm:gap-4 lg:gap-6">
+            <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
+              <div className="w-[min(38%,8.5rem)] shrink-0 sm:max-w-[18rem] lg:max-w-[20rem]">
+                <label className="mb-1 ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase leading-none tracking-[0.12em] text-emerald-900/40 dark:text-emerald-400 md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
+                  <span className="whitespace-nowrap">Security Password</span>
                   {loggedInUserName && (
                     <span className="whitespace-nowrap text-emerald-600 normal-case tracking-normal">
                       ({loggedInUserName})
@@ -1555,7 +1546,7 @@ export function NewPawnModal({
                 </label>
                 <div className={transactionPasswordInputClass(
                   Boolean(passwordFieldError),
-                  "relative flex items-center rounded-xl border border-zinc-200 dark:border-border bg-zinc-50 dark:bg-surface-secondary focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all",
+                  "relative flex h-10 items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-all focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 dark:border-border dark:bg-surface-secondary",
                 )}>
                   <input
                     name="password"
@@ -1566,78 +1557,93 @@ export function NewPawnModal({
                       if (passwordFieldError) setErrorMessage(null);
                     }}
                     placeholder="••••••••"
-                    className="w-full bg-transparent px-4 py-2 text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
+                    className="w-full bg-transparent px-3 py-2 text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
                   />
                 </div>
                 {passwordFieldError && (
                   <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
                 )}
               </div>
+
+              <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
+
+              <div className="min-w-0 shrink-0 text-left">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Total Loan Amount</p>
+                <p className="text-lg font-black tracking-tighter text-emerald-900 dark:text-white md:text-xl">₱ {Number(form.amount || 0).toLocaleString()}</p>
+              </div>
             </div>
 
-            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end sm:justify-end sm:gap-4 lg:w-auto lg:gap-6">
-              <div className="shrink-0 text-right sm:pb-1">
-                <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[0.2em]">Total Loan Amount</p>
-                <p className="text-lg md:text-xl font-black text-emerald-900 dark:text-white tracking-tighter">₱ {Number(form.amount || 0).toLocaleString()}</p>
-              </div>
-
+            <div className="flex shrink-0 items-end gap-2 sm:gap-3">
               {qrUrl ? (
-               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
-                 {(user?.role === "admin" || user?.role === "super_admin") ? (
-                   <div className="relative group shrink-0">
-                     <Image 
-                       src={qrUrl} 
-                       alt="QR Preview" 
-                       width={44} 
-                       height={44} 
-                       unoptimized
-                       className="rounded-lg shadow-sm border border-emerald-200 bg-white dark:bg-surface p-0.5" 
-                     />
-                     <button 
-                       onClick={() => setQrUrl(null)} 
-                       className="absolute -top-1.5 -right-1.5 bg-zinc-900 hover:bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-colors"
-                     >
-                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                     </button>
-                   </div>
-                 ) : user?.role === "employee" ? null : (
-                   <div className="relative group shrink-0 flex items-center justify-center w-11 h-11 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600">
-                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
-                   </div>
-                 )}
-                 <button
-                   type="button"
-                   onClick={handleGenerateTicket}
-                   disabled={isSaving}
-                   className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300 text-white text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl shadow-lg shadow-emerald-700/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                 >
-                   {isSaving ? (
-                    <div className="flex items-center gap-2">
-                      <span className="anim-loading h-5 w-5 border-white/30 border-t-white rounded-full" />
-                      <span>Generating Ticket...</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  {(user?.role === "admin" || user?.role === "super_admin") ? (
+                    <div className="relative group hidden shrink-0 sm:block">
+                      <Image 
+                        src={qrUrl} 
+                        alt="QR Preview" 
+                        width={44} 
+                        height={44} 
+                        unoptimized
+                        className="rounded-lg border border-emerald-200 bg-white p-0.5 shadow-sm dark:bg-surface" 
+                      />
+                      <button 
+                        onClick={() => setQrUrl(null)} 
+                        className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-[10px] text-white opacity-0 shadow-lg transition-colors hover:bg-red-500 group-hover:opacity-100"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
                     </div>
-                  ) : "Print Pawn Ticket"}
-                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
-                 </button>
-               </div>
+                  ) : user?.role === "employee" ? null : (
+                    <div className="relative group hidden h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 sm:flex">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleGenerateTicket}
+                    disabled={isSaving}
+                    className="flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-600 px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                  >
+                    {isSaving ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="anim-loading h-4 w-4 rounded-full border-white/30 border-t-white sm:h-5 sm:w-5" />
+                        <span className="hidden sm:inline">Generating...</span>
+                      </div>
+                    ) : (
+                      <>
+                        Print Ticket
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                      </>
+                    )}
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
                   onClick={handleGenerateQR}
                   disabled={isGeneratingQR}
-                  className="w-full sm:w-auto md:min-w-[16rem] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 disabled:cursor-not-allowed disabled:opacity-60 text-sm font-black uppercase tracking-wider px-6 py-3 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 relative shadow-sm"
+                  className="relative flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-100 px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-emerald-800 shadow-sm transition-all hover:bg-emerald-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm md:min-w-[14rem]"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
-                  {isGeneratingQR ? 'Generating QR...' : 'Generate QR Code'}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
+                  {isGeneratingQR ? "Generating..." : "Generate QR"}
                   {errorMessage && errorMessage.includes("before generating QR") && (
-                    <span className="absolute -top-2 -right-2 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-red-500" />
                     </span>
                   )}
                 </button>
               )}
             </div>
+          </div>
+          <div className="mt-2 flex justify-start sm:mt-3">
+            <button 
+              type="button"
+              onClick={handleReset}
+              className="px-1 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 transition-colors hover:text-zinc-800 dark:hover:text-zinc-200"
+            >
+              Reset Form
+            </button>
           </div>
           {bannerError && (
             <div className="absolute top-4 right-6 left-6 z-50 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">

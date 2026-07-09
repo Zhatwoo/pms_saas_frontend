@@ -11,6 +11,7 @@ interface ConfirmActionModalProps {
   confirmLabel: string;
   cancelLabel?: string;
   variant?: ConfirmActionVariant;
+  zIndexClass?: string;
   onClose: () => void;
   onConfirm: () => Promise<void>;
 }
@@ -22,6 +23,7 @@ export function ConfirmActionModal({
   confirmLabel,
   cancelLabel = "Cancel",
   variant = "warning",
+  zIndexClass = "z-[110]",
   onClose,
   onConfirm,
 }: ConfirmActionModalProps) {
@@ -48,7 +50,7 @@ export function ConfirmActionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
+    <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center px-4`}>
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => {
