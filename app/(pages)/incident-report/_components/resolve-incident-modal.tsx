@@ -52,7 +52,7 @@ export function ResolveIncidentModal({
               onChange={(event) => onNotesChange(event.target.value)}
               rows={5}
               placeholder="Document the action taken, verification, and final outcome."
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
             />
           </label>
         </div>
