@@ -313,7 +313,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
         </button>
 
         {/* Header */}
-        <div className="relative bg-emerald-800 rounded-b-xl sm:rounded-b-2xl px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
+        <div className="relative bg-emerald-800 px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
           <div className="absolute right-[-20px] top-[-30px] h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full bg-white/5" />
           <div className="absolute bottom-[15px] left-[-10px] h-16 w-16 sm:h-20 sm:w-20 md:h-28 md:w-28 rounded-full bg-white/5" />
           <div className="absolute bottom-[-10px] right-[30px] h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full bg-white/5" />
@@ -328,13 +328,8 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
           </div>
         </div>
 
-        <div className="relative bg-emerald-800">
-          <div className="h-2 rounded-t-xl sm:rounded-t-2xl bg-stone-100" />
-          <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
-        </div>
-
         {/* Body */}
-        <div className="bg-stone-100 rounded-b-xl sm:rounded-b-2xl px-4 pb-5 pt-3 sm:px-8 sm:pb-8 sm:pt-6">
+        <div className="bg-stone-100 px-4 pb-5 pt-3 sm:px-8 sm:pb-8 sm:pt-6">
           {view === "login" && (
             <>
               <h3 className="text-base sm:text-xl font-bold text-emerald-950">Welcome back</h3>
