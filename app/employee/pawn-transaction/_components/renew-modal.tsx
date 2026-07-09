@@ -355,7 +355,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       <div className={`relative z-10 flex h-[calc(100dvh-1rem)] w-[92vw] max-w-[1200px] min-h-0 flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[calc(100dvh-2rem)] ${compactTablet ? "md:h-[calc(100dvh-4rem)] md:max-w-6xl lg:h-[88vh] xl:max-w-7xl" : "md:h-[calc(100dvh-3rem)] lg:h-[90vh]"}`}>
         
         {/* Top Floating Header */}
-        <div className={`relative z-10 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
+        <div className={`relative z-30 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-5 ${compactTablet ? "md:px-5 md:py-4" : "md:px-6 md:py-5"}`}>
           <div className="flex items-start justify-between gap-3 md:gap-4">
             <div className={`flex items-center gap-3 ${compactTablet ? "md:gap-3" : "md:gap-4"}`}>
               <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-700/50 bg-emerald-800 text-emerald-300 shadow-inner ${compactTablet ? "md:h-11 md:w-11" : "md:h-12 md:w-12"}`}>
@@ -417,9 +417,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
             <div className={`flex min-h-0 flex-1 flex-col overflow-hidden xl:hidden ${hideMobileSidebar ? "" : "md:max-xl:grid md:max-xl:grid-cols-[300px_minmax(0,1fr)]"}`}>
               {!hideSidebar && !hideMobileSidebar && (
                 <aside className="flex w-full min-h-0 flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 md:max-xl:w-[300px]">
-                  <div className="space-y-3 p-4 md:p-4">
+                  <div className="sticky top-0 z-20 shrink-0 space-y-3 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-white/5 dark:bg-[#0c0f14] md:p-4">
                     <div className="flex items-center gap-2.5">
-                      <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
                     </div>
                     <div className="relative group">
@@ -585,9 +584,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           {/* Left Sidebar: Active Inventory List */}
           {!hideSidebar && (
             <div className={`w-full flex-col overflow-hidden border-r border-emerald-100 bg-emerald-50/10 dark:border-white/5 dark:bg-black/20 ${hideMobileSidebar ? "hidden xl:flex" : "flex"} ${compactTablet ? "lg:w-64 xl:w-72" : "lg:w-72"}`}>
-              <div className={`space-y-4 p-4 ${compactTablet ? "md:p-4" : "md:p-5"}`}>
+              <div className={`sticky top-0 z-20 shrink-0 space-y-4 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-white/5 dark:bg-[#0c0f14] ${compactTablet ? "md:p-4" : "md:p-5"}`}>
                   <div className="flex items-center gap-2.5">
-                    <Search className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Active Inventory</h2>
                   </div>
                   <div className="relative group">
@@ -634,7 +632,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           )}
 
           {/* Main Info Area */}
-          <div className={`min-h-0 flex-1 flex-col gap-6 overflow-y-auto bg-emerald-50/20 p-4 scrollbar-hide sm:p-6 dark:bg-surface-secondary ${selectedItem && showMobileItemList ? "max-xl:hidden xl:flex" : "flex"} ${compactTablet ? "lg:flex-row lg:gap-6 lg:p-6" : "lg:flex-row lg:gap-8 lg:p-8"}`}>
+          <div className={`min-h-0 flex-1 flex-col gap-6 overflow-y-auto bg-emerald-50/20 p-4 scrollbar-hide sm:p-6 dark:bg-surface-secondary ${hideMobileSidebar ? "flex" : "hidden xl:flex"} ${compactTablet ? "lg:flex-row lg:gap-6 lg:p-6" : "lg:flex-row lg:gap-8 lg:p-8"}`}>
             {/* Left Column: Specs */}
             <div className="flex flex-1 flex-col space-y-5">
               {hideMobileSidebar && (
@@ -740,7 +738,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
         {/* Footer Actions */}
-        <div className={`shrink-0 border-t border-emerald-50 bg-white dark:bg-surface ${compactTablet ? "xl:p-6" : "lg:p-6 xl:p-8"}`}>
+        <div className={`relative z-30 shrink-0 border-t border-emerald-50 bg-white dark:border-border-subtle dark:bg-surface ${compactTablet ? "xl:p-6" : "lg:p-6 xl:p-8"}`}>
           <div className={`flex items-end gap-2 p-3 sm:gap-4 sm:p-5 ${compactTablet ? "md:gap-5" : "lg:gap-6"}`}>
             <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
               <div className={`w-[min(38%,8.5rem)] shrink-0 ${compactTablet ? "md:w-40" : "sm:w-40"}`}>

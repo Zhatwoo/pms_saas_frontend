@@ -305,11 +305,11 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
       <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
       <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+        className="relative z-10 flex h-[calc(100dvh-2rem)] min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[90vh]"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
+        <div className="relative z-30 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
@@ -337,13 +337,12 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className="w-full lg:w-[400px] border-r border-emerald-50 dark:border-border bg-emerald-50/30 dark:bg-surface-secondary flex flex-col shrink-0">
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-emerald-600/40 dark:text-emerald-400/40">{searchIcon}</span>
-                <h3 className="text-xs font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-wider">Search Expired Item</h3>
+          <div className={`flex min-h-0 w-full flex-col border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary lg:w-[400px] lg:flex-none lg:shrink-0 ${selectedItem ? "max-lg:hidden" : "flex-1"}`}>
+            <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-border dark:bg-surface-secondary sm:p-6">
+              <div className="mb-2 flex items-center gap-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">Search Expired Item</h3>
               </div>
               
               <div className="relative group">
@@ -367,7 +366,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
                   <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
@@ -413,9 +412,17 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
           </div>
 
           {/* Right Side: Details & Repurchase Price */}
-          <div className="flex-1 bg-white dark:bg-surface overflow-y-auto scrollbar-hide">
+          <div className={`min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-surface ${selectedItem ? "flex max-lg:flex-1" : "hidden lg:flex"}`}>
+            <div className="min-h-0 flex-1 overflow-y-auto scrollbar-hide">
             {selectedItem ? (
-              <div className="p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="p-6 sm:p-8 lg:p-12 animate-in fade-in slide-in-from-right-4 duration-300">
+                <button
+                  type="button"
+                  onClick={() => setSelectedItem(null)}
+                  className="mb-4 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40 lg:hidden"
+                >
+                  ← Change Item
+                </button>
                 <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
                   <div className="space-y-2">
                     <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Expiration Buy Back</p>
@@ -604,7 +611,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center p-12">
+              <div className="flex h-full min-h-[16rem] flex-col items-center justify-center p-8 text-center sm:p-12">
                 <div className="w-24 h-24 rounded-3xl bg-zinc-50 flex items-center justify-center mb-6 text-zinc-200">
                   {packageIcon(48)}
                 </div>
@@ -614,6 +621,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 </p>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
