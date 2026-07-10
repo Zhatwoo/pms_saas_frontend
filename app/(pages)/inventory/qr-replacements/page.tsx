@@ -425,10 +425,8 @@ export default function QrReplacementRequestsPage() {
 
 
       {/* Table Section */}
-
-      <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
-
-        <table className="w-full text-sm text-left">
+      <div className="overflow-x-auto overflow-y-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
+        <table className="w-full text-sm text-left min-w-[800px]">
 
           <thead>
 
