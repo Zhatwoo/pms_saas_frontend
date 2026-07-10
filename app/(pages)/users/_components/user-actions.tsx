@@ -107,10 +107,10 @@ export function UserActions({
 
   return (
     <div className="w-full min-w-0 overflow-hidden rounded-lg border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
-      <div className="flex w-full min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex min-w-0 flex-1 flex-col gap-4 md:flex-row md:items-center">
           {/* Search Field */}
-          <div className="relative w-full md:max-w-xs">
+          <div className="relative w-full shrink-0 md:w-[200px] xl:w-[240px]">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
               {searchIcon}
             </span>
@@ -124,7 +124,7 @@ export function UserActions({
           </div>
 
           {/* Role Filters */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {roleTabs.map((tab) => {
               const isActive = roleFilter === tab.value;
 
@@ -133,7 +133,7 @@ export function UserActions({
                   key={tab.value}
                   type="button"
                   onClick={() => onRoleFilterChange(tab.value)}
-                  className={`rounded border px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:opacity-80 active:scale-95 ${
+                  className={`shrink-0 rounded border px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:opacity-80 active:scale-95 ${
                     isActive
                       ? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
                       : "border-border-main bg-surface text-text-secondary hover:bg-surface-secondary"
@@ -147,11 +147,10 @@ export function UserActions({
         </div>
 
         {/* Global Actions */}
-        <div className="flex w-full min-w-0 flex-col gap-2 border-t border-border-main pt-4 sm:flex-row sm:items-stretch xl:w-auto xl:flex-none xl:border-none xl:pt-0">
+        <div className="flex w-full shrink-0 flex-col gap-2 border-t border-border-main pt-4 sm:flex-row sm:items-stretch lg:w-auto lg:border-none lg:pt-0">
           <ActionButton
             variant="outline"
-            fullWidth
-            className="h-11 min-w-0 border-emerald-600 bg-emerald-50 text-emerald-700 sm:flex-1 xl:flex-none"
+            className="w-full h-10 min-w-0 border-emerald-600 bg-emerald-50 text-emerald-700 sm:flex-1 lg:w-auto lg:flex-none"
             onClick={onExportUsers}
           >
             <span className="flex min-w-0 items-center justify-center gap-1.5">
@@ -162,9 +161,8 @@ export function UserActions({
           {canCreateUser && (
             <ActionButton
               variant="primary"
-              fullWidth
               onClick={onCreateUser}
-              className="h-11 min-w-0 sm:flex-1 xl:flex-none"
+              className="w-full h-10 min-w-0 sm:flex-1 lg:w-auto lg:flex-none"
             >
               <span className="flex min-w-0 items-center justify-center gap-1.5">
                 {plusIcon}
