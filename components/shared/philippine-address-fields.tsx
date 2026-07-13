@@ -22,7 +22,7 @@ interface PhilippineAddressFieldsProps {
 }
 
 const fieldClass =
-  "h-11 w-full rounded-2xl border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 disabled:cursor-not-allowed disabled:bg-surface-secondary";
+  "h-11 w-full rounded-2xl border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none transition-colors placeholder:font-medium placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500 dark:border-zinc-500 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-400 dark:disabled:bg-zinc-900 dark:disabled:text-zinc-500";
 
 const baseUrl = "https://psgc.gitlab.io/api";
 
@@ -283,7 +283,7 @@ export function PhilippineAddressFields({
   const highlightClasses = "border-amber-400 ring-2 ring-amber-400/20";
 
   return (
-    <div className="space-y-4 rounded-[1.35rem] border border-border-main bg-surface-secondary p-4">
+    <div className="space-y-4 rounded-[1.35rem] border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-600 dark:bg-zinc-900/60">
       <div className="space-y-2">
         <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">
           Street / Subdivision / Compound

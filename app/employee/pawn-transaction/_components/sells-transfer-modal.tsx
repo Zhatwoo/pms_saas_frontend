@@ -288,7 +288,7 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
                       placeholder="Search Unit ID / Serial..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:max-w-xs bg-white dark:bg-surface-secondary border border-emerald-100 dark:border-border-subtle rounded-xl px-4 py-2 text-xs font-bold text-text-primary dark:text-white placeholder:text-text-muted focus:ring-4 ring-emerald-500/10 outline-none transition-all"
+                      className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2 text-xs font-bold text-zinc-900 outline-none transition-all placeholder:font-medium placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 dark:border-zinc-500 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-400 sm:max-w-xs"
                     />
                     <div className="absolute right-3 top-2 text-emerald-500 dark:text-emerald-400">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -552,14 +552,14 @@ export function SellsTransferModal({ isOpen, onClose, branchName, onSuccess, ini
           <div className="flex items-end gap-2 p-3 sm:gap-4 sm:px-6 sm:py-4 lg:gap-6 lg:px-8 lg:py-5">
             <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
               <div className="w-[min(38%,8.5rem)] shrink-0 sm:w-40">
-                <label className="mb-1 block text-[9px] font-bold uppercase tracking-tighter text-emerald-800/70 dark:text-emerald-300">Password</label>
+                <label className="mb-1 block text-[9px] font-bold uppercase tracking-tighter text-emerald-800 dark:text-emerald-300">Password</label>
                 <input
                   name="password"
                   value={form.password}
                   onChange={handleChange}
-                  placeholder="••••••••"
+                  placeholder="Enter password"
                   type="password"
-                  className="h-10 w-full rounded-lg border border-emerald-100 bg-slate-50 px-3 text-xs font-bold text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary dark:text-white dark:placeholder:text-zinc-600"
+                  className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-xs font-bold text-zinc-900 outline-none transition-all placeholder:font-medium placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 dark:border-zinc-500 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-400"
                 />
               </div>
 
@@ -613,24 +613,24 @@ function DetailInput({ label, name, value, onChange, placeholder, type = "text",
 }) {
   return (
     <div className="flex items-center justify-between gap-4 group">
-      <span className="shrink-0 text-[10px] font-bold uppercase tracking-tighter text-emerald-800/70 dark:text-emerald-300">{label}:</span>
-      <div className="flex-1 border-b border-dashed border-emerald-100 dark:border-border-subtle" />
-      <div className={`relative flex items-center rounded-xl border border-emerald-100 bg-white transition-all focus-within:ring-4 ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary ${highlight ? "min-w-[140px]" : "min-w-[120px]"}`}>
-        {prefix && <span className="pl-3 text-[10px] font-black text-emerald-600 dark:text-emerald-300">{prefix}</span>}
+      <span className="shrink-0 text-[10px] font-bold uppercase tracking-tighter text-emerald-800 dark:text-emerald-300">{label}:</span>
+      <div className="flex-1 border-b border-dashed border-zinc-200 dark:border-zinc-600" />
+      <div className={`relative flex items-center rounded-xl border border-zinc-300 bg-white transition-all focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/15 dark:border-zinc-500 dark:bg-zinc-800 ${highlight ? "min-w-[140px]" : "min-w-[120px]"}`}>
+        {prefix && <span className="pl-3 text-[10px] font-black text-emerald-700 dark:text-emerald-300">{prefix}</span>}
         <input 
           name={name}
           value={value}
           onChange={onChange}
           type={type}
           placeholder={placeholder}
-          className={`w-full bg-transparent px-3 py-1.5 text-xs font-black text-emerald-950 outline-none placeholder:text-zinc-400 placeholder:font-medium dark:text-white dark:placeholder:text-zinc-500 ${highlight ? "text-right" : ""}`}
+          className={`w-full bg-transparent px-3 py-1.5 text-xs font-black text-zinc-900 outline-none placeholder:font-medium placeholder:text-zinc-500 dark:text-white dark:placeholder:text-zinc-400 ${highlight ? "text-right" : ""}`}
         />
       </div>
     </div>
   );
 }
 
-function Input({ label, name, value, onChange, placeholder, type = "text", bg = "bg-white dark:bg-surface-secondary", size = "md" }: { 
+function Input({ label, name, value, onChange, placeholder, type = "text", bg = "bg-white dark:bg-zinc-800", size = "md" }: { 
   label: string; 
   name: string; 
   value: string; 
@@ -642,14 +642,14 @@ function Input({ label, name, value, onChange, placeholder, type = "text", bg = 
 }) {
   return (
     <div className="space-y-1.5 w-full">
-      {label && <label className="ml-1 text-[10px] font-bold uppercase tracking-tighter text-emerald-800/70 dark:text-emerald-300">{label}</label>}
+      {label && <label className="ml-1 text-[10px] font-bold uppercase tracking-tighter text-emerald-800 dark:text-emerald-300">{label}</label>}
       <input
         name={name}
         value={value}
         onChange={onChange}
-        placeholder={placeholder}
+        placeholder={placeholder || `Enter ${label.toLowerCase()}`}
         type={type}
-        className={`w-full rounded-xl border border-emerald-100 dark:border-border-subtle ${bg} ${size === "sm" ? "py-2" : "py-3"} px-4 text-xs font-black text-emerald-950 outline-none transition-all placeholder:font-medium placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:text-white dark:placeholder:text-zinc-500`}
+        className={`w-full rounded-xl border border-zinc-300 dark:border-zinc-500 ${bg} ${size === "sm" ? "py-2" : "py-3"} px-4 text-xs font-black text-zinc-900 outline-none transition-all placeholder:font-medium placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 dark:text-white dark:placeholder:text-zinc-400`}
       />
     </div>
   );

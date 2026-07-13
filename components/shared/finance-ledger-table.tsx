@@ -612,7 +612,7 @@ export function LedgerFiltersBar({
   variant = "default",
 }: LedgerFiltersBarProps) {
   const inputClass =
-    "w-full rounded-xl border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all";
+    "w-full rounded-lg border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all";
 
   const searchInput = (
     <div className="relative w-full min-w-0">
@@ -638,30 +638,30 @@ export function LedgerFiltersBar({
   );
 
   const filters = (
-    <div className="grid w-full min-w-0 grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_repeat(2,minmax(0,11rem))] lg:items-end">
-      <LedgerTypeFilter value={typeFilter} onChange={onTypeFilterChange} className="w-full min-w-0 min-[480px]:col-span-2 lg:col-span-1" />
-
-      <div className="relative w-full min-w-0">
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => onDateFromChange(e.target.value)}
-          className={inputClass}
-        />
-        <div className={`pointer-events-none absolute -top-2 left-3 px-1 text-[9px] font-black uppercase text-text-tertiary ${variant === "elevated" ? "bg-surface/50" : "bg-surface"}`}>
-          From
-        </div>
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-end w-full min-w-0">
+      <div className="w-full lg:flex-1 min-w-0">
+        <LedgerTypeFilter value={typeFilter} onChange={onTypeFilterChange} className="w-full min-w-0" />
       </div>
 
-      <div className="relative w-full min-w-0">
-        <input
-          type="date"
-          value={dateTo}
-          onChange={(e) => onDateToChange(e.target.value)}
-          className={inputClass}
-        />
-        <div className={`pointer-events-none absolute -top-2 left-3 px-1 text-[9px] font-black uppercase text-text-tertiary ${variant === "elevated" ? "bg-surface/50" : "bg-surface"}`}>
-          To
+      <div className="grid grid-cols-2 gap-3 w-full lg:w-auto lg:min-w-[22rem] min-w-0">
+        <div className="flex w-full min-w-0 flex-col gap-1">
+          <label className="text-[10px] font-black uppercase text-text-tertiary">From</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => onDateFromChange(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex w-full min-w-0 flex-col gap-1">
+          <label className="text-[10px] font-black uppercase text-text-tertiary">To</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => onDateToChange(e.target.value)}
+            className={inputClass}
+          />
         </div>
       </div>
     </div>

@@ -142,8 +142,8 @@ html.theme-transitioning *::after {
   --text-tertiary: #d4d4d8;
   --text-muted: #a1a1aa;
   --text-inverse: #18181b;
-  --input-bg: #1a1f2b;
-  --input-border: #2e3447;
+  --input-bg: #272b35;
+  --input-border: #52525b;
   --header-bg: #14181f;
   --badge-muted-bg: #252a38;
   --badge-muted-text: #a1a1aa;

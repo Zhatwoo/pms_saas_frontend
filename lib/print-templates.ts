@@ -824,8 +824,11 @@ export function buildMoaSlipPrintHtml(slipHtml: string): string {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MOA Slip</title>
   <style>
+    /* Declare page size at root — some mobile browsers ignore @page only inside @media print */
+    ${MOA_PRINT_PAGE_RULE_CSS}
     ${MOA_PRINT_LAYOUT_CSS}
     ${MOA_PRINT_SCREEN_CSS}
     @media print {
@@ -837,6 +840,155 @@ export function buildMoaSlipPrintHtml(slipHtml: string): string {
   ${slipHtml}
 </body>
 </html>`;
+}
+
+/** True when iframe print is unreliable (Chrome Android often prints the host page instead). */
+export function isMobilePrintEnvironment(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const mobileUa = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+  const coarsePointer =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(pointer: coarse)").matches &&
+    window.innerWidth < 1024;
+  return mobileUa || Boolean(coarsePointer);
+}
+
+/**
+ * Print MOA HTML in a way that works on mobile.
+ * Zero-size iframes cause Android Chrome to print the parent page (modal UI included).
+ */
+export async function printMoaSlipDocument(slipHtml: string): Promise<void> {
+  const html = buildMoaSlipPrintHtml(slipHtml);
+  const usePopup = isMobilePrintEnvironment();
+
+  if (usePopup) {
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const printWin = window.open(url, "_blank", "noopener,noreferrer");
+
+    if (printWin) {
+      await new Promise<void>((resolve) => {
+        let finished = false;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          resolve();
+        };
+
+        const runPrint = () => {
+          try {
+            printWin.focus();
+            printWin.print();
+          } catch {
+            // ignore
+          } finally {
+            setTimeout(() => {
+              try {
+                printWin.close();
+              } catch {
+                // ignore
+              }
+              URL.revokeObjectURL(url);
+              finish();
+            }, 1500);
+          }
+        };
+
+        printWin.addEventListener("load", () => {
+          setTimeout(runPrint, 250);
+        });
+        setTimeout(() => {
+          try {
+            if (printWin.document.readyState === "complete") runPrint();
+          } catch {
+            finish();
+          }
+        }, 800);
+      });
+      return;
+    }
+
+    URL.revokeObjectURL(url);
+    // Popup blocked — fall through to iframe path below.
+  }
+
+  const iframe = document.createElement("iframe");
+  // Non-zero size is required on mobile; 0×0 iframes print the host document instead.
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText = [
+    "position:fixed",
+    "left:0",
+    "top:0",
+    `width:${MOA_LEGAL_PAGE.screenWidthPx}px`,
+    `height:${MOA_LEGAL_PAGE.screenHeightPx}px`,
+    "opacity:0",
+    "pointer-events:none",
+    "border:0",
+    "z-index:-1",
+  ].join(";");
+
+  const cleanup = () => {
+    try {
+      iframe.remove();
+    } catch {
+      // already removed
+    }
+  };
+
+  document.body.appendChild(iframe);
+
+  const printWindow = iframe.contentWindow;
+  const iframeDoc = printWindow?.document;
+  if (!iframeDoc || !printWindow) {
+    cleanup();
+    throw new Error("Unable to create print document");
+  }
+
+  iframeDoc.open();
+  iframeDoc.write(html);
+  iframeDoc.close();
+
+  await new Promise<void>((resolve) => {
+    const done = () => resolve();
+    if (iframeDoc.readyState === "complete") {
+      done();
+      return;
+    }
+    iframe.onload = () => done();
+    setTimeout(done, 600);
+  });
+
+  if (document.fonts?.ready) {
+    await Promise.race([
+      document.fonts.ready,
+      new Promise<void>((resolve) => setTimeout(resolve, 1000)),
+    ]);
+  }
+
+  await new Promise<void>((resolve) => {
+    const finish = () => {
+      cleanup();
+      resolve();
+    };
+
+    if ("onafterprint" in printWindow) {
+      printWindow.onafterprint = finish;
+    } else {
+      setTimeout(finish, 1500);
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch {
+          finish();
+        }
+      });
+    });
+  });
 }
 
 /** MOA modal: exact color on root when printing. */

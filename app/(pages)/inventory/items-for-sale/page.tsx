@@ -310,7 +310,7 @@ export default function ItemsForSalePage() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {user?.role === "super_admin" && (
             <ActionButton
               variant="success"

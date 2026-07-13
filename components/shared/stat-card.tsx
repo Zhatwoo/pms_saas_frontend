@@ -53,22 +53,22 @@ export function StatCard({
   return (
     <div
       onClick={onClick}
-      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 sm:p-6 transition-all duration-300 ${
+      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 transition-all duration-300 ${
         onClick ? "cursor-pointer hover:shadow-md hover:border-zinc-300 active:scale-[0.98]" : ""
       } ${className}`}
     >
       <div className={`mb-4 h-1 w-full rounded-full ${borderColor}`} />
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
             {label}
           </p>
-          <p className={`mt-1 text-2xl font-bold text-text-primary sm:text-4xl ${valueClassName}`}>
+          <p className={`mt-1 text-3xl font-bold text-text-primary ${valueClassName}`}>
             {loading ? <ThreeDotLoader /> : value}
           </p>
         </div>
         {icon && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-secondary text-text-tertiary">
             {icon}
           </div>
         )}

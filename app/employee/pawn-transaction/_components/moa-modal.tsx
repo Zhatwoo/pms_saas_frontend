@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { api } from "@/lib/api";
 import { formatPeso } from "@/lib/currency";
 import {
@@ -14,7 +14,7 @@ import {
   MOA_PRINT_CSS,
   MOA_PRINT_SCREEN_CSS,
   MOA_SIGNATURE_LINE_CLASS,
-  buildMoaSlipPrintHtml,
+  printMoaSlipDocument,
 } from "@/lib/print-templates";
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 
@@ -118,6 +118,51 @@ const MOA_PAGE_STYLE = {
   padding: MOA_LEGAL_PAGE.padding,
   boxSizing: "border-box" as const,
 };
+
+/** Scales legal-size MOA pages to fit mobile/tablet modal width (screen only). */
+function MoaPreviewScale({ children }: { children: ReactNode }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => {
+      const available = el.clientWidth;
+      if (available <= 0) return;
+      setScale(Math.min(1, available / MOA_LEGAL_PAGE.screenWidthPx));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const pageCount = 2;
+  const scaledHeight = MOA_LEGAL_PAGE.screenHeightPx * scale * pageCount;
+
+  return (
+    <div ref={containerRef} className="w-full min-w-0 overflow-x-hidden p-2 sm:p-4">
+      <div
+        className="relative mx-auto"
+        style={{
+          width: MOA_LEGAL_PAGE.screenWidthPx * scale,
+          height: scaledHeight,
+        }}
+      >
+        <div
+          className="absolute left-0 top-0 origin-top-left space-y-0"
+          style={{
+            width: MOA_LEGAL_PAGE.screenWidthPx,
+            transform: `scale(${scale})`,
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function MoaBranchHeader({
   primary,
@@ -401,69 +446,21 @@ export function MoaModal({
   const handlePrint = async () => {
     if (!printRef.current) return;
 
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "0";
-    iframe.setAttribute("aria-hidden", "true");
+    // Clone only the legal pages — never include modal chrome (Close / Print buttons).
+    const pages = printRef.current.querySelectorAll(".moa-print-page");
+    if (pages.length === 0) return;
 
-    const cleanup = () => {
-      try {
-        document.body.removeChild(iframe);
-      } catch {
-        // iframe already removed
-      }
-    };
+    const wrapper = document.createElement("div");
+    wrapper.id = "moa-slip-printable";
+    wrapper.className = "moa-paper-effect";
+    pages.forEach((page) => {
+      wrapper.appendChild(page.cloneNode(true));
+    });
 
     try {
-      document.body.appendChild(iframe);
-
-      const printWindow = iframe.contentWindow;
-      const iframeDoc = printWindow?.document;
-      if (!iframeDoc || !printWindow) {
-        cleanup();
-        return;
-      }
-
-      iframeDoc.open();
-      iframeDoc.write(buildMoaSlipPrintHtml(printRef.current.outerHTML));
-      iframeDoc.close();
-
-      await new Promise<void>((resolve) => {
-        const done = () => resolve();
-        if (iframeDoc.readyState === "complete") {
-          done();
-          return;
-        }
-        iframe.onload = () => done();
-        setTimeout(done, 500);
-      });
-
-      if (document.fonts?.ready) {
-        await Promise.race([
-          document.fonts.ready,
-          new Promise<void>((resolve) => setTimeout(resolve, 1000)),
-        ]);
-      }
-
-      if ("onafterprint" in printWindow) {
-        printWindow.onafterprint = cleanup;
-      } else {
-        setTimeout(cleanup, 1000);
-      }
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          printWindow.focus();
-          printWindow.print();
-        });
-      });
+      await printMoaSlipDocument(wrapper.outerHTML);
     } catch (err) {
       console.error("Print failed:", err);
-      cleanup();
     }
   };
 
@@ -645,7 +642,8 @@ export function MoaModal({
         )}
 
         {/* MOA Content - Matches Image 2 */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <MoaPreviewScale>
           <div id="moa-slip-printable" ref={printRef} className="max-w-full bg-white text-zinc-800 moa-paper-effect">
             
             {/* PAGE 1: SLIPS (Original & Customer Copy) */}
@@ -1160,12 +1158,13 @@ export function MoaModal({
               </div>
             </div>
           </div>
+          </MoaPreviewScale>
         </div>
 
         {/* Footer Actions */}
         {!autoPrint && (
-          <div className="sticky bottom-0 bg-white border-t border-zinc-200 px-8 py-4 flex justify-between items-center z-10 no-print">
-            <div className="min-w-0 pr-4">
+          <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-zinc-200 bg-white p-4 no-print sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-4">
+            <div className="min-w-0 sm:pr-4">
               {isFinalizeMode ? (
                 <>
                   <p className="text-[10px] text-zinc-400 font-medium italic">
@@ -1179,17 +1178,17 @@ export function MoaModal({
                 </>
               ) : (
                 <p className="text-[10px] text-zinc-400 font-medium italic">
-                  View or print the memorandum of agreement slip.
+                  View or print the memorandum of agreement slip. Use Legal (8.5×13 in) paper size when printing.
                 </p>
               )}
             </div>
-            <div className="flex gap-4 shrink-0">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:shrink-0 sm:gap-4">
               {isFinalizeMode ? (
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={isLoading}
-                  className="px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95 disabled:opacity-50"
+                  className="w-full px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95 disabled:opacity-50 sm:w-auto"
                 >
                   Back to Form
                 </button>
@@ -1197,15 +1196,15 @@ export function MoaModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95"
+                  className="w-full px-6 py-2.5 text-xs font-black text-zinc-600 border border-zinc-200 rounded-xl hover:bg-zinc-50 transition-all active:scale-95 sm:w-auto"
                 >
                   Close
                 </button>
               )}
               <button
                 type="button"
-                onClick={handlePrint}
-                className="px-6 py-2.5 text-xs font-black text-white bg-zinc-800 rounded-xl hover:bg-black transition-all active:scale-95 flex items-center gap-2"
+                onClick={() => void handlePrint()}
+                className="w-full px-6 py-2.5 text-xs font-black text-white bg-zinc-800 rounded-xl hover:bg-black transition-all active:scale-95 flex items-center justify-center gap-2 sm:w-auto"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z" /></svg>
                 Print / PDF
@@ -1215,7 +1214,7 @@ export function MoaModal({
                   type="button"
                   onClick={handleFinalizeRequest}
                   disabled={isLoading || confirmDisabled}
-                  className="px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed"
+                  className="w-full px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed sm:w-auto"
                 >
                   Save & Finalize Transaction
                 </button>
