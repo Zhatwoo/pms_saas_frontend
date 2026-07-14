@@ -520,7 +520,7 @@ export default function SuperAdminPawnTransactionsPage() {
           : `branch=${encodeURIComponent(selectedBranch.id)}`;
 
       const txUrl = `/transactions?${branchParam}${branchParam ? "&" : ""}date=${selectedDate}`;
-      const summaryUrl = `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`;
+      const summaryUrl = `/branch-finance/summary?date=${selectedDate}${branchParam ? `&${branchParam}` : ""}`;
 
       const data = await api.get<TransactionsResponse>(txUrl);
       const financeSummary = await api

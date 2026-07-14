@@ -433,7 +433,7 @@ export default function PawnTransactionsPage() {
           ),
           api
             .get<BranchFinanceSummary[]>(
-              `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`,
+              `/branch-finance/summary?date=${selectedDate}${branchParam ? `&${branchParam}` : ""}`,
             )
             .catch(() => [] as BranchFinanceSummary[]),
         ]);

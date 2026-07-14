@@ -553,7 +553,7 @@ export default function EmployeePawnTransactionsPage() {
           : `branch=${encodeURIComponent(branchIdForApi)}`;
 
       const txUrl = `/transactions?${branchParam}${branchParam ? "&" : ""}date=${selectedDate}`;
-      const summaryUrl = `/branch-finance/summary${branchParam ? `?${branchParam}` : ""}`;
+      const summaryUrl = `/branch-finance/summary?date=${selectedDate}${branchParam ? `&${branchParam}` : ""}`;
 
       /** Sequential requests reduce concurrent DB pool usage (Supabase session pool limits). */
       const data = await api.get<TransactionsResponse>(txUrl);
