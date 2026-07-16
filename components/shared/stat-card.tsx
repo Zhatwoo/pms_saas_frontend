@@ -65,7 +65,7 @@ export function StatCard({
           <p className={`text-xs font-bold uppercase tracking-wide text-text-tertiary ${labelClassName}`}>
             {label}
           </p>
-          <p className={`mt-1 text-2xl sm:text-3xl font-bold text-text-primary ${valueClassName}`}>
+          <p className={`mt-1 truncate text-xl sm:text-2xl md:text-3xl font-bold text-text-primary ${valueClassName}`}>
             {loading ? <ThreeDotLoader /> : value}
           </p>
         </div>

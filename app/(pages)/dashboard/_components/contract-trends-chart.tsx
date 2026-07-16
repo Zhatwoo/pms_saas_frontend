@@ -23,7 +23,7 @@ interface ContractTrendsChartProps {
 export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
   return (
     <div className="min-w-0 min-h-0 rounded-lg border border-border-main bg-surface p-5 transition-colors duration-300">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
             Contract Trends
@@ -54,7 +54,7 @@ export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
           >
           <BarChart
             data={data}
-            margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: -15, bottom: 5 }}
             barCategoryGap="30%"
             barGap={4}
           >
@@ -63,12 +63,14 @@ export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#71717a" }}
+              tick={{ fontSize: 10, fill: "#71717a" }}
+              interval="preserveStartEnd"
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#71717a" }}
+              tick={{ fontSize: 10, fill: "#71717a" }}
+              width={35}
             />
             <Tooltip
               contentStyle={{

@@ -94,6 +94,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [remarks, setRemarks] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [itemPhotoIndex, setItemPhotoIndex] = useState(0);
+  const [idPhotoIndex, setIdPhotoIndex] = useState(0);
   const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
   const [qrRequestStatus, setQrRequestStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -214,6 +215,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
   useEffect(() => {
     setItemPhotoIndex(0);
+    setIdPhotoIndex(0);
   }, [item?.id, itemPhotos.length]);
 
   useEffect(() => {
@@ -337,76 +339,91 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full shrink-0 bg-emerald-950 p-5 text-white lg:max-h-[90vh] lg:w-[320px] lg:overflow-y-auto lg:scrollbar-hide">
+        <div className="w-full shrink-0 bg-emerald-950 px-5 pb-5 pt-14 text-white lg:max-h-[90vh] lg:w-[320px] lg:overflow-y-auto lg:pt-5 lg:scrollbar-hide">
           <div className="flex flex-col gap-4 min-h-max">
             <div className="flex flex-col items-center text-center">
               <SectionTitle><span className="text-emerald-400">Identity Media</span></SectionTitle>
-              {hasCustomerId ? (
-                <div className="grid w-full gap-3 md:grid-cols-2 lg:grid-cols-1">
-                  {identityMedia.map((media) => (
-                    <button
-                      key={media.label}
-                      type="button"
-                      onClick={() => setPreview(media.src ? { src: media.src, title: media.label } : null)}
-                      className="group relative h-[180px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
-                    >
-                      <Image
-                        src={media.src}
-                        alt={media.label}
-                        fill
-                        unoptimized
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                      <div className="absolute left-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
-                        Expand
-                      </div>
-                      <div className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
-                        {media.label}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (identityMedia[0]?.src) {
-                      setPreview({ src: identityMedia[0].src, title: identityMedia[0].label });
-                    }
-                  }}
-                  className="group relative h-[200px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
-                >
-                  {identityMedia[0]?.src ? (
-                    <>
-                      <Image
-                        src={identityMedia[0].src}
-                        alt={identityMedia[0].label}
-                        fill
-                        unoptimized
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                      <div className="absolute left-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
-                        Expand
-                      </div>
-                      <div className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
-                        {identityMedia[0].label}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center px-6 text-center">
-                      <div className="space-y-2 opacity-60">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
-                          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                          <circle cx="12" cy="13" r="3" />
-                        </svg>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
-                          No capture available
-                        </p>
-                      </div>
+              <div
+                className="relative h-[200px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
+              >
+                {identityMedia.length > 0 ? (
+                  <div
+                    className="flex h-full w-full transition-transform duration-700 ease-out"
+                    style={{ transform: `translateX(-${idPhotoIndex * 100}%)` }}
+                  >
+                    {identityMedia.map((media, index) => (
+                      <button
+                        key={`${media.label}-${index}`}
+                        type="button"
+                        onClick={() => setPreview({ src: media.src, title: media.label })}
+                        className="relative h-full w-full shrink-0"
+                      >
+                        <Image
+                          src={media.src}
+                          alt={media.label}
+                          fill
+                          unoptimized
+                          className="object-cover transition-transform duration-300 hover:scale-[1.03]"
+                        />
+                        <div className="absolute left-2 top-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                          Expand
+                        </div>
+                        <div className="absolute bottom-2 left-2 rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                          {media.label}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center px-6 text-center">
+                    <div className="space-y-2 opacity-60">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
+                        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                        <circle cx="12" cy="13" r="3" />
+                      </svg>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
+                        No capture available
+                      </p>
                     </div>
-                  )}
-                </button>
-              )}
+                  </div>
+                )}
+                {identityMedia.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIdPhotoIndex((i) => (i - 1 + identityMedia.length) % identityMedia.length)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-lg font-black text-white backdrop-blur transition hover:bg-black/60"
+                      aria-label="Previous identity photo"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIdPhotoIndex((i) => (i + 1) % identityMedia.length)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 px-3 py-2 text-lg font-black text-white backdrop-blur transition hover:bg-black/60"
+                      aria-label="Next identity photo"
+                    >
+                      ›
+                    </button>
+                    <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-2">
+                      {identityMedia.map((_, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setIdPhotoIndex(index)}
+                          className={`h-2 rounded-full transition-all ${index === idPhotoIndex ? "w-6 bg-white" : "w-2 bg-white/50"}`}
+                          aria-label={`Show identity photo ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+                {identityMedia.length > 0 && (
+                  <div className="absolute bottom-4 left-4 rounded-full bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white backdrop-blur">
+                    {idPhotoIndex + 1} / {identityMedia.length}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col items-center text-center">
