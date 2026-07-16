@@ -60,9 +60,10 @@ interface OverallSummaryData {
 
 interface OverallSummaryStatsProps {
   data?: OverallSummaryData;
+  loading?: boolean;
 }
 
-export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
+export function OverallSummaryStats({ data, loading }: OverallSummaryStatsProps) {
   const allBranchSales = data?.allBranchSales;
   const branchSales = data?.branchSales;
   const hasBranchComparison =
@@ -85,25 +86,17 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
         value={data?.redeemed || 0}
         icon={<div className="text-emerald-600">{checkIcon}</div>}
       />
-      <div className="flex items-center gap-4 rounded-lg bg-[#064e3b] p-5 shadow-sm">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#047857] text-pawn-gold">
-          {salesIcon}
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-[#a7f3d0]">
-            Total Overall Sales
-          </p>
-          <p className="mt-0.5 text-2xl sm:text-3xl font-bold text-amber-400">
-            {allBranchSales != null ? formatPeso(allBranchSales) : data?.totalOverallSales || "₱ 0"}
-          </p>
-          {hasBranchComparison && (
-            <div className="mt-1 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#a7f3d0]" />
-              <span className="text-xs text-[#a7f3d0]">Branch total: {formatPeso(branchSales)}</span>
-            </div>
-          )}
-        </div>
-      </div>
+      <StatCard
+        label="Total Overall Sales"
+        value={formatPeso(allBranchSales ?? data?.totalOverallSales ?? 0)}
+        loading={false}
+        icon={<div className="text-pawn-gold">{salesIcon}</div>}
+        borderColor="border-[#047857]"
+        className="!bg-[#064e3b] !border-[#047857]"
+        labelClassName="!text-[#a7f3d0]"
+        valueClassName="!text-amber-400"
+        subtitle={hasBranchComparison ? `Branch total: ${formatPeso(branchSales)}` : undefined}
+      />
 
     </div>
   );

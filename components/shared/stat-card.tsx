@@ -9,6 +9,7 @@ interface StatCardProps {
   icon?: ReactNode;
   borderColor?: string;
   className?: string;
+  labelClassName?: string;
   valueClassName?: string;
   onClick?: () => void;
   loading?: boolean;
@@ -46,6 +47,7 @@ export function StatCard({
   icon,
   borderColor = "border-[var(--emerald-border)]",
   className = "",
+  labelClassName = "",
   valueClassName = "",
   onClick,
   loading = false,
@@ -60,10 +62,10 @@ export function StatCard({
       <div className={`mb-4 h-1 w-full rounded-full ${borderColor}`} />
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-wide text-text-tertiary">
+          <p className={`text-xs font-bold uppercase tracking-wide text-text-tertiary ${labelClassName}`}>
             {label}
           </p>
-          <p className={`mt-1 text-3xl font-bold text-text-primary ${valueClassName}`}>
+          <p className={`mt-1 text-2xl sm:text-3xl font-bold text-text-primary ${valueClassName}`}>
             {loading ? <ThreeDotLoader /> : value}
           </p>
         </div>
