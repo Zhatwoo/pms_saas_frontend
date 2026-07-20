@@ -3,10 +3,19 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import dynamic from 'next/dynamic';
-import { AnimatedGradient } from "@/components/shared/animated-gradient";
 import { api } from "@/lib/api";
 import { FeaturedSaleItems } from "./featured-sale-items";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import {
+  LandingBentoFeatures,
+  LandingHero,
+  LandingLightFooter,
+  LandingProcessPricing,
+  LandingSplitSection,
+  LandingTrustBar,
+} from "./landing-layout-sections";
+
+const HERO_IMAGES = ["image2.jpg", "image.png"] as const;
 
 // Lazy-load BranchMap component (Requirements: 12.1)
 const BranchMap = dynamic(
@@ -25,11 +34,11 @@ interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "HOW IT WORKS", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
+const navItems = ["HOME", "PRICING", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
 
 const sectionNavLabels: Record<string, string> = {
   home: "HOME",
-  "how-it-works": "HOW IT WORKS",
+  pricing: "PRICING",
   categories: "WHAT WE BUY",
   "why-us": "WHY US",
   "items-for-sale": "ITEMS FOR SALE",
@@ -279,8 +288,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [underlineLeft, setUnderlineLeft] = useState(0);
   const [underlineWidth, setUnderlineWidth] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -302,8 +310,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
   const prevReview = () => goToReview(reviewIndex - 1);
   const nextReview = () => goToReview(reviewIndex + 1);
-  const prevHeroSlide = () => setSlideIndex((prev) => (prev - 1 + 3) % 3);
-  const nextHeroSlide = () => setSlideIndex((prev) => (prev + 1) % 3);
   const branchCountLabel =
     publicBranches.length > 0
       ? `${publicBranches.length} ${publicBranches.length === 1 ? "Branch" : "Branches"}`
@@ -444,34 +450,36 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
   }, [activeNavItem]);
 
-  // Auto-advance slideshow every 4 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % 3);
-    }, 4000);
+      setHeroImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 7000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="min-h-screen bg-white selection:bg-brand-gold selection:text-brand-green">
+    <div className="min-h-screen bg-[#f4f2ee] selection:bg-brand-gold selection:text-brand-green">
       {/* Plain white background */}
 
       <div className="relative z-10">
         {/* ─── NAV ─── */}
-        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-white/10 bg-brand-green transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
+        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-brand-green/10 bg-white/90 backdrop-blur-md transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
             {/* Logo - Desktop only (lg and up) */}
-            <Image 
-              src="/logo.png" 
-              alt={BRAND_CONFIG.shortCompanyName} 
-              width={48} 
-              height={48} 
-              className="hidden lg:block rounded-lg cursor-pointer" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleScroll(e, "home", "HOME");
-              }} 
-            />
+            <button
+              type="button"
+              className="hidden items-center gap-2 lg:flex"
+              onClick={(e) => handleScroll(e, "home", "HOME")}
+            >
+              <Image
+                src="/logo.png"
+                alt={BRAND_CONFIG.shortCompanyName}
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+              <span className="font-display text-lg font-bold text-brand-green">{BRAND_CONFIG.shortCompanyName}</span>
+            </button>
             
             {/* Burger menu icon - Mobile and Tablet only (below lg) */}
             <button
@@ -489,7 +497,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 }
               }}
               aria-label="Toggle menu"
-              className="flex lg:hidden h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-brand-green transition hover:bg-brand-green/5 lg:hidden"
             >
               {(mobileMenuOpen || tabletMenuOpen) ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
@@ -509,7 +517,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-white hover:text-brand-gold"}`}>
+                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
                     {item}
                   </a>
                 );
@@ -522,7 +530,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-lg bg-brand-gold px-3 py-2 text-xs font-black text-brand-green transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-gold/20 hover:brightness-110 active:translate-y-0 active:scale-95 sm:px-4 sm:text-sm"
+                className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm"
               >
                 Login / Sign Up
               </button>
@@ -666,114 +674,19 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           </div>
         </nav>
 
-        {/* ─── HERO ─── */}
-        <section id="home" className="group relative pt-16 bg-brand-green flex flex-col justify-center lg:min-h-screen">
-          {/* Full-width container */}
-          <div className="w-full overflow-hidden">
-            <div 
-              className="flex transition-transform duration-500 ease-in-out items-center"
-              style={{ transform: `translateX(-${slideIndex * 100}%)` }}
-            >
-              {["one.png", "two.png", "three.png"].map((img, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={img}
-                  src={`/${img}`}
-                  alt=""
-                  className="w-full shrink-0 object-contain lg:object-fill lg:h-[calc(100vh-4rem)]"
-                  style={{
-                    display: "block",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+        <LandingHero onScroll={handleScroll} heroSrc={`/${HERO_IMAGES[heroImageIndex]}`} />
+        <LandingBentoFeatures onScroll={handleScroll} />
+        <LandingProcessPricing onScroll={handleScroll} />
+        <LandingSplitSection onScroll={handleScroll} />
+        <LandingTrustBar />
 
-        {/* â†â† HOW IT WORKS â†â† */}
-        <section id="how-it-works" className="bg-white px-3 py-12 sm:px-6 sm:py-20 md:px-12 md:py-32 lg:py-48">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <h2 className="text-xl font-black text-brand-green sm:text-3xl md:text-4xl lg:text-5xl">
-              <span className="text-brand-gold">3</span> Steps to Get Your Cash
-            </h2>
-            <div className="mt-4 grid gap-2.5 sm:mt-8 sm:gap-4 sm:grid-cols-2 md:mt-12 md:grid-cols-3 md:gap-6">
-              {steps.map((item, index) => (
-                <div key={item.step}
-                  className="reveal-on-scroll flex flex-col rounded-lg bg-brand-green p-3 text-white shadow-xl h-full sm:rounded-2xl sm:p-5 md:p-8">
-                  <div className="flex items-center gap-2 mb-2.5 sm:gap-4 sm:mb-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white sm:h-12 sm:w-12 sm:rounded-xl">
-                      {item.icon}
-                    </div>
-                    <span className="text-xl font-black text-brand-gold sm:text-3xl">{item.step}</span>
-                  </div>
-                  <h3 className="text-sm font-bold sm:text-lg">{item.title}</h3>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-white/75 flex-1 sm:mt-3 sm:text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── CATEGORIES / ITEMS WE ACCEPT ─── */}
-        <section id="categories" className="bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] py-4 lg:py-0 lg:!scroll-mt-16">
-          {/* Full-width container */}
-          <div className="w-full overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/itemsweaccept.png"
-              alt="Items We Accept"
-              className="w-full shrink-0 object-contain"
-              style={{ display: "block" }}
-            />
-          </div>
-        </section>
-
-        {/* â†â† WHY US â†â† */}
-        <section id="why-us" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-28">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:gap-12 reveal-on-scroll">
-            <div className="flex-1">
-              <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">WHY CHOOSE US?</p>
-              <h2 className="mt-2 text-4xl font-black leading-tight text-brand-green md:text-5xl">
-                Fair Prices. Fast Cash.<br /><span className="text-brand-green/80">ZERO HASSLE.</span>
-              </h2>
-              <div className="mt-8 rounded-2xl bg-brand-green p-8 shadow-2xl">
-                <p className="text-base leading-relaxed text-white">
-                  We believe everyone deserves a fair price for their pre-loved items - no low-balling, no runarounds.
-                </p>
-                <p className="mt-4 text-xs text-brand-gold">- {BRAND_CONFIG.companyName} Team</p>
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-gold px-4 py-1.5">
-                  <span className="text-sm font-black text-brand-green">5.0</span>
-                  <span className="text-[10px] font-bold text-brand-green">CUSTOMER RATING</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-4">
-              {reasons.map((item) => (
-                <div key={item.title}
-                  className="flex items-start gap-4 rounded-xl bg-brand-green/8 p-5 shadow-sm transition-colors hover:bg-brand-green/10">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-brand-green">{item.title}</h3>
-                    <p className="mt-0.5 text-sm text-zinc-500">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ ITEMS FOR SALE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <FeaturedSaleItems />
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">CUSTOMER REVIEWS</p>
-            <h2 className="mt-2 text-3xl font-black text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
+            <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
 
             <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
               {/* Left arrow */}
@@ -871,7 +784,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FIND US</p>
-            <h2 className="mt-2 text-4xl font-black text-brand-green md:text-5xl">Our Branch Locations</h2>
+            <h2 className="font-display mt-2 text-4xl font-bold text-brand-green md:text-5xl">Our Branch Locations</h2>
             <p className="mt-3 text-base text-brand-green/60">
               {publicBranches.length > 0
                 ? `Visit us at any of our ${branchCountLabel.toLowerCase()}.`
@@ -944,104 +857,20 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           className="bg-brand-gold px-6 py-20 md:px-12 md:py-32"
         >
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 text-center">
-            <h2 className="text-4xl font-black tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
+            <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
             <p className="text-xl font-bold text-brand-green/90 md:text-2xl lg:text-3xl">
               It only takes a minute to start.
             </p>
           </div>
         </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <footer className="bg-brand-green px-6 pt-10 pb-0 md:px-8 md:pt-12 md:pb-0 lg:px-16 lg:pt-14 lg:pb-0">
-          <div className="mx-auto w-full max-w-7xl">
-            {/* Brand & Contact - Side by side on large screens */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-8 mb-6 md:mb-8">
-              {/* Brand - Centered on mobile, left-aligned on desktop */}
-              <div className="flex flex-col items-center text-center lg:items-start lg:text-left mb-6 lg:mb-0 lg:flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={48} height={48} className="rounded-lg" />
-                  <div>
-                    <p className="text-xs font-bold text-brand-gold uppercase tracking-widest">{BRAND_CONFIG.shortCompanyName}</p>
-                    <p className="text-xl font-black text-white leading-none">Pawnshop</p>
-                  </div>
-                </div>
-                <p className="text-xs leading-relaxed text-white/50 lg:text-sm max-w-md">
-                  Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
-                  <span className="text-brand-gold font-bold">{BRAND_CONFIG.shortCompanyName} promise.</span>
-                </p>
-              </div>
-
-            {/* Contact - Horizontal Cards */}
-            <div className="lg:flex-1 lg:max-w-xl">
-              <p className="mb-3 text-center lg:text-left text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">CONTACT US</p>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-1 lg:gap-2">
-                  {[
-                    { icon: "f", label: "Facebook", sub: `${BRAND_CONFIG.shortCompanyName} Page`, color: "bg-blue-600" },
-                    { icon: "@", label: "Email Us", sub: BRAND_CONFIG.email, color: "bg-red-500" },
-                    { icon: "pin", label: "Visit Us", sub: branchCountLabel, color: "bg-brand-green/70" },
-                  ].map((c) => (
-                    <button
-                      key={c.label}
-                      type="button"
-                      onClick={() => {
-                        if (c.label === "Facebook") {
-                          window.open(`https://${BRAND_CONFIG.website}`, "_blank", "noopener,noreferrer");
-                          return;
-                        }
-                        if (c.label === "Email Us") {
-                          window.open("https://mail.google.com/mail/?view=cm&fs=1", "_blank", "noopener,noreferrer");
-                          return;
-                        }
-                        void openBranchModal();
-                      }}
-                      className="flex w-full items-center gap-2 lg:gap-2.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 lg:px-3 lg:py-2.5 text-left transition-colors hover:bg-white/10"
-                    >
-                      <div className={`flex h-7 w-7 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-md ${c.color} text-white text-xs font-black`}>
-                        {c.icon === "pin" ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4 lg:h-[18px] lg:w-[18px]">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
-                            <circle cx="12" cy="10" r="2.5" />
-                          </svg>
-                        ) : (
-                          c.icon
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] lg:text-xs font-bold text-white">{c.label}</p>
-                        <p className="break-words text-[10px] lg:text-[11px] text-white/50">{c.sub}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 items-center justify-center gap-5 border-t border-white/10 pt-5 pb-0 text-xs text-white/40">
-              {/* Copyright */}
-              <div className="text-center">
-                <span>&copy; 2026 {BRAND_CONFIG.companyName}. All rights reserved.</span>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                  <button
-                    type="button"
-                    onClick={() => setLegalModal("privacy")}
-                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
-                  >
-                    Privacy Policy
-                  </button>
-                  <span className="text-white/20">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setLegalModal("terms")}
-                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
-                  >
-                    Terms of Service
-                  </button>
-                </div>
-              </div>
-            </div>
-             </div>
-         
-        </footer>
+        <LandingLightFooter
+          onScroll={handleScroll}
+          onLoginClick={onLoginClick}
+          onOpenBranches={() => { void openBranchModal(); }}
+          onOpenLegal={(type) => setLegalModal(type)}
+          branchCountLabel={branchCountLabel}
+        />
 
         {legalModal && (
           <div

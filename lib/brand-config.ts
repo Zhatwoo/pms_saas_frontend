@@ -25,8 +25,8 @@ export interface BrandConfig {
 }
 
 export const BRAND_CONFIG: BrandConfig = {
-  companyName: "Lorem Ipsum Company",
-  shortCompanyName: "Lorem Ipsum",
+  companyName: "Pawnshop Company",
+  shortCompanyName: "Pawnshop",
   companyLogo: "/logo.png",
   loginLogo: "/logo.png",
   sidebarLogo: "/logo.png",
