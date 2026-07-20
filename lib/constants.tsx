@@ -13,11 +13,11 @@ import {
   IncidentReportIcon,
   DeviceIcon,
 } from "@/lib/icons";
-import { Building2 } from "lucide-react";
+import { BRAND_CONFIG } from "./brand-config";
 
-export const APP_NAME = "Pawnshop Management System";
-export const APP_SHORT_NAME = "JCLB";
-export const APP_TAGLINE = "BUY BACK SHOP";
+export const APP_NAME = BRAND_CONFIG.companyName;
+export const APP_SHORT_NAME = BRAND_CONFIG.shortCompanyName;
+export const APP_TAGLINE = BRAND_CONFIG.tagline;
 
 const SUPERADMIN_NAV: NavGroup[] = [
   {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 
 interface BranchSummary {
   id: string;
@@ -175,8 +176,8 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
             <div className="rounded-2xl bg-emerald-950/50 p-2">
               <div className="overflow-hidden rounded-xl ring-2 ring-amber-400/60">
                 <Image
-                  src="/logo.png"
-                  alt="JCLB Logo"
+                  src={BRAND_CONFIG.loginLogo}
+                  alt={`${BRAND_CONFIG.shortCompanyName} Logo`}
                   width={120}
                   height={120}
                   className="h-28 w-28 object-contain"
@@ -184,7 +185,7 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
               </div>
             </div>
             <h2 className="mt-4 text-center text-xl font-bold text-white">
-              JCLB Buy Back
+              {BRAND_CONFIG.companyName}
             </h2>
             <p className="text-center text-lg font-bold text-amber-400">
               Create account

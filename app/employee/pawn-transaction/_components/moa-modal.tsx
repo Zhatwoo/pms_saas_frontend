@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { formatPeso } from "@/lib/currency";
 import {
   calculatePeriodicStorageFee,
@@ -215,7 +216,7 @@ function MoaNamedSignatureLine({
 }
 
 const DEFAULT_TERMS_PREAMBLE =
-  'You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.';
+  `You must be pledging to ${BRAND_CONFIG.companyName}, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with ${BRAND_CONFIG.companyName}. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions ${BRAND_CONFIG.companyName} may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless ${BRAND_CONFIG.companyName} from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you ${BRAND_CONFIG.companyName}. After the verification of your item(s), ${BRAND_CONFIG.companyName} will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by ${BRAND_CONFIG.companyName}. Upon receipt of cash from ${BRAND_CONFIG.companyName}, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from ${BRAND_CONFIG.companyName} without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.`;
 
 const DEFAULT_TERMS_DECLARATION =
   "I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.";
@@ -227,7 +228,7 @@ const DEFAULT_TERMS_RECEIVED_TEXT =
   "Received the article(s) in the same condition when sold and repurchased back.";
 
 const DEFAULT_TERMS_RECEIVED_PRESENCE =
-  "(Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)";
+  `(Signed in the presence of ${BRAND_CONFIG.companyName} owner/employee)`;
 
 function normalizeTermsText(rawText?: string) {
   const normalizedLines = (rawText ?? "")
@@ -568,7 +569,7 @@ export function MoaModal({
   const gracePeriodEnd = addDays(baseDate, schedule[4]?.endDay ?? 34);
   const printableTermsLines = termsText.split(/\r?\n/).filter(Boolean);
 
-  const brandName = shopInfo?.shopName || "JCLB BUY BACK SHOP";
+  const brandName = shopInfo?.shopName || BRAND_CONFIG.companyName;
   const transactionBranch = data.branchName?.trim() || "";
   const transactionAddress = data.branchAddress?.trim() || "";
   const transactionPhone = data.branchPhone?.trim() || "";

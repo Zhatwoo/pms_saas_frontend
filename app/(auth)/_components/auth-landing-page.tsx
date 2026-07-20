@@ -2,44 +2,21 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import dynamic from 'next/dynamic';
-import { AnimatedGradient } from "@/components/shared/animated-gradient";
 import { api } from "@/lib/api";
-import { FeaturedSaleItems } from "./featured-sale-items";
-
-// Lazy-load BranchMap component (Requirements: 12.1)
-const BranchMap = dynamic(
-  () => import('@/components/branch-map').then(mod => ({ default: mod.BranchMap })),
-  {
-    ssr: false, // Critical: Leaflet requires browser window
-    loading: () => (
-      <div className="h-40 w-full flex items-center justify-center bg-brand-green/10">
-        <span className="text-sm text-brand-green/60">Loading map...</span>
-      </div>
-    )
-  }
-);
+import { BRAND_CONFIG } from "@/lib/brand-config";
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "HOW IT WORKS", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
+const navItems = ["FEATURES", "WHY CHOOSE US", "HOW IT WORKS", "PRICING", "REVIEWS"];
 
 const sectionNavLabels: Record<string, string> = {
-  home: "HOME",
+  features: "FEATURES",
+  "why-choose-us": "WHY CHOOSE US",
   "how-it-works": "HOW IT WORKS",
-  categories: "WHAT WE BUY",
-  "why-us": "WHY US",
-  "items-for-sale": "ITEMS FOR SALE",
+  pricing: "PRICING",
   reviews: "REVIEWS",
-  branches: "BRANCHES",
-  "contact-us": "CONTACT US",
-};
-
-// Maps nav label text to a section ID when the label differs from the auto-generated id
-const navIdOverrides: Record<string, string> = {
-  "WHAT WE BUY": "categories",
 };
 
 type LegalModalType = "privacy" | "terms" | null;
@@ -54,11 +31,11 @@ interface PublicBranch {
 const termsSections = [
   {
     title: "Website Information",
-    body: "The JCLB Buy Back Pawnshop website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.",
+    body: `The ${BRAND_CONFIG.companyName} website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.`,
   },
   {
     title: "No Online Transaction Guarantee",
-    body: "Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized JCLB Buy Back Shop personnel.",
+    body: `Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized ${BRAND_CONFIG.companyName} personnel.`,
   },
   {
     title: "Customer Responsibilities",
@@ -74,22 +51,22 @@ const termsSections = [
   },
   {
     title: "Internal Login",
-    body: "The login area is reserved for authorized JCLB Buy Back Shop employees and administrators. Customers do not need an account to read the public information on this landing page.",
+    body: `The login area is reserved for authorized ${BRAND_CONFIG.companyName} employees and administrators. Customers do not need an account to read the public information on this landing page.`,
   },
   {
     title: "Limitations",
-    body: "Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from JCLB Buy Back Shop personnel.",
+    body: `Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from ${BRAND_CONFIG.companyName} personnel.`,
   },
   {
     title: "Acceptance",
-    body: "By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to JCLB Buy Back Shop services.",
+    body: `By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to ${BRAND_CONFIG.companyName} services.`,
   },
 ];
 
 const privacySections = [
   {
     title: "Information We May Collect",
-    body: "When customers contact us or complete branch transactions, JCLB Buy Back Shop may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.",
+    body: `When customers contact us or complete branch transactions, ${BRAND_CONFIG.companyName} may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.`,
   },
   {
     title: "How We Use Information",
@@ -109,7 +86,7 @@ const privacySections = [
   },
   {
     title: "Customer Choices",
-    body: "Customers may contact JCLB Buy Back Shop to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.",
+    body: `Customers may contact ${BRAND_CONFIG.companyName} to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.`,
   },
   {
     title: "Website Visitors",
@@ -125,24 +102,39 @@ const legalModalContent = {
   privacy: {
     title: "Privacy Policy",
     ariaLabel: "Close privacy policy",
-    intro: "This policy explains how JCLB Buy Back Shop handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.",
+    intro: `This policy explains how ${BRAND_CONFIG.companyName} handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.`,
     sections: privacySections,
   },
   terms: {
     title: "Terms of Service",
     ariaLabel: "Close terms of service",
-    intro: "These terms explain general use of the JCLB Buy Back Shop website and public information for customers, visitors, and anyone learning about our pawnshop services.",
+    intro: `These terms explain general use of the ${BRAND_CONFIG.companyName} website and public information for customers, visitors, and anyone learning about our pawnshop services.`,
     sections: termsSections,
   },
 };
 
+const reasons = [
+  {
+    title: "Lowest Rates Guaranteed",
+    desc: "Our pricing is based on current market values - no low-balling, no hidden charges, no runarounds.",
+  },
+  {
+    title: "Instant Payouts",
+    desc: "Get an offer and receive your cash the same day. Cash on hand or digital transfer - your choice.",
+  },
+  {
+    title: "Honest & Transparent",
+    desc: "We explain every offer so you know exactly what you're getting before any deal is closed.",
+  },
+];
+
 const steps = [
   {
     step: "01",
-    title: "Send Your Item Details",
-    desc: "Message us on Facebook with photos and details of your item. We accept gadgets, appliances, accessories, and more.",
+    title: "Digital Submission",
+    desc: "Send photos and details of your item online. We accept gadgets, appliances, accessories, and more.",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
         <circle cx="12" cy="13" r="3" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -150,159 +142,141 @@ const steps = [
   },
   {
     step: "02",
-    title: "Get a Fair Offer",
-    desc: "Our team reviews your submission and gives you a fair, competitive buy-back price - usually within the same day.",
+    title: "Transparent Offer",
+    desc: "Our team reviews your submission and gives you a fair, market-based appraisal - usually within the same day.",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
   {
     step: "03",
-    title: "Get Paid Instantly",
-    desc: "Agree to the offer, drop off or ship your item, and get paid instantly. Cash on hand or digital transfer - your choice.",
+    title: "Instant Payout",
+    desc: "Agree to the offer, drop off your item at any branch, and get paid instantly - cash or digital transfer.",
     icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
         <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
   },
 ];
 
-const categories = [
+const pricingPlans = [
   {
-    name: "SMARTPHONES",
-    desc: "iPhone, Samsung and More",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
-      </svg>
-    ),
+    tier: "STARTER",
+    name: "Basic",
+    price: "$29",
+    period: "/mo",
+    cta: "Get Started",
+    popular: false,
+    features: [
+      { label: "1 Branch", included: true },
+      { label: "Basic Reporting", included: true },
+      { label: "Email Support", included: true },
+      { label: "Advanced Analytics", included: false },
+    ],
   },
   {
-    name: "LAPTOP & PCs",
-    desc: "All brands accepted",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8m-4-4v4" />
-      </svg>
-    ),
+    tier: "ACCELERATE",
+    name: "Pro",
+    price: "$79",
+    period: "/mo",
+    cta: "Choose Pro",
+    popular: true,
+    features: [
+      { label: "Up to 5 Branches", included: true },
+      { label: "Advanced Analytics", included: true },
+      { label: "Priority Support", included: true },
+      { label: "Multi-user Access", included: true },
+    ],
   },
   {
-    name: "APPLIANCES",
-    desc: "Smart and Large Electronics",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="2" y="3" width="20" height="18" rx="2" /><path d="M8 21h8M12 17v4M6 8h.01M6 12h.01" />
-      </svg>
-    ),
-  },
-  {
-    name: "GAMING CONSOLES",
-    desc: "PSP, Xbox or Nintendo",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M9 12h6M12 9v6M18 2l4 4-8 8-4-4 8-8z" />
-      </svg>
-    ),
-  },
-  {
-    name: "CAMERAS",
-    desc: "DSLR, mirrorless and action cams",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
-      </svg>
-    ),
-  },
-  {
-    name: "SMARTWATCHES",
-    desc: "Apple Watch or Galaxy Watch",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="7" y="5" width="10" height="14" rx="2" /><path d="M9 5V3h6v2M9 19v2h6v-2M12 9v4l2 2" />
-      </svg>
-    ),
-  },
-  {
-    name: "AUDIO & EARPHONES",
-    desc: "Headphones, TWS or Speakers",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6M3 18a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5zm16 0a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5z" />
-      </svg>
-    ),
-  },
-  {
-    name: "OTHER ITEMS",
-    desc: "Ask us - we might buy it!",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 3H8l-2 4h12l-2-4z" />
-      </svg>
-    ),
+    tier: "SCALE",
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    cta: "Contact Sales",
+    popular: false,
+    features: [
+      { label: "Unlimited Branches", included: true },
+      { label: "Custom Integrations", included: true },
+      { label: "Dedicated Manager", included: true },
+      { label: "Custom SLAs", included: true },
+    ],
   },
 ];
 
-const reasons = [
+const compareRows: { label: string; basic: string | boolean; pro: string | boolean; enterprise: string | boolean }[] = [
+  { label: "Max Branches", basic: "1", pro: "5", enterprise: "Unlimited" },
+  { label: "Cloud Backups", basic: true, pro: true, enterprise: true },
+  { label: "Inventory Management", basic: true, pro: true, enterprise: true },
+  { label: "Real-time Dashboard", basic: false, pro: true, enterprise: true },
+  { label: "Custom API Access", basic: false, pro: false, enterprise: true },
+  { label: "Support SLA", basic: "48h Response", pro: "4h Response", enterprise: "Instant/Dedicated" },
+];
+
+const pricingFaqs = [
   {
-    title: "Same-Day Offers",
-    desc: "We respond fast. Submit your item in the morning and have an offer by afternoon - no waiting around.",
+    question: "Can I upgrade or downgrade later?",
+    answer: "Yes. You can switch plans anytime from your account settings. Upgrades take effect immediately, while downgrades apply at the start of your next billing cycle.",
   },
   {
-    title: "Honest & Transparent",
-    desc: "Our pricing is based on current market values. We explain every offer so you know exactly what you're getting.",
+    question: "Is there a free trial available?",
+    answer: "Yes, every plan starts with a 14-day free trial with full access to all features. No credit card required to start.",
   },
   {
-    title: "Secure Transactions",
-    desc: "Every deal is handled with full transparency. Your items and your money are always protected.",
+    question: "What happens to my data if I cancel?",
+    answer: "Your data stays available for export for 30 days after cancellation. After that period, it is permanently deleted from our servers.",
   },
   {
-    title: "Trusted by Hundreds",
-    desc: "Hundreds of satisfied sellers trust JCLB for their buy-back needs. Join our growing community today.",
+    question: "Do you offer yearly discounts?",
+    answer: "Yes. Paying annually saves you two months compared to monthly billing. Contact us for volume discounts on Enterprise plans.",
   },
 ];
 
 const allReviews = [
+  { name: "Maria L.", sold: "Sold an iPad Pro", initials: "ML", quote: "Quick and easy process. Got a great offer for my iPad and the payment was instant. Very satisfied with the service!" },
   { name: "Manon M.", sold: "Sold an iPhone 12", initials: "MM", quote: "Super fast response! I messaged them about my old iPhone and got an offer within a few hours. Payment was smooth and no issues at all." },
   { name: "Carlos R.", sold: "Sold a MacBook Pro", initials: "CR", quote: "Best buy-back shop I've tried. They gave me a fair price for my laptop and the whole process took less than a day. Highly recommend!" },
-  { name: "Mindy Meeks", sold: "Sold a Samsung Galaxy", initials: "MM", quote: "Very professional and trustworthy. They explained everything clearly and I felt comfortable with the whole transaction. Will sell again!" },
   { name: "Taesan H.", sold: "Sold a MacBook Air", initials: "TH", quote: "No lowball offers like other shops. They gave me the great price for my laptop and paid on the spot." },
-  { name: "Joshua H.", sold: "Sold a PS5 Controller", initials: "JH", quote: "Legit and trustworthy! The offer was fair and they explained everything. Will definitely sell again with JCLB. Highly recommended!" },
-  { name: "Maria L.", sold: "Sold an iPad Pro", initials: "ML", quote: "Quick and easy process. Got a great offer for my iPad and the payment was instant. Very satisfied with the service!" },
+  { name: "Joshua H.", sold: "Sold a PS5 Controller", initials: "JH", quote: `Legit and trustworthy! The offer was fair and they explained everything. Will definitely sell again with ${BRAND_CONFIG.shortCompanyName}. Highly recommended!` },
+  { name: "Mindy Meeks", sold: "Sold a Samsung Galaxy", initials: "MM", quote: "Very professional and trustworthy. They explained everything clearly and I felt comfortable with the whole transaction. Will sell again!" },
 ];
 
+const CREAM = "#F5F1E8";
+
+function Stars({ dark = false }: { dark?: boolean }) {
+  return (
+    <div className="mb-3 flex gap-1">
+      {[...Array(5)].map((_, si) => (
+        <svg key={si} className={`h-4 w-4 ${dark ? "text-brand-green" : "text-brand-gold"}`} fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
 export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
-  const [activeNavItem, setActiveNavItem] = useState("HOME");
-  const [underlineLeft, setUnderlineLeft] = useState(0);
-  const [underlineWidth, setUnderlineWidth] = useState(0);
+  const [activeNavItem, setActiveNavItem] = useState("FEATURES");
   const [reviewIndex, setReviewIndex] = useState(0);
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [isAtTop, setIsAtTop] = useState(true);
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [branchModalOpen, setBranchModalOpen] = useState(false);
   const [publicBranches, setPublicBranches] = useState<PublicBranch[]>([]);
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [branchLoadError, setBranchLoadError] = useState("");
-  const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const lastScrollY = useRef(0);
 
   const totalSlides = allReviews.length;
-
-  const goToReview = (next: number) => {
-    setReviewIndex((next + totalSlides) % totalSlides);
-  };
-
+  const goToReview = (next: number) => setReviewIndex((next + totalSlides) % totalSlides);
   const prevReview = () => goToReview(reviewIndex - 1);
   const nextReview = () => goToReview(reviewIndex + 1);
-  const prevHeroSlide = () => setSlideIndex((prev) => (prev - 1 + 3) % 3);
-  const nextHeroSlide = () => setSlideIndex((prev) => (prev + 1) % 3);
+
   const branchCountLabel =
     publicBranches.length > 0
       ? `${publicBranches.length} ${publicBranches.length === 1 ? "Branch" : "Branches"}`
@@ -310,7 +284,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
   const loadPublicBranches = async () => {
     if (publicBranches.length > 0 || isLoadingBranches) return;
-
     setIsLoadingBranches(true);
     setBranchLoadError("");
     try {
@@ -335,80 +308,35 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Prevent scrolling when mobile or tablet menu is open
   useEffect(() => {
-    if (mobileMenuOpen || tabletMenuOpen) {
-      // Store scroll position
-      const scrollY = window.scrollY;
-      document.body.setAttribute('data-scroll-lock', scrollY.toString());
-      
-      // Add styles to prevent scrolling
-      document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = '0px'; // Prevent layout shift from scrollbar
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
     } else {
-      // Restore scrolling
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-      document.body.removeAttribute('data-scroll-lock');
+      document.body.style.overflow = "";
     }
-  }, [mobileMenuOpen, tabletMenuOpen]);
-
-  // For seamless sliding, we wrap the reviews
-  const extendedReviews = [
-    allReviews[allReviews.length - 1],
-    ...allReviews,
-    allReviews[0],
-  ];
+  }, [mobileMenuOpen]);
 
   const handleScroll = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => {
     e.preventDefault();
     e.stopPropagation();
-    
     const element = document.getElementById(id);
     if (!element) return;
-    
-    // Update active nav item immediately
     setActiveNavItem(item);
-    
-    // Close the menu
     setMobileMenuOpen(false);
-    setTabletMenuOpen(false);
-    
-    // Small delay to let menu start closing, then scroll
     setTimeout(() => {
-      const offset = 64; // Header height
+      const offset = 72;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = elementPosition - offset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-      
+      window.scrollTo({ top: elementPosition - offset, behavior: "smooth" });
       window.history.pushState(null, "", `#${id}`);
     }, 50);
   };
-
-  const handleContactUsClick = () => {
-    const element = document.getElementById("contact-us");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.history.pushState(null, "", "#contact-us");
-    }
-  };
-
-  useEffect(() => {
-    // Reveal on scroll elements are now handled via CSS View Timelines in globals.css
-  }, []);
 
   useEffect(() => {
     const handleScrollSync = () => {
       const sections = document.querySelectorAll("section[id]");
       const { scrollY, innerHeight } = window;
       setShowBackToTop(scrollY > innerHeight * 0.5);
-      setIsAtTop(scrollY <= 10);
 
-      // Hide nav on scroll down, show on scroll up
       if (scrollY > lastScrollY.current + 10 && scrollY > 100) {
         setIsNavVisible(false);
       } else if (scrollY < lastScrollY.current - 10 || scrollY <= 50) {
@@ -416,81 +344,90 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       }
       lastScrollY.current = scrollY;
 
-      // Check if we're in any section
-      let foundSection = false;
       sections.forEach((section) => {
         const rect = section.getBoundingClientRect();
         if (rect.top <= 120 && rect.bottom >= 100) {
           const mapped = sectionNavLabels[section.id];
-          if (mapped) {
-            setActiveNavItem(mapped);
-            foundSection = true;
-          }
+          if (mapped) setActiveNavItem(mapped);
         }
       });
-      
-      // Only set CONTACT US if we're actually at the bottom and no other section was found
-      if (!foundSection && scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
-        setActiveNavItem("CONTACT US");
-      }
     };
     window.addEventListener("scroll", handleScrollSync);
-    return () => { window.removeEventListener("scroll", handleScrollSync); };
+    return () => window.removeEventListener("scroll", handleScrollSync);
   }, []);
 
-  useEffect(() => {
-    const activeRef = navRefs.current[navItems.indexOf(activeNavItem)];
-    if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
-  }, [activeNavItem]);
-
-  // Auto-advance slideshow every 4 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % 3);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+  // Extended list for seamless 3-card carousel
+  const extendedReviews = [allReviews[allReviews.length - 1], ...allReviews, allReviews[0]];
 
   return (
-    <div className="min-h-screen bg-white selection:bg-brand-gold selection:text-brand-green">
-      {/* Plain white background */}
+    <div className="min-h-screen bg-brand-green selection:bg-brand-gold selection:text-brand-green">
+      {/* ─── NAV ─── */}
+      <nav
+        className={`fixed left-0 right-0 top-0 z-[80] border-b border-white/10 bg-brand-green/95 backdrop-blur transition-transform duration-300 ease-in-out ${
+          isNavVisible || mobileMenuOpen ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
+        <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 md:px-8">
+          {/* Brand */}
+          <button
+            type="button"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              setActiveNavItem("FEATURES");
+            }}
+            className="flex items-center gap-2.5"
+          >
+            <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={36} height={36} className="rounded-lg" />
+            <span className="text-sm font-black tracking-tight text-white sm:text-base">
+              {BRAND_CONFIG.shortCompanyName}{" "}
+              <span className="text-brand-gold">Pawnshop</span>
+            </span>
+          </button>
 
-      <div className="relative z-10">
-        {/* ─── NAV ─── */}
-        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-white/10 bg-brand-green transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
-          <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
-            {/* Logo - Desktop only (lg and up) */}
-            <Image 
-              src="/logo.png" 
-              alt="JCLB" 
-              width={48} 
-              height={48} 
-              className="hidden lg:block rounded-lg cursor-pointer" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleScroll(e, "home", "HOME");
-              }} 
-            />
-            
-            {/* Burger menu icon - Mobile and Tablet only (below lg) */}
+          {/* Desktop links */}
+          <div className="hidden items-center gap-7 lg:flex">
+            {navItems.map((item) => {
+              const id = item.toLowerCase().replace(/ /g, "-");
+              return (
+                <a
+                  key={item}
+                  href={`#${id}`}
+                  onClick={(e) => handleScroll(e, id, item)}
+                  className={`text-[11px] font-bold uppercase tracking-widest transition-colors ${
+                    activeNavItem === item ? "text-brand-gold" : "text-white/80 hover:text-brand-gold"
+                  }`}
+                >
+                  {item}
+                </a>
+              );
+            })}
+          </div>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Show navbar when opening menu
-                setIsNavVisible(true);
-                // Toggle appropriate menu based on screen size
-                if (window.innerWidth >= 768 && window.innerWidth < 1024) {
-                  setTabletMenuOpen((prev) => !prev);
-                } else {
-                  setMobileMenuOpen((prev) => !prev);
-                }
-              }}
-              aria-label="Toggle menu"
-              className="flex lg:hidden h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10"
+              onClick={onLoginClick}
+              className="hidden text-xs font-bold uppercase tracking-widest text-white/80 transition-colors hover:text-brand-gold sm:block"
             >
-              {(mobileMenuOpen || tabletMenuOpen) ? (
+              Log In
+            </button>
+            <button
+              type="button"
+              onClick={onLoginClick}
+              className="rounded-full bg-brand-gold px-4 py-2 text-xs font-black text-brand-green transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-gold/25 hover:brightness-110 active:translate-y-0 active:scale-95 sm:px-5 sm:text-sm"
+            >
+              Sign Up
+            </button>
+
+            {/* Mobile burger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Toggle menu"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10 lg:hidden"
+            >
+              {mobileMenuOpen ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
@@ -500,256 +437,235 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 </svg>
               )}
             </button>
+          </div>
+        </div>
 
-            {/* Desktop nav links */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
-              {navItems.map((item, index) => {
-                const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="border-t border-white/10 bg-brand-green px-4 py-4 lg:hidden">
+            <div className="space-y-2">
+              {navItems.map((item) => {
+                const id = item.toLowerCase().replace(/ /g, "-");
+                const isActive = activeNavItem === item;
                 return (
-                  <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
+                  <a
+                    key={item}
+                    href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-white hover:text-brand-gold"}`}>
+                    className={`block rounded-lg border px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${
+                      isActive
+                        ? "border-brand-gold bg-brand-gold/15 text-brand-gold"
+                        : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:text-brand-gold"
+                    }`}
+                  >
                     {item}
                   </a>
                 );
               })}
-              <span className="absolute -bottom-1 h-0.5 bg-brand-gold transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
-            </div>
-
-            {/* Right side: Login button + tablet dropdown + mobile hamburger */}
-            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-lg bg-brand-gold px-3 py-2 text-xs font-black text-brand-green transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-gold/20 hover:brightness-110 active:translate-y-0 active:scale-95 sm:px-4 sm:text-sm"
+                className="block w-full rounded-lg bg-brand-gold px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.16em] text-brand-green"
               >
-                Login / Sign Up
+                Log In / Sign Up
               </button>
+            </div>
+          </div>
+        )}
+      </nav>
 
-              {/* Removed redundant buttons - now using unified burger menu on left */}
+      {/* ─── HERO ─── */}
+      <section id="home" className="relative overflow-hidden bg-brand-green pt-16">
+        <div className="pointer-events-none absolute -right-40 -top-40 h-96 w-96 rounded-full bg-brand-gold/10 blur-3xl" />
 
-              {/* Hamburger ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mobile only */}
+        <div className="mx-auto grid w-full max-w-[1280px] items-center gap-10 px-4 py-12 md:px-8 md:py-16 lg:grid-cols-[1fr_1.05fr] lg:py-20">
+          {/* Copy */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-gold/80">
+              {BRAND_CONFIG.tagline}
+            </p>
+            <h1 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+              The Gold Standard of{" "}
+              <span className="text-brand-gold">Pawn Management</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-sm leading-relaxed text-white/60">
+              Streamline your pawning, inventory, item records and secure your earnings with the modern management suite built for professional pawnshops.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={onLoginClick}
+                className="rounded-lg bg-brand-gold px-6 py-3 text-sm font-black text-brand-green transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-gold/25 hover:brightness-110 active:translate-y-0 active:scale-95"
+              >
+                Start Free Trial
+              </button>
+              <a
+                href="#features"
+                onClick={(e) => handleScroll(e, "features", "FEATURES")}
+                className="rounded-lg border border-white/25 px-6 py-3 text-sm font-bold text-white transition-colors hover:border-brand-gold hover:text-brand-gold"
+              >
+                Watch Demo
+              </a>
             </div>
           </div>
 
-          {/* Tablet side panel menu */}
-          <div className={`fixed inset-0 z-[70] hidden md:block lg:hidden ${tabletMenuOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
-            {/* Backdrop blur overlay - positioned to exclude header from blur */}
-            <div 
-              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${
-                tabletMenuOpen ? "opacity-100" : "opacity-0"
-              }`}
-              style={{ clipPath: 'polygon(0 4rem, 100% 4rem, 100% 100%, 0 100%)' }}
-              onClick={() => setTabletMenuOpen(false)}
-              aria-hidden="true"
-            />
-
-            <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg shadow-lg" />
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">JCLB PawnShop</p>
-                      <p className="text-[8px] font-semibold text-white/60 tracking-wider">Buy Back Shop</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setTabletMenuOpen(false)}
-                    aria-label="Close tablet navigation"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-gold/30 bg-brand-gold/10 text-brand-gold transition-all duration-200 hover:bg-brand-gold hover:text-brand-green hover:scale-110 hover:rotate-90 active:scale-95"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
-                  <div className="space-y-2">
-                    {navItems.map((item, index) => {
-                      const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
-                      const isActive = activeNavItem === item;
-                      return (
-                        <a
-                          key={`tablet-${item}`}
-                          ref={(el) => {
-                            navRefs.current[index] = el;
-                          }}
-                          href={`#${id}`}
-                          onClick={(e) => {
-                            handleScroll(e, id, item);
-                          }}
-                          className={`group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
-                            isActive
-                              ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
-                              : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
-                          }`}
-                        >
-                          <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
-                          <span>{item}</span>
-                        </a>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
-                  <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 JCLB Buy Back Shop</p>
-                </div>
-              </aside>
+          {/* Photo bleeding to the right edge */}
+          <div className="relative lg:-mr-8">
+            <div className="overflow-hidden rounded-2xl shadow-2xl shadow-black/40 lg:rounded-r-none">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/one.png" alt="Pawnshop management dashboard preview" className="block w-full object-cover" />
             </div>
-
-          {/* Mobile drawer menu */}
-          <div className={`fixed inset-0 z-[70] md:hidden ${mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
-            {/* Backdrop blur overlay - positioned to exclude header from blur */}
-            <div 
-              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${
-                mobileMenuOpen ? "opacity-100" : "opacity-0"
-              }`}
-              style={{ clipPath: 'polygon(0 4rem, 100% 4rem, 100% 100%, 0 100%)' }}
-              onClick={() => setMobileMenuOpen(false)}
-              aria-hidden="true"
-            />
-            
-            <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-              <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg shadow-lg" />
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">JCLB PawnShop</p>
-                    <p className="text-[8px] font-semibold text-white/60 tracking-wider">Buy Back Shop</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-gold/30 bg-brand-gold/10 text-brand-gold transition-all duration-200 hover:bg-brand-gold hover:text-brand-green hover:scale-110 hover:rotate-90 active:scale-95"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
-                <div className="space-y-2">
-                  {navItems.map((item) => {
-                    const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
-                    const isActive = activeNavItem === item;
-                    return (
-                      <a
-                        key={item}
-                        href={`#${id}`}
-                        onClick={(e) => {
-                          handleScroll(e, id, item);
-                        }}
-                        className={`group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
-                          isActive
-                            ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
-                            : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
-                        }`}
-                      >
-                        <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
-                        <span>{item}</span>
-                      </a>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
-                <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 JCLB Buy Back Shop</p>
-              </div>
-            </aside>
-          </div>
-        </nav>
-
-        {/* ─── HERO ─── */}
-        <section id="home" className="group relative pt-16 bg-brand-green flex flex-col justify-center lg:min-h-screen">
-          {/* Full-width container */}
-          <div className="w-full overflow-hidden">
-            <div 
-              className="flex transition-transform duration-500 ease-in-out items-center"
-              style={{ transform: `translateX(-${slideIndex * 100}%)` }}
-            >
-              {["one.png", "two.png", "three.png"].map((img, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={img}
-                  src={`/${img}`}
-                  alt=""
-                  className="w-full shrink-0 object-contain lg:object-fill lg:h-[calc(100vh-4rem)]"
-                  style={{
-                    display: "block",
-                  }}
-                />
-              ))}
+            <div className="absolute -bottom-4 left-4 rounded-xl bg-brand-gold px-4 py-3 shadow-xl">
+              <p className="text-[10px] font-black uppercase tracking-widest text-brand-green/70">Trusted Platform</p>
+              <p className="text-lg font-black leading-none text-brand-green">100% Secure</p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* â†â† HOW IT WORKS â†â† */}
-        <section id="how-it-works" className="bg-white px-3 py-12 sm:px-6 sm:py-20 md:px-12 md:py-32 lg:py-48">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <h2 className="text-xl font-black text-brand-green sm:text-3xl md:text-4xl lg:text-5xl">
-              <span className="text-brand-gold">3</span> Steps to Get Your Cash
-            </h2>
-            <div className="mt-4 grid gap-2.5 sm:mt-8 sm:gap-4 sm:grid-cols-2 md:mt-12 md:grid-cols-3 md:gap-6">
-              {steps.map((item, index) => (
-                <div key={item.step}
-                  className="reveal-on-scroll flex flex-col rounded-lg bg-brand-green p-3 text-white shadow-xl h-full sm:rounded-2xl sm:p-5 md:p-8">
-                  <div className="flex items-center gap-2 mb-2.5 sm:gap-4 sm:mb-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white sm:h-12 sm:w-12 sm:rounded-xl">
-                      {item.icon}
-                    </div>
-                    <span className="text-xl font-black text-brand-gold sm:text-3xl">{item.step}</span>
-                  </div>
-                  <h3 className="text-sm font-bold sm:text-lg">{item.title}</h3>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-white/75 flex-1 sm:mt-3 sm:text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── CATEGORIES / ITEMS WE ACCEPT ─── */}
-        <section id="categories" className="bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] py-4 lg:py-0 lg:!scroll-mt-16">
-          {/* Full-width container */}
-          <div className="w-full overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/itemsweaccept.png"
-              alt="Items We Accept"
-              className="w-full shrink-0 object-contain"
-              style={{ display: "block" }}
-            />
-          </div>
-        </section>
-
-        {/* â†â† WHY US â†â† */}
-        <section id="why-us" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-28">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:gap-12 reveal-on-scroll">
-            <div className="flex-1">
-              <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">WHY CHOOSE US?</p>
-              <h2 className="mt-2 text-4xl font-black leading-tight text-brand-green md:text-5xl">
-                Fair Prices. Fast Cash.<br /><span className="text-brand-green/80">ZERO HASSLE.</span>
+      {/* ─── FEATURES / VELOCITY & SCALE BENTO ─── */}
+      <section id="features" className="px-4 py-16 md:px-8 md:py-24" style={{ backgroundColor: CREAM }}>
+        <div className="mx-auto max-w-[1280px]">
+          {/* Header row: heading left, blurb right */}
+          <div className="flex flex-col gap-4 reveal-on-scroll md:flex-row md:items-end md:justify-between">
+            <div>
+              <span className="inline-block rounded bg-brand-green px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-brand-gold">
+                Core Capabilities
+              </span>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-brand-green md:text-5xl">
+                Engineered for Velocity &amp; Scale
               </h2>
-              <div className="mt-8 rounded-2xl bg-brand-green p-8 shadow-2xl">
-                <p className="text-base leading-relaxed text-white">
-                  We believe everyone deserves a fair price for their pre-loved items - no low-balling, no runarounds.
-                </p>
-                <p className="mt-4 text-xs text-brand-gold">- JCLB Buy Back Shop Team</p>
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-gold px-4 py-1.5">
-                  <span className="text-sm font-black text-brand-green">5.0</span>
-                  <span className="text-[10px] font-bold text-brand-green">CUSTOMER RATING</span>
-                </div>
+            </div>
+            <p className="max-w-xs text-sm leading-relaxed text-brand-green/60">
+              A finance-first toolkit to manage assets, clients, and cash flow with banking-grade precision.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 md:mt-14 md:grid-cols-3">
+            {/* Precision Asset Inventory — wide white card with screenshot */}
+            <div className="reveal-on-scroll overflow-hidden rounded-2xl bg-white p-6 shadow-sm md:col-span-2 md:p-8">
+              <h3 className="text-lg font-black text-brand-green">Precision Asset Inventory</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
+                Real-time tracking of every asset. Categorize by metal type, purity, electronics condition, and high-value status. Automated barcode tools ensure your inventory is always sealed and audited.
+              </p>
+              <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 shadow-inner">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/two.png" alt="Inventory dashboard preview" className="block max-h-64 w-full object-cover object-top" />
               </div>
             </div>
-            <div className="flex flex-1 flex-col gap-4">
+
+            {/* Fintech-Grade CRM — dark green card */}
+            <div className="reveal-on-scroll flex flex-col justify-between rounded-2xl bg-brand-green p-6 text-white shadow-xl md:p-8">
+              <div>
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gold text-brand-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6-4a3 3 0 11-3-3" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-black">Fintech-Grade CRM</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">
+                  Build trust with detailed client profiles, loan history, and automated SMS reminders for due dates and renewals.
+                </p>
+              </div>
+              <a
+                href="#pricing"
+                onClick={(e) => handleScroll(e, "pricing", "PRICING")}
+                className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-brand-gold transition-colors hover:text-white"
+              >
+                View Feature
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+            </div>
+
+            {/* Instant Reporting — gold card */}
+            <div className="reveal-on-scroll flex flex-col justify-between rounded-2xl bg-brand-gold p-6 shadow-xl md:p-8">
+              <div>
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-brand-green text-brand-gold">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18M7 15l4-4 3 3 5-6" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-black text-brand-green">Instant Reporting</h3>
+                <p className="mt-2 text-sm leading-relaxed text-brand-green/70">
+                  Watch daily transactions, the cash flow of all branches, and liquidity forecasting from one live dashboard.
+                </p>
+              </div>
+              <a
+                href="#pricing"
+                onClick={(e) => handleScroll(e, "pricing", "PRICING")}
+                className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-brand-green transition-opacity hover:opacity-70"
+              >
+                Explore Metrics
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </a>
+            </div>
+
+            {/* Uncompromising Security — wide white card with shield */}
+            <div className="reveal-on-scroll relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm md:col-span-2 md:p-8">
+              <div className="grid items-center gap-6 md:grid-cols-[1.4fr_auto]">
+                <div>
+                  <h3 className="text-lg font-black text-brand-green">Uncompromising Security</h3>
+                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-zinc-500">
+                    Encrypted transactions and multi-factor authentication protect your data and your clients&apos; assets at every step.
+                  </p>
+                </div>
+                <div className="hidden h-24 w-24 items-center justify-center rounded-full bg-brand-green/5 text-brand-green/30 md:flex">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-14 w-14">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
+                  </svg>
+                </div>
+              </div>
+              <div className="pointer-events-none absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-brand-gold/10" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── WHY CHOOSE US ─── */}
+      <section id="why-choose-us" className="bg-white px-4 py-16 md:px-8 md:py-24">
+        <div className="mx-auto grid max-w-[1280px] items-center gap-10 lg:grid-cols-2 lg:gap-14 reveal-on-scroll">
+          {/* Left: stats bento */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col justify-center rounded-2xl bg-brand-green p-6 text-white shadow-xl">
+              <p className="text-4xl font-black leading-none text-brand-gold">24/7</p>
+              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-white/80">Support</p>
+              <p className="mt-3 text-xs leading-relaxed text-white/60">
+                Our team is ready to help you at every step of the transaction.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-zinc-100 shadow-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/two.png" alt="Mobile management preview" className="block h-full w-full object-cover" />
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-zinc-100 shadow-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/three.png" alt="Secure item handling preview" className="block h-full w-full object-cover" />
+            </div>
+            <div className="flex flex-col justify-center rounded-2xl bg-brand-gold p-6 shadow-xl">
+              <p className="text-4xl font-black leading-none text-brand-green">99.9%</p>
+              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-brand-green/80">Uptime</p>
+              <p className="mt-3 text-xs leading-relaxed text-brand-green/70">
+                Cloud infrastructure you can rely on - every branch, every day.
+              </p>
+            </div>
+          </div>
+
+          {/* Right: headline + checklist */}
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-gold">Why Choose Us?</p>
+            <h2 className="mt-2 text-3xl font-black leading-tight tracking-tight text-brand-green md:text-5xl">
+              Fair Prices. Fast Cash.{" "}
+              <span className="bg-brand-gold px-2 leading-snug text-brand-green">Zero Hassle.</span>
+            </h2>
+
+            <div className="mt-8 space-y-4">
               {reasons.map((item) => (
-                <div key={item.title}
-                  className="flex items-start gap-4 rounded-xl bg-brand-green/8 p-5 shadow-sm transition-colors hover:bg-brand-green/10">
+                <div key={item.title} className="flex items-start gap-4 rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-green">
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} className="h-5 w-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -763,447 +679,631 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ ITEMS FOR SALE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <FeaturedSaleItems />
+      {/* ─── HOW IT WORKS / FAST TRACK TO LIQUIDITY ─── */}
+      <section id="how-it-works" className="bg-brand-green px-4 py-16 md:px-8 md:py-24">
+        <div className="mx-auto max-w-[1280px] reveal-on-scroll">
+          <div className="text-center">
+            <h2 className="text-3xl font-black tracking-tight text-white md:text-5xl">
+              Fast Track to <span className="text-brand-gold">Liquidity</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/60">
+              We've refined the appraisal to cash-in cycle into a seamless, digital journey.
+            </p>
+          </div>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">CUSTOMER REVIEWS</p>
-            <h2 className="mt-2 text-3xl font-black text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
+          <div className="mt-12 grid gap-6 md:grid-cols-3 md:items-stretch">
+            {steps.map((item) => (
+              <div
+                key={item.step}
+                className={`reveal-on-scroll flex h-full flex-col rounded-2xl p-6 md:p-8 ${
+                  item.step === "02"
+                    ? "bg-brand-gold text-brand-green shadow-2xl shadow-black/30 md:-my-4 md:py-10"
+                    : "border border-white/15 bg-white/5 text-white"
+                }`}
+              >
+                <div className="mb-5 flex items-center justify-between">
+                  <span className={`text-3xl font-black ${item.step === "02" ? "text-brand-green" : "text-brand-gold"}`}>
+                    {item.step}
+                  </span>
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                      item.step === "02" ? "bg-brand-green text-brand-gold" : "bg-white/10 text-brand-gold"
+                    }`}
+                  >
+                    {item.icon}
+                  </div>
+                </div>
+                <h3 className="text-base font-black">{item.title}</h3>
+                <p className={`mt-2 flex-1 text-sm leading-relaxed ${item.step === "02" ? "text-brand-green/75" : "text-white/60"}`}>
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
-              {/* Left arrow */}
-              <button onClick={prevReview}
-                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white shadow-lg transition hover:bg-brand-green/90 active:scale-95 md:h-12 md:w-12">
+      {/* ─── PRICING / VALUE-DRIVEN PRICING ─── */}
+      <section id="pricing" className="px-4 py-16 md:px-8 md:py-24" style={{ backgroundColor: CREAM }}>
+        <div className="mx-auto max-w-[1280px]">
+          <div className="text-center reveal-on-scroll">
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-gold">Simple Plans</p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-brand-green md:text-5xl">
+              Value-Driven Pricing
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-brand-green/60">
+              Empower your asset management business with tools designed for velocity, security, and growth. Choose the plan that scales with your ambition.
+            </p>
+          </div>
+
+          {/* Pricing cards — dark green Pro card in the middle */}
+          <div className="mt-12 grid gap-6 md:grid-cols-3 md:items-stretch">
+            {pricingPlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`reveal-on-scroll relative flex flex-col rounded-2xl p-6 md:p-7 ${
+                  plan.popular
+                    ? "bg-brand-green text-white shadow-2xl shadow-black/25 md:-my-4 md:py-10"
+                    : "border border-zinc-200 bg-white shadow-xl"
+                }`}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-brand-gold px-4 py-1 text-[10px] font-black uppercase tracking-widest text-brand-green shadow">
+                    Most Popular
+                  </span>
+                )}
+                <p className={`text-[10px] font-black uppercase tracking-[0.25em] ${plan.popular ? "text-brand-gold/80" : "text-zinc-400"}`}>
+                  {plan.tier}
+                </p>
+                <h3 className={`mt-1 text-xl font-black ${plan.popular ? "text-white" : "text-brand-green"}`}>{plan.name}</h3>
+                <p className="mt-4">
+                  <span className={`text-4xl font-black ${plan.popular ? "text-brand-gold" : "text-brand-green"}`}>{plan.price}</span>
+                  {plan.period && (
+                    <span className={`ml-1 text-sm font-bold ${plan.popular ? "text-white/50" : "text-zinc-400"}`}>{plan.period}</span>
+                  )}
+                </p>
+
+                <ul className="mt-6 flex-1 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature.label} className="flex items-center gap-2.5 text-sm">
+                      {feature.included ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                          className={`h-4 w-4 shrink-0 ${plan.popular ? "text-brand-gold" : "text-brand-green"}`}
+                        >
+                          <circle cx="12" cy="12" r="10" strokeWidth={1.8} />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12.5 2.5 2.5 4.5-5.5" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-zinc-300">
+                          <circle cx="12" cy="12" r="10" strokeWidth={1.8} />
+                          <path strokeLinecap="round" d="M9 12h6" />
+                        </svg>
+                      )}
+                      <span
+                        className={
+                          feature.included
+                            ? plan.popular
+                              ? "font-semibold text-white/90"
+                              : "font-semibold text-zinc-700"
+                            : "text-zinc-300 line-through"
+                        }
+                      >
+                        {feature.label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={onLoginClick}
+                  className={`mt-7 w-full rounded-lg py-2.5 text-sm font-black transition-all duration-200 active:scale-95 ${
+                    plan.popular
+                      ? "bg-brand-gold text-brand-green hover:brightness-110 hover:shadow-lg hover:shadow-brand-gold/30"
+                      : "border-2 border-brand-green/80 bg-white text-brand-green hover:bg-brand-green hover:text-white"
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Compare features */}
+          <div className="mt-16 reveal-on-scroll md:mt-24">
+            <div className="text-center">
+              <h3 className="text-2xl font-black tracking-tight text-brand-green md:text-3xl">Compare Features</h3>
+              <div className="mx-auto mt-2 h-1 w-14 rounded-full bg-brand-gold" />
+            </div>
+
+            <div className="mt-8 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-lg">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50 text-brand-green">
+                    <th className="px-5 py-4 text-xs font-black uppercase tracking-wider">Core Features</th>
+                    <th className="px-5 py-4 text-center text-xs font-black uppercase tracking-wider">Basic</th>
+                    <th className="px-5 py-4 text-center text-xs font-black uppercase tracking-wider">Pro</th>
+                    <th className="px-5 py-4 text-center text-xs font-black uppercase tracking-wider">Enterprise</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compareRows.map((row) => (
+                    <tr key={row.label} className="border-b border-zinc-100 last:border-0">
+                      <td className="px-5 py-4 font-bold text-zinc-700">{row.label}</td>
+                      {[row.basic, row.pro, row.enterprise].map((value, i) => (
+                        <td key={i} className="px-5 py-4 text-center">
+                          {value === true ? (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="mx-auto h-5 w-5 text-brand-green">
+                              <circle cx="12" cy="12" r="10" strokeWidth={1.6} />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12.5 2.5 2.5 4.5-5.5" />
+                            </svg>
+                          ) : value === false ? (
+                            <span className="text-zinc-300">—</span>
+                          ) : (
+                            <span className="text-xs font-bold text-zinc-600">{value}</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* FAQ */}
+          <div className="mt-16 grid gap-10 reveal-on-scroll md:mt-24 lg:grid-cols-[1fr_1.2fr]">
+            <div>
+              <h3 className="text-2xl font-black tracking-tight text-brand-green md:text-3xl">
+                Frequently Asked Questions
+              </h3>
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-zinc-500">
+                Everything you need to know about {BRAND_CONFIG.shortCompanyName} Pawnshop and our pricing structure.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {pricingFaqs.map((faq, index) => {
+                const isOpen = openFaq === index;
+                return (
+                  <div key={faq.question} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : index)}
+                      aria-expanded={isOpen}
+                      className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                    >
+                      <span className="text-sm font-bold text-brand-green">{faq.question}</span>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                        className={`h-4 w-4 shrink-0 text-brand-green transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                    {isOpen && (
+                      <p className="border-t border-zinc-100 px-5 py-4 text-sm leading-relaxed text-zinc-500">
+                        {faq.answer}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── REVIEWS ─── */}
+      <section id="reviews" className="bg-white px-4 py-16 md:px-8 md:py-24">
+        <div className="mx-auto max-w-[1280px] reveal-on-scroll">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-brand-gold">Social Proof</p>
+              <h2 className="mt-2 text-3xl font-black tracking-tight text-brand-green md:text-5xl">What Our Sellers Say</h2>
+            </div>
+            {/* Arrows top-right */}
+            <div className="flex shrink-0 gap-2">
+              <button
+                onClick={prevReview}
+                aria-label="Previous review"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-green/20 text-brand-green transition hover:bg-brand-green hover:text-white active:scale-95 md:h-12 md:w-12"
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
               </button>
-
-              {/* Mobile: single card */}
-              <div className="flex-1 md:hidden">
-                <div className="rounded-2xl bg-brand-green p-5 text-white shadow-2xl">
-                  <div className="flex gap-1 mb-3">
-                    {[...Array(5)].map((_, si) => (
-                      <svg key={si} className="h-4 w-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="text-sm leading-relaxed mb-4 text-white/90">&ldquo;{allReviews[reviewIndex].quote}&rdquo;</p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-gold text-sm font-black text-brand-green">
-                      {allReviews[reviewIndex].initials}
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-white">{allReviews[reviewIndex].name}</p>
-                      <p className="text-xs text-white/60">{allReviews[reviewIndex].sold}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Desktop: 3-card carousel */}
-              <div className="hidden flex-1 overflow-hidden py-8 md:block lg:py-10">
-                <div 
-                  className="flex transition-transform duration-500 ease-out"
-                  style={{ transform: `translateX(${(1 - (reviewIndex + 1)) * 33.333}%)` }}
-                >
-                  {extendedReviews.map((review, i) => {
-                    const isCenter = i === reviewIndex + 1;
-                    return (
-                      <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-2 transition-all duration-500 lg:px-4">
-                        <div className={`h-full rounded-2xl p-4 shadow-lg transition-all duration-500 lg:p-6 ${
-                          isCenter
-                            ? "bg-brand-green text-white scale-105 shadow-2xl z-10"
-                            : "bg-brand-green/8 text-brand-green scale-95 opacity-50"
-                        }`}>
-                          <div className="flex gap-1 mb-4">
-                            {[...Array(5)].map((_, si) => (
-                              <svg key={si} className="h-4 w-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                          <p className={`mb-5 text-xs leading-relaxed lg:mb-6 lg:text-sm ${isCenter ? "text-white/90" : "text-zinc-600"}`}>
-                            &ldquo;{review.quote}&rdquo;
-                          </p>
-                          <div className="flex items-center gap-3">
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${isCenter ? "bg-brand-gold text-brand-green" : "bg-brand-green text-white"}`}>
-                              {review.initials}
-                            </div>
-                            <div className="min-w-0">
-                              <p className={`text-sm font-bold leading-tight ${isCenter ? "text-white" : "text-brand-green"}`}>{review.name}</p>
-                              <p className={`text-xs ${isCenter ? "text-white/60" : "text-zinc-400"}`}>{review.sold}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Right arrow */}
-              <button onClick={nextReview}
-                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white shadow-lg transition hover:bg-brand-green/90 active:scale-95 md:h-12 md:w-12">
+              <button
+                onClick={nextReview}
+                aria-label="Next review"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white transition hover:bg-brand-gold hover:text-brand-green active:scale-95 md:h-12 md:w-12"
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
             </div>
+          </div>
 
-            {/* Dots */}
-            <div className="mt-4 flex justify-center gap-2 md:mt-6">
-              {allReviews.map((_, i) => (
-                <button key={i} onClick={() => goToReview(i)}
-                  className={`h-2 rounded-full transition-all ${i === reviewIndex ? "w-6 bg-brand-green" : "w-2 bg-brand-green/30"}`} />
-              ))}
+          {/* Mobile: single card */}
+          <div className="mt-8 md:hidden">
+            <div className="rounded-2xl bg-brand-gold p-5 text-brand-green shadow-2xl">
+              <Stars dark />
+              <p className="mb-4 text-sm leading-relaxed">&ldquo;{allReviews[reviewIndex].quote}&rdquo;</p>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green text-sm font-black text-brand-gold">
+                  {allReviews[reviewIndex].initials}
+                </div>
+                <div>
+                  <p className="text-sm font-bold">{allReviews[reviewIndex].name}</p>
+                  <p className="text-xs text-brand-green/70">{allReviews[reviewIndex].sold}</p>
+                </div>
+              </div>
             </div>
           </div>
-        </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ BRANCH LOCATIONS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FIND US</p>
-            <h2 className="mt-2 text-4xl font-black text-brand-green md:text-5xl">Our Branch Locations</h2>
-            <p className="mt-3 text-base text-brand-green/60">
-              {publicBranches.length > 0
-                ? `Visit us at any of our ${branchCountLabel.toLowerCase()}.`
-                : "Visit us at any available JCLB Buy Back Shop branch."}
-            </p>
-
-            {isLoadingBranches ? (
-              <div className="mt-10 rounded-2xl border border-brand-green/20 bg-brand-green/5 px-6 py-10 text-center text-sm font-bold text-brand-green/60">
-                Loading branch locations...
-              </div>
-            ) : branchLoadError ? (
-              <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 px-6 py-5 text-sm font-semibold text-red-700">
-                {branchLoadError}
-              </div>
-            ) : publicBranches.length === 0 ? (
-              <div className="mt-10 rounded-2xl border border-brand-green/20 bg-brand-green/5 px-6 py-10 text-center text-sm font-bold text-brand-green/60">
-                Branch locations will be posted soon.
-              </div>
-            ) : (
-              <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {publicBranches.map((branch) => (
-                <div key={branch.id} className="rounded-2xl bg-brand-green overflow-hidden shadow-xl">
-                  {/* Interactive map with geocoding (Requirements: 9.1, 9.2) */}
-                  <BranchMap 
-                    branchName={branch.name}
-                    location={branch.location ?? null}
-                    branchId={branch.id}
-                  />
-                  <div className="p-5">
-                    <h3 className="font-black text-white text-lg">{branch.name}</h3>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-start gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 mt-0.5 text-brand-gold">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {branch.location?.trim() || "Address will be announced soon."}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-brand-gold">
-                          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Branch hours may vary
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-brand-gold">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                        Contact through Facebook
+          {/* Desktop: 3-card carousel, gold center card */}
+          <div className="mt-6 hidden overflow-hidden py-6 md:block">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(${(1 - (reviewIndex + 1)) * 33.333}%)` }}
+            >
+              {extendedReviews.map((review, i) => {
+                const isCenter = i === reviewIndex + 1;
+                return (
+                  <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-2 transition-all duration-500 lg:px-4">
+                    <div
+                      className={`h-full rounded-2xl p-5 transition-all duration-500 lg:p-6 ${
+                        isCenter
+                          ? "z-10 scale-105 bg-brand-gold text-brand-green shadow-2xl"
+                          : "scale-95 border border-zinc-100 bg-white text-brand-green shadow-lg"
+                      }`}
+                    >
+                      <Stars dark={isCenter} />
+                      <p className={`mb-5 text-xs leading-relaxed lg:text-sm ${isCenter ? "text-brand-green/90" : "text-zinc-600"}`}>
+                        &ldquo;{review.quote}&rdquo;
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                            isCenter ? "bg-brand-green text-brand-gold" : "bg-brand-green text-white"
+                          }`}
+                        >
+                          {review.initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold leading-tight">{review.name}</p>
+                          <p className={`text-xs ${isCenter ? "text-brand-green/70" : "text-zinc-400"}`}>{review.sold}</p>
+                        </div>
                       </div>
                     </div>
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.location?.trim() || branch.name)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-4 block w-full rounded-xl bg-brand-gold py-2.5 text-center text-sm font-black text-brand-green transition-colors hover:bg-brand-gold"
-                    >
-                      Get Directions
-                    </a>
                   </div>
-                </div>
-              ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
-        </section>
 
-        {/* --- CONTACT CTA --- */}
-        <section
-          id="contact-us"
-          className="bg-brand-gold px-6 py-20 md:px-12 md:py-32"
-        >
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 text-center">
-            <h2 className="text-4xl font-black tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
-            <p className="text-xl font-bold text-brand-green/90 md:text-2xl lg:text-3xl">
-              It only takes a minute to start.
-            </p>
+          {/* Dots */}
+          <div className="mt-6 flex justify-center gap-2">
+            {allReviews.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goToReview(i)}
+                aria-label={`Go to review ${i + 1}`}
+                className={`h-2 rounded-full transition-all ${i === reviewIndex ? "w-6 bg-brand-green" : "w-2 bg-brand-green/20"}`}
+              />
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <footer className="bg-brand-green px-6 pt-10 pb-0 md:px-8 md:pt-12 md:pb-0 lg:px-16 lg:pt-14 lg:pb-0">
-          <div className="mx-auto w-full max-w-7xl">
-            {/* Brand & Contact - Side by side on large screens */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-8 mb-6 md:mb-8">
-              {/* Brand - Centered on mobile, left-aligned on desktop */}
-              <div className="flex flex-col items-center text-center lg:items-start lg:text-left mb-6 lg:mb-0 lg:flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg" />
-                  <div>
-                    <p className="text-xs font-bold text-brand-gold uppercase tracking-widest">JCLB BUY BACK</p>
-                    <p className="text-xl font-black text-white leading-none">Pawnshop</p>
-                  </div>
-                </div>
-                <p className="text-xs leading-relaxed text-white/50 lg:text-sm max-w-md">
-                  Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
-                  <span className="text-brand-gold font-bold">JCLB promise.</span>
-                </p>
-              </div>
+      {/* ─── CTA ─── */}
+      <section id="cta" className="px-4 py-16 md:px-8 md:py-24" style={{ backgroundColor: CREAM }}>
+        <div className="mx-auto max-w-3xl text-center reveal-on-scroll">
+          <h2 className="text-3xl font-black leading-tight tracking-tight text-brand-green md:text-5xl">
+            Ready to modernize your{" "}
+            <span className="bg-brand-gold px-2 leading-snug">asset management?</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-brand-green/60">
+            Join hundreds of pawnshop owners who have modernized their operations with {BRAND_CONFIG.shortCompanyName} {BRAND_CONFIG.tagline.toLowerCase()} services.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={onLoginClick}
+              className="rounded-lg bg-brand-gold px-7 py-3 text-sm font-black text-brand-green transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-gold/30 hover:brightness-110 active:translate-y-0 active:scale-95"
+            >
+              Start Your Free Trial
+            </button>
+            <button
+              type="button"
+              onClick={() => void openBranchModal()}
+              className="rounded-lg border-2 border-brand-green px-7 py-3 text-sm font-black text-brand-green transition-colors hover:bg-brand-green hover:text-white"
+            >
+              Talk to an Expert
+            </button>
+          </div>
+        </div>
+      </section>
 
-            {/* Contact - Horizontal Cards */}
-            <div className="lg:flex-1 lg:max-w-xl">
-              <p className="mb-3 text-center lg:text-left text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">CONTACT US</p>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-1 lg:gap-2">
-                  {[
-                    { icon: "f", label: "Facebook", sub: "JCLB Buy Back Shop", color: "bg-blue-600" },
-                    { icon: "@", label: "Email Us", sub: "Compose with Gmail", color: "bg-red-500" },
-                    { icon: "pin", label: "Visit Us", sub: branchCountLabel, color: "bg-brand-green/70" },
-                  ].map((c) => (
-                    <button
-                      key={c.label}
-                      type="button"
-                      onClick={() => {
-                        if (c.label === "Facebook") {
-                          window.open("https://www.facebook.com/JclbBuyBackShop", "_blank", "noopener,noreferrer");
-                          return;
-                        }
-                        if (c.label === "Email Us") {
-                          window.open("https://mail.google.com/mail/?view=cm&fs=1", "_blank", "noopener,noreferrer");
-                          return;
-                        }
-                        void openBranchModal();
-                      }}
-                      className="flex w-full items-center gap-2 lg:gap-2.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 lg:px-3 lg:py-2.5 text-left transition-colors hover:bg-white/10"
-                    >
-                      <div className={`flex h-7 w-7 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-md ${c.color} text-white text-xs font-black`}>
-                        {c.icon === "pin" ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4 lg:h-[18px] lg:w-[18px]">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
-                            <circle cx="12" cy="10" r="2.5" />
-                          </svg>
-                        ) : (
-                          c.icon
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] lg:text-xs font-bold text-white">{c.label}</p>
-                        <p className="break-words text-[10px] lg:text-[11px] text-white/50">{c.sub}</p>
-                      </div>
-                    </button>
-                  ))}
+      {/* ─── FOOTER ─── */}
+      <footer className="bg-brand-green px-4 pb-8 pt-12 md:px-8 md:pt-16">
+        <div className="mx-auto max-w-[1280px]">
+          <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center gap-3">
+                <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={44} height={44} className="rounded-lg" />
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-gold">{BRAND_CONFIG.shortCompanyName}</p>
+                  <p className="text-lg font-black leading-none text-white">Pawnshop</p>
                 </div>
               </div>
+              <p className="mt-4 max-w-xs text-xs leading-relaxed text-white/50">
+                Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
+                <span className="font-bold text-brand-gold">{BRAND_CONFIG.shortCompanyName} promise.</span>
+              </p>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 items-center justify-center gap-5 border-t border-white/10 pt-5 pb-0 text-xs text-white/40">
-              {/* Copyright */}
-              <div className="text-center">
-                <span>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</span>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                  <button
-                    type="button"
-                    onClick={() => setLegalModal("privacy")}
-                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
-                  >
+            {/* Platform column */}
+            <div>
+              <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-brand-gold">Platform</p>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li><a href="#features" onClick={(e) => handleScroll(e, "features", "FEATURES")} className="transition-colors hover:text-brand-gold">Features</a></li>
+                <li><a href="#pricing" onClick={(e) => handleScroll(e, "pricing", "PRICING")} className="transition-colors hover:text-brand-gold">Pricing</a></li>
+                <li><a href="#how-it-works" onClick={(e) => handleScroll(e, "how-it-works", "HOW IT WORKS")} className="transition-colors hover:text-brand-gold">How It Works</a></li>
+                <li>
+                  <button type="button" onClick={() => void openBranchModal()} className="transition-colors hover:text-brand-gold">
+                    Branches
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Support column */}
+            <div>
+              <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-brand-gold">Support</p>
+              <ul className="space-y-2 text-sm text-white/60">
+                <li><a href="#reviews" onClick={(e) => handleScroll(e, "reviews", "REVIEWS")} className="transition-colors hover:text-brand-gold">Reviews</a></li>
+                <li>
+                  <button type="button" onClick={() => setLegalModal("privacy")} className="transition-colors hover:text-brand-gold">
                     Privacy Policy
                   </button>
-                  <span className="text-white/20">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setLegalModal("terms")}
-                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
-                  >
+                </li>
+                <li>
+                  <button type="button" onClick={() => setLegalModal("terms")} className="transition-colors hover:text-brand-gold">
                     Terms of Service
                   </button>
-                </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact column */}
+            <div>
+              <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-brand-gold">Contact</p>
+              <div className="space-y-2.5">
+                {[
+                  { icon: "f", label: "Facebook", sub: `${BRAND_CONFIG.shortCompanyName} Page`, color: "bg-blue-600" },
+                  { icon: "@", label: "Email Us", sub: BRAND_CONFIG.email, color: "bg-red-500" },
+                  { icon: "pin", label: "Visit Us", sub: branchCountLabel, color: "bg-brand-gold text-brand-green" },
+                ].map((c) => (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={() => {
+                      if (c.label === "Facebook") {
+                        window.open(`https://${BRAND_CONFIG.website}`, "_blank", "noopener,noreferrer");
+                        return;
+                      }
+                      if (c.label === "Email Us") {
+                        window.open("https://mail.google.com/mail/?view=cm&fs=1", "_blank", "noopener,noreferrer");
+                        return;
+                      }
+                      void openBranchModal();
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-left transition-colors hover:bg-white/10"
+                  >
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-black text-white ${c.color}`}>
+                      {c.icon === "pin" ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
+                          <circle cx="12" cy="10" r="2.5" />
+                        </svg>
+                      ) : (
+                        c.icon
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-white">{c.label}</p>
+                      <p className="break-words text-[11px] text-white/50">{c.sub}</p>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-             </div>
-         
-        </footer>
+          </div>
 
-        {legalModal && (
+          <div className="mt-10 border-t border-white/10 pt-5 text-center text-xs text-white/40">
+            &copy; 2026 {BRAND_CONFIG.companyName}. All rights reserved. {BRAND_CONFIG.tagline}.
+          </div>
+        </div>
+      </footer>
+
+      {/* ─── LEGAL MODAL ─── */}
+      {legalModal && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+          onClick={() => setLegalModal(null)}
+        >
           <div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
-            onClick={() => setLegalModal(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="landing-legal-modal-title"
+            className="relative max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-stone-100 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="landing-legal-modal-title"
-              className="relative max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-stone-100 shadow-2xl"
-              onClick={(event) => event.stopPropagation()}
+            <button
+              type="button"
+              onClick={() => setLegalModal(null)}
+              aria-label={legalModalContent[legalModal].ariaLabel}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
+              <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
+              <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
+              <div className="relative">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">{BRAND_CONFIG.companyName}</p>
+                <h3 id="landing-legal-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
+                  {legalModalContent[legalModal].intro}
+                </p>
+              </div>
+            </div>
+
+            <div className="relative bg-brand-green/90">
+              <div className="h-2 rounded-t-xl bg-stone-100" />
+              <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
+              <div className="space-y-4">
+                {legalModalContent[legalModal].sections.map((section, index) => (
+                  <section key={section.title} className="border-b border-zinc-200 pb-4 last:border-0 last:pb-0">
+                    <div className="flex gap-3">
+                      <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-green/90 text-xs font-bold text-white">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-brand-green">{section.title}</h4>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
+                      </div>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-200 bg-white/60 px-6 py-4 sm:px-8">
               <button
                 type="button"
                 onClick={() => setLegalModal(null)}
-                aria-label={legalModalContent[legalModal].ariaLabel}
-                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
+                I Understand
               </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
-                <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
-                <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
-                <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">JCLB Buy Back Pawnshop</p>
-                  <h3 id="landing-legal-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
-                    {legalModalContent[legalModal].intro}
-                  </p>
+      {/* ─── BRANCH MODAL ─── */}
+      {branchModalOpen && (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+          onClick={() => setBranchModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="branch-list-modal-title"
+            className="relative max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-stone-100 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setBranchModalOpen(false)}
+              aria-label="Close branch list"
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
+              <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
+              <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
+              <div className="relative">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">{BRAND_CONFIG.companyName}</p>
+                <h3 id="branch-list-modal-title" className="mt-2 text-2xl font-bold">Available Branches</h3>
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
+                  Visit any active branch below for in-person appraisal, item drop-off, payment, renewal, redemption, or customer assistance.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative bg-brand-green/90">
+              <div className="h-2 rounded-t-xl bg-stone-100" />
+              <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
+            </div>
+
+            <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
+              {isLoadingBranches ? (
+                <p className="py-10 text-center text-sm font-semibold text-zinc-500">Loading branches...</p>
+              ) : branchLoadError ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {branchLoadError}
                 </div>
-              </div>
-
-              <div className="relative bg-brand-green/90">
-                <div className="h-2 rounded-t-xl bg-stone-100" />
-                <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
-              </div>
-
-              <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
-                <div className="space-y-4">
-                  {legalModalContent[legalModal].sections.map((section, index) => (
-                    <section key={section.title} className="border-b border-zinc-200 pb-4 last:border-0 last:pb-0">
+              ) : publicBranches.length === 0 ? (
+                <p className="py-10 text-center text-sm font-semibold text-zinc-500">No public branches are available right now.</p>
+              ) : (
+                <div className="space-y-3">
+                  {publicBranches.map((branch) => (
+                    <section key={branch.id} className="rounded-xl border border-zinc-200 bg-white px-4 py-4 shadow-sm">
                       <div className="flex gap-3">
-                        <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-green/90 text-xs font-bold text-white">
-                          {index + 1}
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green/90 text-sm font-black text-white">
+                          {branch.branch_code || branch.name.slice(0, 2).toUpperCase()}
                         </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-brand-green">{section.title}</h4>
-                          <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-brand-green">{branch.name}</h4>
+                          <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                            {branch.location?.trim() || "Address will be announced soon."}
+                          </p>
                         </div>
                       </div>
                     </section>
                   ))}
                 </div>
-              </div>
-
-              <div className="border-t border-zinc-200 bg-white/60 px-6 py-4 sm:px-8">
-                <button
-                  type="button"
-                  onClick={() => setLegalModal(null)}
-                  className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
-                >
-                  I Understand
-                </button>
-              </div>
+              )}
             </div>
-          </div>
-        )}
 
-        {branchModalOpen && (
-          <div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
-            onClick={() => setBranchModalOpen(false)}
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="branch-list-modal-title"
-              className="relative max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-stone-100 shadow-2xl"
-              onClick={(event) => event.stopPropagation()}
-            >
+            <div className="border-t border-zinc-200 bg-white/60 px-6 py-4 sm:px-8">
               <button
                 type="button"
                 onClick={() => setBranchModalOpen(false)}
-                aria-label="Close branch list"
-                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
+                Close
               </button>
-
-              <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
-                <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
-                <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
-                <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">JCLB Buy Back Pawnshop</p>
-                  <h3 id="branch-list-modal-title" className="mt-2 text-2xl font-bold">Available Branches</h3>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
-                    Visit any active branch below for in-person appraisal, item drop-off, payment, renewal, redemption, or customer assistance.
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative bg-brand-green/90">
-                <div className="h-2 rounded-t-xl bg-stone-100" />
-                <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
-              </div>
-
-              <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
-                {isLoadingBranches ? (
-                  <p className="py-10 text-center text-sm font-semibold text-zinc-500">Loading branches...</p>
-                ) : branchLoadError ? (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {branchLoadError}
-                  </div>
-                ) : publicBranches.length === 0 ? (
-                  <p className="py-10 text-center text-sm font-semibold text-zinc-500">No public branches are available right now.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {publicBranches.map((branch) => (
-                      <section key={branch.id} className="rounded-xl border border-zinc-200 bg-white px-4 py-4 shadow-sm">
-                        <div className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green/90 text-sm font-black text-white">
-                            {branch.branch_code || branch.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-brand-green">{branch.name}</h4>
-                            <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                              {branch.location?.trim() || "Address will be announced soon."}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-200 bg-white/60 px-6 py-4 sm:px-8">
-                <button
-                  type="button"
-                  onClick={() => setBranchModalOpen(false)}
-                  className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
-                >
-                  Close
-                </button>
-              </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Back to top button */}
+      {/* Back to top */}
       <button
         type="button"
-        className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
+        className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white ${
+          showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"
+        }`}
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
-          setActiveNavItem("HOME");
+          setActiveNavItem("FEATURES");
           window.history.pushState(null, "", "#home");
         }}
         aria-label="Back to top"

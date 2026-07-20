@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { uploadFundTransferProof } from "@/lib/fund-transfer-storage";
 import {
   buildFinanceQueues,
@@ -583,7 +584,7 @@ export default function EmployeeBranchFinancePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-3xl font-black uppercase tracking-tighter">
-                      JCLB Buy Back Shop
+                      {BRAND_CONFIG.companyName}
                     </h1>
                     <p className="text-sm font-bold text-emerald-100/80 uppercase tracking-[0.2em] mt-1">
                       {dashboard?.branch?.name || "Branch"} - Financial Ledger Report
