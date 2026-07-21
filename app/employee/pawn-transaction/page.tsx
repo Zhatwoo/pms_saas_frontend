@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { TransactionActions, type FilterType, type ViewMode } from "./_components/transaction-actions";
 import { api, ApiError } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { PaginationFooter } from "@/components/shared/pagination";
 import { TransactionStats } from "./_components/transaction-stats";
 import { TransactionTable, type TransactionRow, type PurposeType } from "./_components/transaction-table";
@@ -1043,7 +1044,7 @@ export default function EmployeePawnTransactionsPage() {
       {/* ── Print-only layout ─────────────────────────────── */}
       <div className="hidden print:block">
         <div className="header-print">
-          <h1>JCLB Buy Back Shop</h1>
+          <h1>{BRAND_CONFIG.companyName}</h1>
           <p>Pawn Transactions Report - {selectedBranch.name}</p>
         </div>
 

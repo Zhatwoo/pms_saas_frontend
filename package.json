@@ -18,6 +18,7 @@
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^1.8.0",
     "modern-screenshot": "^4.7.0",
+    "motion": "^12.42.2",
     "next": "16.2.10",
     "ogl": "^1.0.11",
     "react": "19.2.4",

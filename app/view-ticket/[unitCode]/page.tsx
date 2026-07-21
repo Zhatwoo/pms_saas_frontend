@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { formatPeso } from "@/lib/currency";
 
 interface TransactionDetail {
@@ -129,7 +130,7 @@ export default function PublicTicketView() {
           {/* Top Banner */}
           <div className="bg-emerald-950 p-8 md:p-12 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">JCLB PAWNSHOP OFFICIAL</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">{BRAND_CONFIG.shortCompanyName} PAWNSHOP OFFICIAL</p>
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">{data.item_name}</h1>
               <p className="text-sm font-medium text-emerald-100/60 uppercase tracking-widest">{data.branch_info?.name || "BGC BRANCH"}</p>
             </div>
@@ -295,7 +296,7 @@ export default function PublicTicketView() {
 
         {/* Footer Links */}
         <div className="text-center no-print pb-12">
-           <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">© 2026 JCLB Pawnshop Management System</p>
+           <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest">© 2026 {BRAND_CONFIG.companyName}</p>
         </div>
       </div>
     </div>
