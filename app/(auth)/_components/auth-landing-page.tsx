@@ -3,9 +3,19 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import dynamic from 'next/dynamic';
-import { AnimatedGradient } from "@/components/shared/animated-gradient";
 import { api } from "@/lib/api";
 import { FeaturedSaleItems } from "./featured-sale-items";
+import { BRAND_CONFIG } from "@/lib/brand-config";
+import {
+  LandingBentoFeatures,
+  LandingHero,
+  LandingLightFooter,
+  LandingProcessPricing,
+  LandingSplitSection,
+  LandingTrustBar,
+} from "./landing-layout-sections";
+
+const HERO_IMAGES = ["image2.jpg", "image.png"] as const;
 
 // Lazy-load BranchMap component (Requirements: 12.1)
 const BranchMap = dynamic(
@@ -24,11 +34,11 @@ interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "HOW IT WORKS", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
+const navItems = ["HOME", "PRICING", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
 
 const sectionNavLabels: Record<string, string> = {
   home: "HOME",
-  "how-it-works": "HOW IT WORKS",
+  pricing: "PRICING",
   categories: "WHAT WE BUY",
   "why-us": "WHY US",
   "items-for-sale": "ITEMS FOR SALE",
@@ -54,11 +64,11 @@ interface PublicBranch {
 const termsSections = [
   {
     title: "Website Information",
-    body: "The JCLB Buy Back Pawnshop website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.",
+    body: `The ${BRAND_CONFIG.companyName} website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.`,
   },
   {
     title: "No Online Transaction Guarantee",
-    body: "Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized JCLB Buy Back Shop personnel.",
+    body: `Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized ${BRAND_CONFIG.companyName} personnel.`,
   },
   {
     title: "Customer Responsibilities",
@@ -74,22 +84,22 @@ const termsSections = [
   },
   {
     title: "Internal Login",
-    body: "The login area is reserved for authorized JCLB Buy Back Shop employees and administrators. Customers do not need an account to read the public information on this landing page.",
+    body: `The login area is reserved for authorized ${BRAND_CONFIG.companyName} employees and administrators. Customers do not need an account to read the public information on this landing page.`,
   },
   {
     title: "Limitations",
-    body: "Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from JCLB Buy Back Shop personnel.",
+    body: `Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from ${BRAND_CONFIG.companyName} personnel.`,
   },
   {
     title: "Acceptance",
-    body: "By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to JCLB Buy Back Shop services.",
+    body: `By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to ${BRAND_CONFIG.companyName} services.`,
   },
 ];
 
 const privacySections = [
   {
     title: "Information We May Collect",
-    body: "When customers contact us or complete branch transactions, JCLB Buy Back Shop may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.",
+    body: `When customers contact us or complete branch transactions, ${BRAND_CONFIG.companyName} may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.`,
   },
   {
     title: "How We Use Information",
@@ -109,7 +119,7 @@ const privacySections = [
   },
   {
     title: "Customer Choices",
-    body: "Customers may contact JCLB Buy Back Shop to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.",
+    body: `Customers may contact ${BRAND_CONFIG.companyName} to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.`,
   },
   {
     title: "Website Visitors",
@@ -125,13 +135,13 @@ const legalModalContent = {
   privacy: {
     title: "Privacy Policy",
     ariaLabel: "Close privacy policy",
-    intro: "This policy explains how JCLB Buy Back Shop handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.",
+    intro: `This policy explains how ${BRAND_CONFIG.companyName} handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.`,
     sections: privacySections,
   },
   terms: {
     title: "Terms of Service",
     ariaLabel: "Close terms of service",
-    intro: "These terms explain general use of the JCLB Buy Back Shop website and public information for customers, visitors, and anyone learning about our pawnshop services.",
+    intro: `These terms explain general use of the ${BRAND_CONFIG.companyName} website and public information for customers, visitors, and anyone learning about our pawnshop services.`,
     sections: termsSections,
   },
 };
@@ -260,7 +270,7 @@ const reasons = [
   },
   {
     title: "Trusted by Hundreds",
-    desc: "Hundreds of satisfied sellers trust JCLB for their buy-back needs. Join our growing community today.",
+    desc: `Hundreds of satisfied sellers trust ${BRAND_CONFIG.shortCompanyName} for their buy-back needs. Join our growing community today.`,
   },
 ];
 
@@ -269,7 +279,7 @@ const allReviews = [
   { name: "Carlos R.", sold: "Sold a MacBook Pro", initials: "CR", quote: "Best buy-back shop I've tried. They gave me a fair price for my laptop and the whole process took less than a day. Highly recommend!" },
   { name: "Mindy Meeks", sold: "Sold a Samsung Galaxy", initials: "MM", quote: "Very professional and trustworthy. They explained everything clearly and I felt comfortable with the whole transaction. Will sell again!" },
   { name: "Taesan H.", sold: "Sold a MacBook Air", initials: "TH", quote: "No lowball offers like other shops. They gave me the great price for my laptop and paid on the spot." },
-  { name: "Joshua H.", sold: "Sold a PS5 Controller", initials: "JH", quote: "Legit and trustworthy! The offer was fair and they explained everything. Will definitely sell again with JCLB. Highly recommended!" },
+  { name: "Joshua H.", sold: "Sold a PS5 Controller", initials: "JH", quote: `Legit and trustworthy! The offer was fair and they explained everything. Will definitely sell again with ${BRAND_CONFIG.shortCompanyName}. Highly recommended!` },
   { name: "Maria L.", sold: "Sold an iPad Pro", initials: "ML", quote: "Quick and easy process. Got a great offer for my iPad and the payment was instant. Very satisfied with the service!" },
 ];
 
@@ -278,8 +288,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [underlineLeft, setUnderlineLeft] = useState(0);
   const [underlineWidth, setUnderlineWidth] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
-  const [slideIndex, setSlideIndex] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -301,8 +310,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
   const prevReview = () => goToReview(reviewIndex - 1);
   const nextReview = () => goToReview(reviewIndex + 1);
-  const prevHeroSlide = () => setSlideIndex((prev) => (prev - 1 + 3) % 3);
-  const nextHeroSlide = () => setSlideIndex((prev) => (prev + 1) % 3);
   const branchCountLabel =
     publicBranches.length > 0
       ? `${publicBranches.length} ${publicBranches.length === 1 ? "Branch" : "Branches"}`
@@ -443,34 +450,36 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
   }, [activeNavItem]);
 
-  // Auto-advance slideshow every 4 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % 3);
-    }, 4000);
+      setHeroImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 7000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="min-h-screen bg-white selection:bg-brand-gold selection:text-brand-green">
+    <div className="min-h-screen bg-[#f4f2ee] selection:bg-brand-gold selection:text-brand-green">
       {/* Plain white background */}
 
       <div className="relative z-10">
         {/* ─── NAV ─── */}
-        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-white/10 bg-brand-green transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
+        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-brand-green/10 bg-white/90 backdrop-blur-md transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
           <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
             {/* Logo - Desktop only (lg and up) */}
-            <Image 
-              src="/logo.png" 
-              alt="JCLB" 
-              width={48} 
-              height={48} 
-              className="hidden lg:block rounded-lg cursor-pointer" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleScroll(e, "home", "HOME");
-              }} 
-            />
+            <button
+              type="button"
+              className="hidden items-center gap-2 lg:flex"
+              onClick={(e) => handleScroll(e, "home", "HOME")}
+            >
+              <Image
+                src="/logo.png"
+                alt={BRAND_CONFIG.shortCompanyName}
+                width={40}
+                height={40}
+                className="rounded-lg"
+              />
+              <span className="font-display text-lg font-bold text-brand-green">{BRAND_CONFIG.shortCompanyName}</span>
+            </button>
             
             {/* Burger menu icon - Mobile and Tablet only (below lg) */}
             <button
@@ -488,7 +497,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 }
               }}
               aria-label="Toggle menu"
-              className="flex lg:hidden h-10 w-10 items-center justify-center rounded-lg text-brand-gold transition hover:bg-brand-gold/10"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-brand-green transition hover:bg-brand-green/5 lg:hidden"
             >
               {(mobileMenuOpen || tabletMenuOpen) ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
@@ -508,7 +517,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-white hover:text-brand-gold"}`}>
+                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
                     {item}
                   </a>
                 );
@@ -521,7 +530,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-lg bg-brand-gold px-3 py-2 text-xs font-black text-brand-green transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-gold/20 hover:brightness-110 active:translate-y-0 active:scale-95 sm:px-4 sm:text-sm"
+                className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm"
               >
                 Login / Sign Up
               </button>
@@ -547,10 +556,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
                 <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg shadow-lg" />
+                    <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={42} height={42} className="rounded-lg shadow-lg" />
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">JCLB PawnShop</p>
-                      <p className="text-[8px] font-semibold text-white/60 tracking-wider">Buy Back Shop</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
+                      <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
                     </div>
                   </div>
                   <button
@@ -595,7 +604,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 </div>
 
                 <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
-                  <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 JCLB Buy Back Shop</p>
+                  <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 {BRAND_CONFIG.companyName}</p>
                 </div>
               </aside>
             </div>
@@ -615,10 +624,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
               <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <Image src="/logo.png" alt="JCLB" width={42} height={42} className="rounded-lg shadow-lg" />
+                  <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={42} height={42} className="rounded-lg shadow-lg" />
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">JCLB PawnShop</p>
-                    <p className="text-[8px] font-semibold text-white/60 tracking-wider">Buy Back Shop</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
+                    <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
                   </div>
                 </div>
                 <button
@@ -659,120 +668,25 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </div>
 
               <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
-                <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 JCLB Buy Back Shop</p>
+                <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 {BRAND_CONFIG.companyName}</p>
               </div>
             </aside>
           </div>
         </nav>
 
-        {/* ─── HERO ─── */}
-        <section id="home" className="group relative pt-16 bg-brand-green flex flex-col justify-center lg:min-h-screen">
-          {/* Full-width container */}
-          <div className="w-full overflow-hidden">
-            <div 
-              className="flex transition-transform duration-500 ease-in-out items-center"
-              style={{ transform: `translateX(-${slideIndex * 100}%)` }}
-            >
-              {["one.png", "two.png", "three.png"].map((img, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={img}
-                  src={`/${img}`}
-                  alt=""
-                  className="w-full shrink-0 object-contain lg:object-fill lg:h-[calc(100vh-4rem)]"
-                  style={{
-                    display: "block",
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+        <LandingHero onScroll={handleScroll} heroSrc={`/${HERO_IMAGES[heroImageIndex]}`} />
+        <LandingBentoFeatures onScroll={handleScroll} />
+        <LandingProcessPricing onScroll={handleScroll} />
+        <LandingSplitSection onScroll={handleScroll} />
+        <LandingTrustBar />
 
-        {/* â†â† HOW IT WORKS â†â† */}
-        <section id="how-it-works" className="bg-white px-3 py-12 sm:px-6 sm:py-20 md:px-12 md:py-32 lg:py-48">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <h2 className="text-xl font-black text-brand-green sm:text-3xl md:text-4xl lg:text-5xl">
-              <span className="text-brand-gold">3</span> Steps to Get Your Cash
-            </h2>
-            <div className="mt-4 grid gap-2.5 sm:mt-8 sm:gap-4 sm:grid-cols-2 md:mt-12 md:grid-cols-3 md:gap-6">
-              {steps.map((item, index) => (
-                <div key={item.step}
-                  className="reveal-on-scroll flex flex-col rounded-lg bg-brand-green p-3 text-white shadow-xl h-full sm:rounded-2xl sm:p-5 md:p-8">
-                  <div className="flex items-center gap-2 mb-2.5 sm:gap-4 sm:mb-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white sm:h-12 sm:w-12 sm:rounded-xl">
-                      {item.icon}
-                    </div>
-                    <span className="text-xl font-black text-brand-gold sm:text-3xl">{item.step}</span>
-                  </div>
-                  <h3 className="text-sm font-bold sm:text-lg">{item.title}</h3>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-white/75 flex-1 sm:mt-3 sm:text-sm">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── CATEGORIES / ITEMS WE ACCEPT ─── */}
-        <section id="categories" className="bg-brand-green flex flex-col justify-center lg:min-h-[calc(100vh-4rem)] py-4 lg:py-0 lg:!scroll-mt-16">
-          {/* Full-width container */}
-          <div className="w-full overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/itemsweaccept.png"
-              alt="Items We Accept"
-              className="w-full shrink-0 object-contain"
-              style={{ display: "block" }}
-            />
-          </div>
-        </section>
-
-        {/* â†â† WHY US â†â† */}
-        <section id="why-us" className="bg-white px-4 py-16 md:px-12 md:py-24 lg:pt-48 lg:pb-28">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8 lg:flex-row lg:gap-12 reveal-on-scroll">
-            <div className="flex-1">
-              <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">WHY CHOOSE US?</p>
-              <h2 className="mt-2 text-4xl font-black leading-tight text-brand-green md:text-5xl">
-                Fair Prices. Fast Cash.<br /><span className="text-brand-green/80">ZERO HASSLE.</span>
-              </h2>
-              <div className="mt-8 rounded-2xl bg-brand-green p-8 shadow-2xl">
-                <p className="text-base leading-relaxed text-white">
-                  We believe everyone deserves a fair price for their pre-loved items - no low-balling, no runarounds.
-                </p>
-                <p className="mt-4 text-xs text-brand-gold">- JCLB Buy Back Shop Team</p>
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-gold px-4 py-1.5">
-                  <span className="text-sm font-black text-brand-green">5.0</span>
-                  <span className="text-[10px] font-bold text-brand-green">CUSTOMER RATING</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-4">
-              {reasons.map((item) => (
-                <div key={item.title}
-                  className="flex items-start gap-4 rounded-xl bg-brand-green/8 p-5 shadow-sm transition-colors hover:bg-brand-green/10">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-brand-green">{item.title}</h3>
-                    <p className="mt-0.5 text-sm text-zinc-500">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ ITEMS FOR SALE ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <FeaturedSaleItems />
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
         <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">CUSTOMER REVIEWS</p>
-            <h2 className="mt-2 text-3xl font-black text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
+            <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
 
             <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
               {/* Left arrow */}
@@ -870,11 +784,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40">
           <div className="mx-auto max-w-6xl reveal-on-scroll">
             <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FIND US</p>
-            <h2 className="mt-2 text-4xl font-black text-brand-green md:text-5xl">Our Branch Locations</h2>
+            <h2 className="font-display mt-2 text-4xl font-bold text-brand-green md:text-5xl">Our Branch Locations</h2>
             <p className="mt-3 text-base text-brand-green/60">
               {publicBranches.length > 0
                 ? `Visit us at any of our ${branchCountLabel.toLowerCase()}.`
-                : "Visit us at any available JCLB Buy Back Shop branch."}
+                : `Visit us at any available ${BRAND_CONFIG.companyName} branch.`}
             </p>
 
             {isLoadingBranches ? (
@@ -943,104 +857,20 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           className="bg-brand-gold px-6 py-20 md:px-12 md:py-32"
         >
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 text-center">
-            <h2 className="text-4xl font-black tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
+            <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
             <p className="text-xl font-bold text-brand-green/90 md:text-2xl lg:text-3xl">
               It only takes a minute to start.
             </p>
           </div>
         </section>
 
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ FOOTER ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <footer className="bg-brand-green px-6 pt-10 pb-0 md:px-8 md:pt-12 md:pb-0 lg:px-16 lg:pt-14 lg:pb-0">
-          <div className="mx-auto w-full max-w-7xl">
-            {/* Brand & Contact - Side by side on large screens */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between lg:gap-8 mb-6 md:mb-8">
-              {/* Brand - Centered on mobile, left-aligned on desktop */}
-              <div className="flex flex-col items-center text-center lg:items-start lg:text-left mb-6 lg:mb-0 lg:flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <Image src="/logo.png" alt="JCLB" width={48} height={48} className="rounded-lg" />
-                  <div>
-                    <p className="text-xs font-bold text-brand-gold uppercase tracking-widest">JCLB BUY BACK</p>
-                    <p className="text-xl font-black text-white leading-none">Pawnshop</p>
-                  </div>
-                </div>
-                <p className="text-xs leading-relaxed text-white/50 lg:text-sm max-w-md">
-                  Your trusted partner for buying back pre-loved gadgets and electronics. Fast, fair, and friendly - that&apos;s the{" "}
-                  <span className="text-brand-gold font-bold">JCLB promise.</span>
-                </p>
-              </div>
-
-            {/* Contact - Horizontal Cards */}
-            <div className="lg:flex-1 lg:max-w-xl">
-              <p className="mb-3 text-center lg:text-left text-[11px] font-black uppercase tracking-widest text-brand-gold lg:text-xs">CONTACT US</p>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-1 lg:gap-2">
-                  {[
-                    { icon: "f", label: "Facebook", sub: "JCLB Buy Back Shop", color: "bg-blue-600" },
-                    { icon: "@", label: "Email Us", sub: "Compose with Gmail", color: "bg-red-500" },
-                    { icon: "pin", label: "Visit Us", sub: branchCountLabel, color: "bg-brand-green/70" },
-                  ].map((c) => (
-                    <button
-                      key={c.label}
-                      type="button"
-                      onClick={() => {
-                        if (c.label === "Facebook") {
-                          window.open("https://www.facebook.com/JclbBuyBackShop", "_blank", "noopener,noreferrer");
-                          return;
-                        }
-                        if (c.label === "Email Us") {
-                          window.open("https://mail.google.com/mail/?view=cm&fs=1", "_blank", "noopener,noreferrer");
-                          return;
-                        }
-                        void openBranchModal();
-                      }}
-                      className="flex w-full items-center gap-2 lg:gap-2.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 lg:px-3 lg:py-2.5 text-left transition-colors hover:bg-white/10"
-                    >
-                      <div className={`flex h-7 w-7 lg:h-8 lg:w-8 shrink-0 items-center justify-center rounded-md ${c.color} text-white text-xs font-black`}>
-                        {c.icon === "pin" ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4 lg:h-[18px] lg:w-[18px]">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-4.35 7-11a7 7 0 1 0-14 0c0 6.65 7 11 7 11z" />
-                            <circle cx="12" cy="10" r="2.5" />
-                          </svg>
-                        ) : (
-                          c.icon
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] lg:text-xs font-bold text-white">{c.label}</p>
-                        <p className="break-words text-[10px] lg:text-[11px] text-white/50">{c.sub}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 items-center justify-center gap-5 border-t border-white/10 pt-5 pb-0 text-xs text-white/40">
-              {/* Copyright */}
-              <div className="text-center">
-                <span>&copy; 2026 JCLB Buy Back Shop. All rights reserved.</span>
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-                  <button
-                    type="button"
-                    onClick={() => setLegalModal("privacy")}
-                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
-                  >
-                    Privacy Policy
-                  </button>
-                  <span className="text-white/20">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setLegalModal("terms")}
-                    className="font-bold text-brand-gold/70 transition hover:text-brand-gold hover:underline"
-                  >
-                    Terms of Service
-                  </button>
-                </div>
-              </div>
-            </div>
-             </div>
-         
-        </footer>
+        <LandingLightFooter
+          onScroll={handleScroll}
+          onLoginClick={onLoginClick}
+          onOpenBranches={() => { void openBranchModal(); }}
+          onOpenLegal={(type) => setLegalModal(type)}
+          branchCountLabel={branchCountLabel}
+        />
 
         {legalModal && (
           <div
@@ -1069,7 +899,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
                 <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
                 <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">JCLB Buy Back Pawnshop</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">{BRAND_CONFIG.companyName}</p>
                   <h3 id="landing-legal-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
                   <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
                     {legalModalContent[legalModal].intro}
@@ -1140,7 +970,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
                 <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
                 <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">JCLB Buy Back Pawnshop</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">{BRAND_CONFIG.companyName}</p>
                   <h3 id="branch-list-modal-title" className="mt-2 text-2xl font-bold">Available Branches</h3>
                   <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
                     Visit any active branch below for in-person appraisal, item drop-off, payment, renewal, redemption, or customer assistance.

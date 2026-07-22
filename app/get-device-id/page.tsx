@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getDeviceFingerprint } from "@/lib/fingerprint";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 
 export default function GetDeviceIdPage() {
   const [fingerprint, setFingerprint] = useState<string>("");
@@ -35,7 +36,7 @@ export default function GetDeviceIdPage() {
           </div>
           <h1 className="mt-3 text-xl font-bold text-white">Device ID Lookup</h1>
           <p className="mt-1 text-sm text-emerald-200">
-            JCLB Pawnshop Management System
+            {BRAND_CONFIG.companyName}
           </p>
         </div>
 
@@ -108,7 +109,7 @@ export default function GetDeviceIdPage() {
         </div>
 
         <div className="border-t border-zinc-100 px-8 py-4 text-center text-[10px] text-zinc-400">
-          JCLB Buy Back Shop · Device Security System
+          {BRAND_CONFIG.shortCompanyName} · Device Security System
         </div>
       </div>
     </div>

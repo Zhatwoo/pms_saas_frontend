@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type TouchEvent } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { toast } from "sonner";
 import { formatPeso } from "@/lib/currency";
 import { StatusBadge } from "./status-badge";
@@ -312,7 +313,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       {/* Neat Print Label Section (Only visible during print) */}
       {canViewQr && (
         <div id="print-label" className="hidden print:flex flex-col items-center justify-center bg-white w-full h-full p-0">
-          <p className="text-[5px] font-black leading-none text-emerald-800 uppercase mb-[1px]">JCLB</p>
+          <p className="text-[5px] font-black leading-none text-emerald-800 uppercase mb-[1px]">{BRAND_CONFIG.shortCompanyName}</p>
           {qrData && (
             <>
               <img 
