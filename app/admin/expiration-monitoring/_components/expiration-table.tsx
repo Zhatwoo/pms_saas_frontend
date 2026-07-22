@@ -39,7 +39,7 @@ function formatDate(dateStr: string): string {
 }
 
 function DaysRemainingBadge({ days }: { days: number }) {
-  let bgColor = "bg-green-100 text-green-700";
+  let bgColor = "bg-brand-green/10 text-brand-green";
   if (days <= 0) {
     bgColor = "bg-red-100 text-red-600";
   } else if (days <= 3) {
@@ -132,7 +132,7 @@ export function ExpirationTable({
       renderCell={(key, value, row) => {
         if (key === "principal" || key === "totalDue") {
           return (
-            <span className="font-semibold text-emerald-700">
+            <span className="font-semibold text-brand-green">
               {formatPeso(value)}
             </span>
           );
@@ -152,7 +152,7 @@ export function ExpirationTable({
                   type="button"
                   onClick={() => onRenew?.(row.id)}
                   disabled={renewingId === row.id}
-                  className="rounded-md bg-emerald-700 px-3 py-1 text-[10px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-md bg-brand-green px-3 py-1 text-[10px] font-bold text-white transition-opacity hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {renewingId === row.id ? "Renewing..." : "Renew"}
                 </button>
@@ -178,7 +178,7 @@ export function ExpirationTable({
                 disabled={sendingId === row.id}
                 className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
                   sendingId === row.id 
-                    ? "text-emerald-500 bg-emerald-50" 
+                    ? "text-brand-green bg-brand-green/10"
                     : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
                 }`}
                 title={`Send email to ${row.customer}`}

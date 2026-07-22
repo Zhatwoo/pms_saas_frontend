@@ -127,7 +127,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
         value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
-        borderColor="bg-emerald-600"
+        borderColor="bg-brand-green"
         loading={isLoading}
       />
       <StatCard
@@ -172,7 +172,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
       />
       
       <div className="flex flex-col justify-between overflow-hidden rounded-lg border border-border-main bg-surface p-3 shadow-sm transition-colors duration-300">
-        <div className="mb-2 h-1 w-full rounded-full bg-emerald-900 dark:bg-emerald-500" />
+        <div className="mb-2 h-1 w-full rounded-full bg-brand-green" />
 
         <div className="flex items-start xl:items-center justify-between gap-2 min-w-0">
           <div className="min-w-0">
@@ -195,7 +195,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
             <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
               Ending balance
             </p>
-            <div className="mt-0.5 text-lg font-black text-emerald-600 leading-none h-[22px] flex items-center justify-end">
+            <div className="mt-0.5 text-lg font-black text-brand-green leading-none h-[22px] flex items-center justify-end">
               {isLoading ? <ThreeDotLoader /> : formatPeso(data?.endingBalance ?? 0)}
             </div>
           </div>

@@ -486,7 +486,7 @@ export function InterestRatesSettings() {
   if (isLoading) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-xl border border-border-main bg-surface shadow-sm">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-green border-t-transparent" />
         <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
           Loading Interest rate profiles...
         </p>
@@ -513,7 +513,7 @@ export function InterestRatesSettings() {
               onClick={() => setIsEditing(!isEditing)}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-bold transition ${
                 isEditing
-                  ? "border-amber-600 bg-amber-600 text-white hover:bg-amber-700"
+                  ? "border-brand-green bg-brand-green text-white hover:brightness-110"
                   : "border-border-main bg-surface-secondary hover:bg-surface-hover text-zinc-600 dark:text-zinc-300"
               }`}
             >
@@ -544,7 +544,7 @@ export function InterestRatesSettings() {
                 </button>
                 <button
                   onClick={handleAddGroup}
-                  className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-emerald-700 transition"
+                  className="flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:brightness-110 transition"
                 >
                   <svg
                     width="12"
@@ -596,7 +596,7 @@ export function InterestRatesSettings() {
             <p className="text-xs font-bold text-zinc-400">No Interest Rate Groups added yet.</p>
             <button
               onClick={handleAddGroup}
-              className="mt-2 text-[10px] font-bold uppercase tracking-wider text-emerald-600 hover:underline"
+              className="mt-2 text-[10px] font-bold uppercase tracking-wider text-brand-green hover:underline"
             >
               Create first Group
             </button>
@@ -645,7 +645,7 @@ export function InterestRatesSettings() {
                           value={group.name}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => handleUpdateGroupField(group.id, "name", e.target.value)}
-                          className="h-7 rounded border border-border-main bg-surface-secondary px-2 text-xs font-bold text-text-primary outline-none focus:border-emerald-500"
+                          className="h-7 rounded border border-border-main bg-surface-secondary px-2 text-xs font-bold text-text-primary outline-none focus:border-brand-green"
                         />
                       ) : (
                         <span className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
@@ -654,7 +654,7 @@ export function InterestRatesSettings() {
                       )}
 
                       {/* Display assigned categories count badge */}
-                      <span className="rounded bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+                      <span className="rounded bg-brand-green/10 px-2 py-0.5 text-[9px] font-bold uppercase text-brand-green">
                         {group.categories.filter(c => categoriesList.includes(c)).length} Categories Assigned
                       </span>
                     </div>
@@ -734,7 +734,7 @@ export function InterestRatesSettings() {
                                     >
                                       <td className="px-4 py-3.5 font-semibold text-zinc-700 dark:text-zinc-300">
                                         <div className="flex items-center gap-2.5">
-                                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-[9px] font-black text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-green/10 text-[9px] font-black text-brand-green">
                                             {idx + 1}
                                           </span>
                                           {tier.label}
@@ -751,7 +751,7 @@ export function InterestRatesSettings() {
                                                 handleUpdateTierValue(group.id, tier.id, "startDay", Math.round(val));
                                               }}
                                               disabled={tier.id === "tier1"}
-                                              className="h-8 w-28 rounded-lg border border-border-main bg-surface-secondary pl-10 pr-3 text-xs font-bold text-text-primary outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
+                                              className="h-8 w-28 rounded-lg border border-border-main bg-surface-secondary pl-10 pr-3 text-xs font-bold text-text-primary outline-none transition focus:border-brand-green focus:ring-1 focus:ring-brand-green/20"
                                             />
                                           </div>
                                         ) : (
@@ -770,7 +770,7 @@ export function InterestRatesSettings() {
                                               onCommit={(val) => {
                                                 handleUpdateTierValue(group.id, tier.id, "endDay", Math.round(val));
                                               }}
-                                              className="h-8 w-28 rounded-lg border border-border-main bg-surface-secondary pl-10 pr-3 text-xs font-bold text-text-primary outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
+                                              className="h-8 w-28 rounded-lg border border-border-main bg-surface-secondary pl-10 pr-3 text-xs font-bold text-text-primary outline-none transition focus:border-brand-green focus:ring-1 focus:ring-brand-green/20"
                                             />
                                           </div>
                                         ) : (
@@ -788,7 +788,7 @@ export function InterestRatesSettings() {
                                               onCommit={(val) => {
                                                 handleUpdateTierValue(group.id, tier.id, "rate", val);
                                               }}
-                                              className="h-8 w-24 rounded-lg border border-border-main bg-surface-secondary px-2.5 pr-6 text-xs font-bold text-text-primary outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
+                                              className="h-8 w-24 rounded-lg border border-border-main bg-surface-secondary px-2.5 pr-6 text-xs font-bold text-text-primary outline-none transition focus:border-brand-green focus:ring-1 focus:ring-brand-green/20"
                                             />
                                             <span className="absolute right-2.5 text-[10px] text-zinc-400 dark:text-zinc-500 font-bold pointer-events-none">%</span>
                                           </div>
@@ -838,7 +838,7 @@ export function InterestRatesSettings() {
                                   key={cat}
                                   className={`flex items-center gap-2 rounded px-2 py-1 text-xs transition cursor-pointer ${
                                     isAssignedToThis
-                                      ? "bg-emerald-50/50 font-semibold text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                      ? "bg-brand-green/10 font-semibold text-brand-green"
                                       : isAssignedToOther
                                       ? "opacity-40 cursor-not-allowed text-zinc-400"
                                       : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
@@ -851,7 +851,7 @@ export function InterestRatesSettings() {
                                     onChange={(e) =>
                                       handleCategoryCheckboxChange(group.id, cat, e.target.checked)
                                     }
-                                    className="h-3.5 w-3.5 rounded border-border-main text-emerald-600 outline-none focus:ring-0 focus:ring-offset-0 disabled:opacity-50 bg-surface-secondary"
+                                    className="h-3.5 w-3.5 rounded border-border-main text-brand-green outline-none focus:ring-0 focus:ring-offset-0 disabled:opacity-50 bg-surface-secondary"
                                   />
                                   <span className="text-[11px] select-none">{cat}</span>
                                 </label>
@@ -901,23 +901,23 @@ export function InterestRatesSettings() {
                         <div className="space-y-1 text-xs">
                           <div className="flex justify-between py-0.5">
                             <span className="text-zinc-500 text-[10px]">First {group.first5DaysLimit ?? 5} days interest:</span>
-                            <span className="font-black text-emerald-600">₱ {((sampleAmount * cumFirst5) / 100).toLocaleString()}</span>
+                            <span className="font-black text-brand-green">₱ {((sampleAmount * cumFirst5) / 100).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-zinc-500 text-[10px]">Day {group.day10Limit ?? 10} Interest due:</span>
-                            <span className="font-black text-emerald-600">₱ {((sampleAmount * cumDay10) / 100).toLocaleString()}</span>
+                            <span className="font-black text-brand-green">₱ {((sampleAmount * cumDay10) / 100).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-zinc-500 text-[10px]">Day {group.day20Limit ?? 20} Interest due:</span>
-                            <span className="font-black text-emerald-600">₱ {((sampleAmount * cumDay20) / 100).toLocaleString()}</span>
+                            <span className="font-black text-brand-green">₱ {((sampleAmount * cumDay20) / 100).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-zinc-500 text-[10px]">Day {group.defaultDuration} Interest due:</span>
-                            <span className="font-black text-emerald-600">₱ {((sampleAmount * cumDay30) / 100).toLocaleString()}</span>
+                            <span className="font-black text-brand-green">₱ {((sampleAmount * cumDay30) / 100).toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between py-0.5">
                             <span className="text-zinc-500 text-[10px]">Grace Period Interest due:</span>
-                            <span className="font-black text-emerald-600">₱ {((sampleAmount * cumGrace) / 100).toLocaleString()}</span>
+                            <span className="font-black text-brand-green">₱ {((sampleAmount * cumGrace) / 100).toLocaleString()}</span>
                           </div>
                         </div>
                       </div>
@@ -934,14 +934,14 @@ export function InterestRatesSettings() {
       {isEditing && groups.length > 0 && (
         <div className="flex items-center justify-end gap-3 border-t border-border-main bg-surface-secondary px-4 py-3">
           {settingsSaved && (
-            <span className="text-[10px] font-bold text-emerald-600 animate-fade-in">
+            <span className="text-[10px] font-bold text-brand-green animate-fade-in">
               Settings Saved!
             </span>
           )}
           <button
             onClick={handleSaveSettings}
             disabled={isSaving}
-            className="flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-5 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="flex h-9 items-center justify-center rounded-lg bg-brand-green px-5 text-xs font-bold uppercase tracking-wider text-white hover:brightness-110 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {isSaving ? "Saving..." : "Save & Update Policies"}
           </button>

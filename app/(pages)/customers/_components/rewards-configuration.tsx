@@ -187,7 +187,7 @@ export function RewardsConfiguration() {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-green px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:brightness-110"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M5 12h14" />
@@ -200,7 +200,7 @@ export function RewardsConfiguration() {
       {/* Rewards List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-green/30 border-t-brand-green" />
           <span className="ml-3 text-sm text-text-secondary">Loading rules...</span>
         </div>
       ) : rewards.length === 0 ? (
@@ -216,7 +216,7 @@ export function RewardsConfiguration() {
           {rewards.map((reward) => (
             <div
               key={reward.id}
-              className={`group relative rounded-xl border bg-surface p-5 shadow-sm transition-colors hover:border-emerald-border hover:bg-surface-raised ${
+              className={`group relative rounded-xl border bg-surface p-5 shadow-sm transition-colors hover:border-brand-green/40 hover:bg-surface-raised ${
                 reward.is_active
                   ? "border-border-main"
                   : "border-border-main bg-surface opacity-70"
@@ -227,7 +227,7 @@ export function RewardsConfiguration() {
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                     reward.is_active
-                      ? "bg-emerald-surface text-emerald-text"
+                      ? "bg-brand-green/10 text-brand-green"
                       : "bg-badge-muted-bg text-badge-muted-text"
                   }`}
                 >
@@ -240,7 +240,7 @@ export function RewardsConfiguration() {
                 <div
                   className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
                     reward.reward_type === "cashback"
-                      ? "bg-emerald-surface text-emerald-text"
+                      ? "bg-brand-green/10 text-brand-green"
                       : reward.reward_type === "discount"
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
                         : "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300"
@@ -276,7 +276,7 @@ export function RewardsConfiguration() {
               {/* Value & Actions */}
               <div className="mt-4 flex items-center justify-between border-t border-border-main pt-3">
                 <div>
-                  <p className="text-lg font-bold text-emerald-text">
+                  <p className="text-lg font-bold text-brand-green">
                     {formatRewardValue(reward.reward_type, Number(reward.reward_value))}
                   </p>
                 </div>
@@ -315,7 +315,7 @@ export function RewardsConfiguration() {
             className="w-full max-w-lg overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-emerald-900 px-6 py-5">
+            <div className="bg-brand-green px-6 py-5">
               <h2 className="text-xl font-bold text-white">
                 {editingId ? "Edit Rule" : "Create New Rule"}
               </h2>
@@ -328,7 +328,7 @@ export function RewardsConfiguration() {
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand-green focus:ring-1 focus:ring-brand-green"
                   placeholder="e.g. Bronze Loyalty Tier"
                   required
                 />
@@ -407,7 +407,7 @@ export function RewardsConfiguration() {
                   id="comp_is_active"
                   checked={form.is_active}
                   onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                  className="h-4 w-4 rounded border-border-main accent-emerald-600"
+                  className="h-4 w-4 rounded border-border-main accent-brand-green"
                 />
                 <label htmlFor="comp_is_active" className="text-sm text-text-secondary">Rule is active</label>
               </div>
@@ -423,7 +423,7 @@ export function RewardsConfiguration() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+                  className="rounded-lg bg-brand-green px-5 py-2 text-sm font-semibold text-white shadow-sm hover:brightness-110 disabled:opacity-50"
                 >
                   {isSaving ? "Saving..." : "Save Rule"}
                 </button>

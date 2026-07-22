@@ -218,15 +218,15 @@ export function ItemTransferModal({
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md" onClick={onClose} />
+      <div className="fixed inset-0 bg-pawn-sidebar/40 backdrop-blur-md" onClick={onClose} />
       <div className="relative z-10 flex h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-border-main bg-emerald-950 px-6 py-5 text-white">
+        <div className="flex items-start justify-between gap-4 border-b border-border-main bg-pawn-sidebar px-6 py-5 text-white">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-800 text-amber-300">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-pawn-sidebar-light text-pawn-gold">
               {transferIcon}
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300">{branchName}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-pawn-gold">{branchName}</p>
               <h2 className="mt-1 text-xl font-black uppercase tracking-tight">Transfer Items</h2>
             </div>
           </div>
@@ -244,21 +244,21 @@ export function ItemTransferModal({
           <div className="min-h-0 overflow-y-auto border-r border-border-main p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-500">Available Items</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-green">Available Items</p>
                 <h3 className="mt-1 text-sm font-bold text-text-primary">Select an item to send to another branch</h3>
               </div>
               <input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search item name or code"
-                className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 sm:w-72"
+                className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-brand-green sm:w-72"
               />
             </div>
 
             <div className="mt-4 overflow-hidden rounded-xl border border-border-main">
               <div className="max-h-[330px] overflow-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-emerald-900 text-amber-300">
+                  <thead className="sticky top-0 bg-pawn-sidebar text-pawn-gold">
                     <tr>
                       <th className="px-3 py-2 text-[10px] font-black uppercase">Item Code</th>
                       <th className="px-3 py-2 text-[10px] font-black uppercase">Item</th>
@@ -280,7 +280,7 @@ export function ItemTransferModal({
                         <tr
                           key={item.id}
                           onClick={() => setSelectedItem(item)}
-                          className={`cursor-pointer transition hover:bg-emerald-500/10 ${selectedItem?.id === item.id ? "bg-emerald-600 text-white" : ""}`}
+                          className={`cursor-pointer transition hover:bg-brand-green/10 ${selectedItem?.id === item.id ? "bg-brand-green text-white" : ""}`}
                         >
                           <td className="whitespace-nowrap px-3 py-2 text-xs font-black">{item.itemId}</td>
                           <td className="px-3 py-2 text-xs font-bold">{item.itemName}</td>
@@ -307,7 +307,7 @@ export function ItemTransferModal({
                   <select
                     value={targetBranchId}
                     onChange={(event) => setTargetBranchId(event.target.value)}
-                    className="h-10 w-full rounded-lg border border-border-main bg-surface px-3 text-sm font-bold text-text-primary outline-none focus:border-emerald-500"
+                    className="h-10 w-full rounded-lg border border-border-main bg-surface px-3 text-sm font-bold text-text-primary outline-none focus:border-brand-green"
                   >
                     <option value="">Select branch</option>
                     {destinationBranches.map((branch) => (
@@ -323,14 +323,14 @@ export function ItemTransferModal({
                 value={itemIncluded}
                 onChange={handleTextChange}
                 placeholder="Included items / accessories"
-                className="h-10 rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-emerald-500"
+                className="h-10 rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary outline-none focus:border-brand-green"
               />
               <textarea
                 name="notes"
                 value={notes}
                 onChange={handleTextChange}
                 placeholder="Transfer notes"
-                className="min-h-20 rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
+                className="min-h-20 rounded-lg border border-border-main bg-surface px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"
               />
             </div>
           </div>
@@ -338,7 +338,7 @@ export function ItemTransferModal({
           <div className="min-h-0 overflow-y-auto p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-500">Pending Receipts</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-green">Pending Receipts</p>
                 <h3 className="mt-1 text-sm font-bold text-text-primary">Confirm items received by the destination branch</h3>
               </div>
               {incomingPendingCount > 0 ? (
@@ -374,7 +374,7 @@ export function ItemTransferModal({
                       type="button"
                       onClick={() => handleReceive(transfer)}
                       disabled={isSubmitting || (!isAllBranches && transfer.targetBranchId !== branchId)}
-                      className="mt-4 h-10 w-full rounded-lg bg-emerald-600 text-xs font-black uppercase tracking-wider text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
+                      className="mt-4 h-10 w-full rounded-lg bg-brand-green text-xs font-black uppercase tracking-wider text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
                     >
                       Receive Item
                     </button>
@@ -392,7 +392,7 @@ export function ItemTransferModal({
             onChange={handleTextChange}
             type="password"
             placeholder="Password for transfer / receive"
-            className="h-11 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-emerald-500 sm:max-w-xs"
+            className="h-11 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none focus:border-brand-green sm:max-w-xs"
           />
           <div className="flex items-center gap-2">
             <button
@@ -406,7 +406,7 @@ export function ItemTransferModal({
               type="button"
               onClick={handleSubmitTransfer}
               disabled={!selectedItem || !targetBranchId || !password || isSubmitting}
-              className="h-11 rounded-lg bg-emerald-700 px-6 text-xs font-black uppercase tracking-wider text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
+              className="h-11 rounded-lg bg-brand-green px-6 text-xs font-black uppercase tracking-wider text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
             >
               {isSubmitting ? "Processing..." : "Create Transfer"}
             </button>

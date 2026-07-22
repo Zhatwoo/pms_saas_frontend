@@ -14,10 +14,10 @@ interface RequestCustomerEditModalProps {
 }
 
 const inputClass =
-  "h-11 w-full rounded-2xl border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15";
+  "h-11 w-full rounded-2xl border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-brand-green focus:ring-2 focus:ring-brand-green/15";
 
 const textareaClass =
-  "min-h-[160px] w-full rounded-2xl border border-input-border bg-input-bg px-3 py-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15";
+  "min-h-[160px] w-full rounded-2xl border border-input-border bg-input-bg px-3 py-3 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-brand-green focus:ring-2 focus:ring-brand-green/15";
 
 const overlayClass =
   "fixed inset-0 z-[130] flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-8 backdrop-blur-md";
@@ -107,16 +107,16 @@ export function RequestCustomerEditModal({
   return (
     <div className={overlayClass} onClick={onClose}>
       <div className={modalClass} onClick={(event) => event.stopPropagation()}>
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-pawn-sidebar via-pawn-sidebar to-brand-green px-6 py-5 text-white">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-pawn-gold/90">
                 Request Customer Edit
               </p>
               <h2 className="mt-1 text-2xl font-black tracking-tight">
                 {customerName?.trim() || "Customer"}
               </h2>
-              <p className="mt-1 text-sm text-emerald-50/80">
+              <p className="mt-1 text-sm text-white/80">
                 Submit a note for review. The backend receives this as a single request-edit payload.
               </p>
             </div>
@@ -143,7 +143,7 @@ export function RequestCustomerEditModal({
               <button
                 type="button"
                 onClick={() => handleModeChange("specific")}
-                className={`rounded-2xl border px-4 py-3 text-left transition-colors ${mode === "specific" ? "border-emerald-500 bg-emerald-50 text-emerald-900" : "border-border-main bg-surface text-text-primary hover:bg-surface-hover"}`}
+                className={`rounded-2xl border px-4 py-3 text-left transition-colors ${mode === "specific" ? "border-brand-green bg-brand-green/10 text-text-primary" : "border-border-main bg-surface text-text-primary hover:bg-surface-hover"}`}
               >
                 <p className="text-sm font-bold">Specific field</p>
                 <p className="mt-1 text-xs text-text-tertiary">
@@ -153,7 +153,7 @@ export function RequestCustomerEditModal({
               <button
                 type="button"
                 onClick={() => handleModeChange("freeform")}
-                className={`rounded-2xl border px-4 py-3 text-left transition-colors ${mode === "freeform" ? "border-emerald-500 bg-emerald-50 text-emerald-900" : "border-border-main bg-surface text-text-primary hover:bg-surface-hover"}`}
+                className={`rounded-2xl border px-4 py-3 text-left transition-colors ${mode === "freeform" ? "border-brand-green bg-brand-green/10 text-text-primary" : "border-border-main bg-surface text-text-primary hover:bg-surface-hover"}`}
               >
                 <p className="text-sm font-bold">Free-form note</p>
                 <p className="mt-1 text-xs text-text-tertiary">
@@ -198,7 +198,7 @@ export function RequestCustomerEditModal({
             />
           </label>
 
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <div className="rounded-2xl border border-brand-green/20 bg-brand-green/10 px-4 py-3 text-sm text-text-primary">
             This action sends a review request to the backend at /customers/{customerId}/request-edit.
           </div>
 
@@ -213,7 +213,7 @@ export function RequestCustomerEditModal({
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-green px-4 py-2.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSaving && <span className="anim-loading h-4 w-4 rounded-full border border-white/30" />}
               {isSaving ? "Sending..." : "Submit Request"}

@@ -64,7 +64,7 @@ export function TransactionActions({ activeFilter = "All", onFilterChange, onExp
           <ActionButton
             key={f}
             variant={filterVariantMap[f]}
-            className={activeFilter === f ? "ring-2 ring-offset-1 ring-emerald-600 opacity-100" : "opacity-70 hover:opacity-100"}
+            className={activeFilter === f ? "ring-2 ring-offset-1 ring-brand-green opacity-100" : "opacity-70 hover:opacity-100"}
             onClick={() => onFilterChange?.(activeFilter === f ? "All" : f)}
           >
             {f}
@@ -79,7 +79,7 @@ export function TransactionActions({ activeFilter = "All", onFilterChange, onExp
             Export CSV
           </span>
         </ActionButton>
-        <ActionButton variant="primary" className="bg-emerald-700 border-emerald-700 text-amber-400" onClick={onPrintReport}>
+        <ActionButton variant="primary" className="bg-brand-green border-brand-green text-white hover:brightness-110" onClick={onPrintReport}>
           <span className="flex items-center gap-1.5">
             {printerIcon}
             Print Report

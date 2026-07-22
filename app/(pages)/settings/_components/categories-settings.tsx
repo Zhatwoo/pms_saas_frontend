@@ -138,7 +138,7 @@ export default function CategoriesSettings() {
       <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
         <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
           <svg
-            className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+            className="h-4 w-4 text-brand-green"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -155,7 +155,7 @@ export default function CategoriesSettings() {
         {isSuperAdmin && !isAdding && (
           <button
             onClick={() => setIsAdding(true)}
-            className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 transition-all duration-200 shadow-sm"
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[11px] font-bold text-white hover:brightness-110 transition-all duration-200 shadow-sm"
           >
             <svg
               className="h-3.5 w-3.5"
@@ -183,7 +183,7 @@ export default function CategoriesSettings() {
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 disabled={isSubmitLoading}
-                className="h-9 w-full rounded-md border border-border-main bg-surface px-3 text-xs text-text-primary outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200"
+                className="h-9 w-full rounded-md border border-border-main bg-surface px-3 text-xs text-text-primary outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all duration-200"
               />
             </div>
             <div className="space-y-1">
@@ -194,7 +194,7 @@ export default function CategoriesSettings() {
                 value={newCatDesc}
                 onChange={(e) => setNewCatDesc(e.target.value)}
                 disabled={isSubmitLoading}
-                className="h-9 w-full rounded-md border border-border-main bg-surface px-3 text-xs text-text-primary outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200"
+                className="h-9 w-full rounded-md border border-border-main bg-surface px-3 text-xs text-text-primary outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all duration-200"
               />
             </div>
           </div>
@@ -214,7 +214,7 @@ export default function CategoriesSettings() {
             <button
               type="submit"
               disabled={isSubmitLoading}
-              className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-50 transition-all duration-200 shadow-sm"
+              className="inline-flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-50 transition-all duration-200 shadow-sm"
             >
               {isSubmitLoading ? "Creating..." : "Save Category"}
             </button>
@@ -225,7 +225,7 @@ export default function CategoriesSettings() {
       <div className="p-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-6 gap-2 text-zinc-500">
-            <svg className="animate-spin h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-5 w-5 text-brand-green" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
@@ -258,7 +258,7 @@ export default function CategoriesSettings() {
                             type="text"
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
-                            className="h-8 w-full rounded border border-emerald-500 bg-surface px-2 text-xs text-text-primary outline-none focus:ring-1 focus:ring-emerald-500"
+                            className="h-8 w-full rounded border border-brand-green bg-surface px-2 text-xs text-text-primary outline-none focus:ring-1 focus:ring-brand-green"
                             disabled={isEditLoading}
                           />
                         ) : (
@@ -271,7 +271,7 @@ export default function CategoriesSettings() {
                             type="text"
                             value={editDesc}
                             onChange={(e) => setEditDesc(e.target.value)}
-                            className="h-8 w-full rounded border border-emerald-500 bg-surface px-2 text-xs text-text-primary outline-none focus:ring-1 focus:ring-emerald-500"
+                            className="h-8 w-full rounded border border-brand-green bg-surface px-2 text-xs text-text-primary outline-none focus:ring-1 focus:ring-brand-green"
                             disabled={isEditLoading}
                           />
                         ) : (
@@ -292,7 +292,7 @@ export default function CategoriesSettings() {
                               <button
                                 onClick={() => handleSaveEdit(cat.id)}
                                 disabled={isEditLoading}
-                                className="rounded bg-emerald-700 text-white px-2 py-1 text-[10px] font-bold hover:bg-emerald-800"
+                                className="rounded bg-brand-green text-white px-2 py-1 text-[10px] font-bold hover:brightness-110"
                               >
                                 {isEditLoading ? "Saving..." : "Save"}
                               </button>
@@ -301,7 +301,7 @@ export default function CategoriesSettings() {
                             <div className="flex items-center justify-center gap-2">
                               <button
                                 onClick={() => handleStartEdit(cat)}
-                                className="text-zinc-600 hover:text-emerald-700 dark:text-zinc-400 dark:hover:text-emerald-400 font-bold text-[11px] transition-colors"
+                                className="text-zinc-600 hover:text-brand-green dark:text-zinc-400 dark:hover:text-brand-green font-bold text-[11px] transition-colors"
                               >
                                 Edit
                               </button>

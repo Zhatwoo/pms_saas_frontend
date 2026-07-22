@@ -154,7 +154,7 @@ export function AddFundsModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4 sticky top-0 bg-surface z-10">
           <div className="flex items-center gap-3">
-            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isTransfer ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"}`}>
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isTransfer ? "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400" : "bg-emerald-surface text-emerald-text"}`}>
               {isTransfer ? (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="17 1 21 5 17 9" />
@@ -193,7 +193,7 @@ export function AddFundsModal({
                 type="button"
                 onClick={() => setSourceType("MANAGEMENT")}
                 className={`flex-1 rounded-md px-3 py-1.5 text-xs font-bold transition-colors ${
-                  !isTransfer ? "bg-surface shadow-sm text-emerald-700 dark:text-emerald-400 border border-emerald-500/20" : "text-text-muted hover:text-text-primary"
+                  !isTransfer ? "bg-surface shadow-sm text-emerald-text border border-emerald-border" : "text-text-muted hover:text-text-primary"
                 }`}
               >
                 Management
@@ -338,7 +338,7 @@ export function AddFundsModal({
             <button
               type="submit"
               className={`rounded-lg border px-5 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 ${
-                isTransfer ? "border-blue-700 bg-blue-600" : "border-emerald-700 bg-emerald-600"
+                isTransfer ? "border-blue-700 bg-blue-600" : "border-pawn-sidebar-light bg-pawn-sidebar"
               }`}
             >
               {submitLabel ?? `Submit ${isTransfer ? "Transfer" : "Funds"}`}

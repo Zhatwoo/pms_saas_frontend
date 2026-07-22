@@ -95,7 +95,7 @@ function SingleBranchCard({
   const isPositive = delta >= 0;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
+    <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-pawn-sidebar via-pawn-sidebar-light to-pawn-sidebar shadow-lg">
       {/* Header */}
       <div className="flex flex-col gap-3 px-4 pt-5 pb-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
         <div className="flex items-center gap-3 min-w-0">
@@ -104,14 +104,14 @@ function SingleBranchCard({
           </div>
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-white md:text-xl">{branchName}</h2>
-            <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
+            <p className="text-xs font-medium uppercase tracking-wider text-pawn-gold-light/70">
               Balance Overview
             </p>
           </div>
         </div>
         <div className="flex w-fit items-center gap-1.5 self-start rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm sm:self-auto">
           <ClockIcon />
-          <span className="text-[10px] text-emerald-300">
+          <span className="text-[10px] text-pawn-gold-light">
             {fmtDate(lastUpdated)}
           </span>
         </div>
@@ -120,7 +120,7 @@ function SingleBranchCard({
       {/* Current Balance (hero) */}
       <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-end sm:justify-between md:px-6">
         <div className="min-w-0">
-          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
+          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-pawn-gold-light/60">
             Current Balance
           </p>
           <div className="flex flex-wrap items-end gap-2 sm:gap-3">
@@ -130,7 +130,7 @@ function SingleBranchCard({
             <span
               className={`mb-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
                 isPositive
-                  ? "bg-emerald-400/20 text-emerald-300"
+                  ? "bg-pawn-gold/20 text-pawn-gold-light"
                   : "bg-red-400/20 text-red-300"
               }`}
             >
@@ -145,7 +145,7 @@ function SingleBranchCard({
           <div className="w-full shrink-0 sm:w-auto">
             <button
               onClick={onAddFunds}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30 sm:w-auto md:px-6 md:py-3 md:text-base"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-pawn-gold/50 bg-pawn-gold/20 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-pawn-gold/30 sm:w-auto md:px-6 md:py-3 md:text-base"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -160,19 +160,19 @@ function SingleBranchCard({
       {/* Stat tiles */}
       <div className="grid grid-cols-1 gap-4 px-4 pb-6 sm:grid-cols-3 md:px-6">
         <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
-          <p className="text-xs font-medium uppercase text-emerald-400/70">Starting</p>
+          <p className="text-xs font-medium uppercase text-pawn-gold-light/70">Starting</p>
           <p className="mt-0.5 text-base font-bold text-white">{fmt(startingBalance)}</p>
         </div>
         <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
-          <p className="text-xs font-medium uppercase text-emerald-400/70">End Balance</p>
+          <p className="text-xs font-medium uppercase text-pawn-gold-light/70">End Balance</p>
           <p className="mt-0.5 text-base font-bold text-white">{fmt(currentBalance)}</p>
         </div>
         <div className="rounded-lg bg-white/5 px-3.5 py-3 backdrop-blur-sm">
-          <div className="flex items-center gap-1 text-emerald-400/70">
+          <div className="flex items-center gap-1 text-pawn-gold-light/70">
             <ArrowUpIcon />
             <p className="text-xs font-medium uppercase">Added</p>
           </div>
-          <p className="mt-0.5 text-base font-bold text-emerald-300">{fmt(totalAdded)}</p>
+          <p className="mt-0.5 text-base font-bold text-pawn-gold-light">{fmt(totalAdded)}</p>
         </div>
       </div>
     </div>
@@ -198,7 +198,7 @@ function AggregateBranchCard({
   return (
     <div className="space-y-4">
       {/* Overview Banner */}
-      <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
+      <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-pawn-sidebar via-pawn-sidebar-light to-pawn-sidebar shadow-lg">
         <div className="flex flex-col gap-3 px-4 pt-5 pb-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
@@ -206,13 +206,13 @@ function AggregateBranchCard({
             </div>
             <div className="min-w-0">
               <h2 className="text-lg font-bold text-white sm:text-xl">All Branches Overview</h2>
-              <p className="text-xs font-medium uppercase tracking-wider text-emerald-400/70">
+              <p className="text-xs font-medium uppercase tracking-wider text-pawn-gold-light/70">
                 Combined Balance
               </p>
             </div>
           </div>
           <div className="flex w-fit items-center gap-1.5 self-start rounded-full bg-white/10 px-3 py-1 backdrop-blur-sm sm:self-auto">
-            <span className="text-[10px] font-bold text-emerald-300">
+            <span className="text-[10px] font-bold text-pawn-gold-light">
               {totalBranches} Active Branches
             </span>
           </div>
@@ -220,7 +220,7 @@ function AggregateBranchCard({
 
         <div className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
           <div className="min-w-0">
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-emerald-400/60">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-pawn-gold-light/60">
               Total Overall Sales / Balance
             </p>
             <div className="flex flex-wrap items-end gap-2 sm:gap-3">
@@ -229,7 +229,7 @@ function AggregateBranchCard({
               </span>
             </div>
             {systemExpenses > 0 && (
-              <p className="mt-1 text-xs font-medium text-emerald-300/80">
+              <p className="mt-1 text-xs font-medium text-pawn-gold-light/80">
                 (Branch Total: {fmt(branchTotal)} - System Expenses: {fmt(systemExpenses)})
               </p>
             )}
@@ -239,7 +239,7 @@ function AggregateBranchCard({
             {onAddFunds && (
               <button
                 onClick={onAddFunds}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500/30 sm:w-auto sm:px-5 sm:py-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-pawn-gold/50 bg-pawn-gold/20 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-pawn-gold/30 sm:w-auto sm:px-5 sm:py-2"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -269,7 +269,7 @@ function AggregateBranchCard({
         {branchRows.map((b) => (
           <div
             key={b.branchId}
-            className="flex flex-col justify-between rounded-xl border border-border-main bg-surface px-5 py-4 shadow-sm transition-colors hover:border-emerald-500/30 hover:bg-surface-secondary"
+            className="flex flex-col justify-between rounded-xl border border-border-main bg-surface px-5 py-4 shadow-sm transition-colors hover:border-brand-green/30 hover:bg-surface-secondary"
           >
             <div className="mb-3 flex items-start justify-between">
               <div>
@@ -279,7 +279,7 @@ function AggregateBranchCard({
               <span
                 className={`inline-flex items-center justify-center rounded px-2 py-0.5 text-[10px] font-bold ${
                   b.status === "Active"
-                    ? "bg-emerald-500/15 text-emerald-300"
+                    ? "bg-emerald-surface text-emerald-text"
                     : "bg-zinc-500/15 text-zinc-300"
                 }`}
               >
@@ -293,8 +293,8 @@ function AggregateBranchCard({
                 <p className={`text-sm font-semibold ${b.startingBalance < 50000 ? "text-amber-500/80" : "text-text-secondary"}`}>{fmt(b.startingBalance)}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600/70">Current</p>
-                <p className="text-sm font-extrabold text-emerald-400">{fmt(b.currentBalance)}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-text/70">Current</p>
+                <p className="text-sm font-extrabold text-brand-green">{fmt(b.currentBalance)}</p>
               </div>
             </div>
           </div>

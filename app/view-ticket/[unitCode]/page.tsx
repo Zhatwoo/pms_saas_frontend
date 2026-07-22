@@ -70,10 +70,10 @@ export default function PublicTicketView() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-emerald-50/30">
+      <div className="min-h-screen flex items-center justify-center bg-brand-green/5">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
-          <p className="text-sm font-bold text-emerald-800 uppercase tracking-widest">Verifying Ticket...</p>
+          <div className="h-12 w-12 rounded-full border-4 border-brand-green border-t-transparent animate-spin" />
+          <p className="text-sm font-bold text-brand-green uppercase tracking-widest">Verifying Ticket...</p>
         </div>
       </div>
     );
@@ -81,21 +81,21 @@ export default function PublicTicketView() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-emerald-50/30 p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-xl border border-emerald-100">
+      <div className="min-h-screen flex items-center justify-center bg-brand-green/5 p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-xl border border-brand-green/15">
           <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h1 className="text-xl font-black text-zinc-900 mb-2">Ticket Not Found</h1>
           <p className="text-zinc-500 text-sm mb-6">{error || "The requested pawn ticket could not be retrieved."}</p>
-          <button onClick={() => window.location.reload()} className="w-full py-3 bg-emerald-700 text-white rounded-xl font-bold hover:bg-emerald-800 transition-all">Retry Access</button>
+          <button onClick={() => window.location.reload()} className="w-full py-3 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all">Retry Access</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 selection:bg-emerald-100 p-4 sm:p-8 md:p-12">
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 selection:bg-brand-green/20 p-4 sm:p-8 md:p-12">
       <style jsx global>{`
         @media print {
           .no-print { display: none !important; }
@@ -108,17 +108,17 @@ export default function PublicTicketView() {
         {/* Header Actions */}
         <div className="flex items-center justify-between no-print">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-xl bg-emerald-700 flex items-center justify-center text-white shadow-lg">
+             <div className="w-10 h-10 rounded-xl bg-brand-green flex items-center justify-center text-white shadow-lg">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
              </div>
              <div>
-                <h2 className="text-sm font-black text-emerald-900 uppercase tracking-tighter">Official Transaction Record</h2>
+                <h2 className="text-sm font-black text-brand-green uppercase tracking-tighter">Official Transaction Record</h2>
                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{unitCode}</p>
              </div>
           </div>
-          <button 
+          <button
             onClick={handlePrint}
-            className="px-6 py-3 border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-800 transition-all shadow-xl active:scale-95 flex items-center gap-2"
+            className="px-6 py-3 border border-brand-green bg-brand-green text-pawn-gold rounded-2xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all shadow-xl active:scale-95 flex items-center gap-2"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
             Download PDF
@@ -128,15 +128,15 @@ export default function PublicTicketView() {
         {/* Main Document Card */}
         <div className="bg-white rounded-[2.5rem] shadow-2xl border border-zinc-200 overflow-hidden print-container">
           {/* Top Banner */}
-          <div className="bg-emerald-950 p-8 md:p-12 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="bg-brand-green p-8 md:p-12 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">{BRAND_CONFIG.shortCompanyName} PAWNSHOP OFFICIAL</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-pawn-gold">{BRAND_CONFIG.shortCompanyName} PAWNSHOP OFFICIAL</p>
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase">{data.item_name}</h1>
-              <p className="text-sm font-medium text-emerald-100/60 uppercase tracking-widest">{data.branch_info?.name || "BGC BRANCH"}</p>
+              <p className="text-sm font-medium text-white/60 uppercase tracking-widest">{data.branch_info?.name || "BGC BRANCH"}</p>
             </div>
             <div className="text-left md:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400/60">Pawn Valuation</p>
-              <p className="text-4xl font-black text-emerald-400">{formatPeso(data.amount)}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pawn-gold/60">Pawn Valuation</p>
+              <p className="text-4xl font-black text-pawn-gold">{formatPeso(data.amount)}</p>
             </div>
           </div>
 
@@ -150,7 +150,7 @@ export default function PublicTicketView() {
               <InfoBlock label="Memory/Storage" value={data.memory_storage || "—"} />
               <InfoBlock label="Condition" value={data.condition || "—"} />
               <InfoBlock label="Items Included" value={data.items_included || "—"} />
-              <InfoBlock label="Status" value="VERIFIED" highlight color="text-emerald-600" />
+              <InfoBlock label="Status" value="VERIFIED" highlight color="text-brand-green" />
             </div>
 
             {/* Visual Evidence Section */}
@@ -253,7 +253,7 @@ export default function PublicTicketView() {
             {/* Customer & Branch Section */}
             <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-zinc-100">
                <div className="bg-zinc-50 rounded-3xl p-8 space-y-4 border border-zinc-100">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Customer Details</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">Customer Details</p>
                   <div className="space-y-4">
                      <div>
                         <p className="text-[9px] font-bold text-zinc-400 uppercase">Registered Name</p>
@@ -267,7 +267,7 @@ export default function PublicTicketView() {
                </div>
 
                <div className="bg-zinc-50 rounded-3xl p-8 space-y-4 border border-zinc-100">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Originating Branch</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">Originating Branch</p>
                   <div className="space-y-4">
                      <div>
                         <p className="text-[9px] font-bold text-zinc-400 uppercase">Branch Name</p>
@@ -276,7 +276,7 @@ export default function PublicTicketView() {
                      <div>
                         <p className="text-[9px] font-bold text-zinc-400 uppercase">Location & Contact</p>
                         <p className="text-sm font-medium text-zinc-700">{data.branch_info?.location}</p>
-                        <p className="text-sm font-black text-emerald-700 mt-1">{data.branch_info?.phone}</p>
+                        <p className="text-sm font-black text-brand-green mt-1">{data.branch_info?.phone}</p>
                      </div>
                   </div>
                </div>
@@ -307,7 +307,7 @@ function InfoBlock({ label, value, highlight = false, color = "text-zinc-900" }:
   return (
     <div className="space-y-1">
       <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-sm font-black uppercase tracking-tight ${highlight ? (color !== "text-zinc-900" ? color : "text-emerald-700") : "text-zinc-800"}`}>
+      <p className={`text-sm font-black uppercase tracking-tight ${highlight ? (color !== "text-zinc-900" ? color : "text-brand-green") : "text-zinc-800"}`}>
         {value || "—"}
       </p>
     </div>

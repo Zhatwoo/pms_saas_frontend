@@ -78,28 +78,28 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
       <StatCard
         label="Active"
         value={data?.active || 0}
-        icon={<div className="text-emerald-600">{checkIcon}</div>}
+        icon={<div className="text-brand-green">{checkIcon}</div>}
       />
       <StatCard
         label="Redeemed"
         value={data?.redeemed || 0}
-        icon={<div className="text-emerald-600">{checkIcon}</div>}
+        icon={<div className="text-brand-green">{checkIcon}</div>}
       />
-      <div className="flex items-center gap-4 rounded-lg bg-[#064e3b] p-5 shadow-sm">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#047857] text-pawn-gold">
+      <div className="flex items-center gap-4 rounded-lg bg-brand-green p-5 shadow-sm">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-pawn-gold">
           {salesIcon}
         </div>
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-[#a7f3d0]">
+          <p className="text-xs font-bold uppercase tracking-wide text-white/70">
             Total Overall Sales
           </p>
-          <p className="mt-0.5 text-2xl sm:text-3xl font-bold text-amber-400">
+          <p className="mt-0.5 text-2xl sm:text-3xl font-bold text-pawn-gold">
             {allBranchSales != null ? formatPeso(allBranchSales) : data?.totalOverallSales || "₱ 0"}
           </p>
           {hasBranchComparison && (
             <div className="mt-1 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#a7f3d0]" />
-              <span className="text-xs text-[#a7f3d0]">Branch total: {formatPeso(branchSales)}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
+              <span className="text-xs text-white/70">Branch total: {formatPeso(branchSales)}</span>
             </div>
           )}
         </div>

@@ -52,7 +52,7 @@ export function ResolveIncidentModal({
               onChange={(event) => onNotesChange(event.target.value)}
               rows={5}
               placeholder="Document the action taken, verification, and final outcome."
-              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
             />
           </label>
         </div>
@@ -69,7 +69,7 @@ export function ResolveIncidentModal({
             type="button"
             onClick={onConfirm}
             disabled={!canSubmit}
-            className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-sm font-bold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Resolving..." : "Confirm Resolve"}
           </button>

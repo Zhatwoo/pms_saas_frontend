@@ -162,7 +162,7 @@ export function TransactionActions({
           <button
             type="button"
             onClick={onNewPawn}
-            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 whitespace-nowrap"
+            className="flex items-center gap-1.5 rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:brightness-110 whitespace-nowrap"
           >
             {plusIcon}
             New Pawn

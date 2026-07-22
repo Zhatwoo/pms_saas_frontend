@@ -177,7 +177,7 @@ export default function ItemsForSalePage() {
   const [categoryTotal, setCategoryTotal] = useState(0);
 
   const toolbarLabelClass = "text-[11px] font-bold uppercase tracking-wider text-text-tertiary";
-  const toolbarSelectClass = "h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+  const toolbarSelectClass = "h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green";
 
   useEffect(() => { setCurrentPage(1); }, [selectedBranch.id, viewMode, category, searchQuery, selectedDate]);
 
@@ -306,7 +306,7 @@ export default function ItemsForSalePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+              className="h-10 w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
             />
           </div>
         </div>
@@ -315,7 +315,7 @@ export default function ItemsForSalePage() {
             <ActionButton
               variant="success"
               onClick={() => setIsAddModalOpen(true)}
-              className="!border-emerald-700 !bg-emerald-700 !text-white shadow-sm hover:!bg-emerald-800 hover:!text-white dark:!bg-emerald-700 dark:!text-white"
+              className="!border-brand-green !bg-brand-green !text-white shadow-sm hover:!brightness-110 hover:!text-white"
             >
               <span className="flex items-center gap-1.5">
                 {plusIcon}
@@ -324,8 +324,8 @@ export default function ItemsForSalePage() {
             </ActionButton>
           )}
           <div className="flex rounded-md border border-border-main overflow-hidden">
-            <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>List</button>
-            <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>Calendar</button>
+            <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-brand-green text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>List</button>
+            <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-brand-green text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>Calendar</button>
           </div>
         </div>
       </div>
@@ -349,7 +349,7 @@ export default function ItemsForSalePage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-emerald-900 text-amber-400">
+              <tr className="bg-pawn-sidebar text-pawn-gold">
                 {['ID', 'Item Name', 'Category', 'Branch', 'Date Added', 'Price', 'Status'].concat(user?.role === 'super_admin' ? ['Actions'] : []).map((h) => (
                   <th key={h} className={`whitespace-nowrap ${h === 'Price' ? 'px-4 py-3 text-xs font-bold uppercase tracking-wide text-center' : h === 'Actions' ? 'px-4 py-3 text-xs font-bold uppercase tracking-wide text-center' : 'px-4 py-3 text-xs font-bold uppercase tracking-wide text-left'}`}>
                     {h}
@@ -379,17 +379,17 @@ export default function ItemsForSalePage() {
                     onClick={() => setSelectedSaleItem(item)}
                     className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60 cursor-pointer"
                   >
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-emerald-800 dark:text-emerald-400">{item.itemId}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-bold text-brand-green">{item.itemId}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-secondary font-medium">{item.itemName}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.category}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.branch}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm text-text-tertiary">{item.availableDate}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-center font-medium text-emerald-700">&#8369;{item.price.toLocaleString()}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-center font-medium text-brand-green">&#8369;{item.price.toLocaleString()}</td>
                     <td className="whitespace-nowrap px-4 py-3"><StatusBadge label={saleStatusLabel(item.status)} variant={statusVariant[item.status] || "green"} /></td>
                     {user?.role === 'super_admin' ? (
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center">
-                          <button type="button" onClick={() => setSelectedSaleItem(item)} title={`View ${item.itemName}`} aria-label={`View ${item.itemName}`} className="inline-flex items-center justify-center bg-transparent p-0 text-emerald-700 transition-colors hover:text-emerald-600 focus:outline-none focus-visible:outline-none">
+                          <button type="button" onClick={() => setSelectedSaleItem(item)} title={`View ${item.itemName}`} aria-label={`View ${item.itemName}`} className="inline-flex items-center justify-center bg-transparent p-0 text-brand-green transition-colors hover:text-brand-green/80 focus:outline-none focus-visible:outline-none">
                             {eyeIcon}
                           </button>
                         </div>
@@ -397,7 +397,7 @@ export default function ItemsForSalePage() {
                     ) : (
                       <td className="px-4 py-3 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button type="button" onClick={() => setSelectedSaleItem(item)} title={`View ${item.itemName}`} aria-label={`View ${item.itemName}`} className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
+                          <button type="button" onClick={() => setSelectedSaleItem(item)} title={`View ${item.itemName}`} aria-label={`View ${item.itemName}`} className="inline-flex items-center gap-1.5 rounded-md border border-brand-green/20 bg-brand-green/10 px-3 py-1.5 text-xs font-bold text-brand-green transition-colors hover:bg-brand-green/20">
                             {eyeIcon}
                             <span>View</span>
                           </button>
@@ -421,10 +421,10 @@ export default function ItemsForSalePage() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6">
           <button type="button" className="absolute inset-0 bg-transparent backdrop-blur-sm" onClick={() => setSelectedSaleItem(null)} aria-label="Close item details" />
           <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-border-main bg-surface text-text-primary shadow-2xl transition-colors dark:border-white/10 dark:bg-zinc-950">
-            <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 px-6 py-4">
+            <div className="bg-gradient-to-r from-brand-green to-brand-green/90 px-6 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-300/90">Item Details</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-pawn-gold/90">Item Details</p>
                   <h2 className="mt-1 text-xl font-black text-white">{selectedSaleItem.itemName}</h2>
                 </div>
                 <button type="button" onClick={() => setSelectedSaleItem(null)} className="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-white/20">Close</button>
@@ -445,7 +445,7 @@ export default function ItemsForSalePage() {
                     <p className="mt-1 break-words text-sm font-semibold text-text-primary">{value as string}</p>
                   </div>
                 ))}
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 sm:col-span-2 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+                <div className="rounded-2xl border border-brand-green/20 bg-brand-green/5 px-4 py-3 sm:col-span-2">
                   <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-text-muted">Added to sale</p>
                   <p className="mt-1 text-sm font-semibold text-text-primary">{selectedSaleItem.availableDate}</p>
                 </div>

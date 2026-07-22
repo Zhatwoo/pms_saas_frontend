@@ -356,7 +356,7 @@ export function BranchDaySessionToolbar({
       <div className="rounded-xl border border-border-main bg-surface-secondary/80 px-4 py-3 shadow-sm print-hide">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+            <p className="text-[10px] font-black uppercase tracking-widest text-brand-green">
               Branch day (Manila)
             </p>
             <p className="truncate text-sm font-semibold text-text-primary">
@@ -380,7 +380,7 @@ export function BranchDaySessionToolbar({
                 checklistHandlesStarting
               }
               onClick={() => setStartOpen(true)}
-              className="rounded-lg border border-emerald-700 bg-emerald-800 px-4 py-2 text-xs font-bold uppercase tracking-wide text-amber-300 shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-xs font-bold uppercase tracking-wide text-pawn-gold shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Start day
             </button>

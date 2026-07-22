@@ -174,8 +174,8 @@ export function BranchSelectorDropdown() {
           `group flex items-center gap-2 rounded-xl border transition-all duration-200` +
           ` px-2.5 py-1.5 md:px-3.5 md:py-2 text-sm font-medium` +
           (open
-            ? ` border-emerald-400/50 bg-emerald-surface text-emerald-text shadow-md shadow-emerald-100/20`
-            : ` border-border-main bg-surface text-text-secondary shadow-sm hover:border-emerald-300 hover:shadow-md`)
+            ? ` border-brand-green/50 bg-emerald-surface text-emerald-text shadow-md shadow-emerald-surface/20`
+            : ` border-border-main bg-surface text-text-secondary shadow-sm hover:border-brand-green/40 hover:shadow-md`)
         }
         title="Switch branch view"
       >
@@ -185,8 +185,8 @@ export function BranchSelectorDropdown() {
             flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-200
             ${
               isAllBranches
-                ? "bg-gradient-to-br from-emerald-500 to-emerald-700 text-white"
-                : "bg-emerald-100 text-emerald-700"
+                ? "bg-gradient-to-br from-brand-green to-pawn-sidebar text-white"
+                : "bg-emerald-surface text-emerald-text"
             }
           `}
         >
@@ -200,7 +200,7 @@ export function BranchSelectorDropdown() {
               {selectedBranch.name}
             </span>
             {isAllBranches && (
-              <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+              <span className="flex items-center gap-0.5 rounded-full bg-gradient-to-r from-pawn-gold to-pawn-gold-light px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                 <ShieldIcon />
                 Admin
               </span>
@@ -227,7 +227,7 @@ export function BranchSelectorDropdown() {
             <span className="text-sm font-semibold uppercase tracking-wider text-text-muted">
               Select Branch
             </span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            <span className="rounded-full bg-emerald-surface px-2 py-0.5 text-xs font-semibold text-emerald-text">
               {branches.length} available
             </span>
           </div>
@@ -256,7 +256,7 @@ export function BranchSelectorDropdown() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search branches..."
-                  className="w-full rounded-lg border border-border-main bg-surface-secondary py-2 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-emerald-300 focus:bg-surface"
+                  className="w-full rounded-lg border border-border-main bg-surface-secondary py-2 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted focus:border-brand-green/40 focus:bg-surface"
                 />
               </div>
             </div>
@@ -293,11 +293,11 @@ export function BranchSelectorDropdown() {
                   key={branch.id}
                   onClick={() => handleSelect(branch)}
                   className={`group/item flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-all duration-150 ${
-                    isSelected ? (isAll ? "bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800" : "bg-emerald-50 text-emerald-800") : "text-text-secondary hover:bg-surface-hover"
+                    isSelected ? (isAll ? "bg-gradient-to-r from-emerald-surface to-emerald-surface/50 text-emerald-text" : "bg-emerald-surface text-emerald-text") : "text-text-secondary hover:bg-surface-hover"
                   }`}
                 >
                   {/* Icon circle */}
-                  <span className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${isAll ? (isSelected ? "bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-200" : "bg-emerald-100 text-emerald-600 group-hover/item:bg-emerald-200") : isSelected ? "bg-emerald-600 text-white shadow-md shadow-emerald-200" : "bg-surface-secondary text-text-muted group-hover/item:bg-surface-hover"}`}>
+                  <span className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-all duration-200 ${isAll ? (isSelected ? "bg-gradient-to-br from-brand-green to-pawn-sidebar text-white shadow-md shadow-brand-green/20" : "bg-emerald-surface text-emerald-text group-hover/item:bg-emerald-border/40") : isSelected ? "bg-brand-green text-white shadow-md shadow-brand-green/20" : "bg-surface-secondary text-text-muted group-hover/item:bg-surface-hover"}`}>
                     {isAll ? <GlobeIcon /> : <BuildingIcon />}
                   </span>
 
@@ -319,7 +319,7 @@ export function BranchSelectorDropdown() {
 
                   {/* Check mark */}
                   {isSelected && (
-                    <span className="flex-shrink-0 text-emerald-600">
+                    <span className="flex-shrink-0 text-brand-green">
                       <CheckIcon />
                     </span>
                   )}

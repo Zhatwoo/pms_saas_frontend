@@ -21,7 +21,7 @@ export function ActionButtons({
         className={`group flex items-center gap-2.5 rounded-xl border px-5 py-3 text-sm font-bold transition-all duration-200 ${
           isAllBranches
             ? "cursor-not-allowed border-border-main bg-surface-secondary text-text-muted opacity-60"
-            : "border-emerald-600 bg-gradient-to-r from-emerald-700 to-emerald-600 text-white shadow-md shadow-emerald-900/20 hover:shadow-lg hover:shadow-emerald-900/30 active:scale-[0.98]"
+            : "border-pawn-sidebar-light bg-gradient-to-r from-pawn-sidebar to-pawn-sidebar-light text-white shadow-md shadow-pawn-sidebar/20 hover:shadow-lg hover:shadow-pawn-sidebar/30 active:scale-[0.98]"
         }`}
       >
         <svg

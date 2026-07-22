@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon, MenuIcon } from "@/lib/icons";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { AccentPicker } from "@/components/shared/accent-picker";
 import { BranchSelectorDropdown } from "@/components/shared/branch-selector-dropdown";
 import { api, ApiError } from "@/lib/api";
 import { extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation";
@@ -590,6 +591,10 @@ export function Header({
               </div>
             </div>
           )}
+        </div>
+
+        <div className="block">
+          <AccentPicker />
         </div>
 
         <div className="block">
