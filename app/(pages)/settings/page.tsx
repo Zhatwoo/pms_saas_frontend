@@ -14,6 +14,30 @@ import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_PRINT_SCREEN_CSS, MOA_SIGNATURE_LINE
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
+import {
+  DEFAULT_SLIP_SECTION_ORDER,
+  MoaSortableGroup,
+  MoaSortableItem,
+  loadSlipSectionOrder,
+  saveSlipSectionOrder,
+  type SlipSectionId,
+} from "./_components/moa-dnd";
+import {
+  MoaDesignCanvasLayer,
+  MOA_FONT_OPTIONS,
+  MOA_PAGE_SIZES,
+  applyToolbarToSelected,
+  loadMoaDesignElements,
+  loadMoaPageSize,
+  saveMoaDesignElements,
+  saveMoaPageSize,
+  type MoaDesignElement,
+  type MoaHeaderFieldKey,
+  type MoaPageSizeId,
+  type MoaTextAlign,
+  type MoaTextStylePatch,
+} from "./_components/moa-design-palette";
+import { MoaDesignToolsPanel, MoaFieldConfigTab } from "./_components/moa-design";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -298,7 +322,18 @@ export default function SettingsPage() {
     { date: "", storage: "", period: "2nd Period", periodValue: "", extend: "", sign: "" },
     { date: "", storage: "", period: "3rd Period", periodValue: "", extend: "", sign: "" },
   ]);
-  const [isTopHeaderSwapped, setIsTopHeaderSwapped] = useState(false);
+  const [slipSectionOrder, setSlipSectionOrder] = useState<SlipSectionId[]>([...DEFAULT_SLIP_SECTION_ORDER]);
+  const [moaDesignElements, setMoaDesignElements] = useState<MoaDesignElement[]>([]);
+  const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
+  const [moaDesignFontFamily, setMoaDesignFontFamily] = useState<string>(MOA_FONT_OPTIONS[0].value);
+  const [moaDesignFontSize, setMoaDesignFontSize] = useState(11);
+  const [moaDesignTextAlign, setMoaDesignTextAlign] = useState<MoaTextAlign>("left");
+  const [moaDesignFontWeight, setMoaDesignFontWeight] = useState<"normal" | "bold">("normal");
+  const [moaDesignFontStyle, setMoaDesignFontStyle] = useState<"normal" | "italic">("normal");
+  const [moaDesignTextDecoration, setMoaDesignTextDecoration] = useState<"none" | "underline" | "line-through">("none");
+  const [moaDesignColor, setMoaDesignColor] = useState("#18181b");
+  const [moaPageSizeId, setMoaPageSizeId] = useState<MoaPageSizeId>("long");
+  const [isPaletteDragging, setIsPaletteDragging] = useState(false);
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
   const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
   const [unitFields, setUnitFields] = useState<UnitFieldKey[]>(DEFAULT_UNIT_FIELDS);
@@ -459,6 +494,116 @@ export default function SettingsPage() {
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+
+  useEffect(() => {
+    setSlipSectionOrder(loadSlipSectionOrder(selectedMoaCategory));
+    setMoaDesignElements(loadMoaDesignElements(selectedMoaCategory));
+    setMoaPageSizeId(loadMoaPageSize(selectedMoaCategory));
+    setSelectedDesignId(null);
+  }, [selectedMoaCategory]);
+
+  const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
+
+  const updateSlipSectionOrder = (next: SlipSectionId[]) => {
+    setSlipSectionOrder(next);
+    saveSlipSectionOrder(selectedMoaCategory, next);
+  };
+
+  const updateMoaDesignElements = (next: MoaDesignElement[]) => {
+    setMoaDesignElements(next);
+    saveMoaDesignElements(selectedMoaCategory, next);
+  };
+
+  const handleMoaPageSizeChange = (id: MoaPageSizeId) => {
+    setMoaPageSizeId(id);
+    saveMoaPageSize(selectedMoaCategory, id);
+  };
+
+  const applyDesignStylePatch = (patch: MoaTextStylePatch) => {
+    if (patch.fontFamily !== undefined) setMoaDesignFontFamily(patch.fontFamily);
+    if (patch.fontSize !== undefined) setMoaDesignFontSize(patch.fontSize);
+    if (patch.textAlign !== undefined) setMoaDesignTextAlign(patch.textAlign);
+    if (patch.fontWeight !== undefined) setMoaDesignFontWeight(patch.fontWeight);
+    if (patch.fontStyle !== undefined) setMoaDesignFontStyle(patch.fontStyle);
+    if (patch.textDecoration !== undefined) setMoaDesignTextDecoration(patch.textDecoration);
+    if (patch.color !== undefined) setMoaDesignColor(patch.color);
+    if (selectedDesignId) {
+      updateMoaDesignElements(applyToolbarToSelected(moaDesignElements, selectedDesignId, patch));
+    }
+  };
+
+  const handleDesignFontFamilyChange = (value: string) => {
+    applyDesignStylePatch({ fontFamily: value });
+  };
+
+  const handleDesignFontSizeChange = (value: number) => {
+    applyDesignStylePatch({ fontSize: value });
+  };
+
+  const handleSelectDesignElement = (id: string | null) => {
+    setSelectedDesignId(id);
+    if (!id) return;
+    const selected = moaDesignElements.find((el) => el.id === id);
+    if (!selected) return;
+    setMoaDesignFontFamily(selected.fontFamily);
+    setMoaDesignFontSize(selected.fontSize);
+    setMoaDesignTextAlign(selected.textAlign);
+    setMoaDesignFontWeight(selected.fontWeight);
+    setMoaDesignFontStyle(selected.fontStyle);
+    setMoaDesignTextDecoration(selected.textDecoration);
+    setMoaDesignColor(selected.color);
+  };
+
+  const handleAddHeaderField = (key: MoaHeaderFieldKey) => {
+    if (!selectedDesignId) return;
+    const selected = moaDesignElements.find((el) => el.id === selectedDesignId);
+    if (!selected || selected.kind !== "header") return;
+    if (selected.headerFields.some((field) => field.key === key)) return;
+    updateMoaDesignElements(
+      moaDesignElements.map((el) =>
+        el.id === selectedDesignId
+          ? {
+              ...el,
+              headerFields: [
+                ...el.headerFields,
+                {
+                  id: `hf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                  key,
+                  x: 8,
+                  y:
+                    el.headerFields.length === 0
+                      ? 8
+                      : Math.max(...el.headerFields.map((field) => field.y + 20)) + 6,
+                  width: 180,
+                },
+              ],
+            }
+          : el,
+      ),
+    );
+  };
+
+  const reorderFinancialFields = (nextIds: string[]) => {
+    setFinancialFields(nextIds as FinancialFieldKey[]);
+  };
+
+  const reorderUnitFields = (nextIds: string[]) => {
+    setUnitFields(nextIds as UnitFieldKey[]);
+  };
+
+  const reorderCustomFinancialFields = (nextIds: string[]) => {
+    setCustomFinancialFields((fields) => {
+      const byId = new Map(fields.map((field) => [field.id, field]));
+      return nextIds.map((id) => byId.get(id)).filter(Boolean) as CustomMoaField[];
+    });
+  };
+
+  const reorderCustomUnitFields = (nextIds: string[]) => {
+    setCustomUnitFields((fields) => {
+      const byId = new Map(fields.map((field) => [field.id, field]));
+      return nextIds.map((id) => byId.get(id)).filter(Boolean) as CustomMoaField[];
+    });
+  };
   const resolvedTermsText = normalizeMoaTerms(termsText);
 
   // Uncontrolled refs for terms editors — avoids cursor-jump on every keystroke
@@ -829,6 +974,360 @@ export default function SettingsPage() {
     );
   };
 
+  const renderShopHeader = (editable: boolean) => (
+    <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
+      <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
+        {shopSettings.shopName}
+      </p>
+      {shopSettings.shopAddress && (
+        <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.shopAddress}</p>
+      )}
+      {shopSettings.phoneNumber && (
+        <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.phoneNumber}</p>
+      )}
+      {editable && canEditMoa && (
+        <p className="pt-0.5 text-[7px] font-semibold uppercase tracking-wide text-sky-600">
+          Drag header to move
+        </p>
+      )}
+    </div>
+  );
+
+  const renderFinancialColumn = (editable: boolean) => {
+    const ordered = financialFields
+      .map((key) => FINANCIAL_FIELD_OPTIONS.find((field) => field.key === key))
+      .filter(Boolean) as typeof FINANCIAL_FIELD_OPTIONS;
+
+    if (!editable || !canEditMoa) {
+      return (
+        <div className="space-y-1">
+          {ordered.map((field) => (
+            <div key={field.key} className="space-y-0.5">
+              <div className="grid grid-cols-[80px_1fr] items-center gap-1">
+                <span className="font-semibold text-zinc-500 uppercase text-[8px]">
+                  {topLabels[field.key]}
+                </span>
+                {CL(field.key, moaFields[field.valueKey], 100)}
+              </div>
+              {field.key === "parkingFee" && (
+                <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
+                  (Cars, motorcycle and bike)
+                </div>
+              )}
+            </div>
+          ))}
+          {customFinancialFields.map((field) => (
+            <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
+              <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+              {CL(`custom-financial-${field.id}`, "", 100)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <MoaSortableGroup
+          group={`financial-${selectedMoaCategory}`}
+          enabled={canEditMoa}
+          itemIds={financialFields}
+          onReorderIds={reorderFinancialFields}
+        >
+          <div className="space-y-1">
+            {ordered.map((field) => (
+              <MoaSortableItem key={field.key} id={field.key} variant="field" handleLabel={`Move ${topLabels[field.key]}`}>
+                <div className="space-y-0.5">
+                  <div className="grid grid-cols-[80px_1fr] items-center gap-1">
+                    {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
+                    {RL(
+                      field.key,
+                      moaFields[field.valueKey],
+                      (value) => updateMoaField(field.valueKey, value),
+                      100,
+                    )}
+                  </div>
+                  {field.key === "parkingFee" && (
+                    <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
+                      (Cars, motorcycle and bike)
+                    </div>
+                  )}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+        <MoaSortableGroup
+          group={`custom-financial-${selectedMoaCategory}`}
+          enabled={canEditMoa && customFinancialFields.length > 1}
+          itemIds={customFinancialFields.map((field) => field.id)}
+          onReorderIds={reorderCustomFinancialFields}
+        >
+          <div className="space-y-1">
+            {customFinancialFields.map((field) => (
+              <MoaSortableItem key={field.id} id={field.id} variant="field" handleLabel={`Move ${field.label}`}>
+                <div className="grid grid-cols-[80px_1fr] items-center gap-1">
+                  <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                  {RL(`custom-financial-${field.id}`, "", () => undefined, 100)}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+      </div>
+    );
+  };
+
+  const renderUnitColumn = (editable: boolean) => {
+    const ordered = unitFields
+      .map((key) => UNIT_FIELD_OPTIONS.find((field) => field.key === key))
+      .filter(Boolean) as typeof UNIT_FIELD_OPTIONS;
+
+    if (!editable || !canEditMoa) {
+      return (
+        <div className="space-y-1">
+          {ordered.map((field) => (
+            <div key={field.key} className="grid grid-cols-[92px_1fr] items-center gap-1">
+              <span className="font-semibold text-zinc-500 uppercase text-[8px]">{topLabels[field.key]}</span>
+              {CL(field.key, moaFields[field.valueKey], 100)}
+            </div>
+          ))}
+          {customUnitFields.map((field) => (
+            <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
+              <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+              {CL(`custom-unit-${field.id}`, "", 100)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <MoaSortableGroup
+          group={`unit-${selectedMoaCategory}`}
+          enabled={canEditMoa}
+          itemIds={unitFields}
+          onReorderIds={reorderUnitFields}
+        >
+          <div className="space-y-1">
+            {ordered.map((field) => (
+              <MoaSortableItem key={field.key} id={field.key} variant="field" handleLabel={`Move ${topLabels[field.key]}`}>
+                <div className="grid grid-cols-[92px_1fr] items-center gap-1">
+                  {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
+                  {RL(
+                    field.key,
+                    moaFields[field.valueKey],
+                    (value) => updateMoaField(field.valueKey, value),
+                    100,
+                  )}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+        <MoaSortableGroup
+          group={`custom-unit-${selectedMoaCategory}`}
+          enabled={canEditMoa && customUnitFields.length > 1}
+          itemIds={customUnitFields.map((field) => field.id)}
+          onReorderIds={reorderCustomUnitFields}
+        >
+          <div className="space-y-1">
+            {customUnitFields.map((field) => (
+              <MoaSortableItem key={field.id} id={field.id} variant="field" handleLabel={`Move ${field.label}`}>
+                <div className="grid grid-cols-[92px_1fr] items-center gap-1">
+                  <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                  {RL(`custom-unit-${field.id}`, "", () => undefined, 100)}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+      </div>
+    );
+  };
+
+  const renderSlipSectionContent = (sectionId: SlipSectionId, editable: boolean) => {
+    switch (sectionId) {
+      case "shopHeader":
+        return renderShopHeader(editable);
+      case "copyMeta":
+        return editable ? (
+          <div className="flex items-center justify-between gap-3 pt-1">
+            {renderEditableLabel("originalCopy", "font-bold italic text-[9.5px]")}
+            <div className="flex items-center gap-1 text-[9.5px]">
+              {renderEditableLabel("unitCode", "font-bold uppercase whitespace-nowrap")}
+              {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v), 100)}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span className="font-bold italic text-[9.5px]">Customer copy</span>
+            <div className="flex items-center gap-1 text-[9.5px]">
+              <span className="font-bold uppercase whitespace-nowrap">{topLabels.unitCode}</span>
+              {CL("unitCode", moaFields.unitCode, 100)}
+            </div>
+          </div>
+        );
+      case "title":
+        return editable ? (
+          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5">
+            <input
+              value={topLabels.moaTitle}
+              onChange={(e) => updateTopLabel("moaTitle", e.target.value)}
+              readOnly={!canEditMoa}
+              tabIndex={canEditMoa ? 0 : -1}
+              spellCheck={false}
+              className={`moa-title-input block w-full text-center text-[11px] font-bold uppercase border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+            />
+          </div>
+        ) : (
+          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5 text-zinc-800">
+            {topLabels.moaTitle}
+          </div>
+        );
+      case "dates":
+        return editable ? (
+          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                {renderEditableLabel("purchasedDate", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
+                {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v), 140)}
+              </div>
+              <div className="flex items-center gap-2">
+                {renderEditableLabel("idsPresented", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
+                {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v), 140)}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
+                {renderEditableLabel("maturityDate", "font-bold uppercase tracking-wider text-[8.5px] mt-0.5")}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
+                    {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
+                    {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
+                    {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 120)}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-zinc-800 font-bold">
+                {renderEditableLabel("expiryDate", "font-bold uppercase tracking-wider text-[8.5px]")}
+                {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v), 80)}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.purchasedDate}</span>
+                {CL("purchasedDate", moaFields.purchasedDate, 140)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.idsPresented}</span>
+                {CL("idsPresented", moaFields.idsPresented, 140)}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
+                <span className="font-bold uppercase tracking-wider text-[8.5px] mt-0.5">{topLabels.maturityDate}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
+                    {CL("maturityDate1st", moaFields.maturityDate1st, 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
+                    {CL("maturityDate2nd", moaFields.maturityDate2nd, 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
+                    {CL("maturityDate3rd", moaFields.maturityDate3rd, 120)}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-red-600 font-bold">
+                <span className="font-bold uppercase tracking-wider text-[8.5px]">{topLabels.expiryDate}</span>
+                {CL("expiryDate", moaFields.expiryDate, 80)}
+              </div>
+            </div>
+          </div>
+        );
+      case "agreement":
+        return editable ? (
+          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
+            <div>
+              {renderEditableLabel("customerIntro", "inline")} {RL("customerName", moaFields.customerName, (v) => updateMoaField("customerName", v), 180)} {renderEditableLabel("legalAgeResident", "inline")} {RL("customerAddress", moaFields.customerAddress, (v) => updateMoaField("customerAddress", v), 220)}. For the amount of {RL("amountInWords", moaFields.principalAmount || "", (v) => updateMoaField("principalAmount", v), 130)} (P {RL("amountInFigures", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("agreementText", "inline")} for THIRTY (30) days from the date of purchase. {renderEditableLabel("repayIntro", "inline")} (P {RL("repurchaseAmount", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("plusText", "inline")} (P {RL("storageFeeValue", moaFields.storageFee || "", (v) => updateMoaField("storageFee", v), 80)}) {renderEditableLabel("storageFeeText", "inline")} {RL("penaltyAmountText", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 80)} (P {RL("penaltyAmount", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 60)}) and you are given 5 days grace period ({RL("gracePeriod", moaFields.expiryDate || "", (v) => updateMoaField("expiryDate", v), 100)}) my right to repurchase back the unit(s) described below is deemed waived.
+            </div>
+          </div>
+        ) : (
+          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
+            <p>
+              {topLabels.customerIntro} {CL("customerName", moaFields.customerName, 180)} {topLabels.legalAgeResident} {CL("customerAddress", moaFields.customerAddress, 220)}. For the amount of {CL("amountInWords", moaFields.principalAmount || "", 130)} (P {CL("amountInFigures", moaFields.amount || "", 80)}) {topLabels.agreementText} for THIRTY (30) days from the date of purchase. {topLabels.repayIntro} (P {CL("repurchaseAmount", moaFields.amount || "", 80)}) {topLabels.plusText} (P {CL("storageFeeValue", moaFields.storageFee || "", 80)}) {topLabels.storageFeeText} {CL("penaltyAmountText", moaFields.penaltyAmount || "", 80)} (P {CL("penaltyAmount", moaFields.penaltyAmount || "", 60)}) and you are given 5 days grace period ({CL("gracePeriod", moaFields.expiryDate || "", 100)}) my right to repurchase back the unit(s) described below is deemed waived.
+            </p>
+          </div>
+        );
+      case "unitFields":
+        return (
+          <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
+            <p className="font-bold text-center underline text-[9.5px]">
+              {editable ? renderEditableLabel("unitDescription", "inline") : topLabels.unitDescription}
+            </p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
+              {renderFinancialColumn(editable)}
+              {renderUnitColumn(editable)}
+            </div>
+          </div>
+        );
+      case "signatures":
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const renderSlipBodySections = (editable: boolean) => {
+    const bodySections = slipSectionOrder.filter((id) => id !== "signatures");
+
+    if (!editable || !canEditMoa) {
+      return bodySections.map((sectionId) => (
+        <div key={sectionId}>{renderSlipSectionContent(sectionId, editable)}</div>
+      ));
+    }
+
+    return (
+      <MoaSortableGroup
+        group={`slip-sections-${selectedMoaCategory}`}
+        enabled={canEditMoa}
+        itemIds={bodySections}
+        onReorderIds={(nextIds) => {
+          const next = [...nextIds, ...slipSectionOrder.filter((id) => !nextIds.includes(id as SlipSectionId))] as SlipSectionId[];
+          updateSlipSectionOrder(next);
+        }}
+      >
+        <div className="space-y-0.5">
+          {bodySections.map((sectionId) => (
+            <MoaSortableItem
+              key={sectionId}
+              id={sectionId}
+              variant="block"
+              handleLabel={`Move ${sectionId === "shopHeader" ? "header" : "section"}`}
+            >
+              {renderSlipSectionContent(sectionId, editable)}
+            </MoaSortableItem>
+          ))}
+        </div>
+      </MoaSortableGroup>
+    );
+  };
+
   return (
     <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
       <div className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
@@ -1112,11 +1611,13 @@ export default function SettingsPage() {
                   </label>
 
                   <button
-                    onClick={() => setIsTopHeaderSwapped((v) => !v)}
-                    disabled={!isSuperAdmin}
+                    onClick={() => {
+                      updateSlipSectionOrder([...DEFAULT_SLIP_SECTION_ORDER]);
+                    }}
+                    disabled={!canEditMoa}
                     className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 sm:w-auto"
                   >
-                    {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
+                    Reset Section Layout
                   </button>
 
                   <button
@@ -1160,19 +1661,63 @@ export default function SettingsPage() {
                   </p>
                 )}
 
+                {isMoaEditMode && canEditMoa && (
+                  <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-[10px] font-medium text-sky-900">
+                    Blank canvas for <strong>{selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "this category" : selectedMoaCategory}</strong> — drag Header, Section, Body, and Elements to build the MOA.
+                  </p>
+                )}
+
                 <div className="min-w-0 overflow-x-auto rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
                   <div className="flex min-w-0 flex-col items-stretch gap-6 xl:flex-row xl:items-start xl:justify-center">
-                    <div className="flex w-full min-w-0 max-w-[816px] flex-1 flex-col gap-6">
+                    <div
+                      className="flex w-full min-w-0 flex-1 flex-col gap-6"
+                      style={{ maxWidth: moaPageSize.screenWidthPx }}
+                    >
+                      {isMoaEditMode ? (
+                        <MoaPaperScale
+                          paperWidth={moaPageSize.screenWidthPx}
+                          paperHeight={moaPageSize.screenHeightPx}
+                        >
+                          <div
+                            className={`${MOA_SETTINGS_PAPER_CLASS} relative bg-white`}
+                            style={{
+                              padding: moaPageSize.padding,
+                              boxSizing: "border-box",
+                              width: moaPageSize.screenWidthPx,
+                              height: moaPageSize.screenHeightPx,
+                              maxHeight: moaPageSize.screenHeightPx,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(228_228_231_/_0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgb(228_228_231_/_0.45)_1px,transparent_1px)] bg-[size:24px_24px]" />
+                            <MoaDesignCanvasLayer
+                              enabled={canEditMoa}
+                              paletteDragging={isPaletteDragging}
+                              elements={moaDesignElements}
+                              selectedId={selectedDesignId}
+                              onSelect={handleSelectDesignElement}
+                              onChangeElements={updateMoaDesignElements}
+                              defaultFontFamily={moaDesignFontFamily}
+                              defaultFontSize={moaDesignFontSize}
+                              branchPreview={shopSettings}
+                            />
+                          </div>
+                        </MoaPaperScale>
+                      ) : (
+                      <>
                       {/* PAGE 1: SLIPS (Original & Customer Copy) */}
-                      <MoaPaperScale>
+                      <MoaPaperScale
+                        paperWidth={moaPageSize.screenWidthPx}
+                        paperHeight={moaPageSize.screenHeightPx}
+                      >
                       <div
-                        className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
+                        className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet relative`}
                         style={{
-                          padding: MOA_LEGAL_PAGE.padding,
+                          padding: moaPageSize.padding,
                           boxSizing: "border-box",
-                          width: MOA_LEGAL_PAGE.screenWidthPx,
-                          height: MOA_LEGAL_PAGE.screenHeightPx,
-                          maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
+                          width: moaPageSize.screenWidthPx,
+                          height: moaPageSize.screenHeightPx,
+                          maxHeight: moaPageSize.screenHeightPx,
                           overflow: "hidden",
                         }}
                       >
@@ -1182,144 +1727,7 @@ export default function SettingsPage() {
                         <div className="moa-slip-half">
                         <div className="moa-slip-copy relative moa-watermark">
                         <div className="moa-slip-body space-y-0.5">
-                          {/* Row 1: Branch Info (centered) */}
-                          <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
-                            <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
-                              {shopSettings.shopName}
-                            </p>
-                            {shopSettings.shopAddress && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.shopAddress}</p>
-                            )}
-                            {shopSettings.phoneNumber && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.phoneNumber}</p>
-                            )}
-                          </div>
-
-                          {/* Row 2: Copy type + Unit Code */}
-                          <div className="flex items-center justify-between gap-3 pt-1">
-                            {renderEditableLabel("originalCopy", "font-bold italic text-[9.5px]")}
-                            <div className="flex items-center gap-1 text-[9.5px]">
-                              {renderEditableLabel("unitCode", "font-bold uppercase whitespace-nowrap")}
-                              {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v), 100)}
-                            </div>
-                          </div>
-
-                          {/* Centered Slip Title */}
-                          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5">
-                            <input
-                              value={topLabels.moaTitle}
-                              onChange={(e) => updateTopLabel("moaTitle", e.target.value)}
-                              readOnly={!canEditMoa}
-                              tabIndex={canEditMoa ? 0 : -1}
-                              spellCheck={false}
-                              className={`moa-title-input block w-full text-center text-[11px] font-bold uppercase border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
-                            />
-                          </div>
-
-                          {/* Dates grid */}
-                          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                {renderEditableLabel("purchasedDate", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
-                                {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v), 140)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {renderEditableLabel("idsPresented", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
-                                {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v), 140)}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
-                                {renderEditableLabel("maturityDate", "font-bold uppercase tracking-wider text-[8.5px] mt-0.5")}
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
-                                    {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
-                                    {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
-                                    {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 120)}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-zinc-800 font-bold">
-                                {renderEditableLabel("expiryDate", "font-bold uppercase tracking-wider text-[8.5px]")}
-                                {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v), 80)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Agreement Paragraph */}
-                          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
-                            <div>
-                              {renderEditableLabel("customerIntro", "inline")} {RL("customerName", moaFields.customerName, (v) => updateMoaField("customerName", v), 180)} {renderEditableLabel("legalAgeResident", "inline")} {RL("customerAddress", moaFields.customerAddress, (v) => updateMoaField("customerAddress", v), 220)}. For the amount of {RL("amountInWords", moaFields.principalAmount || "", (v) => updateMoaField("principalAmount", v), 130)} (P {RL("amountInFigures", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("agreementText", "inline")} for THIRTY (30) days from the date of purchase. {renderEditableLabel("repayIntro", "inline")} (P {RL("repurchaseAmount", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("plusText", "inline")} (P {RL("storageFeeValue", moaFields.storageFee || "", (v) => updateMoaField("storageFee", v), 80)}) {renderEditableLabel("storageFeeText", "inline")} {RL("penaltyAmountText", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 80)} (P {RL("penaltyAmount", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 60)}) and you are given 5 days grace period ({RL("gracePeriod", moaFields.expiryDate || "", (v) => updateMoaField("expiryDate", v), 100)}) my right to repurchase back the unit(s) described below is deemed waived.
-                            </div>
-                          </div>
-
-                          {/* Unit Description & Financial Fields */}
-                          <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
-                            <p className="font-bold text-center underline text-[9.5px]">{renderEditableLabel("unitDescription", "inline")}</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
-                              {/* Left column: Financial fields */}
-                              <div className="space-y-1">
-                                {FINANCIAL_FIELD_OPTIONS.filter((field) =>
-                                  financialFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="space-y-0.5">
-                                    <div className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                      {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
-                                      {RL(
-                                        field.key,
-                                        moaFields[field.valueKey],
-                                        (value) => updateMoaField(field.valueKey, value),
-                                        100
-                                      )}
-                                    </div>
-                                    {field.key === "parkingFee" && (
-                                      <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
-                                        (Cars, motorcycle and bike)
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {customFinancialFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {RL(`custom-financial-${field.id}`, "", () => undefined, 100)}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Right column: Unit description */}
-                              <div className="space-y-1">
-                                {UNIT_FIELD_OPTIONS.filter((field) =>
-                                  unitFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
-                                    {RL(
-                                      field.key,
-                                      moaFields[field.valueKey],
-                                      (value) => updateMoaField(field.valueKey, value),
-                                      100
-                                    )}
-                                  </div>
-                                ))}
-                                {customUnitFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {RL(`custom-unit-${field.id}`, "", () => undefined, 100)}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
+                          {renderSlipBodySections(true)}
                           </div>
                           <div className="moa-slip-footer space-y-0.5">
                           {/* Signatures */}
@@ -1385,127 +1793,7 @@ export default function SettingsPage() {
                         <div className="moa-slip-half">
                         <div className="moa-slip-copy relative moa-watermark">
                         <div className="moa-slip-body space-y-0.5">
-                          {/* Row 1: Branch Info (centered) */}
-                          <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
-                            <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
-                              {shopSettings.shopName}
-                            </p>
-                            {shopSettings.shopAddress && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.shopAddress}</p>
-                            )}
-                            {shopSettings.phoneNumber && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.phoneNumber}</p>
-                            )}
-                          </div>
-
-                          {/* Row 2: Copy type + Unit Code */}
-                          <div className="flex items-center justify-between gap-3 pt-1">
-                            <span className="font-bold italic text-[9.5px]">Customer copy</span>
-                            <div className="flex items-center gap-1 text-[9.5px]">
-                              <span className="font-bold uppercase whitespace-nowrap">{topLabels.unitCode}</span>
-                              {CL("unitCode", moaFields.unitCode, 100)}
-                            </div>
-                          </div>
-
-                          {/* Centered Slip Title */}
-                          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5 text-zinc-800">
-                            {topLabels.moaTitle}
-                          </div>
-
-                          {/* Dates grid */}
-                          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.purchasedDate}</span>
-                                {CL("purchasedDate", moaFields.purchasedDate, 140)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.idsPresented}</span>
-                                {CL("idsPresented", moaFields.idsPresented, 140)}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
-                                <span className="font-bold uppercase tracking-wider text-[8.5px] mt-0.5">{topLabels.maturityDate}</span>
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
-                                    {CL("maturityDate1st", moaFields.maturityDate1st, 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
-                                    {CL("maturityDate2nd", moaFields.maturityDate2nd, 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
-                                    {CL("maturityDate3rd", moaFields.maturityDate3rd, 120)}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-red-600 font-bold">
-                                <span className="font-bold uppercase tracking-wider text-[8.5px]">{topLabels.expiryDate}</span>
-                                {CL("expiryDate", moaFields.expiryDate, 80)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Agreement Paragraph */}
-                          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
-                            <p>
-                              {topLabels.customerIntro} {CL("customerName", moaFields.customerName, 180)} {topLabels.legalAgeResident} {CL("customerAddress", moaFields.customerAddress, 220)}. For the amount of {CL("amountInWords", moaFields.principalAmount || "", 130)} (P {CL("amountInFigures", moaFields.amount || "", 80)}) {topLabels.agreementText} for THIRTY (30) days from the date of purchase. {topLabels.repayIntro} (P {CL("repurchaseAmount", moaFields.amount || "", 80)}) {topLabels.plusText} (P {CL("storageFeeValue", moaFields.storageFee || "", 80)}) {topLabels.storageFeeText} {CL("penaltyAmountText", moaFields.penaltyAmount || "", 80)} (P {CL("penaltyAmount", moaFields.penaltyAmount || "", 60)}) and you are given 5 days grace period ({CL("gracePeriod", moaFields.expiryDate || "", 100)}) my right to repurchase back the unit(s) described below is deemed waived.
-                            </p>
-                          </div>
-
-                          {/* Unit Description & Financial Fields */}
-                          <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
-                            <p className="font-bold text-center underline text-[9.5px]">{topLabels.unitDescription}</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
-                              {/* Left column: Financial fields */}
-                              <div className="space-y-1">
-                                {FINANCIAL_FIELD_OPTIONS.filter((field) =>
-                                  financialFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="space-y-0.5">
-                                    <div className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                      <span className="font-semibold text-zinc-500 uppercase text-[8px]">{topLabels[field.key]}</span>
-                                      {CL(field.key, moaFields[field.valueKey], 100)}
-                                    </div>
-                                    {field.key === "parkingFee" && (
-                                      <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
-                                        (Cars, motorcycle and bike)
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {customFinancialFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {CL(`custom-financial-${field.id}`, "", 100)}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Right column: Unit description */}
-                              <div className="space-y-1">
-                                {UNIT_FIELD_OPTIONS.filter((field) =>
-                                  unitFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{topLabels[field.key]}</span>
-                                    {CL(field.key, moaFields[field.valueKey], 100)}
-                                  </div>
-                                ))}
-                                {customUnitFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {CL(`custom-unit-${field.id}`, "", 100)}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
+                          {renderSlipBodySections(false)}
                           </div>
                           <div className="moa-slip-footer space-y-0.5">
                           {/* Signatures */}
@@ -1563,15 +1851,18 @@ export default function SettingsPage() {
                       </MoaPaperScale>
 
                       {/* PAGE 2: TERMS AND CONDITIONS */}
-                      <MoaPaperScale>
+                      <MoaPaperScale
+                        paperWidth={moaPageSize.screenWidthPx}
+                        paperHeight={moaPageSize.screenHeightPx}
+                      >
                       <div
                         className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
                         style={{
-                          padding: MOA_LEGAL_PAGE.padding,
+                          padding: moaPageSize.padding,
                           boxSizing: "border-box",
-                          width: MOA_LEGAL_PAGE.screenWidthPx,
-                          height: MOA_LEGAL_PAGE.screenHeightPx,
-                          maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
+                          width: moaPageSize.screenWidthPx,
+                          height: moaPageSize.screenHeightPx,
+                          maxHeight: moaPageSize.screenHeightPx,
                           overflow: "hidden",
                         }}
                       >
@@ -1744,185 +2035,124 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       </MoaPaperScale>
+                      </>
+                      )}
                     </div>
                     {isMoaEditMode && (
-                      <aside className="w-full min-w-0 xl:w-80 flex-none space-y-4">
-                        <div className="space-y-4 rounded-xl border border-border-main bg-surface p-4 shadow-sm">
-                          <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                            MOA Field Config
-                          </h3>
-                          <p className="mt-1 text-[9px] leading-4 text-zinc-500">
-                            Configure fields for {selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "all categories" : selectedMoaCategory}.
-                          </p>
-                        </div>
-
-                        <div className="space-y-2 rounded-md border border-zinc-200 p-2">
-                          <p className="text-[10px] font-bold uppercase text-zinc-700">Financial Details</p>
-                          <div className="space-y-1">
-                            {FINANCIAL_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
-                                <input
-                                  type="checkbox"
-                                  checked={financialFields.includes(field.key)}
-                                  onChange={() =>
-                                    toggleMoaSectionField(field.key, financialFields, setFinancialFields)
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-emerald-700"
-                                />
-                                {topLabels[field.key]}
-                              </label>
-                            ))}
-                          </div>
-                          {customFinancialFields.map((field) => (
-                            <div key={field.id} className="flex items-center gap-1">
-                              <input
-                                value={field.label}
-                                onChange={(event) =>
-                                  setCustomFinancialFields((fields) =>
-                                    fields.map((currentField) =>
-                                      currentField.id === field.id
-                                        ? { ...currentField, label: event.target.value }
-                                        : currentField,
-                                    ),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomFinancialFields((fields) =>
-                                    fields.filter((currentField) => currentField.id !== field.id),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                aria-label={`Remove ${field.label}`}
-                              >
-                                X
-                              </button>
-                            </div>
-                          ))}
-                          <div className="flex gap-1">
-                            <input
-                              value={newFinancialField}
-                              onChange={(event) => setNewFinancialField(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  addCustomMoaField(
-                                    newFinancialField,
-                                    setNewFinancialField,
-                                    setCustomFinancialFields,
-                                  );
-                                }
-                              }}
-                              disabled={!canEditMoa}
-                              placeholder="New financial field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
+                      <aside className="w-full min-w-0 xl:sticky xl:top-4 xl:w-80 xl:max-h-[calc(100vh-5rem)] flex-none xl:overflow-y-auto">
+                        <MoaDesignToolsPanel
+                          enabled={canEditMoa}
+                          pageSize={moaPageSizeId}
+                          onPageSizeChange={handleMoaPageSizeChange}
+                          fontFamily={moaDesignFontFamily}
+                          fontSize={moaDesignFontSize}
+                          textAlign={moaDesignTextAlign}
+                          fontWeight={moaDesignFontWeight}
+                          fontStyle={moaDesignFontStyle}
+                          textDecoration={moaDesignTextDecoration}
+                          color={moaDesignColor}
+                          onFontFamilyChange={handleDesignFontFamilyChange}
+                          onFontSizeChange={handleDesignFontSizeChange}
+                          onTextStyleChange={applyDesignStylePatch}
+                          selectedId={selectedDesignId}
+                          onPaletteDragStateChange={setIsPaletteDragging}
+                          onAddHeaderField={handleAddHeaderField}
+                          onDeleteSelected={() => {
+                            if (!selectedDesignId) return;
+                            updateMoaDesignElements(
+                              moaDesignElements.filter((el) => el.id !== selectedDesignId),
+                            );
+                            setSelectedDesignId(null);
+                          }}
+                          onClearAll={() => {
+                            updateMoaDesignElements([]);
+                            setSelectedDesignId(null);
+                          }}
+                          fieldConfig={
+                            <MoaFieldConfigTab
+                              enabled={canEditMoa}
+                              categoryLabel={
+                                selectedMoaCategory === DEFAULT_MOA_CATEGORY
+                                  ? "all categories"
+                                  : selectedMoaCategory
+                              }
+                              groupSuffix={selectedMoaCategory}
+                              financialOptions={FINANCIAL_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              unitOptions={UNIT_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              financialFields={financialFields}
+                              unitFields={unitFields}
+                              customFinancialFields={customFinancialFields}
+                              customUnitFields={customUnitFields}
+                              newFinancialField={newFinancialField}
+                              newUnitField={newUnitField}
+                              onReorderFinancial={reorderFinancialFields}
+                              onReorderUnit={reorderUnitFields}
+                              onReorderCustomFinancial={reorderCustomFinancialFields}
+                              onReorderCustomUnit={reorderCustomUnitFields}
+                              onToggleFinancial={(key) =>
+                                toggleMoaSectionField(
+                                  key as FinancialFieldKey,
+                                  financialFields,
+                                  setFinancialFields,
+                                )
+                              }
+                              onToggleUnit={(key) =>
+                                toggleMoaSectionField(
+                                  key as UnitFieldKey,
+                                  unitFields,
+                                  setUnitFields,
+                                )
+                              }
+                              onCustomFinancialLabelChange={(id, label) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onCustomUnitLabelChange={(id, label) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onRemoveCustomFinancial={(id) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onRemoveCustomUnit={(id) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onNewFinancialChange={setNewFinancialField}
+                              onNewUnitChange={setNewUnitField}
+                              onAddCustomFinancial={() =>
                                 addCustomMoaField(
                                   newFinancialField,
                                   setNewFinancialField,
                                   setCustomFinancialFields,
                                 )
                               }
-                              disabled={!canEditMoa || !newFinancialField.trim()}
-                              className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 rounded-md border border-zinc-200 p-2">
-                          <p className="text-[10px] font-bold uppercase text-zinc-700">Unit Description</p>
-                          <div className="space-y-1">
-                            {UNIT_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
-                                <input
-                                  type="checkbox"
-                                  checked={unitFields.includes(field.key)}
-                                  onChange={() =>
-                                    toggleMoaSectionField(field.key, unitFields, setUnitFields)
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-emerald-700"
-                                />
-                                {topLabels[field.key]}
-                              </label>
-                            ))}
-                          </div>
-                          {customUnitFields.map((field) => (
-                            <div key={field.id} className="flex items-center gap-1">
-                              <input
-                                value={field.label}
-                                onChange={(event) =>
-                                  setCustomUnitFields((fields) =>
-                                    fields.map((currentField) =>
-                                      currentField.id === field.id
-                                        ? { ...currentField, label: event.target.value }
-                                        : currentField,
-                                    ),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomUnitFields((fields) =>
-                                    fields.filter((currentField) => currentField.id !== field.id),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                aria-label={`Remove ${field.label}`}
-                              >
-                                X
-                              </button>
-                            </div>
-                          ))}
-                          <div className="flex gap-1">
-                            <input
-                              value={newUnitField}
-                              onChange={(event) => setNewUnitField(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  addCustomMoaField(
-                                    newUnitField,
-                                    setNewUnitField,
-                                    setCustomUnitFields,
-                                  );
-                                }
-                              }}
-                              disabled={!canEditMoa}
-                              placeholder="New unit field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
+                              onAddCustomUnit={() =>
                                 addCustomMoaField(
                                   newUnitField,
                                   setNewUnitField,
                                   setCustomUnitFields,
                                 )
                               }
-                              disabled={!canEditMoa || !newUnitField.trim()}
-                              className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
+                              onPaletteDragStateChange={setIsPaletteDragging}
+                            />
+                          }
+                        />
                       </aside>
                     )}
                   </div>
@@ -1930,7 +2160,7 @@ export default function SettingsPage() {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    This template matches the printed MOA layout. Enable Edit Mode and unlock template to modify any section.
+                    Design tools (Canvas / Layout / Elements / Text / Fields tabs) are frontend-only for now.
                   </p>
 
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
