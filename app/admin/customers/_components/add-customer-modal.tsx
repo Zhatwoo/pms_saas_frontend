@@ -151,14 +151,14 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-emerald-900 px-6 py-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+        <div className="bg-pawn-sidebar px-6 py-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pawn-gold">
             Customer Management
           </p>
           <div className="mt-2 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">Add New Customer</h2>
-              <p className="mt-1 text-sm text-emerald-50/80">
+              <p className="mt-1 text-sm text-white/80">
                 Register a new customer profile with their identification
                 details.
               </p>
@@ -205,7 +205,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
                 value={form.fullName}
                 onChange={(e) => updateField("fullName", e.target.value)}
                 placeholder="Juan Dela Cruz"
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </div>
 
@@ -221,7 +221,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
                 placeholder="+639123456789"
                 maxLength={13}
                 aria-invalid={phoneError ? "true" : "false"}
-                className={`h-11 w-full rounded-md border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700 ${
+                className={`h-11 w-full rounded-md border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green ${
                   phoneError ? "border-red-400" : "border-input-border"
                 }`}
               />
@@ -242,7 +242,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
                 placeholder="juandelacruz@gmail.com"
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </div>
 
@@ -254,7 +254,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
               <select
                 value={form.idType}
                 onChange={(e) => updateField("idType", e.target.value)}
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               >
                 {idTypeOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -274,7 +274,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
                 value={form.idNumber}
                 onChange={(e) => updateField("idNumber", e.target.value)}
                 placeholder="N5012345678"
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </div>
 
@@ -288,7 +288,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
                 value={form.address}
                 onChange={(e) => updateField("address", e.target.value)}
                 placeholder="123 Main Street, Brgy. San Antonio, Manila"
-                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </div>
           </div>
@@ -309,7 +309,7 @@ export function AddCustomerModal({ onClose, onSave }: AddCustomerModalProps) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
+              className="rounded-md bg-brand-green px-4 py-2.5 text-sm font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
             >
               {isSubmitting ? "Saving..." : "Save Customer"}
             </button>

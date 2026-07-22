@@ -165,7 +165,7 @@ export function DailyBalanceConfirmation({
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
         <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto scale-in-center rounded-2xl border border-border-main bg-surface p-4 shadow-2xl sm:p-6">
         <div className="mb-6 flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:gap-4 sm:text-left">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-amber-400">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-green text-pawn-gold">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
@@ -186,7 +186,7 @@ export function DailyBalanceConfirmation({
             <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-text-muted">
               Expected Amount
             </label>
-            <p className="text-2xl font-black text-amber-400 sm:text-3xl">
+            <p className="text-2xl font-black text-pawn-gold sm:text-3xl">
               {formatPeso(
                 Number(String(currentCash ?? "0").replace(/,/g, "")) || 0,
               )}
@@ -207,7 +207,7 @@ export function DailyBalanceConfirmation({
                 value={confirmedAmount}
                 onChange={handleInputChange}
                 disabled={isSubmitting}
-                className="w-full rounded-xl border-2 border-border-main bg-surface py-3.5 pl-10 pr-4 text-center text-xl font-black text-amber-400 outline-none transition-all focus:border-emerald-500 disabled:opacity-50 sm:py-4 sm:text-left"
+                className="w-full rounded-xl border-2 border-border-main bg-surface py-3.5 pl-10 pr-4 text-center text-xl font-black text-pawn-gold outline-none transition-all focus:border-brand-green disabled:opacity-50 sm:py-4 sm:text-left"
               />
             </div>
           </div>
@@ -250,7 +250,7 @@ export function DailyBalanceConfirmation({
             className={`w-full rounded-xl py-3.5 text-sm font-bold text-white shadow-lg transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:py-3 ${
               type !== "starting" ? "sm:flex-1" : ""
             } ${
-              type === "starting" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
+              type === "starting" ? "bg-brand-green shadow-brand-green/20" : "bg-amber-600 shadow-amber-600/20"
             }`}
           >
             {isSubmitting ? "Processing..." : isLoadingExpectedAmount ? "Loading expected amount..." : "Confirm & Proceed"}

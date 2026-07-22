@@ -1,6 +1,6 @@
 const barColors = [
-  "bg-emerald-600",
-  "bg-emerald-500",
+  "bg-brand-green",
+  "bg-brand-green/70",
   "bg-pawn-gold",
   "bg-yellow-500",
   "bg-orange-400",
@@ -32,7 +32,7 @@ export function BranchSalesTable({ data = [], date, title = "Per-Branch Sales" }
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
-      <div className="bg-emerald-900 px-4 py-3">
+      <div className="bg-pawn-sidebar px-4 py-3">
         <h3 className="text-sm font-bold text-pawn-gold sm:text-base">
           {title} &mdash; {date || "Today"}
         </h3>
@@ -105,7 +105,7 @@ export function BranchSalesTable({ data = [], date, title = "Per-Branch Sales" }
               <td className="px-4 py-3 text-center text-sm font-bold text-text-primary">
                 {totalTxn}
               </td>
-              <td className="px-4 py-3 text-right text-sm font-bold text-emerald-700">
+              <td className="px-4 py-3 text-right text-sm font-bold text-brand-green">
                 {formatPeso(totalSales)}
               </td>
               <td className="px-4 py-3" />

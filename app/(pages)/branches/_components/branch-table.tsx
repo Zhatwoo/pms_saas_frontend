@@ -177,7 +177,7 @@ export function BranchTable({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1020px] text-base">
             <thead>
-              <tr className="bg-emerald-900 text-amber-400">
+              <tr className="bg-pawn-sidebar text-pawn-gold">
                 <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
                   Branch ID
                 </th>

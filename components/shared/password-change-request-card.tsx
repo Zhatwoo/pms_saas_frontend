@@ -70,7 +70,7 @@ function PasswordField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className="h-10 w-full rounded-lg border border-input-border bg-input-bg px-3 pr-12 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+          className="h-10 w-full rounded-lg border border-input-border bg-input-bg px-3 pr-12 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
         />
         <button
           type="button"
@@ -423,7 +423,7 @@ export function PasswordChangeRequestCard() {
       </button>
 
       {canChangeDirectly && success && (
-        <p className="mt-2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{success}</p>
+        <p className="mt-2 text-[10px] font-semibold text-brand-green">{success}</p>
       )}
 
       {canRequest && (
@@ -439,12 +439,12 @@ export function PasswordChangeRequestCard() {
             <p className="mt-1 text-[9px] text-zinc-600 dark:text-zinc-500">Approval Route: {approverLabel}</p>
           )}
           {hasOneTimeAccess && (
-            <p className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200">
+            <p className="mt-2 rounded-lg border border-brand-green/30 bg-brand-green/10 px-3 py-2 text-[10px] font-semibold text-brand-green">
               One-time password change access is approved. Click Change Password to use it.
             </p>
           )}
           {success && (
-            <p className="mt-2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{success}</p>
+            <p className="mt-2 text-[10px] font-semibold text-brand-green">{success}</p>
           )}
         </div>
       )}
@@ -475,7 +475,7 @@ export function PasswordChangeRequestCard() {
                     <button
                       onClick={() => openReviewModal(request, "approved")}
                       disabled={reviewingId === request.id}
-                      className="rounded-md bg-emerald-700 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white transition-colors hover:bg-emerald-800 disabled:opacity-60"
+                      className="rounded-md bg-brand-green px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white transition-colors hover:opacity-90 disabled:opacity-60"
                     >
                       Approve
                     </button>
@@ -502,7 +502,7 @@ export function PasswordChangeRequestCard() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.10),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.22),transparent_18%)] dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_18%)]" />
             <div className="relative px-5 py-6 sm:px-6 sm:py-7">
               <div className="mx-auto flex w-full flex-col items-center text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 shadow-[0_0_0_1px_rgba(16,185,129,0.08)] dark:text-emerald-200">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-brand-green/20 bg-brand-green/10 text-brand-green shadow-[0_0_0_1px_rgba(16,185,129,0.08)]">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 17.5A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-9A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5z" />
                     <path d="M12 11a2 2 0 0 1 2 2v2H10v-2a2 2 0 0 1 2-2z" />
@@ -526,7 +526,7 @@ export function PasswordChangeRequestCard() {
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}
                     placeholder="Example: I suspect my password was exposed and need immediate reset approval."
-                    className="min-h-[140px] w-full rounded-lg border border-input-border bg-input-bg px-4 py-3 pr-14 text-sm leading-6 text-zinc-900 outline-none transition-colors placeholder:text-zinc-500 focus:border-emerald-500 dark:text-zinc-100 dark:placeholder:text-zinc-400"
+                    className="min-h-[140px] w-full rounded-lg border border-input-border bg-input-bg px-4 py-3 pr-14 text-sm leading-6 text-zinc-900 outline-none transition-colors placeholder:text-zinc-500 focus:border-brand-green dark:text-zinc-100 dark:placeholder:text-zinc-400"
                   />
                   <span className="pointer-events-none absolute bottom-2.5 right-3 text-xs text-zinc-900 dark:text-zinc-400">
                     {reason.length}/500
@@ -549,7 +549,7 @@ export function PasswordChangeRequestCard() {
                   <button
                     onClick={() => void submitRequest()}
                     disabled={isSubmitting}
-                    className="rounded-lg bg-emerald-600 px-5 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
+                    className="rounded-lg bg-brand-green px-5 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:opacity-60"
                   >
                     {isSubmitting ? "Submitting..." : "Submit Request"}
                   </button>
@@ -564,7 +564,7 @@ export function PasswordChangeRequestCard() {
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={closeReviewModal} />
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
-            <div className={`h-1.5 ${reviewModal.decision === "approved" ? "bg-emerald-500" : "bg-red-500"}`} />
+            <div className={`h-1.5 ${reviewModal.decision === "approved" ? "bg-brand-green" : "bg-red-500"}`} />
             <div className="p-6">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-text-tertiary">
                 Password Approval
@@ -589,7 +589,7 @@ export function PasswordChangeRequestCard() {
                 onChange={(event) => setReviewNote(event.target.value)}
                 maxLength={500}
                 placeholder={reviewModal.decision === "approved" ? "Example: Approved for one-time password change access." : "Explain why this request is rejected."}
-                className="mt-2 min-h-[120px] w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
+                className="mt-2 min-h-[120px] w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"
               />
               {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
               <div className="mt-5 flex justify-end gap-2">
@@ -603,7 +603,7 @@ export function PasswordChangeRequestCard() {
                 <button
                   onClick={() => void reviewRequest()}
                   disabled={Boolean(reviewingId)}
-                  className={`rounded-lg px-4 py-2 text-xs font-bold text-white disabled:opacity-60 ${reviewModal.decision === "approved" ? "bg-emerald-700 hover:bg-emerald-800" : "bg-red-600 hover:bg-red-700"}`}
+                  className={`rounded-lg px-4 py-2 text-xs font-bold text-white disabled:opacity-60 ${reviewModal.decision === "approved" ? "bg-brand-green hover:opacity-90" : "bg-red-600 hover:bg-red-700"}`}
                 >
                   {reviewingId ? "Saving..." : reviewModal.decision === "approved" ? "Approve" : "Reject"}
                 </button>
@@ -617,9 +617,9 @@ export function PasswordChangeRequestCard() {
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setIsDirectChangeModalOpen(false)} />
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
-            <div className="h-1.5 bg-emerald-500" />
+            <div className="h-1.5 bg-brand-green" />
             <div className="p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-500">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-green">
                 Super Admin
               </p>
               <h3 className="mt-2 text-xl font-black text-text-primary">Change Password</h3>
@@ -666,7 +666,7 @@ export function PasswordChangeRequestCard() {
                 <button
                   onClick={() => void submitDirectChange()}
                   disabled={isChangingDirect}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
+                  className="rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {isChangingDirect ? "Saving..." : "Change Password"}
                 </button>
@@ -680,9 +680,9 @@ export function PasswordChangeRequestCard() {
         <div className="fixed inset-0 z-[85] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setIsActivationModalOpen(false)} />
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
-            <div className="h-1.5 bg-emerald-500" />
+            <div className="h-1.5 bg-brand-green" />
             <div className="p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-500">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-green">
                 One-Time Access
               </p>
               <h3 className="mt-2 text-xl font-black text-text-primary">Activate New Password</h3>
@@ -729,7 +729,7 @@ export function PasswordChangeRequestCard() {
                 <button
                   onClick={() => void activateApprovedRequest()}
                   disabled={isActivating}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
+                  className="rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {isActivating ? "Activating..." : "Use Approval"}
                 </button>

@@ -169,11 +169,11 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
         </button>
 
         {/* Left Side Branding */}
-        <div className="relative flex w-full flex-col items-center justify-center bg-emerald-800 px-8 py-10 md:w-2/5">
+        <div className="relative flex w-full flex-col items-center justify-center bg-brand-green px-8 py-10 md:w-2/5">
           <div className="absolute right-[-20px] top-[-30px] h-40 w-40 rounded-full bg-white/5" />
           <div className="absolute bottom-[-40px] left-[-40px] h-40 w-40 rounded-full bg-white/5" />
           <div className="relative flex flex-col items-center">
-            <div className="rounded-2xl bg-emerald-950/50 p-2">
+            <div className="rounded-2xl bg-black/20 p-2">
               <div className="overflow-hidden rounded-xl ring-2 ring-amber-400/60">
                 <Image
                   src={BRAND_CONFIG.loginLogo}
@@ -195,7 +195,7 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
 
         {/* Right Side Form */}
         <div className="flex w-full flex-col justify-center bg-stone-100 px-8 py-8 md:w-3/5">
-          <h3 className="text-xl font-bold text-emerald-950">Request access</h3>
+          <h3 className="text-xl font-bold text-brand-green">Request access</h3>
           <p className="mt-1 text-xs text-zinc-500">
             Your account must be approved by a Super Admin before you can sign
             in.
@@ -359,7 +359,7 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
                 isLoadingBranches ||
                 branches.length === 0
               }
-              className="mt-2 w-full bg-emerald-800 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              className="mt-2 w-full bg-brand-green py-3 text-base font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
             >
               {isSubmitting ? "Submitting…" : "Submit request"}
             </button>
@@ -374,7 +374,7 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
                 onClose();
                 onSwitchToLogin();
               }}
-              className="font-bold text-emerald-800 hover:underline"
+              className="font-bold text-brand-green hover:underline"
             >
               Sign In
             </button>

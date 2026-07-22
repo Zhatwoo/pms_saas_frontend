@@ -206,7 +206,7 @@ function ExpirationMonitoringPageContent() {
   return (
     <div className="space-y-5">
       {toastMessage ? (
-        <div className="fixed right-4 top-4 z-50 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-md">
+        <div className="fixed right-4 top-4 z-50 rounded-md bg-brand-green px-4 py-2 text-sm font-semibold text-white shadow-md">
           {toastMessage}
         </div>
       ) : null}

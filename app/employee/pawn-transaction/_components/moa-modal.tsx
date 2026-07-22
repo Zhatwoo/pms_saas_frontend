@@ -606,16 +606,16 @@ export function MoaModal({
   return (
     <div id="moa-modal-root" className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 text-zinc-900">
       <div
-        className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print"
+        className="fixed inset-0 bg-brand-green/40 backdrop-blur-md transition-opacity no-print"
         onClick={isViewMode ? onClose : undefined}
       />
       <div
-        className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10 light moa-paper-effect"
+        className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden bg-white rounded-3xl shadow-2xl shadow-brand-green/20 animate-in fade-in zoom-in-95 duration-300 flex flex-col relative z-10 light moa-paper-effect"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         {!autoPrint && (
-          <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10 flex items-center justify-between no-print">
+          <div className="bg-gradient-to-r from-brand-green via-brand-green to-brand-green px-6 py-5 text-white shrink-0 relative z-10 flex items-center justify-between no-print">
             <div>
               <h2 className="text-xl font-black tracking-tight text-white leading-none">{labels?.moaTitle || "Memorandum of Agreement Slip"}</h2>
             </div>
@@ -633,12 +633,12 @@ export function MoaModal({
         )}
 
         {autoPrint && (
-          <div className="bg-emerald-50 px-6 py-4 flex items-center justify-between border-b border-emerald-100 no-print">
+          <div className="bg-brand-green/10 px-6 py-4 flex items-center justify-between border-b border-brand-green/20 no-print">
             <div className="flex items-center gap-3">
-              <div className="animate-spin h-4 w-4 border-2 border-emerald-600 border-t-transparent rounded-full" />
-              <p className="text-sm font-bold text-emerald-900">Preparing print dialog...</p>
+              <div className="animate-spin h-4 w-4 border-2 border-brand-green border-t-transparent rounded-full" />
+              <p className="text-sm font-bold text-brand-green">Preparing print dialog...</p>
             </div>
-            <button onClick={onClose} className="text-xs font-bold text-emerald-700 hover:underline">Cancel</button>
+            <button onClick={onClose} className="text-xs font-bold text-brand-green hover:underline">Cancel</button>
           </div>
         )}
 
@@ -735,7 +735,7 @@ export function MoaModal({
                             <span className="font-semibold text-zinc-500 uppercase text-[8px]">
                               {labels?.[field] || financialLabelFallbacks[field]}
                             </span>
-                            <span className={`border-b border-zinc-300 w-[100px] inline-block text-center ${isTotal ? "font-bold text-emerald-800" : "text-zinc-900"}`}>
+                            <span className={`border-b border-zinc-300 w-[100px] inline-block text-center ${isTotal ? "font-bold text-brand-green" : "text-zinc-900"}`}>
                               {financialValues[field]}
                             </span>
                           </div>
@@ -922,7 +922,7 @@ export function MoaModal({
                             <span className="font-semibold text-zinc-500 uppercase text-[8px]">
                               {labels?.[field] || financialLabelFallbacks[field]}
                             </span>
-                            <span className={`border-b border-zinc-300 w-[100px] inline-block text-center ${isTotal ? "font-bold text-emerald-800" : "text-zinc-900"}`}>
+                            <span className={`border-b border-zinc-300 w-[100px] inline-block text-center ${isTotal ? "font-bold text-brand-green" : "text-zinc-900"}`}>
                               {financialValues[field]}
                             </span>
                           </div>
@@ -1060,7 +1060,7 @@ export function MoaModal({
                   <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
 
                   <div className="text-center flex flex-col items-center space-y-1.5">
-                    <span className="font-bold uppercase text-[8.5px] text-emerald-900 block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
+                    <span className="font-bold uppercase text-[8.5px] text-brand-green block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
                     <span className="text-[7.5px] text-zinc-500 block leading-tight">{authorizedSubtext}</span>
 
                     <MoaNamedSignatureLine
@@ -1126,7 +1126,7 @@ export function MoaModal({
                   <MoaNamedSignatureLine name={fullName} label={sellerSignatureLabel} />
 
                   <div className="text-center flex flex-col items-center space-y-1.5">
-                    <span className="font-bold uppercase text-[8.5px] text-emerald-900 block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
+                    <span className="font-bold uppercase text-[8.5px] text-brand-green block tracking-wide">{labels?.authorizedText || "I HEREBY AUTHORIZED"}</span>
                     <span className="text-[7.5px] text-zinc-500 block leading-tight">{authorizedSubtext}</span>
 
                     <MoaNamedSignatureLine
@@ -1215,7 +1215,7 @@ export function MoaModal({
                   type="button"
                   onClick={handleFinalizeRequest}
                   disabled={isLoading || confirmDisabled}
-                  className="w-full px-8 py-2.5 text-xs font-black text-white bg-emerald-700 rounded-xl shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed sm:w-auto"
+                  className="w-full px-8 py-2.5 text-xs font-black text-white bg-brand-green rounded-xl shadow-lg shadow-brand-green/20 hover:bg-brand-green/90 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:bg-zinc-400 disabled:cursor-not-allowed sm:w-auto"
                 >
                   Save & Finalize Transaction
                 </button>
@@ -1236,13 +1236,12 @@ export function MoaModal({
         .moa-paper-effect .text-zinc-700 { color: #3f3f46 !important; }
         .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
         .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
-        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .text-brand-green { color: var(--brand-green) !important; }
         .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
         .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
         .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
         .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
-        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
-        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-brand-green\/10 { background-color: color-mix(in oklab, var(--brand-green) 10%, transparent) !important; }
         .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
         .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
@@ -1340,17 +1339,17 @@ export function MoaModal({
       {isFinalizeMode && isFinalizeConfirmOpen ? (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 no-print">
           <div
-            className="absolute inset-0 bg-emerald-950/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-brand-green/50 backdrop-blur-sm"
             onClick={() => {
               if (!isLoading) setIsFinalizeConfirmOpen(false);
             }}
           />
           <div
-            className="relative z-10 w-full max-w-md rounded-2xl border border-emerald-200 bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-200"
+            className="relative z-10 w-full max-w-md rounded-2xl border border-brand-green/20 bg-white shadow-2xl shadow-brand-green/20 animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col items-center px-6 pt-6 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10">
                 <svg
                   width="24"
                   height="24"
@@ -1360,7 +1359,7 @@ export function MoaModal({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-emerald-700"
+                  className="text-brand-green"
                 >
                   <path d="M12 9v4" />
                   <path d="M12 17h.01" />
@@ -1394,7 +1393,7 @@ export function MoaModal({
                 type="button"
                 onClick={handleFinalizeConfirm}
                 disabled={isLoading || confirmDisabled}
-                className="flex-1 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-700/20 transition-colors hover:bg-emerald-800 disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 rounded-xl bg-brand-green px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-brand-green/20 transition-colors hover:bg-brand-green/90 disabled:bg-zinc-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>

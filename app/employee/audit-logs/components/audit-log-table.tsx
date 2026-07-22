@@ -11,7 +11,7 @@ interface AuditLogTableProps {
 function statusClass(status: DisplayEmployeeActivityLog["status"]) {
   if (status === "Failed") return "bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-300";
   if (status === "Pending") return "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300";
-  return "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300";
+  return "bg-brand-green/10 text-brand-green";
 }
 
 /* ── Mobile / tablet portrait card ── */

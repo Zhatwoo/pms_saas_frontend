@@ -303,20 +303,20 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
-      <div 
-        className="relative z-10 flex h-[calc(100dvh-2rem)] min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[90vh]"
+      <div className="fixed inset-0 bg-brand-green/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div
+        className="relative z-10 flex h-[calc(100dvh-2rem)] min-h-0 w-full max-w-7xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl shadow-brand-green/20 animate-in fade-in zoom-in-95 duration-300 dark:bg-background sm:h-[90vh]"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative z-30 shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 text-white sm:px-6 sm:py-5">
+        <div className="relative z-30 shrink-0 bg-gradient-to-r from-brand-green via-brand-green to-brand-green px-4 py-4 text-white sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+              <div className="w-12 h-12 rounded-2xl bg-brand-green flex items-center justify-center text-pawn-gold shadow-inner border border-brand-green/50">
                 {tagIcon}
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-pawn-gold/90 dark:text-pawn-gold">
                   {branchName} | Expired Inventory
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
@@ -324,10 +324,10 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 </h1>
               </div>
             </div>
-            
-            <button 
-              onClick={onClose} 
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+
+            <button
+              onClick={onClose}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-brand-green transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
               aria-label="Close Buy Back modal"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -339,26 +339,26 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
           {/* Left Side: Search & Selection */}
-          <div className={`flex min-h-0 w-full flex-col border-emerald-50 bg-emerald-50/30 dark:border-border dark:bg-surface-secondary lg:w-[400px] lg:flex-none lg:shrink-0 ${selectedItem ? "max-lg:hidden" : "flex-1"}`}>
-            <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-emerald-100/80 bg-emerald-50/95 p-4 backdrop-blur-md dark:border-border dark:bg-surface-secondary sm:p-6">
+          <div className={`flex min-h-0 w-full flex-col border-brand-green/20 bg-brand-green/5 dark:border-border dark:bg-surface-secondary lg:w-[400px] lg:flex-none lg:shrink-0 ${selectedItem ? "max-lg:hidden" : "flex-1"}`}>
+            <div className="sticky top-0 z-20 shrink-0 space-y-4 border-b border-brand-green/20 bg-brand-green/5 p-4 backdrop-blur-md dark:border-border dark:bg-surface-secondary sm:p-6">
               <div className="mb-2 flex items-center gap-3">
-                <h3 className="text-xs font-black uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">Search Expired Item</h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-brand-green/70 dark:text-pawn-gold">Search Expired Item</h3>
               </div>
-              
+
               <div className="relative group">
-                <input 
+                <input
                   type="text"
                   placeholder="Name, Unit Code, Serial..."
-                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-emerald-100 dark:border-border-subtle rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium"
+                  className="w-full h-12 pl-12 pr-4 bg-white dark:bg-surface border-2 border-brand-green/20 dark:border-border-subtle rounded-xl outline-none focus:border-brand-green transition-all text-sm font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-200 group-focus-within:text-emerald-500 transition-colors">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-green/40 group-focus-within:text-brand-green transition-colors">
                   {searchIcon}
                 </span>
                 <button
                   onClick={() => setIsScannerOpen(true)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-50 hover:bg-emerald-100 flex items-center justify-center text-emerald-600 transition-all active:scale-95 border border-emerald-100"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-brand-green/10 hover:bg-brand-green/20 flex items-center justify-center text-brand-green transition-all active:scale-95 border border-brand-green/20"
                   title="Scan QR Code"
                 >
                   {qrCodeIcon}
@@ -369,8 +369,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3">
-                  <div className="w-8 h-8 border-4 border-emerald-50 dark:border-border0 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase">Scanning Inventory...</p>
+                  <div className="w-8 h-8 border-4 border-brand-green/20 dark:border-border0 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-[10px] font-bold text-brand-green/70 dark:text-pawn-gold uppercase">Scanning Inventory...</p>
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 text-center p-6 bg-white dark:bg-surface rounded-2xl border-2 border-dashed border-zinc-200">
@@ -389,21 +389,21 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                       setBuyBackPrice(String(item.amount)); // Default price as original loan
                     }}
                     className={`w-full p-4 mb-3 rounded-2xl border-2 transition-all flex flex-col gap-2 text-left relative group ${
-                      selectedItem?.id === item.id 
-                        ? 'bg-emerald-50 dark:bg-emerald-600/20 border-emerald-400 shadow-xl shadow-emerald-900/5 ring-4 ring-emerald-500/5' 
-                        : 'bg-white dark:bg-surface/5 border-transparent hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-600/10 hover:shadow-lg'
+                      selectedItem?.id === item.id
+                        ? 'bg-brand-green/10 dark:bg-brand-green/20 border-brand-green/40 shadow-xl shadow-brand-green/5 ring-4 ring-brand-green/5'
+                        : 'bg-white dark:bg-surface/5 border-transparent hover:border-brand-green/20 hover:bg-brand-green/10 dark:hover:bg-brand-green/10 hover:shadow-lg'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">{item.itemId}</p>
-                      <span className="bg-emerald-900 text-white text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">
+                      <p className="text-[10px] font-black text-brand-green uppercase tracking-widest">{item.itemId}</p>
+                      <span className="bg-brand-green text-white text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">
                         {item.status}
                       </span>
                     </div>
                     <h4 className="font-black text-zinc-800 dark:text-white leading-tight pr-8">{item.itemName}</h4>
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-border">
-                      <p className="text-[10px] font-bold text-zinc-400 dark:text-emerald-400 capitalize">{item.customers?.full_name || 'Unknown'}</p>
-                      <p className="font-black text-zinc-900 dark:text-emerald-400 text-xs">₱ {item.amount.toLocaleString()}</p>
+                      <p className="text-[10px] font-bold text-zinc-400 dark:text-pawn-gold capitalize">{item.customers?.full_name || 'Unknown'}</p>
+                      <p className="font-black text-zinc-900 dark:text-pawn-gold text-xs">₱ {item.amount.toLocaleString()}</p>
                     </div>
                   </button>
                 ))
@@ -419,13 +419,13 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 <button
                   type="button"
                   onClick={() => setSelectedItem(null)}
-                  className="mb-4 inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40 lg:hidden"
+                  className="mb-4 inline-flex items-center gap-2 rounded-xl border border-brand-green/20 bg-brand-green/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-brand-green transition-colors hover:bg-brand-green/20 dark:border-brand-green/40 dark:bg-brand-green/20 dark:text-pawn-gold dark:hover:bg-brand-green/30 lg:hidden"
                 >
                   ← Change Item
                 </button>
                 <div className="flex flex-wrap items-start justify-between gap-6 mb-10">
                   <div className="space-y-2">
-                    <p className="text-xs font-black text-emerald-600 uppercase tracking-[2px]">Expiration Buy Back</p>
+                    <p className="text-xs font-black text-brand-green uppercase tracking-[2px]">Expiration Buy Back</p>
                     <h2 className="text-4xl font-black text-zinc-950 dark:text-white tracking-tighter leading-none">
                       {selectedItem.itemName}
                     </h2>
@@ -454,12 +454,12 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
                   <DetailSection title="Repurchase Agreement" icon={dollarIcon}>
                     <div className="p-4 bg-zinc-50 dark:bg-surface-secondary rounded-xl space-y-4">
-                      <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Agreed Buy Back Price</p>
+                      <p className="text-[10px] font-black text-brand-green/40 dark:text-pawn-gold uppercase tracking-widest">Agreed Buy Back Price</p>
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-zinc-400">₱</span>
-                        <input 
+                        <input
                           type="number"
-                          className="w-full h-14 pl-10 pr-4 bg-white dark:bg-surface border-2 border-emerald-200 rounded-xl text-2xl font-black text-emerald-950 dark:text-white outline-none focus:border-emerald-50 dark:border-border0 transition-all"
+                          className="w-full h-14 pl-10 pr-4 bg-white dark:bg-surface border-2 border-brand-green/20 rounded-xl text-2xl font-black text-brand-green dark:text-white outline-none focus:border-brand-green transition-all"
                           placeholder="0"
                           value={buyBackPrice}
                           onChange={(e) => setBuyBackPrice(e.target.value.replace(/[^0-9.]/g, ""))}
@@ -473,33 +473,33 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 </div>
 
                 {/* Confirm Section */}
-                <div className="p-8 rounded-3xl bg-emerald-900 text-white relative overflow-hidden">
+                <div className="p-8 rounded-3xl bg-brand-green text-white relative overflow-hidden">
                   <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
                     <div className="flex-1 space-y-8">
-                      <div className="flex items-center gap-2 text-emerald-500">
+                      <div className="flex items-center gap-2 text-pawn-gold">
                         {shieldIcon}
                         <h4 className="text-xl font-black uppercase text-white">Authorize Repurchase</h4>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest ml-1">Processed By</label>
-                          <input 
+                          <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">Processed By</label>
+                          <input
                             type="text"
                             placeholder="Admin Name"
-                            className="w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium"
+                            className="w-full h-12 px-4 bg-brand-green/80 border-2 border-brand-green/60 rounded-xl outline-none focus:border-brand-green transition-all text-sm font-medium"
                             value={adminForm.processedBy}
                             onChange={(e) => setAdminForm({...adminForm, processedBy: e.target.value})}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest ml-1">Admin Password</label>
-                          <input 
+                          <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">Admin Password</label>
+                          <input
                             type="password"
                             placeholder="••••••••"
                             className={transactionPasswordInputClass(
                               Boolean(passwordFieldError),
-                              "w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl outline-none focus:border-emerald-50 dark:border-border0 transition-all text-sm font-medium",
+                              "w-full h-12 px-4 bg-brand-green/80 border-2 border-brand-green/60 rounded-xl outline-none focus:border-brand-green transition-all text-sm font-medium",
                             )}
                             value={adminForm.password}
                             onChange={(e) => {
@@ -515,7 +515,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
                       {/* Buyback Proof Upload Section */}
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest ml-1">
+                        <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">
                           Buyback Proof (Optional)
                         </label>
                         {!proofFile ? (
@@ -529,7 +529,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                             />
                             <label
                               htmlFor="proof-upload"
-                              className="flex items-center justify-center gap-2 w-full h-12 px-4 bg-emerald-800 border-2 border-emerald-700 rounded-xl cursor-pointer hover:bg-emerald-700 transition-all text-sm font-medium"
+                              className="flex items-center justify-center gap-2 w-full h-12 px-4 bg-brand-green/80 border-2 border-brand-green/60 rounded-xl cursor-pointer hover:bg-brand-green/70 transition-all text-sm font-medium"
                             >
                               {imageIcon}
                               <span>Select Image</span>
@@ -537,7 +537,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-emerald-800 border-2 border-emerald-700">
+                            <div className="relative w-full h-32 rounded-xl overflow-hidden bg-brand-green/80 border-2 border-brand-green/60">
                               {proofPreviewUrl && (
                                 <img
                                   src={proofPreviewUrl}
@@ -547,7 +547,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                               )}
                             </div>
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs font-medium text-emerald-300 truncate flex-1">
+                              <p className="text-xs font-medium text-pawn-gold/80 truncate flex-1">
                                 {proofFile.name}
                               </p>
                               <button
@@ -563,7 +563,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                         {proofUploadError && (
                           <p className="text-xs font-bold text-red-300 mt-1">{proofUploadError}</p>
                         )}
-                        <p className="text-[9px] font-medium text-emerald-500/70 leading-tight">
+                        <p className="text-[9px] font-medium text-pawn-gold/70 leading-tight">
                           Upload photo evidence (receipt/agreement). Max 4MB. Supports JPEG, PNG, HEIC.
                         </p>
                       </div>
@@ -579,15 +579,15 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                     <div className="w-full md:w-[320px] bg-white dark:bg-surface/5 p-6 rounded-2xl border border-white/10 flex flex-col gap-6">
                       <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-white/10 pb-4">
-                          <p className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Total Repurchase</p>
-                          <p className="text-3xl font-black text-emerald-950 dark:text-white leading-none">₱ {Number(buyBackPrice || 0).toLocaleString()}</p>
+                          <p className="text-[10px] font-black text-pawn-gold uppercase tracking-widest">Total Repurchase</p>
+                          <p className="text-3xl font-black text-brand-green dark:text-white leading-none">₱ {Number(buyBackPrice || 0).toLocaleString()}</p>
                         </div>
                       </div>
 
                       <button
                         onClick={handleConfirmBuyBack}
                         disabled={isConfirming || isUploadingProof}
-                        className="w-full h-14 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:cursor-not-allowed"
+                        className="w-full h-14 bg-brand-green hover:bg-brand-green/90 disabled:bg-brand-green/30 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-brand-green/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                       >
                         {isUploadingProof ? (
                           <div className="flex items-center gap-2">
@@ -639,9 +639,9 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 function DetailSection({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 px-1 text-emerald-900/40 dark:text-emerald-400">
+      <div className="flex items-center gap-2 px-1 text-brand-green/40 dark:text-pawn-gold">
         {icon}
-        <h4 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">{title}</h4>
+        <h4 className="text-[10px] font-black text-brand-green/40 dark:text-pawn-gold uppercase tracking-[2px]">{title}</h4>
       </div>
       <div className="divide-y divide-zinc-50 border-t border-zinc-100">
         {children}
@@ -653,8 +653,8 @@ function DetailSection({ title, icon, children }: { title: string, icon: React.R
 function DetailRow({ label, value }: { label: string, value: string | number }) {
   return (
     <div className="flex items-center justify-between py-3 px-1">
-      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter">{label}</span>
-      <span className="text-xs font-black text-emerald-950 dark:text-white">{value}</span>
+      <span className="text-[10px] font-bold text-brand-green/40 dark:text-pawn-gold uppercase tracking-tighter">{label}</span>
+      <span className="text-xs font-black text-brand-green dark:text-white">{value}</span>
     </div>
   );
 }

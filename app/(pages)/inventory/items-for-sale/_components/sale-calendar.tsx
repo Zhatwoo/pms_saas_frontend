@@ -66,7 +66,7 @@ export function SaleCalendar({
 
   return (
     <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
-      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-950 to-emerald-900 px-4 py-4 sm:px-5">
+      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-brand-green/90 to-brand-green px-4 py-4 sm:px-5">
         <button
           type="button"
           onClick={() => calendarMonth === 0 ? onChangeMonth(calendarYear - 1, 11) : onChangeMonth(calendarYear, calendarMonth - 1)}
@@ -77,7 +77,7 @@ export function SaleCalendar({
         </button>
         <div className="min-w-[140px] text-center">
           <p className="text-lg font-bold leading-tight text-white">{MONTH_NAMES[calendarMonth]}</p>
-          <p className="text-xs font-semibold text-emerald-300">{calendarYear}</p>
+          <p className="text-xs font-semibold text-pawn-gold">{calendarYear}</p>
         </div>
         <button
           type="button"

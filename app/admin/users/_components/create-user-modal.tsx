@@ -157,14 +157,14 @@ export function CreateUserModal({
 				className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
 				onClick={(event) => event.stopPropagation()}
 			>
-				<div className="bg-emerald-900 px-6 py-5">
-					<p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">
+				<div className="bg-pawn-sidebar px-6 py-5">
+					<p className="text-xs font-bold uppercase tracking-[0.22em] text-pawn-gold">
 						User Management
 					</p>
 					<div className="mt-2 flex items-start justify-between gap-4">
 						<div>
 							<h2 className="text-2xl font-bold text-white">Create New User</h2>
-							<p className="mt-1 text-base text-emerald-50/80">
+							<p className="mt-1 text-base text-white/80">
 								{isSuperAdminRole
 									? "Create a global account with access across every branch."
 									: "Add a new employee or admin account and assign a branch."}
@@ -210,7 +210,7 @@ export function CreateUserModal({
 								value={form.fullName}
 								onChange={(event) => updateField("fullName", event.target.value)}
 								placeholder="John Doe"
-								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
+								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-brand-green"
 							/>
 						</div>
 
@@ -223,7 +223,7 @@ export function CreateUserModal({
 								value={form.email}
 								onChange={(event) => updateField("email", event.target.value)}
 								placeholder="johndoe@gmail.com"
-								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
+								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-brand-green"
 							/>
 						</div>
 
@@ -236,7 +236,7 @@ export function CreateUserModal({
 								value={form.password}
 								onChange={(event) => updateField("password", event.target.value)}
 								placeholder="At least 6 characters"
-								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
+								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-brand-green"
 							/>
 						</div>
 
@@ -247,7 +247,7 @@ export function CreateUserModal({
 							<select
 								value={form.role}
 								onChange={(event) => updateRole(event.target.value as CreateableUserRole)}
-								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
+								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-brand-green"
 							>
 								{availableRoles.map((role) => (
 									<option key={role} value={role}>
@@ -264,7 +264,7 @@ export function CreateUserModal({
 							<select
 								value={form.branchId}
 								onChange={(event) => updateField("branchId", event.target.value)}
-								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-emerald-700"
+								className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-colors focus:border-brand-green"
 								disabled={isSuperAdminRole || branches.length === 0}
 							>
 								{isSuperAdminRole ? (
@@ -299,7 +299,7 @@ export function CreateUserModal({
 						<button
 							type="submit"
 							disabled={isSubmitting || (!isSuperAdminRole && branches.length === 0)}
-							className="rounded-md bg-emerald-700 px-5 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-800"
+							className="rounded-md bg-brand-green px-5 py-3 text-base font-bold text-white transition-colors hover:brightness-110"
 						>
 							{isSubmitting ? "Creating..." : "Create User"}
 						</button>

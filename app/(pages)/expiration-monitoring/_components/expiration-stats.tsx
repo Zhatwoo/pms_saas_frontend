@@ -75,7 +75,7 @@ export function ExpirationStats({ data, isLoading }: ExpirationStatsProps) {
         value={isLoading ? "..." : (data?.thirtyDays ?? 0)}
         subtitle="Expiring within 30 Days"
         icon={boxIcon}
-        borderColor="border-green-500"
+        borderColor="border-brand-green"
       />
     </div>
   );

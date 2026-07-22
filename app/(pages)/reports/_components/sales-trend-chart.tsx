@@ -13,13 +13,6 @@ import {
   ComposedChart,
 } from "recharts";
 
-const barColorMap: Record<string, string> = {
-  weekday: "#d4a843",
-  high: "#1a472a",
-  weekend: "#a1a1aa",
-};
-
-
 function formatPesoShort(value: number): string {
   if (value >= 1000000) return `\u20B1${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `\u20B1${(value / 1000).toFixed(0)}K`;
@@ -89,12 +82,12 @@ export function SalesTrendChart({
   return (
     <div className="min-w-0 w-full overflow-hidden rounded-lg border border-border-main bg-surface transition-colors duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between bg-emerald-900 px-4 py-3">
+      <div className="flex items-center justify-between bg-pawn-sidebar px-4 py-3">
         <h3 className="text-sm font-bold text-pawn-gold">
           Historical Sales Trend
         </h3>
         {activePeriod && (
-          <span className="rounded-md bg-pawn-gold px-3 py-1 text-[10px] font-bold text-emerald-900">
+          <span className="rounded-md bg-pawn-gold px-3 py-1 text-[10px] font-bold text-pawn-sidebar">
             {activePeriod}
           </span>
         )}
@@ -116,8 +109,8 @@ export function SalesTrendChart({
                 >
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="var(--brand-green)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--brand-green)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
@@ -135,7 +128,7 @@ export function SalesTrendChart({
                     tickFormatter={formatPesoShort}
                   />
                   <Tooltip
-                    cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    cursor={{ stroke: 'var(--brand-green)', strokeWidth: 1, strokeDasharray: '4 4' }}
                     formatter={(value) => [
                       formatPesoFull(Number(value)),
                       "Sales",
@@ -152,17 +145,17 @@ export function SalesTrendChart({
                   <Area
                     type="monotone"
                     dataKey="sales"
-                    stroke="#10b981"
+                    stroke="var(--brand-green)"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorSales)"
                     animationDuration={1500}
                   />
-                  <Bar 
-                    dataKey="sales" 
-                    barSize={6} 
-                    fill="#d4a843" 
-                    radius={[4, 4, 0, 0]} 
+                  <Bar
+                    dataKey="sales"
+                    barSize={6}
+                    fill="var(--pawn-gold)"
+                    radius={[4, 4, 0, 0]}
                     opacity={0.7}
                   />
                 </ComposedChart>
@@ -172,11 +165,11 @@ export function SalesTrendChart({
             {/* Legend */}
             <div className="mt-3 flex items-center justify-center gap-6">
               <div className="flex items-center gap-1.5">
-                <span className="inline-block h-2 w-6 rounded-full bg-[#10b981]" />
+                <span className="inline-block h-2 w-6 rounded-full bg-brand-green" />
                 <span className="text-[11px] font-medium text-text-secondary">Trend line</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[#d4a843] opacity-70" />
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-pawn-gold opacity-70" />
                 <span className="text-[11px] font-medium text-text-secondary">Sales Volume</span>
               </div>
             </div>
@@ -201,9 +194,9 @@ export function SalesTrendChart({
             )}
 
             {/* Today highlight */}
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-surface px-3 py-1.5 ring-1 ring-emerald-500/20">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-              <span className="text-xs font-bold text-emerald-700">
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-brand-green/10 px-3 py-1.5 ring-1 ring-brand-green/20">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-brand-green" />
+              <span className="text-xs font-bold text-brand-green">
                 {formatPesoFull(todaySales)} — {selectionLabel}
               </span>
             </div>

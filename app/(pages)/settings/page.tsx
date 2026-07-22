@@ -51,7 +51,7 @@ function ResizableLine({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={!canEdit}
-        className={`block w-full bg-transparent text-[10px] outline-none disabled:pointer-events-none px-0.5 leading-none m-0 p-0 ${canEdit ? "hover:bg-emerald-50 focus:bg-emerald-50" : ""}`}
+        className={`block w-full bg-transparent text-[10px] outline-none disabled:pointer-events-none px-0.5 leading-none m-0 p-0 ${canEdit ? "hover:bg-brand-green/10 focus:bg-brand-green/10" : ""}`}
         style={{ height: '14px' }}
       />
       {canEdit && (
@@ -75,7 +75,7 @@ function ResizableLine({
             document.addEventListener("pointerup", onPointerUp);
           }}
         >
-          <span className="inline-block h-3 w-0.5 rounded-full bg-emerald-400" />
+          <span className="inline-block h-3 w-0.5 rounded-full bg-pawn-gold" />
         </span>
       )}
     </span>
@@ -809,7 +809,7 @@ export default function SettingsPage() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.preventDefault();
           }}
-          className={`${sanitizedClassName} inline outline-none ${canEditMoa ? "border-b border-dashed border-emerald-400 bg-emerald-50/30 cursor-text" : ""}`}
+          className={`${sanitizedClassName} inline outline-none ${canEditMoa ? "border-b border-dashed border-brand-green/60 bg-brand-green/5 cursor-text" : ""}`}
         >
           {topLabels[field]}
         </span>
@@ -824,7 +824,7 @@ export default function SettingsPage() {
         readOnly={!canEditMoa}
         tabIndex={canEditMoa ? 0 : -1}
         spellCheck={false}
-        className={`${sanitizedClassName} ${hasExplicitWidth ? "block shrink-0" : "block w-full"} border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : "hover:bg-emerald-50/30 focus:bg-emerald-50/50"}`}
+        className={`${sanitizedClassName} ${hasExplicitWidth ? "block shrink-0" : "block w-full"} border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : "hover:bg-brand-green/5 focus:bg-brand-green/10"}`}
       />
     );
   };
@@ -838,7 +838,7 @@ export default function SettingsPage() {
             type="button"
             onClick={() => setActiveTab(tab)}
             className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[10px] font-bold transition-all sm:px-6 sm:py-2 sm:text-sm ${activeTab === tab
-                ? "bg-emerald-700 text-white shadow-sm"
+                ? "bg-brand-green text-white shadow-sm"
                 : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
           >
@@ -851,7 +851,7 @@ export default function SettingsPage() {
         <div className="min-w-0 space-y-6">
           {profileToast && (
             <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-              <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+              <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
                 {profileToast}
               </div>
             </div>
@@ -870,7 +870,7 @@ export default function SettingsPage() {
                         Full Name
                       </label>
                       <input
-                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
                         value={profileFullName}
                         onChange={(event) => setProfileFullName(event.target.value)}
                         placeholder="Your full name"
@@ -906,7 +906,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSaveProfile}
                   disabled={isSavingProfile || profileFullName === user?.fullName}
-                  className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-brand-green px-6 py-2 text-xs font-bold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSavingProfile ? "Saving..." : "Save Changes"}
                 </button>
@@ -927,7 +927,7 @@ export default function SettingsPage() {
               <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
                 <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
                   <svg
-                    className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                    className="h-4 w-4 text-brand-green"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -974,7 +974,7 @@ export default function SettingsPage() {
                         <button
                           onClick={handleSaveShopEdit}
                           disabled={isSavingSettings}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          className="inline-flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                         >
                           {isSavingSettings ? (
                             <>
@@ -1004,7 +1004,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleTempShopSettingChange("shopName", e.target.value)}
                     disabled={!isShopEditMode}
                     className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
                         : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                       }`}
                   />
@@ -1019,7 +1019,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleTempShopSettingChange("shopAddress", e.target.value)}
                     disabled={!isShopEditMode}
                     className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                        ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
                         : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                       }`}
                   />
@@ -1035,7 +1035,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleTempShopSettingChange("phoneNumber", e.target.value)}
                       disabled={!isShopEditMode}
                       className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                          ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                          ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
                           : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                         }`}
                     />
@@ -1051,7 +1051,7 @@ export default function SettingsPage() {
                       onChange={(e) => handleTempShopSettingChange("email", e.target.value)}
                       disabled={!isShopEditMode}
                       className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                          ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
+                          ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
                           : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                         }`}
                     />
@@ -1073,7 +1073,7 @@ export default function SettingsPage() {
               <div className="border-b border-border-main px-3 py-3 sm:px-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                  <span className="rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-brand-green">
                     Super Admin Only
                   </span>
                 </div>
@@ -1093,7 +1093,7 @@ export default function SettingsPage() {
                     }
                     disabled={!isSuperAdmin}
                     className={`w-full rounded-lg px-4 py-2 text-[11px] font-bold transition-colors sm:w-auto ${isMoaEditMode
-                        ? "border border-emerald-700 bg-emerald-700 text-white"
+                        ? "border border-brand-green bg-brand-green text-white"
                         : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
@@ -1106,7 +1106,7 @@ export default function SettingsPage() {
                       checked={isMoaLocked}
                       onChange={(e) => setIsMoaLocked(e.target.checked)}
                       disabled={!isSuperAdmin}
-                      className="h-3.5 w-3.5 shrink-0 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 disabled:cursor-not-allowed"
+                      className="h-3.5 w-3.5 shrink-0 rounded border-zinc-300 text-brand-green focus:ring-brand-green disabled:cursor-not-allowed"
                     />
                     Lock Template (Prevent Editing)
                   </label>
@@ -1123,7 +1123,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={handleApplyMoaToAllCategories}
                     disabled={!canEditMoa || moaCategories.length === 0}
-                    className="w-full rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    className="w-full rounded-lg border border-brand-green bg-brand-green/10 px-3 py-2 text-[11px] font-bold text-brand-green transition-colors hover:bg-brand-green/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   >
                     Apply to All Categories
                   </button>
@@ -1142,8 +1142,8 @@ export default function SettingsPage() {
                             onClick={() => handleMoaCategoryChange(category.value)}
                             disabled={!canEditMoa}
                             className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${isActive
-                                ? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
-                                : "border-border-main bg-surface text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:text-zinc-300"
+                                ? "border-brand-green bg-brand-green text-white shadow-sm"
+                                : "border-border-main bg-surface text-zinc-700 hover:border-brand-green/40 hover:bg-brand-green/10 hover:text-brand-green dark:text-zinc-300"
                               }`}
                           >
                             {category.label}
@@ -1155,7 +1155,7 @@ export default function SettingsPage() {
                 )}
 
                 {isMoaEditMode && selectedMoaCategory !== DEFAULT_MOA_CATEGORY && (
-                  <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-medium text-emerald-800">
+                  <p className="rounded-md border border-brand-green/25 bg-brand-green/10 px-3 py-2 text-[10px] font-medium text-brand-green">
                     Editing the MOA used for <strong>{selectedMoaCategory}</strong> transactions.
                   </p>
                 )}
@@ -1760,7 +1760,7 @@ export default function SettingsPage() {
                           <p className="text-[10px] font-bold uppercase text-zinc-700">Financial Details</p>
                           <div className="space-y-1">
                             {FINANCIAL_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
+                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-brand-green/10">
                                 <input
                                   type="checkbox"
                                   checked={financialFields.includes(field.key)}
@@ -1768,7 +1768,7 @@ export default function SettingsPage() {
                                     toggleMoaSectionField(field.key, financialFields, setFinancialFields)
                                   }
                                   disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-emerald-700"
+                                  className="h-3.5 w-3.5 accent-brand-green"
                                 />
                                 {topLabels[field.key]}
                               </label>
@@ -1788,7 +1788,7 @@ export default function SettingsPage() {
                                   )
                                 }
                                 disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
+                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-brand-green"
                               />
                               <button
                                 type="button"
@@ -1821,7 +1821,7 @@ export default function SettingsPage() {
                               }}
                               disabled={!canEditMoa}
                               placeholder="New financial field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
+                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-brand-green"
                             />
                             <button
                               type="button"
@@ -1833,7 +1833,7 @@ export default function SettingsPage() {
                                 )
                               }
                               disabled={!canEditMoa || !newFinancialField.trim()}
-                              className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
+                              className="rounded bg-brand-green px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
                             >
                               Add
                             </button>
@@ -1844,7 +1844,7 @@ export default function SettingsPage() {
                           <p className="text-[10px] font-bold uppercase text-zinc-700">Unit Description</p>
                           <div className="space-y-1">
                             {UNIT_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
+                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-brand-green/10">
                                 <input
                                   type="checkbox"
                                   checked={unitFields.includes(field.key)}
@@ -1852,7 +1852,7 @@ export default function SettingsPage() {
                                     toggleMoaSectionField(field.key, unitFields, setUnitFields)
                                   }
                                   disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-emerald-700"
+                                  className="h-3.5 w-3.5 accent-brand-green"
                                 />
                                 {topLabels[field.key]}
                               </label>
@@ -1872,7 +1872,7 @@ export default function SettingsPage() {
                                   )
                                 }
                                 disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
+                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-brand-green"
                               />
                               <button
                                 type="button"
@@ -1905,7 +1905,7 @@ export default function SettingsPage() {
                               }}
                               disabled={!canEditMoa}
                               placeholder="New unit field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
+                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-brand-green"
                             />
                             <button
                               type="button"
@@ -1917,7 +1917,7 @@ export default function SettingsPage() {
                                 )
                               }
                               disabled={!canEditMoa || !newUnitField.trim()}
-                              className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
+                              className="rounded bg-brand-green px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
                             >
                               Add
                             </button>
@@ -1958,7 +1958,7 @@ export default function SettingsPage() {
                 </div>
 
                 {(moaSavedAt || sendStatus === "sent") && (
-                  <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                  <div className="rounded-md border border-brand-green/20 bg-brand-green/10 px-3 py-2 text-[10px] text-brand-green">
                     {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
                     {sendStatus === "sent" && <span>MOA template sent to all branches.</span>}
                   </div>
@@ -1992,19 +1992,19 @@ export default function SettingsPage() {
               <p className="mt-1 text-[10px] text-zinc-700 dark:text-zinc-400">Super Admin Settings</p>
               <button
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
+                className="mt-3 w-full rounded-lg border border-brand-green/20 bg-brand-green/10 py-2 text-[9px] font-bold uppercase tracking-wider text-brand-green transition-colors hover:bg-brand-green/20 dark:border-brand-green/30 dark:bg-brand-green/15"
               >
                 Change Avatar
               </button>
               {avatarToast && (
-                <p className="mt-2 text-[10px] font-medium text-emerald-800 dark:text-emerald-300">{avatarToast}</p>
+                <p className="mt-2 text-[10px] font-medium text-brand-green">{avatarToast}</p>
               )}
               <PasswordChangeRequestCard />
-              <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left dark:border-emerald-900 dark:bg-emerald-950">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
+              <div className="mt-4 rounded-xl border border-brand-green/20 bg-brand-green/10 p-4 text-left dark:border-brand-green/30 dark:bg-brand-green/15">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-brand-green">
                   Security Restriction
                 </p>
-                <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
+                <p className="mt-2 text-xs leading-5 text-brand-green">
                   System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
                 </p>
               </div>
@@ -2081,19 +2081,19 @@ export default function SettingsPage() {
         .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
         .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
         .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
-        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .text-emerald-900 { color: var(--brand-green) !important; }
         .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
         .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
         .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
         .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
-        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
-        .moa-paper-effect .text-emerald-950 { color: #022c22 !important; }
-        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-emerald-50 { background-color: color-mix(in oklab, var(--brand-green) 8%, white) !important; }
+        .moa-paper-effect .text-emerald-950 { color: var(--brand-green) !important; }
+        .moa-paper-effect .text-emerald-800 { color: var(--brand-green) !important; }
         .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
         .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
         .moa-paper-effect input { color: #18181b !important; }
-        .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
+        .moa-paper-effect .border-emerald-900\/40 { border-color: color-mix(in oklab, var(--brand-green) 40%, transparent) !important; }
         .moa-paper-effect .moa-signature-line {
           display: block !important;
           min-height: 22px !important;

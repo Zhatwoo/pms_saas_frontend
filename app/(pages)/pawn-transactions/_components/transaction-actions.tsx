@@ -98,7 +98,7 @@ export function TransactionActions({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Txn no, customer, item…"
-            className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+            className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
           />
         </div>
 
@@ -112,7 +112,7 @@ export function TransactionActions({
             onChange={(event) =>
               onPurposeFilterChange(event.target.value as TransactionPurposeFilter)
             }
-            className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+            className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
           >
             <option value="All">All Purposes</option>
             {PURPOSE_OPTIONS.map((purpose) => (
@@ -134,7 +134,7 @@ export function TransactionActions({
               value={dateFilter}
               max={maxDate}
               onChange={(event) => onDateFilterChange?.(event.target.value)}
-              className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+              className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
             />
           </div>
         ) : null}
@@ -144,7 +144,7 @@ export function TransactionActions({
           <ActionButton
             variant="outline"
             onClick={onExportCSV}
-            className="w-full sm:w-auto h-11 border-emerald-600 bg-emerald-50 text-emerald-700"
+            className="w-full sm:w-auto h-11 border-brand-green bg-brand-green/10 text-brand-green"
           >
             <span className="flex items-center justify-center gap-1.5">
               {downloadIcon}
@@ -154,7 +154,7 @@ export function TransactionActions({
           <ActionButton
             variant="primary"
             onClick={onPrintReport}
-            className="w-full sm:w-auto h-11 border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 text-amber-400"
+            className="w-full sm:w-auto h-11 border-brand-green bg-brand-green text-white hover:brightness-110"
           >
             <span className="flex items-center justify-center gap-1.5">
               {printerIcon}
@@ -165,14 +165,14 @@ export function TransactionActions({
             <button
               type="button"
               onClick={() => onViewModeChange?.("list")}
-              className={`flex-1 min-w-[120px] h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+              className={`flex-1 min-w-[120px] h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-brand-green text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
             >
               List
             </button>
             <button
               type="button"
               onClick={() => onViewModeChange?.("calendar")}
-              className={`flex-1 min-w-[120px] h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
+              className={`flex-1 min-w-[120px] h-11 px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-brand-green text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}
             >
               Calendar
             </button>

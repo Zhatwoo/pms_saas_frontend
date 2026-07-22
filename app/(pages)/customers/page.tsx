@@ -20,7 +20,7 @@ export default function CustomersPage() {
           onClick={() => setActiveTab("directory")}
           className={`px-5 py-2 text-sm font-semibold transition-all duration-200 rounded-lg ${
             activeTab === "directory"
-              ? "bg-emerald-600 text-white shadow-md"
+              ? "bg-brand-green text-white shadow-md"
               : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
           }`}
         >
@@ -32,7 +32,7 @@ export default function CustomersPage() {
             onClick={() => setActiveTab("rewards")}
             className={`px-5 py-2 text-sm font-semibold transition-all duration-200 rounded-lg ${
               activeTab === "rewards"
-                ? "bg-emerald-600 text-white shadow-md"
+                ? "bg-brand-green text-white shadow-md"
                 : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
             }`}
           >

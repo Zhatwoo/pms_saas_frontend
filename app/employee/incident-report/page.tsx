@@ -90,7 +90,7 @@ function getStatusBadgeClasses(status: IncidentStatus) {
     case "escalated":
       return "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900/30";
     case "resolved":
-      return "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/30";
+      return "bg-brand-green/10 text-brand-green border-brand-green/20";
     case "reopened":
       return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/30";
   }
@@ -349,7 +349,7 @@ export default function EmployeeIncidentReportPage() {
     <div className="space-y-6">
       {toastMessage ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+          <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
             {toastMessage}
           </div>
         </div>
@@ -395,13 +395,13 @@ export default function EmployeeIncidentReportPage() {
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search ticket, branch, or transaction reference..."
-            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
           />
 
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+            className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none"
           >
             <option value="all">All Status</option>
             {statusOptions.map((option) => (
@@ -519,7 +519,7 @@ export default function EmployeeIncidentReportPage() {
         <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
           <thead>
-            <tr className="bg-emerald-900 text-amber-400">
+            <tr className="bg-pawn-sidebar text-pawn-gold">
               <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Ticket</th>
               <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Incident</th>
               <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">Branch</th>

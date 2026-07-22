@@ -375,7 +375,7 @@ function InfoCard({
   return (
     <div className="rounded-2xl border border-border-main bg-surface-secondary p-4">
       <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
-      <p className={`mt-1 text-sm font-semibold ${highlight ? "text-emerald-700" : "text-text-primary"}`}>{value}</p>
+      <p className={`mt-1 text-sm font-semibold ${highlight ? "text-brand-green" : "text-text-primary"}`}>{value}</p>
     </div>
   );
 }
@@ -423,12 +423,12 @@ function TransactionViewModal({
         className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-border-main bg-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-brand-green via-brand-green to-brand-green/80 px-6 py-5 text-white">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-amber-300/90">Transaction Details</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-pawn-gold/90">Transaction Details</p>
               <h2 className="mt-1 text-2xl font-black tracking-tight">{transaction.item}</h2>
-              <p className="mt-1 text-sm text-emerald-50/80">
+              <p className="mt-1 text-sm text-white/80">
                 Transaction No: {transaction.transactionNo} · {transaction.purpose}
               </p>
             </div>
@@ -527,7 +527,7 @@ function TransactionViewModal({
                         key={`${photo}-${index}`}
                         type="button"
                         onClick={() => setPhotoIndex(index)}
-                        className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border transition-colors ${index === photoIndex ? "border-emerald-600 ring-2 ring-emerald-100" : "border-border-main hover:border-emerald-300"}`}
+                        className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border transition-colors ${index === photoIndex ? "border-brand-green ring-2 ring-brand-green/20" : "border-border-main hover:border-brand-green/50"}`}
                         aria-label={`Select item photo ${index + 1}`}
                       >
                         <img src={photo} alt={`Item photo ${index + 1}`} className="h-full w-full object-cover" />
@@ -560,12 +560,12 @@ function TransactionViewModal({
                   )
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-4 py-12">
-                    <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-emerald-500/30 bg-emerald-50/50">
+                    <div className="flex h-48 w-48 items-center justify-center rounded-3xl border-2 border-dashed border-brand-green/30 bg-brand-green/5">
                       <div className="text-center">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-green">
                           Visible to
                         </p>
-                        <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">
+                        <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-brand-green">
                           Admin only
                         </p>
                       </div>
@@ -602,7 +602,7 @@ function TransactionViewModal({
                   if (!targetItemId || targetItemId === "-") return;
                   router.push(`/inventory/pawned-items?itemId=${encodeURIComponent(targetItemId)}`);
                 }}
-                className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100"
+                className="rounded-xl border border-brand-green/20 bg-brand-green/10 px-4 py-2 text-sm font-semibold text-brand-green transition-colors hover:bg-brand-green/20"
               >
                 View Item
               </button>
@@ -739,7 +739,7 @@ function EmployeeCustomerDetailContent() {
                 title: "Client Registered", 
                 date: new Date(customerData.created_at).toLocaleDateString(), 
                 description: "Basic profile created in the system.", 
-                color: "bg-emerald-500" 
+                color: "bg-brand-green"
               }
             ],
           });
@@ -890,7 +890,7 @@ function EmployeeCustomerDetailContent() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
         <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
-          <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+          <span className="anim-loading h-4 w-4 rounded-full border border-brand-green/30" />
           Loading customer details...
         </div>
       </div>
@@ -904,9 +904,9 @@ function EmployeeCustomerDetailContent() {
         <button
           type="button"
           onClick={() => router.push(pathname.replace("/view_user", ""))}
-          className="group inline-flex items-center gap-2 rounded-full border border-border-main bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+          className="group inline-flex items-center gap-2 rounded-full border border-border-main bg-surface px-4 py-2 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-green/40 hover:bg-brand-green/10 hover:text-brand-green"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-200">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green/10 text-brand-green transition-colors group-hover:bg-brand-green/20">
             {backIcon}
           </span>
           Back to Customers
@@ -924,10 +924,10 @@ function EmployeeCustomerDetailContent() {
         <button
           type="button"
           onClick={() => router.push(pathname.replace("/view_user", ""))}
-          className="group inline-flex h-11 items-center gap-3 rounded-full border border-border-main bg-surface px-4 pl-2 pr-5 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-900"
+          className="group inline-flex h-11 items-center gap-3 rounded-full border border-border-main bg-surface px-4 pl-2 pr-5 text-sm font-medium text-text-primary shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-green/40 hover:bg-brand-green/10 hover:text-brand-green"
           aria-label="Back to customers list"
         >
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 transition-colors group-hover:bg-emerald-200">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/10 text-brand-green transition-colors group-hover:bg-brand-green/20">
             {backIcon}
           </span>
           <span className="leading-none">Back to customers</span>
@@ -943,7 +943,7 @@ function EmployeeCustomerDetailContent() {
           <button
             type="button"
             onClick={() => setIsViewOpen(true)}
-            className="group w-full cursor-pointer rounded-lg border border-border-main bg-surface text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
+            className="group w-full cursor-pointer rounded-lg border border-border-main bg-surface text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-green/40 hover:shadow-lg"
           >
             <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
               {/* Profile photo + customer details */}
@@ -980,7 +980,7 @@ function EmployeeCustomerDetailContent() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
               { label: "Total Items Pawned", value: customer.totalItemsPawned,             className: "text-text-primary" },
-              { label: "Active Pawned",       value: customer.activePawned,                className: "text-emerald-700"  },
+              { label: "Active Pawned",       value: customer.activePawned,                className: "text-brand-green"  },
               { label: "Total Loan Value",    value: formatCurrency(customer.totalLoanValue), className: "text-text-primary" },
               {
                 label: "Overdue Payments",
@@ -1003,7 +1003,7 @@ function EmployeeCustomerDetailContent() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-emerald-900 text-amber-400">
+                  <tr className="bg-pawn-sidebar text-pawn-gold">
                     {["Date", "Item", "Amount", "Status", "Branch", "Action"].map((h, i) => (
                       <th
                         key={h}
@@ -1034,7 +1034,7 @@ function EmployeeCustomerDetailContent() {
                             setViewingTransaction(tx);
                           }
                         }}
-                        className="cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60"
+                        className="cursor-pointer border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-brand-green/10"
                       >
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-secondary">{tx.date}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold text-text-primary">{tx.item}</td>
@@ -1195,7 +1195,7 @@ function EmployeeCustomerDetailContent() {
 
                 const iconMap: Record<FeedItem["kind"], React.ReactNode> = {
                   pawn: (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                     </span>
                   ),
@@ -1210,7 +1210,7 @@ function EmployeeCustomerDetailContent() {
                     </span>
                   ),
                   edit_approved: (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                     </span>
                   ),
@@ -1234,7 +1234,7 @@ function EmployeeCustomerDetailContent() {
                 if (isLoadingLogs) {
                   return (
                     <div className="flex items-center gap-3 px-5 py-6 text-sm text-text-tertiary">
-                      <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+                      <span className="anim-loading h-4 w-4 rounded-full border border-brand-green/30" />
                       Loading activity...
                     </div>
                   );
@@ -1295,7 +1295,7 @@ function EmployeeCustomerDetailContent() {
                       <div
                         key={item.key}
                         id={`activity-log-${item.key}`}
-                        className={`flex scroll-mt-24 items-start gap-3 border-l-4 px-5 py-4 transition-colors ${isHighlighted ? "border-emerald-500/80 bg-surface-subtle/60 dark:border-emerald-300/80 dark:bg-emerald-950/20" : "border-transparent hover:bg-surface-secondary/50"}`}
+                        className={`flex scroll-mt-24 items-start gap-3 border-l-4 px-5 py-4 transition-colors ${isHighlighted ? "border-brand-green/80 bg-surface-subtle/60" : "border-transparent hover:bg-surface-secondary/50"}`}
                       >
                         <div className="mt-0.5 flex-shrink-0">
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/15 text-blue-400">
@@ -1382,10 +1382,10 @@ function EmployeeCustomerDetailContent() {
                       <div
                         key={item.key}
                         id={`activity-log-${item.key}`}
-                        className={`flex scroll-mt-24 items-start gap-3 border-l-4 px-5 py-4 transition-colors ${isHighlighted ? "border-emerald-500/80 bg-surface-subtle/60 dark:border-emerald-300/80 dark:bg-emerald-950/20" : "border-transparent hover:bg-surface-secondary/50"}`}
+                        className={`flex scroll-mt-24 items-start gap-3 border-l-4 px-5 py-4 transition-colors ${isHighlighted ? "border-brand-green/80 bg-surface-subtle/60" : "border-transparent hover:bg-surface-secondary/50"}`}
                       >
                         <div className="mt-0.5 flex-shrink-0">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M20 6 9 17l-5-5" />
                             </svg>
@@ -1393,7 +1393,7 @@ function EmployeeCustomerDetailContent() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-                            <p className="text-sm font-semibold text-emerald-700">
+                            <p className="text-sm font-semibold text-brand-green">
                               Edit Approved
                               {adminName && (
                                 <span className="ml-1.5 text-xs font-normal text-text-tertiary">· {adminName} (Admin)</span>
@@ -1411,7 +1411,7 @@ function EmployeeCustomerDetailContent() {
                               <p className="text-xs text-text-secondary">
                                 <span className="text-text-tertiary line-through">{oldValue}</span>
                                 <span className="mx-1.5 text-text-tertiary">→</span>
-                                <span className="font-medium text-emerald-700">{newValue}</span>
+                                <span className="font-medium text-brand-green">{newValue}</span>
                               </p>
                             )}
                           </div>
@@ -1424,7 +1424,7 @@ function EmployeeCustomerDetailContent() {
                     <div
                       key={item.key}
                       id={`activity-log-${item.key}`}
-                      className={`flex scroll-mt-24 items-start gap-3 border-l-4 px-5 py-4 transition-colors ${isHighlighted ? "border-emerald-500/80 bg-surface-subtle/60 dark:border-emerald-300/80 dark:bg-emerald-950/20" : "border-transparent hover:bg-surface-secondary/50"}`}
+                      className={`flex scroll-mt-24 items-start gap-3 border-l-4 px-5 py-4 transition-colors ${isHighlighted ? "border-brand-green/80 bg-surface-subtle/60" : "border-transparent hover:bg-surface-secondary/50"}`}
                     >
                       <div className="mt-0.5 flex-shrink-0">{iconMap[item.kind]}</div>
                       <div className="min-w-0 flex-1">
@@ -1518,14 +1518,14 @@ function EmployeeCustomerDetailContent() {
             className="w-full max-w-lg overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="bg-emerald-900 px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+            <div className="bg-brand-green px-6 py-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pawn-gold">
                 Customer Notes
               </p>
               <div className="mt-2 flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-bold text-white">Add Note</h2>
-                  <p className="mt-1 text-sm text-emerald-50/80">
+                  <p className="mt-1 text-sm text-white/80">
                     Save a quick note to the customer activity log.
                   </p>
                 </div>
@@ -1562,7 +1562,7 @@ function EmployeeCustomerDetailContent() {
                   value={noteTitle}
                   onChange={(event) => setNoteTitle(event.target.value)}
                   placeholder="Optional title"
-                  className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  className="h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
                 />
               </div>
 
@@ -1575,11 +1575,11 @@ function EmployeeCustomerDetailContent() {
                   onChange={(event) => setNoteBody(event.target.value)}
                   placeholder="Write something useful for the next person who opens this customer..."
                   rows={5}
-                  className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700"
+                  className="w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
                 />
               </div>
 
-              <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
+              <div className="rounded-xl border border-brand-green/20 bg-brand-green/5 px-4 py-3 text-sm text-brand-green">
                 This note will appear at the top of the activity log.
               </div>
 
@@ -1594,7 +1594,7 @@ function EmployeeCustomerDetailContent() {
                 <button
                   type="submit"
                   disabled={isSavingNote}
-                  className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
+                  className="rounded-md bg-brand-green px-4 py-2.5 text-sm font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
                 >
                   {isSavingNote ? "Saving..." : "Save Note"}
                 </button>
@@ -1615,7 +1615,7 @@ export default function EmployeeCustomerDetailPage() {
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center px-4 py-20">
           <div className="flex items-center gap-3 rounded-full border border-border-main bg-surface px-4 py-3 text-sm text-text-secondary shadow-sm">
-            <span className="anim-loading h-4 w-4 rounded-full border border-emerald-500/30" />
+            <span className="anim-loading h-4 w-4 rounded-full border border-brand-green/30" />
             Loading customer details…
           </div>
         </div>

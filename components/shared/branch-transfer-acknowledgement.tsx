@@ -135,7 +135,7 @@ export function BranchTransferAcknowledgement() {
           <button
             type="button"
             onClick={() => forceLogoutToLogin(securityLogoutMessage)}
-            className="mt-6 w-full rounded-md bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500"
+            className="mt-6 w-full rounded-md bg-brand-green px-4 py-3 text-sm font-bold text-white transition hover:opacity-90"
           >
             Sign in again
           </button>
@@ -152,9 +152,9 @@ export function BranchTransferAcknowledgement() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="branch-transfer-title"
-        className="w-full max-w-md rounded-lg border border-emerald-400/30 bg-surface-main p-6 text-text-primary shadow-2xl"
+        className="w-full max-w-md rounded-lg border border-brand-green/30 bg-surface-main p-6 text-text-primary shadow-2xl"
       >
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-400">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-green">
           Branch Assignment
         </p>
         <h2 id="branch-transfer-title" className="mt-3 text-xl font-bold">
@@ -174,7 +174,7 @@ export function BranchTransferAcknowledgement() {
           type="button"
           onClick={handleConfirm}
           disabled={isConfirming}
-          className="mt-6 w-full rounded-md bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
+          className="mt-6 w-full rounded-md bg-brand-green px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isConfirming ? "Confirming..." : "I understand"}
         </button>

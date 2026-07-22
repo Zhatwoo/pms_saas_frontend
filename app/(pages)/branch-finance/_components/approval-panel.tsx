@@ -32,7 +32,7 @@ const typeLabel: Record<string, string> = {
 };
 
 const typeColor: Record<string, string> = {
-  ADD_FUNDS: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
+  ADD_FUNDS: "bg-emerald-surface text-emerald-text",
   TRANSFER_OUT: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
   TRANSFER_IN: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
 };

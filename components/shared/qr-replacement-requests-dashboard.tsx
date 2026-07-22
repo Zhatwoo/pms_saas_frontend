@@ -124,7 +124,7 @@ export function QRReplacementRequestsDashboard() {
             onClick={() => setFilterStatus(status as any)}
             className={`px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
               filterStatus === status
-                ? "bg-emerald-600 text-white"
+                ? "bg-brand-green text-white"
                 : "bg-surface-secondary text-text-primary hover:bg-surface-tertiary"
             }`}
           >
@@ -138,7 +138,7 @@ export function QRReplacementRequestsDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-emerald-900 text-amber-400">
+              <tr className="bg-brand-green text-pawn-gold">
                 <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
                   Item ID
                 </th>
@@ -177,7 +177,7 @@ export function QRReplacementRequestsDashboard() {
                 requests.map((request) => (
                   <tr
                     key={request.id}
-                    className="border-t border-border-subtle bg-surface-secondary hover:bg-emerald-50/50 transition-colors cursor-pointer"
+                    className="border-t border-border-subtle bg-surface-secondary hover:bg-brand-green/10 transition-colors cursor-pointer"
                     onClick={() => setSelectedRequest(request)}
                   >
                     <td className="whitespace-nowrap px-4 py-3 text-xs font-medium text-text-secondary">
@@ -198,7 +198,7 @@ export function QRReplacementRequestsDashboard() {
                           e.stopPropagation();
                           setSelectedRequest(request);
                         }}
-                        className="rounded-lg px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-semibold text-xs transition-all"
+                        className="rounded-lg px-3 py-1.5 bg-brand-green/10 text-brand-green hover:bg-brand-green/20 font-semibold text-xs transition-all"
                       >
                         Review
                       </button>
@@ -216,7 +216,7 @@ export function QRReplacementRequestsDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg rounded-2xl border border-border-main bg-surface shadow-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="border-b border-border-subtle bg-emerald-50 px-6 py-4 sticky top-0">
+            <div className="border-b border-border-subtle bg-brand-green/10 px-6 py-4 sticky top-0">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-text-primary">
@@ -319,11 +319,11 @@ export function QRReplacementRequestsDashboard() {
                     <button
                       onClick={() => handleApprove(selectedRequest.id)}
                       disabled={isProcessing}
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2.5 rounded-lg bg-brand-green text-white font-semibold hover:bg-brand-green/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {isProcessing ? (
                         <>
-                          <span className="anim-loading h-4 w-4 border-2 border-emerald-300 border-t-white rounded-full" />
+                          <span className="anim-loading h-4 w-4 border-2 border-brand-green/30 border-t-white rounded-full" />
                           Processing...
                         </>
                       ) : (

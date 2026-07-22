@@ -105,7 +105,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
         value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
-        borderColor="bg-emerald-600"
+        borderColor="bg-brand-green"
         className="min-h-[160px] rounded-xl p-6"
         loading={isLoading}
       />
@@ -162,7 +162,7 @@ export function TransactionStats({ data, isLoading }: TransactionStatsProps) {
             <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
               End Balance
             </p>
-            <div className="mt-0.5 text-xl font-bold text-emerald-600 h-[28px] flex items-center">
+            <div className="mt-0.5 text-xl font-bold text-brand-green h-[28px] flex items-center">
               {isLoading ? <ThreeDotLoader /> : `₱ ${data?.endingBalance?.toLocaleString() || "0"}`}
             </div>
           </div>

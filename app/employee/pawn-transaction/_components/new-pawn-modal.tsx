@@ -926,10 +926,10 @@ export function NewPawnModal({
         const targetPath = `${pathname || "/employee/pawn-transaction"}?transactionNo=${encodeURIComponent(createdTransactionNo)}&highlightTransaction=true`;
 
         toast.custom((toastId) => (
-          <div className="flex w-[360px] items-center justify-between gap-4 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-xl shadow-emerald-900/10">
+          <div className="flex w-[360px] items-center justify-between gap-4 rounded-2xl border border-brand-green/20 bg-white px-4 py-3 shadow-xl shadow-brand-green/10">
             <div className="min-w-0">
-              <p className="text-sm font-bold text-emerald-900">New pawn transaction created</p>
-              <p className="mt-0.5 truncate text-xs text-emerald-700">{createdTransactionNo}</p>
+              <p className="text-sm font-bold text-brand-green">New pawn transaction created</p>
+              <p className="mt-0.5 truncate text-xs text-brand-green/80">{createdTransactionNo}</p>
             </div>
             <button
               type="button"
@@ -937,7 +937,7 @@ export function NewPawnModal({
                 toast.dismiss(toastId);
                 router.push(targetPath);
               }}
-              className="shrink-0 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-800"
+              className="shrink-0 rounded-xl bg-brand-green px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-brand-green/90"
             >
               View
             </button>
@@ -987,23 +987,23 @@ export function NewPawnModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
-      <div 
-        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
+      <div className="fixed inset-0 bg-brand-green/40 backdrop-blur-md transition-opacity no-print" onClick={onClose} />
+      <div
+        className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-brand-green/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0">
+        <div className="bg-gradient-to-r from-brand-green via-brand-green to-brand-green px-6 py-5 text-white shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+              <div className="w-12 h-12 rounded-2xl bg-brand-green flex items-center justify-center text-pawn-gold shadow-inner border border-brand-green/50">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
               </div>
               <div>
-                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                <p className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.28em] text-pawn-gold/90 dark:text-pawn-gold">
                   {branchName}
                 </p>
                 <h1 className="mt-0.5 md:mt-1 text-xl md:text-2xl font-black tracking-tight text-white leading-none">
@@ -1011,10 +1011,10 @@ export function NewPawnModal({
                 </h1>
               </div>
             </div>
-            
-            <button 
-              onClick={handleReset} 
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-emerald-950 transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
+
+            <button
+              onClick={handleReset}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/95 text-brand-green transition-colors hover:bg-white dark:bg-surface/10 dark:text-white dark:hover:bg-surface/20"
               aria-label="Close New Pawn Ticket"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1025,34 +1025,34 @@ export function NewPawnModal({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 lg:p-6 bg-emerald-50/30 dark:bg-surface-secondary">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-5 lg:p-6 bg-brand-green/5 dark:bg-surface-secondary">
           <div className="max-w-6xl mx-auto space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 lg:gap-6">
               {/* Customer Information */}
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                    <div className="w-8 h-8 rounded-lg bg-brand-green/10 flex items-center justify-center text-brand-green">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </div>
-                    <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Customer Details</h3>
+                    <h3 className="text-[10px] font-black text-brand-green/40 dark:text-pawn-gold uppercase tracking-[2px]">Customer Details</h3>
                   </div>
 
-                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-emerald-100 dark:border-border-subtle bg-emerald-50/50 dark:bg-surface/50 p-1 shadow-sm">
+                  <div className="relative flex w-full max-w-[19rem] rounded-2xl border border-brand-green/20 dark:border-border-subtle bg-brand-green/5 dark:bg-surface/50 p-1 shadow-sm">
                     <span
-                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white dark:bg-emerald-900/40 shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
+                      className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-xl bg-white dark:bg-brand-green/40 shadow-sm transition-transform duration-300 ease-out ${customerMode === "new" ? "translate-x-0" : "translate-x-full"}`}
                     />
                     <button
                       type="button"
                       onClick={() => setCustomerMode("new")}
-                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "new" ? "text-emerald-900 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`}
+                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "new" ? "text-brand-green dark:text-pawn-gold" : "text-zinc-500 dark:text-zinc-400"}`}
                     >
                       New Customer
                     </button>
                     <button
                       type="button"
                       onClick={handleSwitchToExistingCustomers}
-                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "existing" ? "text-emerald-900 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`}
+                      className={`relative z-10 flex-1 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${customerMode === "existing" ? "text-brand-green dark:text-pawn-gold" : "text-zinc-500 dark:text-zinc-400"}`}
                     >
                       Existing Customer
                     </button>
@@ -1060,25 +1060,25 @@ export function NewPawnModal({
                 </div>
 
                 {selectedCustomer && customerMode === "new" && (
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-sm">
+                  <div className="rounded-2xl border border-brand-green/20 bg-brand-green/10 px-4 py-3 shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Loaded branch customer</p>
-                        <p className="mt-1 text-sm font-black text-emerald-950 dark:text-white">{selectedCustomer.full_name}</p>
-                        <p className="mt-0.5 text-xs font-medium text-emerald-800/70">This contract will reuse the selected branch record.</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">Loaded branch customer</p>
+                        <p className="mt-1 text-sm font-black text-brand-green dark:text-white">{selectedCustomer.full_name}</p>
+                        <p className="mt-0.5 text-xs font-medium text-brand-green/70">This contract will reuse the selected branch record.</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={handleSwitchToExistingCustomers}
-                          className="rounded-xl border border-emerald-200 bg-white dark:bg-surface px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700 transition-colors hover:bg-emerald-50"
+                          className="rounded-xl border border-brand-green/20 bg-white dark:bg-surface px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-brand-green transition-colors hover:bg-brand-green/10"
                         >
                           Change Customer
                         </button>
                         <button
                           type="button"
                           onClick={handleUseAsNewCustomer}
-                          className="rounded-xl border border-emerald-200 bg-emerald-700 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-emerald-800"
+                          className="rounded-xl border border-brand-green/20 bg-brand-green px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-white transition-colors hover:bg-brand-green/90"
                         >
                           Use As New
                         </button>
@@ -1097,7 +1097,7 @@ export function NewPawnModal({
                 {customerMode === "existing" ? (
                   <div className="space-y-4 rounded-3xl border border-zinc-200 dark:border-border bg-white dark:bg-surface p-4 shadow-sm">
                     <div className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Search by name only</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green">Search by name only</p>
                       <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                           Find a branch customer, review the contact details, and load the record into the pawn form.
                       </p>
@@ -1142,7 +1142,7 @@ export function NewPawnModal({
                               key={customer.id}
                               type="button"
                               onClick={() => handleSelectExistingCustomer(customer)}
-                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-zinc-200 dark:border-border bg-white dark:bg-surface hover:border-emerald-200"}`}
+                              className={`w-full rounded-2xl border px-4 py-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${selectedCustomerId === customer.id ? "border-brand-green/40 bg-brand-green/10 shadow-sm" : "border-zinc-200 dark:border-border bg-white dark:bg-surface hover:border-brand-green/20"}`}
                             >
                               <div className="flex items-start justify-between gap-4">
                                 <div className="min-w-0 space-y-1">
@@ -1198,7 +1198,7 @@ export function NewPawnModal({
                         value={form.idPresented}
                         onChange={handleChange}
                         disabled={Boolean(selectedCustomerId)}
-                        className="w-full rounded-xl border border-zinc-200 dark:border-border bg-white dark:bg-surface px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100 dark:bg-surface-hover [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
+                        className="w-full rounded-xl border border-zinc-200 dark:border-border bg-white dark:bg-surface px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-brand-green focus:outline-none focus:ring-4 focus:ring-brand-green/10 transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:bg-zinc-100 dark:bg-surface-hover [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                       >
                         <option value="">— Select ID Type —</option>
                         <optgroup label="Government IDs">
@@ -1228,7 +1228,7 @@ export function NewPawnModal({
 
                     {/* Camera capture section */}
                     <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 dark:bg-surface-secondary border border-zinc-100">
-                      <span className="text-[10px] font-black text-emerald-700 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <span className="text-[10px] font-black text-brand-green uppercase tracking-[0.2em] flex items-center gap-2">
                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                          {getVerificationMode(form.idPresented) === "no-id"
                            ? "Customer Photo"
@@ -1285,10 +1285,10 @@ export function NewPawnModal({
               {/* Unit Information */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <div className="w-8 h-8 rounded-lg bg-brand-green/10 flex items-center justify-center text-brand-green">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
                   </div>
-                  <h3 className="text-[10px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-[2px]">Unit Information</h3>
+                  <h3 className="text-[10px] font-black text-brand-green/40 dark:text-pawn-gold uppercase tracking-[2px]">Unit Information</h3>
                 </div>
 
                 <div className="grid gap-4">
@@ -1303,7 +1303,7 @@ export function NewPawnModal({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between px-1">
                       <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Item Photos</label>
-                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{form.itemPhotos.length} / 4 Captured</span>
+                      <span className="text-[10px] font-bold text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-full">{form.itemPhotos.length} / 4 Captured</span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-2">
@@ -1330,7 +1330,7 @@ export function NewPawnModal({
                           <button 
                             type="button"
                             onClick={() => setPreviewImage({ src: photo, title: `Item Photo ${index + 1}` })}
-                            className="absolute left-2 top-2 rounded-full bg-emerald-600/90 p-1.5 text-white opacity-0 transition group-hover:opacity-100 hover:bg-emerald-500"
+                            className="absolute left-2 top-2 rounded-full bg-brand-green/90 p-1.5 text-white opacity-0 transition group-hover:opacity-100 hover:brightness-110"
                             title="Preview photo"
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
@@ -1359,7 +1359,7 @@ export function NewPawnModal({
                       name="category"
                       value={form.category}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
+                      className="w-full rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-brand-green focus:outline-none focus:ring-4 focus:ring-brand-green/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                     >
                       <option value="">— Select Category —</option>
                       {categoriesList.map((catName) => (
@@ -1400,7 +1400,7 @@ export function NewPawnModal({
                           name="condition"
                           value={form.condition}
                           onChange={handleChange}
-                          className={`${form.condition === "Others" ? "w-1/2" : "w-full"} rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
+                          className={`${form.condition === "Others" ? "w-1/2" : "w-full"} rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white focus:border-brand-green focus:outline-none focus:ring-4 focus:ring-brand-green/10 transition-all appearance-none cursor-pointer [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
                         >
                           <option value="">Select Condition</option>
                           <optgroup label="Working">
@@ -1423,7 +1423,7 @@ export function NewPawnModal({
                             value={form.conditionSpecify}
                             onChange={handleChange}
                             placeholder="Specify condition"
-                            className="w-1/2 rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                            className="w-1/2 rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover px-4 py-3 text-sm font-bold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-brand-green focus:ring-4 focus:ring-brand-green/10 transition-all"
                           />
                         )}
                       </div>
@@ -1432,7 +1432,7 @@ export function NewPawnModal({
                     {showUnitField("memory") && (
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest md:tracking-wide ml-1">{activeMoaLabels.memory || "Memory / Storage"}</label>
-                      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all`}>
+                      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border bg-zinc-100 dark:bg-surface-hover focus-within:border-brand-green focus-within:ring-4 focus-within:ring-brand-green/10 transition-all`}>
                         <input
                           name="memory"
                           value={form.memory}
@@ -1444,13 +1444,13 @@ export function NewPawnModal({
                           type="text"
                           inputMode="numeric"
                           pattern="[0-9]*"
-                          className="w-full bg-transparent px-4 py-3 text-xs font-black text-emerald-950 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
+                          className="w-full bg-transparent px-4 py-3 text-xs font-black text-brand-green dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]"
                         />
                         <select
                           name="memoryUnit"
                           value={form.memoryUnit}
                           onChange={handleChange}
-                          className="mr-2 rounded-lg border border-zinc-200 dark:border-border bg-white/70 dark:bg-surface px-2 py-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-300 outline-none transition-colors focus:border-emerald-500"
+                          className="mr-2 rounded-lg border border-zinc-200 dark:border-border bg-white/70 dark:bg-surface px-2 py-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-300 outline-none transition-colors focus:border-brand-green"
                           aria-label="Memory unit"
                         >
                           <option value="MB">MB</option>
@@ -1512,16 +1512,16 @@ export function NewPawnModal({
                   </div>
 
                   {showFinancialField("storageFee") && (
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50 border border-emerald-100 dark:border-border-subtle mt-2">
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-brand-green/10 border border-brand-green/20 dark:border-border-subtle mt-2">
                     <div>
-                      <p className="text-xs md:text-sm font-black text-emerald-900 uppercase tracking-tight md:tracking-wide">
+                      <p className="text-xs md:text-sm font-black text-brand-green uppercase tracking-tight md:tracking-wide">
                         {activeMoaLabels.storageFee || "Storage Fee"}
                       </p>
-                      <p className="mt-0.5 text-[10px] font-semibold text-emerald-700/80">
+                      <p className="mt-0.5 text-[10px] font-semibold text-brand-green/80">
                         Auto-computed from principal (every 10 days · MOA only)
                       </p>
                     </div>
-                    <p className="text-sm md:text-base font-black text-emerald-900">
+                    <p className="text-sm md:text-base font-black text-brand-green">
                       {formatPeso(computedStorageFee)}
                     </p>
                   </div>
@@ -1533,21 +1533,21 @@ export function NewPawnModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="shrink-0 border-t border-emerald-50 bg-white p-3 dark:bg-surface sm:p-4 md:p-5 lg:p-6">
+        <div className="shrink-0 border-t border-brand-green/10 bg-white p-3 dark:bg-surface sm:p-4 md:p-5 lg:p-6">
           <div className="flex items-end gap-2 sm:gap-4 lg:gap-6">
             <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
               <div className="w-[min(38%,8.5rem)] shrink-0 sm:max-w-[18rem] lg:max-w-[20rem]">
-                <label className="mb-1 ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase leading-none tracking-[0.12em] text-emerald-900/40 dark:text-emerald-400 md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
+                <label className="mb-1 ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase leading-none tracking-[0.12em] text-brand-green/40 dark:text-pawn-gold md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
                   <span className="whitespace-nowrap">Security Password</span>
                   {loggedInUserName && (
-                    <span className="whitespace-nowrap text-emerald-600 normal-case tracking-normal">
+                    <span className="whitespace-nowrap text-brand-green normal-case tracking-normal">
                       ({loggedInUserName})
                     </span>
                   )}
                 </label>
                 <div className={transactionPasswordInputClass(
                   Boolean(passwordFieldError),
-                  "relative flex h-10 items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-all focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 dark:border-border dark:bg-surface-secondary",
+                  "relative flex h-10 items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-all focus-within:border-brand-green focus-within:ring-4 focus-within:ring-brand-green/10 dark:border-border dark:bg-surface-secondary",
                 )}>
                   <input
                     name="password"
@@ -1569,8 +1569,8 @@ export function NewPawnModal({
               <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
 
               <div className="min-w-0 shrink-0 text-left">
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Total Loan Amount</p>
-                <p className="text-lg font-black tracking-tighter text-emerald-900 dark:text-white md:text-xl">₱ {Number(form.amount || 0).toLocaleString()}</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-green/40 dark:text-pawn-gold">Total Loan Amount</p>
+                <p className="text-lg font-black tracking-tighter text-brand-green dark:text-white md:text-xl">₱ {Number(form.amount || 0).toLocaleString()}</p>
               </div>
             </div>
 
@@ -1585,7 +1585,7 @@ export function NewPawnModal({
                         width={44} 
                         height={44} 
                         unoptimized
-                        className="rounded-lg border border-emerald-200 bg-white p-0.5 shadow-sm dark:bg-surface" 
+                        className="rounded-lg border border-brand-green/20 bg-white p-0.5 shadow-sm dark:bg-surface"
                       />
                       <button 
                         onClick={() => setQrUrl(null)} 
@@ -1595,7 +1595,7 @@ export function NewPawnModal({
                       </button>
                     </div>
                   ) : user?.role === "employee" ? null : (
-                    <div className="relative group hidden h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 sm:flex">
+                    <div className="relative group hidden h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-brand-green/20 bg-brand-green/10 text-brand-green sm:flex">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
                     </div>
                   )}
@@ -1603,7 +1603,7 @@ export function NewPawnModal({
                     type="button"
                     onClick={handleGenerateTicket}
                     disabled={isSaving}
-                    className="flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-600 px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-emerald-300 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
+                    className="flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-brand-green px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-white shadow-lg shadow-brand-green/20 transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-brand-green/30 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm"
                   >
                     {isSaving ? (
                       <div className="flex items-center gap-1.5">
@@ -1623,7 +1623,7 @@ export function NewPawnModal({
                   type="button"
                   onClick={handleGenerateQR}
                   disabled={isGeneratingQR}
-                  className="relative flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-emerald-100 px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-emerald-800 shadow-sm transition-all hover:bg-emerald-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm md:min-w-[14rem]"
+                  className="relative flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-brand-green/10 px-3 py-2.5 text-[9px] font-black uppercase tracking-wide text-brand-green shadow-sm transition-all hover:bg-brand-green/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:gap-2 sm:px-6 sm:py-3 sm:text-sm md:min-w-[14rem]"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3m0 4h4v-4m-4 0v-3h4" /></svg>
                   {isGeneratingQR ? "Generating..." : "Generate QR"}
@@ -1754,8 +1754,8 @@ function Input({
 }) {
   return (
     <div className="space-y-1.5 w-full">
-      {label && <label className="text-[10px] font-bold text-emerald-900/40 dark:text-emerald-400 uppercase tracking-tighter ml-1">{label}</label>}
-      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border ${bg} focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100 dark:bg-surface-hover' : ''}`}>
+      {label && <label className="text-[10px] font-bold text-brand-green/40 dark:text-pawn-gold uppercase tracking-tighter ml-1">{label}</label>}
+      <div className={`relative flex items-center overflow-hidden rounded-xl border border-zinc-200 dark:border-border ${bg} focus-within:border-brand-green focus-within:ring-4 focus-within:ring-brand-green/10 transition-all ${readOnly ? 'opacity-70 bg-zinc-100 dark:bg-surface-hover' : ''}`}>
         {prefix && <span className="pl-4 text-zinc-400 font-bold">{prefix}</span>}
         <input
           name={name}
@@ -1764,7 +1764,7 @@ function Input({
           placeholder={placeholder}
           type={type}
           readOnly={readOnly}
-          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-xs font-black text-emerald-950 dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium ${readOnly ? 'cursor-not-allowed select-none' : ''} [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
+          className={`w-full bg-transparent ${prefix ? 'pl-2' : 'px-4'} ${size === 'sm' ? 'py-2' : 'py-3'} text-xs font-black text-brand-green dark:text-white outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-600 placeholder:font-medium ${readOnly ? 'cursor-not-allowed select-none' : ''} [&:-webkit-autofill]:[transition:background-color_5000s_ease-in-out_0s]`}
         />
       </div>
     </div>
@@ -1777,7 +1777,7 @@ function PreviewModal({ src, title, onClose }: { src: string; title: string; onC
       <div className="anim-modal-enter relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-white/5 px-6 py-4 bg-zinc-900">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-400">Media Preview</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-pawn-gold">Media Preview</p>
             <h3 className="mt-1 text-lg font-black text-white">{title}</h3>
           </div>
           <button type="button" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white" aria-label="Close image preview">
@@ -1897,7 +1897,7 @@ function PhotoUpload({
       <div
         onClick={handleThumbnailClick}
         className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white dark:bg-surface flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
-          ${ photo ? "border-emerald-400 cursor-pointer" : "border-zinc-200 dark:border-border hover:border-emerald-500 hover:bg-emerald-50 cursor-pointer" }`}
+          ${ photo ? "border-pawn-gold cursor-pointer" : "border-zinc-200 dark:border-border hover:border-brand-green hover:bg-brand-green/10 cursor-pointer" }`}
       >
         {photo && !allowMultipleCapture ? (
           <>
@@ -1915,14 +1915,14 @@ function PhotoUpload({
                   e.stopPropagation();
                   if (onPreview) onPreview(photo);
                 }}
-                className="bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-emerald-500 transition"
+                className="bg-brand-green text-white font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:brightness-110 transition"
               >
                 View Full
               </button>
               <button
                 type="button"
                 onClick={retake}
-                className="bg-white dark:bg-surface text-emerald-700 font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-emerald-50 transition"
+                className="bg-white dark:bg-surface text-brand-green font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-brand-green/10 transition"
               >
                 Retake
               </button>
@@ -1930,14 +1930,14 @@ function PhotoUpload({
           </>
         ) : (
           <>
-            <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-surface-secondary flex items-center justify-center mb-2 group-hover:bg-emerald-100 transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-400 group-hover:text-emerald-600 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-surface-secondary flex items-center justify-center mb-2 group-hover:bg-brand-green/10 transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-400 group-hover:text-brand-green transition-colors">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
               </svg>
             </div>
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-emerald-700 transition-colors">{label}</p>
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-brand-green transition-colors">{label}</p>
             {allowMultipleCapture && photo && (
-              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-emerald-600/70">Ready for next shot</p>
+              <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-pawn-gold/80">Ready for next shot</p>
             )}
           </>
         )}
@@ -1973,10 +1973,10 @@ function PhotoUpload({
               {/* Viewfinder corners */}
               {isStreaming && !cameraError && (
                 <>
-                  <span className="absolute top-3 left-3 w-8 h-8 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
-                  <span className="absolute top-3 right-3 w-8 h-8 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
-                  <span className="absolute bottom-3 left-3 w-8 h-8 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
-                  <span className="absolute bottom-3 right-3 w-8 h-8 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
+                  <span className="absolute top-3 left-3 w-8 h-8 border-t-4 border-l-4 border-pawn-gold rounded-tl-lg" />
+                  <span className="absolute top-3 right-3 w-8 h-8 border-t-4 border-r-4 border-pawn-gold rounded-tr-lg" />
+                  <span className="absolute bottom-3 left-3 w-8 h-8 border-b-4 border-l-4 border-pawn-gold rounded-bl-lg" />
+                  <span className="absolute bottom-3 right-3 w-8 h-8 border-b-4 border-r-4 border-pawn-gold rounded-br-lg" />
                 </>
               )}
             </div>
@@ -1994,15 +1994,15 @@ function PhotoUpload({
                 type="button"
                 onClick={capturePhoto}
                 disabled={!isStreaming}
-                className="w-14 h-14 rounded-full bg-white dark:bg-surface border-4 border-emerald-500 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-40"
+                className="w-14 h-14 rounded-full bg-white dark:bg-surface border-4 border-brand-green flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-40"
                 title="Capture photo"
               >
-                <span className="w-10 h-10 rounded-full bg-emerald-600 block" />
+                <span className="w-10 h-10 rounded-full bg-brand-green block" />
               </button>
               <button
                 type="button"
                 onClick={stopCamera}
-                className="px-5 py-2 rounded-xl bg-emerald-600 text-xs font-black text-white hover:bg-emerald-500 transition"
+                className="px-5 py-2 rounded-xl bg-brand-green text-xs font-black text-white hover:brightness-110 transition"
               >
                 Done
               </button>

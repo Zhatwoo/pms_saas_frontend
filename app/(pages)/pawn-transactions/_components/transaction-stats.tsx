@@ -128,7 +128,7 @@ export function TransactionStats({ data, isLoading = false, selectedDate }: Tran
         value={data?.pawnedToday || 0}
         subtitle="Active contracts"
         icon={pawnedIcon}
-        borderColor="bg-emerald-600"
+        borderColor="bg-brand-green"
         loading={isLoading}
       />
       <StatCard
@@ -183,7 +183,7 @@ export function TransactionStats({ data, isLoading = false, selectedDate }: Tran
               <p className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">
                 End Balance (Range)
               </p>
-              <p className="mt-0.5 text-xl font-bold text-emerald-600">
+              <p className="mt-0.5 text-xl font-bold text-brand-green">
                 {isLoading ? <ThreeDotLoader /> : <>₱ {data?.endingBalance?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}</>}
               </p>
             </div>
@@ -192,13 +192,13 @@ export function TransactionStats({ data, isLoading = false, selectedDate }: Tran
       )}
 
       {isSuperAdmin && (
-        <div className="flex flex-col justify-between rounded-lg border border-emerald-900 bg-emerald-900 p-4 shadow-sm">
+        <div className="flex flex-col justify-between rounded-lg border border-pawn-sidebar bg-pawn-sidebar p-4 shadow-sm">
           <div className="flex items-center gap-3 h-full">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-800 text-yellow-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-pawn-sidebar-light text-pawn-gold">
               {balanceIcon}
             </div>
             <div>
-              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-emerald-200">
+              <p className="text-[10px] md:text-[11px] font-bold uppercase tracking-wide text-white/70">
                 Live Total Balance For All Branches
               </p>
               <p className="mt-0.5 text-lg xl:text-xl font-bold text-yellow-500">

@@ -163,7 +163,7 @@ export function ConfirmFundModal({
       <div className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-surface shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-md sm:rounded-2xl">
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border-main px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300 sm:h-10 sm:w-10">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-green/15 text-brand-green sm:h-10 sm:w-10">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
@@ -196,23 +196,23 @@ export function ConfirmFundModal({
           }}
           className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:space-y-5 sm:px-6 sm:py-5"
         >
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 sm:p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+          <div className="rounded-xl border border-brand-green/20 bg-brand-green/10 p-3 sm:p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-green">
               Receipt Confirmation
             </p>
-            <p className="mt-2 break-words text-2xl font-extrabold text-emerald-200 sm:text-3xl">
+            <p className="mt-2 break-words text-2xl font-extrabold text-brand-green sm:text-3xl">
               {formatPeso(amount.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
             </p>
-            <p className="mt-2 break-words text-xs text-emerald-200/80">
+            <p className="mt-2 break-words text-xs text-brand-green/80">
               {requestNo ? `${requestNo} ` : ""}{branchName ? `for ${branchName}` : ""}
             </p>
             {sourceBranchName ? (
-              <p className="mt-1 text-xs text-emerald-200/80">
+              <p className="mt-1 text-xs text-brand-green/80">
                 Source: {sourceBranchName}
               </p>
             ) : null}
             {transferMode ? (
-              <p className="mt-1 text-xs text-emerald-200/80">
+              <p className="mt-1 text-xs text-brand-green/80">
                 Transfer mode: {transferMode.replaceAll("_", " ")}
               </p>
             ) : null}
@@ -247,7 +247,7 @@ export function ConfirmFundModal({
                 setReceivedAmount(nextValue);
                 setError(null);
               }}
-              className="w-full rounded-lg border border-input-border bg-input-bg p-3 text-base text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 sm:text-sm"
+              className="w-full rounded-lg border border-input-border bg-input-bg p-3 text-base text-text-primary outline-none transition-colors focus:border-brand-green focus:ring-1 focus:ring-brand-green sm:text-sm"
               placeholder="Enter actual amount received"
               required
             />
@@ -277,7 +277,7 @@ export function ConfirmFundModal({
                 }
               }}
               onClick={() => proofInputRef.current?.click()}
-              className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input-border bg-input-bg p-3 text-center text-sm font-semibold text-text-primary outline-none transition-colors hover:border-emerald-500 hover:bg-emerald-500/5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input-border bg-input-bg p-3 text-center text-sm font-semibold text-text-primary outline-none transition-colors hover:border-brand-green hover:bg-brand-green/5 focus:border-brand-green focus:ring-1 focus:ring-brand-green"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -288,7 +288,7 @@ export function ConfirmFundModal({
               <span className="text-xs font-medium text-text-tertiary">Paste image also works</span>
             </div>
             {proofFile ? (
-              <div className="mt-3 overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+              <div className="mt-3 overflow-hidden rounded-xl border border-brand-green/20 bg-brand-green/5">
                 {proofPreviewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={proofPreviewUrl} alt="Selected proof preview" className="h-28 w-full object-cover sm:h-36" />
@@ -318,7 +318,7 @@ export function ConfirmFundModal({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="Optional notes about the received funds"
-              className="w-full resize-none rounded-lg border border-input-border bg-input-bg p-3 text-base text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 sm:text-sm"
+              className="w-full resize-none rounded-lg border border-input-border bg-input-bg p-3 text-base text-text-primary outline-none transition-colors focus:border-brand-green focus:ring-1 focus:ring-brand-green sm:text-sm"
             />
           </div>
 
@@ -340,7 +340,7 @@ export function ConfirmFundModal({
               type="button"
               disabled={isSubmitting}
               onClick={() => void runConfirm()}
-              className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5"
+              className="flex items-center justify-center gap-2 rounded-lg bg-brand-green px-5 py-3 text-sm font-bold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:py-2.5"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />

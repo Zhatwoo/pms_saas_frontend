@@ -82,7 +82,7 @@ export default function QrReplacementRequestsPage() {
 
   const toolbarLabelClass = "text-[11px] font-bold uppercase tracking-wider text-text-tertiary";
 
-  const toolbarSelectClass = "h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+  const toolbarSelectClass = "h-10 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green";
 
 
 
@@ -412,7 +412,7 @@ export default function QrReplacementRequestsPage() {
 
                 onChange={(e) => setSearchQuery(e.target.value)}
 
-                className="h-10 w-64 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="h-10 w-64 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
 
               />
 
@@ -430,7 +430,7 @@ export default function QrReplacementRequestsPage() {
 
           <thead>
 
-            <tr className="bg-[#064e3b] text-[#fbbf24] uppercase text-[10px] font-bold tracking-[0.1em]">
+            <tr className="bg-brand-green text-pawn-gold uppercase text-[10px] font-bold tracking-[0.1em]">
 
               <th className="px-4 py-3">Date</th>
 
@@ -504,7 +504,7 @@ export default function QrReplacementRequestsPage() {
 
                     </td>
 
-                    <td className="px-4 py-4 whitespace-nowrap text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="px-4 py-4 whitespace-nowrap text-[11px] font-bold text-brand-green">
 
                       {details.itemId}
 
@@ -602,7 +602,7 @@ export default function QrReplacementRequestsPage() {
 
                           onClick={() => openReview(req)}
 
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-800 transition-all hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-950/60"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-brand-green/30 bg-brand-green/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wide text-brand-green transition-all hover:bg-brand-green/20"
 
                           title="View details, proof photo, and approve or reject"
 

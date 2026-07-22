@@ -15,21 +15,21 @@ export type ThemeButtonSize = "sm" | "md" | "lg" | "icon";
 
 const variantClasses: Record<ThemeButtonVariant, string> = {
   primary:
-    "border-transparent bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/30 dark:shadow-emerald-500/35 dark:hover:shadow-emerald-500/45 focus-visible:ring-emerald-500",
+    "border-transparent bg-brand-green text-white shadow-sm shadow-brand-green/20 hover:brightness-110 hover:shadow-md hover:shadow-brand-green/30 focus-visible:ring-brand-green",
   secondary:
-    "border border-emerald-700/35 bg-surface-secondary text-text-primary shadow-sm hover:bg-surface-hover hover:shadow-md dark:shadow-black/35 focus-visible:ring-emerald-500",
+    "border border-brand-green/35 bg-surface-secondary text-text-primary shadow-sm hover:bg-surface-hover hover:shadow-md dark:shadow-black/35 focus-visible:ring-brand-green",
   outline:
-    "border border-emerald-700 bg-surface text-emerald-700 shadow-sm hover:bg-emerald-700 hover:text-white hover:shadow-md dark:text-emerald-400 dark:hover:text-white focus-visible:ring-emerald-500",
+    "border border-brand-green bg-surface text-brand-green shadow-sm hover:bg-brand-green hover:text-white hover:shadow-md focus-visible:ring-brand-green",
   ghost:
-    "border-transparent bg-transparent text-emerald-700 hover:bg-emerald-50/60 dark:text-emerald-400 dark:hover:bg-emerald-900/20 focus-visible:ring-emerald-500",
+    "border-transparent bg-transparent text-brand-green hover:bg-brand-green/10 focus-visible:ring-brand-green",
   danger:
-    "border-transparent bg-emerald-800 text-white shadow-sm shadow-emerald-900/25 hover:bg-emerald-900 hover:shadow-md hover:shadow-emerald-900/35 dark:shadow-emerald-500/35 dark:hover:shadow-emerald-500/45 focus-visible:ring-emerald-500",
+    "border-transparent bg-red-700 text-white shadow-sm shadow-red-900/25 hover:bg-red-800 hover:shadow-md hover:shadow-red-900/35 dark:shadow-red-500/35 dark:hover:shadow-red-500/45 focus-visible:ring-red-500",
   success:
-    "border-transparent bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 hover:bg-emerald-800 hover:shadow-md hover:shadow-emerald-900/30 dark:shadow-emerald-500/35 dark:hover:shadow-emerald-500/45 focus-visible:ring-emerald-500",
+    "border-transparent bg-brand-green text-white shadow-sm shadow-brand-green/20 hover:brightness-110 hover:shadow-md hover:shadow-brand-green/30 focus-visible:ring-brand-green",
   warning:
-    "border-transparent bg-emerald-600 text-white shadow-sm shadow-emerald-900/20 hover:bg-emerald-700 hover:shadow-md hover:shadow-emerald-900/30 dark:shadow-emerald-500/35 dark:hover:shadow-emerald-500/45 focus-visible:ring-emerald-500",
+    "border-transparent bg-brand-gold text-brand-green shadow-sm shadow-brand-gold/20 hover:brightness-105 hover:shadow-md hover:shadow-brand-gold/30 focus-visible:ring-brand-gold",
   info:
-    "border-transparent bg-emerald-500 text-white shadow-sm shadow-emerald-900/20 hover:bg-emerald-600 hover:shadow-md hover:shadow-emerald-900/30 dark:shadow-emerald-500/35 dark:hover:shadow-emerald-500/45 focus-visible:ring-emerald-500",
+    "border-transparent bg-brand-green/80 text-white shadow-sm shadow-brand-green/20 hover:bg-brand-green hover:shadow-md hover:shadow-brand-green/30 focus-visible:ring-brand-green",
 };
 
 const sizeClasses: Record<ThemeButtonSize, string> = {

@@ -655,7 +655,7 @@ export default function UserManagementPage() {
               <button
                 type="button"
                 onClick={() => handleExportUsers("csv")}
-                className="w-full rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
+                className="w-full rounded-lg border border-brand-green bg-brand-green px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90"
               >
                 Export as CSV
               </button>
