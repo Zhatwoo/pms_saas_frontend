@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import { api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
@@ -132,9 +133,9 @@ const DEFAULT_MOA_CATEGORY = "__default__";
 const DEFAULT_TERMS_TEXT = `1. This Memorandum of agreement is renewable every TEN (10) days.
 2. The Seller shall advise the Buyer of any change of address or mobile number.
 3. This is not a PAWN; this is an extended purchase sale known as the buyback agreement.
-4. JCLB BUY BACK SHOP OPC has the right to open the sealed item and put on display and dispose this item which way it desires without any further notice after the extension period expires (repurchased back).
-5. JCLB BUY BACK SHOP OPC will not be held liable for any loss or damages on this item caused by long time non-usage, ACT of NATURE and any FORTUITOUS EVENTS that may occur without fault or negligence on its part during the storage period as long as the original signed seal and wrapping are untampered.
-6. That the seller declares under the penalty of the anti-fencing law that he is the owner of the item(s) subject of the agreement and in no event will JCLB BUY BACK SHOP OPC be liable to any third-party claiming ownership of the item(s)
+4. ${BRAND_CONFIG.companyName} has the right to open the sealed item and put on display and dispose this item which way it desires without any further notice after the extension period expires (repurchased back).
+5. ${BRAND_CONFIG.companyName} will not be held liable for any loss or damages on this item caused by long time non-usage, ACT of NATURE and any FORTUITOUS EVENTS that may occur without fault or negligence on its part during the storage period as long as the original signed seal and wrapping are untampered.
+6. That the seller declares under the penalty of the anti-fencing law that he is the owner of the item(s) subject of the agreement and in no event will ${BRAND_CONFIG.companyName} be liable to any third-party claiming ownership of the item(s)
 7. There are no FINANCE or INTEREST charges connected with this MOA.
 8. In case of loss of this MOA, you are required to bring a valid id and notarized affidavit of loss during or before the buyback period expires.
 9. Representative is required to bring one (1) valid id (seller) and letter of authorization from the owner (seller), and representative's valid id.`;
@@ -254,7 +255,7 @@ export default function SettingsPage() {
     customerIntro: "I Mr. /Mrs.",
     legalAgeResident: "of legal age and a resident of",
     agreementText:
-      "agree to transfer and convey, by way of sale with a right to repurchase back the ownership over the following unit under JCLB BUY BACK SHOP OPC for THIRTY (30) days from the date of purchase. If I have repurchased the above unit, I shall pay the amount of",
+      `agree to transfer and convey, by way of sale with a right to repurchase back the ownership over the following unit under ${BRAND_CONFIG.companyName} for THIRTY (30) days from the date of purchase. If I have repurchased the above unit, I shall pay the amount of`,
     repayIntro: "If I have repurchased the above unit, I shall pay the amount of",
     plusText: "plus",
     storageFeeText: "every 10 days as a storage fee. FAILURE to repurchase back or renew the storage fee within THIRTY (30) days, there will be a corresponding penalty amounting to",
@@ -279,10 +280,10 @@ export default function SettingsPage() {
     adviseText:
       "SELLER IS ADVISED TO READ AND UNDERSTAND THE TERMS AND CONDITIONS ON THE REVERSE SIDE HEREOF",
     termsHeading: "TERMS AND CONDITIONS",
-    termsPreamble: "You must be pledging to JCLB BUY BACK SHOP OPC, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an \"item\"), or otherwise conducting business with JCLB BUY BACK SHOP OPC. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions JCLB BUY BACK SHOP OPC may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless JCLB BUY BACK SHOP OPC from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you JCLB BUY BACK SHOP OPC. After the verification of your item(s), JCLB BUY BACK SHOP OPC will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by JCLB BUY BACK SHOP OPC. Upon receipt of cash from JCLB BUY BACK SHOP OPC, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from JCLB BUY BACK SHOP OPC without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.",
+    termsPreamble: `You must be pledging to ${BRAND_CONFIG.companyName}, mobile phones, laptop computers, appliances, bike, motor vehicle and other electronic devices or other property or items, otherwise (individually, an "item"), or otherwise conducting business with ${BRAND_CONFIG.companyName}. You should have valid proofs of identity and should be voluntarily agreeing to be legally bound by these terms and conditions ${BRAND_CONFIG.companyName} may request documentation of other proof of compliance that you are the real owner of the item(s). You agree to and will identify and hold harmless ${BRAND_CONFIG.companyName} from and against any claims, suits, investigations, judgment, liabilities, obligations and damages relating to or arising out of the title to, ownership of or lien on any item sold or purported or arranged to be sold by you ${BRAND_CONFIG.companyName}. After the verification of your item(s), ${BRAND_CONFIG.companyName} will in its sole discretion, pay in cash that constitutes the payment for item(s) purchased by ${BRAND_CONFIG.companyName}. Upon receipt of cash from ${BRAND_CONFIG.companyName}, you will be legally bound by the sale transaction and you will not have the opportunity or right to rescind the transaction or repurchased your item(s) back from ${BRAND_CONFIG.companyName} without paying the purchased amount and storage fee for THIRTY (30) DAYS which run from the time you received the payment.`,
     sellerSignature: "(Name, signature and contact number of Seller)",
     authorizedText: "I HEREBY AUTHORIZED",
-    representativeSignature: "(JCLB Representative)",
+    representativeSignature: `(${BRAND_CONFIG.shortCompanyName} Representative)`,
     termsDeclaration:
       "I hereby declare that the item mentioned in front of this document are my personal property and free from any liens and encumbrances.",
     authorizedSubtext:
@@ -290,7 +291,7 @@ export default function SettingsPage() {
     termsReceivedText:
       "Received the article(s) in the same condition when sold and repurchased back.",
     termsReceivedPresence:
-      "(Signed in the presence of JCLB BUY BACK SHOP OPC owner/employee)",
+      `(Signed in the presence of ${BRAND_CONFIG.companyName} owner/employee)`,
   });
   const [extensionRows, setExtensionRows] = useState<ExtensionRow[]>([
     { date: "", storage: "", period: "1st Period", periodValue: "", extend: "", sign: "" },
@@ -316,10 +317,10 @@ export default function SettingsPage() {
   const initialExtensionRowsRef = useRef(extensionRows);
 
   const [shopSettings, setShopSettings] = useState({
-    shopName: "JCLB BUY BACK SHOP",
-    shopAddress: "123 Main Street, Manila, Philippines",
-    phoneNumber: "+63 2 1234 5678",
-    email: "info@jclbbuyback.com",
+    shopName: BRAND_CONFIG.companyName,
+    shopAddress: BRAND_CONFIG.address,
+    phoneNumber: BRAND_CONFIG.phone,
+    email: BRAND_CONFIG.email,
   });
 
   const [policies, setPolicies] = useState({
@@ -332,10 +333,10 @@ export default function SettingsPage() {
   // Shop settings edit mode states
   const [isShopEditMode, setIsShopEditMode] = useState(false);
   const [tempShopSettings, setTempShopSettings] = useState({
-    shopName: "JCLB BUY BACK SHOP",
-    shopAddress: "123 Main Street, Manila, Philippines",
-    phoneNumber: "+63 2 1234 5678",
-    email: "info@jclbbuyback.com",
+    shopName: BRAND_CONFIG.companyName,
+    shopAddress: BRAND_CONFIG.address,
+    phoneNumber: BRAND_CONFIG.phone,
+    email: BRAND_CONFIG.email,
   });
 
   const adminInitials = (profileFullName || user?.fullName || "Admin")

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { useSearchParams } from "next/navigation";
 import { ApiError, api } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { useBranch } from "@/contexts/branch-context";
 import { useInterestRates } from "@/contexts/interest-rates-context";
 import {
@@ -734,7 +735,7 @@ export default function PawnTransactionsPage() {
 
       <div className="hidden print:block">
         <div className="header-print">
-          <h1>JCLB Buy Back Shop</h1>
+          <h1>{BRAND_CONFIG.companyName}</h1>
           <p>Pawn Transactions Report - {isAllBranches ? "All Branches" : selectedBranch.name}</p>
         </div>
         

@@ -11,6 +11,8 @@ export const PRINT_BRAND = {
   mutedInk: "#52525b",
 } as const;
 
+import { BRAND_CONFIG } from "@/lib/brand-config";
+
 /** Base rules shared by document + QR sheet prints. */
 export const PMS_PRINT_BASE_CSS = `
   *, *::before, *::after { box-sizing: border-box; }
@@ -238,7 +240,7 @@ export function buildPmsPrintDocument(params: {
   metaHtml: string;
   bodyHtml: string;
 }): string {
-  const headerTitle = params.headerTitle ?? "JCLB Buy Back Shop";
+  const headerTitle = params.headerTitle ?? BRAND_CONFIG.companyName;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -271,7 +273,7 @@ export function buildQrSheetDocument(params: { sheetTitle: string; cardsHtml: st
 </head>
 <body>
   <header class="pms-qr-print-header">
-    <div class="brand">JCLB Buy Back Shop</div>
+    <div class="brand">${BRAND_CONFIG.companyName}</div>
     <div class="sheet">${escapeHtml(params.sheetTitle)}</div>
   </header>
   <main class="pms-qr-grid">${params.cardsHtml}</main>
@@ -291,13 +293,13 @@ export const MOA_LEGAL_PAGE = {
 /** MOA: `@page` rule — 8.5 × 13 portrait, zero margin (content carries its own padding). */
 export const MOA_PRINT_PAGE_RULE_CSS = `@page { size: 8.5in 13in portrait; margin: 0; }`;
 
-/** JCLB diagonal watermark — shared by settings preview, MOA modal, and print iframe. */
+/** ${BRAND_CONFIG.shortCompanyName} diagonal watermark — shared by settings preview, MOA modal, and print iframe. */
 export const MOA_WATERMARK_CSS = `
   .moa-watermark {
     position: relative;
   }
   .moa-watermark::before {
-    content: "JCLB";
+    content: "${BRAND_CONFIG.shortCompanyName}";
     position: absolute;
     top: 50%;
     left: 50%;

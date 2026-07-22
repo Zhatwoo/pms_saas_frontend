@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent } f
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 import { fetchCategories } from "@/lib/categories";
 import { formatPeso } from "@/lib/currency";
 import { toast } from "sonner";
@@ -320,7 +321,7 @@ export function NewPawnModal({
         } catch (error) {
           console.error("Failed to fetch next unit code:", error);
           // Fallback to a placeholder if API fails
-          setForm(prev => ({ ...prev, unitCode: "PENDING-jclb-xxxxx" }));
+          setForm(prev => ({ ...prev, unitCode: `PENDING-${BRAND_CONFIG.shortCompanyName.toLowerCase()}-xxxxx` }));
         }
       };
       fetchNextCode();
