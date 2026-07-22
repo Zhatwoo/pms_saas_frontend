@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { getAuthorizedRedirect, getDefaultRouteForRole } from "@/lib/auth";
 import { getDeviceFingerprint } from "@/lib/fingerprint";
 import { api, ApiError } from "@/lib/api";
+import { BRAND_CONFIG } from "@/lib/brand-config";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -66,11 +67,11 @@ function getDeviceAuthFailure(
 const termsSections = [
   {
     title: "Website Information",
-    body: "The JCLB Buy Back Pawnshop website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.",
+    body: `The ${BRAND_CONFIG.companyName} website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.`,
   },
   {
     title: "No Online Transaction Guarantee",
-    body: "Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized JCLB Buy Back Shop personnel.",
+    body: `Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized ${BRAND_CONFIG.companyName} personnel.`,
   },
   {
     title: "Customer Responsibilities",
@@ -86,22 +87,22 @@ const termsSections = [
   },
   {
     title: "Internal Login",
-    body: "The login area is reserved for authorized JCLB Buy Back Shop employees and administrators. Customers do not need an account to read the public information on this landing page.",
+    body: `The login area is reserved for authorized ${BRAND_CONFIG.companyName} employees and administrators. Customers do not need an account to read the public information on this landing page.`,
   },
   {
     title: "Limitations",
-    body: "Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from JCLB Buy Back Shop personnel.",
+    body: `Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from ${BRAND_CONFIG.companyName} personnel.`,
   },
   {
     title: "Acceptance",
-    body: "By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to JCLB Buy Back Shop services.",
+    body: `By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to ${BRAND_CONFIG.companyName} services.`,
   },
 ];
 
 const privacySections = [
   {
     title: "Information We May Collect",
-    body: "When customers contact us or complete branch transactions, JCLB Buy Back Shop may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.",
+    body: `When customers contact us or complete branch transactions, ${BRAND_CONFIG.companyName} may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.`,
   },
   {
     title: "How We Use Information",
@@ -121,7 +122,7 @@ const privacySections = [
   },
   {
     title: "Customer Choices",
-    body: "Customers may contact JCLB Buy Back Shop to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.",
+    body: `Customers may contact ${BRAND_CONFIG.companyName} to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.`,
   },
   {
     title: "Website Visitors",
@@ -137,13 +138,13 @@ const legalModalContent = {
   privacy: {
     title: "Privacy Policy",
     ariaLabel: "Close privacy policy",
-    intro: "This policy explains how JCLB Buy Back Shop handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.",
+    intro: `This policy explains how ${BRAND_CONFIG.companyName} handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.`,
     sections: privacySections,
   },
   terms: {
     title: "Terms of Service",
     ariaLabel: "Close terms of service",
-    intro: "These terms explain general use of the JCLB Buy Back Shop website and public information for customers, visitors, and anyone learning about our pawnshop services.",
+    intro: `These terms explain general use of the ${BRAND_CONFIG.companyName} website and public information for customers, visitors, and anyone learning about our pawnshop services.`,
     sections: termsSections,
   },
 };
@@ -320,10 +321,10 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
           <div className="relative flex flex-col items-center">
             <div className="rounded-lg sm:rounded-2xl bg-emerald-950/50 p-1 sm:p-2">
               <div className="overflow-hidden rounded-md sm:rounded-xl ring-2 ring-amber-400/60">
-                <Image src="/logo.png" alt="JCLB Logo" width={64} height={64} className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 object-cover" />
+                <Image src={BRAND_CONFIG.loginLogo} alt={`${BRAND_CONFIG.shortCompanyName} Logo`} width={64} height={64} className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 object-cover" />
               </div>
             </div>
-            <h2 className="mt-1.5 sm:mt-3 text-sm sm:text-lg font-bold text-white">JCLB Buy Back</h2>
+            <h2 className="mt-1.5 sm:mt-3 text-sm sm:text-lg font-bold text-white">{BRAND_CONFIG.companyName}</h2>
             <p className="text-sm sm:text-lg font-bold text-amber-400">Pawnshop</p>
           </div>
         </div>
@@ -411,7 +412,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               </p>
               <div className="mt-2.5 sm:mt-4 text-center text-[8px] sm:text-[10px] text-zinc-400">
                 <p>
-                  JCLB Buy Back Shop ·{" "}
+                  {BRAND_CONFIG.companyName} ·{" "}
                   <button
                     type="button"
                     onClick={() => setLegalModal("privacy")}
@@ -520,7 +521,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
               <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
               <div className="relative">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">JCLB Buy Back Pawnshop</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">{BRAND_CONFIG.companyName}</p>
                 <h3 id="terms-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50/85">
                   {legalModalContent[legalModal].intro}

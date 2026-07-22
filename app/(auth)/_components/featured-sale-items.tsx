@@ -169,10 +169,10 @@ export function FeaturedSaleItems() {
       : ITEM_CATEGORIES.find((label) => normalizeCategory(label) === normalizeCategory(selectedCategory)) || selectedCategory;
 
   return (
-    <section id="items-for-sale" className="scroll-mt-20 bg-emerald-900 px-4 py-16 md:px-12 md:py-24 lg:scroll-mt-32 lg:pt-32 lg:pb-48">
+    <section id="items-for-sale" className="scroll-mt-20 bg-[#f4f2ee] px-4 py-16 md:px-12 md:py-24 lg:scroll-mt-32 lg:pb-48 lg:pt-32">
       <div className="mx-auto max-w-6xl reveal-on-scroll">
         <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Available Items for Sale</p>
-        <h2 className="mt-2 text-3xl font-black text-white md:text-4xl lg:text-5xl">
+        <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
           Fresh Finds from <span className="text-brand-gold">Our Branches</span>
         </h2>
 
@@ -181,7 +181,7 @@ export function FeaturedSaleItems() {
             <button
               type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${selectedCategory === "all" ? "border-brand-gold bg-brand-gold text-emerald-950" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
+              className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${selectedCategory === "all" ? "border-brand-gold bg-brand-gold text-brand-green" : "border-brand-green/20 bg-white text-brand-green hover:bg-brand-green/5"}`}
             >
               All
             </button>
@@ -196,7 +196,7 @@ export function FeaturedSaleItems() {
                   key={category}
                   type="button"
                   onClick={() => setSelectedCategory(category)}
-                  className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${normalizeCategory(selectedCategory) === normalizeCategory(category) ? "border-brand-gold bg-brand-gold text-emerald-950" : "border-white/20 bg-white/10 text-white hover:bg-white/20"}`}
+                  className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.22em] transition-all ${normalizeCategory(selectedCategory) === normalizeCategory(category) ? "border-brand-gold bg-brand-gold text-brand-green" : "border-brand-green/20 bg-white text-brand-green hover:bg-brand-green/5"}`}
                 >
                   {category} <span className="opacity-70">({count})</span>
                 </button>
@@ -207,7 +207,7 @@ export function FeaturedSaleItems() {
         </div>
 
         <div className="mt-8 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm text-white/60">
+          <div className="flex items-center gap-2 text-sm text-brand-green/60">
             <span className="h-2.5 w-2.5 rounded-full bg-brand-gold" />
             <span>{filteredItems.length} items found</span>
           </div>
@@ -217,7 +217,7 @@ export function FeaturedSaleItems() {
               type="button"
               onClick={() => setCurrentSlide((previous) => (previous - 1 + Math.max(slides.length, 1)) % Math.max(slides.length, 1))}
               disabled={slides.length <= 1}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-green/20 bg-white text-brand-green transition hover:bg-brand-green hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
               aria-label="Previous items"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
@@ -228,7 +228,7 @@ export function FeaturedSaleItems() {
               type="button"
               onClick={() => setCurrentSlide((previous) => (previous + 1) % Math.max(slides.length, 1))}
               disabled={slides.length <= 1}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-green/20 bg-white text-brand-green transition hover:bg-brand-green hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
               aria-label="Next items"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
@@ -340,7 +340,7 @@ export function FeaturedSaleItems() {
                 key={index}
                 type="button"
                 onClick={() => setCurrentSlide(index)}
-                className={`h-2 rounded-full transition-all ${index === currentSlide ? "w-8 bg-brand-gold" : "w-2 bg-emerald-300 hover:bg-emerald-400"}`}
+                className={`h-2 rounded-full transition-all ${index === currentSlide ? "w-8 bg-brand-gold" : "w-2 bg-brand-green/25 hover:bg-brand-green/40"}`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
