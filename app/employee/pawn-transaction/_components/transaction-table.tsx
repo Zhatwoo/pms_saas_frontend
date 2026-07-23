@@ -218,7 +218,7 @@ export function TransactionTable({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-emerald-900 text-amber-400">
+            <tr className="bg-brand-green text-pawn-gold">
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -275,7 +275,7 @@ export function TransactionTable({
                     tabIndex={0}
                     className={`cursor-pointer border-t border-border-subtle transition-colors hover:bg-emerald-surface/60 ${isHighlightedRow ? "transaction-highlight-active border-l-4 border-l-amber-500 bg-amber-500/10" : ""
                       } ${isStartRow
-                        ? "border-l-4 border-l-emerald-700 bg-emerald-surface/40"
+                        ? "border-l-4 border-l-brand-green bg-emerald-surface/40"
                         : "bg-surface-secondary"
                       }`}
                   >
@@ -306,10 +306,10 @@ export function TransactionTable({
                     <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-orange-600 dark:text-orange-400">
                       {formatMoney(row.buyOut)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-xs font-medium text-brand-green">
                       {formatMoney(row.sold)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-emerald-600 dark:text-emerald-400">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-brand-green">
                       {formatMoney(row.cashIn)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right text-sm text-red-500 dark:text-red-400">
@@ -371,7 +371,7 @@ export function TransactionTable({
                               onViewDetails(row);
                             }}
                             title="View details"
-                            className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-emerald-50 hover:text-emerald-700"
+                            className="rounded-lg p-1.5 text-text-muted transition-all hover:bg-brand-green/10 hover:text-brand-green"
                           >
                             {eyeIcon}
                           </button>

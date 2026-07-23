@@ -38,8 +38,8 @@ export function InventoryScanner({ onComplete, isLocked = false, title = "Invent
   if (showCompletionConfirm) {
     return (
       <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-lg p-4">
-        <div className="w-full max-w-sm scale-in-center rounded-3xl bg-surface p-8 shadow-2xl border border-emerald-500/20 text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+        <div className="w-full max-w-sm scale-in-center rounded-3xl bg-surface p-8 shadow-2xl border border-brand-green/20 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -50,7 +50,7 @@ export function InventoryScanner({ onComplete, isLocked = false, title = "Invent
           </p>
           <button
             onClick={onComplete}
-            className="w-full rounded-2xl bg-emerald-700 py-4 text-sm font-bold text-white shadow-xl shadow-emerald-700/20 transition-all hover:bg-emerald-800 hover:scale-[1.02] active:scale-95"
+            className="w-full rounded-2xl bg-brand-green py-4 text-sm font-bold text-white shadow-xl shadow-brand-green/20 transition-all hover:bg-brand-green/90 hover:scale-[1.02] active:scale-95"
           >
             Finish & Grant Access
           </button>
@@ -63,18 +63,18 @@ export function InventoryScanner({ onComplete, isLocked = false, title = "Invent
     <div className="flex flex-col h-full bg-surface rounded-3xl border border-border-main p-8 shadow-sm">
       <div className="flex items-center justify-between mb-8 text-left">
         <div>
-          <h2 className="text-2xl font-black text-emerald-900 leading-tight">{title}</h2>
+          <h2 className="text-2xl font-black text-brand-green leading-tight">{title}</h2>
           <p className="text-sm text-text-tertiary">Scan all physical items (Pawned or Retail) to verify stock.</p>
         </div>
-        <div className="flex items-center gap-3 rounded-2xl bg-emerald-100 px-6 py-3 border border-emerald-200">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-sm font-black text-emerald-800">{scannedItems.length} ITEMS ACCOUNTED</span>
+        <div className="flex items-center gap-3 rounded-2xl bg-brand-green/10 px-6 py-3 border border-brand-green/20">
+          <span className="h-2.5 w-2.5 rounded-full bg-brand-green animate-pulse" />
+          <span className="text-sm font-black text-brand-green">{scannedItems.length} ITEMS ACCOUNTED</span>
         </div>
       </div>
 
       <form onSubmit={handleScan} className="mb-8">
         <div className="relative group">
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-600 transition-transform group-focus-within:scale-110">
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-green transition-transform group-focus-within:scale-110">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 7V5a2 2 0 0 1 2-2h2" />
               <path d="M17 3h2a2 2 0 0 1 2 2v2" />
@@ -89,11 +89,11 @@ export function InventoryScanner({ onComplete, isLocked = false, title = "Invent
             placeholder="Awaiting Barcode Input..."
             value={currentScan}
             onChange={(e) => setCurrentScan(e.target.value)}
-            className="w-full rounded-2xl border-2 border-border-main bg-surface-secondary py-6 pl-16 pr-36 text-xl font-bold text-text-primary outline-none focus:border-emerald-500 focus:bg-surface transition-all shadow-inner"
+            className="w-full rounded-2xl border-2 border-border-main bg-surface-secondary py-6 pl-16 pr-36 text-xl font-bold text-text-primary outline-none focus:border-brand-green focus:bg-surface transition-all shadow-inner"
           />
           <button
             type="submit"
-            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-xl bg-emerald-700 px-8 py-3 text-sm font-black text-white transition-all hover:bg-emerald-800 shadow-lg shadow-emerald-700/20"
+            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-xl bg-brand-green px-8 py-3 text-sm font-black text-white transition-all hover:bg-brand-green/90 shadow-lg shadow-brand-green/20"
           >
             ADD
           </button>
@@ -118,15 +118,15 @@ export function InventoryScanner({ onComplete, isLocked = false, title = "Invent
             {scannedItems.map((id, index) => (
               <div 
                 key={id} 
-                className="flex items-center justify-between rounded-2xl border border-border-subtle bg-surface-secondary p-5 hover:border-emerald-500/40 transition-all group animate-slide-up"
+                className="flex items-center justify-between rounded-2xl border border-border-subtle bg-surface-secondary p-5 hover:border-brand-green/40 transition-all group animate-slide-up"
               >
                 <div className="flex items-center gap-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100/50 text-xs font-black text-emerald-700">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-green/10 text-xs font-black text-brand-green">
                     {scannedItems.length - index}
                   </div>
                   <div>
                     <p className="text-sm font-black text-text-primary tracking-tight uppercase">{id}</p>
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Verified Accounted</p>
+                    <p className="text-[10px] font-bold text-brand-green uppercase tracking-widest">Verified Accounted</p>
                   </div>
                 </div>
                 <button 

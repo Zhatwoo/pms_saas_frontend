@@ -318,7 +318,7 @@ export default function BranchesPage() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-emerald-600"
+          className="text-emerald-text"
         >
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
           <circle cx="12" cy="12" r="3" />
@@ -327,7 +327,7 @@ export default function BranchesPage() {
           Viewing:{" "}
           <span className="font-bold">{viewingLabel}</span>
           {!isAllBranches && canSwitchBranch && (
-            <span className="ml-2 text-emerald-500">
+            <span className="ml-2 text-emerald-text/70">
               — Filtered from header selector
             </span>
           )}

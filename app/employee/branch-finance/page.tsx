@@ -307,7 +307,7 @@ export default function EmployeeBranchFinancePage() {
     <div className="w-full min-w-0 max-w-full space-y-4 sm:space-y-6">
       {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-emerald-500/20 bg-surface-secondary px-5 py-3 text-sm font-semibold text-emerald-300 shadow-xl shadow-black/20">
+          <div className="rounded-xl border border-brand-green/20 bg-surface-secondary px-5 py-3 text-sm font-semibold text-brand-green shadow-xl shadow-black/20">
             {toast}
           </div>
         </div>
@@ -341,15 +341,15 @@ export default function EmployeeBranchFinancePage() {
         </div>
       ) : dashboard ? (
         <div className="space-y-6 transition-opacity duration-200">
-          <div className="group relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 p-4 shadow-2xl transition-all hover:shadow-emerald-900/20 sm:p-6">
+          <div className="group relative overflow-hidden rounded-2xl border border-brand-green/30 bg-gradient-to-br from-brand-green via-brand-green/90 to-brand-green p-4 shadow-2xl transition-all hover:shadow-brand-green/20 sm:p-6">
             <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/5 blur-3xl transition-all group-hover:bg-white/10" />
-            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-emerald-400/5 blur-3xl" />
-            
+            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-pawn-gold/5 blur-3xl" />
+
             <div className="relative flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 animate-pulse" />
-                  <h2 className="truncate text-xs font-black uppercase tracking-widest text-emerald-400/80 sm:text-sm">
+                  <div className="h-2 w-2 shrink-0 rounded-full bg-pawn-gold animate-pulse" />
+                  <h2 className="truncate text-xs font-black uppercase tracking-widest text-pawn-gold/80 sm:text-sm">
                     {finance?.name ?? dashboard?.branch?.name ?? "Branch Balance"}
                   </h2>
                 </div>
@@ -357,20 +357,20 @@ export default function EmployeeBranchFinancePage() {
                   {formatCurrency(resolvedCurrentBalance)}
                 </p>
                 <div className="mt-4 flex items-start gap-2">
-                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-emerald-400">
+                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-pawn-gold">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                     </svg>
                   </div>
-                  <p className="text-[10px] font-bold uppercase leading-relaxed tracking-wider text-emerald-400/60">
+                  <p className="text-[10px] font-bold uppercase leading-relaxed tracking-wider text-pawn-gold/60">
                     Last sync: {formatFinanceDate(finance?.lastUpdated)}
                   </p>
                 </div>
               </div>
-              
+
               <div className="hidden sm:block">
                 <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/10">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400 opacity-50">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-pawn-gold opacity-50">
                     <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
                     <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
                     <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z" />
@@ -490,7 +490,7 @@ export default function EmployeeBranchFinancePage() {
                           type="button"
                           onClick={() => handleConfirmRequestClick(request)}
                           disabled={isSubmitting}
-                          className="w-full shrink-0 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-900/20 transition-all hover:bg-emerald-700 hover:shadow-emerald-900/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                          className="w-full shrink-0 rounded-xl bg-brand-green px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-brand-green/20 transition-all hover:brightness-110 hover:shadow-brand-green/40 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           {getConfirmationLabel(request)}
                         </button>
@@ -580,18 +580,18 @@ export default function EmployeeBranchFinancePage() {
             `}} />
 
             <div id="print-ledger-section" className="hidden print:block mb-8">
-              <div className="bg-emerald-800 text-white p-6 rounded-t-xl mb-6 border-b-4 border-amber-400">
+              <div className="bg-brand-green text-white p-6 rounded-t-xl mb-6 border-b-4 border-pawn-gold">
                 <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-3xl font-black uppercase tracking-tighter">
                       {BRAND_CONFIG.companyName}
                     </h1>
-                    <p className="text-sm font-bold text-emerald-100/80 uppercase tracking-[0.2em] mt-1">
+                    <p className="text-sm font-bold text-pawn-gold/80 uppercase tracking-[0.2em] mt-1">
                       {dashboard?.branch?.name || "Branch"} - Financial Ledger Report
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/60">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-pawn-gold/60">
                       Official Document
                     </p>
                   </div>

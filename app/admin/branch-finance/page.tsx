@@ -378,7 +378,7 @@ export default function AdminBranchFinancePage() {
     <div className="space-y-6">
       {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+          <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
             {toast}
           </div>
         </div>
@@ -416,40 +416,40 @@ export default function AdminBranchFinancePage() {
         </div>
       ) : dashboard ? (
         <div className="space-y-6 transition-opacity duration-200">
-          <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 shadow-lg">
+          <div className="overflow-hidden rounded-xl border border-border-main bg-gradient-to-br from-brand-green via-brand-green/90 to-brand-green shadow-lg">
             <div className="flex items-center justify-between px-6 pt-5 pb-3">
               <div>
                 <h2 className="text-xl font-bold text-white">{finance?.name ?? dashboard?.branch?.name ?? "Branch"}</h2>
-                <p className="text-xs uppercase tracking-wider text-emerald-300/80">
+                <p className="text-xs uppercase tracking-wider text-pawn-gold/80">
                   {finance?.branchCode ? `Code ${finance.branchCode}` : "Branch Finance Overview"}
                 </p>
               </div>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-emerald-200">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-pawn-gold">
                 {finance?.status ?? dashboard?.branch?.status ?? "Unknown"}
               </span>
             </div>
 
             <div className="px-6 py-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-300/70">Current Balance</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-pawn-gold/70">Current Balance</p>
               <p className="mt-2 text-4xl font-extrabold tracking-tight text-white">{formatCurrency(resolvedCurrentBalance)}</p>
-              <p className="mt-2 text-xs text-emerald-200/80">Last updated: {formatFinanceDate(finance?.lastUpdated)}</p>
+              <p className="mt-2 text-xs text-pawn-gold/80">Last updated: {formatFinanceDate(finance?.lastUpdated)}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 px-6 pb-6 md:grid-cols-4">
               <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Starting</p>
+                <p className="text-xs uppercase text-pawn-gold/70">Starting</p>
                 <p className="mt-1 text-lg font-bold text-white">{formatCurrency(finance?.startingBalance ?? 0)}</p>
               </div>
               <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Transferred In</p>
+                <p className="text-xs uppercase text-pawn-gold/70">Transferred In</p>
                 <p className="mt-1 text-lg font-bold text-white">{formatCurrency(finance?.totalAdded ?? 0)}</p>
               </div>
               <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Pending Requests</p>
+                <p className="text-xs uppercase text-pawn-gold/70">Pending Requests</p>
                 <p className="mt-1 text-lg font-bold text-white">{dashboard?.fundRequests.summary.pending ?? 0}</p>
               </div>
               <div className="rounded-lg bg-white/5 px-4 py-3">
-                <p className="text-xs uppercase text-emerald-300/70">Transferred Requests</p>
+                <p className="text-xs uppercase text-pawn-gold/70">Transferred Requests</p>
                 <p className="mt-1 text-lg font-bold text-white">{dashboard?.fundRequests.summary.transferred ?? 0}</p>
               </div>
             </div>
@@ -531,7 +531,7 @@ export default function AdminBranchFinancePage() {
                           type="button"
                           onClick={() => handleConfirmRequestClick(request)}
                           disabled={isSubmitting}
-                          className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-xs font-bold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {getConfirmationLabel(request)}
                         </button>

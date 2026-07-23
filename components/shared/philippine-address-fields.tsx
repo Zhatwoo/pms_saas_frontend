@@ -22,7 +22,7 @@ interface PhilippineAddressFieldsProps {
 }
 
 const fieldClass =
-  "h-11 w-full rounded-2xl border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none transition-colors placeholder:font-medium placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500 dark:border-zinc-500 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-400 dark:disabled:bg-zinc-900 dark:disabled:text-zinc-500";
+  "h-11 w-full rounded-2xl border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-900 outline-none transition-colors placeholder:font-medium placeholder:text-zinc-500 focus:border-brand-green focus:ring-2 focus:ring-brand-green/20 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500 dark:border-zinc-500 dark:bg-zinc-800 dark:text-white dark:placeholder:text-zinc-400 dark:disabled:bg-zinc-900 dark:disabled:text-zinc-500";
 
 const baseUrl = "https://psgc.gitlab.io/api";
 
@@ -285,7 +285,7 @@ export function PhilippineAddressFields({
   return (
     <div className="space-y-4 rounded-[1.35rem] border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-600 dark:bg-zinc-900/60">
       <div className="space-y-2">
-        <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">
+        <label className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green/70 dark:text-pawn-gold">
           Street / Subdivision / Compound
         </label>
         <input
@@ -300,7 +300,7 @@ export function PhilippineAddressFields({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">Region</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green/70 dark:text-pawn-gold">Region</label>
           <select value={regionCode} onChange={handleRegionChange} disabled={disabled} className={`${fieldClass} ${highlightedField === "region" ? highlightClasses : ""}`}>
             <option value="">Select region</option>
             {regions.map((r) => <option key={r.code} value={r.code}>{toOption(r)}</option>)}
@@ -308,7 +308,7 @@ export function PhilippineAddressFields({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">Province / District</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green/70 dark:text-pawn-gold">Province / District</label>
           <select value={provinceCode} onChange={handleProvinceChange} disabled={provinceFieldDisabled} className={`${fieldClass} ${highlightedField === "address" ? highlightClasses : highlightedField === "region" ? highlightClasses : ""}`}>
             <option value="">{addressMode === "region" ? "No province for this region" : "Select province"}</option>
             {provinces.map((p) => <option key={p.code} value={p.code}>{toOption(p)}</option>)}
@@ -323,7 +323,7 @@ export function PhilippineAddressFields({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">City / Municipality</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green/70 dark:text-pawn-gold">City / Municipality</label>
           <select value={cityCode} onChange={handleCityChange} disabled={cityFieldDisabled} className={`${fieldClass} ${highlightedField === "city" ? highlightClasses : ""}`}>
             <option value="">Select city / municipality</option>
             {value.city && !cities.some((c) => c.name === value.city) && (
@@ -334,7 +334,7 @@ export function PhilippineAddressFields({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-800/70 dark:text-emerald-300">Barangay</label>
+          <label className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green/70 dark:text-pawn-gold">Barangay</label>
           <select value={barangayCode} onChange={handleBarangayChange} disabled={disabled || !cityCode} className={`${fieldClass} ${highlightedField === "barangay" ? highlightClasses : ""}`}>
             <option value="">Select barangay</option>
             {value.barangay && !barangays.some((b) => b.name === value.barangay) && (

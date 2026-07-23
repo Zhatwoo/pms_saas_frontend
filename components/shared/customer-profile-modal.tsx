@@ -69,7 +69,7 @@ function PreviewModal({ src, title, onClose }: PreviewState & { onClose: () => v
       <div className="anim-modal-enter my-auto flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-surface shadow-2xl sm:rounded-[2rem]" onClick={(e) => e.stopPropagation()}>
         <div className="flex shrink-0 items-center justify-between border-b border-border-main px-4 py-4 sm:px-5">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Identity Preview</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green">Identity Preview</p>
             <h3 className="mt-1 text-lg font-black text-text-primary">{title}</h3>
           </div>
           <button type="button" onClick={onClose} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-hover" aria-label="Close image preview">
@@ -101,7 +101,7 @@ function PhotoTile({ title, src, onOpen, emptyLabel }: { title: string; src: str
           <img src={src} alt={title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
         ) : (
           <div className="flex flex-col items-center gap-2 px-6 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
             </span>
             <div>
@@ -262,12 +262,12 @@ export function ViewCustomerModal({
         <div className={modalClass} onClick={(e) => e.stopPropagation()}>
 
           {/* ── Header ── */}
-          <div className="shrink-0 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-4 py-4 sm:px-6 sm:py-5 text-white">
+          <div className="shrink-0 bg-gradient-to-r from-pawn-sidebar via-brand-green to-brand-green px-4 py-4 sm:px-6 sm:py-5 text-white">
             <div className="relative flex items-start justify-center">
               <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-300/90">Customer Profile</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-pawn-gold/90">Customer Profile</p>
                 <h2 className="mt-1 text-xl sm:text-2xl font-black tracking-tight">{customer.name}</h2>
-                <p className="mt-1 text-xs sm:text-sm text-emerald-50/80">{customer.branch} · Registered {customer.createdAt}</p>
+                <p className="mt-1 text-xs sm:text-sm text-white/80">{customer.branch} · Registered {customer.createdAt}</p>
               </div>
               <button
                 type="button"
@@ -323,7 +323,7 @@ export function ViewCustomerModal({
                         </>
                       ) : (
                         <div className="flex flex-col items-center gap-2 px-6 text-center">
-                          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
                           </span>
                           <div>
@@ -423,9 +423,9 @@ export function ViewCustomerModal({
                           Cancel
                         </button>
                         {isDirty && (
-                          <button type="button" onClick={handleSave} disabled={isSaving} className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-900 transition-colors hover:bg-emerald-100 disabled:opacity-50">
+                          <button type="button" onClick={handleSave} disabled={isSaving} className="inline-flex items-center gap-2 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-brand-green transition-colors hover:bg-brand-green/20 disabled:opacity-50">
                             {isSaving ? (
-                              <span className="h-3 w-3 animate-spin rounded-full border border-emerald-600 border-t-transparent" />
+                              <span className="h-3 w-3 animate-spin rounded-full border border-brand-green border-t-transparent" />
                             ) : (
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
                             )}
@@ -434,7 +434,7 @@ export function ViewCustomerModal({
                         )}
                       </>
                     ) : (
-                      <button type="button" onClick={() => setIsEditing(true)} className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-900 transition-colors hover:bg-emerald-100">
+                      <button type="button" onClick={() => setIsEditing(true)} className="inline-flex items-center gap-2 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-brand-green transition-colors hover:bg-brand-green/20">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 2 4 4-10 10H8v-4L18 2z" /><path d="M13 6 18 11" /></svg>
                         Edit Profile
                       </button>
@@ -461,7 +461,7 @@ export function ViewCustomerModal({
               <button
                 type="button"
                 onClick={() => setIsRequestOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-900 transition-colors hover:bg-emerald-100"
+                className="inline-flex items-center gap-2 rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-brand-green transition-colors hover:bg-brand-green/20"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9" />
@@ -511,7 +511,7 @@ function EditableField({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full rounded-2xl border bg-input-bg px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 ${highlighted ? "border-amber-400 ring-2 ring-amber-400/20" : "border-input-border"}`}
+          className={`w-full rounded-2xl border bg-input-bg px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary outline-none transition-colors focus:border-brand-green focus:ring-2 focus:ring-brand-green/15 ${highlighted ? "border-amber-400 ring-2 ring-amber-400/20" : "border-input-border"}`}
         />
       ) : (
         <div className={`rounded-2xl border px-3 py-2.5 text-xs sm:text-sm font-semibold text-text-primary break-words ${highlighted ? "border-amber-400 bg-amber-50" : "border-border-main bg-surface"}`}>

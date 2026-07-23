@@ -288,7 +288,7 @@ export function FinanceLedgerTable({
       <div className="flex justify-end">
         <button
           onClick={handlePrint}
-          className="flex items-center gap-2 rounded-lg border border-emerald-700 dark:border-emerald-400/80 bg-emerald-700 px-4 py-2 text-sm font-bold text-amber-400 transition-colors hover:bg-emerald-800 dark:hover:bg-emerald-800"
+          className="flex items-center gap-2 rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-sm font-bold text-pawn-gold transition-colors hover:opacity-90"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 6 2 18 2 18 9" />
@@ -563,7 +563,7 @@ export function LedgerTypeFilter({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none rounded-lg border border-border-main bg-surface py-2.5 pl-3 pr-8 text-sm font-medium text-text-primary transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/10 cursor-pointer"
+        className="w-full appearance-none rounded-lg border border-border-main bg-surface py-2.5 pl-3 pr-8 text-sm font-medium text-text-primary transition-all focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/10 cursor-pointer"
       >
         {TYPE_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -612,7 +612,7 @@ export function LedgerFiltersBar({
   variant = "default",
 }: LedgerFiltersBarProps) {
   const inputClass =
-    "w-full rounded-lg border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-emerald-500 focus:outline-none transition-all";
+    "w-full rounded-lg border border-border-main bg-surface px-4 py-2.5 text-sm font-medium text-text-primary focus:border-brand-green focus:outline-none transition-all";
 
   const searchInput = (
     <div className="relative w-full min-w-0">
@@ -630,7 +630,7 @@ export function LedgerFiltersBar({
         onChange={(e) => onSearchChange(e.target.value)}
         className={
           variant === "elevated"
-            ? "w-full rounded-xl border border-border-main bg-surface py-2.5 pl-10 pr-4 text-sm font-medium text-text-primary placeholder:text-text-tertiary focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 transition-all"
+            ? "w-full rounded-xl border border-border-main bg-surface py-2.5 pl-10 pr-4 text-sm font-medium text-text-primary placeholder:text-text-tertiary focus:border-brand-green focus:outline-none focus:ring-4 focus:ring-brand-green/10 transition-all"
             : `${inputClass} placeholder:text-text-muted`
         }
       />

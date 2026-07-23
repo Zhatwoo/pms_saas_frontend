@@ -78,9 +78,9 @@ export function BranchDetailDrawer({
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 bg-gradient-to-r from-emerald-900 to-emerald-800 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-zinc-100 bg-gradient-to-r from-pawn-sidebar to-pawn-sidebar-light px-6 py-5">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-pawn-gold-light">
               Branch Details
             </p>
             <h2 className="mt-1 text-lg font-bold text-white">
@@ -89,7 +89,7 @@ export function BranchDetailDrawer({
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-emerald-300 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-pawn-gold-light transition-colors hover:bg-white/10 hover:text-white"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -193,14 +193,14 @@ export function BranchDetailDrawer({
               <div className="rounded-lg border border-emerald-border bg-emerald-surface p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-emerald-text">
                       Total Inventory Value
                     </p>
-                    <p className="mt-1 text-2xl font-bold text-emerald-900">
+                    <p className="mt-1 text-2xl font-bold text-brand-green">
                       {branch.totalValue}
                     </p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-surface text-emerald-text">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="12" y1="1" x2="12" y2="23" />
                       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />

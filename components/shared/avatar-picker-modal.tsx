@@ -385,7 +385,7 @@ export function AvatarPickerModal({
       <div className="w-full max-w-[560px] overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-5 sm:px-7">
           <div>
-            <h3 className="text-3xl font-extrabold tracking-tight text-emerald-950 dark:text-white">
+            <h3 className="text-3xl font-extrabold tracking-tight text-pawn-sidebar dark:text-white">
               Change Avatar
             </h3>
             <p className="mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
@@ -397,7 +397,7 @@ export function AvatarPickerModal({
             onClick={onClose}
             disabled={isSaving}
             aria-label="Close"
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-60 dark:bg-emerald-950/40 dark:text-emerald-400 dark:hover:bg-emerald-900/50"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green transition-colors hover:bg-brand-green/20 disabled:opacity-60"
           >
             <span className="text-3xl leading-none">×</span>
           </button>
@@ -410,7 +410,7 @@ export function AvatarPickerModal({
                 role="img"
                 aria-label={activeAvatarUrl ? "Avatar crop preview" : "No avatar selected"}
                 title={activeAvatarUrl ? "Drag to adjust avatar" : "No avatar selected"}
-                className={`relative flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-8 border-emerald-50 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-950/40 dark:bg-emerald-950/40 dark:text-emerald-300 ${
+                className={`relative flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-8 border-brand-green/10 bg-brand-green/10 text-brand-green shadow-sm ${
                   canSave ? "cursor-grab active:cursor-grabbing" : ""
                 }`}
                 onPointerDown={beginAvatarDrag}
@@ -429,8 +429,8 @@ export function AvatarPickerModal({
                     />
                   </div>
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-zinc-900">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600 text-emerald-50">
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-green/10 to-white dark:to-zinc-900">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-green text-white">
                       <svg viewBox="0 0 24 24" fill="none" className="h-9 w-9 stroke-current" strokeWidth="1.8">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 15 0" />
@@ -446,7 +446,7 @@ export function AvatarPickerModal({
               type="button"
               onClick={() => setMode("camera")}
               disabled={isSaving}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-green px-7 py-3 text-sm font-extrabold text-white shadow-sm transition-colors hover:opacity-90 disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5A2.5 2.5 0 0 1 6.5 5h3l1.5-2h2l1.5 2h3A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
@@ -460,7 +460,7 @@ export function AvatarPickerModal({
         <div className="border-t border-zinc-200 px-5 py-5 dark:border-zinc-800 sm:px-6">
           {mode === "camera" ? (
             <div className="space-y-4">
-              <div className="overflow-hidden rounded-[22px] border-2 border-dashed border-emerald-300 bg-zinc-50 p-3 dark:border-emerald-900/70 dark:bg-zinc-950/30">
+              <div className="overflow-hidden rounded-[22px] border-2 border-dashed border-brand-green/40 bg-zinc-50 p-3 dark:bg-zinc-950/30">
                 <div className="overflow-hidden rounded-[20px] border border-zinc-200 bg-black dark:border-zinc-700">
                   <video ref={videoRef} autoPlay playsInline muted className="h-60 w-full object-cover" />
                 </div>
@@ -471,7 +471,7 @@ export function AvatarPickerModal({
                   type="button"
                   onClick={() => void handleCapture()}
                   disabled={isStartingCamera}
-                  className="rounded-full bg-emerald-600 px-7 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-full bg-brand-green px-7 py-3 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isStartingCamera ? "Starting camera..." : "Capture Photo"}
                 </button>
@@ -495,8 +495,8 @@ export function AvatarPickerModal({
               }}
               className={`cursor-pointer rounded-[24px] border-2 border-dashed px-5 py-8 text-center transition-colors ${
                 isDragging
-                  ? "border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20"
-                  : "border-emerald-200 bg-white hover:bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-zinc-900 dark:hover:bg-emerald-950/10"
+                  ? "border-brand-green bg-brand-green/10"
+                  : "border-brand-green/30 bg-white hover:bg-brand-green/5 dark:bg-zinc-900"
               }`}
             >
               <input
@@ -511,7 +511,7 @@ export function AvatarPickerModal({
                 className="sr-only"
               />
 
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-400">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-brand-green/30 bg-brand-green/10 text-brand-green">
                 <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 stroke-current" strokeWidth="1.9">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v10" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="m7.5 8.5 4.5-4.5 4.5 4.5" />
@@ -522,7 +522,7 @@ export function AvatarPickerModal({
               <h4 className="mt-4 text-xl font-extrabold text-zinc-900 dark:text-white">
                 Drag &amp; drop your image here
               </h4>
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              <p className="text-sm font-semibold text-brand-green">
                 or click to browse
               </p>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -558,7 +558,7 @@ export function AvatarPickerModal({
                   value={zoom}
                   onChange={(event) => setZoom(Number(event.target.value))}
                   disabled={!canSave}
-                  className="w-full max-w-md accent-emerald-600 disabled:opacity-50"
+                  className="w-full max-w-md accent-brand-green disabled:opacity-50"
                 />
               </div>
 
@@ -574,7 +574,7 @@ export function AvatarPickerModal({
                   setError(null);
                 }}
                 disabled={isSaving || !canSave}
-                className="w-fit text-sm font-bold text-emerald-600 transition-colors hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-400 dark:hover:text-emerald-300"
+                className="w-fit text-sm font-bold text-brand-green transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Reset current avatar
               </button>
@@ -593,7 +593,7 @@ export function AvatarPickerModal({
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={isSaving || !canSave}
-                className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-xl bg-brand-green px-5 py-2.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSaving ? "Saving..." : "Save Avatar"}
               </button>

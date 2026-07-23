@@ -65,7 +65,7 @@ interface PawnedItemDetailsModalProps {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="mb-6 w-full text-center text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600/80 dark:text-emerald-400">
+    <h3 className="mb-6 w-full text-center text-[10px] font-black uppercase tracking-[0.2em] text-brand-green/80">
       {children}
     </h3>
   );
@@ -75,7 +75,7 @@ function DetailItem({ label, value, highlight = false }: { label: string; value:
   return (
     <div className="space-y-1">
       <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
-      <p className={`text-sm font-bold ${highlight ? "text-emerald-600 dark:text-emerald-400" : "text-text-primary"}`}>
+      <p className={`text-sm font-bold ${highlight ? "text-brand-green" : "text-text-primary"}`}>
         {value || "—"}
       </p>
     </div>
@@ -313,7 +313,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       {/* Neat Print Label Section (Only visible during print) */}
       {canViewQr && (
         <div id="print-label" className="hidden print:flex flex-col items-center justify-center bg-white w-full h-full p-0">
-          <p className="text-[5px] font-black leading-none text-emerald-800 uppercase mb-[1px]">{BRAND_CONFIG.shortCompanyName}</p>
+          <p className="text-[5px] font-black leading-none text-brand-green uppercase mb-[1px]">{BRAND_CONFIG.shortCompanyName}</p>
           {qrData && (
             <>
               <img 
@@ -338,10 +338,10 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left Section: Visuals */}
-        <div className="w-full shrink-0 bg-emerald-950 p-5 text-white lg:max-h-[90vh] lg:w-[320px] lg:overflow-y-auto lg:scrollbar-hide">
+        <div className="w-full shrink-0 bg-pawn-sidebar p-5 text-white lg:max-h-[90vh] lg:w-[320px] lg:overflow-y-auto lg:scrollbar-hide">
           <div className="flex flex-col gap-4 min-h-max">
             <div className="flex flex-col items-center text-center">
-              <SectionTitle><span className="text-emerald-400">Identity Media</span></SectionTitle>
+              <SectionTitle><span className="text-pawn-gold">Identity Media</span></SectionTitle>
               {hasCustomerId ? (
                 <div className="grid w-full gap-3 md:grid-cols-2 lg:grid-cols-1">
                   {identityMedia.map((media) => (
@@ -349,7 +349,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                       key={media.label}
                       type="button"
                       onClick={() => setPreview(media.src ? { src: media.src, title: media.label } : null)}
-                      className="group relative h-[180px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
+                      className="group relative h-[180px] w-full overflow-hidden rounded-2xl border border-pawn-sidebar-light bg-pawn-sidebar-light/60 shadow-xl"
                     >
                       <Image
                         src={media.src}
@@ -375,7 +375,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                       setPreview({ src: identityMedia[0].src, title: identityMedia[0].label });
                     }
                   }}
-                  className="group relative h-[200px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
+                  className="group relative h-[200px] w-full overflow-hidden rounded-2xl border border-pawn-sidebar-light bg-pawn-sidebar-light/60 shadow-xl"
                 >
                   {identityMedia[0]?.src ? (
                     <>
@@ -396,11 +396,11 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                   ) : (
                     <div className="flex h-full w-full items-center justify-center px-6 text-center">
                       <div className="space-y-2 opacity-60">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-pawn-gold-light">
                           <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
                           <circle cx="12" cy="13" r="3" />
                         </svg>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-pawn-gold-light/70">
                           No capture available
                         </p>
                       </div>
@@ -411,9 +411,9 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
             </div>
 
             <div className="flex flex-col items-center text-center">
-              <SectionTitle><span className="text-emerald-400">Item Visuals</span></SectionTitle>
+              <SectionTitle><span className="text-pawn-gold">Item Visuals</span></SectionTitle>
               <div
-                className="relative h-[200px] w-full overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl"
+                className="relative h-[200px] w-full overflow-hidden rounded-2xl border border-pawn-sidebar-light bg-pawn-sidebar-light/60 shadow-xl"
                 onTouchStart={handleItemTouchStart}
                 onTouchEnd={handleItemTouchEnd}
               >
@@ -437,12 +437,12 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                 ) : (
                   <div className="flex h-full w-full items-center justify-center px-6 text-center">
                     <div className="space-y-2 opacity-60">
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-emerald-300">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto text-pawn-gold-light">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
                       </svg>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200/70">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-pawn-gold-light/70">
                         No item photo saved
                       </p>
                     </div>
@@ -491,14 +491,14 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
             </div>
 
             <div className="flex flex-col items-center text-center">
-              <SectionTitle><span className="text-emerald-400">Security Identity</span></SectionTitle>
+              <SectionTitle><span className="text-pawn-gold">Security Identity</span></SectionTitle>
               <div className="flex w-full flex-col items-center justify-center gap-3">
                 {canRequestQrReplacement ? (
                   <button
                     type="button"
                     onClick={() => setIsQrModalOpen(true)}
                     disabled={qrRequestStatus === "pending"}
-                    className="w-full rounded-xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-100 transition-all hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full rounded-xl border border-pawn-gold/40 bg-brand-green/15 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-pawn-gold-light transition-all hover:bg-brand-green/25 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {qrRequestStatus === "pending" ? "QR Replacement Pending" : "QR Replacement"}
                   </button>
@@ -518,12 +518,12 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     )}
                   </>
                 ) : !canViewQr ? (
-                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300/70 bg-emerald-100/20 px-4 text-center">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-100">QR Visible to Super Admin only</p>
+                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-pawn-gold/70 bg-pawn-gold/20 px-4 text-center">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-pawn-gold-light">QR Visible to Super Admin only</p>
                   </div>
                 ) : (
-                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-100/30">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600/70">No QR generated</p>
+                  <div className="flex h-[180px] w-[180px] items-center justify-center rounded-2xl border-2 border-dashed border-pawn-gold bg-pawn-gold/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-brand-green/70">No QR generated</p>
                   </div>
                 )}
               </div>
@@ -535,7 +535,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         <div className="flex-1 p-5 md:p-8 lg:max-h-[90vh] lg:overflow-y-auto lg:p-12 lg:scrollbar-hide">
           {isLoading ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-50">
-               <div className="h-12 w-12 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+               <div className="h-12 w-12 rounded-full border-4 border-brand-green border-t-transparent animate-spin" />
                <p className="text-xs font-black uppercase tracking-widest">Retrieving Secure Data...</p>
             </div>
           ) : error ? (
@@ -545,24 +545,24 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                </div>
                <h4 className="text-lg font-black text-text-primary mb-2">Access Error</h4>
                <p className="text-sm text-text-tertiary mb-6">{error}</p>
-               <button onClick={fetchDetails} className="px-6 py-2 bg-emerald-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-800">Retry Fetch</button>
+               <button onClick={fetchDetails} className="px-6 py-2 bg-brand-green text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-90">Retry Fetch</button>
             </div>
           ) : !item ? null : (
             <div className="space-y-10">
               {/* Header Info */}
               <div className="flex flex-col gap-6 border-b border-border-main pb-8 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Pawned Inventory Record</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-brand-green">Pawned Inventory Record</span>
                   <h2 className="text-4xl font-black text-text-primary tracking-tighter uppercase">{item.item_name}</h2>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-text-tertiary uppercase tracking-tighter">{item.category}</span>
                     <span className="h-1 w-1 rounded-full bg-border-main" />
-                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">{item.branch}</span>
+                    <span className="text-xs font-black text-brand-green uppercase tracking-tighter">{item.branch}</span>
                   </div>
                 </div>
                 <div className="text-right">
                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Pawn Value</p>
-                   <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{formatPeso(item.amount.toLocaleString())}</p>
+                   <p className="text-3xl font-black text-brand-green">{formatPeso(item.amount.toLocaleString())}</p>
                 </div>
               </div>
 
@@ -604,14 +604,14 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                       value={remarks}
                       onChange={(e) => setRemarks(e.target.value)}
                       placeholder="Add internal notes about the item condition or specific investigations..."
-                      className="w-full min-h-[120px] rounded-3xl border border-border-main bg-surface-secondary p-6 text-sm font-medium text-text-primary placeholder:text-text-tertiary outline-none focus:border-emerald-500 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                      className="w-full min-h-[120px] rounded-3xl border border-border-main bg-surface-secondary p-6 text-sm font-medium text-text-primary placeholder:text-text-tertiary outline-none focus:border-brand-green dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                     />
                     <div className="flex justify-end">
                       <button 
                         type="button"
                         onClick={handleSaveRemarks}
                         disabled={isSaving || !onSaveRemarks || remarks === (item.remarks || "")}
-                        className="rounded-2xl bg-emerald-600 px-8 py-3 text-xs font-black text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-40 transition-all flex items-center gap-2 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                        className="rounded-2xl bg-brand-green px-8 py-3 text-xs font-black text-white shadow-lg shadow-brand-green/20 hover:opacity-90 disabled:opacity-40 transition-all flex items-center gap-2"
                       >
                         {isSaving && <div className="h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />}
                         {isSaving ? "SAVING..." : "UPDATE REMARKS"}
@@ -633,15 +633,15 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                  <div className="space-y-3">
                     {item.renewals.length > 0 ? (
                       item.renewals.map((r, i) => (
-                        <div key={i} className="flex items-center justify-between p-5 bg-surface-secondary rounded-2xl border border-border-main group hover:border-emerald-500/30 transition-colors">
+                        <div key={i} className="flex items-center justify-between p-5 bg-surface-secondary rounded-2xl border border-border-main group hover:border-brand-green/30 transition-colors">
                           <div className="flex items-center gap-4">
-                             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-[10px] font-black text-emerald-600 dark:text-emerald-400">R{i+1}</div>
+                             <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center text-[10px] font-black text-brand-green">R{i+1}</div>
                              <div>
                                 <p className="text-xs font-black uppercase tracking-tight text-text-primary">Renewal Payment Cycle {i+1}</p>
                                 <p className="text-[10px] font-bold text-text-tertiary">PROCESSED ON {r.date}</p>
                              </div>
                           </div>
-                          <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatPeso(r.amount.toLocaleString())}</p>
+                          <p className="text-sm font-black text-brand-green">{formatPeso(r.amount.toLocaleString())}</p>
                         </div>
                       ))
                     ) : (
@@ -663,7 +663,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                     <button
                       type="button"
                       onClick={() => setBuybackProofPreview({ src: buybackTransaction.buyback_proof!, title: "Buyback Transaction Proof" })}
-                      className="group relative overflow-hidden rounded-2xl border border-emerald-800 bg-emerald-900/60 shadow-xl hover:border-emerald-600 transition-all"
+                      className="group relative overflow-hidden rounded-2xl border border-pawn-sidebar-light bg-pawn-sidebar-light/60 shadow-xl hover:border-brand-green transition-all"
                     >
                       <img
                         src={buybackTransaction.buyback_proof}
@@ -700,7 +700,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                         }}
                         className={`px-8 py-4 rounded-2xl text-xs font-black transition-all shadow-xl active:scale-95 ${
                           (qrRequestStatus === "approved" || !item?.created_at || (new Date().getTime() - new Date(item.created_at).getTime() < 86400000))
-                            ? "bg-emerald-600 dark:bg-emerald-500 text-white hover:bg-emerald-700 dark:hover:bg-emerald-600"
+                            ? "bg-brand-green text-white hover:opacity-90"
                             : "bg-surface-secondary text-text-tertiary cursor-not-allowed"
                         }`}
                       >
@@ -739,7 +739,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         <div className="relative max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-surface shadow-2xl" onClick={(event) => event.stopPropagation()}>
           <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Identity Preview</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green">Identity Preview</p>
               <h3 className="mt-1 text-lg font-black text-text-primary">{preview.title}</h3>
             </div>
             <button
@@ -774,7 +774,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
         >
           <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Proof Preview</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green">Proof Preview</p>
               <h3 className="mt-1 text-lg font-black text-text-primary">{buybackProofPreview.title}</h3>
             </div>
             <button

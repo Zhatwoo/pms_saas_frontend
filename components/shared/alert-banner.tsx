@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 const variants = {
-  info: "bg-emerald-900/80 text-white",
+  info: "bg-brand-green/80 text-white",
   warning: "bg-amber-50 border border-amber-300 text-amber-800",
   error: "bg-red-50 border border-red-300 text-red-700",
 } as const;

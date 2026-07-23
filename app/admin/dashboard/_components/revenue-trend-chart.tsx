@@ -66,10 +66,10 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
               type="monotone"
               dataKey="revenue"
               name="Revenue"
-              stroke="#1a472a"
+              stroke="var(--brand-green)"
               strokeWidth={2}
-              dot={{ r: 4, fill: "#1a472a", strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: "#1a472a", strokeWidth: 0 }}
+              dot={{ r: 4, fill: "var(--brand-green)", strokeWidth: 0 }}
+              activeDot={{ r: 6, fill: "var(--brand-green)", strokeWidth: 0 }}
             />
           </LineChart>
           </ResponsiveContainer>

@@ -657,7 +657,7 @@ function formatLoginReason(reason: string | null) {
 }
 
 function formatLoginStatus(status: string) {
-  if (status === "SUCCESS") return { label: "Success", color: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50" };
+  if (status === "SUCCESS") return { label: "Success", color: "bg-brand-green/10 text-brand-green border-brand-green/20" };
   if (status === "BLOCKED") return { label: "Blocked", color: "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-100 dark:border-rose-800/50" };
   return { label: "Failed", color: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800/50" };
 }
@@ -1074,11 +1074,11 @@ export default function AuditLogsPage() {
               <span className="text-2xl md:text-4xl font-black text-text-primary">{card.count}</span>
             </div>
             <div className="mt-1.5 md:mt-2 flex items-center gap-2 z-10">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
+              <div className="h-1.5 w-1.5 rounded-full bg-brand-green"></div>
               <span className="text-[10px] md:text-xs text-text-muted font-medium">{card.sub}</span>
             </div>
             {/* Hover dash effect */}
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-emerald-500/10 dark:bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-500/10 transition-all duration-500"></div>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-brand-green/10 dark:bg-brand-green/5 rounded-full blur-2xl group-hover:bg-brand-green/20 dark:group-hover:bg-brand-green/10 transition-all duration-500"></div>
           </div>
         ))}
       </div>
@@ -1099,11 +1099,11 @@ export default function AuditLogsPage() {
               <button
                 key={tab}
                 onClick={() => setFilterType(tab)}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${isActive ? "border-emerald-600 text-emerald-700 dark:text-emerald-400" : "border-transparent text-text-tertiary hover:text-text-secondary hover:bg-surface-secondary rounded-t-lg"
+                className={`flex items-center gap-2 px-6 py-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${isActive ? "border-brand-green text-brand-green" : "border-transparent text-text-tertiary hover:text-text-secondary hover:bg-surface-secondary rounded-t-lg"
                   }`}
               >
                 {tab}
-                <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400" : "bg-surface-secondary text-text-tertiary"}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActive ? "bg-brand-green/10 text-brand-green" : "bg-surface-secondary text-text-tertiary"}`}>
                   {count}
                 </span>
               </button>
@@ -1123,7 +1123,7 @@ export default function AuditLogsPage() {
                     placeholder="Search by name, email, IP..."
                     value={loginSearchQuery}
                     onChange={e => setLoginSearchQuery(e.target.value)}
-                    className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-brand-green transition-colors"
                   />
                 </div>
                 {["ALL", "SUCCESS", "FAILED", "BLOCKED"].map(s => (
@@ -1131,7 +1131,7 @@ export default function AuditLogsPage() {
                     key={s}
                     onClick={() => setLoginStatusFilter(s)}
                     className={`px-3 py-2 rounded-lg text-xs font-bold border transition-colors ${loginStatusFilter === s
-                      ? s === "SUCCESS" ? "bg-emerald-600 text-white border-emerald-600"
+                      ? s === "SUCCESS" ? "bg-brand-green text-white border-brand-green"
                         : s === "FAILED" ? "bg-amber-500 text-white border-amber-500"
                           : s === "BLOCKED" ? "bg-rose-600 text-white border-rose-600"
                             : "bg-zinc-800 text-white border-zinc-700"
@@ -1201,7 +1201,7 @@ export default function AuditLogsPage() {
                             type="button"
                             onClick={() => void handleRequestDeviceAuthorization(log)}
                             disabled={isRequesting}
-                            className="mt-3 rounded-lg border border-emerald-600 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                            className="mt-3 rounded-lg border border-brand-green px-3 py-2 text-xs font-bold text-brand-green transition-colors hover:bg-brand-green/10 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {isRequesting ? "Sending..." : "Request Access"}
                           </button>
@@ -1215,7 +1215,7 @@ export default function AuditLogsPage() {
                 <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-emerald-900 text-amber-400">
+                      <tr className="bg-pawn-sidebar text-pawn-gold">
                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Date & Time</th>
                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Status</th>
                         <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide xl:px-6">Employee</th>
@@ -1279,7 +1279,7 @@ export default function AuditLogsPage() {
                                   type="button"
                                   onClick={() => void handleRequestDeviceAuthorization(log)}
                                   disabled={isRequesting}
-                                  className="rounded-lg border border-emerald-600 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                                  className="rounded-lg border border-brand-green px-3 py-1.5 text-xs font-bold text-brand-green transition-colors hover:bg-brand-green/10 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                   {isRequesting ? "Sending..." : "Request Access"}
                                 </button>
@@ -1319,7 +1319,7 @@ export default function AuditLogsPage() {
                 placeholder="Search logs..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-emerald-500 transition-colors"
+                className="w-full rounded-lg border border-input-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text-primary outline-none focus:border-brand-green transition-colors"
               />
             </div>
 
@@ -1327,7 +1327,7 @@ export default function AuditLogsPage() {
               <select
                 value={selectedBranchValue}
                 onChange={(e) => handleBranchChange(e.target.value)}
-                className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500 sm:w-auto"
+                className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-brand-green sm:w-auto"
               >
                 {pageBranchOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -1340,7 +1340,7 @@ export default function AuditLogsPage() {
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
-              className="h-11 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-emerald-500 sm:w-auto"
+              className="h-11 w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm font-medium text-text-primary outline-none hover:border-text-tertiary focus:border-brand-green sm:w-auto"
               aria-label="Filter by action"
             >
               <option value="all">All Actions</option>
@@ -1365,7 +1365,7 @@ export default function AuditLogsPage() {
             <button
               onClick={handleExport}
               disabled={filteredLogs.length === 0}
-              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+              className="flex items-center gap-2 rounded-lg bg-brand-green px-4 py-2.5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -1392,7 +1392,7 @@ export default function AuditLogsPage() {
               {paginatedLogs.map((log) => {
                 const { date: dString, time: tString } = formatAuditDateTime(log.createdAt);
                 const statusBadge =
-                  log.statusGuess === "Success" ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50" :
+                  log.statusGuess === "Success" ? "bg-brand-green/10 text-brand-green border border-brand-green/20" :
                   log.statusGuess === "Failed" ? "bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50" :
                   "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50";
 
@@ -1434,7 +1434,7 @@ export default function AuditLogsPage() {
                       <span className={`text-xs font-black tracking-widest uppercase ${
                         log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
                         log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
-                        'text-emerald-600 dark:text-emerald-400'
+                        'text-brand-green'
                       }`}>{log.actionBadge}</span>
                     </div>
 
@@ -1454,7 +1454,7 @@ export default function AuditLogsPage() {
             <div className="hidden lg:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-emerald-900 text-amber-400">
+                  <tr className="bg-pawn-sidebar text-pawn-gold">
                     <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Date & Time</th>
                     <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">User</th>
                     <th className="px-4 py-4 text-xs font-bold uppercase tracking-wide text-left xl:px-6">Log Type</th>
@@ -1501,7 +1501,7 @@ export default function AuditLogsPage() {
                         <td className="px-4 py-4 whitespace-nowrap xl:px-6">
                           <span className={`text-xs font-black tracking-widest uppercase ${log.actionBadge === 'FAILED' || log.actionBadge === 'DELETE' ? 'text-rose-600 dark:text-rose-400' :
                             log.actionBadge === 'CREATE' ? 'text-blue-600 dark:text-blue-400' :
-                              'text-emerald-600 dark:text-emerald-400'
+                              'text-brand-green'
                             }`}>
                             {log.actionBadge}
                           </span>
@@ -1522,7 +1522,7 @@ export default function AuditLogsPage() {
                         <td className="px-4 py-4 whitespace-nowrap text-right xl:px-6">
                           <div className="flex justify-end">
                             {log.statusGuess === "Success" && (
-                              <span className="inline-flex px-2.5 py-1 rounded bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50 text-xs font-bold">Success</span>
+                              <span className="inline-flex px-2.5 py-1 rounded bg-brand-green/10 text-brand-green border border-brand-green/20 text-xs font-bold">Success</span>
                             )}
                             {log.statusGuess === "Failed" && (
                               <span className="inline-flex px-2.5 py-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-100 dark:border-rose-800/50 text-xs font-bold">Failed</span>

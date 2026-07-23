@@ -50,7 +50,7 @@ export function TransactionFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search notes..."
-            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-emerald-400"
+            className="w-full rounded-lg border border-input-border bg-input-bg py-2.5 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-pawn-sidebar"
           />
         </div>
       </div>
@@ -63,7 +63,7 @@ export function TransactionFilters({
         <select
           value={branchFilter}
           onChange={(e) => onBranchFilterChange(e.target.value)}
-          className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400 sm:w-auto"
+          className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar sm:w-auto"
         >
           <option value="all">All Branches</option>
           {branches.map((b) => (
@@ -83,7 +83,7 @@ export function TransactionFilters({
           type="date"
           value={dateFilter}
           onChange={(e) => onDateFilterChange(e.target.value)}
-          className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-400 sm:w-auto"
+          className="w-full rounded-lg border border-input-border bg-input-bg px-4 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar sm:w-auto"
         />
       </div>
 

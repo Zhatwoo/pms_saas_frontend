@@ -574,7 +574,7 @@ export default function BranchFinancePage() {
     <div className="space-y-6">
       {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+          <div className="rounded-xl border border-emerald-border bg-emerald-surface px-5 py-3 text-sm font-semibold text-emerald-text shadow-xl">
             {toast}
           </div>
         </div>
@@ -652,7 +652,7 @@ export default function BranchFinancePage() {
                             setSelectedTransferRequest(request);
                             setTransferModalOpen(true);
                           }}
-                          className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-700"
+                          className="rounded-lg border border-pawn-sidebar-light bg-pawn-sidebar px-4 py-2 text-xs font-bold text-white transition-colors hover:opacity-90"
                         >
                           Confirm & Transfer
                         </button>

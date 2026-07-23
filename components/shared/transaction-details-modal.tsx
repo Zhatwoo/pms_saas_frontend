@@ -84,20 +84,20 @@ export function TransactionDetailsModal({
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-xl" {...modalAriaProps} ref={modalRef}>
       <div className="max-h-[92vh] w-[95vw] max-w-5xl scale-in-center overflow-y-auto rounded-[28px] border bg-surface shadow-[0_24px_80px_rgba(15,23,42,0.35)] transition-colors border-border-main md:w-[90vw]">
-        <div className="relative overflow-hidden border-b px-6 py-6 border-emerald-700/40" style={{ background: 'linear-gradient(to right, rgb(5, 150, 105), rgb(6, 95, 70), rgb(5, 150, 105))' }}>
-          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1))' }} />
-          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-400/10 blur-3xl" />
-          <div className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-emerald-300/5 blur-2xl" />
+        <div className="relative overflow-hidden border-b px-6 py-6 border-brand-green/40" style={{ background: 'linear-gradient(to right, var(--brand-green), var(--pawn-sidebar), var(--brand-green))' }}>
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--brand-green) 15%, transparent), color-mix(in srgb, var(--brand-green) 10%, transparent))' }} />
+          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-pawn-gold/10 blur-3xl" />
+          <div className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-brand-green/5 blur-2xl" />
 
           <div className="relative flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-amber-300/95">
+              <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-pawn-gold/95">
                 Transaction Details
               </p>
               <h2 className="mt-2 text-3xl font-black tracking-tight text-white">
                 {transaction.transactionNo}
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-100/80">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/80">
                 Review transaction details, financial values, and related records in a single view.
               </p>
               <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -124,7 +124,7 @@ export function TransactionDetailsModal({
               )}
               <button
                 onClick={onClose}
-                className="rounded-full border border-emerald-300/40 bg-emerald-500/20 px-4 py-2 text-sm font-bold text-emerald-100 transition-colors hover:bg-emerald-500/30 hover:border-emerald-300/60"
+                className="rounded-full border border-pawn-gold/40 bg-white/20 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-white/30 hover:border-pawn-gold/60"
               >
                 Close
               </button>
@@ -229,7 +229,7 @@ export function TransactionDetailsModal({
           >
             <div className="flex items-center justify-between border-b border-border-main px-5 py-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Proof Preview</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-green">Proof Preview</p>
                 <h3 className="mt-1 text-lg font-black text-text-primary">{buybackProofPreview.title}</h3>
               </div>
               <button

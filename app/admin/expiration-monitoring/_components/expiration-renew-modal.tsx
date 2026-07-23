@@ -281,18 +281,18 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-6 text-zinc-900 dark:text-white">
-      <div className="fixed inset-0 bg-emerald-950/40 backdrop-blur-md transition-opacity no-print" onClick={handleRequestClose} />
-      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-emerald-900/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
-        
+      <div className="fixed inset-0 bg-pawn-sidebar/40 backdrop-blur-md transition-opacity no-print" onClick={handleRequestClose} />
+      <div className="relative w-full max-w-7xl h-[90vh] flex flex-col bg-white dark:bg-background rounded-3xl shadow-2xl shadow-brand-green/20 overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative z-10">
+
         {/* Top Floating Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-6 py-5 text-white shrink-0 relative z-10">
+        <div className="bg-gradient-to-r from-pawn-sidebar via-pawn-sidebar to-brand-green px-6 py-5 text-white shrink-0 relative z-10">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-800 flex items-center justify-center text-emerald-300 shadow-inner border border-emerald-700/50">
+              <div className="w-12 h-12 rounded-2xl bg-brand-green/80 flex items-center justify-center text-pawn-gold shadow-inner border border-brand-green/50">
                 <RotateCcw className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-amber-300/90 dark:text-emerald-400">
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-pawn-gold/90">
                   {branchName}
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight text-white leading-none">
@@ -318,7 +318,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
 
           {/* Main Info Area */}
-          <div className="flex-1 p-4 sm:p-6 xl:p-8 flex flex-col xl:flex-row gap-8 bg-emerald-50/20 dark:bg-surface-secondary overflow-y-auto scrollbar-hide">
+          <div className="flex-1 p-4 sm:p-6 xl:p-8 flex flex-col xl:flex-row gap-8 bg-brand-green/5 dark:bg-surface-secondary overflow-y-auto scrollbar-hide">
             {/* Left Column: Specs */}
             <div className="flex-1 space-y-5 flex flex-col">
               <SectionHeader title="Loan & Item Identity" icon={Info} />
@@ -346,18 +346,18 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                 <StaticDetailRow label="Parking Fee" value={selectedItem?.parkingFee} />
                 <StaticDetailRow label="Purchased Date" value={selectedItem?.purchasedDate} />
                 <StaticDetailRow label="Expiration Date" value={selectedItem?.expirationDate} />
-                <div className="pt-3 border-t border-emerald-100 space-y-1 mt-auto">
-                   <p className="text-[9px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Principal Amount</p>
+                <div className="pt-3 border-t border-brand-green/15 space-y-1 mt-auto">
+                   <p className="text-[9px] font-black text-brand-green/60 dark:text-pawn-gold uppercase tracking-widest">Principal Amount</p>
                    <div className="flex items-center gap-2">
-                     <span className="text-2xl font-black text-emerald-950 dark:text-white">₱ {selectedItem?.amount.toLocaleString() || '0.00'}</span>
-                     <div className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[8px] font-black uppercase tracking-tighter border border-emerald-200">Value Assessed</div>
+                     <span className="text-2xl font-black text-pawn-sidebar dark:text-white">₱ {selectedItem?.amount.toLocaleString() || '0.00'}</span>
+                     <div className="px-2 py-0.5 bg-brand-green/10 text-brand-green rounded-full text-[8px] font-black uppercase tracking-tighter border border-brand-green/20">Value Assessed</div>
                    </div>
                 </div>
               </div>
             </div>
 
             {/* Right Action Panel */}
-            <div className="flex w-full shrink-0 flex-col gap-4 bg-emerald-900 p-6 xl:w-[340px]">
+            <div className="flex w-full shrink-0 flex-col gap-4 bg-pawn-sidebar p-6 xl:w-[340px]">
                <div className="space-y-3">
                   <SectionHeader title="Transaction Type" icon={Tag} isDark />
                   
@@ -386,22 +386,22 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                <div className="space-y-3">
                   <SectionHeader title="Period Settings" icon={Calendar} isDark />
                   
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-100/80 bg-white px-4 py-2.5 shadow-lg dark:border-white/10 dark:bg-emerald-950/50">
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-brand-green/20 bg-white px-4 py-2.5 shadow-lg dark:border-white/10 dark:bg-pawn-sidebar/50">
                     <div className="space-y-0.5">
-                      <p className="text-[8px] font-black text-emerald-900/40 dark:text-emerald-400 uppercase tracking-widest">Items Renewed</p>
-                      <p className="text-[7px] font-bold text-emerald-600/60 dark:text-emerald-400/60 uppercase tracking-tighter">Extend Multiplier</p>
+                      <p className="text-[8px] font-black text-brand-green/60 dark:text-pawn-gold uppercase tracking-widest">Items Renewed</p>
+                      <p className="text-[7px] font-bold text-brand-green/60 dark:text-pawn-gold/60 uppercase tracking-tighter">Extend Multiplier</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <button 
+                      <button
                         onClick={() => setItemsRenewed(Math.max(1, itemsRenewed - 1))}
-                        className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-800 text-emerald-900 dark:text-white hover:bg-emerald-100 dark:hover:bg-emerald-700 flex items-center justify-center transition-all active:scale-90"
+                        className="w-7 h-7 rounded-lg bg-brand-green/10 dark:bg-brand-green/80 text-pawn-sidebar dark:text-white hover:bg-brand-green/20 dark:hover:brightness-110 flex items-center justify-center transition-all active:scale-90"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-2xl font-black text-emerald-950 dark:text-white min-w-[1.5ch] text-center">{itemsRenewed}</span>
-                      <button 
+                      <span className="text-2xl font-black text-pawn-sidebar dark:text-white min-w-[1.5ch] text-center">{itemsRenewed}</span>
+                      <button
                         onClick={() => setItemsRenewed(itemsRenewed + 1)}
-                        className="w-7 h-7 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center transition-all active:scale-90 shadow-lg shadow-emerald-500/20"
+                        className="w-7 h-7 rounded-lg bg-brand-green text-white hover:brightness-110 flex items-center justify-center transition-all active:scale-90 shadow-lg shadow-brand-green/20"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -412,16 +412,16 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                {/* Dynamic Section: Principal Adjustment OR Interest View */}
                <div className="space-y-3">
                  {isReappraiseActive ? (
-                   <div className="bg-emerald-950/50 rounded-xl border border-white/5 p-4 space-y-2 animate-in zoom-in-95 duration-200">
+                   <div className="bg-brand-green/20 rounded-xl border border-white/5 p-4 space-y-2 animate-in zoom-in-95 duration-200">
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="w-3 h-3 text-emerald-400" />
-                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Adjust Principal</p>
+                        <TrendingUp className="w-3 h-3 text-pawn-gold" />
+                        <p className="text-[9px] font-black text-pawn-gold uppercase tracking-widest">Adjust Principal</p>
                       </div>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-xs">₱</span>
-                        <input 
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pawn-gold font-black text-xs">₱</span>
+                        <input
                           type="number"
-                          className="w-full h-9 pl-8 pr-3 bg-white/10 border-2 border-emerald-500/30 rounded-lg text-white font-black text-lg outline-none focus:border-emerald-500 transition-all"
+                          className="w-full h-9 pl-8 pr-3 bg-white/10 border-2 border-pawn-gold/30 rounded-lg text-white font-black text-lg outline-none focus:border-pawn-gold transition-all"
                           value={newPrincipal || ""}
                           onChange={(e) => {
                             const val = e.target.value.replace(/[^0-9.]/g, "");
@@ -433,10 +433,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                  ) : (
                    <div className="bg-white/5 rounded-xl border border-white/5 p-4 flex items-center justify-between">
                       <div>
-                        <p className="text-[8px] font-black text-emerald-900/40 dark:text-white uppercase tracking-widest">Interest Due</p>
-                        <p className="text-[7px] font-bold text-emerald-500/50 uppercase">({interestCalc.percentage}% Rate)</p>
+                        <p className="text-[8px] font-black text-white/70 uppercase tracking-widest">Interest Due</p>
+                        <p className="text-[7px] font-bold text-pawn-gold/70 uppercase">({interestCalc.percentage}% Rate)</p>
                       </div>
-                      <p className="text-xl font-black text-emerald-950 dark:text-white">₱ {(interestCalc.interestAmount * itemsRenewed).toLocaleString()}</p>
+                      <p className="text-xl font-black text-white">₱ {(interestCalc.interestAmount * itemsRenewed).toLocaleString()}</p>
                    </div>
                  )}
                </div>
@@ -445,18 +445,18 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         </div>
 
         {/* Footer Actions */}
-        <div className="shrink-0 border-t border-emerald-50 bg-white p-4 dark:bg-surface sm:p-6 lg:p-8">
+        <div className="shrink-0 border-t border-brand-green/10 bg-white p-4 dark:bg-surface sm:p-6 lg:p-8">
           <div className="flex items-end gap-2 sm:gap-4 lg:gap-6">
             <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
               <div className="w-[min(38%,8.5rem)] shrink-0 sm:w-40">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">Password</label>
-                  <input 
-                    type="password" 
+                  <label className="text-[9px] font-black uppercase tracking-[0.2em] text-brand-green/60 dark:text-pawn-gold">Password</label>
+                  <input
+                    type="password"
                     placeholder="••••••••"
                     className={transactionPasswordInputClass(
                       Boolean(passwordFieldError),
-                      "h-10 w-full rounded-lg border border-emerald-100 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-border-subtle dark:bg-surface-secondary",
+                      "h-10 w-full rounded-lg border border-brand-green/15 bg-slate-50 px-3 text-sm text-text-primary outline-none transition-all placeholder:text-text-muted focus:border-brand-green focus:ring-4 focus:ring-brand-green/10 dark:border-border-subtle dark:bg-surface-secondary",
                     )}
                     value={adminForm.password}
                     onChange={(e) => {
@@ -473,22 +473,22 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
               <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
 
               <div className="min-w-0 shrink-0 text-left">
-                <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-emerald-900/40 dark:text-emerald-400">
+                <p className="mb-1 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-brand-green/60 dark:text-pawn-gold">
                   TOTAL PAYMENT
                 </p>
-                <p className="text-xl font-black leading-none tracking-tighter text-emerald-950 dark:text-white sm:text-2xl md:text-3xl">
+                <p className="text-xl font-black leading-none tracking-tighter text-pawn-sidebar dark:text-white sm:text-2xl md:text-3xl">
                   ₱ {totalToPay.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <button 
+            <button
               disabled={isLoading || !selectedItem}
               onClick={handleProceed}
-              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-[0.98] sm:gap-3 sm:rounded-2xl sm:px-10 sm:py-4 sm:text-sm sm:tracking-wider md:px-12 md:py-5 ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 hover:bg-emerald-700'}`}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[9px] font-black uppercase tracking-wide transition-all active:scale-[0.98] sm:gap-3 sm:rounded-2xl sm:px-10 sm:py-4 sm:text-sm sm:tracking-wider md:px-12 md:py-5 ${isLoading || !selectedItem ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-surface-hover' : 'bg-brand-green text-white shadow-xl shadow-brand-green/30 hover:brightness-110'}`}
             >
               {isLoading ? (
-                 <span className="anim-loading h-4 w-4 rounded-full border-emerald-950/30 border-t-emerald-950" />
+                 <span className="anim-loading h-4 w-4 rounded-full border-pawn-sidebar/30 border-t-pawn-sidebar" />
               ) : (
                  <>
                    {isReappraiseActive ? "PROCESS REAPPRAISAL" : "PROCESS RENEWAL"}
@@ -527,10 +527,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: any, isDark?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-950 text-emerald-400' : 'bg-white text-emerald-600 shadow-sm border border-emerald-50 dark:bg-surface dark:border-border-subtle'}`}>
+      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-pawn-sidebar text-pawn-gold' : 'bg-white text-brand-green shadow-sm border border-brand-green/10 dark:bg-surface dark:border-border-subtle'}`}>
         <Icon className="w-3.5 h-3.5" />
       </div>
-      <h3 className={`text-[9px] font-black uppercase tracking-[2px] ${isDark ? 'text-emerald-400' : 'text-emerald-900/40 dark:text-white'}`}>
+      <h3 className={`text-[9px] font-black uppercase tracking-[2px] ${isDark ? 'text-pawn-gold' : 'text-brand-green/60 dark:text-white'}`}>
         {title}
       </h3>
     </div>
@@ -540,11 +540,11 @@ function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, i
 function StaticDetailRow({ label, value }: { label: string, value: string | number | undefined }) {
   return (
     <div className="flex items-center justify-between gap-3 py-1.5 group">
-      <span className="text-[10px] font-bold text-emerald-900/40 dark:text-white/60 uppercase tracking-tighter whitespace-nowrap shrink-0">
+      <span className="text-[10px] font-bold text-brand-green/60 dark:text-white/60 uppercase tracking-tighter whitespace-nowrap shrink-0">
         {label}:
       </span>
-      <div className="flex-1 border-b border-emerald-100 dark:border-border-subtle border-dashed group-hover:border-emerald-300 transition-colors" />
-      <span className="text-[12px] font-black text-emerald-950 dark:text-white tracking-tight">
+      <div className="flex-1 border-b border-brand-green/15 dark:border-border-subtle border-dashed group-hover:border-brand-green/40 transition-colors" />
+      <span className="text-[12px] font-black text-pawn-sidebar dark:text-white tracking-tight">
         {value || "---"}
       </span>
     </div>
@@ -557,16 +557,16 @@ function ActionToggle({ label, isActive, onClick, sub }: { label: string, isActi
       type="button"
       onClick={onClick}
       className={`relative flex min-w-0 flex-col gap-0.5 rounded-2xl p-3 text-left transition-all group ${
-        isActive 
-          ? "border-2 border-emerald-400 bg-emerald-50 shadow-lg dark:border-emerald-300 dark:bg-emerald-600/40" 
-          : "border border-white/10 bg-white/10 text-emerald-100/40 hover:border-emerald-200/60 dark:border-white/10 dark:bg-surface/5 dark:text-white/40 dark:hover:bg-white/5"
+        isActive
+          ? "border-2 border-pawn-gold bg-white/90 shadow-lg dark:border-pawn-gold dark:bg-brand-green/40"
+          : "border border-white/10 bg-white/10 text-white/40 hover:border-pawn-gold/40 dark:border-white/10 dark:bg-surface/5 dark:text-white/40 dark:hover:bg-white/5"
       }`}
     >
-      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? "border-emerald-600 dark:border-white" : "border-current"}`}>
-        {isActive && <div className="h-1 w-1 rounded-full bg-emerald-600 dark:bg-white" />}
+      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? "border-brand-green dark:border-white" : "border-current"}`}>
+        {isActive && <div className="h-1 w-1 rounded-full bg-brand-green dark:bg-white" />}
       </div>
-      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? "text-emerald-950 dark:text-white" : "text-current"}`}>{label}</p>
-      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? "text-emerald-600/60 dark:text-white/60" : "text-current"}`}>{sub}</p>}
+      <p className={`text-[10px] font-black uppercase tracking-tight ${isActive ? "text-pawn-sidebar dark:text-white" : "text-current"}`}>{label}</p>
+      {sub && <p className={`text-[8px] font-bold leading-none ${isActive ? "text-brand-green/60 dark:text-white/60" : "text-current"}`}>{sub}</p>}
     </button>
   );
 }

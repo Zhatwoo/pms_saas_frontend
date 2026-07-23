@@ -85,8 +85,8 @@ const pawnedStatusOptions = [
 ];
 
 const toolbarLabelClass = "text-[10px] font-bold uppercase tracking-wider text-text-tertiary";
-const toolbarFieldClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
-const toolbarSelectClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500";
+const toolbarFieldClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-brand-green";
+const toolbarSelectClass = "h-10 w-full lg:w-56 rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-brand-green";
 
 const statusVariant: Record<string, "green" | "blue" | "red" | "orange"> = {
   Active: "green",
@@ -201,8 +201,8 @@ function EditPawnedItemModal({
         className="w-full max-w-md rounded-xl bg-surface border border-border-main shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-emerald-900 px-6 py-4">
-          <p className="text-amber-400 text-[10px] font-bold uppercase tracking-wider">Edit Pawned Item</p>
+        <div className="bg-brand-green px-6 py-4">
+          <p className="text-pawn-gold text-[10px] font-bold uppercase tracking-wider">Edit Pawned Item</p>
           <h2 className="text-white text-lg font-bold">{item.itemId}</h2>
         </div>
         <div className="p-6 space-y-4">
@@ -211,7 +211,7 @@ function EditPawnedItemModal({
             <input
               value={itemName}
               onChange={(e) => setItemName(e.target.value)}
-              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -219,7 +219,7 @@ function EditPawnedItemModal({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500"
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"
             >
               {categoriesList.map((name) => (
                 <option key={name} value={name}>{name}</option>
@@ -233,7 +233,7 @@ function EditPawnedItemModal({
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
               rows={3}
-              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-emerald-500 resize-none"
+              className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green resize-none"
             />
           </div>
         </div>
@@ -241,7 +241,7 @@ function EditPawnedItemModal({
           <button type="button" onClick={onClose} className="px-4 py-2 text-xs font-bold text-text-secondary rounded-md border border-border-main hover:bg-surface-hover">
             Cancel
           </button>
-          <button type="submit" disabled={isSaving} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800 disabled:opacity-50">
+          <button type="submit" disabled={isSaving} className="px-4 py-2 text-xs font-bold text-white bg-brand-green rounded-md hover:brightness-110 disabled:opacity-50">
             {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </div>
@@ -472,7 +472,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
           const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(item.itemId)}`;
           const encoded = encodeURIComponent(publicViewUrl);
-          qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
+          qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=0B5D3B&bgcolor=f0fdf4&margin=2`;
         }
 
         return `
@@ -560,7 +560,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
       <div>
-        <p className="text-sm text-emerald-900/60 dark:text-zinc-300">
+        <p className="text-sm text-brand-green/60 dark:text-zinc-300">
           Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
         </p>
       </div>
@@ -593,7 +593,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className={viewOnly ? "h-10 w-full rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 lg:w-56" : toolbarFieldClass}
+              className={viewOnly ? "h-10 w-full rounded-md border border-border-main bg-surface-secondary px-4 text-sm text-text-primary outline-none transition-colors focus:border-brand-green lg:w-56" : toolbarFieldClass}
             />
           </div>
         </div>
@@ -605,7 +605,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                 <div className="relative">
                   <ActionButton
                     variant="primary"
-                    className="border-emerald-700 bg-emerald-700 text-amber-400"
+                    className="border-brand-green bg-brand-green text-pawn-gold"
                     onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}
                   >
                     <span className="flex items-center gap-1.5">
@@ -640,10 +640,10 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                 </div>
               )}
               <div className="flex overflow-hidden rounded-md border border-border-main bg-surface">
-                <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+                <button onClick={() => setViewMode("list")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "list" ? "bg-brand-green text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
                   List
                 </button>
-                <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
+                <button onClick={() => setViewMode("calendar")} className={`px-4 py-2 text-sm font-medium transition-colors ${viewMode === "calendar" ? "bg-brand-green text-white" : "bg-surface text-text-secondary hover:bg-surface-hover"}`}>
                   Calendar
                 </button>
               </div>
@@ -651,7 +651,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           ) : (
             <>
               {!viewOnly && (
-                <button onClick={() => setIsQrScanOpen(true)} className="flex items-center gap-1.5 rounded-md border border-emerald-600 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100">
+                <button onClick={() => setIsQrScanOpen(true)} className="flex items-center gap-1.5 rounded-md border border-brand-green bg-brand-green/10 px-3 py-1.5 text-xs font-bold text-brand-green transition-colors hover:bg-brand-green/20">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
                   </svg>
@@ -659,16 +659,16 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                 </button>
               )}
               <div className="flex overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900">
-                <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+                <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${viewMode === "list" ? "bg-brand-green text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
                   List
                 </button>
-                <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
+                <button onClick={() => setViewMode("calendar")} className={`px-3 py-1.5 ${viewOnly ? "text-sm font-semibold" : "text-xs font-medium"} transition-colors ${viewMode === "calendar" ? "bg-brand-green text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}>
                   Calendar
                 </button>
               </div>
               {userRole === "super_admin" && (
                 <div className="relative">
-                  <ActionButton variant="outline" className="!border-emerald-700 !bg-surface !text-emerald-700 hover:!opacity-80" onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}>
+                  <ActionButton variant="outline" className="!border-brand-green !bg-surface !text-brand-green hover:!opacity-80" onClick={() => setIsPrintQrMenuOpen((prev) => !prev)}>
                     <span className="flex items-center gap-1.5">
                       {printerIcon}
                       Print QR
@@ -725,7 +725,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
           <div className="overflow-x-auto">
             <table className={viewOnly ? "min-w-[1420px] w-full text-sm" : "w-full text-sm"}>
               <thead>
-                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
+                <tr className="bg-brand-green text-pawn-gold">
                   {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Interest Rate %", "Status", "Renewals", "Remarks", isSuperAdmin ? "QR" : null, "Actions"]
                     .filter((h): h is string => h !== null)
                     .map((h) => (
@@ -752,17 +752,17 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                   pawnedItems.map((item, idx) => (
                     <Fragment key={item.id}>
                       <tr onClick={viewOnly ? () => setSelectedItemId(item.id) : undefined} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
-                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-emerald-700 dark:text-emerald-400">{item.itemId}</td>
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-bold text-brand-green">{item.itemId}</td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-secondary dark:text-zinc-300">{item.itemName}</td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary dark:text-zinc-400">{item.category}</td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary dark:text-zinc-400">{item.branch}</td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm text-text-tertiary dark:text-zinc-400">{item.pawnDate}</td>
-                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-center text-sm font-black text-emerald-700 dark:text-emerald-400">
+                        <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-center text-sm font-black text-brand-green">
                           {getPawnedItemInterestRatePercent(item)}%
                         </td>
                         <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                         <td className="px-3 py-2 sm:px-4 sm:py-3 text-center">
-                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={viewOnly ? "mx-auto inline-flex text-sm font-bold text-emerald-700 hover:underline dark:text-emerald-400" : "mx-auto inline-flex text-xs font-bold text-emerald-700 hover:underline dark:text-emerald-400"}>
+                          <button onClick={(event) => { event.stopPropagation(); setExpandedRow(expandedRow === item.itemId ? null : item.itemId); }} className={viewOnly ? "mx-auto inline-flex text-sm font-bold text-brand-green hover:underline" : "mx-auto inline-flex text-xs font-bold text-brand-green hover:underline"}>
                             {item.renewalCount}x ▾
                           </button>
                         </td>
@@ -784,10 +784,10 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                         )}
                         <td className="px-3 py-2 sm:px-4 sm:py-3 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            <button 
-                              onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }} 
+                            <button
+                              onClick={(event) => { event.stopPropagation(); setSelectedItemId(item.id); }}
                               title="View Details"
-                              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                              className="inline-flex items-center justify-center rounded-lg border border-brand-green/30 bg-brand-green/10 p-2 text-brand-green transition-colors hover:bg-brand-green/20"
                             >
                               {eyeIcon}
                             </button>
@@ -797,7 +797,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
                                 handleReprintMoa(item.id);
                               }}
                               title="View/Print MOA Slip"
-                              className="inline-flex items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                              className="inline-flex items-center justify-center rounded-lg border border-brand-green/30 bg-brand-green/10 p-2 text-brand-green transition-colors hover:bg-brand-green/20"
                             >
                               {printerIcon}
                             </button>

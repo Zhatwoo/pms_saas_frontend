@@ -720,7 +720,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           </p>
           <button
             onClick={handleConfirmCompletion}
-            className="w-full rounded-2xl bg-emerald-700 py-4 text-sm font-bold text-white shadow-xl shadow-emerald-700/20 transition-all hover:bg-emerald-800 hover:scale-[1.02] active:scale-95"
+            className="w-full rounded-2xl bg-brand-green py-4 text-sm font-bold text-white shadow-xl shadow-brand-green/20 transition-all hover:opacity-90 hover:scale-[1.02] active:scale-95"
           >
             Finish & Open Dashboard
           </button>
@@ -800,14 +800,14 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
           <section className="relative flex shrink-0 flex-col bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 sm:p-4 lg:min-h-0 lg:shrink lg:overflow-hidden lg:p-6">
             <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:text-left">
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.32em] text-emerald-700/70 sm:tracking-[0.4em]">Opening Workflow</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.32em] text-brand-green/70 sm:tracking-[0.4em]">Opening Workflow</p>
                 <h2 className="mt-2 text-xl font-black leading-tight sm:text-2xl lg:text-3xl">Branch inventory QR scan</h2>
                 <p className="mt-2 max-w-xl text-xs leading-5 text-zinc-600 dark:text-zinc-300 sm:text-left lg:text-sm">
                   Scan available sale items and active pawn items within 7 days of maturity before starting the day.
                 </p>
               </div>
 
-              <div className="shrink-0 rounded-full border border-emerald-200 bg-white px-3 py-2 text-[10px] font-bold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-zinc-800 dark:text-emerald-300 sm:px-4 sm:text-xs">
+              <div className="shrink-0 rounded-full border border-brand-green/20 bg-white px-3 py-2 text-[10px] font-bold text-brand-green shadow-sm dark:border-brand-green/40 dark:bg-zinc-800 dark:text-pawn-gold sm:px-4 sm:text-xs">
                 {scannedItems.length} Verified
               </div>
             </div>
@@ -819,7 +819,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               <span>{cameraStatusLabel}</span>
             </div>
 
-            <div className="relative mt-3 overflow-hidden rounded-2xl border border-emerald-100 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 sm:mt-4 sm:rounded-[1.5rem] lg:mt-5">
+            <div className="relative mt-3 overflow-hidden rounded-2xl border border-brand-green/20 bg-zinc-50 shadow-[0_24px_70px_rgba(15,23,42,0.05)] dark:border-zinc-700 dark:bg-zinc-950 sm:mt-4 sm:rounded-[1.5rem] lg:mt-5">
               <div className="relative aspect-[4/3] w-full sm:aspect-[16/10] lg:aspect-[16/9]">
                 <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" playsInline muted />
                 <div className="absolute inset-0 bg-black/8" />
@@ -846,7 +846,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       !isCheckingTally &&
                       !isLoadingChecklistItems && (
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/92 p-4 text-center animate-in fade-in duration-500 dark:bg-zinc-900/92 sm:p-8">
-                        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 sm:mb-4 sm:h-16 sm:w-16">
+                        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-brand-green/10 text-brand-green sm:mb-4 sm:h-16 sm:w-16">
                           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                             <polyline points="22 4 12 14.01 9 11.01" />
@@ -877,10 +877,10 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-700">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.35em] text-emerald-700/70">Pawned Item Details</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.35em] text-brand-green/70">Pawned Item Details</p>
                       <h3 className="mt-1 text-sm font-black text-zinc-900 dark:text-zinc-100">Key fields from the verified item record</h3>
                     </div>
-                    <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-700">
+                    <span className="rounded-full border border-brand-green/20 bg-brand-green/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-brand-green">
                       {activeItem ? "Fetched" : "Decoded"}
                     </span>
                   </div>
@@ -922,7 +922,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     The QR payload is parsed automatically. If needed, paste the code value from the QR data string.
                   </p>
                 </div>
-                <div className="inline-flex min-w-max items-center whitespace-nowrap rounded-full bg-emerald-100 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 sm:tracking-[0.16em]">
+                <div className="inline-flex min-w-max items-center whitespace-nowrap rounded-full bg-brand-green/10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-brand-green dark:bg-brand-green/20 dark:text-pawn-gold sm:tracking-[0.16em]">
                   Auto scan first
                 </div>
               </div>
@@ -930,7 +930,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               <form onSubmit={handleManualScan} className="mt-4">
                 <div className="flex flex-col gap-2 sm:relative">
                   <div className="relative">
-                    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600">
+                    <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-brand-green">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 7V5a2 2 0 0 1 2-2h2" />
                       <path d="M17 3h2a2 2 0 0 1 2 2v2" />
@@ -946,7 +946,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                       value={currentScan}
                       onChange={(event) => setCurrentScan(event.target.value)}
                       disabled={isLoading}
-                      className={`w-full rounded-2xl border-2 ${error ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30" : "border-emerald-200 bg-white dark:border-emerald-700 dark:bg-zinc-900"} py-3.5 pl-12 pr-4 text-sm font-bold text-zinc-900 outline-none transition-all focus:border-emerald-500 dark:text-zinc-100 dark:placeholder:text-zinc-500 sm:py-4 sm:pr-32`}
+                      className={`w-full rounded-2xl border-2 ${error ? "border-rose-500 bg-rose-50/50 dark:bg-rose-950/30" : "border-brand-green/20 bg-white dark:border-brand-green/40 dark:bg-zinc-900"} py-3.5 pl-12 pr-4 text-sm font-bold text-zinc-900 outline-none transition-all focus:border-brand-green dark:text-zinc-100 dark:placeholder:text-zinc-500 sm:py-4 sm:pr-32`}
                     />
                   </div>
                   <button
@@ -977,7 +977,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                 </div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-100">
                   <div
-                    className="h-full rounded-full bg-emerald-600 transition-all duration-300"
+                    className="h-full rounded-full bg-brand-green transition-all duration-300"
                     style={{
                       width:
                         tally && tally.totalInSystem > 0
@@ -1053,7 +1053,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
               </div>
 
               {pendingItem ? (
-                <div className="mt-4 space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 shadow-sm dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                <div className="mt-4 space-y-4 rounded-2xl border border-brand-green/20 bg-brand-green/5 p-4 shadow-sm dark:border-brand-green/30 dark:bg-brand-green/10">
                   <div className="flex items-start gap-4">
                     <div className="relative aspect-square w-28 shrink-0 overflow-hidden rounded-2xl border border-zinc-100 bg-white p-2 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                       {ownerPhoto && !pendingPhotoBroken ? (
@@ -1078,7 +1078,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-emerald-600">Owner / Customer</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-brand-green">Owner / Customer</p>
                       <h3 className="mt-1 break-words text-lg font-black text-zinc-900 dark:text-zinc-100">{pendingItem.customerName || "Unknown owner"}</h3>
                       <div className="mt-3 space-y-2">
                         <div>
@@ -1110,13 +1110,13 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <div className="flex gap-3">
                     <button
                       onClick={discardPendingItem}
-                      className="flex-1 rounded-2xl border border-zinc-200 bg-white py-3 text-xs font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+                      className="flex-1 rounded-2xl border border-zinc-200 bg-white py-3 text-xs font-bold text-zinc-700 transition-all hover:bg-zinc-50 active:scale-95 dark:border-brand-green/40 dark:bg-brand-green/20 dark:text-pawn-gold dark:hover:bg-brand-green/30"
                     >
                       Rescan
                     </button>
                     <button
                       onClick={verifyItem}
-                      className="flex-1 rounded-2xl bg-emerald-700 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95"
+                      className="flex-1 rounded-2xl bg-brand-green py-3 text-xs font-bold text-white shadow-lg shadow-brand-green/20 transition-all hover:opacity-90 active:scale-95"
                     >
                       Verify Item
                     </button>
@@ -1145,7 +1145,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   <p className="text-[10px] font-black uppercase tracking-[0.28em] text-zinc-400">Verified items</p>
                   <h4 className="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">{scannedItems.length} accounted for</h4>
                 </div>
-                <div className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
+                <div className="rounded-full bg-brand-green/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-brand-green">
                   {scannedItems.length} scanned
                 </div>
               </div>
@@ -1174,7 +1174,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                           setSelectedVerifiedItem(item);
                         }
                       }}
-                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-all hover:border-emerald-200 hover:bg-emerald-50/40 active:scale-[0.99] cursor-pointer dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-emerald-600 dark:hover:bg-emerald-900/30"
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 p-3 text-left transition-all hover:border-brand-green/30 hover:bg-brand-green/5 active:scale-[0.99] cursor-pointer dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-brand-green/50 dark:hover:bg-brand-green/10"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
@@ -1209,7 +1209,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                         <button
                           aria-label="View verified item"
                           onClick={(e) => { e.stopPropagation(); setSelectedVerifiedItem(item); }}
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 transition-colors hover:text-emerald-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-emerald-400"
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 transition-colors hover:text-brand-green dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:text-pawn-gold"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
@@ -1244,7 +1244,7 @@ export function InventoryAuditModal({ isOpen, onConfirm, onClose, displayMode = 
                   }
                 }}
                 disabled={activeCompletionBlocked}
-                className={`w-full rounded-2xl bg-emerald-700 py-4 text-sm font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-700 dark:shadow-none ${checklistEmpty ? "" : "mt-4"}`}
+                className={`w-full rounded-2xl bg-brand-green py-4 text-sm font-black text-white shadow-lg shadow-brand-green/20 transition-all hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-none ${checklistEmpty ? "" : "mt-4"}`}
               >
                 Complete Inventory Count
               </button>

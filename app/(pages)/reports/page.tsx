@@ -388,7 +388,7 @@ export default function ReportsPage() {
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <p className="text-sm font-semibold text-red-600">{error}</p>
-          <button onClick={() => setActivePeriod(activePeriod)} className="px-4 py-2 text-xs font-bold text-white bg-emerald-700 rounded-md hover:bg-emerald-800">
+          <button onClick={() => setActivePeriod(activePeriod)} className="px-4 py-2 text-xs font-bold text-white bg-brand-green rounded-md hover:brightness-110">
             Retry
           </button>
         </div>
