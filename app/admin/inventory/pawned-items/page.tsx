@@ -70,6 +70,69 @@ interface PawnedItem {
   interest_rate_snapshot?: unknown;
 }
 
+interface MoaCustomerDetails {
+  full_name?: string;
+  address?: string;
+  barangay?: string;
+  city?: string;
+  province?: string;
+  region?: string;
+  middle_name?: string;
+  contact_number?: string;
+  id_presented?: string;
+}
+
+interface MoaCreatedByUser {
+  full_name?: string;
+}
+
+interface MoaItemDetails {
+  items_included?: string;
+  itemsIncluded?: string;
+  condition?: string;
+  memory_storage?: string;
+  memoryStorage?: string;
+  created_by_user?: MoaCreatedByUser;
+  customer?: MoaCustomerDetails;
+  customers?: MoaCustomerDetails;
+  customerName?: string;
+  pawn_date?: string;
+  pawnDate?: string;
+  amount?: number | string;
+  category?: string;
+  item_id?: string;
+  itemId?: string;
+  item_name?: string;
+  itemName?: string;
+  customerAddress?: string;
+  serial_number?: string;
+  serialNumber?: string;
+  remarks?: string;
+  branch?: string;
+  customerIdPresented?: string;
+  customerContact?: string;
+  createdByName?: string;
+}
+
+interface MoaTransactionFallback {
+  pawned_item?: {
+    customer?: MoaCustomerDetails;
+    items_included?: string;
+    condition?: string;
+    memory_storage?: string;
+  };
+  customer?: MoaCustomerDetails;
+  created_by_user?: MoaCreatedByUser;
+}
+
+interface BranchRecord {
+  name?: string;
+  location?: string;
+  contact_number?: string;
+  contactNumber?: string;
+  phone?: string;
+}
+
 const categoryOptions = [
   { value: "all", label: "All" },
   { value: "electronics", label: "Electronics" },
@@ -332,15 +395,15 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
     });
     try {
       const sourceItem = pawnedItems.find((item) => item.id === id);
-      let itemDetails: any;
-      let transactionFallback: any = null;
+      let itemDetails: MoaItemDetails | undefined;
+      let transactionFallback: MoaTransactionFallback | null = null;
       try {
-        itemDetails = await api.get<any>(`/inventory/pawned/${id}`);
+        itemDetails = await api.get<MoaItemDetails>(`/inventory/pawned/${id}`);
       } catch {
         if (!sourceItem?.itemId) {
           throw new Error("Missing item code for MOA reprint fallback.");
         }
-        itemDetails = await api.get<any>(`/inventory/item/${encodeURIComponent(sourceItem.itemId)}`);
+        itemDetails = await api.get<MoaItemDetails>(`/inventory/item/${encodeURIComponent(sourceItem.itemId)}`);
       }
 
       const isMissing = (value?: string | null) => !value || value.trim() === "" || value.trim() === "---";
@@ -357,7 +420,7 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
             : "";
         if (params) {
           try {
-            transactionFallback = await api.get<any>(`/transactions/pawn-source?${params}`);
+            transactionFallback = await api.get<MoaTransactionFallback>(`/transactions/pawn-source?${params}`);
           } catch {
             transactionFallback = null;
           }
@@ -400,8 +463,8 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
       let branchAddress = "";
       let branchPhone = "";
       try {
-        const branchList = await api.get<any[]>("/branches");
-        const match = branchList?.find((b: any) => b.name === itemDetails.branch);
+        const branchList = await api.get<BranchRecord[]>("/branches");
+        const match = branchList?.find((b) => b.name === itemDetails.branch);
         if (match) {
           branchAddress = match.location || "";
           branchPhone = match.contact_number || match.contactNumber || match.phone || "";

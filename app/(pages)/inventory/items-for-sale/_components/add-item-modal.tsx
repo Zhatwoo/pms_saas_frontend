@@ -135,8 +135,8 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       toast.success("Item added for sale successfully!");
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add item.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add item.");
     } finally {
       setIsSubmitting(false);
       isProcessingRef.current = false;

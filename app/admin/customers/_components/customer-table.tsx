@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -193,9 +193,8 @@ export function CustomerTable() {
           isLoading={isLoading}
           loadingMessage="Loading customers..."
           onRowClick={(row) => router.push(`/admin/customers/view_user?id=${row.id}`)}
-          renderCell={(key, value, row) => {
-            
-            return value;
+          renderCell={(key, value) => {
+            return value as ReactNode;
           }}
         />
 

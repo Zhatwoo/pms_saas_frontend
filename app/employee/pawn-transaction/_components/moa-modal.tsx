@@ -423,27 +423,6 @@ export function MoaModal({
     };
   }, [data.category, isOpen]);
 
-  useEffect(() => {
-    if (!isOpen || !autoPrint || !labels) return;
-
-    let cancelled = false;
-    const tryPrint = (attempt = 0) => {
-      if (cancelled) return;
-      const pageCount = printRef.current?.querySelectorAll(".moa-print-page").length ?? 0;
-      if (pageCount >= 2 || attempt >= 8) {
-        void handlePrint();
-        return;
-      }
-      setTimeout(() => tryPrint(attempt + 1), 200);
-    };
-
-    const timer = setTimeout(() => tryPrint(), 500);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [isOpen, autoPrint, labels, termsText]);
-
   const handlePrint = async () => {
     if (!printRef.current) return;
 
@@ -464,6 +443,27 @@ export function MoaModal({
       console.error("Print failed:", err);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen || !autoPrint || !labels) return;
+
+    let cancelled = false;
+    const tryPrint = (attempt = 0) => {
+      if (cancelled) return;
+      const pageCount = printRef.current?.querySelectorAll(".moa-print-page").length ?? 0;
+      if (pageCount >= 2 || attempt >= 8) {
+        void handlePrint();
+        return;
+      }
+      setTimeout(() => tryPrint(attempt + 1), 200);
+    };
+
+    const timer = setTimeout(() => tryPrint(), 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isOpen, autoPrint, labels, termsText]);
 
   useEffect(() => {
     if (autoPrint && isOpen) {

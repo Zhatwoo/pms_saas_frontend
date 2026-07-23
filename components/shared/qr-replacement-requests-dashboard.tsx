@@ -28,7 +28,8 @@ export function QRReplacementRequestsDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<QRReplacementRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected" | "completed">("pending");
+  type FilterStatus = "all" | "pending" | "approved" | "rejected" | "completed";
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
 
   useEffect(() => {
     fetchRequests();
@@ -43,7 +44,7 @@ export function QRReplacementRequestsDashboard() {
       
       const response = await api.get<QRReplacementRequest[] | { data?: QRReplacementRequest[] }>(url);
       setRequests(Array.isArray(response) ? response : response.data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to fetch QR replacement requests");
     } finally {
       setIsLoading(false);
@@ -57,7 +58,7 @@ export function QRReplacementRequestsDashboard() {
       toast.success("Request approved successfully!");
       fetchRequests();
       setSelectedRequest(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to approve request");
     } finally {
       setIsProcessing(false);
@@ -79,14 +80,14 @@ export function QRReplacementRequestsDashboard() {
       setRejectionReason("");
       fetchRequests();
       setSelectedRequest(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to reject request");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): "blue" | "green" | "red" | "purple" | "black" => {
     switch (status) {
       case "pending":
         return "blue";
@@ -97,7 +98,7 @@ export function QRReplacementRequestsDashboard() {
       case "completed":
         return "purple";
       default:
-        return "gray";
+        return "black";
     }
   };
 
@@ -121,7 +122,7 @@ export function QRReplacementRequestsDashboard() {
         {["all", "pending", "approved", "rejected", "completed"].map((status) => (
           <button
             key={status}
-            onClick={() => setFilterStatus(status as any)}
+            onClick={() => setFilterStatus(status as FilterStatus)}
             className={`px-4 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-all ${
               filterStatus === status
                 ? "bg-brand-green text-white"
@@ -187,7 +188,7 @@ export function QRReplacementRequestsDashboard() {
                       {getReasonEmoji(request.reason)} {request.reason}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <StatusBadge label={request.status} variant={getStatusColor(request.status) as any} />
+                      <StatusBadge label={request.status} variant={getStatusColor(request.status)} />
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-text-secondary">
                       {formatTimeWithAmPm(request.created_at)}
@@ -245,7 +246,7 @@ export function QRReplacementRequestsDashboard() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-text-secondary">Status:</span>
-                  <StatusBadge label={selectedRequest.status} variant={getStatusColor(selectedRequest.status) as any} />
+                  <StatusBadge label={selectedRequest.status} variant={getStatusColor(selectedRequest.status)} />
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-text-secondary">Reason:</span>

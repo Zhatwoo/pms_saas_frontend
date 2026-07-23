@@ -14,6 +14,21 @@ interface Renewal {
   amount: number;
 }
 
+interface BuybackTransactionResponse {
+  related_pawned_item_id?: string | null;
+  purpose?: string;
+  buyback_proof?: string | null;
+}
+
+interface TransactionsListResponse {
+  transactions?: BuybackTransactionResponse[];
+}
+
+interface ActivityLogEntry {
+  created_at: string;
+  details: string | null;
+}
+
 interface Customer {
   id: string;
   full_name: string;
@@ -132,22 +147,23 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       if (data.status === "Redeemed") {
         await fetchBuybackTransaction(data.id);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch item details.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to fetch item details.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const fetchBuybackTransaction = async (pawnedItemId: string) => {
     try {
       // Fetch transactions related to this pawned item
-      const response = await api.get<any>(`/transactions?range=all`);
-      
+      const response = await api.get<TransactionsListResponse>(`/transactions?range=all`);
+
       if (response && response.transactions) {
         // Find the buyback transaction for this pawned item
         const buybackTx = response.transactions.find(
-          (tx: any) => tx.related_pawned_item_id === pawnedItemId && tx.purpose === "Buy Back"
+          (tx) => tx.related_pawned_item_id === pawnedItemId && tx.purpose === "Buy Back"
         );
         
         if (buybackTx && buybackTx.buyback_proof) {
@@ -165,10 +181,10 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const fetchQrRequestStatus = async (pawnedItemId: string) => {
     try {
       // Activity logs for QR requests
-      const logs = await api.get<any[]>(`/activity-logs?pawnedItemId=${pawnedItemId}&action=QR_REPLACEMENT_REQUEST,QR_REPLACEMENT_APPROVED,QR_REPLACEMENT_REJECTED`);
+      const logs = await api.get<ActivityLogEntry[]>(`/activity-logs?pawnedItemId=${pawnedItemId}&action=QR_REPLACEMENT_REQUEST,QR_REPLACEMENT_APPROVED,QR_REPLACEMENT_REJECTED`);
       if (logs.length > 0) {
         // Sort by date desc
-        const latest = logs.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+        const latest = logs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
         const details = JSON.parse(latest.details || "{}");
         setQrRequestStatus(details.requestStatus || "none");
       } else {
@@ -186,8 +202,9 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
       await onSaveRemarks(item.id, remarks);
       toast.success("Remarks updated.");
       await fetchDetails();
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save remarks.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to save remarks.";
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -621,7 +638,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
                 ) : (
                   <div className="rounded-3xl bg-surface-secondary p-6 border border-border-main">
                     <p className="text-sm font-medium italic text-text-secondary leading-relaxed">
-                      "{item.remarks || "No additional notes or description provided for this item."}"
+                      &quot;{item.remarks || "No additional notes or description provided for this item."}&quot;
                     </p>
                   </div>
                 )}

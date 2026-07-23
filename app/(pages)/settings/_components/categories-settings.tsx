@@ -5,6 +5,18 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { Category } from "@/lib/categories";
+import { ApiError } from "@/lib/api";
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const nested = error.payload as { response?: { data?: { message?: string } } };
+    return nested?.response?.data?.message || error.message || fallback;
+  }
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+  return fallback;
+}
 
 export default function CategoriesSettings() {
   const { user } = useAuth();
@@ -68,9 +80,9 @@ export default function CategoriesSettings() {
         fetchAllCategories();
         window.dispatchEvent(new CustomEvent("categories-updated"));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      const msg = error?.response?.data?.message || "Failed to create category";
+      const msg = extractErrorMessage(error, "Failed to create category");
       toast.error(msg);
     } finally {
       setIsSubmitLoading(false);
@@ -108,9 +120,9 @@ export default function CategoriesSettings() {
         fetchAllCategories();
         window.dispatchEvent(new CustomEvent("categories-updated"));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      const msg = error?.response?.data?.message || "Failed to update category";
+      const msg = extractErrorMessage(error, "Failed to update category");
       toast.error(msg);
     } finally {
       setIsEditLoading(false);
@@ -124,9 +136,9 @@ export default function CategoriesSettings() {
       toast.success(`Category "${name}" deleted successfully.`);
       fetchAllCategories();
       window.dispatchEvent(new CustomEvent("categories-updated"));
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      const msg = error?.response?.data?.message || "Failed to delete category";
+      const msg = extractErrorMessage(error, "Failed to delete category");
       toast.error(msg);
     } finally {
       setDeletingId(null);

@@ -1,6 +1,6 @@
 import { DataTable } from "@/components/shared/data-table";
 import type { Column } from "@/components/shared/data-table";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 
 const columns: Column[] = [
@@ -129,19 +129,19 @@ export function ExpirationTable({
           ? "bg-amber-100/50 hover:bg-amber-100 transition-all duration-1000 ring-2 ring-amber-400 z-10 relative shadow-sm" 
           : ""
       }
-      renderCell={(key, value, row) => {
+      renderCell={(key, rawValue, row) => {
         if (key === "principal" || key === "totalDue") {
           return (
             <span className="font-semibold text-brand-green">
-              {formatPeso(value)}
+              {formatPeso(rawValue as number)}
             </span>
           );
         }
         if (key === "maturityDate") {
-          return <span>{formatDate(value)}</span>;
+          return <span>{formatDate(rawValue as string)}</span>;
         }
         if (key === "daysRemaining") {
-          return <DaysRemainingBadge days={value} />;
+          return <DaysRemainingBadge days={rawValue as number} />;
         }
         if (key === "actions") {
           const isOverdue = row.daysRemaining <= 0;
@@ -193,7 +193,7 @@ export function ExpirationTable({
             </div>
           );
         }
-        return value;
+        return rawValue as ReactNode;
       }}
     />
   );

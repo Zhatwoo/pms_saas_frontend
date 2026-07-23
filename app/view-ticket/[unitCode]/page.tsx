@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { api } from "@/lib/api";
@@ -41,6 +41,7 @@ export default function PublicTicketView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const swipeStartRef = useRef<number | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!unitCode) return;
@@ -52,7 +53,7 @@ export default function PublicTicketView() {
       if (res) {
         setData(res);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to fetch ticket:", err);
       setError("Pawn ticket not found or no longer available.");
     } finally {
@@ -164,12 +165,12 @@ export default function PublicTicketView() {
                         className="relative h-full w-full touch-pan-y"
                         onTouchStart={(e) => {
                           const touch = e.touches[0];
-                          (window as any).swipeStart = touch.clientX;
+                          swipeStartRef.current = touch.clientX;
                         }}
                         onTouchEnd={(e) => {
                           const touch = e.changedTouches[0];
                           const swipeEnd = touch.clientX;
-                          const swipeStart = (window as any).swipeStart;
+                          const swipeStart = swipeStartRef.current ?? swipeEnd;
                           if (swipeStart - swipeEnd > 50) {
                             setPhotoIndex((prev) => (prev + 1) % data.item_photos.length);
                           } else if (swipeStart - swipeEnd < -50) {

@@ -78,9 +78,10 @@ export function QrScanner({ onScan, onClose, isOpen }: QrScannerProps) {
         } else {
           void controls.stop();
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setCameraError(err.message || "Could not start camera.");
+          const message = err instanceof Error ? err.message : "Could not start camera.";
+          setCameraError(message);
           setIsInitializing(false);
         }
       }

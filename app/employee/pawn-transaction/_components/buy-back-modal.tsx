@@ -131,8 +131,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
       setIsLoading(true);
       try {
         // Search items that are Expired or For Sale
-        const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Expired&search=${searchQuery}`);
-        
+        const response = await api.get<{ items: ForSaleItem[] }>(`/inventory/pawned?status=Expired&search=${searchQuery}`);
+
         const mapped = (response.items || []).map(item => ({
           id: item.id,
           itemId: item.itemId,
@@ -250,8 +250,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
             branchId: branchId,
           });
           toast.success("Buyback proof uploaded successfully");
-        } catch (uploadErr: any) {
-          const uploadMsg = uploadErr.message || "Failed to upload proof image";
+        } catch (uploadErr) {
+          const uploadMsg = uploadErr instanceof Error ? uploadErr.message : "Failed to upload proof image";
           setProofUploadError(uploadMsg);
           toast.error(uploadMsg);
           setIsUploadingProof(false);
@@ -286,8 +286,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
       }
       onClose();
       toast.success("Item bought back successfully!");
-    } catch (err: any) {
-      const msg = err.message || "Failed to process transaction.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
     } finally {

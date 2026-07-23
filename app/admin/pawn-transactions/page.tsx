@@ -27,6 +27,8 @@ import {
   isLegacyBuyBackRepurchase,
   isLegacyBuyOutTransaction,
   resolvePawnedItemJoin,
+  type EnrichedPawnedItem,
+  type PawnSourceResponse,
 } from "@/lib/pawn-transaction-mapper";
 import { formatDateToYMD } from "@/lib/time";
 import { getPhCalendarDateString } from "@/lib/branch-calendar-date";
@@ -794,18 +796,18 @@ export default function SuperAdminPawnTransactionsPage() {
       hasMissingField(tx.customerName) ||
       hasMissingField(tx.createdByName);
 
-    let enriched: any = null;
-    let pawnSource: any = null;
+    let enriched: EnrichedPawnedItem | null = null;
+    let pawnSource: PawnSourceResponse | null = null;
     if (tx.relatedPawnedItemId && needsEnrichment) {
       try {
-        enriched = await api.get<any>(`/inventory/pawned/${tx.relatedPawnedItemId}`);
+        enriched = await api.get<EnrichedPawnedItem>(`/inventory/pawned/${tx.relatedPawnedItemId}`);
       } catch {
         enriched = null;
       }
     }
     if (!enriched && tx.unitCode && needsEnrichment) {
       try {
-        enriched = await api.get<any>(`/inventory/item/${encodeURIComponent(tx.unitCode)}`);
+        enriched = await api.get<EnrichedPawnedItem>(`/inventory/item/${encodeURIComponent(tx.unitCode)}`);
       } catch {
         enriched = null;
       }
@@ -818,7 +820,7 @@ export default function SuperAdminPawnTransactionsPage() {
           : "";
       if (params) {
         try {
-          pawnSource = await api.get<any>(`/transactions/pawn-source?${params}`);
+          pawnSource = await api.get<PawnSourceResponse>(`/transactions/pawn-source?${params}`);
         } catch {
           pawnSource = null;
         }

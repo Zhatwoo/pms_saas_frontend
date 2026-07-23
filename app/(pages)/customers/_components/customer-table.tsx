@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-table";
 import type { Column } from "@/components/shared/data-table";
@@ -201,7 +201,7 @@ export function CustomerTable() {
             );
           }
 
-          return value;
+          return value as ReactNode;
         }}
       />
 

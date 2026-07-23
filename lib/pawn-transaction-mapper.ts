@@ -5,6 +5,39 @@ import {
   type InterestRateGroup,
 } from "./interest";
 
+/**
+ * Shape returned by `/inventory/pawned/:id` and `/inventory/item/:unitCode`
+ * when enriching a transaction row with the underlying pawned-item record
+ * for reprint/MOA purposes. Fields are optional because both endpoints
+ * return partial/legacy records depending on how the item was created.
+ */
+export interface EnrichedPawnedItem {
+  customerName?: string | null;
+  customerAddress?: string | null;
+  customerIdPresented?: string | null;
+  itemName?: string | null;
+  serialNumber?: string | null;
+  itemsIncluded?: string | null;
+  condition?: string | null;
+  memoryStorage?: string | null;
+  created_by_user?: {
+    full_name?: string | null;
+  } | null;
+}
+
+/** Shape returned by `/transactions/pawn-source`, keyed off legacy snake_case fields. */
+export interface PawnSourceResponse {
+  pawned_item?: {
+    serial_number?: string | null;
+    items_included?: string | null;
+    condition?: string | null;
+    memory_storage?: string | null;
+  } | null;
+  created_by_user?: {
+    full_name?: string | null;
+  } | null;
+}
+
 export function resolvePawnedItemJoin<T>(
   raw: T | T[] | null | undefined,
 ): T | null {

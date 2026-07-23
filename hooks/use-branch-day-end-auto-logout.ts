@@ -27,29 +27,29 @@ export function useBranchDayEndAutoLogout() {
 
   const triggerLogout = useCallback(() => {
     if (logoutTriggeredRef.current) return;
-    if (user?.role !== "employee" || !user.branchId) return;
+    if (user?.role !== "employee" || !user?.branchId) return;
     logoutTriggeredRef.current = true;
     forceLogoutToLogin(BRANCH_DAY_END_LOGOUT_MESSAGE);
   }, [forceLogoutToLogin, user?.branchId, user?.role]);
 
   useEffect(() => {
-    if (user?.role !== "employee" || !user.branchId) return;
+    if (user?.role !== "employee" || !user?.branchId) return;
 
     return subscribeToBranchDayEndedNotifications((notification) => {
       if (!notification || !isBranchDayEndedApiNotification(notification)) return;
-      if (!matchesEmployeeBranch(user.branchId, notification)) return;
+      if (!matchesEmployeeBranch(user?.branchId, notification)) return;
       triggerLogout();
     });
   }, [triggerLogout, user?.branchId, user?.role]);
 
   useEffect(() => {
-    if (user?.role !== "employee" || !user.branchId) return;
+    if (user?.role !== "employee" || !user?.branchId) return;
 
     const onStorage = (event: StorageEvent) => {
       if (event.key !== BRANCH_DAY_END_STORAGE_KEY || !event.newValue) return;
       try {
         const parsed = JSON.parse(event.newValue) as { branchId?: string };
-        if (parsed.branchId === user.branchId) {
+        if (parsed.branchId === user?.branchId) {
           triggerLogout();
         }
       } catch {

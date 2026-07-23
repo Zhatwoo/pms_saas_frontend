@@ -91,6 +91,28 @@ interface RenewModalProps {
   compactTablet?: boolean;
 }
 
+/** Raw shape of a single item returned by `GET /inventory/pawned`. */
+interface PawnedItemApiResponse {
+  id: string;
+  itemId?: string;
+  itemName?: string;
+  serialNumber?: string;
+  itemsIncluded?: string;
+  condition?: string;
+  memoryStorage?: string;
+  category?: string;
+  remarks?: string;
+  pawnDate?: string;
+  created_at?: string;
+  amount?: number | string;
+  interestRateSnapshot?: unknown;
+  interest_rate_snapshot?: unknown;
+  customers?:
+    | { full_name?: string; contact_number?: string }
+    | { full_name?: string; contact_number?: string }[]
+    | null;
+}
+
 interface PawnItemDetails {
   id: string;
   name: string;
@@ -130,7 +152,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<PawnedItemApiResponse[]>([]);
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [showMobileItemList, setShowMobileItemList] = useState(true);
   const isProcessingRef = useRef(false);
@@ -153,14 +175,14 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   const totalToPay = isReappraiseActive ? newPrincipal : (interestCalc.interestAmount * itemsRenewed);
   const interestDue = interestCalc.interestAmount * itemsRenewed;
 
-  const triggerSearch = async (code: string, preFetchedItem?: any) => {
+  const triggerSearch = async (code: string, preFetchedItem?: PawnedItemApiResponse) => {
     if (!code && !preFetchedItem) return;
     setIsLoading(true);
     setError(null);
     try {
       let item = preFetchedItem;
       if (!item) {
-        const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active&search=${code}`);
+        const response = await api.get<{ items: PawnedItemApiResponse[] }>(`/inventory/pawned?status=Active&search=${code}`);
         if (response.items && response.items.length > 0) {
           item = response.items[0];
         }
@@ -204,7 +226,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   const fetchInventory = async () => {
     try {
-      const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active`);
+      const response = await api.get<{ items: PawnedItemApiResponse[] }>(`/inventory/pawned?status=Active`);
       setInventoryItems(response.items || []);
     } catch (err) {
       console.error("Failed to fetch inventory", err);
@@ -249,8 +271,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       if (onSuccess) onSuccess();
       onClose();
       toast.success(`Transaction ${isReappraiseActive ? "reappraised" : "renewed"} successfully!`);
-    } catch (err: any) {
-      const msg = err.message || "Failed to process transaction.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -291,8 +313,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         await executeTransaction(null);
         setIsConfirmOpen(false);
       }
-    } catch (err: any) {
-      const msg = err.message || "Failed to process transaction.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
       setIsLoading(false);
@@ -338,8 +360,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
     setIsCancelConfirmOpen(true);
   };
 
-  const handleSelectItem = (item: any) => {
-    void triggerSearch(item.itemId, item);
+  const handleSelectItem = (item: PawnedItemApiResponse) => {
+    void triggerSearch(item.itemId ?? "", item);
     setShowMobileItemList(false);
   };
 
@@ -434,9 +456,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                   <div className="flex-1 space-y-1.5 overflow-y-auto px-4 pb-4 pt-0 scrollbar-hide md:max-xl:px-3">
                     {inventoryItems
                       .filter((item) =>
-                        item.itemId.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
-                        item.itemName.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
-                        (item.customers?.[0]?.full_name || "").toLowerCase().includes(sidebarSearch.toLowerCase())
+                        (item.itemId || "").toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                        (item.itemName || "").toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                        ((Array.isArray(item.customers) ? item.customers[0]?.full_name : item.customers?.full_name) || "").toLowerCase().includes(sidebarSearch.toLowerCase())
                       )
                       .map((item) => (
                         <div
@@ -601,9 +623,9 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
                <div className={`flex-1 space-y-2 overflow-y-auto p-4 pt-0 scrollbar-hide ${compactTablet ? "md:p-3" : ""}`}>
                   {inventoryItems
                     .filter(item =>
-                      item.itemId.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
-                      item.itemName.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
-                      (item.customers?.[0]?.full_name || "").toLowerCase().includes(sidebarSearch.toLowerCase())
+                      (item.itemId || "").toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                      (item.itemName || "").toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                      ((Array.isArray(item.customers) ? item.customers[0]?.full_name : item.customers?.full_name) || "").toLowerCase().includes(sidebarSearch.toLowerCase())
                     )
                     .map((item) => (
                       <div
@@ -845,7 +867,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
 // ── Sub-components ────────────────────────────────────────────────────────
 
-function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: any, isDark?: boolean }) {
+function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: React.ComponentType<{ className?: string }>, isDark?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-brand-green text-pawn-gold' : 'bg-white text-brand-green shadow-sm border border-brand-green/20 dark:bg-surface dark:border-border-subtle'}`}>

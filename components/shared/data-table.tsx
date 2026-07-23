@@ -7,25 +7,25 @@ export interface Column {
   align?: "left" | "center" | "right";
 }
 
-interface DataTableProps {
+interface DataTableProps<T> {
   columns: Column[];
-  data: Record<string, any>[];
+  data: T[];
   renderCell?: (
     key: string,
-    value: any,
-    row: Record<string, any>,
+    value: unknown,
+    row: T,
     rowIndex: number,
   ) => ReactNode;
   headerClassName?: string;
   tableClassName?: string;
   emptyMessage?: ReactNode;
-  rowClassName?: (row: Record<string, any>, rowIndex: number) => string;
-  onRowClick?: (row: Record<string, any>, rowIndex: number) => void;
+  rowClassName?: (row: T, rowIndex: number) => string;
+  onRowClick?: (row: T, rowIndex: number) => void;
   isLoading?: boolean;
   loadingMessage?: string;
 }
 
-export function DataTable({
+export function DataTable<T>({
   columns,
   data,
   renderCell,
@@ -36,7 +36,8 @@ export function DataTable({
   onRowClick,
   isLoading = false,
   loadingMessage = "Loading data...",
-}: DataTableProps) {
+}: DataTableProps<T>) {
+  const getCellValue = (row: T, key: string): unknown => (row as Record<string, unknown>)[key];
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20 transition-colors duration-300">
       <div className="overflow-x-auto">
@@ -101,8 +102,8 @@ export function DataTable({
                       }`}
                     >
                       {renderCell
-                        ? renderCell(col.key, row[col.key], row, idx)
-                        : row[col.key]}
+                        ? renderCell(col.key, getCellValue(row, col.key), row, idx)
+                        : (getCellValue(row, col.key) as ReactNode)}
                     </td>
                   ))}
                 </tr>

@@ -65,6 +65,29 @@ interface RedeemModalProps {
   compactTablet?: boolean;
 }
 
+/** Raw shape of a single item returned by `GET /inventory/pawned`. */
+interface PawnedItemApiResponse {
+  id: string;
+  itemId?: string;
+  itemName?: string;
+  serialNumber?: string;
+  itemsIncluded?: string;
+  condition?: string;
+  memoryStorage?: string;
+  qrCode?: string;
+  category?: string;
+  pawnDate?: string;
+  created_at?: string;
+  amount?: number | string;
+  status: string;
+  interestRateSnapshot?: unknown;
+  interest_rate_snapshot?: unknown;
+  customers?:
+    | { full_name?: string; contact_number?: string }
+    | { full_name?: string; contact_number?: string }[]
+    | null;
+}
+
 interface PawnedSearchItem {
   id: string;
   name: string;
@@ -198,7 +221,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
     const fetchItems = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active&search=${searchQuery}`);
+        const response = await api.get<{ items: PawnedItemApiResponse[] }>(`/inventory/pawned?status=Active&search=${searchQuery}`);
         
         // Map backend format to component format
         const mapped = (response.items || []).map(item => {
@@ -216,7 +239,7 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
             memory: item.memoryStorage || "---",
             qrCode: item.qrCode || "",
             category: item.category || "---",
-            purchasedDate: item.pawnDate || item.created_at,
+            purchasedDate: item.pawnDate || item.created_at || "---",
             amount: String(item.amount || 0),
             storageFee: "0", 
             contactNumber: customerData?.contact_number || "---",
@@ -356,8 +379,8 @@ export function RedeemModal({ isOpen, onClose, branchId, branchName, onSuccess, 
       onClose();
       toast.success("Item bought out successfully!");
       setIsConfirmOpen(false);
-    } catch (err: any) {
-      const msg = err.message || "Failed to process transaction.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
       setIsConfirmOpen(false);
@@ -954,7 +977,7 @@ function Plus({ className }: { className?: string }) {
   );
 }
 
-function DetailSection({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) {
+function DetailSection({ title, icon: Icon, children }: { title: string, icon: React.ComponentType<{ className?: string }>, children: React.ReactNode }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 px-1">
