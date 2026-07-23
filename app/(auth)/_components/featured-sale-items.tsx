@@ -169,10 +169,10 @@ export function FeaturedSaleItems() {
       : ITEM_CATEGORIES.find((label) => normalizeCategory(label) === normalizeCategory(selectedCategory)) || selectedCategory;
 
   return (
-    <section id="items-for-sale" className="scroll-mt-20 bg-[#f4f2ee] px-4 py-16 md:px-12 md:py-24 lg:scroll-mt-32 lg:pb-48 lg:pt-32">
-      <div className="mx-auto max-w-6xl reveal-on-scroll">
-        <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Available Items for Sale</p>
-        <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
+    <section id="items-for-sale" className="landing-section-pad scroll-mt-20 bg-[#f4f2ee] lg:scroll-mt-32">
+      <div className="landing-container reveal-on-scroll">
+        <p className="text-sm font-bold uppercase tracking-widest text-brand-gold uqhd:text-base">Available Items for Sale</p>
+        <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl uqhd:text-6xl uhd:text-7xl">
           Fresh Finds from <span className="text-brand-gold">Our Branches</span>
         </h2>
 

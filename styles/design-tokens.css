@@ -103,4 +103,8 @@
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-inter);
+
+  /* Large displays: QHD/UWQHD (2560) and 4K (3840) */
+  --breakpoint-uqhd: 2560px;
+  --breakpoint-uhd: 3840px;
 }
