@@ -2039,244 +2039,120 @@ export default function SettingsPage() {
                       )}
                     </div>
                     {isMoaEditMode && (
-                      <aside className="w-full min-w-0 xl:w-80 flex-none space-y-4">
-                        <div className="space-y-4 rounded-xl border border-border-main bg-surface p-4 shadow-sm">
-                          <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                            MOA Field Config
-                          </h3>
-                          <p className="mt-1 text-[9px] leading-4 text-zinc-500">
-                            Configure fields for {selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "all categories" : selectedMoaCategory}.
-                          </p>
-                        </div>
-
-                        <div className="space-y-2 rounded-md border border-zinc-200 p-2">
-                          <p className="text-[10px] font-bold uppercase text-zinc-700">Financial Details</p>
-                          <div className="space-y-1">
-                            {FINANCIAL_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-brand-green/10">
-                                <input
-                                  type="checkbox"
-                                  checked={financialFields.includes(field.key)}
-                                  onChange={() =>
-                                    toggleMoaSectionField(field.key, financialFields, setFinancialFields)
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-brand-green"
-                                />
-                                {topLabels[field.key]}
-                              </label>
-                            ))}
-                          </div>
-                          {customFinancialFields.map((field) => (
-                            <div key={field.id} className="flex items-center gap-1">
-                              <input
-                                value={field.label}
-                                onChange={(event) =>
-                                  setCustomFinancialFields((fields) =>
-                                    fields.map((currentField) =>
-                                      currentField.id === field.id
-                                        ? { ...currentField, label: event.target.value }
-                                        : currentField,
-                                    ),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-brand-green"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomFinancialFields((fields) =>
-                                    fields.filter((currentField) => currentField.id !== field.id),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                aria-label={`Remove ${field.label}`}
-                              >
-                                X
-                              </button>
-                            </div>
-                          ))}
-                          <div className="flex gap-1">
-                            <input
-                              value={newFinancialField}
-                              onChange={(event) => setNewFinancialField(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  addCustomMoaField(
-                                    newFinancialField,
-                                    setNewFinancialField,
-                                    setCustomFinancialFields,
-                                  );
-                                }
-                              }}
-                              disabled={!canEditMoa}
-                              placeholder="New financial field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-brand-green"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
+                      <aside className="w-full min-w-0 xl:sticky xl:top-4 xl:w-80 xl:max-h-[calc(100vh-5rem)] flex-none xl:overflow-y-auto">
+                        <MoaDesignToolsPanel
+                          enabled={canEditMoa}
+                          pageSize={moaPageSizeId}
+                          onPageSizeChange={handleMoaPageSizeChange}
+                          fontFamily={moaDesignFontFamily}
+                          fontSize={moaDesignFontSize}
+                          textAlign={moaDesignTextAlign}
+                          fontWeight={moaDesignFontWeight}
+                          fontStyle={moaDesignFontStyle}
+                          textDecoration={moaDesignTextDecoration}
+                          color={moaDesignColor}
+                          onFontFamilyChange={handleDesignFontFamilyChange}
+                          onFontSizeChange={handleDesignFontSizeChange}
+                          onTextStyleChange={applyDesignStylePatch}
+                          selectedId={selectedDesignId}
+                          onPaletteDragStateChange={setIsPaletteDragging}
+                          onAddHeaderField={handleAddHeaderField}
+                          onDeleteSelected={() => {
+                            if (!selectedDesignId) return;
+                            updateMoaDesignElements(
+                              moaDesignElements.filter((el) => el.id !== selectedDesignId),
+                            );
+                            setSelectedDesignId(null);
+                          }}
+                          onClearAll={() => {
+                            updateMoaDesignElements([]);
+                            setSelectedDesignId(null);
+                          }}
+                          fieldConfig={
+                            <MoaFieldConfigTab
+                              enabled={canEditMoa}
+                              categoryLabel={
+                                selectedMoaCategory === DEFAULT_MOA_CATEGORY
+                                  ? "all categories"
+                                  : selectedMoaCategory
+                              }
+                              groupSuffix={selectedMoaCategory}
+                              financialOptions={FINANCIAL_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              unitOptions={UNIT_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              financialFields={financialFields}
+                              unitFields={unitFields}
+                              customFinancialFields={customFinancialFields}
+                              customUnitFields={customUnitFields}
+                              newFinancialField={newFinancialField}
+                              newUnitField={newUnitField}
+                              onReorderFinancial={reorderFinancialFields}
+                              onReorderUnit={reorderUnitFields}
+                              onReorderCustomFinancial={reorderCustomFinancialFields}
+                              onReorderCustomUnit={reorderCustomUnitFields}
+                              onToggleFinancial={(key) =>
+                                toggleMoaSectionField(
+                                  key as FinancialFieldKey,
+                                  financialFields,
+                                  setFinancialFields,
+                                )
+                              }
+                              onToggleUnit={(key) =>
+                                toggleMoaSectionField(
+                                  key as UnitFieldKey,
+                                  unitFields,
+                                  setUnitFields,
+                                )
+                              }
+                              onCustomFinancialLabelChange={(id, label) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onCustomUnitLabelChange={(id, label) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onRemoveCustomFinancial={(id) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onRemoveCustomUnit={(id) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onNewFinancialChange={setNewFinancialField}
+                              onNewUnitChange={setNewUnitField}
+                              onAddCustomFinancial={() =>
                                 addCustomMoaField(
                                   newFinancialField,
                                   setNewFinancialField,
                                   setCustomFinancialFields,
-                                  <aside className="w-full min-w-0 xl:sticky xl:top-4 xl:w-80 xl:max-h-[calc(100vh-5rem)] flex-none xl:overflow-y-auto">
-                                    <MoaDesignToolsPanel
-                                      enabled={canEditMoa}
-                                      pageSize={moaPageSizeId}
-                                      onPageSizeChange={handleMoaPageSizeChange}
-                                      fontFamily={moaDesignFontFamily}
-                                      fontSize={moaDesignFontSize}
-                                      textAlign={moaDesignTextAlign}
-                                      fontWeight={moaDesignFontWeight}
-                                      fontStyle={moaDesignFontStyle}
-                                      textDecoration={moaDesignTextDecoration}
-                                      color={moaDesignColor}
-                                      onFontFamilyChange={handleDesignFontFamilyChange}
-                                      onFontSizeChange={handleDesignFontSizeChange}
-                                      onTextStyleChange={applyDesignStylePatch}
-                                      selectedId={selectedDesignId}
-                                      onPaletteDragStateChange={setIsPaletteDragging}
-                                      onAddHeaderField={handleAddHeaderField}
-                                      onDeleteSelected={() => {
-                                        if (!selectedDesignId) return;
-                                        updateMoaDesignElements(
-                                          moaDesignElements.filter((el) => el.id !== selectedDesignId),
-                                        );
-                                        setSelectedDesignId(null);
-                                      }}
-                                      onClearAll={() => {
-                                        updateMoaDesignElements([]);
-                                        setSelectedDesignId(null);
-                                      }}
-                                      fieldConfig={
-                                        <MoaFieldConfigTab
-                                          enabled={canEditMoa}
-                                          categoryLabel={
-                                            selectedMoaCategory === DEFAULT_MOA_CATEGORY
-                                              ? "all categories"
-                                              : selectedMoaCategory
-                                          }
-                                          groupSuffix={selectedMoaCategory}
-                                          financialOptions={FINANCIAL_FIELD_OPTIONS.map((field) => ({
-                                            key: field.key,
-                                            label: topLabels[field.key],
-                                          }))}
-                                          unitOptions={UNIT_FIELD_OPTIONS.map((field) => ({
-                                            key: field.key,
-                                            label: topLabels[field.key],
-                                          }))}
-                                          financialFields={financialFields}
-                                          unitFields={unitFields}
-                                          customFinancialFields={customFinancialFields}
-                                          customUnitFields={customUnitFields}
-                                          newFinancialField={newFinancialField}
-                                          newUnitField={newUnitField}
-                                          onReorderFinancial={reorderFinancialFields}
-                                          onReorderUnit={reorderUnitFields}
-                                          onReorderCustomFinancial={reorderCustomFinancialFields}
-                                          onReorderCustomUnit={reorderCustomUnitFields}
-                                          onToggleFinancial={(key) =>
-                                            toggleMoaSectionField(
-                                              key as FinancialFieldKey,
-                                              financialFields,
-                                              setFinancialFields,
-                                            )
-                                          }
-                                          disabled={!canEditMoa || !newFinancialField.trim()}
-                                          className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
-                                        >
-                                          Add
-                                        </button>
-                          </div>
-                        </div>
-
-                          <div className="space-y-2 rounded-md border border-zinc-200 p-2">
-                            <p className="text-[10px] font-bold uppercase text-zinc-700">Unit Description</p>
-                            <div className="space-y-1">
-                              {UNIT_FIELD_OPTIONS.map((field) => (
-                                <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
-                                  <input
-                                    type="checkbox"
-                                    checked={unitFields.includes(field.key)}
-                                    onChange={() =>
-                                      toggleMoaSectionField(field.key, unitFields, setUnitFields)
-                                    }
-                                    disabled={!canEditMoa}
-                                    className="h-3.5 w-3.5 accent-emerald-700"
-                                  />
-                                  {topLabels[field.key]}
-                                </label>
-                              ))}
-                            </div>
-                            {customUnitFields.map((field) => (
-                              <div key={field.id} className="flex items-center gap-1">
-                                <input
-                                  value={field.label}
-                                  onChange={(event) =>
-                                    setCustomUnitFields((fields) =>
-                                      fields.map((currentField) =>
-                                        currentField.id === field.id
-                                          ? { ...currentField, label: event.target.value }
-                                          : currentField,
-                                      ),
-                                    )
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setCustomUnitFields((fields) =>
-                                      fields.filter((currentField) => currentField.id !== field.id),
-                                    )
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                  aria-label={`Remove ${field.label}`}
-                                >
-                                  X
-                                </button>
-                              </div>
-                            ))}
-                            <div className="flex gap-1">
-                              <input
-                                value={newUnitField}
-                                onChange={(event) => setNewUnitField(event.target.value)}
-                                onKeyDown={(event) => {
-                                  if (event.key === "Enter") {
-                                    event.preventDefault();
-                                    addCustomMoaField(
-                                      newUnitField,
-                                      setNewUnitField,
-                                      setCustomUnitFields,
-                                    );
-                                  }
-                                }}
-                                disabled={!canEditMoa}
-                                placeholder="New unit field"
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  addCustomMoaField(
-                                    newUnitField,
-                                    setNewUnitField,
-                                    setCustomUnitFields,
-                                  )
-                                }
-                                disabled={!canEditMoa || !newUnitField.trim()}
-                                className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
-                              >
-                                Add
-                              </button>
-                            </div>
-                          </div>
+                                )
+                              }
+                              onAddCustomUnit={() =>
+                                addCustomMoaField(
+                                  newUnitField,
+                                  setNewUnitField,
+                                  setCustomUnitFields,
+                                )
+                              }
+                              onPaletteDragStateChange={setIsPaletteDragging}
+                            />
+                          }
+                        />
                       </aside>
                     )}
                   </div>
