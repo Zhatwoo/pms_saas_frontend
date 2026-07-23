@@ -37,8 +37,11 @@ import {
   type MoaTextAlign,
   type MoaTextStylePatch,
 } from "./_components/moa-design-palette";
-import { MoaDesignToolsPanel, MoaFieldConfigTab } from "./_components/moa-design";
+import { useMoaKeyboard } from "./hooks/useMoaKeyboard";
+import { MoaDesignToolsPanel } from "./_components/moa-design/tools-panel";
 
+import { MoaFieldConfigTab } from "./_components/moa-design/field-config-tab";
+// Hook implementation resides in ./hooks/useMoaKeyboard.ts
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
 function ResizableLine({
@@ -325,6 +328,9 @@ export default function SettingsPage() {
   const [slipSectionOrder, setSlipSectionOrder] = useState<SlipSectionId[]>([...DEFAULT_SLIP_SECTION_ORDER]);
   const [moaDesignElements, setMoaDesignElements] = useState<MoaDesignElement[]>([]);
   const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
+  const [moaHistory, setMoaHistory] = useState<MoaDesignElement[][]>([]);
+  const [moaFuture, setMoaFuture] = useState<MoaDesignElement[][]>([]);
+  const moaClipboardRef = useRef<MoaDesignElement | null>(null);
   const [moaDesignFontFamily, setMoaDesignFontFamily] = useState<string>(MOA_FONT_OPTIONS[0].value);
   const [moaDesignFontSize, setMoaDesignFontSize] = useState(11);
   const [moaDesignTextAlign, setMoaDesignTextAlign] = useState<MoaTextAlign>("left");
@@ -500,6 +506,8 @@ export default function SettingsPage() {
     setMoaDesignElements(loadMoaDesignElements(selectedMoaCategory));
     setMoaPageSizeId(loadMoaPageSize(selectedMoaCategory));
     setSelectedDesignId(null);
+    setMoaHistory([]);
+    setMoaFuture([]);
   }, [selectedMoaCategory]);
 
   const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
@@ -509,10 +517,99 @@ export default function SettingsPage() {
     saveSlipSectionOrder(selectedMoaCategory, next);
   };
 
-  const updateMoaDesignElements = (next: MoaDesignElement[]) => {
+  const updateMoaDesignElements = (next: MoaDesignElement[], pushToHistory = true) => {
+    if (pushToHistory) {
+      setMoaHistory((prev) => [...prev, moaDesignElements]);
+      setMoaFuture([]);
+    }
     setMoaDesignElements(next);
     saveMoaDesignElements(selectedMoaCategory, next);
   };
+
+  const handleUndo = () => {
+    if (moaHistory.length === 0) return;
+    const previous = moaHistory[moaHistory.length - 1];
+    setMoaHistory((prev) => prev.slice(0, -1));
+    setMoaFuture((prev) => [moaDesignElements, ...prev]);
+    updateMoaDesignElements(previous, false);
+  };
+
+  const handleRedo = () => {
+    if (moaFuture.length === 0) return;
+    const nextState = moaFuture[0];
+    setMoaFuture((prev) => prev.slice(1));
+    setMoaHistory((prev) => [...prev, moaDesignElements]);
+    updateMoaDesignElements(nextState, false);
+  };
+
+  const handleDeleteSelected = () => {
+    if (!selectedDesignId) return;
+    updateMoaDesignElements(moaDesignElements.filter((el) => el.id !== selectedDesignId));
+    setSelectedDesignId(null);
+  };
+
+  const handleCopySelected = () => {
+    if (!selectedDesignId) return;
+    const source = moaDesignElements.find((el) => el.id === selectedDesignId);
+    if (!source) return;
+    moaClipboardRef.current = {
+      ...source,
+      headerFields: source.headerFields.map((hf) => ({ ...hf })),
+    };
+  };
+
+  const handleCutSelected = () => {
+    if (!selectedDesignId) return;
+    handleCopySelected();
+    handleDeleteSelected();
+  };
+
+  const handlePasteSelected = () => {
+    const clip = moaClipboardRef.current;
+    if (!clip) return;
+    const newId = `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const pasted: MoaDesignElement = {
+      ...clip,
+      id: newId,
+      x: clip.x + 16,
+      y: clip.y + 16,
+      headerFields: clip.headerFields.map((hf) => ({
+        ...hf,
+        id: `hf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      })),
+    };
+    updateMoaDesignElements([...moaDesignElements, pasted]);
+    setSelectedDesignId(newId);
+  };
+
+  const handleDuplicateSelected = () => {
+    if (!selectedDesignId) return;
+    const source = moaDesignElements.find((el) => el.id === selectedDesignId);
+    if (!source) return;
+    const newId = `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const nextElement: MoaDesignElement = {
+      ...source,
+      id: newId,
+      x: source.x + 16,
+      y: source.y + 16,
+      headerFields: source.headerFields.map((hf) => ({
+        ...hf,
+        id: `hf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      })),
+    };
+    updateMoaDesignElements([...moaDesignElements, nextElement]);
+    setSelectedDesignId(newId);
+  };
+
+  useMoaKeyboard({
+    onDelete: () => { if (canEditMoa) handleDeleteSelected(); },
+    onCopy: () => { if (canEditMoa) handleCopySelected(); },
+    onCut: () => { if (canEditMoa) handleCutSelected(); },
+    onPaste: () => { if (canEditMoa) handlePasteSelected(); },
+    onDuplicate: () => { if (canEditMoa) handleDuplicateSelected(); },
+    onUndo: () => { if (canEditMoa) handleUndo(); },
+    onRedo: () => { if (canEditMoa) handleRedo(); },
+  });
 
   const handleMoaPageSizeChange = (id: MoaPageSizeId) => {
     setMoaPageSizeId(id);
