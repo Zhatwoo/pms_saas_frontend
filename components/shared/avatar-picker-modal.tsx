@@ -491,13 +491,11 @@ export function AvatarPickerModal({
   const zoomPercent = Math.round((zoom - 1) * 100);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-3 sm:p-4">
-      <div className="flex w-full max-w-[640px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-900 sm:rounded-3xl">
-
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-5 py-4 dark:border-zinc-800 sm:px-6">
-          <div className="min-w-0">
-            <h3 className="truncate text-lg font-bold tracking-tight text-zinc-900 dark:text-white sm:text-xl">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-[560px] overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="flex items-start justify-between gap-4 px-6 pb-4 pt-5 sm:px-7">
+          <div>
+            <h3 className="text-3xl font-extrabold tracking-tight text-pawn-sidebar dark:text-white">
               Change Avatar
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
@@ -509,7 +507,7 @@ export function AvatarPickerModal({
             onClick={onClose}
             disabled={isSaving}
             aria-label="Close"
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 disabled:opacity-60 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green transition-colors hover:bg-brand-green/20 disabled:opacity-60"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M18 6 6 18M6 6l12 12" />
@@ -517,52 +515,41 @@ export function AvatarPickerModal({
           </button>
         </div>
 
-        {/* ── Body ── */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
-
-          {/* ── Avatar Preview + Vertical Zoom ── */}
-          <div className="relative mx-auto w-fit">
-            {/* Fixed-size avatar container — centered by mx-auto, not influenced by the absolute slider */}
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                {/* Decorative ring */}
-                <div className="absolute -inset-1.5 rounded-full border-2 border-dashed border-emerald-200 dark:border-emerald-800/60" />
-                <div
-                  role="img"
-                  aria-label={activeAvatarUrl ? "Avatar crop preview" : "No avatar selected"}
-                  title={activeAvatarUrl ? "Drag to reposition" : "No avatar selected"}
-                  className={`relative flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-emerald-50 shadow-lg ring-1 ring-zinc-200/60 dark:border-zinc-800 dark:bg-emerald-950/40 dark:ring-zinc-700/40 sm:h-44 sm:w-44 ${
-                    canSave ? "cursor-grab active:cursor-grabbing" : ""
-                  }`}
-                  onPointerDown={beginAvatarDrag}
-                  onPointerMove={updateAvatarDrag}
-                  onPointerUp={endAvatarDrag}
-                  onPointerCancel={endAvatarDrag}
-                  style={{ touchAction: "none" }}
-                >
-                  {activeAvatarUrl ? (
+        <div className="border-t border-zinc-200 px-5 py-5 dark:border-zinc-800 sm:px-6">
+          <div className="flex flex-col items-center text-center">
+            <div className="relative">
+              <div
+                role="img"
+                aria-label={activeAvatarUrl ? "Avatar crop preview" : "No avatar selected"}
+                title={activeAvatarUrl ? "Drag to adjust avatar" : "No avatar selected"}
+                className={`relative flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-8 border-brand-green/10 bg-brand-green/10 text-brand-green shadow-sm ${
+                  canSave ? "cursor-grab active:cursor-grabbing" : ""
+                }`}
+                onPointerDown={beginAvatarDrag}
+                onPointerMove={updateAvatarDrag}
+                onPointerUp={endAvatarDrag}
+                onPointerCancel={endAvatarDrag}
+                style={{ touchAction: "none" }}
+              >
+                {activeAvatarUrl ? (
+                  <div className="absolute inset-0 overflow-hidden rounded-full">
                     <img
                       src={activeAvatarUrl}
                       alt="Avatar preview"
                       className="absolute inset-0 h-full w-full object-cover"
                       draggable={false}
                     />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-zinc-900">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-emerald-50 sm:h-16 sm:w-16">
-                        <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 stroke-current sm:h-9 sm:w-9" strokeWidth="1.8">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 15 0" />
-                        </svg>
-                      </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-green/10 to-white dark:to-zinc-900">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-green text-white">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-9 w-9 stroke-current" strokeWidth="1.8">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 12.75a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 20.25a7.5 7.5 0 0 1 15 0" />
+                      </svg>
                     </div>
-                  )}
-
-                  {/* Drag indicator overlay */}
-                  {isAvatarDragging && (
-                    <div className="absolute inset-0 rounded-full bg-black/10 dark:bg-black/20" />
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Always reserve space to prevent layout shift */}
@@ -627,7 +614,7 @@ export function AvatarPickerModal({
               type="button"
               onClick={() => setMode("camera")}
               disabled={isSaving}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-400"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-green px-7 py-3 text-sm font-extrabold text-white shadow-sm transition-colors hover:opacity-90 disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 stroke-current" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5A2.5 2.5 0 0 1 6.5 5h3l1.5-2h2l1.5 2h3A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
@@ -648,80 +635,79 @@ export function AvatarPickerModal({
             </button>
           </div>
 
-          {/* ── Upload / Camera Area ── */}
-          <div className="mt-4">
-            {mode === "camera" ? (
-              <div className="space-y-3">
-                <div className="overflow-hidden rounded-xl border border-zinc-200 bg-black dark:border-zinc-700">
-                  <video ref={videoRef} autoPlay playsInline muted className="h-48 w-full object-cover sm:h-56" />
-                </div>
-                <div className="flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => void handleCapture()}
-                    disabled={isStartingCamera}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-current" strokeWidth="2">
-                      <circle cx="12" cy="12" r="3.5" />
-                    </svg>
-                    {isStartingCamera ? "Starting camera..." : "Capture Photo"}
-                  </button>
+        <div className="border-t border-zinc-200 px-5 py-5 dark:border-zinc-800 sm:px-6">
+          {mode === "camera" ? (
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-[22px] border-2 border-dashed border-brand-green/40 bg-zinc-50 p-3 dark:bg-zinc-950/30">
+                <div className="overflow-hidden rounded-[20px] border border-zinc-200 bg-black dark:border-zinc-700">
+                  <video ref={videoRef} autoPlay playsInline muted className="h-60 w-full object-cover" />
                 </div>
               </div>
-            ) : (
-              <div
-                onClick={openFilePicker}
-                onDragEnter={(event) => {
-                  event.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={async (event) => {
-                  event.preventDefault();
-                  await handleFileDrop(event.dataTransfer.files);
-                }}
-                className={`group cursor-pointer rounded-xl border-2 border-dashed px-4 py-5 text-center transition-all sm:py-6 ${
-                  isDragging
-                    ? "border-emerald-400 bg-emerald-50/80 dark:border-emerald-600 dark:bg-emerald-950/20"
-                    : "border-zinc-200 bg-zinc-50/50 hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-800/30 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/10"
-                }`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null;
-                    void handleSelectFile(file);
-                    event.currentTarget.value = "";
-                  }}
-                  className="sr-only"
-                />
 
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 transition-colors group-hover:bg-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:group-hover:bg-emerald-900/40">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="1.8">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 16.7V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.3" />
-                  </svg>
-                </div>
-
-                <p className="mt-2 text-sm font-bold text-zinc-700 dark:text-zinc-200">
-                  Drag &amp; drop your image here
-                </p>
-                <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  or click to browse
-                </p>
-                <p className="mt-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-                  PNG, JPG or WEBP • Max size 5MB
-                </p>
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => void handleCapture()}
+                  disabled={isStartingCamera}
+                  className="rounded-full bg-brand-green px-7 py-3 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isStartingCamera ? "Starting camera..." : "Capture Photo"}
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div
+              onClick={openFilePicker}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={async (event) => {
+                event.preventDefault();
+                await handleFileDrop(event.dataTransfer.files);
+              }}
+              className={`cursor-pointer rounded-[24px] border-2 border-dashed px-5 py-8 text-center transition-colors ${
+                isDragging
+                  ? "border-brand-green bg-brand-green/10"
+                  : "border-brand-green/30 bg-white hover:bg-brand-green/5 dark:bg-zinc-900"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  void handleSelectFile(file);
+                  event.currentTarget.value = "";
+                }}
+                className="sr-only"
+              />
+
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-brand-green/30 bg-brand-green/10 text-brand-green">
+                <svg viewBox="0 0 24 24" fill="none" className="h-12 w-12 stroke-current" strokeWidth="1.9">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v10" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m7.5 8.5 4.5-4.5 4.5 4.5" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 13.5A4.5 4.5 0 0 1 9 9h6a4.5 4.5 0 0 1 0 9H9a4.5 4.5 0 0 1-4.5-4.5Z" />
+                </svg>
+              </div>
+
+              <h4 className="mt-4 text-xl font-extrabold text-zinc-900 dark:text-white">
+                Drag &amp; drop your image here
+              </h4>
+              <p className="text-sm font-semibold text-brand-green">
+                or click to browse
+              </p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                PNG, JPG or WEBP • Max size 5MB
+              </p>
+            </div>
+          )}
 
           {/* ── Error ── */}
           {error && (
@@ -731,26 +717,70 @@ export function AvatarPickerModal({
           )}
         </div>
 
-        {/* ── Footer ── */}
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-100 px-5 py-3 dark:border-zinc-800 sm:px-6 sm:py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            disabled={isSaving}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={isSaving || !canSave}
-            className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSaving ? "Saving..." : "Save Avatar"}
-          </button>
+        <div className="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800 sm:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0 flex-1 space-y-3">
+              <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+                Drag the avatar above to adjust placement. Use zoom to change the crop size.
+              </p>
+
+              <div className="flex items-center gap-4">
+                <label htmlFor="avatar-zoom" className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                  Zoom
+                </label>
+                <input
+                  id="avatar-zoom"
+                  type="range"
+                  min="1"
+                  max="2"
+                  step="0.01"
+                  value={zoom}
+                  onChange={(event) => setZoom(Number(event.target.value))}
+                  disabled={!canSave}
+                  className="w-full max-w-md accent-brand-green disabled:opacity-50"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewUrl(null);
+                  setSourceImageUrl(null);
+                  setZoom(1);
+                  setPositionX(0);
+                  setPositionY(0);
+                  setMode("upload");
+                  setError(null);
+                }}
+                disabled={isSaving || !canSave}
+                className="w-fit text-sm font-bold text-brand-green transition-colors hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Reset current avatar
+              </button>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={isSaving || !canSave}
+                className="rounded-xl bg-brand-green px-5 py-2.5 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? "Saving..." : "Save Avatar"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
+
     </div>
   );
 }

@@ -77,19 +77,19 @@ export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
       <StatCard
         label="Active"
         value={data?.active || 0}
-        icon={<div className="text-emerald-600">{checkIcon}</div>}
+        icon={<div className="text-brand-green">{checkIcon}</div>}
       />
       <StatCard
         label="Redeemed"
         value={data?.redeemed || 0}
-        icon={<div className="text-emerald-600">{checkIcon}</div>}
+        icon={<div className="text-brand-green">{checkIcon}</div>}
       />
       <StatCard
         label="Total Overall Sales"
         value={allBranchSales != null ? formatPeso(allBranchSales) : data?.totalOverallSales || "₱ 0"}
         subtitle={hasBranchComparison ? `Branch total: ${formatPeso(branchSales)}` : undefined}
-        icon={<div className="text-emerald-600">{salesIcon}</div>}
-        valueClassName="text-amber-400"
+        icon={<div className="text-brand-green">{salesIcon}</div>}
+        valueClassName="text-pawn-gold"
       />
     </div>
   );

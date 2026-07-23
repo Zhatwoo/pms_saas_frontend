@@ -118,7 +118,7 @@ export function UserActions({
 							value={search}
 							onChange={(event) => onSearchChange(event.target.value)}
 							placeholder="Search users..."
-							className="h-10 w-full rounded-md border border-input-border bg-input-bg pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-700"
+							className="h-10 w-full rounded-md border border-input-border bg-input-bg pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-brand-green"
 						/>
 					</div>
 
@@ -133,7 +133,7 @@ export function UserActions({
                   onClick={() => onRoleFilterChange(tab.value)}
                   className={`shrink-0 rounded border px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all hover:opacity-80 active:scale-95 ${
 										isActive
-											? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
+											? "border-brand-green bg-brand-green text-white shadow-sm"
 											: "border-border-main bg-surface text-text-secondary hover:bg-surface-secondary"
 									}`}
 								>
@@ -147,7 +147,7 @@ export function UserActions({
         <div className="flex w-full shrink-0 flex-col gap-2 border-t border-border-main pt-4 sm:flex-row sm:items-stretch lg:w-auto lg:border-none lg:pt-0">
           <ActionButton
             variant="outline"
-            className="w-full !border-emerald-600 !bg-emerald-50 !text-emerald-700 h-10 min-w-0 sm:flex-1 lg:w-auto lg:flex-none"
+            className="w-full !border-brand-green !bg-brand-green/10 !text-brand-green h-10 min-w-0 sm:flex-1 lg:w-auto lg:flex-none"
             onClick={onExportUsers}
 					>
 						<span className="flex min-w-0 items-center justify-center gap-1.5">

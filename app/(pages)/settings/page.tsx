@@ -14,6 +14,30 @@ import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_PRINT_SCREEN_CSS, MOA_SIGNATURE_LINE
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
+import {
+  DEFAULT_SLIP_SECTION_ORDER,
+  MoaSortableGroup,
+  MoaSortableItem,
+  loadSlipSectionOrder,
+  saveSlipSectionOrder,
+  type SlipSectionId,
+} from "./_components/moa-dnd";
+import {
+  MoaDesignCanvasLayer,
+  MOA_FONT_OPTIONS,
+  MOA_PAGE_SIZES,
+  applyToolbarToSelected,
+  loadMoaDesignElements,
+  loadMoaPageSize,
+  saveMoaDesignElements,
+  saveMoaPageSize,
+  type MoaDesignElement,
+  type MoaHeaderFieldKey,
+  type MoaPageSizeId,
+  type MoaTextAlign,
+  type MoaTextStylePatch,
+} from "./_components/moa-design-palette";
+import { MoaDesignToolsPanel, MoaFieldConfigTab } from "./_components/moa-design";
 
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -51,7 +75,7 @@ function ResizableLine({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={!canEdit}
-        className={`block w-full bg-transparent text-[10px] outline-none disabled:pointer-events-none px-0.5 leading-none m-0 p-0 ${canEdit ? "hover:bg-emerald-50 focus:bg-emerald-50" : ""}`}
+        className={`block w-full bg-transparent text-[10px] outline-none disabled:pointer-events-none px-0.5 leading-none m-0 p-0 ${canEdit ? "hover:bg-brand-green/10 focus:bg-brand-green/10" : ""}`}
         style={{ height: '14px' }}
       />
       {canEdit && (
@@ -75,7 +99,7 @@ function ResizableLine({
             document.addEventListener("pointerup", onPointerUp);
           }}
         >
-          <span className="inline-block h-3 w-0.5 rounded-full bg-emerald-400" />
+          <span className="inline-block h-3 w-0.5 rounded-full bg-pawn-gold" />
         </span>
       )}
     </span>
@@ -298,7 +322,18 @@ export default function SettingsPage() {
     { date: "", storage: "", period: "2nd Period", periodValue: "", extend: "", sign: "" },
     { date: "", storage: "", period: "3rd Period", periodValue: "", extend: "", sign: "" },
   ]);
-  const [isTopHeaderSwapped, setIsTopHeaderSwapped] = useState(false);
+  const [slipSectionOrder, setSlipSectionOrder] = useState<SlipSectionId[]>([...DEFAULT_SLIP_SECTION_ORDER]);
+  const [moaDesignElements, setMoaDesignElements] = useState<MoaDesignElement[]>([]);
+  const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
+  const [moaDesignFontFamily, setMoaDesignFontFamily] = useState<string>(MOA_FONT_OPTIONS[0].value);
+  const [moaDesignFontSize, setMoaDesignFontSize] = useState(11);
+  const [moaDesignTextAlign, setMoaDesignTextAlign] = useState<MoaTextAlign>("left");
+  const [moaDesignFontWeight, setMoaDesignFontWeight] = useState<"normal" | "bold">("normal");
+  const [moaDesignFontStyle, setMoaDesignFontStyle] = useState<"normal" | "italic">("normal");
+  const [moaDesignTextDecoration, setMoaDesignTextDecoration] = useState<"none" | "underline" | "line-through">("none");
+  const [moaDesignColor, setMoaDesignColor] = useState("#18181b");
+  const [moaPageSizeId, setMoaPageSizeId] = useState<MoaPageSizeId>("long");
+  const [isPaletteDragging, setIsPaletteDragging] = useState(false);
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
   const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
   const [unitFields, setUnitFields] = useState<UnitFieldKey[]>(DEFAULT_UNIT_FIELDS);
@@ -459,6 +494,116 @@ export default function SettingsPage() {
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+
+  useEffect(() => {
+    setSlipSectionOrder(loadSlipSectionOrder(selectedMoaCategory));
+    setMoaDesignElements(loadMoaDesignElements(selectedMoaCategory));
+    setMoaPageSizeId(loadMoaPageSize(selectedMoaCategory));
+    setSelectedDesignId(null);
+  }, [selectedMoaCategory]);
+
+  const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
+
+  const updateSlipSectionOrder = (next: SlipSectionId[]) => {
+    setSlipSectionOrder(next);
+    saveSlipSectionOrder(selectedMoaCategory, next);
+  };
+
+  const updateMoaDesignElements = (next: MoaDesignElement[]) => {
+    setMoaDesignElements(next);
+    saveMoaDesignElements(selectedMoaCategory, next);
+  };
+
+  const handleMoaPageSizeChange = (id: MoaPageSizeId) => {
+    setMoaPageSizeId(id);
+    saveMoaPageSize(selectedMoaCategory, id);
+  };
+
+  const applyDesignStylePatch = (patch: MoaTextStylePatch) => {
+    if (patch.fontFamily !== undefined) setMoaDesignFontFamily(patch.fontFamily);
+    if (patch.fontSize !== undefined) setMoaDesignFontSize(patch.fontSize);
+    if (patch.textAlign !== undefined) setMoaDesignTextAlign(patch.textAlign);
+    if (patch.fontWeight !== undefined) setMoaDesignFontWeight(patch.fontWeight);
+    if (patch.fontStyle !== undefined) setMoaDesignFontStyle(patch.fontStyle);
+    if (patch.textDecoration !== undefined) setMoaDesignTextDecoration(patch.textDecoration);
+    if (patch.color !== undefined) setMoaDesignColor(patch.color);
+    if (selectedDesignId) {
+      updateMoaDesignElements(applyToolbarToSelected(moaDesignElements, selectedDesignId, patch));
+    }
+  };
+
+  const handleDesignFontFamilyChange = (value: string) => {
+    applyDesignStylePatch({ fontFamily: value });
+  };
+
+  const handleDesignFontSizeChange = (value: number) => {
+    applyDesignStylePatch({ fontSize: value });
+  };
+
+  const handleSelectDesignElement = (id: string | null) => {
+    setSelectedDesignId(id);
+    if (!id) return;
+    const selected = moaDesignElements.find((el) => el.id === id);
+    if (!selected) return;
+    setMoaDesignFontFamily(selected.fontFamily);
+    setMoaDesignFontSize(selected.fontSize);
+    setMoaDesignTextAlign(selected.textAlign);
+    setMoaDesignFontWeight(selected.fontWeight);
+    setMoaDesignFontStyle(selected.fontStyle);
+    setMoaDesignTextDecoration(selected.textDecoration);
+    setMoaDesignColor(selected.color);
+  };
+
+  const handleAddHeaderField = (key: MoaHeaderFieldKey) => {
+    if (!selectedDesignId) return;
+    const selected = moaDesignElements.find((el) => el.id === selectedDesignId);
+    if (!selected || selected.kind !== "header") return;
+    if (selected.headerFields.some((field) => field.key === key)) return;
+    updateMoaDesignElements(
+      moaDesignElements.map((el) =>
+        el.id === selectedDesignId
+          ? {
+            ...el,
+            headerFields: [
+              ...el.headerFields,
+              {
+                id: `hf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                key,
+                x: 8,
+                y:
+                  el.headerFields.length === 0
+                    ? 8
+                    : Math.max(...el.headerFields.map((field) => field.y + 20)) + 6,
+                width: 180,
+              },
+            ],
+          }
+          : el,
+      ),
+    );
+  };
+
+  const reorderFinancialFields = (nextIds: string[]) => {
+    setFinancialFields(nextIds as FinancialFieldKey[]);
+  };
+
+  const reorderUnitFields = (nextIds: string[]) => {
+    setUnitFields(nextIds as UnitFieldKey[]);
+  };
+
+  const reorderCustomFinancialFields = (nextIds: string[]) => {
+    setCustomFinancialFields((fields) => {
+      const byId = new Map(fields.map((field) => [field.id, field]));
+      return nextIds.map((id) => byId.get(id)).filter(Boolean) as CustomMoaField[];
+    });
+  };
+
+  const reorderCustomUnitFields = (nextIds: string[]) => {
+    setCustomUnitFields((fields) => {
+      const byId = new Map(fields.map((field) => [field.id, field]));
+      return nextIds.map((id) => byId.get(id)).filter(Boolean) as CustomMoaField[];
+    });
+  };
   const resolvedTermsText = normalizeMoaTerms(termsText);
 
   // Uncontrolled refs for terms editors — avoids cursor-jump on every keystroke
@@ -809,7 +954,7 @@ export default function SettingsPage() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.preventDefault();
           }}
-          className={`${sanitizedClassName} inline outline-none ${canEditMoa ? "border-b border-dashed border-emerald-400 bg-emerald-50/30 cursor-text" : ""}`}
+          className={`${sanitizedClassName} inline outline-none ${canEditMoa ? "border-b border-dashed border-brand-green/60 bg-brand-green/5 cursor-text" : ""}`}
         >
           {topLabels[field]}
         </span>
@@ -824,8 +969,362 @@ export default function SettingsPage() {
         readOnly={!canEditMoa}
         tabIndex={canEditMoa ? 0 : -1}
         spellCheck={false}
-        className={`${sanitizedClassName} ${hasExplicitWidth ? "block shrink-0" : "block w-full"} border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : "hover:bg-emerald-50/30 focus:bg-emerald-50/50"}`}
+        className={`${sanitizedClassName} ${hasExplicitWidth ? "block shrink-0" : "block w-full"} border-none bg-transparent p-0 text-inherit outline-none ${!canEditMoa ? "pointer-events-none" : "hover:bg-brand-green/5 focus:bg-brand-green/10"}`}
       />
+    );
+  };
+
+  const renderShopHeader = (editable: boolean) => (
+    <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
+      <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
+        {shopSettings.shopName}
+      </p>
+      {shopSettings.shopAddress && (
+        <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.shopAddress}</p>
+      )}
+      {shopSettings.phoneNumber && (
+        <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.phoneNumber}</p>
+      )}
+      {editable && canEditMoa && (
+        <p className="pt-0.5 text-[7px] font-semibold uppercase tracking-wide text-sky-600">
+          Drag header to move
+        </p>
+      )}
+    </div>
+  );
+
+  const renderFinancialColumn = (editable: boolean) => {
+    const ordered = financialFields
+      .map((key) => FINANCIAL_FIELD_OPTIONS.find((field) => field.key === key))
+      .filter(Boolean) as typeof FINANCIAL_FIELD_OPTIONS;
+
+    if (!editable || !canEditMoa) {
+      return (
+        <div className="space-y-1">
+          {ordered.map((field) => (
+            <div key={field.key} className="space-y-0.5">
+              <div className="grid grid-cols-[80px_1fr] items-center gap-1">
+                <span className="font-semibold text-zinc-500 uppercase text-[8px]">
+                  {topLabels[field.key]}
+                </span>
+                {CL(field.key, moaFields[field.valueKey], 100)}
+              </div>
+              {field.key === "parkingFee" && (
+                <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
+                  (Cars, motorcycle and bike)
+                </div>
+              )}
+            </div>
+          ))}
+          {customFinancialFields.map((field) => (
+            <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
+              <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+              {CL(`custom-financial-${field.id}`, "", 100)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <MoaSortableGroup
+          group={`financial-${selectedMoaCategory}`}
+          enabled={canEditMoa}
+          itemIds={financialFields}
+          onReorderIds={reorderFinancialFields}
+        >
+          <div className="space-y-1">
+            {ordered.map((field) => (
+              <MoaSortableItem key={field.key} id={field.key} variant="field" handleLabel={`Move ${topLabels[field.key]}`}>
+                <div className="space-y-0.5">
+                  <div className="grid grid-cols-[80px_1fr] items-center gap-1">
+                    {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
+                    {RL(
+                      field.key,
+                      moaFields[field.valueKey],
+                      (value) => updateMoaField(field.valueKey, value),
+                      100,
+                    )}
+                  </div>
+                  {field.key === "parkingFee" && (
+                    <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
+                      (Cars, motorcycle and bike)
+                    </div>
+                  )}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+        <MoaSortableGroup
+          group={`custom-financial-${selectedMoaCategory}`}
+          enabled={canEditMoa && customFinancialFields.length > 1}
+          itemIds={customFinancialFields.map((field) => field.id)}
+          onReorderIds={reorderCustomFinancialFields}
+        >
+          <div className="space-y-1">
+            {customFinancialFields.map((field) => (
+              <MoaSortableItem key={field.id} id={field.id} variant="field" handleLabel={`Move ${field.label}`}>
+                <div className="grid grid-cols-[80px_1fr] items-center gap-1">
+                  <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                  {RL(`custom-financial-${field.id}`, "", () => undefined, 100)}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+      </div>
+    );
+  };
+
+  const renderUnitColumn = (editable: boolean) => {
+    const ordered = unitFields
+      .map((key) => UNIT_FIELD_OPTIONS.find((field) => field.key === key))
+      .filter(Boolean) as typeof UNIT_FIELD_OPTIONS;
+
+    if (!editable || !canEditMoa) {
+      return (
+        <div className="space-y-1">
+          {ordered.map((field) => (
+            <div key={field.key} className="grid grid-cols-[92px_1fr] items-center gap-1">
+              <span className="font-semibold text-zinc-500 uppercase text-[8px]">{topLabels[field.key]}</span>
+              {CL(field.key, moaFields[field.valueKey], 100)}
+            </div>
+          ))}
+          {customUnitFields.map((field) => (
+            <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
+              <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+              {CL(`custom-unit-${field.id}`, "", 100)}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <MoaSortableGroup
+          group={`unit-${selectedMoaCategory}`}
+          enabled={canEditMoa}
+          itemIds={unitFields}
+          onReorderIds={reorderUnitFields}
+        >
+          <div className="space-y-1">
+            {ordered.map((field) => (
+              <MoaSortableItem key={field.key} id={field.key} variant="field" handleLabel={`Move ${topLabels[field.key]}`}>
+                <div className="grid grid-cols-[92px_1fr] items-center gap-1">
+                  {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
+                  {RL(
+                    field.key,
+                    moaFields[field.valueKey],
+                    (value) => updateMoaField(field.valueKey, value),
+                    100,
+                  )}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+        <MoaSortableGroup
+          group={`custom-unit-${selectedMoaCategory}`}
+          enabled={canEditMoa && customUnitFields.length > 1}
+          itemIds={customUnitFields.map((field) => field.id)}
+          onReorderIds={reorderCustomUnitFields}
+        >
+          <div className="space-y-1">
+            {customUnitFields.map((field) => (
+              <MoaSortableItem key={field.id} id={field.id} variant="field" handleLabel={`Move ${field.label}`}>
+                <div className="grid grid-cols-[92px_1fr] items-center gap-1">
+                  <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
+                  {RL(`custom-unit-${field.id}`, "", () => undefined, 100)}
+                </div>
+              </MoaSortableItem>
+            ))}
+          </div>
+        </MoaSortableGroup>
+      </div>
+    );
+  };
+
+  const renderSlipSectionContent = (sectionId: SlipSectionId, editable: boolean) => {
+    switch (sectionId) {
+      case "shopHeader":
+        return renderShopHeader(editable);
+      case "copyMeta":
+        return editable ? (
+          <div className="flex items-center justify-between gap-3 pt-1">
+            {renderEditableLabel("originalCopy", "font-bold italic text-[9.5px]")}
+            <div className="flex items-center gap-1 text-[9.5px]">
+              {renderEditableLabel("unitCode", "font-bold uppercase whitespace-nowrap")}
+              {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v), 100)}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <span className="font-bold italic text-[9.5px]">Customer copy</span>
+            <div className="flex items-center gap-1 text-[9.5px]">
+              <span className="font-bold uppercase whitespace-nowrap">{topLabels.unitCode}</span>
+              {CL("unitCode", moaFields.unitCode, 100)}
+            </div>
+          </div>
+        );
+      case "title":
+        return editable ? (
+          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5">
+            <input
+              value={topLabels.moaTitle}
+              onChange={(e) => updateTopLabel("moaTitle", e.target.value)}
+              readOnly={!canEditMoa}
+              tabIndex={canEditMoa ? 0 : -1}
+              spellCheck={false}
+              className={`moa-title-input block w-full text-center text-[11px] font-bold uppercase border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+            />
+          </div>
+        ) : (
+          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5 text-zinc-800">
+            {topLabels.moaTitle}
+          </div>
+        );
+      case "dates":
+        return editable ? (
+          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                {renderEditableLabel("purchasedDate", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
+                {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v), 140)}
+              </div>
+              <div className="flex items-center gap-2">
+                {renderEditableLabel("idsPresented", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
+                {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v), 140)}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
+                {renderEditableLabel("maturityDate", "font-bold uppercase tracking-wider text-[8.5px] mt-0.5")}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
+                    {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
+                    {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
+                    {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 120)}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-zinc-800 font-bold">
+                {renderEditableLabel("expiryDate", "font-bold uppercase tracking-wider text-[8.5px]")}
+                {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v), 80)}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.purchasedDate}</span>
+                {CL("purchasedDate", moaFields.purchasedDate, 140)}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.idsPresented}</span>
+                {CL("idsPresented", moaFields.idsPresented, 140)}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
+                <span className="font-bold uppercase tracking-wider text-[8.5px] mt-0.5">{topLabels.maturityDate}</span>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
+                    {CL("maturityDate1st", moaFields.maturityDate1st, 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
+                    {CL("maturityDate2nd", moaFields.maturityDate2nd, 120)}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
+                    {CL("maturityDate3rd", moaFields.maturityDate3rd, 120)}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-red-600 font-bold">
+                <span className="font-bold uppercase tracking-wider text-[8.5px]">{topLabels.expiryDate}</span>
+                {CL("expiryDate", moaFields.expiryDate, 80)}
+              </div>
+            </div>
+          </div>
+        );
+      case "agreement":
+        return editable ? (
+          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
+            <div>
+              {renderEditableLabel("customerIntro", "inline")} {RL("customerName", moaFields.customerName, (v) => updateMoaField("customerName", v), 180)} {renderEditableLabel("legalAgeResident", "inline")} {RL("customerAddress", moaFields.customerAddress, (v) => updateMoaField("customerAddress", v), 220)}. For the amount of {RL("amountInWords", moaFields.principalAmount || "", (v) => updateMoaField("principalAmount", v), 130)} (P {RL("amountInFigures", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("agreementText", "inline")} for THIRTY (30) days from the date of purchase. {renderEditableLabel("repayIntro", "inline")} (P {RL("repurchaseAmount", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("plusText", "inline")} (P {RL("storageFeeValue", moaFields.storageFee || "", (v) => updateMoaField("storageFee", v), 80)}) {renderEditableLabel("storageFeeText", "inline")} {RL("penaltyAmountText", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 80)} (P {RL("penaltyAmount", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 60)}) and you are given 5 days grace period ({RL("gracePeriod", moaFields.expiryDate || "", (v) => updateMoaField("expiryDate", v), 100)}) my right to repurchase back the unit(s) described below is deemed waived.
+            </div>
+          </div>
+        ) : (
+          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
+            <p>
+              {topLabels.customerIntro} {CL("customerName", moaFields.customerName, 180)} {topLabels.legalAgeResident} {CL("customerAddress", moaFields.customerAddress, 220)}. For the amount of {CL("amountInWords", moaFields.principalAmount || "", 130)} (P {CL("amountInFigures", moaFields.amount || "", 80)}) {topLabels.agreementText} for THIRTY (30) days from the date of purchase. {topLabels.repayIntro} (P {CL("repurchaseAmount", moaFields.amount || "", 80)}) {topLabels.plusText} (P {CL("storageFeeValue", moaFields.storageFee || "", 80)}) {topLabels.storageFeeText} {CL("penaltyAmountText", moaFields.penaltyAmount || "", 80)} (P {CL("penaltyAmount", moaFields.penaltyAmount || "", 60)}) and you are given 5 days grace period ({CL("gracePeriod", moaFields.expiryDate || "", 100)}) my right to repurchase back the unit(s) described below is deemed waived.
+            </p>
+          </div>
+        );
+      case "unitFields":
+        return (
+          <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
+            <p className="font-bold text-center underline text-[9.5px]">
+              {editable ? renderEditableLabel("unitDescription", "inline") : topLabels.unitDescription}
+            </p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
+              {renderFinancialColumn(editable)}
+              {renderUnitColumn(editable)}
+            </div>
+          </div>
+        );
+      case "signatures":
+        return null;
+      default:
+        return null;
+    }
+  };
+
+  const renderSlipBodySections = (editable: boolean) => {
+    const bodySections = slipSectionOrder.filter((id) => id !== "signatures");
+
+    if (!editable || !canEditMoa) {
+      return bodySections.map((sectionId) => (
+        <div key={sectionId}>{renderSlipSectionContent(sectionId, editable)}</div>
+      ));
+    }
+
+    return (
+      <MoaSortableGroup
+        group={`slip-sections-${selectedMoaCategory}`}
+        enabled={canEditMoa}
+        itemIds={bodySections}
+        onReorderIds={(nextIds) => {
+          const next = [...nextIds, ...slipSectionOrder.filter((id) => !nextIds.includes(id as SlipSectionId))] as SlipSectionId[];
+          updateSlipSectionOrder(next);
+        }}
+      >
+        <div className="space-y-0.5">
+          {bodySections.map((sectionId) => (
+            <MoaSortableItem
+              key={sectionId}
+              id={sectionId}
+              variant="block"
+              handleLabel={`Move ${sectionId === "shopHeader" ? "header" : "section"}`}
+            >
+              {renderSlipSectionContent(sectionId, editable)}
+            </MoaSortableItem>
+          ))}
+        </div>
+      </MoaSortableGroup>
     );
   };
 
@@ -838,8 +1337,8 @@ export default function SettingsPage() {
             type="button"
             onClick={() => setActiveTab(tab)}
             className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-[10px] font-bold transition-all sm:px-6 sm:py-2 sm:text-sm ${activeTab === tab
-                ? "bg-emerald-700 text-white shadow-sm"
-                : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
+              ? "bg-brand-green text-white shadow-sm"
+              : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
           >
             {tab}
@@ -851,7 +1350,7 @@ export default function SettingsPage() {
         <div className="min-w-0 space-y-6">
           {profileToast && (
             <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-              <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+              <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
                 {profileToast}
               </div>
             </div>
@@ -870,7 +1369,7 @@ export default function SettingsPage() {
                         Full Name
                       </label>
                       <input
-                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                        className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
                         value={profileFullName}
                         onChange={(event) => setProfileFullName(event.target.value)}
                         placeholder="Your full name"
@@ -906,7 +1405,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSaveProfile}
                   disabled={isSavingProfile || profileFullName === user?.fullName}
-                  className="rounded-lg bg-emerald-700 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg bg-brand-green px-6 py-2 text-xs font-bold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSavingProfile ? "Saving..." : "Save Changes"}
                 </button>
@@ -927,7 +1426,7 @@ export default function SettingsPage() {
               <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
                 <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
                   <svg
-                    className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                    className="h-4 w-4 text-brand-green"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -974,7 +1473,7 @@ export default function SettingsPage() {
                         <button
                           onClick={handleSaveShopEdit}
                           disabled={isSavingSettings}
-                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          className="inline-flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                         >
                           {isSavingSettings ? (
                             <>
@@ -1004,8 +1503,8 @@ export default function SettingsPage() {
                     onChange={(e) => handleTempShopSettingChange("shopName", e.target.value)}
                     disabled={!isShopEditMode}
                     className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
-                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                      ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                       }`}
                   />
                 </div>
@@ -1019,8 +1518,8 @@ export default function SettingsPage() {
                     onChange={(e) => handleTempShopSettingChange("shopAddress", e.target.value)}
                     disabled={!isShopEditMode}
                     className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                        ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
-                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                      ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
+                      : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                       }`}
                   />
                 </div>
@@ -1035,8 +1534,8 @@ export default function SettingsPage() {
                       onChange={(e) => handleTempShopSettingChange("phoneNumber", e.target.value)}
                       disabled={!isShopEditMode}
                       className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                          ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
-                          : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                        ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                         }`}
                     />
                   </div>
@@ -1051,8 +1550,8 @@ export default function SettingsPage() {
                       onChange={(e) => handleTempShopSettingChange("email", e.target.value)}
                       disabled={!isShopEditMode}
                       className={`h-10 w-full rounded-md border px-3 text-sm outline-none transition-all duration-200 ${isShopEditMode
-                          ? "border-emerald-500 bg-surface shadow-sm focus:ring-1 focus:ring-emerald-500 text-text-primary"
-                          : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
+                        ? "border-brand-green bg-surface shadow-sm focus:ring-1 focus:ring-brand-green text-text-primary"
+                        : "border-border-main bg-surface-secondary text-text-secondary opacity-80 cursor-not-allowed"
                         }`}
                     />
                   </div>
@@ -1073,7 +1572,7 @@ export default function SettingsPage() {
               <div className="border-b border-border-main px-3 py-3 sm:px-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                  <span className="rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-brand-green">
                     Super Admin Only
                   </span>
                 </div>
@@ -1093,8 +1592,8 @@ export default function SettingsPage() {
                     }
                     disabled={!isSuperAdmin}
                     className={`w-full rounded-lg px-4 py-2 text-[11px] font-bold transition-colors sm:w-auto ${isMoaEditMode
-                        ? "border border-emerald-700 bg-emerald-700 text-white"
-                        : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
+                      ? "border border-brand-green bg-brand-green text-white"
+                      : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
@@ -1106,24 +1605,26 @@ export default function SettingsPage() {
                       checked={isMoaLocked}
                       onChange={(e) => setIsMoaLocked(e.target.checked)}
                       disabled={!isSuperAdmin}
-                      className="h-3.5 w-3.5 shrink-0 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 disabled:cursor-not-allowed"
+                      className="h-3.5 w-3.5 shrink-0 rounded border-zinc-300 text-brand-green focus:ring-brand-green disabled:cursor-not-allowed"
                     />
                     Lock Template (Prevent Editing)
                   </label>
 
                   <button
-                    onClick={() => setIsTopHeaderSwapped((v) => !v)}
-                    disabled={!isSuperAdmin}
+                    onClick={() => {
+                      updateSlipSectionOrder([...DEFAULT_SLIP_SECTION_ORDER]);
+                    }}
+                    disabled={!canEditMoa}
                     className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 sm:w-auto"
                   >
-                    {isTopHeaderSwapped ? "Default Header Layout" : "Interchange Top Fields"}
+                    Reset Section Layout
                   </button>
 
                   <button
                     type="button"
                     onClick={handleApplyMoaToAllCategories}
                     disabled={!canEditMoa || moaCategories.length === 0}
-                    className="w-full rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    className="w-full rounded-lg border border-brand-green bg-brand-green/10 px-3 py-2 text-[11px] font-bold text-brand-green transition-colors hover:bg-brand-green/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   >
                     Apply to All Categories
                   </button>
@@ -1142,8 +1643,8 @@ export default function SettingsPage() {
                             onClick={() => handleMoaCategoryChange(category.value)}
                             disabled={!canEditMoa}
                             className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${isActive
-                                ? "border-emerald-700 bg-emerald-700 text-white shadow-sm"
-                                : "border-border-main bg-surface text-zinc-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 dark:text-zinc-300"
+                              ? "border-brand-green bg-brand-green text-white shadow-sm"
+                              : "border-border-main bg-surface text-zinc-700 hover:border-brand-green/40 hover:bg-brand-green/10 hover:text-brand-green dark:text-zinc-300"
                               }`}
                           >
                             {category.label}
@@ -1155,774 +1656,503 @@ export default function SettingsPage() {
                 )}
 
                 {isMoaEditMode && selectedMoaCategory !== DEFAULT_MOA_CATEGORY && (
-                  <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[10px] font-medium text-emerald-800">
+                  <p className="rounded-md border border-brand-green/25 bg-brand-green/10 px-3 py-2 text-[10px] font-medium text-brand-green">
                     Editing the MOA used for <strong>{selectedMoaCategory}</strong> transactions.
+                  </p>
+                )}
+
+                {isMoaEditMode && canEditMoa && (
+                  <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-[10px] font-medium text-sky-900">
+                    Blank canvas for <strong>{selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "this category" : selectedMoaCategory}</strong> — drag Header, Section, Body, and Elements to build the MOA.
                   </p>
                 )}
 
                 <div className="min-w-0 overflow-x-auto rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
                   <div className="flex min-w-0 flex-col items-stretch gap-6 xl:flex-row xl:items-start xl:justify-center">
-                    <div className="flex w-full min-w-0 max-w-[816px] flex-1 flex-col gap-6">
-                      {/* PAGE 1: SLIPS (Original & Customer Copy) */}
-                      <MoaPaperScale>
-                      <div
-                        className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
-                        style={{
-                          padding: MOA_LEGAL_PAGE.padding,
-                          boxSizing: "border-box",
-                          width: MOA_LEGAL_PAGE.screenWidthPx,
-                          height: MOA_LEGAL_PAGE.screenHeightPx,
-                          maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div className="moa-slip-halves">
-
-                        {/* ORIGINAL COPY (Top Half) */}
-                        <div className="moa-slip-half">
-                        <div className="moa-slip-copy relative moa-watermark">
-                        <div className="moa-slip-body space-y-0.5">
-                          {/* Row 1: Branch Info (centered) */}
-                          <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
-                            <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
-                              {shopSettings.shopName}
-                            </p>
-                            {shopSettings.shopAddress && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.shopAddress}</p>
-                            )}
-                            {shopSettings.phoneNumber && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.phoneNumber}</p>
-                            )}
-                          </div>
-
-                          {/* Row 2: Copy type + Unit Code */}
-                          <div className="flex items-center justify-between gap-3 pt-1">
-                            {renderEditableLabel("originalCopy", "font-bold italic text-[9.5px]")}
-                            <div className="flex items-center gap-1 text-[9.5px]">
-                              {renderEditableLabel("unitCode", "font-bold uppercase whitespace-nowrap")}
-                              {RL("unitCode", moaFields.unitCode, (v) => updateMoaField("unitCode", v), 100)}
-                            </div>
-                          </div>
-
-                          {/* Centered Slip Title */}
-                          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5">
-                            <input
-                              value={topLabels.moaTitle}
-                              onChange={(e) => updateTopLabel("moaTitle", e.target.value)}
-                              readOnly={!canEditMoa}
-                              tabIndex={canEditMoa ? 0 : -1}
-                              spellCheck={false}
-                              className={`moa-title-input block w-full text-center text-[11px] font-bold uppercase border-none bg-transparent p-0 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
-                            />
-                          </div>
-
-                          {/* Dates grid */}
-                          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                {renderEditableLabel("purchasedDate", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
-                                {RL("purchasedDate", moaFields.purchasedDate, (v) => updateMoaField("purchasedDate", v), 140)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {renderEditableLabel("idsPresented", "w-24 font-bold uppercase tracking-wider text-[8.5px]")}
-                                {RL("idsPresented", moaFields.idsPresented, (v) => updateMoaField("idsPresented", v), 140)}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
-                                {renderEditableLabel("maturityDate", "font-bold uppercase tracking-wider text-[8.5px] mt-0.5")}
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
-                                    {RL("maturityDate1st", moaFields.maturityDate1st, (v) => updateMoaField("maturityDate1st", v), 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
-                                    {RL("maturityDate2nd", moaFields.maturityDate2nd, (v) => updateMoaField("maturityDate2nd", v), 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
-                                    {RL("maturityDate3rd", moaFields.maturityDate3rd, (v) => updateMoaField("maturityDate3rd", v), 120)}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-zinc-800 font-bold">
-                                {renderEditableLabel("expiryDate", "font-bold uppercase tracking-wider text-[8.5px]")}
-                                {RL("expiryDate", moaFields.expiryDate, (v) => updateMoaField("expiryDate", v), 80)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Agreement Paragraph */}
-                          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
-                            <div>
-                              {renderEditableLabel("customerIntro", "inline")} {RL("customerName", moaFields.customerName, (v) => updateMoaField("customerName", v), 180)} {renderEditableLabel("legalAgeResident", "inline")} {RL("customerAddress", moaFields.customerAddress, (v) => updateMoaField("customerAddress", v), 220)}. For the amount of {RL("amountInWords", moaFields.principalAmount || "", (v) => updateMoaField("principalAmount", v), 130)} (P {RL("amountInFigures", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("agreementText", "inline")} for THIRTY (30) days from the date of purchase. {renderEditableLabel("repayIntro", "inline")} (P {RL("repurchaseAmount", moaFields.amount || "", (v) => updateMoaField("amount", v), 80)}) {renderEditableLabel("plusText", "inline")} (P {RL("storageFeeValue", moaFields.storageFee || "", (v) => updateMoaField("storageFee", v), 80)}) {renderEditableLabel("storageFeeText", "inline")} {RL("penaltyAmountText", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 80)} (P {RL("penaltyAmount", moaFields.penaltyAmount || "", (v) => updateMoaField("penaltyAmount", v), 60)}) and you are given 5 days grace period ({RL("gracePeriod", moaFields.expiryDate || "", (v) => updateMoaField("expiryDate", v), 100)}) my right to repurchase back the unit(s) described below is deemed waived.
-                            </div>
-                          </div>
-
-                          {/* Unit Description & Financial Fields */}
-                          <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
-                            <p className="font-bold text-center underline text-[9.5px]">{renderEditableLabel("unitDescription", "inline")}</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
-                              {/* Left column: Financial fields */}
-                              <div className="space-y-1">
-                                {FINANCIAL_FIELD_OPTIONS.filter((field) =>
-                                  financialFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="space-y-0.5">
-                                    <div className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                      {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
-                                      {RL(
-                                        field.key,
-                                        moaFields[field.valueKey],
-                                        (value) => updateMoaField(field.valueKey, value),
-                                        100
-                                      )}
-                                    </div>
-                                    {field.key === "parkingFee" && (
-                                      <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
-                                        (Cars, motorcycle and bike)
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {customFinancialFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {RL(`custom-financial-${field.id}`, "", () => undefined, 100)}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Right column: Unit description */}
-                              <div className="space-y-1">
-                                {UNIT_FIELD_OPTIONS.filter((field) =>
-                                  unitFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    {renderEditableLabel(field.key, "font-semibold text-zinc-500 uppercase text-[8px]")}
-                                    {RL(
-                                      field.key,
-                                      moaFields[field.valueKey],
-                                      (value) => updateMoaField(field.valueKey, value),
-                                      100
-                                    )}
-                                  </div>
-                                ))}
-                                {customUnitFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {RL(`custom-unit-${field.id}`, "", () => undefined, 100)}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          </div>
-                          <div className="moa-slip-footer space-y-0.5">
-                          {/* Signatures */}
-                          <div className="grid grid-cols-2 gap-12 pt-1 text-center">
-                            <div className="flex flex-col items-center">
-                              {RL("sellerName", moaFields.sellerName, (v) => updateMoaField("sellerName", v), 180)}
-                              <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{renderEditableLabel("sellerSignature", "inline")}</p>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              {RL("representativeName", moaFields.representativeName, (v) => updateMoaField("representativeName", v), 180)}
-                              <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{renderEditableLabel("representativeSignature", "inline")}</p>
-                            </div>
-                          </div>
-
-                          {/* Renewal table */}
-                          <div className="py-2 space-y-1 border-t border-zinc-100">
-                            {extensionRows.map((row, index) => (
-                              <div key={index} className="flex items-center justify-between gap-2 text-[8.5px] font-semibold text-zinc-600">
-                                <div className="flex items-center gap-1">
-                                  <span>Date:</span>
-                                  {RL(`extRow_${index}_date`, row.date, (v) => updateExtensionRow(index, "date", v), 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Storage:</span>
-                                  {RL(`extRow_${index}_storage`, row.storage, (v) => updateExtensionRow(index, "storage", v), 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Period:</span>
-                                  <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
-                                  {RL(`extRow_${index}_periodValue`, row.periodValue || "", (v) => updateExtensionRow(index, "periodValue", v), 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Extend:</span>
-                                  {RL(`extRow_${index}_extend`, row.extend, (v) => updateExtensionRow(index, "extend", v), 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Sign:</span>
-                                  {RL(`extRow_${index}_sign`, row.sign, (v) => updateExtensionRow(index, "sign", v), 60)}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Advise Banner */}
-                          <div className="text-center font-bold text-[8.5px] uppercase pt-1 border-t border-zinc-100 select-text">
-                            <input
-                              value={topLabels.adviseText}
-                              onChange={(e) => updateTopLabel("adviseText", e.target.value)}
-                              readOnly={!canEditMoa}
-                              tabIndex={canEditMoa ? 0 : -1}
-                              spellCheck={false}
-                              className={`block w-full border-none bg-transparent text-center text-[8.5px] font-bold uppercase text-zinc-700 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
-                            />
-                          </div>
-                        </div>
-                        </div>
-                        </div>
-
-                        {/* Middle Cut Guide */}
-                        <MoaCutGuide />
-
-                        {/* CUSTOMER COPY (Bottom Half) */}
-                        <div className="moa-slip-half">
-                        <div className="moa-slip-copy relative moa-watermark">
-                        <div className="moa-slip-body space-y-0.5">
-                          {/* Row 1: Branch Info (centered) */}
-                          <div className="text-center space-y-0.5 pb-1 border-b border-zinc-300">
-                            <p className="text-[12px] font-extrabold uppercase text-zinc-950 tracking-wider">
-                              {shopSettings.shopName}
-                            </p>
-                            {shopSettings.shopAddress && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.shopAddress}</p>
-                            )}
-                            {shopSettings.phoneNumber && (
-                              <p className="text-[7.5px] text-zinc-500 font-bold leading-tight">{shopSettings.phoneNumber}</p>
-                            )}
-                          </div>
-
-                          {/* Row 2: Copy type + Unit Code */}
-                          <div className="flex items-center justify-between gap-3 pt-1">
-                            <span className="font-bold italic text-[9.5px]">Customer copy</span>
-                            <div className="flex items-center gap-1 text-[9.5px]">
-                              <span className="font-bold uppercase whitespace-nowrap">{topLabels.unitCode}</span>
-                              {CL("unitCode", moaFields.unitCode, 100)}
-                            </div>
-                          </div>
-
-                          {/* Centered Slip Title */}
-                          <div className="text-center font-bold uppercase tracking-wider text-[11px] py-0.5 text-zinc-800">
-                            {topLabels.moaTitle}
-                          </div>
-
-                          {/* Dates grid */}
-                          <div className="grid grid-cols-2 gap-4 border-b border-zinc-300 pb-2">
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.purchasedDate}</span>
-                                {CL("purchasedDate", moaFields.purchasedDate, 140)}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="w-24 font-bold uppercase tracking-wider text-[8.5px]">{topLabels.idsPresented}</span>
-                                {CL("idsPresented", moaFields.idsPresented, 140)}
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="grid grid-cols-[90px_1fr] items-start gap-x-1">
-                                <span className="font-bold uppercase tracking-wider text-[8.5px] mt-0.5">{topLabels.maturityDate}</span>
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">1st</span>
-                                    {CL("maturityDate1st", moaFields.maturityDate1st, 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">2nd</span>
-                                    {CL("maturityDate2nd", moaFields.maturityDate2nd, 120)}
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[8px] font-bold text-zinc-500 w-6 whitespace-nowrap">3rd</span>
-                                    {CL("maturityDate3rd", moaFields.maturityDate3rd, 120)}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-[160px_1fr] items-center gap-x-1 text-red-600 font-bold">
-                                <span className="font-bold uppercase tracking-wider text-[8.5px]">{topLabels.expiryDate}</span>
-                                {CL("expiryDate", moaFields.expiryDate, 80)}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Agreement Paragraph */}
-                          <div className="moa-agreement-text space-y-1.5 leading-relaxed text-justify text-[9px] px-1 select-text">
-                            <p>
-                              {topLabels.customerIntro} {CL("customerName", moaFields.customerName, 180)} {topLabels.legalAgeResident} {CL("customerAddress", moaFields.customerAddress, 220)}. For the amount of {CL("amountInWords", moaFields.principalAmount || "", 130)} (P {CL("amountInFigures", moaFields.amount || "", 80)}) {topLabels.agreementText} for THIRTY (30) days from the date of purchase. {topLabels.repayIntro} (P {CL("repurchaseAmount", moaFields.amount || "", 80)}) {topLabels.plusText} (P {CL("storageFeeValue", moaFields.storageFee || "", 80)}) {topLabels.storageFeeText} {CL("penaltyAmountText", moaFields.penaltyAmount || "", 80)} (P {CL("penaltyAmount", moaFields.penaltyAmount || "", 60)}) and you are given 5 days grace period ({CL("gracePeriod", moaFields.expiryDate || "", 100)}) my right to repurchase back the unit(s) described below is deemed waived.
-                            </p>
-                          </div>
-
-                          {/* Unit Description & Financial Fields */}
-                          <div className="border-y border-zinc-200 py-2 my-2 space-y-2 bg-zinc-50/30">
-                            <p className="font-bold text-center underline text-[9.5px]">{topLabels.unitDescription}</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 px-3">
-                              {/* Left column: Financial fields */}
-                              <div className="space-y-1">
-                                {FINANCIAL_FIELD_OPTIONS.filter((field) =>
-                                  financialFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="space-y-0.5">
-                                    <div className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                      <span className="font-semibold text-zinc-500 uppercase text-[8px]">{topLabels[field.key]}</span>
-                                      {CL(field.key, moaFields[field.valueKey], 100)}
-                                    </div>
-                                    {field.key === "parkingFee" && (
-                                      <div className="text-[7.5px] text-zinc-500 font-bold italic leading-none pl-[80px]">
-                                        (Cars, motorcycle and bike)
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {customFinancialFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[80px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {CL(`custom-financial-${field.id}`, "", 100)}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Right column: Unit description */}
-                              <div className="space-y-1">
-                                {UNIT_FIELD_OPTIONS.filter((field) =>
-                                  unitFields.includes(field.key),
-                                ).map((field) => (
-                                  <div key={field.key} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{topLabels[field.key]}</span>
-                                    {CL(field.key, moaFields[field.valueKey], 100)}
-                                  </div>
-                                ))}
-                                {customUnitFields.map((field) => (
-                                  <div key={field.id} className="grid grid-cols-[92px_1fr] items-center gap-1">
-                                    <span className="font-semibold text-zinc-500 uppercase text-[8px]">{field.label}:</span>
-                                    {CL(`custom-unit-${field.id}`, "", 100)}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          </div>
-                          <div className="moa-slip-footer space-y-0.5">
-                          {/* Signatures */}
-                          <div className="grid grid-cols-2 gap-12 pt-1 text-center">
-                            <div className="flex flex-col items-center">
-                              {CL("sellerName", moaFields.sellerName, 180)}
-                              <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{topLabels.sellerSignature}</p>
-                            </div>
-                            <div className="flex flex-col items-center">
-                              {CL("representativeName", moaFields.representativeName, 180)}
-                              <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{topLabels.representativeSignature}</p>
-                            </div>
-                          </div>
-
-                          {/* Renewal table */}
-                          <div className="py-2 space-y-1 border-t border-zinc-100">
-                            {extensionRows.map((row, index) => (
-                              <div key={index} className="flex items-center justify-between gap-2 text-[8.5px] font-semibold text-zinc-600">
-                                <div className="flex items-center gap-1">
-                                  <span>Date:</span>
-                                  {CL(`extRow_${index}_date`, row.date, 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Storage:</span>
-                                  {CL(`extRow_${index}_storage`, row.storage, 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Period:</span>
-                                  <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
-                                  {CL(`extRow_${index}_periodValue`, row.periodValue || "", 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Extend:</span>
-                                  {CL(`extRow_${index}_extend`, row.extend, 60)}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span>Sign:</span>
-                                  {CL(`extRow_${index}_sign`, row.sign, 60)}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Advise Banner */}
-                          <div className="text-center font-bold text-[8.5px] uppercase pt-1 border-t border-zinc-100 select-text">
-                            <div className="block w-full text-center text-[8.5px] font-bold uppercase text-zinc-700 outline-none">
-                              {topLabels.adviseText}
-                            </div>
-                          </div>
-                        </div>
-                        </div>
-                        </div>
-                        </div>
-                      </div>
-                      </MoaPaperScale>
-
-                      {/* PAGE 2: TERMS AND CONDITIONS */}
-                      <MoaPaperScale>
-                      <div
-                        className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
-                        style={{
-                          padding: MOA_LEGAL_PAGE.padding,
-                          boxSizing: "border-box",
-                          width: MOA_LEGAL_PAGE.screenWidthPx,
-                          height: MOA_LEGAL_PAGE.screenHeightPx,
-                          maxHeight: MOA_LEGAL_PAGE.screenHeightPx,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div className="moa-slip-halves">
-
-                        {/* Top Copy (Original terms) */}
-                        <div className="moa-slip-half">
-                        <div className="moa-terms-copy relative moa-watermark">
-                        <div className="moa-terms-body space-y-1.5">
-                          <h2 className="text-center font-bold uppercase text-[11px] select-text">
-                            <input
-                              value={topLabels.termsHeading}
-                              onChange={(e) => updateTopLabel("termsHeading", e.target.value)}
-                              readOnly={!canEditMoa}
-                              tabIndex={canEditMoa ? 0 : -1}
-                              spellCheck={false}
-                              className={`block w-full border-none bg-transparent text-center text-[11px] font-bold uppercase outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
-                            />
-                          </h2>
-
+                    <div
+                      className="flex w-full min-w-0 flex-1 flex-col gap-6"
+                      style={{ maxWidth: moaPageSize.screenWidthPx }}
+                    >
+                      {isMoaEditMode ? (
+                        <MoaPaperScale
+                          paperWidth={moaPageSize.screenWidthPx}
+                          paperHeight={moaPageSize.screenHeightPx}
+                        >
                           <div
-                            ref={termsPreambleRef}
-                            contentEditable={canEditMoa}
-                            suppressContentEditableWarning
-                            onFocus={() => {
-                              termsPreambleEditingRef.current = true;
+                            className={`${MOA_SETTINGS_PAPER_CLASS} relative bg-white`}
+                            style={{
+                              padding: moaPageSize.padding,
+                              boxSizing: "border-box",
+                              width: moaPageSize.screenWidthPx,
+                              height: moaPageSize.screenHeightPx,
+                              maxHeight: moaPageSize.screenHeightPx,
+                              overflow: "hidden",
                             }}
-                            onInput={(e) => {
-                              termsPreambleEditingRef.current = true;
-                              updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "");
-                            }}
-                            onBlur={(e) => {
-                              termsPreambleEditingRef.current = false;
-                              updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "");
-                            }}
-                            className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-700 text-justify outline-none select-text"
-                          />
-
-                          <div
-                            ref={termsRef}
-                            contentEditable={canEditMoa}
-                            suppressContentEditableWarning
-                            onFocus={() => {
-                              termsEditingRef.current = true;
-                            }}
-                            onInput={(e) => {
-                              termsEditingRef.current = true;
-                              setTermsText(e.currentTarget.innerText ?? "");
-                            }}
-                            onBlur={(e) => {
-                              termsEditingRef.current = false;
-                              setTermsText(e.currentTarget.innerText ?? "");
-                            }}
-                            className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify outline-none select-text py-1"
-                          />
-
-                          <p className="italic font-bold text-zinc-800 text-[9px] text-center">
-                            {renderEditableLabel("termsDeclaration", "italic font-bold text-zinc-800 text-[9px] text-center block w-full")}
-                          </p>
-
-                          </div>
-                          <div className="moa-terms-footer">
-                          {/* Signatures block */}
-                          <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
-                            <div className="moa-signature-block text-center">
-                              <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                              {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-left")}
-                            </div>
-
-                            <div className="text-center flex flex-col items-center space-y-1.5">
-                              {renderEditableLabel("authorizedText", "font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide text-center w-full")}
-                              {renderEditableLabel("authorizedSubtext", "text-[7.5px] text-zinc-500 block leading-tight text-center w-full")}
-
-                              <div className="moa-signature-block w-full">
-                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                                {renderEditableLabel("representativeSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]")}
-                              </div>
-
-                              <div className="moa-signature-block w-full">
-                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                                {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-right")}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Received Section */}
-                          <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
-                            <div className="text-[8.5px] leading-tight text-zinc-800 font-medium text-left">
-                              {renderEditableLabel("termsReceivedText", "text-[8.5px] leading-tight text-zinc-800 font-medium text-left block w-full")}
-                              <br />
-                              {renderEditableLabel("termsReceivedPresence", "text-[8.5px] leading-tight text-zinc-800 font-medium text-left block w-full")}
-                            </div>
-                            <div className="w-1/2">
-                              <div className="moa-signature-block w-full">
-                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                                {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-received")}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        </div>
-                        </div>
-
-                        {/* Middle Cut Guide */}
-                        <MoaCutGuide />
-
-                        {/* Bottom Copy (Customer terms) */}
-                        <div className="moa-slip-half">
-                        <div className="moa-terms-copy relative moa-watermark">
-                        <div className="moa-terms-body space-y-1.5">
-                          <h2 className="text-center font-bold uppercase text-[11px] text-zinc-800 leading-none">
-                            {topLabels.termsHeading}
-                          </h2>
-
-                          <div
-                            className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-700 text-justify"
                           >
-                            {topLabels.termsPreamble}
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(228_228_231_/_0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgb(228_228_231_/_0.45)_1px,transparent_1px)] bg-[size:24px_24px]" />
+                            <MoaDesignCanvasLayer
+                              enabled={canEditMoa}
+                              paletteDragging={isPaletteDragging}
+                              elements={moaDesignElements}
+                              selectedId={selectedDesignId}
+                              onSelect={handleSelectDesignElement}
+                              onChangeElements={updateMoaDesignElements}
+                              defaultFontFamily={moaDesignFontFamily}
+                              defaultFontSize={moaDesignFontSize}
+                              branchPreview={shopSettings}
+                            />
                           </div>
+                        </MoaPaperScale>
+                      ) : (
+                        <>
+                          {/* PAGE 1: SLIPS (Original & Customer Copy) */}
+                          <MoaPaperScale
+                            paperWidth={moaPageSize.screenWidthPx}
+                            paperHeight={moaPageSize.screenHeightPx}
+                          >
+                            <div
+                              className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet relative`}
+                              style={{
+                                padding: moaPageSize.padding,
+                                boxSizing: "border-box",
+                                width: moaPageSize.screenWidthPx,
+                                height: moaPageSize.screenHeightPx,
+                                maxHeight: moaPageSize.screenHeightPx,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <div className="moa-slip-halves">
 
-                          <div className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify py-1">
-                            {resolvedTermsText}
-                          </div>
+                                {/* ORIGINAL COPY (Top Half) */}
+                                <div className="moa-slip-half">
+                                  <div className="moa-slip-copy relative moa-watermark">
+                                    <div className="moa-slip-body space-y-0.5">
+                                      {renderSlipBodySections(true)}
+                                    </div>
+                                    <div className="moa-slip-footer space-y-0.5">
+                                      {/* Signatures */}
+                                      <div className="grid grid-cols-2 gap-12 pt-1 text-center">
+                                        <div className="flex flex-col items-center">
+                                          {RL("sellerName", moaFields.sellerName, (v) => updateMoaField("sellerName", v), 180)}
+                                          <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{renderEditableLabel("sellerSignature", "inline")}</p>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                          {RL("representativeName", moaFields.representativeName, (v) => updateMoaField("representativeName", v), 180)}
+                                          <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{renderEditableLabel("representativeSignature", "inline")}</p>
+                                        </div>
+                                      </div>
 
-                          <p className="italic font-bold text-zinc-800 text-[9px] text-center">
-                            {topLabels.termsDeclaration}
-                          </p>
+                                      {/* Renewal table */}
+                                      <div className="py-2 space-y-1 border-t border-zinc-100">
+                                        {extensionRows.map((row, index) => (
+                                          <div key={index} className="flex items-center justify-between gap-2 text-[8.5px] font-semibold text-zinc-600">
+                                            <div className="flex items-center gap-1">
+                                              <span>Date:</span>
+                                              {RL(`extRow_${index}_date`, row.date, (v) => updateExtensionRow(index, "date", v), 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Storage:</span>
+                                              {RL(`extRow_${index}_storage`, row.storage, (v) => updateExtensionRow(index, "storage", v), 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Period:</span>
+                                              <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
+                                              {RL(`extRow_${index}_periodValue`, row.periodValue || "", (v) => updateExtensionRow(index, "periodValue", v), 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Extend:</span>
+                                              {RL(`extRow_${index}_extend`, row.extend, (v) => updateExtensionRow(index, "extend", v), 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Sign:</span>
+                                              {RL(`extRow_${index}_sign`, row.sign, (v) => updateExtensionRow(index, "sign", v), 60)}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
 
-                          </div>
-                          <div className="moa-terms-footer">
-                          {/* Signatures block */}
-                          <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
-                            <div className="moa-signature-block text-center">
-                              <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                              <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.sellerSignature}</span>
-                            </div>
+                                      {/* Advise Banner */}
+                                      <div className="text-center font-bold text-[8.5px] uppercase pt-1 border-t border-zinc-100 select-text">
+                                        <input
+                                          value={topLabels.adviseText}
+                                          onChange={(e) => updateTopLabel("adviseText", e.target.value)}
+                                          readOnly={!canEditMoa}
+                                          tabIndex={canEditMoa ? 0 : -1}
+                                          spellCheck={false}
+                                          className={`block w-full border-none bg-transparent text-center text-[8.5px] font-bold uppercase text-zinc-700 outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
 
-                            <div className="text-center flex flex-col items-center space-y-1.5">
-                              <span className="font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide">{topLabels.authorizedText}</span>
-                              <span className="text-[7.5px] text-zinc-500 block leading-tight">{topLabels.authorizedSubtext}</span>
+                                {/* Middle Cut Guide */}
+                                <MoaCutGuide />
 
-                              <div className="moa-signature-block w-full">
-                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                                <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.representativeSignature}</span>
+                                {/* CUSTOMER COPY (Bottom Half) */}
+                                <div className="moa-slip-half">
+                                  <div className="moa-slip-copy relative moa-watermark">
+                                    <div className="moa-slip-body space-y-0.5">
+                                      {renderSlipBodySections(false)}
+                                    </div>
+                                    <div className="moa-slip-footer space-y-0.5">
+                                      {/* Signatures */}
+                                      <div className="grid grid-cols-2 gap-12 pt-1 text-center">
+                                        <div className="flex flex-col items-center">
+                                          {CL("sellerName", moaFields.sellerName, 180)}
+                                          <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{topLabels.sellerSignature}</p>
+                                        </div>
+                                        <div className="flex flex-col items-center">
+                                          {CL("representativeName", moaFields.representativeName, 180)}
+                                          <p className="mt-0.5 text-[8.5px] font-bold text-zinc-500">{topLabels.representativeSignature}</p>
+                                        </div>
+                                      </div>
+
+                                      {/* Renewal table */}
+                                      <div className="py-2 space-y-1 border-t border-zinc-100">
+                                        {extensionRows.map((row, index) => (
+                                          <div key={index} className="flex items-center justify-between gap-2 text-[8.5px] font-semibold text-zinc-600">
+                                            <div className="flex items-center gap-1">
+                                              <span>Date:</span>
+                                              {CL(`extRow_${index}_date`, row.date, 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Storage:</span>
+                                              {CL(`extRow_${index}_storage`, row.storage, 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Period:</span>
+                                              <span className="font-bold text-zinc-800">{row.period === "1st Period" ? "1st" : row.period === "2nd Period" ? "2nd" : row.period === "3rd Period" ? "3rd" : row.period}</span>
+                                              {CL(`extRow_${index}_periodValue`, row.periodValue || "", 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Extend:</span>
+                                              {CL(`extRow_${index}_extend`, row.extend, 60)}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                              <span>Sign:</span>
+                                              {CL(`extRow_${index}_sign`, row.sign, 60)}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+
+                                      {/* Advise Banner */}
+                                      <div className="text-center font-bold text-[8.5px] uppercase pt-1 border-t border-zinc-100 select-text">
+                                        <div className="block w-full text-center text-[8.5px] font-bold uppercase text-zinc-700 outline-none">
+                                          {topLabels.adviseText}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
+                            </div>
+                          </MoaPaperScale>
 
-                              <div className="moa-signature-block w-full">
-                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                                <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.sellerSignature}</span>
+                          {/* PAGE 2: TERMS AND CONDITIONS */}
+                          <MoaPaperScale
+                            paperWidth={moaPageSize.screenWidthPx}
+                            paperHeight={moaPageSize.screenHeightPx}
+                          >
+                            <div
+                              className={`${MOA_SETTINGS_PAPER_CLASS} moa-slip-sheet`}
+                              style={{
+                                padding: moaPageSize.padding,
+                                boxSizing: "border-box",
+                                width: moaPageSize.screenWidthPx,
+                                height: moaPageSize.screenHeightPx,
+                                maxHeight: moaPageSize.screenHeightPx,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <div className="moa-slip-halves">
+
+                                {/* Top Copy (Original terms) */}
+                                <div className="moa-slip-half">
+                                  <div className="moa-terms-copy relative moa-watermark">
+                                    <div className="moa-terms-body space-y-1.5">
+                                      <h2 className="text-center font-bold uppercase text-[11px] select-text">
+                                        <input
+                                          value={topLabels.termsHeading}
+                                          onChange={(e) => updateTopLabel("termsHeading", e.target.value)}
+                                          readOnly={!canEditMoa}
+                                          tabIndex={canEditMoa ? 0 : -1}
+                                          spellCheck={false}
+                                          className={`block w-full border-none bg-transparent text-center text-[11px] font-bold uppercase outline-none ${!canEditMoa ? "pointer-events-none" : ""}`}
+                                        />
+                                      </h2>
+
+                                      <div
+                                        ref={termsPreambleRef}
+                                        contentEditable={canEditMoa}
+                                        suppressContentEditableWarning
+                                        onFocus={() => {
+                                          termsPreambleEditingRef.current = true;
+                                        }}
+                                        onInput={(e) => {
+                                          termsPreambleEditingRef.current = true;
+                                          updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "");
+                                        }}
+                                        onBlur={(e) => {
+                                          termsPreambleEditingRef.current = false;
+                                          updateTopLabel("termsPreamble", e.currentTarget.innerText ?? "");
+                                        }}
+                                        className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-700 text-justify outline-none select-text"
+                                      />
+
+                                      <div
+                                        ref={termsRef}
+                                        contentEditable={canEditMoa}
+                                        suppressContentEditableWarning
+                                        onFocus={() => {
+                                          termsEditingRef.current = true;
+                                        }}
+                                        onInput={(e) => {
+                                          termsEditingRef.current = true;
+                                          setTermsText(e.currentTarget.innerText ?? "");
+                                        }}
+                                        onBlur={(e) => {
+                                          termsEditingRef.current = false;
+                                          setTermsText(e.currentTarget.innerText ?? "");
+                                        }}
+                                        className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify outline-none select-text py-1"
+                                      />
+
+                                      <p className="italic font-bold text-zinc-800 text-[9px] text-center">
+                                        {renderEditableLabel("termsDeclaration", "italic font-bold text-zinc-800 text-[9px] text-center block w-full")}
+                                      </p>
+
+                                    </div>
+                                    <div className="moa-terms-footer">
+                                      {/* Signatures block */}
+                                      <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
+                                        <div className="moa-signature-block text-center">
+                                          <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                          {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-left")}
+                                        </div>
+
+                                        <div className="text-center flex flex-col items-center space-y-1.5">
+                                          {renderEditableLabel("authorizedText", "font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide text-center w-full")}
+                                          {renderEditableLabel("authorizedSubtext", "text-[7.5px] text-zinc-500 block leading-tight text-center w-full")}
+
+                                          <div className="moa-signature-block w-full">
+                                            <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                            {renderEditableLabel("representativeSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]")}
+                                          </div>
+
+                                          <div className="moa-signature-block w-full">
+                                            <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                            {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-right")}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Received Section */}
+                                      <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
+                                        <div className="text-[8.5px] leading-tight text-zinc-800 font-medium text-left">
+                                          {renderEditableLabel("termsReceivedText", "text-[8.5px] leading-tight text-zinc-800 font-medium text-left block w-full")}
+                                          <br />
+                                          {renderEditableLabel("termsReceivedPresence", "text-[8.5px] leading-tight text-zinc-800 font-medium text-left block w-full")}
+                                        </div>
+                                        <div className="w-1/2">
+                                          <div className="moa-signature-block w-full">
+                                            <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                            {renderEditableLabel("sellerSignature", "moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]", "-terms-received")}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Middle Cut Guide */}
+                                <MoaCutGuide />
+
+                                {/* Bottom Copy (Customer terms) */}
+                                <div className="moa-slip-half">
+                                  <div className="moa-terms-copy relative moa-watermark">
+                                    <div className="moa-terms-body space-y-1.5">
+                                      <h2 className="text-center font-bold uppercase text-[11px] text-zinc-800 leading-none">
+                                        {topLabels.termsHeading}
+                                      </h2>
+
+                                      <div
+                                        className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-700 text-justify"
+                                      >
+                                        {topLabels.termsPreamble}
+                                      </div>
+
+                                      <div className="whitespace-pre-wrap text-[9px] leading-relaxed text-zinc-800 text-justify py-1">
+                                        {resolvedTermsText}
+                                      </div>
+
+                                      <p className="italic font-bold text-zinc-800 text-[9px] text-center">
+                                        {topLabels.termsDeclaration}
+                                      </p>
+
+                                    </div>
+                                    <div className="moa-terms-footer">
+                                      {/* Signatures block */}
+                                      <div className="moa-terms-signatures grid grid-cols-[1.2fr_1.5fr] gap-8 pt-2 items-start">
+                                        <div className="moa-signature-block text-center">
+                                          <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                          <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.sellerSignature}</span>
+                                        </div>
+
+                                        <div className="text-center flex flex-col items-center space-y-1.5">
+                                          <span className="font-bold uppercase text-[8.5px] text-zinc-950 block tracking-wide">{topLabels.authorizedText}</span>
+                                          <span className="text-[7.5px] text-zinc-500 block leading-tight">{topLabels.authorizedSubtext}</span>
+
+                                          <div className="moa-signature-block w-full">
+                                            <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                            <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.representativeSignature}</span>
+                                          </div>
+
+                                          <div className="moa-signature-block w-full">
+                                            <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                            <span className="moa-signature-label uppercase font-bold text-zinc-500">{topLabels.sellerSignature}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Received Section */}
+                                      <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
+                                        <p className="text-[8.5px] leading-tight text-zinc-800 font-medium text-left">
+                                          {topLabels.termsReceivedText}<br />
+                                          {topLabels.termsReceivedPresence}
+                                        </p>
+                                        <div className="w-1/2">
+                                          <div className="moa-signature-block w-full">
+                                            <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
+                                            <span className="moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]">{topLabels.sellerSignature}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-
-                          {/* Received Section */}
-                          <div className="moa-terms-received pt-2 space-y-2 border-t border-zinc-100">
-                            <p className="text-[8.5px] leading-tight text-zinc-800 font-medium text-left">
-                              {topLabels.termsReceivedText}<br />
-                              {topLabels.termsReceivedPresence}
-                            </p>
-                            <div className="w-1/2">
-                              <div className="moa-signature-block w-full">
-                                <div className={MOA_SIGNATURE_LINE_CLASS} aria-hidden="true" />
-                                <span className="moa-signature-label uppercase font-bold text-zinc-500 text-center block w-full text-[6.5px]">{topLabels.sellerSignature}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        </div>
-                        </div>
-                        </div>
-                      </div>
-                      </MoaPaperScale>
+                          </MoaPaperScale>
+                        </>
+                      )}
                     </div>
                     {isMoaEditMode && (
-                      <aside className="w-full min-w-0 xl:w-80 flex-none space-y-4">
-                        <div className="space-y-4 rounded-xl border border-border-main bg-surface p-4 shadow-sm">
-                          <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
-                            MOA Field Config
-                          </h3>
-                          <p className="mt-1 text-[9px] leading-4 text-zinc-500">
-                            Configure fields for {selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "all categories" : selectedMoaCategory}.
-                          </p>
-                        </div>
-
-                        <div className="space-y-2 rounded-md border border-zinc-200 p-2">
-                          <p className="text-[10px] font-bold uppercase text-zinc-700">Financial Details</p>
-                          <div className="space-y-1">
-                            {FINANCIAL_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
-                                <input
-                                  type="checkbox"
-                                  checked={financialFields.includes(field.key)}
-                                  onChange={() =>
-                                    toggleMoaSectionField(field.key, financialFields, setFinancialFields)
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-emerald-700"
-                                />
-                                {topLabels[field.key]}
-                              </label>
-                            ))}
-                          </div>
-                          {customFinancialFields.map((field) => (
-                            <div key={field.id} className="flex items-center gap-1">
-                              <input
-                                value={field.label}
-                                onChange={(event) =>
-                                  setCustomFinancialFields((fields) =>
-                                    fields.map((currentField) =>
-                                      currentField.id === field.id
-                                        ? { ...currentField, label: event.target.value }
-                                        : currentField,
-                                    ),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomFinancialFields((fields) =>
-                                    fields.filter((currentField) => currentField.id !== field.id),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                aria-label={`Remove ${field.label}`}
-                              >
-                                X
-                              </button>
-                            </div>
-                          ))}
-                          <div className="flex gap-1">
-                            <input
-                              value={newFinancialField}
-                              onChange={(event) => setNewFinancialField(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  addCustomMoaField(
-                                    newFinancialField,
-                                    setNewFinancialField,
-                                    setCustomFinancialFields,
-                                  );
-                                }
-                              }}
-                              disabled={!canEditMoa}
-                              placeholder="New financial field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
+                      <aside className="w-full min-w-0 xl:sticky xl:top-4 xl:w-80 xl:max-h-[calc(100vh-5rem)] flex-none xl:overflow-y-auto">
+                        <MoaDesignToolsPanel
+                          enabled={canEditMoa}
+                          pageSize={moaPageSizeId}
+                          onPageSizeChange={handleMoaPageSizeChange}
+                          fontFamily={moaDesignFontFamily}
+                          fontSize={moaDesignFontSize}
+                          textAlign={moaDesignTextAlign}
+                          fontWeight={moaDesignFontWeight}
+                          fontStyle={moaDesignFontStyle}
+                          textDecoration={moaDesignTextDecoration}
+                          color={moaDesignColor}
+                          onFontFamilyChange={handleDesignFontFamilyChange}
+                          onFontSizeChange={handleDesignFontSizeChange}
+                          onTextStyleChange={applyDesignStylePatch}
+                          selectedId={selectedDesignId}
+                          onPaletteDragStateChange={setIsPaletteDragging}
+                          onAddHeaderField={handleAddHeaderField}
+                          onDeleteSelected={() => {
+                            if (!selectedDesignId) return;
+                            updateMoaDesignElements(
+                              moaDesignElements.filter((el) => el.id !== selectedDesignId),
+                            );
+                            setSelectedDesignId(null);
+                          }}
+                          onClearAll={() => {
+                            updateMoaDesignElements([]);
+                            setSelectedDesignId(null);
+                          }}
+                          fieldConfig={
+                            <MoaFieldConfigTab
+                              enabled={canEditMoa}
+                              categoryLabel={
+                                selectedMoaCategory === DEFAULT_MOA_CATEGORY
+                                  ? "all categories"
+                                  : selectedMoaCategory
+                              }
+                              groupSuffix={selectedMoaCategory}
+                              financialOptions={FINANCIAL_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              unitOptions={UNIT_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              financialFields={financialFields}
+                              unitFields={unitFields}
+                              customFinancialFields={customFinancialFields}
+                              customUnitFields={customUnitFields}
+                              newFinancialField={newFinancialField}
+                              newUnitField={newUnitField}
+                              onReorderFinancial={reorderFinancialFields}
+                              onReorderUnit={reorderUnitFields}
+                              onReorderCustomFinancial={reorderCustomFinancialFields}
+                              onReorderCustomUnit={reorderCustomUnitFields}
+                              onToggleFinancial={(key) =>
+                                toggleMoaSectionField(
+                                  key as FinancialFieldKey,
+                                  financialFields,
+                                  setFinancialFields,
+                                )
+                              }
+                              onToggleUnit={(key) =>
+                                toggleMoaSectionField(
+                                  key as UnitFieldKey,
+                                  unitFields,
+                                  setUnitFields,
+                                )
+                              }
+                              onCustomFinancialLabelChange={(id, label) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onCustomUnitLabelChange={(id, label) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onRemoveCustomFinancial={(id) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onRemoveCustomUnit={(id) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onNewFinancialChange={setNewFinancialField}
+                              onNewUnitChange={setNewUnitField}
+                              onAddCustomFinancial={() =>
                                 addCustomMoaField(
                                   newFinancialField,
                                   setNewFinancialField,
                                   setCustomFinancialFields,
                                 )
                               }
-                              disabled={!canEditMoa || !newFinancialField.trim()}
-                              className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 rounded-md border border-zinc-200 p-2">
-                          <p className="text-[10px] font-bold uppercase text-zinc-700">Unit Description</p>
-                          <div className="space-y-1">
-                            {UNIT_FIELD_OPTIONS.map((field) => (
-                              <label key={field.key} className="flex items-center gap-2 rounded px-1.5 py-1 text-[10px] font-semibold hover:bg-emerald-50">
-                                <input
-                                  type="checkbox"
-                                  checked={unitFields.includes(field.key)}
-                                  onChange={() =>
-                                    toggleMoaSectionField(field.key, unitFields, setUnitFields)
-                                  }
-                                  disabled={!canEditMoa}
-                                  className="h-3.5 w-3.5 accent-emerald-700"
-                                />
-                                {topLabels[field.key]}
-                              </label>
-                            ))}
-                          </div>
-                          {customUnitFields.map((field) => (
-                            <div key={field.id} className="flex items-center gap-1">
-                              <input
-                                value={field.label}
-                                onChange={(event) =>
-                                  setCustomUnitFields((fields) =>
-                                    fields.map((currentField) =>
-                                      currentField.id === field.id
-                                        ? { ...currentField, label: event.target.value }
-                                        : currentField,
-                                    ),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] outline-none focus:border-emerald-500"
-                              />
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCustomUnitFields((fields) =>
-                                    fields.filter((currentField) => currentField.id !== field.id),
-                                  )
-                                }
-                                disabled={!canEditMoa}
-                                className="rounded px-2 py-1 text-[10px] font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                                aria-label={`Remove ${field.label}`}
-                              >
-                                X
-                              </button>
-                            </div>
-                          ))}
-                          <div className="flex gap-1">
-                            <input
-                              value={newUnitField}
-                              onChange={(event) => setNewUnitField(event.target.value)}
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  addCustomMoaField(
-                                    newUnitField,
-                                    setNewUnitField,
-                                    setCustomUnitFields,
-                                  );
-                                }
-                              }}
-                              disabled={!canEditMoa}
-                              placeholder="New unit field"
-                              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500"
-                            />
-                            <button
-                              type="button"
-                              onClick={() =>
+                              onAddCustomUnit={() =>
                                 addCustomMoaField(
                                   newUnitField,
                                   setNewUnitField,
                                   setCustomUnitFields,
                                 )
                               }
-                              disabled={!canEditMoa || !newUnitField.trim()}
-                              className="rounded bg-emerald-700 px-2.5 py-1.5 text-[10px] font-bold text-white disabled:opacity-50"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
+                              onPaletteDragStateChange={setIsPaletteDragging}
+                            />
+                          }
+                        />
                       </aside>
                     )}
                   </div>
@@ -1930,7 +2160,7 @@ export default function SettingsPage() {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    This template matches the printed MOA layout. Enable Edit Mode and unlock template to modify any section.
+                    Design tools (Canvas / Layout / Elements / Text / Fields tabs) are frontend-only for now.
                   </p>
 
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
@@ -1958,7 +2188,7 @@ export default function SettingsPage() {
                 </div>
 
                 {(moaSavedAt || sendStatus === "sent") && (
-                  <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2 text-[10px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                  <div className="rounded-md border border-brand-green/20 bg-brand-green/10 px-3 py-2 text-[10px] text-brand-green">
                     {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
                     {sendStatus === "sent" && <span>MOA template sent to all branches.</span>}
                   </div>
@@ -1992,19 +2222,19 @@ export default function SettingsPage() {
               <p className="mt-1 text-[10px] text-zinc-700 dark:text-zinc-400">Super Admin Settings</p>
               <button
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="mt-3 w-full rounded-lg border border-emerald-100 bg-emerald-50 py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 dark:hover:bg-emerald-900"
+                className="mt-3 w-full rounded-lg border border-brand-green/20 bg-brand-green/10 py-2 text-[9px] font-bold uppercase tracking-wider text-brand-green transition-colors hover:bg-brand-green/20 dark:border-brand-green/30 dark:bg-brand-green/15"
               >
                 Change Avatar
               </button>
               {avatarToast && (
-                <p className="mt-2 text-[10px] font-medium text-emerald-800 dark:text-emerald-300">{avatarToast}</p>
+                <p className="mt-2 text-[10px] font-medium text-brand-green">{avatarToast}</p>
               )}
               <PasswordChangeRequestCard />
-              <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-left dark:border-emerald-900 dark:bg-emerald-950">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
+              <div className="mt-4 rounded-xl border border-brand-green/20 bg-brand-green/10 p-4 text-left dark:border-brand-green/30 dark:bg-brand-green/15">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-brand-green">
                   Security Restriction
                 </p>
-                <p className="mt-2 text-xs leading-5 text-emerald-950 dark:text-emerald-100">
+                <p className="mt-2 text-xs leading-5 text-brand-green">
                   System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
                 </p>
               </div>
@@ -2081,19 +2311,19 @@ export default function SettingsPage() {
         .moa-paper-effect .bg-zinc-50\/50 { background-color: #f9fafb !important; }
         .moa-paper-effect .text-zinc-500 { color: #71717a !important; }
         .moa-paper-effect .text-zinc-400 { color: #a1a1aa !important; }
-        .moa-paper-effect .text-emerald-900 { color: #064e3b !important; }
+        .moa-paper-effect .text-emerald-900 { color: var(--brand-green) !important; }
         .moa-paper-effect .border-zinc-100 { border-color: #f4f4f5 !important; }
         .moa-paper-effect .border-zinc-200 { border-color: #e4e4e7 !important; }
         .moa-paper-effect .border-zinc-300 { border-color: #d4d4d8 !important; }
         .moa-paper-effect .border-zinc-400 { border-color: #a1a1aa !important; }
-        .moa-paper-effect .bg-emerald-50 { background-color: #ecfdf5 !important; }
-        .moa-paper-effect .text-emerald-950 { color: #022c22 !important; }
-        .moa-paper-effect .text-emerald-800 { color: #065f46 !important; }
+        .moa-paper-effect .bg-emerald-50 { background-color: color-mix(in oklab, var(--brand-green) 8%, white) !important; }
+        .moa-paper-effect .text-emerald-950 { color: var(--brand-green) !important; }
+        .moa-paper-effect .text-emerald-800 { color: var(--brand-green) !important; }
         .moa-paper-effect .bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
         .moa-paper-effect .bg-white\/50 { background-color: rgba(255, 255, 255, 0.5) !important; }
         .moa-paper-effect .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
         .moa-paper-effect input { color: #18181b !important; }
-        .moa-paper-effect .border-emerald-900\/40 { border-color: rgba(6, 78, 59, 0.4) !important; }
+        .moa-paper-effect .border-emerald-900\/40 { border-color: color-mix(in oklab, var(--brand-green) 40%, transparent) !important; }
         .moa-paper-effect .moa-signature-line {
           display: block !important;
           min-height: 22px !important;
@@ -2104,7 +2334,7 @@ export default function SettingsPage() {
         ${MOA_PRINT_SCREEN_CSS}
       `}</style>
 
-      
+
 
       <AvatarPickerModal
         isOpen={isAvatarModalOpen}

@@ -28,7 +28,7 @@ export function ExpirationTabs({ activeTab, onTabChange, counts }: ExpirationTab
             onClick={() => onTabChange(tab.key)}
             className={`rounded-md px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:py-2 sm:text-sm ${
               tab.key === activeTab
-                ? "bg-emerald-700 text-amber-400 shadow-sm"
+                ? "bg-pawn-sidebar text-pawn-gold shadow-sm"
                 : "text-zinc-600 dark:text-text-secondary hover:bg-zinc-200 dark:hover:bg-surface-hover"
             }`}
           >

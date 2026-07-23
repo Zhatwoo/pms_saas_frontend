@@ -37,7 +37,7 @@ const closeIcon = (
 );
 
 const inputClass =
-  "h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-700";
+  "h-11 w-full rounded-md border border-input-border bg-input-bg px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green";
 
 interface EditCustomerModalProps {
   customer: CustomerDetail;
@@ -100,16 +100,16 @@ export function EditCustomerModal({ customer, onClose, onSave }: EditCustomerMod
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-emerald-900 px-6 py-5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
+        <div className="bg-brand-green px-6 py-5">
+          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pawn-gold">
             Customer Management
           </p>
           <div className="mt-2 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">Edit Customer Profile</h2>
-              <p className="mt-1 text-sm text-emerald-50/80">
+              <p className="mt-1 text-sm text-white/80">
                 Update the customer details for{" "}
-                <span className="font-bold text-amber-300">{customer.name}</span>.
+                <span className="font-bold text-pawn-gold">{customer.name}</span>.
               </p>
             </div>
             <button
@@ -221,7 +221,7 @@ export function EditCustomerModal({ customer, onClose, onSave }: EditCustomerMod
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col items-center">
-                <div className="flex h-36 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border-main bg-surface-secondary transition-colors hover:border-emerald-400 hover:bg-emerald-surface/30">
+                <div className="flex h-36 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border-main bg-surface-secondary transition-colors hover:border-brand-green/50 hover:bg-brand-green/5">
                   {cameraIcon}
                 </div>
                 <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
@@ -229,7 +229,7 @@ export function EditCustomerModal({ customer, onClose, onSave }: EditCustomerMod
                 </p>
               </div>
               <div className="flex flex-col items-center">
-                <div className="flex h-36 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border-main bg-surface-secondary transition-colors hover:border-emerald-400 hover:bg-emerald-surface/30">
+                <div className="flex h-36 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-border-main bg-surface-secondary transition-colors hover:border-brand-green/50 hover:bg-brand-green/5">
                   {cameraIcon}
                 </div>
                 <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-text-tertiary">
@@ -239,7 +239,7 @@ export function EditCustomerModal({ customer, onClose, onSave }: EditCustomerMod
             </div>
           </div>
 
-          <div className="rounded-xl border border-emerald-border bg-emerald-surface px-4 py-3 text-sm text-emerald-text">
+          <div className="rounded-xl border border-brand-green/20 bg-brand-green/5 px-4 py-3 text-sm text-brand-green">
             Update the profile details and save the changes.
           </div>
 
@@ -253,7 +253,7 @@ export function EditCustomerModal({ customer, onClose, onSave }: EditCustomerMod
             </button>
             <button
               type="submit"
-              className="rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+              className="rounded-md bg-brand-green px-4 py-2.5 text-sm font-bold text-white transition-colors hover:brightness-110"
             >
               Save Changes
             </button>

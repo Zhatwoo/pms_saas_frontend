@@ -34,7 +34,7 @@ export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-700" />
+            <span className="h-2.5 w-2.5 rounded-full bg-brand-green" />
             <span className="text-xs text-text-secondary">Contracts</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -82,13 +82,13 @@ export function ContractTrendsChart({ data = [] }: ContractTrendsChartProps) {
             <Bar
               dataKey="contracts"
               name="Contracts"
-              fill="#1a472a"
+              fill="var(--brand-green)"
               radius={[4, 4, 0, 0]}
             />
             <Bar
               dataKey="redeemed"
               name="Redeemed"
-              fill="#d4a843"
+              fill="var(--pawn-gold)"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

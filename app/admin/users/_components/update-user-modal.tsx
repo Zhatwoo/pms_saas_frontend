@@ -106,14 +106,14 @@ export function UpdateUserModal({
         className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="bg-emerald-900 px-6 py-5">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">
+        <div className="bg-pawn-sidebar px-6 py-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-pawn-gold">
             Admin User Management
           </p>
           <div className="mt-2 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-white">Update User Profile</h2>
-              <p className="mt-1 text-base text-emerald-50/80">
+              <p className="mt-1 text-base text-white/80">
                 Update account information for <span className="font-bold text-amber-300">{user.email}</span>.
               </p>
             </div>
@@ -154,7 +154,7 @@ export function UpdateUserModal({
                 value={form.fullName}
                 onChange={(event) => updateField("fullName", event.target.value)}
                 placeholder="John Doe"
-                className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
+                className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-brand-green/50 focus:ring-4 focus:ring-brand-green/5"
               />
             </div>
 
@@ -178,7 +178,7 @@ export function UpdateUserModal({
                 <select
                   value={form.role}
                   onChange={(event) => updateField("role", event.target.value as UserRole)}
-                  className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
+                  className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-brand-green/50 focus:ring-4 focus:ring-brand-green/5"
                 >
                   {availableRoles.map((role) => (
                     <option key={role} value={role}>
@@ -229,7 +229,7 @@ export function UpdateUserModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-emerald-700 px-5 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-800"
+              className="rounded-md bg-brand-green px-5 py-3 text-base font-bold text-white transition-colors hover:brightness-110"
             >
               {isSubmitting ? "Updating..." : "Update Account"}
             </button>

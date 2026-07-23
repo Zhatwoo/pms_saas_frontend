@@ -545,7 +545,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
         {/* ═══════════════════════════════════════════════════════
             BRANCH OVERVIEW HEADER (Always visible)
            ═══════════════════════════════════════════════════════ */}
-        <div className="rounded-xl border border-border-main bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 p-5 md:p-6 shadow-lg">
+        <div className="rounded-xl border border-border-main bg-gradient-to-br from-pawn-sidebar via-pawn-sidebar-light to-pawn-sidebar p-5 md:p-6 shadow-lg">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
@@ -558,7 +558,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                     label={branch.status}
                     variant={statusVariantMap[branch.status] || "black"}
                   />
-                  <span className="flex items-center gap-1.5 text-sm text-emerald-300">
+                  <span className="flex items-center gap-1.5 text-sm text-pawn-gold-light">
                     <span className="font-mono font-bold">ID: {branch.branchId}</span>
                   </span>
                 </div>
@@ -569,23 +569,23 @@ export function BranchProfile({ branch }: BranchProfileProps) {
           {/* Meta row */}
           <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
             <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
-              <span className="text-emerald-400"><IconMapPin /></span>
+              <span className="text-pawn-gold-light"><IconMapPin /></span>
               <div>
-                <p className="text-xs font-medium uppercase text-emerald-400/70">Location</p>
+                <p className="text-xs font-medium uppercase text-pawn-gold-light/70">Location</p>
                 <p className="text-sm font-semibold text-white">{branch.location}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
-              <span className="text-emerald-400"><IconPhone /></span>
+              <span className="text-pawn-gold-light"><IconPhone /></span>
               <div>
-                <p className="text-xs font-medium uppercase text-emerald-400/70">Contact</p>
+                <p className="text-xs font-medium uppercase text-pawn-gold-light/70">Contact</p>
                 <p className="text-sm font-semibold text-white">{branch.contactNumber || "—"}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
-              <span className="text-emerald-400"><IconCalendar /></span>
+              <span className="text-pawn-gold-light"><IconCalendar /></span>
               <div>
-                <p className="text-xs font-medium uppercase text-emerald-400/70">Created</p>
+                <p className="text-xs font-medium uppercase text-pawn-gold-light/70">Created</p>
                 <p className="text-sm font-semibold text-white">
                   {branch.createdAt
                     ? new Date(branch.createdAt).toLocaleDateString("en-US", {
@@ -598,16 +598,16 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
-              <span className="text-emerald-400"><IconClock /></span>
+              <span className="text-pawn-gold-light"><IconClock /></span>
               <div>
-                <p className="text-xs font-medium uppercase text-emerald-400/70">Last Activity</p>
+                <p className="text-xs font-medium uppercase text-pawn-gold-light/70">Last Activity</p>
                 <p className="text-sm font-semibold text-white">10 mins ago</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-lg bg-white/5 px-3.5 py-3 md:px-4 md:py-3 backdrop-blur-sm">
-              <span className="text-emerald-400"><IconUsers /></span>
+              <span className="text-pawn-gold-light"><IconUsers /></span>
               <div>
-                <p className="text-xs font-medium uppercase text-emerald-400/70">Staff</p>
+                <p className="text-xs font-medium uppercase text-pawn-gold-light/70">Staff</p>
                 <p className="text-sm font-semibold text-white">{managers.length + employees.length} members</p>
               </div>
             </div>
@@ -826,7 +826,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                         <div className="flex items-center gap-2 truncate">
                           <div
                             className={`h-1.5 w-1.5 rounded-full ${
-                              act.action === "Added" ? "bg-emerald-500" : "bg-blue-500"
+                              act.action === "Added" ? "bg-brand-green" : "bg-blue-500"
                             }`}
                           />
                           <span className="truncate text-sm text-text-secondary">
@@ -899,7 +899,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
                             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-bold ${
                               txn.type === "Pawn"
                                 ? "bg-amber-500/10 text-amber-500"
-                                : "bg-emerald-500/10 text-emerald-500"
+                                : "bg-emerald-surface text-emerald-text"
                             }`}
                           >
                             {txn.type.charAt(0)}

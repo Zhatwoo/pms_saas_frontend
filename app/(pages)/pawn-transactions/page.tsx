@@ -277,7 +277,7 @@ function TransactionsCalendar({
 
   return (
     <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
-      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-950 to-emerald-900 px-4 py-4 sm:px-5">
+      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-pawn-sidebar to-pawn-sidebar-light px-4 py-4 sm:px-5">
         <button
           type="button"
           onClick={() => calendarMonth === 0 ? onChangeMonth(calendarYear - 1, 11) : onChangeMonth(calendarYear, calendarMonth - 1)}
@@ -288,7 +288,7 @@ function TransactionsCalendar({
         </button>
         <div className="min-w-[140px] text-center">
           <p className="text-lg font-bold leading-tight text-white">{MONTH_NAMES[calendarMonth]}</p>
-          <p className="text-xs font-semibold text-emerald-300">{calendarYear}</p>
+          <p className="text-xs font-semibold text-pawn-gold">{calendarYear}</p>
         </div>
         <button
           type="button"
@@ -334,15 +334,15 @@ function TransactionsCalendar({
                 if (isFuture) return;
                 onSelectDate(dateStr);
               }}
-              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-emerald-50/10"} ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle ${isFuture ? "cursor-not-allowed opacity-40" : "hover:bg-brand-green/10"} ${isSelected ? "ring-2 ring-inset ring-brand-green bg-brand-green/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
-              <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
+              <span className={`text-xs font-bold leading-none ${isSelected ? "text-brand-green" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
               </span>
               {count > 0 && (
                 <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center gap-1">
-                  <div className="h-1 flex-1 rounded-full bg-emerald-500/60" />
-                  <span className="text-[9px] font-black leading-none text-emerald-400">{count}</span>
+                  <div className="h-1 flex-1 rounded-full bg-brand-green/60" />
+                  <span className="text-[9px] font-black leading-none text-brand-green">{count}</span>
                 </div>
               )}
             </button>
@@ -352,7 +352,7 @@ function TransactionsCalendar({
 
       <div className="flex items-center gap-4 border-t border-zinc-200/80 bg-surface-secondary/60 px-4 py-2.5 dark:border-border-subtle">
         <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
+          <div className="h-2.5 w-2.5 rounded-sm bg-brand-green/50" />
           <span className="text-[10px] font-bold uppercase text-text-muted">Has transactions</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -726,7 +726,7 @@ export default function PawnTransactionsPage() {
           body * { visibility: hidden; }
           .printable-area, .printable-area * { visibility: visible; }
           .printable-area { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
-          .header-print { background: #064e3b !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important; padding: 40px 20px !important; text-align: center !important; margin-bottom: 30px !important; border-bottom: 8px solid #f59e0b !important; }
+          .header-print { background: var(--brand-green) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: white !important; padding: 40px 20px !important; text-align: center !important; margin-bottom: 30px !important; border-bottom: 8px solid var(--pawn-gold) !important; }
           .header-print h1 { margin: 0 !important; font-size: 32px !important; font-weight: 900 !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: white !important; }
           .header-print p { margin: 10px 0 0 !important; font-size: 14px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 4px !important; opacity: 0.9 !important; color: white !important; }
           .print-hide { display: none !important; }
@@ -740,36 +740,36 @@ export default function PawnTransactionsPage() {
         </div>
         
         <div className="mb-8">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-800 mb-3 border-b-2 border-emerald-800 pb-1">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-brand-green mb-3 border-b-2 border-brand-green pb-1">
             Executive Summary
           </h2>
-          <table className="w-full border-collapse border border-emerald-800/20 text-sm">
+          <table className="w-full border-collapse border border-brand-green/20 text-sm">
             <thead>
-              <tr className="bg-emerald-50">
-                <th className="border border-emerald-800/20 p-2 text-left text-emerald-900">Metric</th>
-                <th className="border border-emerald-800/20 p-2 text-right text-emerald-900">Value</th>
+              <tr className="bg-brand-green/10">
+                <th className="border border-brand-green/20 p-2 text-left text-brand-green">Metric</th>
+                <th className="border border-brand-green/20 p-2 text-right text-brand-green">Value</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td className="border border-emerald-800/20 p-2">Pawned Today</td>
-                <td className="border border-emerald-800/20 p-2 text-right font-bold">{stats.pawnedToday}</td>
+                <td className="border border-brand-green/20 p-2">Pawned Today</td>
+                <td className="border border-brand-green/20 p-2 text-right font-bold">{stats.pawnedToday}</td>
               </tr>
               <tr>
-                <td className="border border-emerald-800/20 p-2">Buy Back</td>
-                <td className="border border-emerald-800/20 p-2 text-right font-bold">{stats.buyBack}</td>
+                <td className="border border-brand-green/20 p-2">Buy Back</td>
+                <td className="border border-brand-green/20 p-2 text-right font-bold">{stats.buyBack}</td>
               </tr>
               <tr>
-                <td className="border border-emerald-800/20 p-2">Renewed</td>
-                <td className="border border-emerald-800/20 p-2 text-right font-bold">{stats.renewed}</td>
+                <td className="border border-brand-green/20 p-2">Renewed</td>
+                <td className="border border-brand-green/20 p-2 text-right font-bold">{stats.renewed}</td>
               </tr>
               <tr>
-                <td className="border border-emerald-800/20 p-2">Sold Item</td>
-                <td className="border border-emerald-800/20 p-2 text-right font-bold">{stats.soldItem}</td>
+                <td className="border border-brand-green/20 p-2">Sold Item</td>
+                <td className="border border-brand-green/20 p-2 text-right font-bold">{stats.soldItem}</td>
               </tr>
-              <tr className="bg-emerald-50/50">
-                <td className="border border-emerald-800/20 p-2 font-bold text-emerald-900">Live Total Balance</td>
-                <td className="border border-emerald-800/20 p-2 text-right font-bold text-emerald-900">
+              <tr className="bg-brand-green/5">
+                <td className="border border-brand-green/20 p-2 font-bold text-brand-green">Live Total Balance</td>
+                <td className="border border-brand-green/20 p-2 text-right font-bold text-brand-green">
                   {formatPeso(stats.endingBalance)}
                 </td>
               </tr>
@@ -778,43 +778,43 @@ export default function PawnTransactionsPage() {
         </div>
 
         <div className="mt-8">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-800 mb-3 border-b-2 border-emerald-800 pb-1">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-brand-green mb-3 border-b-2 border-brand-green pb-1">
             Detailed Transactions
           </h2>
-          <table className="w-full border-collapse border border-emerald-800/20 text-[10px]">
+          <table className="w-full border-collapse border border-brand-green/20 text-[10px]">
             <thead>
-              <tr className="bg-emerald-50">
-                <th className="border border-emerald-800/10 p-1 text-left">Txn #</th>
-                <th className="border border-emerald-800/10 p-1 text-left">Branch</th>
-                <th className="border border-emerald-800/10 p-1 text-left">Purpose</th>
-                <th className="border border-emerald-800/10 p-1 text-left">Customer</th>
-                <th className="border border-emerald-800/10 p-1 text-right">Cash In</th>
-                <th className="border border-emerald-800/10 p-1 text-right">Cash Out</th>
-                <th className="border border-emerald-800/10 p-1 text-right">Pawn</th>
-                <th className="border border-emerald-800/10 p-1 text-right">Storage</th>
-                <th className="border border-emerald-800/10 p-1 text-left">Unit</th>
+              <tr className="bg-brand-green/10">
+                <th className="border border-brand-green/10 p-1 text-left">Txn #</th>
+                <th className="border border-brand-green/10 p-1 text-left">Branch</th>
+                <th className="border border-brand-green/10 p-1 text-left">Purpose</th>
+                <th className="border border-brand-green/10 p-1 text-left">Customer</th>
+                <th className="border border-brand-green/10 p-1 text-right">Cash In</th>
+                <th className="border border-brand-green/10 p-1 text-right">Cash Out</th>
+                <th className="border border-brand-green/10 p-1 text-right">Pawn</th>
+                <th className="border border-brand-green/10 p-1 text-right">Storage</th>
+                <th className="border border-brand-green/10 p-1 text-left">Unit</th>
               </tr>
             </thead>
             <tbody>
               {filteredTransactions.map((tx) => (
                 <tr key={tx.id}>
-                  <td className="border border-emerald-800/10 p-1">{tx.transactionNo}</td>
-                  <td className="border border-emerald-800/10 p-1">{tx.branch}</td>
-                  <td className="border border-emerald-800/10 p-1 font-bold">{tx.purpose}</td>
-                  <td className="border border-emerald-800/10 p-1">{tx.customerName || "Walk-in"}</td>
-                  <td className="border border-emerald-800/10 p-1 text-right">
+                  <td className="border border-brand-green/10 p-1">{tx.transactionNo}</td>
+                  <td className="border border-brand-green/10 p-1">{tx.branch}</td>
+                  <td className="border border-brand-green/10 p-1 font-bold">{tx.purpose}</td>
+                  <td className="border border-brand-green/10 p-1">{tx.customerName || "Walk-in"}</td>
+                  <td className="border border-brand-green/10 p-1 text-right">
                     {tx.cashIn !== "0" ? formatPeso(Number(tx.cashIn)) : "-"}
                   </td>
-                  <td className="border border-emerald-800/10 p-1 text-right">
+                  <td className="border border-brand-green/10 p-1 text-right">
                     {tx.cashOut !== "0" ? formatPeso(Number(tx.cashOut)) : "-"}
                   </td>
-                  <td className="border border-emerald-800/10 p-1 text-right">
+                  <td className="border border-brand-green/10 p-1 text-right">
                     {tx.pawn !== "0" ? formatPeso(Number(tx.pawn)) : "-"}
                   </td>
-                  <td className="border border-emerald-800/10 p-1 text-right">
+                  <td className="border border-brand-green/10 p-1 text-right">
                     {tx.storage !== "0" ? formatPeso(Number(tx.storage)) : "-"}
                   </td>
-                  <td className="border border-emerald-800/10 p-1">{tx.unitCode || tx.unit || "-"}</td>
+                  <td className="border border-brand-green/10 p-1">{tx.unitCode || tx.unit || "-"}</td>
                 </tr>
               ))}
             </tbody>

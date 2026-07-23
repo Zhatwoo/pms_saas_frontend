@@ -182,7 +182,7 @@ export default function EmployeeItemsForSalePage() {
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
       <div>
-        <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
+        <p className="text-sm text-brand-green/60 dark:text-zinc-400">
           Inventory of expired pawn items and direct purchases currently available for retail sale.
         </p>
       </div>
@@ -202,7 +202,7 @@ export default function EmployeeItemsForSalePage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
-              className="h-10 w-full sm:w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+              className="h-10 w-full sm:w-48 rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
             />
           </div>
         </div>
@@ -210,19 +210,19 @@ export default function EmployeeItemsForSalePage() {
         <div className="flex w-full overflow-hidden rounded-md border border-border-main bg-surface-secondary dark:border-slate-700 dark:bg-slate-900 sm:w-auto sm:self-end">
           <button
             onClick={() => setSaleViewMode("current")}
-            className={`flex-1 sm:flex-none ${toolbarTabClass} ${saleViewMode === "current" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}
+            className={`flex-1 sm:flex-none ${toolbarTabClass} ${saleViewMode === "current" ? "bg-brand-green text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}
           >
             All Records
           </button>
           <button
             onClick={() => setSaleViewMode("calendar")}
-            className={`flex-1 sm:flex-none ${toolbarTabClass} ${saleViewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}
+            className={`flex-1 sm:flex-none ${toolbarTabClass} ${saleViewMode === "calendar" ? "bg-brand-green text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}
           >
             Calendar
           </button>
           <button
             onClick={() => setSaleViewMode("history")}
-            className={`flex-1 sm:flex-none ${toolbarTabClass} ${saleViewMode === "history" ? "bg-emerald-700 text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}
+            className={`flex-1 sm:flex-none ${toolbarTabClass} ${saleViewMode === "history" ? "bg-brand-green text-white shadow-sm" : "bg-transparent text-text-secondary hover:bg-surface-hover dark:text-slate-300 dark:hover:bg-slate-800"}`}
           >
             History
           </button>
@@ -288,10 +288,10 @@ export default function EmployeeItemsForSalePage() {
                   <div key={item.id || item.itemId} className="flex flex-col gap-2 bg-surface-secondary px-4 py-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{item.itemId}</p>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-brand-green">{item.itemId}</p>
                         <button
                           onClick={() => setViewingItem(item)}
-                          className="mt-0.5 text-sm font-bold text-text-primary hover:text-emerald-700 hover:underline transition-colors text-left"
+                          className="mt-0.5 text-sm font-bold text-text-primary hover:text-brand-green hover:underline transition-colors text-left"
                         >
                           {item.itemName}
                         </button>
@@ -314,7 +314,7 @@ export default function EmployeeItemsForSalePage() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
+                <tr className="bg-brand-green text-pawn-gold">
                   {["ID", "Item Name", "Category", "Date Sold", "Price", "Status"].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
@@ -336,9 +336,9 @@ export default function EmployeeItemsForSalePage() {
                 ) : (
                   calendarDateItems.map((item) => (
                     <tr key={item.id || item.itemId} className="border-t border-border-subtle bg-surface-secondary transition-colors hover:bg-emerald-surface/60">
-                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold text-emerald-700 dark:text-emerald-400">{item.itemId}</td>
+                      <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-xs font-bold text-brand-green">{item.itemId}</td>
                       <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3 text-sm font-medium text-text-secondary">
-                        <button onClick={() => setViewingItem(item)} className="text-text-primary dark:text-zinc-400 transition-colors hover:underline hover:text-emerald-700">
+                        <button onClick={() => setViewingItem(item)} className="text-text-primary dark:text-zinc-400 transition-colors hover:underline hover:text-brand-green">
                           {item.itemName}
                         </button>
                       </td>
@@ -371,10 +371,10 @@ export default function EmployeeItemsForSalePage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{item.itemId}</p>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-brand-green">{item.itemId}</p>
                         <button
                           onClick={() => setViewingItem(item)}
-                          className="mt-0.5 text-sm font-bold text-text-primary hover:text-emerald-700 hover:underline transition-colors text-left"
+                          className="mt-0.5 text-sm font-bold text-text-primary hover:text-brand-green hover:underline transition-colors text-left"
                         >
                           {item.itemName}
                         </button>
@@ -390,7 +390,7 @@ export default function EmployeeItemsForSalePage() {
                       {item.status === "Available" ? (
                         <button
                           onClick={() => setSellingItem(item)}
-                          className="w-full rounded-xl bg-emerald-700 py-2 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95"
+                          className="w-full rounded-xl bg-brand-green py-2 text-[10px] font-black text-white shadow-lg shadow-brand-green/20 hover:opacity-90 transition-all active:scale-95"
                         >
                           Sell Item
                         </button>
@@ -408,7 +408,7 @@ export default function EmployeeItemsForSalePage() {
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-emerald-900 text-amber-400 dark:bg-emerald-950 dark:text-amber-300">
+                <tr className="bg-brand-green text-pawn-gold">
                   {["ID", "Item Name", "Category", "Date Expired", "Price", "Status", "Actions"].map((h) => (
                     <th key={h} className={`whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide ${h === "Price" ? "text-right" : "text-left"}`}>{h}</th>
                   ))}
@@ -428,11 +428,11 @@ export default function EmployeeItemsForSalePage() {
                 ) : (
                   saleItems.map((item, idx) => (
                     <tr key={item.id || item.itemId} className={`border-t border-border-subtle transition-colors ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary/40"} hover:bg-surface-hover`}>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">{item.itemId}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-brand-green">{item.itemId}</td>
                       <td className="whitespace-nowrap px-3 py-2">
                         <button
                           onClick={() => setViewingItem(item)}
-                          className="text-xs font-bold text-text-primary dark:text-zinc-400 hover:text-emerald-700 transition-colors hover:underline"
+                          className="text-xs font-bold text-text-primary dark:text-zinc-400 hover:text-brand-green transition-colors hover:underline"
                         >
                           {item.itemName}
                         </button>
@@ -443,7 +443,7 @@ export default function EmployeeItemsForSalePage() {
                       <td className="whitespace-nowrap px-3 py-2"><StatusBadge label={item.status} variant={statusVariant[item.status] || "green"} /></td>
                       <td className="px-3 py-2 whitespace-nowrap">
                         {item.status === "Available" ? (
-                          <button onClick={() => setSellingItem(item)} className="rounded-xl bg-emerald-700 px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-emerald-700/20 hover:bg-emerald-800 transition-all active:scale-95">
+                          <button onClick={() => setSellingItem(item)} className="rounded-xl bg-brand-green px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-brand-green/20 hover:opacity-90 transition-all active:scale-95">
                             Sell Item
                           </button>
                         ) : item.status === "Reserved" ? (
@@ -498,7 +498,7 @@ export default function EmployeeItemsForSalePage() {
       {viewingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md px-4" onClick={() => setViewingItem(null)}>
           <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-border-main bg-surface shadow-2xl scale-in-center" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-emerald-950 to-emerald-900 px-5 py-4 sm:px-8 sm:py-6">
+            <div className="bg-gradient-to-r from-brand-green to-brand-green/80 px-5 py-4 sm:px-8 sm:py-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="rounded-full bg-pawn-gold/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-pawn-gold">
                   Item #{viewingItem.itemId}
@@ -512,7 +512,7 @@ export default function EmployeeItemsForSalePage() {
               <div className="grid grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Retail Price</p>
-                  <p className="text-lg sm:text-xl font-black text-emerald-400">&#8369;{viewingItem.price.toLocaleString()}</p>
+                  <p className="text-lg sm:text-xl font-black text-pawn-gold">&#8369;{viewingItem.price.toLocaleString()}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Date Expired</p>
@@ -533,7 +533,7 @@ export default function EmployeeItemsForSalePage() {
             <div className="border-t border-border-subtle px-5 py-4 sm:px-8 flex justify-end">
               <button
                 onClick={() => setViewingItem(null)}
-                className="rounded-xl bg-emerald-700 px-6 sm:px-8 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-800 active:scale-95"
+                className="rounded-xl bg-brand-green px-6 sm:px-8 py-2.5 text-xs font-black text-white shadow-lg shadow-brand-green/20 transition-all hover:opacity-90 active:scale-95"
               >
                 Close View
               </button>

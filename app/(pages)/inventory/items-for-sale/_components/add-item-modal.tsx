@@ -149,7 +149,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 text-text-primary dark:text-text-primary">
       <div className="fixed inset-0 bg-slate-950/65 backdrop-blur-sm" onClick={onClose} />
       <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-border-main bg-surface shadow-2xl transition-colors dark:border-white/10 dark:bg-zinc-950">
-        <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 px-6 py-4 flex items-center justify-between shrink-0">
+        <div className="bg-gradient-to-r from-brand-green to-brand-green/90 px-6 py-4 flex items-center justify-between shrink-0">
           <h2 className="text-lg font-black text-white">Add Item For Sale</h2>
           <button onClick={onClose} className="text-white/60 hover:text-white transition-colors">
              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -159,11 +159,11 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 text-text-primary">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase text-emerald-700 tracking-wider dark:text-emerald-400">Item Details</h3>
-              
+              <h3 className="text-xs font-black uppercase text-brand-green tracking-wider">Item Details</h3>
+
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase text-text-muted">Item Name</label>
-                <input required name="item_name" value={form.item_name} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100" />
+                <input required name="item_name" value={form.item_name} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100" />
               </div>
 
               <div className="space-y-1">
@@ -173,7 +173,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                   name="category" 
                   value={form.category} 
                   onChange={handleChange} 
-                  className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-emerald-500 cursor-pointer appearance-none dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
+                  className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green cursor-pointer appearance-none dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
                 >
                   <option value="">-- Select Category --</option>
                   {categoriesList.map((catName) => (
@@ -187,12 +187,12 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase text-text-muted">Price (₱)</label>
-                <input required type="number" name="price" value={form.price} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-emerald-500 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100" />
+                <input required type="number" name="price" value={form.price} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100" />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase text-text-muted">Assign to Branch</label>
-                <select required name="branch_id" value={form.branch_id} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-emerald-500 cursor-pointer dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
+                <select required name="branch_id" value={form.branch_id} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green cursor-pointer dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100">
                   <option value="">-- Select Branch --</option>
                   {branches.filter(b => b.id !== "__all__").map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
@@ -200,7 +200,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
                 </select>
               </div>
 
-              <div className="space-y-1 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+              <div className="space-y-1 rounded-2xl border border-brand-green/20 bg-brand-green/5 p-3">
                 <label className="text-[10px] font-bold uppercase text-text-muted">Date Listed</label>
                 <div className="mt-1 text-sm font-semibold text-text-primary">{listingDateLabel}</div>
                 <input type="hidden" value={listingDate} readOnly />
@@ -209,18 +209,18 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xs font-black uppercase text-emerald-700 tracking-wider dark:text-emerald-400">Media & QR</h3>
-              
+              <h3 className="text-xs font-black uppercase text-brand-green tracking-wider">Media & QR</h3>
+
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase text-text-muted">Item Photo</label>
-                <div 
+                <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex h-32 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 transition-colors hover:bg-emerald-50 dark:border-emerald-400/20 dark:bg-emerald-400/5 dark:hover:bg-emerald-400/10"
+                  className="flex h-32 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand-green/20 bg-brand-green/5 transition-colors hover:bg-brand-green/10"
                 >
                   {photoUrl ? (
                     <img src={photoUrl} alt="Item" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-300">Click to upload photo</span>
+                    <span className="text-xs font-bold text-brand-green">Click to upload photo</span>
                   )}
                 </div>
                 <input type="file" accept="image/*" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" />
@@ -229,7 +229,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-bold uppercase text-text-muted">QR Code</label>
-                  <button type="button" onClick={handleGenerateQR} className="rounded bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-600 hover:text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300 dark:hover:bg-emerald-400/25">Generate QR</button>
+                  <button type="button" onClick={handleGenerateQR} className="rounded bg-brand-green/10 px-2 py-1 text-[10px] font-black uppercase text-brand-green hover:text-brand-green/80">Generate QR</button>
                 </div>
                 <div className="flex h-32 w-full items-center justify-center rounded-2xl border border-border-main bg-surface-secondary dark:border-white/10 dark:bg-zinc-900">
                   {qrUrl ? (
@@ -244,7 +244,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
           <div className="mt-4 flex justify-end gap-3 border-t border-border-subtle pt-4 dark:border-white/10">
             <button type="button" onClick={onClose} className="rounded-xl px-5 py-2.5 text-xs font-black uppercase text-text-muted hover:bg-surface-secondary dark:hover:bg-white/5">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-black uppercase text-white hover:bg-emerald-700 disabled:opacity-50">
+            <button type="submit" disabled={isSubmitting} className="rounded-xl bg-brand-green px-6 py-2.5 text-xs font-black uppercase text-white hover:brightness-110 disabled:opacity-50">
               {isSubmitting ? "Saving..." : "Add Item"}
             </button>
           </div>

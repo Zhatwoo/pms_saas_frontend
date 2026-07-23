@@ -103,7 +103,7 @@ function ProgressRing({
         fill="none"
         stroke="currentColor"
         strokeWidth={strokeWidth}
-        className="text-emerald-100"
+        className="text-brand-green/15"
       />
       <circle
         cx={size / 2}
@@ -115,7 +115,7 @@ function ProgressRing({
         strokeLinecap="round"
         strokeDasharray={circumference}
         strokeDashoffset={strokeDashoffset}
-        className={percentage >= 1 ? "text-emerald-500" : "text-amber-500"}
+        className={percentage >= 1 ? "text-brand-green" : "text-amber-500"}
         style={{ transition: "stroke-dashoffset 0.6s ease" }}
       />
     </svg>
@@ -184,9 +184,9 @@ export function CustomerRewardsSection({
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border-main bg-surface p-6 shadow-sm">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-700">🎁 Rewards</h3>
+        <h3 className="text-sm font-bold uppercase tracking-wider text-brand-green">🎁 Rewards</h3>
         <div className="mt-4 flex items-center justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-green/30 border-t-brand-green" />
           <span className="ml-3 text-sm text-text-secondary">Loading rewards...</span>
         </div>
       </div>
@@ -196,10 +196,10 @@ export function CustomerRewardsSection({
   return (
     <div className="rounded-2xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
       {/* Header */}
-      <div className="rounded-t-2xl border-b border-border-main bg-gradient-to-r from-emerald-50 to-amber-50 px-5 py-4 dark:from-emerald-950/40 dark:to-amber-950/40 dark:border-zinc-700">
+      <div className="rounded-t-2xl border-b border-border-main bg-gradient-to-r from-brand-green/10 to-amber-50 px-5 py-4 dark:from-brand-green/15 dark:to-amber-950/40 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">🎁 Customer Rewards</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-brand-green">🎁 Customer Rewards</h3>
             <p className="mt-0.5 text-xs text-text-secondary dark:text-zinc-400">
               {earnedRewards.length} earned · {claimedRewards.length} claimed
             </p>
@@ -222,7 +222,7 @@ export function CustomerRewardsSection({
             onClick={() => setActiveTab(tab.key)}
             className={`flex-1 px-4 py-3 text-center text-xs font-semibold transition-colors ${
               activeTab === tab.key
-                ? "border-b-2 border-emerald-600 text-emerald-700 dark:border-emerald-400 dark:text-emerald-300"
+                ? "border-b-2 border-brand-green text-brand-green"
                 : "text-text-secondary hover:text-text-primary dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
           >
@@ -230,7 +230,7 @@ export function CustomerRewardsSection({
             {tab.count > 0 && (
               <span className={`ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
                 activeTab === tab.key
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  ? "bg-brand-green/10 text-brand-green"
                   : "bg-surface-secondary text-text-tertiary dark:bg-zinc-800 dark:text-zinc-400"
               }`}>
                 {tab.count}
@@ -263,7 +263,7 @@ export function CustomerRewardsSection({
                     key={item.reward_id}
                     className={`group rounded-xl border p-4 transition-all ${
                       item.is_eligible
-                        ? "border-emerald-300 bg-emerald-50/60 shadow-sm dark:border-emerald-900 dark:bg-emerald-950/30"
+                        ? "border-brand-green/40 bg-brand-green/5 shadow-sm"
                         : "border-border-main bg-surface-secondary dark:border-zinc-700 dark:bg-zinc-900/50"
                     }`}
                   >
@@ -279,7 +279,7 @@ export function CustomerRewardsSection({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-emerald-600 dark:text-emerald-400">{getRewardIcon(item.reward_type)}</span>
+                          <span className="text-brand-green">{getRewardIcon(item.reward_type)}</span>
                           <h4 className="text-sm font-semibold text-text-primary dark:text-zinc-100">{item.name}</h4>
                         </div>
                         <p className="mt-0.5 text-xs text-text-secondary dark:text-zinc-400">{item.description}</p>
@@ -299,13 +299,13 @@ export function CustomerRewardsSection({
                           )}
                         </div>
                         {item.is_eligible && (
-                          <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                          <p className="mt-2 text-xs font-semibold text-brand-green">
                             ✅ Eligible! Reward will be granted on next qualifying transaction.
                           </p>
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                        <p className="text-sm font-bold text-brand-green">
                           {formatRewardValue(item.reward_type, item.reward_value)}
                         </p>
                       </div>
@@ -328,9 +328,9 @@ export function CustomerRewardsSection({
               earnedRewards.map((reward) => (
                 <div
                   key={reward.id}
-                  className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 shadow-sm dark:border-emerald-900 dark:bg-emerald-950/30"
+                  className="flex items-center gap-3 rounded-xl border border-brand-green/25 bg-brand-green/5 p-4 shadow-sm"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
                     {getRewardIcon(reward.reward_type)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -344,7 +344,7 @@ export function CustomerRewardsSection({
                       type="button"
                       disabled={claimingId === reward.id}
                       onClick={() => handleClaim(reward.id, reward.name)}
-                      className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                      className="rounded-lg bg-brand-green px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:brightness-110 disabled:opacity-50"
                     >
                       {claimingId === reward.id ? "Claiming..." : "Claim"}
                     </button>

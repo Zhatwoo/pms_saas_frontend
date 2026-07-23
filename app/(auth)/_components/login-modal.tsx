@@ -314,12 +314,12 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
         </button>
 
         {/* Header */}
-        <div className="relative bg-emerald-800 px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
+        <div className="relative bg-brand-green px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
           <div className="absolute right-[-20px] top-[-30px] h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full bg-white/5" />
           <div className="absolute bottom-[15px] left-[-10px] h-16 w-16 sm:h-20 sm:w-20 md:h-28 md:w-28 rounded-full bg-white/5" />
           <div className="absolute bottom-[-10px] right-[30px] h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full bg-white/5" />
           <div className="relative flex flex-col items-center">
-            <div className="rounded-lg sm:rounded-2xl bg-emerald-950/50 p-1 sm:p-2">
+            <div className="rounded-lg sm:rounded-2xl bg-black/20 p-1 sm:p-2">
               <div className="overflow-hidden rounded-md sm:rounded-xl ring-2 ring-amber-400/60">
                 <Image src={BRAND_CONFIG.loginLogo} alt={`${BRAND_CONFIG.shortCompanyName} Logo`} width={64} height={64} className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 object-cover" />
               </div>
@@ -333,7 +333,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
         <div className="bg-stone-100 px-4 pb-5 pt-3 sm:px-8 sm:pb-8 sm:pt-6">
           {view === "login" && (
             <>
-              <h3 className="text-base sm:text-xl font-bold text-emerald-950">Welcome back</h3>
+              <h3 className="text-base sm:text-xl font-bold text-brand-green">Welcome back</h3>
               <p className="mt-0.5 text-[10px] sm:text-xs text-zinc-500">Sign in to access your branch portal</p>
 
               {(error || fingerprintError) && (
@@ -388,14 +388,14 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
                   </div>
                   <div className="mt-1 sm:mt-2 flex justify-end gap-1 text-[10px] sm:text-xs">
                     <span className="text-zinc-500">Forgot password?</span>
-                    <button type="button" className="font-bold text-emerald-800 hover:underline">Reset here</button>
+                    <button type="button" className="font-bold text-brand-green hover:underline">Reset here</button>
                   </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isSubmitting || isRequestingAuth}
-                  className="w-full bg-emerald-800 py-2 sm:py-3 text-xs sm:text-base font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                  className="w-full bg-brand-green py-2 sm:py-3 text-xs sm:text-base font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
                 >
                   {isSubmitting
                     ? isRequestingAuth
@@ -408,7 +408,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               <div className="my-2.5 sm:my-4 h-px bg-zinc-200" />
               <p className="text-center text-[10px] sm:text-xs text-zinc-500">
                 Don&apos;t have an account?{" "}
-                <button type="button" onClick={() => { onClose(); onRequestSignUp?.(); }} className="font-bold text-emerald-800 hover:underline">Sign Up</button>
+                <button type="button" onClick={() => { onClose(); onRequestSignUp?.(); }} className="font-bold text-brand-green hover:underline">Sign Up</button>
               </p>
               <div className="mt-2.5 sm:mt-4 text-center text-[8px] sm:text-[10px] text-zinc-400">
                 <p>
@@ -416,7 +416,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
                   <button
                     type="button"
                     onClick={() => setLegalModal("privacy")}
-                    className="font-semibold text-emerald-800 transition-colors hover:text-emerald-700 hover:underline"
+                    className="font-semibold text-brand-green transition-colors hover:brightness-125 hover:underline"
                   >
                     Privacy Policy
                   </button>
@@ -426,7 +426,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
                   <button
                     type="button"
                     onClick={() => setLegalModal("terms")}
-                    className="font-semibold text-emerald-800 transition-colors hover:text-emerald-700 hover:underline"
+                    className="font-semibold text-brand-green transition-colors hover:brightness-125 hover:underline"
                   >
                     Terms of Service
                   </button>
@@ -461,7 +461,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               <button
                 onClick={handleRequestAuthorization}
                 disabled={isRequestingAuth}
-                className="mt-3 sm:mt-6 w-full bg-emerald-800 py-2 sm:py-3 text-[11px] sm:text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                className="mt-3 sm:mt-6 w-full bg-brand-green py-2 sm:py-3 text-[11px] sm:text-sm font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
               >
                 {isRequestingAuth ? "Sending Request..." : "Request Device Authorization"}
               </button>
@@ -487,7 +487,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               </p>
               <button
                 onClick={onClose}
-                className="mt-3 sm:mt-6 w-full bg-emerald-800 py-2 sm:py-3 text-[11px] sm:text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+                className="mt-3 sm:mt-6 w-full bg-brand-green py-2 sm:py-3 text-[11px] sm:text-sm font-bold text-white transition-colors hover:brightness-110"
               >
                 Close
               </button>
@@ -517,19 +517,19 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               </svg>
             </button>
 
-            <div className="relative overflow-hidden bg-emerald-800 px-6 pb-6 pt-7 text-white sm:px-8">
+            <div className="relative overflow-hidden bg-brand-green px-6 pb-6 pt-7 text-white sm:px-8">
               <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
               <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
               <div className="relative">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">{BRAND_CONFIG.companyName}</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-pawn-gold">{BRAND_CONFIG.companyName}</p>
                 <h3 id="terms-modal-title" className="mt-2 text-2xl font-bold">{legalModalContent[legalModal].title}</h3>
-                <p className="mt-2 max-w-xl text-sm leading-relaxed text-emerald-50/85">
+                <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
                   {legalModalContent[legalModal].intro}
                 </p>
               </div>
             </div>
 
-            <div className="relative bg-emerald-800">
+            <div className="relative bg-brand-green">
               <div className="h-2 rounded-t-lg sm:rounded-t-xl bg-stone-100" />
               <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
             </div>
@@ -539,11 +539,11 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
                 {legalModalContent[legalModal].sections.map((section, index) => (
                   <section key={section.title} className="border-b border-zinc-200 pb-4 last:border-0 last:pb-0">
                     <div className="flex gap-3">
-                      <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-emerald-800 text-xs font-bold text-white">
+                      <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-bold text-white">
                         {index + 1}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-emerald-950">{section.title}</h4>
+                        <h4 className="text-sm font-bold text-brand-green">{section.title}</h4>
                         <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
                       </div>
                     </div>
@@ -556,7 +556,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               <button
                 type="button"
                 onClick={() => setLegalModal(null)}
-                className="w-full bg-emerald-800 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700"
+                className="w-full bg-brand-green py-3 text-sm font-bold text-white transition-colors hover:brightness-110"
               >
                 I Understand
               </button>

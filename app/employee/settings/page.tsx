@@ -88,7 +88,7 @@ export default function EmployeeSettingsPage() {
     <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h3]:text-base [&_h4]:text-xl [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
       {toast && (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-emerald-300 bg-emerald-100 px-5 py-3 text-sm font-semibold text-emerald-900 shadow-xl">
+          <div className="rounded-xl border border-brand-green/30 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
             {toast}
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function EmployeeSettingsPage() {
               setToast(null);
             }}
             className={`shrink-0 px-6 py-2 text-xs font-bold transition-all rounded-md whitespace-nowrap ${activeTab === tab
-                ? "bg-emerald-700 text-white shadow-sm"
+                ? "bg-brand-green text-white shadow-sm"
                 : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
           >
@@ -122,7 +122,7 @@ export default function EmployeeSettingsPage() {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Full Name</label>
                     <input
-                      className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary focus:border-emerald-500 outline-none transition-colors"
+                      className="rounded-lg border border-input-border px-3 py-2 text-sm text-text-primary focus:border-brand-green outline-none transition-colors"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Your full name"
@@ -158,7 +158,7 @@ export default function EmployeeSettingsPage() {
 
           {activeTab === "Branch Config" && (
             <div className="rounded-xl border border-border-main bg-surface p-6 shadow-sm">
-              <h3 className="text-base font-bold text-emerald-800 mb-4 pb-2 border-b">Current Location: {branchName}</h3>
+              <h3 className="text-base font-bold text-brand-green mb-4 pb-2 border-b">Current Location: {branchName}</h3>
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 gap-y-4">
                   <div>
@@ -169,12 +169,12 @@ export default function EmployeeSettingsPage() {
                     <label className="text-[10px] font-bold uppercase text-text-muted tracking-wide">Closing Time</label>
                     <p className="text-sm text-text-primary pt-1">06:00 PM</p>
                   </div>
-                  <div className="bg-emerald-50/50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 sm:col-span-2">
-                    <p className="text-[10px] font-bold uppercase text-emerald-700 dark:text-emerald-400 tracking-wide mb-1 flex items-center gap-1.5">
+                  <div className="bg-brand-green/5 dark:bg-brand-green/20 p-3 rounded-lg border border-brand-green/10 dark:border-brand-green/40 sm:col-span-2">
+                    <p className="text-[10px] font-bold uppercase text-brand-green tracking-wide mb-1 flex items-center gap-1.5">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                       Security Restriction
                     </p>
-                    <p className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                    <p className="text-xs text-text-primary leading-relaxed">
                       Branch associates are restricted to accessing data for their assigned terminal only.
                       Changes to operation hours must be approved by the Super Admin.
                     </p>
@@ -193,7 +193,7 @@ export default function EmployeeSettingsPage() {
                   notificationSound ===
                     (user?.notificationSound || DEFAULT_NOTIFICATION_SOUND))
               }
-              className="rounded-lg bg-emerald-800 px-6 py-2 text-xs font-bold text-white transition-colors hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-emerald-700 disabled:opacity-100"
+              className="rounded-lg bg-brand-green px-6 py-2 text-xs font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSaving ? "Saving..." : "Save Changes"}
             </button>
@@ -209,7 +209,7 @@ export default function EmployeeSettingsPage() {
         {activeTab === "Profile" && (
           <div className="min-w-0 space-y-6">
             <div className="rounded-xl border border-border-main bg-surface p-6 text-center shadow-sm">
-              <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full border-4 border-emerald-50 bg-white dark:border-emerald-950/60 dark:bg-zinc-800">
+              <div className="mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full border-4 border-brand-green/10 bg-white dark:border-brand-green/40 dark:bg-zinc-800">
                 {user?.avatarUrl ? (
                   <Image
                     src={user.avatarUrl}
@@ -220,7 +220,7 @@ export default function EmployeeSettingsPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-emerald-950 dark:text-zinc-50">
+                  <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-brand-green dark:text-zinc-50">
                     {initials}
                   </div>
                 )}
@@ -229,7 +229,7 @@ export default function EmployeeSettingsPage() {
               <p className="mb-4 text-xs text-text-secondary">{branchName}</p>
               <button
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="w-full rounded-lg border border-emerald-200 bg-emerald-100 py-2 text-[10px] font-bold uppercase tracking-wider text-emerald-800 transition-colors hover:bg-emerald-200 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                className="w-full rounded-lg border border-brand-green/20 bg-brand-green/10 py-2 text-[10px] font-bold uppercase tracking-wider text-brand-green transition-colors hover:bg-brand-green/20 dark:border-brand-green/40 dark:bg-brand-green/20 dark:hover:bg-brand-green/30"
               >
                 Change Avatar
               </button>

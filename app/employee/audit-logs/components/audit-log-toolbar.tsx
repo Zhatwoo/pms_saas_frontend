@@ -150,7 +150,7 @@ export function AuditLogToolbar({
                 onClick={() => onPeriodChange(period)}
                 className={`h-8 shrink-0 whitespace-nowrap rounded px-3 text-xs font-bold uppercase tracking-wide transition ${
                   activePeriod === period
-                    ? "bg-emerald-700 text-white"
+                    ? "bg-brand-green text-white"
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                 }`}
               >

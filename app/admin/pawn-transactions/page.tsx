@@ -168,7 +168,7 @@ function TransactionsCalendar({
 
   return (
     <div className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm transition-colors duration-300">
-      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-950 to-emerald-900 px-4 py-4 sm:px-5">
+      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-pawn-sidebar to-pawn-sidebar-light px-4 py-4 sm:px-5">
         <button
           type="button"
           onClick={() => (calendarMonth === 0 ? onChangeMonth(calendarYear - 1, 11) : onChangeMonth(calendarYear, calendarMonth - 1))}
@@ -180,7 +180,7 @@ function TransactionsCalendar({
 
         <div className="min-w-[140px] text-center">
           <p className="text-lg font-bold leading-tight text-white">{MONTH_NAMES[calendarMonth]}</p>
-          <p className="text-xs font-semibold text-emerald-300">{calendarYear}</p>
+          <p className="text-xs font-semibold text-pawn-gold">{calendarYear}</p>
         </div>
 
         <button
@@ -217,16 +217,16 @@ function TransactionsCalendar({
               key={day}
               type="button"
               onClick={() => onSelectDate(dateString)}
-              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle hover:bg-emerald-50/10 ${isSelected ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
+              className={`relative h-16 border-b border-r border-zinc-200/80 p-1.5 text-left transition-all dark:border-border-subtle hover:bg-brand-green/10 ${isSelected ? "ring-2 ring-inset ring-brand-green bg-brand-green/10" : ""} ${isToday ? "ring-1 ring-inset ring-amber-400" : ""}`}
             >
-              <span className={`text-xs font-bold leading-none ${isSelected ? "text-emerald-400" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
+              <span className={`text-xs font-bold leading-none ${isSelected ? "text-brand-green" : isToday ? "text-amber-400" : count > 0 ? "text-text-primary" : "text-text-muted"}`}>
                 {day}
               </span>
 
               {count > 0 && (
                 <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center gap-1">
-                  <div className="h-1 flex-1 rounded-full bg-emerald-500/60" />
-                  <span className="text-[9px] font-black leading-none text-emerald-400">{count}</span>
+                  <div className="h-1 flex-1 rounded-full bg-brand-green/60" />
+                  <span className="text-[9px] font-black leading-none text-brand-green">{count}</span>
                 </div>
               )}
             </button>
@@ -237,7 +237,7 @@ function TransactionsCalendar({
       <div className="flex items-center justify-between border-t border-zinc-200/80 bg-surface-secondary/60 px-4 py-2.5 dark:border-border-subtle">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-sm bg-emerald-500/50" />
+            <div className="h-2.5 w-2.5 rounded-sm bg-brand-green/50" />
             <span className="text-[10px] font-bold uppercase text-text-muted">Has transactions</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -998,7 +998,7 @@ export default function SuperAdminPawnTransactionsPage() {
                   <td
                     colSpan={3}
                     className={`p-2 text-right font-black font-mono normal-case ${
-                      printLedgerTotals.net >= 0 ? "text-emerald-700" : "text-red-600"
+                      printLedgerTotals.net >= 0 ? "text-brand-green" : "text-red-600"
                     }`}
                   >
                     {formatPeso(printLedgerTotals.net)}
@@ -1012,7 +1012,7 @@ export default function SuperAdminPawnTransactionsPage() {
 
       <div className="print-hide space-y-5">
       <div className="rounded-xl border border-border-main bg-surface px-4 py-3 shadow-sm transition-colors duration-300">
-        <p className="text-sm text-emerald-900/60 dark:text-zinc-400">
+        <p className="text-sm text-text-secondary dark:text-zinc-400">
           Branch transactions for the selected calendar date — list and calendar views (calendar counts reflect loaded history).
         </p>
       </div>
@@ -1030,7 +1030,7 @@ export default function SuperAdminPawnTransactionsPage() {
       <div className="rounded-xl border border-border-main bg-surface p-5 shadow-sm transition-colors duration-300">
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px_auto] xl:items-end">
           <div className="min-w-0">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-muted dark:text-pawn-gold">
               Search Transactions
             </label>
             <input
@@ -1038,12 +1038,12 @@ export default function SuperAdminPawnTransactionsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by transaction no, purpose, item, or details"
-              className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+              className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
             />
           </div>
 
           <div className="w-full xl:w-56">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-emerald-900/40 dark:text-emerald-400">
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-text-muted dark:text-pawn-gold">
               Purpose Filter
             </label>
             <select
@@ -1052,7 +1052,7 @@ export default function SuperAdminPawnTransactionsPage() {
                 setActiveFilter(e.target.value as FilterType);
                 setCurrentPage(1);
               }}
-              className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+              className="h-10 w-full rounded-lg border border-border-main bg-surface-secondary px-3 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
             >
               <option value="All">All Purposes</option>
               <option value="Renew">Renew</option>
@@ -1104,7 +1104,7 @@ export default function SuperAdminPawnTransactionsPage() {
             </ActionButton>
             <ActionButton
               variant="primary"
-              className="border-emerald-700 bg-emerald-700 text-amber-400"
+              className="border-brand-green bg-brand-green text-white hover:brightness-110"
               onClick={handlePrintReport}
             >
               <span className="flex items-center gap-1.5">
@@ -1116,14 +1116,14 @@ export default function SuperAdminPawnTransactionsPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "list" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
+                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "list" ? "bg-brand-green text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
               >
                 List
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("calendar")}
-                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "calendar" ? "bg-emerald-700 text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
+                className={`rounded-lg px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${viewMode === "calendar" ? "bg-brand-green text-white shadow-sm" : "text-text-secondary hover:text-text-primary"}`}
               >
                 Calendar
               </button>

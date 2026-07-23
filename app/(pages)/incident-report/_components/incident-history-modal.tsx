@@ -88,7 +88,7 @@ export function IncidentHistoryModal({
       timestamp: ticket.resolved_at,
       meta: `Resolved by ${resolvedByName}`,
       icon: <ShieldCheck size={16} />,
-      tone: "bg-emerald-100 text-emerald-700",
+      tone: "bg-brand-green/10 text-brand-green",
     });
   }
 
@@ -290,7 +290,7 @@ function getActionConfig(action: IncidentEventAction) {
       return {
         title: "Ticket resolved",
         icon: <ShieldCheck size={16} />,
-        tone: "bg-emerald-100 text-emerald-700",
+        tone: "bg-brand-green/10 text-brand-green",
       };
     case "reopened":
       return {

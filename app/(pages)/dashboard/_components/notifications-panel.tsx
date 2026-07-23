@@ -84,7 +84,7 @@ export function NotificationsPanel({ notifications = [] }: NotificationsPanelPro
         <div className="mt-4 flex justify-end border-t border-border-subtle pt-3">
           <Link
             href={auditLogsHref}
-            className="text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-500"
+            className="text-xs font-semibold text-brand-green transition-colors hover:brightness-110"
           >
             View all
           </Link>

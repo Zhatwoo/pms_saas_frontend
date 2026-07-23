@@ -72,7 +72,7 @@ export function TransactionFormModal({
       <div className="relative z-10 max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border-main bg-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-600">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-brand-green">
               Pawn Transactions
             </p>
             <h2 className="mt-1 text-xl font-bold text-text-primary">
@@ -95,7 +95,7 @@ export function TransactionFormModal({
                 value={formValues.transactionNo}
                 onChange={(event) => updateField("transactionNo", event.target.value)}
                 required
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -103,7 +103,7 @@ export function TransactionFormModal({
               <select
                 value={formValues.branchId}
                 onChange={(event) => handleBranchChange(event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               >
                 {branches.map((branch) => (
                   <option key={branch.id} value={branch.id}>
@@ -119,7 +119,7 @@ export function TransactionFormModal({
                 onChange={(event) =>
                   updateField("purpose", event.target.value as TransactionRow["purpose"])
                 }
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               >
                 {PURPOSE_OPTIONS.map((purpose) => (
                   <option key={purpose} value={purpose}>
@@ -135,7 +135,7 @@ export function TransactionFormModal({
                 value={formValues.date}
                 onChange={(event) => updateField("date", event.target.value)}
                 required
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -145,7 +145,7 @@ export function TransactionFormModal({
                 value={formValues.time}
                 onChange={(event) => updateField("time", event.target.value)}
                 required
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -153,7 +153,7 @@ export function TransactionFormModal({
               <input
                 value={formValues.customerName}
                 onChange={(event) => updateField("customerName", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -161,7 +161,7 @@ export function TransactionFormModal({
               <input
                 value={formValues.customerAddress}
                 onChange={(event) => updateField("customerAddress", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -169,7 +169,7 @@ export function TransactionFormModal({
               <input
                 value={formValues.unit}
                 onChange={(event) => updateField("unit", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -177,7 +177,7 @@ export function TransactionFormModal({
               <input
                 value={formValues.unitCode}
                 onChange={(event) => updateField("unitCode", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -188,7 +188,7 @@ export function TransactionFormModal({
                 step="0.01"
                 value={formValues.cashIn}
                 onChange={(event) => updateField("cashIn", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -199,7 +199,7 @@ export function TransactionFormModal({
                 step="0.01"
                 value={formValues.cashOut}
                 onChange={(event) => updateField("cashOut", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -210,7 +210,7 @@ export function TransactionFormModal({
                 step="0.01"
                 value={formValues.returnVal}
                 onChange={(event) => updateField("returnVal", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -221,7 +221,7 @@ export function TransactionFormModal({
                 step="0.01"
                 value={formValues.pawn}
                 onChange={(event) => updateField("pawn", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -232,7 +232,7 @@ export function TransactionFormModal({
                 step="0.01"
                 value={formValues.storage}
                 onChange={(event) => updateField("storage", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </Field>
 
@@ -243,7 +243,7 @@ export function TransactionFormModal({
               <input
                 value={formValues.details}
                 onChange={(event) => updateField("details", event.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </div>
 
@@ -255,7 +255,7 @@ export function TransactionFormModal({
                 rows={4}
                 value={formValues.notes}
                 onChange={(event) => updateField("notes", event.target.value)}
-                className="w-full resize-none rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500"
+                className="w-full resize-none rounded-lg border border-border-main bg-surface-secondary px-3 py-2.5 text-sm text-text-primary outline-none transition-colors focus:border-brand-green"
               />
             </div>
           </div>
@@ -270,7 +270,7 @@ export function TransactionFormModal({
             </button>
             <button
               type="submit"
-              className="rounded-lg border border-emerald-700 bg-emerald-700 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+              className="rounded-lg border border-brand-green bg-brand-green px-5 py-2 text-sm font-bold text-white transition-colors hover:brightness-110"
             >
               {mode === "create" ? "Save Transaction" : "Update Transaction"}
             </button>

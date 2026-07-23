@@ -56,7 +56,7 @@ interface Employee {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    AUTHORIZED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400",
+    AUTHORIZED: "bg-brand-green/10 text-brand-green dark:bg-brand-green/20 dark:text-brand-green",
     PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
     BLOCKED: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400",
   };
@@ -68,7 +68,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const fieldClassName =
-  "w-full rounded border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500";
+  "w-full rounded border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-brand-green";
 const labelClassName = "mb-1 block text-xs font-bold text-text-secondary";
 
 function getDeviceBranchId(device: Device) {
@@ -226,7 +226,7 @@ function AddDeviceModal({
             <button type="button" onClick={onClose} className="flex-1 rounded border border-border-main py-2.5 text-sm font-semibold text-text-secondary hover:bg-surface-hover">
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="flex-1 rounded bg-emerald-700 py-2.5 text-sm font-bold text-white hover:bg-emerald-600 disabled:opacity-50">
+            <button type="submit" disabled={saving} className="flex-1 rounded bg-brand-green py-2.5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50">
               {saving ? "Adding..." : "Add & Authorize Device"}
             </button>
           </div>
@@ -337,7 +337,7 @@ function AuthorizeModal({
             <button type="button" onClick={onClose} className="flex-1 rounded border border-border-main py-2 text-sm font-semibold text-text-secondary hover:bg-surface-hover">
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="flex-1 rounded bg-emerald-700 py-2 text-sm font-bold text-white hover:bg-emerald-600 disabled:opacity-50">
+            <button type="submit" disabled={saving} className="flex-1 rounded bg-brand-green py-2 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50">
               {saving ? "Saving..." : "Authorize"}
             </button>
           </div>
@@ -503,13 +503,13 @@ export default function DevicesPage() {
                 placeholder="Search by name, fingerprint, or employee..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full min-w-0 rounded-lg border border-input-border bg-input-bg px-4 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-emerald-500"
+                className="w-full min-w-0 rounded-lg border border-input-border bg-input-bg px-4 py-2 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-brand-green"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-emerald-500 md:w-auto lg:hidden"
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand-green md:w-auto lg:hidden"
             >
               {(["ALL", "AUTHORIZED", "PENDING", "BLOCKED"] as const).map((s) => (
                 <option key={s} value={s}>
@@ -526,7 +526,7 @@ export default function DevicesPage() {
                 onClick={() => setStatusFilter(s)}
                 className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
                   statusFilter === s
-                    ? "bg-emerald-700 text-white shadow-sm shadow-emerald-900/20 dark:bg-emerald-600 dark:shadow-emerald-500/20"
+                    ? "bg-brand-green text-white shadow-sm shadow-brand-green/20"
                     : "bg-surface-secondary text-text-secondary hover:bg-surface-hover"
                 }`}
               >
@@ -630,7 +630,7 @@ export default function DevicesPage() {
                       {device.status === "PENDING" && (
                         <button
                           onClick={() => setAuthorizeTarget(device)}
-                          className="w-full rounded bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 min-[420px]:w-auto min-[420px]:py-1"
+                          className="w-full rounded bg-brand-green/10 px-3 py-2 text-xs font-semibold text-brand-green hover:bg-brand-green/20 min-[420px]:w-auto min-[420px]:py-1"
                         >
                           Authorize
                         </button>
@@ -646,7 +646,7 @@ export default function DevicesPage() {
                       {device.status === "BLOCKED" && (
                         <button
                           onClick={() => handleUnblock(device.id)}
-                          className="w-full rounded bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 min-[420px]:w-auto min-[420px]:py-1"
+                          className="w-full rounded bg-brand-green/10 px-3 py-2 text-xs font-semibold text-brand-green hover:bg-brand-green/20 min-[420px]:w-auto min-[420px]:py-1"
                         >
                           Unblock
                         </button>
@@ -719,7 +719,7 @@ export default function DevicesPage() {
                           <div className="space-y-1.5">
                             {device.recent_users.map((u, i) => (
                               <div key={u.id ?? i} className="flex items-center gap-1.5">
-                                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[9px] font-bold text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400">
+                                <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-green/10 text-[9px] font-bold text-brand-green dark:bg-brand-green/20">
                                   {(u.full_name ?? u.email ?? "?")[0].toUpperCase()}
                                 </div>
                                 <div>
@@ -749,7 +749,7 @@ export default function DevicesPage() {
                             {device.status === "PENDING" && (
                               <button
                                 onClick={() => setAuthorizeTarget(device)}
-                                className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30"
+                                className="rounded bg-brand-green/10 px-2 py-1 text-xs font-semibold text-brand-green hover:bg-brand-green/20 dark:bg-brand-green/20 dark:hover:bg-brand-green/30"
                               >
                                 Authorize
                               </button>
@@ -765,7 +765,7 @@ export default function DevicesPage() {
                             {device.status === "BLOCKED" && (
                               <button
                                 onClick={() => handleUnblock(device.id)}
-                                className="rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-400 dark:hover:bg-emerald-500/30"
+                                className="rounded bg-brand-green/10 px-2 py-1 text-xs font-semibold text-brand-green hover:bg-brand-green/20 dark:bg-brand-green/20 dark:hover:bg-brand-green/30"
                               >
                                 Unblock
                               </button>

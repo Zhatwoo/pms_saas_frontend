@@ -24,7 +24,6 @@ export function AccountStatusModal({
 
   const isReject = mode === "reject";
   const title = isReject ? "Reject & Delete Account" : "Approve Account";
-  const themeColor = isReject ? "red" : "emerald";
 
   async function handleConfirm() {
     setIsProcessing(true);
@@ -44,9 +43,9 @@ export function AccountStatusModal({
       />
 
       {/* Modal */}
-      <div className={`relative z-10 w-full max-w-sm animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-${themeColor}-200 bg-surface shadow-2xl overflow-hidden`}>
+      <div className={`relative z-10 w-full max-w-sm animate-[fadeInUp_0.25s_ease-out] rounded-xl border ${isReject ? "border-red-200" : "border-brand-green/30"} bg-surface shadow-2xl overflow-hidden`}>
         <div className="flex flex-col items-center px-6 pt-6">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-full bg-${themeColor}-100`}>
+          <div className={`flex h-12 w-12 items-center justify-center rounded-full ${isReject ? "bg-red-100" : "bg-brand-green/10"}`}>
             {isReject ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -54,7 +53,7 @@ export function AccountStatusModal({
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
             ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-green">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                 <polyline points="22 4 12 14.01 9 11.01" />
               </svg>
@@ -73,7 +72,7 @@ export function AccountStatusModal({
             ) : (
               <>
                 Are you sure you want to approve <span className="font-bold text-text-primary">{user.fullName}</span>? 
-                This will grant them <span className="text-emerald-600 font-semibold italic">Active access</span> to the system.
+                This will grant them <span className="text-brand-green font-semibold italic">Active access</span> to the system.
               </>
             )}
           </p>
@@ -93,7 +92,7 @@ export function AccountStatusModal({
             type="button"
             onClick={handleConfirm}
             disabled={isProcessing}
-            className={`flex-1 rounded-lg border border-${isReject ? "red" : "emerald"}-600 bg-${isReject ? "red" : "emerald"}-600 px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50`}
+            className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 ${isReject ? "border-red-600 bg-red-600" : "border-brand-green bg-brand-green"}`}
           >
             {isProcessing ? "Processing..." : isReject ? "Yes, Reject & Delete" : "Yes, Approve Account"}
           </button>

@@ -50,7 +50,7 @@ export function BranchStats({
         value={totalBranches}
         subtitle="All registered branches"
         icon={branchIcon}
-        borderColor="bg-emerald-700"
+        borderColor="bg-brand-green"
       />
       <StatCard
         label="Active Branches"

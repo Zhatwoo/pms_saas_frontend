@@ -38,7 +38,7 @@ function formatDate(dateStr: string): string {
 }
 
 function DaysRemainingBadge({ days }: { days: number }) {
-  let bgColor = "bg-green-100 text-green-700";
+  let bgColor = "bg-brand-green/10 text-brand-green";
   if (days <= 0) {
     bgColor = "bg-red-100 text-red-600";
   } else if (days <= 3) {
@@ -133,7 +133,7 @@ export function ExpirationTable({
       renderCell={(key, value, row) => {
         if (key === "principal" || key === "totalDue") {
           return (
-            <span className="font-semibold text-emerald-700">
+            <span className="font-semibold text-brand-green">
               {formatPeso(value)}
             </span>
           );
@@ -153,7 +153,7 @@ export function ExpirationTable({
                   type="button"
                   onClick={() => onRenew?.(row.id, row.ticketNo)}
                   disabled={renewingItemId === row.id}
-                  className="rounded-md bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-md bg-brand-green px-4 py-1.5 text-xs font-bold text-white transition-opacity hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {renewingItemId === row.id ? "Renewing..." : "Renew"}
                 </button>

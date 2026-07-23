@@ -49,8 +49,8 @@ const branchIcon = (
 
 const activeUsersIcon = (
 	<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-		<circle cx="8" cy="8" r="6" className="fill-green-500/20" />
-		<circle cx="8" cy="8" r="3.5" className="fill-green-500" />
+		<circle cx="8" cy="8" r="6" className="fill-brand-green/20" />
+		<circle cx="8" cy="8" r="3.5" className="fill-brand-green" />
 	</svg>
 );
 
@@ -98,7 +98,7 @@ export function UserStats({
 				value={activeUsers}
 				subtitle="Approved and can sign in"
 				icon={activeUsersIcon}
-				borderColor="bg-green-500"
+				borderColor="bg-brand-green"
 			/>
 			<StatCard
 				label="Branches"

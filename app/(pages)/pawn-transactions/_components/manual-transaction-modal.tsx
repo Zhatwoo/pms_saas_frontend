@@ -70,15 +70,15 @@ export function ManualTransactionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md animate-[fadeInUp_0.2s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4 bg-emerald-900/5">
+        <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4 bg-brand-green/5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 shadow-sm border border-emerald-200/50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-green/10 text-brand-green shadow-sm border border-brand-green/20">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-emerald-text leading-tight">Cash Transfer Entry</h2>
+              <h2 className="text-lg font-bold text-brand-green leading-tight">Cash Transfer Entry</h2>
               <p className="text-[10px] font-medium text-text-tertiary">Record cash adjustments manually</p>
             </div>
           </div>
@@ -95,8 +95,8 @@ export function ManualTransactionModal({
                 type="button"
                 onClick={() => setType("Cash In")}
                 className={`flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all ${
-                  type === "Cash In" 
-                    ? "bg-emerald-600 text-white shadow-md scale-[1.02]" 
+                  type === "Cash In"
+                    ? "bg-brand-green text-white shadow-md scale-[1.02]"
                     : "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
                 }`}
               >
@@ -125,7 +125,7 @@ export function ManualTransactionModal({
                 type="text"
                 value={transactionNo}
                 onChange={(e) => setTransactionNo(e.target.value)}
-                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-xs font-mono outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
+                className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-xs font-mono outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green/20"
               />
             </div>
             <div className="space-y-1.5">
@@ -141,20 +141,20 @@ export function ManualTransactionModal({
                   }}
                   placeholder="0.00"
                   required
-                  className="w-full rounded-lg border border-border-main bg-surface pl-7 pr-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 font-bold text-emerald-700"
+                  className="w-full rounded-lg border border-border-main bg-surface pl-7 pr-3 py-2 text-sm outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green/20 font-bold text-brand-green"
                 />
               </div>
             </div>
           </div>
 
           {type === "Cash Transfer" ? (
-            <div className="grid grid-cols-2 gap-4 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
+            <div className="grid grid-cols-2 gap-4 bg-brand-green/5 p-3 rounded-xl border border-brand-green/10">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">From Branch</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-brand-green">From Branch</label>
                 <select
                   value={fromBranch}
                   onChange={(e) => setFromBranch(e.target.value)}
-                  className="w-full rounded-lg border border-emerald-200 bg-surface px-3 py-2 text-xs outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-brand-green/20 bg-surface px-3 py-2 text-xs outline-none focus:border-brand-green"
                 >
                   {branches.filter(b => b !== "All Branches").map((b) => (
                     <option key={`from-${b}`} value={b}>{b}</option>
@@ -175,12 +175,12 @@ export function ManualTransactionModal({
               </div>
             </div>
           ) : (
-            <div className="space-y-1.5 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Branch (Where to Cash In)</label>
+            <div className="space-y-1.5 bg-brand-green/5 p-3 rounded-xl border border-brand-green/10">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-brand-green">Branch (Where to Cash In)</label>
               <select
                 value={targetBranch}
                 onChange={(e) => setTargetBranch(e.target.value)}
-                className="w-full rounded-lg border border-emerald-200 bg-surface px-3 py-2 text-xs outline-none focus:border-emerald-500"
+                className="w-full rounded-lg border border-brand-green/20 bg-surface px-3 py-2 text-xs outline-none focus:border-brand-green"
               >
                 {branches.filter(b => b !== "All Branches").map((b) => (
                   <option key={`target-${b}`} value={b}>{b}</option>
@@ -196,7 +196,7 @@ export function ManualTransactionModal({
               onChange={(e) => setDetails(e.target.value)}
               rows={3}
               placeholder="Enter transaction details..."
-              className="w-full rounded-xl border border-border-main bg-surface px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 resize-none transition-shadow duration-200"
+              className="w-full rounded-xl border border-border-main bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green/20 resize-none transition-shadow duration-200"
             />
           </div>
 
@@ -211,7 +211,7 @@ export function ManualTransactionModal({
             <button
               type="submit"
               className={`px-6 py-2.5 text-xs font-bold text-white rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition-all ${
-                type === "Cash In" ? "bg-emerald-700 shadow-emerald-700/20" : "bg-amber-600 shadow-amber-600/20"
+                type === "Cash In" ? "bg-brand-green shadow-brand-green/20" : "bg-amber-600 shadow-amber-600/20"
               }`}
             >
               Complete Entry

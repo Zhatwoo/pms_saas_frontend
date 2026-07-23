@@ -112,11 +112,11 @@ export function RenewalProofModal({
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-zinc-950 border border-emerald-500/20 shadow-2xl animate-in zoom-in-95 duration-300">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white dark:bg-zinc-950 border border-brand-green/20 shadow-2xl animate-in zoom-in-95 duration-300">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white flex items-center justify-between">
+        <div className="bg-gradient-to-r from-pawn-sidebar via-brand-green to-brand-green px-5 py-4 text-white flex items-center justify-between">
           <div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-300">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-pawn-gold">
               Transaction Proof
             </p>
             <h3 className="text-base font-black uppercase tracking-wider mt-0.5">
@@ -147,7 +147,7 @@ export function RenewalProofModal({
         {/* Body */}
         <div className="p-5 flex flex-col items-center">
           {/* Main View Area */}
-          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-900 border-2 border-emerald-500/20 shadow-inner flex items-center justify-center">
+          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-zinc-900 border-2 border-brand-green/20 shadow-inner flex items-center justify-center">
             {photo ? (
               // Preview captured/uploaded photo
               <img
@@ -168,10 +168,10 @@ export function RenewalProofModal({
                 {/* Viewfinder borders */}
                 {isStreaming && (
                   <>
-                    <span className="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
-                    <span className="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
-                    <span className="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
-                    <span className="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
+                    <span className="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-pawn-gold rounded-tl-lg" />
+                    <span className="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-pawn-gold rounded-tr-lg" />
+                    <span className="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-pawn-gold rounded-bl-lg" />
+                    <span className="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-pawn-gold rounded-br-lg" />
                   </>
                 )}
               </>
@@ -196,7 +196,7 @@ export function RenewalProofModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-4 py-2 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-black uppercase tracking-wider rounded-xl transition"
+                  className="px-4 py-2 bg-brand-green/10 hover:bg-brand-green/20 text-brand-green border border-brand-green/20 text-xs font-black uppercase tracking-wider rounded-xl transition"
                 >
                   Upload Signed MOA File
                 </button>
@@ -221,7 +221,7 @@ export function RenewalProofModal({
                   type="button"
                   onClick={() => onConfirm(photo)}
                   disabled={isLoading}
-                  className="flex-[2] py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition flex items-center justify-center gap-2"
+                  className="flex-[2] py-3.5 bg-brand-green hover:bg-brand-green/90 text-white text-xs font-black uppercase tracking-wider rounded-2xl shadow-lg shadow-brand-green/20 hover:shadow-brand-green/30 transition flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -249,10 +249,10 @@ export function RenewalProofModal({
                     type="button"
                     onClick={capturePhoto}
                     disabled={!isStreaming || isLoading}
-                    className="w-14 h-14 rounded-full bg-white border-4 border-emerald-500 flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-40"
+                    className="w-14 h-14 rounded-full bg-white border-4 border-brand-green flex items-center justify-center shadow-lg active:scale-95 transition-transform disabled:opacity-40"
                     title="Capture signed MOA photo"
                   >
-                    <span className="w-10 h-10 rounded-full bg-emerald-600 block hover:bg-emerald-700 transition" />
+                    <span className="w-10 h-10 rounded-full bg-brand-green block hover:bg-brand-green/90 transition" />
                   </button>
                 )}
                 <button

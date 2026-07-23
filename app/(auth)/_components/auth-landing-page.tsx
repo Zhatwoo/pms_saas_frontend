@@ -383,7 +383,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     
     // Small delay to let menu start closing, then scroll
     setTimeout(() => {
-      const offset = 64; // Header height
+      const offset =
+        window.innerWidth >= 3840 ? 96 : window.innerWidth >= 2560 ? 80 : 64; // Header height by viewport
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - offset;
       
@@ -464,7 +465,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       <div className="relative z-10">
         {/* ─── NAV ─── */}
         <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-brand-green/10 bg-white/90 backdrop-blur-md transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
-          <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
+          <div className="landing-container-wide flex h-16 items-center justify-between px-4 md:px-6 lg:px-12 uqhd:h-20 uhd:h-24">
             {/* Logo - Desktop only (lg and up) */}
             <button
               type="button"
@@ -476,9 +477,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 alt={BRAND_CONFIG.shortCompanyName}
                 width={40}
                 height={40}
-                className="rounded-lg"
+                className="rounded-lg uqhd:h-12 uqhd:w-12 uhd:h-14 uhd:w-14"
               />
-              <span className="font-display text-lg font-bold text-brand-green">{BRAND_CONFIG.shortCompanyName}</span>
+              <span className="font-display text-lg font-bold text-brand-green uqhd:text-xl uhd:text-2xl">{BRAND_CONFIG.shortCompanyName}</span>
             </button>
             
             {/* Burger menu icon - Mobile and Tablet only (below lg) */}
@@ -511,13 +512,13 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             </button>
 
             {/* Desktop nav links */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8 uqhd:gap-10 uhd:gap-12">
               {navItems.map((item, index) => {
                 const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
+                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
                     {item}
                   </a>
                 );
@@ -530,7 +531,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm"
+                className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm uqhd:px-5 uqhd:py-2.5 uqhd:text-base"
               >
                 Login / Sign Up
               </button>
@@ -683,10 +684,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         <FeaturedSaleItems />
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">CUSTOMER REVIEWS</p>
-            <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
+        <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48 uqhd:px-16 uqhd:py-32 uhd:px-24 uhd:py-40">
+          <div className="landing-container reveal-on-scroll">
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold uqhd:text-base">CUSTOMER REVIEWS</p>
+            <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl uqhd:text-6xl uhd:text-7xl">What Our Sellers Say</h2>
 
             <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
               {/* Left arrow */}
@@ -781,11 +782,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         </section>
 
         {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ BRANCH LOCATIONS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FIND US</p>
-            <h2 className="font-display mt-2 text-4xl font-bold text-brand-green md:text-5xl">Our Branch Locations</h2>
-            <p className="mt-3 text-base text-brand-green/60">
+        <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40 uqhd:px-16 uqhd:pt-36 uqhd:pb-48 uhd:px-24">
+          <div className="landing-container reveal-on-scroll">
+            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold uqhd:text-base">FIND US</p>
+            <h2 className="font-display mt-2 text-4xl font-bold text-brand-green md:text-5xl uqhd:text-6xl uhd:text-7xl">Our Branch Locations</h2>
+            <p className="mt-3 text-base text-brand-green/60 uqhd:text-lg uhd:text-xl">
               {publicBranches.length > 0
                 ? `Visit us at any of our ${branchCountLabel.toLowerCase()}.`
                 : `Visit us at any available ${BRAND_CONFIG.companyName} branch.`}
@@ -854,11 +855,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {/* --- CONTACT CTA --- */}
         <section
           id="contact-us"
-          className="bg-brand-gold px-6 py-20 md:px-12 md:py-32"
+          className="bg-brand-gold px-6 py-20 md:px-12 md:py-32 uqhd:py-40 uhd:py-48"
         >
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 text-center">
-            <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
-            <p className="text-xl font-bold text-brand-green/90 md:text-2xl lg:text-3xl">
+          <div className="landing-container-wide flex flex-col items-center justify-center gap-4 text-center">
+            <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl lg:text-6xl uqhd:text-7xl uhd:text-8xl">Ready to Turn Your Items Into Cash?</h2>
+            <p className="text-xl font-bold text-brand-green/90 md:text-2xl lg:text-3xl uqhd:text-4xl">
               It only takes a minute to start.
             </p>
           </div>
