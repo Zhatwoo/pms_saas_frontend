@@ -59,7 +59,6 @@ export function getAuthorizedRedirect(
     (role === "super_admin" &&
       !requestedRedirect.startsWith("/admin") &&
       !requestedRedirect.startsWith("/employee")) ||
-    (role === "super_admin" && requestedRedirect.startsWith("/client-management")) ||
     (role === "admin" && requestedRedirect.startsWith("/admin")) ||
     (role === "employee" && requestedRedirect.startsWith("/employee"));
 

@@ -13,7 +13,6 @@ import {
   IncidentReportIcon,
   DeviceIcon,
 } from "@/lib/icons";
-import { Building2 } from "lucide-react";
 import { BRAND_CONFIG } from "./brand-config";
 
 export const APP_NAME = BRAND_CONFIG.companyName;
@@ -68,12 +67,6 @@ const SUPERADMIN_NAV: NavGroup[] = [
       { label: "Device Management", href: "/devices", icon: <DeviceIcon /> },
       { label: "Settings", href: "/settings", icon: <SettingsIcon /> },
       { label: "Audit Logs", href: "/audit-logs", icon: <AuditLogIcon /> },
-    ],
-  },
-  {
-    section: "SAAS",
-    items: [
-      { label: "Client Management", href: "/client-management", icon: <Building2 className="h-5 w-5" strokeWidth={1.5} /> },
     ],
   },
 ];
