@@ -117,12 +117,12 @@ export function QrReplacementReviewModal({
         className="relative z-10 flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border-main bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between border-b border-border-subtle bg-emerald-950 px-6 py-4">
+        <div className="flex items-start justify-between border-b border-border-subtle bg-brand-green px-6 py-4">
           <div>
-            <h2 id="qr-review-title" className="text-lg font-bold text-amber-400">
+            <h2 id="qr-review-title" className="text-lg font-bold text-pawn-gold">
               Review QR Replacement Request
             </h2>
-            <p className="mt-0.5 text-xs text-emerald-100/80">
+            <p className="mt-0.5 text-xs text-white/80">
               Verify the proof photo and details before approving or rejecting.
             </p>
           </div>
@@ -130,7 +130,7 @@ export function QrReplacementReviewModal({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="rounded-lg p-1.5 text-emerald-100/80 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+            className="rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
             aria-label="Close"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -190,7 +190,7 @@ export function QrReplacementReviewModal({
                   <button
                     type="button"
                     onClick={() => window.open(details.proofPhoto!, "_blank")}
-                    className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    className="rounded-lg border border-brand-green/30 bg-brand-green/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-brand-green hover:bg-brand-green/20"
                   >
                     Open Full Size
                   </button>
@@ -288,7 +288,7 @@ export function QrReplacementReviewModal({
                   type="button"
                   disabled={isProcessing}
                   onClick={() => handleReview("approve")}
-                  className="rounded-lg border border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-700 disabled:opacity-50"
+                  className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-xs font-bold uppercase tracking-wide text-white hover:opacity-90 disabled:opacity-50"
                 >
                   {isProcessing ? <LoadingSpinnerLabel text="Approving..." /> : "Approve & Print QR"}
                 </button>
@@ -317,7 +317,7 @@ export function QrReplacementReviewModal({
                   <button
                     type="button"
                     onClick={() => onPrint(details.itemId!, details.qrCode)}
-                    className="rounded-lg border border-emerald-600 bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white hover:bg-emerald-700"
+                    className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-xs font-bold uppercase tracking-wide text-white hover:opacity-90"
                   >
                     Print QR ({qrSize})
                   </button>
@@ -347,7 +347,7 @@ function InfoRow({
       <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">{label}</p>
       <p
         className={`mt-0.5 text-sm font-semibold ${
-          highlight ? "text-emerald-600 dark:text-emerald-400" : "text-text-primary"
+          highlight ? "text-brand-green" : "text-text-primary"
         }`}
       >
         {value || "—"}

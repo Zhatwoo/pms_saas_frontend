@@ -39,7 +39,7 @@ function RoleBadge({ role }: { role?: UserRole }) {
 		normalizedRole === "SUPER_ADMIN"
 			? "bg-amber-100 text-amber-800"
 			: normalizedRole === "ADMIN"
-			? "bg-emerald-950 text-emerald-50"
+			? "bg-brand-green text-white"
 			: "bg-badge-muted-bg text-badge-muted-text";
 
 	return (
@@ -139,7 +139,7 @@ export function UserTable({
 				<div className="overflow-x-auto">
 					<table className="w-full min-w-[900px] text-base">
 						<thead>
-							<tr className="bg-emerald-900 text-amber-400">
+							<tr className="bg-pawn-sidebar text-pawn-gold">
 								<th className="whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide">
 									Full Name
 								</th>

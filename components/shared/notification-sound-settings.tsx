@@ -97,8 +97,8 @@ export function NotificationSoundSettings({
               }}
               className={`min-w-0 rounded-lg border px-3 py-3 text-left text-sm transition ${
                 isSelected
-                  ? "border-emerald-600 bg-emerald-100 text-emerald-900 dark:border-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-300"
-                  : "border-border-main bg-surface-subtle text-text-secondary hover:border-emerald-500/60 hover:text-text-primary"
+                  ? "border-brand-green bg-brand-green/10 text-brand-green"
+                  : "border-border-main bg-surface-subtle text-text-secondary hover:border-brand-green/60 hover:text-text-primary"
               }`}
             >
               <span className="block truncate font-bold">{sound.label}</span>
@@ -114,12 +114,12 @@ export function NotificationSoundSettings({
             type="button"
             onClick={handleSave}
             disabled={isSaving || !hasChanges}
-            className="rounded-lg bg-emerald-700 px-5 py-2 text-xs font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg bg-brand-green px-5 py-2 text-xs font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSaving ? "Saving..." : "Save Sound"}
           </button>
           {status ? (
-            <span className="text-xs font-medium text-emerald-400">{status}</span>
+            <span className="text-xs font-medium text-brand-green">{status}</span>
           ) : null}
         </div>
       ) : null}

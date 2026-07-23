@@ -80,7 +80,7 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-emerald-900 text-amber-400">
+            <tr className="bg-pawn-sidebar text-pawn-gold">
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -109,7 +109,7 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                   key={row.transactionNo}
                   className={`border-t border-border-subtle ${
                     isStartRow
-                      ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
+                      ? "border-l-4 border-l-brand-green bg-emerald-surface"
                       : idx % 2 === 0
                         ? "bg-surface"
                         : "bg-surface-secondary"
@@ -126,7 +126,7 @@ export function TransactionTable({ data = [] }: TransactionTableProps) {
                           type="text" 
                           defaultValue={row.cashIn}
                           placeholder="0"
-                          className="w-16 ml-auto block text-right border-b border-border-main outline-none focus:border-emerald-500 bg-transparent text-xs py-0.5"
+                          className="w-16 ml-auto block text-right border-b border-border-main outline-none focus:border-brand-green bg-transparent text-xs py-0.5"
                         />
                       </td>
                     );

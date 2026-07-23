@@ -33,7 +33,7 @@ export function TransactionConfirmModal({
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-emerald-950/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-brand-green/50 backdrop-blur-sm"
         onClick={() => {
           if (!isLoading) onClose();
         }}
@@ -43,11 +43,11 @@ export function TransactionConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="transaction-confirm-title"
-        className="relative z-10 w-full max-w-md rounded-2xl border border-emerald-200 bg-white shadow-2xl shadow-emerald-900/20 animate-in fade-in zoom-in-95 duration-200 dark:border-emerald-900/40 dark:bg-background"
+        className="relative z-10 w-full max-w-md rounded-2xl border border-brand-green/30 bg-white shadow-2xl shadow-brand-green/20 animate-in fade-in zoom-in-95 duration-200 dark:border-brand-green/40 dark:bg-background"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col items-center px-6 pt-6 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 dark:bg-brand-green/20">
             <svg
               width="24"
               height="24"
@@ -57,7 +57,7 @@ export function TransactionConfirmModal({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-emerald-700 dark:text-emerald-400"
+              className="text-brand-green"
             >
               <path d="M12 9v4" />
               <path d="M12 17h.01" />
@@ -91,7 +91,7 @@ export function TransactionConfirmModal({
             type="button"
             onClick={() => void onConfirm()}
             disabled={isLoading}
-            className="flex-1 rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-700/20 transition-colors hover:bg-emerald-800 disabled:bg-text-muted disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 rounded-xl bg-brand-green px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-brand-green/20 transition-colors hover:opacity-90 disabled:bg-text-muted disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>

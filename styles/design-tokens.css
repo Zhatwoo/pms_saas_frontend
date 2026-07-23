@@ -98,9 +98,13 @@
   --color-emerald-text: var(--emerald-text);
 
   /* ── Brand colors ── */
-  --color-brand-green: #0B5D3B;
-  --color-brand-gold: #E8C547;
+  --color-brand-green: var(--brand-green);
+  --color-brand-gold: var(--brand-gold);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-inter);
+
+  /* Large displays: QHD/UWQHD (2560) and 4K (3840) */
+  --breakpoint-uqhd: 2560px;
+  --breakpoint-uhd: 3840px;
 }

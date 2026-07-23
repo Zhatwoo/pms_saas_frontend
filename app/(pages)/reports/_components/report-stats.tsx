@@ -21,7 +21,7 @@ export function ReportStats({ data, showBranchStats = true }: ReportStatsProps) 
       <StatCard
         label="TOTAL SALES TODAY"
         value={data ? formatPeso(data.totalSalesToday) : "₱ 0"}
-        borderColor="border-emerald-700"
+        borderColor="border-brand-green"
       />
       <StatCard
         label="TOTAL TRANSACTIONS"

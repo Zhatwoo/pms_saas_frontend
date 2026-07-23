@@ -105,7 +105,7 @@ export function BranchEndDayModal({
               value={physicalInput}
               onChange={handlePhysicalChange}
               disabled={isSubmitting}
-              className="w-full rounded-xl border-2 border-border-main bg-surface py-3 pl-10 pr-4 text-lg font-bold text-amber-400 outline-none focus:border-emerald-500 disabled:opacity-50"
+              className="w-full rounded-xl border-2 border-border-main bg-surface py-3 pl-10 pr-4 text-lg font-bold text-amber-400 outline-none focus:border-brand-green disabled:opacity-50"
             />
           </div>
         </div>
@@ -116,7 +116,7 @@ export function BranchEndDayModal({
             checked={confirmed}
             onChange={(e) => setConfirmed(e.target.checked)}
             disabled={isSubmitting}
-            className="mt-0.5 h-4 w-4 rounded border-border-main text-emerald-600 focus:ring-emerald-500"
+            className="mt-0.5 h-4 w-4 rounded border-border-main accent-brand-green focus:ring-brand-green"
           />
           <span className="text-xs text-text-secondary leading-relaxed">
             I confirm the branch business day is ending for this branch. Transactions for this calendar date will be

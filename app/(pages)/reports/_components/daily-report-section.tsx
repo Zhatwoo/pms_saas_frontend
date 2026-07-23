@@ -64,7 +64,7 @@ export function DailyReportSection({ data, date, period }: DailyReportSectionPro
         {
           label: "Total Sales",
           value: data?.totalSales ?? 0,
-          tone: "text-emerald-700" as const,
+          tone: "text-brand-green" as const,
         },
         {
           label: "Total Cash Out",
@@ -91,7 +91,7 @@ export function DailyReportSection({ data, date, period }: DailyReportSectionPro
         {
           label: "Total Sales",
           value: data?.totalSales ?? 0,
-          tone: "text-emerald-700" as const,
+          tone: "text-brand-green" as const,
         },
         {
           label: "Total Cash Out",

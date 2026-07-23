@@ -138,7 +138,7 @@ export function TransactionTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1400px] text-sm">
           <thead>
-            <tr className="bg-emerald-900 text-amber-400">
+            <tr className="bg-pawn-sidebar text-pawn-gold">
               {visibleColumns.map((col) => (
                 <th
                   key={col.key}
@@ -197,7 +197,7 @@ export function TransactionTable({
                       isHighlighted
                         ? "animate-highlight-blink"
                         : isStartRow
-                        ? "border-l-4 border-l-emerald-700 bg-emerald-surface"
+                        ? "border-l-4 border-l-brand-green bg-emerald-surface"
                         : "bg-surface-secondary"
                     }`}
                   >
@@ -270,14 +270,14 @@ export function TransactionTable({
                       }
                       if (col.key === "sold") {
                         return (
-                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-emerald-700">
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-brand-green">
                             {formatAmount(row.sold)}
                           </td>
                         );
                       }
                       if (col.key === "cashIn") {
                         return (
-                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm text-emerald-700">
+                          <td key={col.key} className="whitespace-nowrap px-4 py-3 text-right text-sm text-brand-green">
                             {formatAmount(row.cashIn)}
                           </td>
                         );
@@ -370,7 +370,7 @@ export function TransactionTable({
                                   type="button"
                                   onClick={() => onViewDetails(row)}
                                   title="View details"
-                                  className="rounded-lg p-2 text-text-muted transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+                                  className="rounded-lg p-2 text-text-muted transition-colors hover:bg-brand-green/10 hover:text-brand-green"
                                 >
                                   {eyeIcon}
                                 </button>

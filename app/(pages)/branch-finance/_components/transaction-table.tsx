@@ -32,7 +32,7 @@ const columns: Column[] = [
 ];
 
 const typeConfig = {
-  ADD_FUNDS: { label: "Add Funds", bgClass: "bg-emerald-100 text-emerald-700", dotClass: "bg-emerald-500" },
+  ADD_FUNDS: { label: "Add Funds", bgClass: "bg-emerald-surface text-emerald-text", dotClass: "bg-brand-green" },
   TRANSFER_IN: { label: "Transfer In", bgClass: "bg-blue-100 text-blue-700", dotClass: "bg-blue-500" },
   TRANSFER_OUT: { label: "Transfer Out", bgClass: "bg-red-100 text-red-600", dotClass: "bg-red-500" },
 };
@@ -121,7 +121,7 @@ export function TransactionTable({
                 ? "text-red-600"
                 : txType === "TRANSFER_IN"
                   ? "text-blue-600"
-                  : "text-emerald-600";
+                  : "text-emerald-text";
             const prefix = txType === "TRANSFER_OUT" ? "-" : "+";
             return (
               <span className={`text-sm font-bold ${color}`}>

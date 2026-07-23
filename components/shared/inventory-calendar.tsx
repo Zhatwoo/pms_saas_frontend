@@ -82,8 +82,8 @@ export function InventoryCalendar({
 
   return (
     <div className="overflow-hidden rounded-lg border border-border-main bg-surface shadow-lg shadow-black/20">
-      <div className="flex items-center justify-between bg-emerald-900 p-6 text-white">
-        <h3 className="text-xl font-bold text-amber-400">{monthName} {year}</h3>
+      <div className="flex items-center justify-between bg-brand-green p-6 text-white">
+        <h3 className="text-xl font-bold text-pawn-gold">{monthName} {year}</h3>
         <div className="flex gap-2">
           <button 
             onClick={() => setCurrentDate(new Date(year, month - 1))}
@@ -122,12 +122,12 @@ export function InventoryCalendar({
           const highlightClass = isToday
             ? "ring-2 ring-inset ring-yellow-400 bg-yellow-500/10"
             : isSelected
-              ? "ring-2 ring-inset ring-emerald-500 bg-emerald-500/10"
+              ? "ring-2 ring-inset ring-brand-green bg-brand-green/10"
               : "";
           const dayTextClass = isToday
             ? "text-yellow-400"
             : isSelected
-              ? "text-emerald-400"
+              ? "text-brand-green"
               : "text-text-secondary";
           
           return (
@@ -136,15 +136,15 @@ export function InventoryCalendar({
               type={onSelectDate ? "button" : undefined}
               disabled={Boolean(onSelectDate) && isFutureDate}
               onClick={onSelectDate && !isFutureDate ? () => onSelectDate(dateString) : undefined}
-              className={`group relative border border-border-subtle bg-surface p-2 text-left transition-colors ${onSelectDate ? (isFutureDate ? "cursor-not-allowed opacity-45" : "cursor-pointer hover:bg-emerald-50/10") : ""} ${highlightClass}`}
+              className={`group relative border border-border-subtle bg-surface p-2 text-left transition-colors ${onSelectDate ? (isFutureDate ? "cursor-not-allowed opacity-45" : "cursor-pointer hover:bg-brand-green/10") : ""} ${highlightClass}`}
             >
               <span className={`text-sm font-bold ${dayTextClass}`}>{day}</span>
               
               <div className="mt-1 space-y-1">
                 {count > 0 ? (
                   <div className="flex items-center gap-1">
-                    <div className="h-1.5 flex-1 rounded-full bg-emerald-500/70" />
-                    <span className="text-[9px] font-black leading-none text-emerald-400">{count}</span>
+                    <div className="h-1.5 flex-1 rounded-full bg-brand-green/70" />
+                    <span className="text-[9px] font-black leading-none text-brand-green">{count}</span>
                   </div>
                 ) : null}
                 {!calendarData && dayItems.slice(0, 3).map((item, idx) => (
@@ -160,7 +160,7 @@ export function InventoryCalendar({
               </div>
 
               {count > 0 && (
-                <div className="absolute inset-0 z-10 flex flex-col justify-center bg-emerald-950/95 p-4 text-white opacity-0 transition-all group-hover:opacity-100">
+                <div className="absolute inset-0 z-10 flex flex-col justify-center bg-brand-green/95 p-4 text-white opacity-0 transition-all group-hover:opacity-100">
                   <p className="text-[10px] font-bold uppercase underline mb-2 tracking-wider">Day Summary</p>
                   <p className="text-xs font-bold">{count} Total Items</p>
                   {dayItems.length > 0 && (

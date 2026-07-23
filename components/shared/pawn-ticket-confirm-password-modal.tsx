@@ -43,7 +43,7 @@ export function ConfirmPasswordModal({ isOpen, onClose, onConfirm }: ConfirmPass
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-2 w-full rounded-[30px] border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 w-full rounded-[30px] border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary focus:border-brand-green focus:outline-none focus:ring-2 focus:ring-brand-green/20"
               placeholder="Enter password"
               autoFocus
             />
@@ -61,7 +61,7 @@ export function ConfirmPasswordModal({ isOpen, onClose, onConfirm }: ConfirmPass
             </button>
             <button
               type="submit"
-              className="rounded-[30px] bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+              className="rounded-[30px] bg-brand-green px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
             >
               Continue
             </button>

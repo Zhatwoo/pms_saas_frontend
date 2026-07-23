@@ -29,7 +29,7 @@ export function DataTable({
   columns,
   data,
   renderCell,
-  headerClassName = "bg-emerald-900 text-amber-400",
+  headerClassName = "bg-pawn-sidebar text-pawn-gold",
   tableClassName,
   emptyMessage = "No records found.",
   rowClassName,

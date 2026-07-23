@@ -99,9 +99,9 @@ export function QrScanner({ onScan, onClose, isOpen }: QrScannerProps) {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
       <div className="relative w-full max-w-lg bg-surface rounded-3xl overflow-hidden shadow-2xl border border-white/10 animate-in fade-in zoom-in duration-300">
-        <div className="bg-emerald-950 px-6 py-4 flex items-center justify-between">
+        <div className="bg-brand-green px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-800 flex items-center justify-center text-emerald-400">
+            <div className="w-8 h-8 rounded-lg bg-brand-green/80 flex items-center justify-center text-pawn-gold">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                 <rect x="7" y="7" width="3" height="3"/>
@@ -124,19 +124,19 @@ export function QrScanner({ onScan, onClose, isOpen }: QrScannerProps) {
           <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" />
           
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-64 h-64 border-2 border-emerald-400 rounded-3xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.5)]">
-              <div className="absolute inset-x-0 top-0 h-0.5 bg-emerald-400 animate-scan-line" />
-              <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl" />
-              <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl" />
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-xl" />
+            <div className="w-64 h-64 border-2 border-pawn-gold rounded-3xl relative shadow-[0_0_0_999px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-x-0 top-0 h-0.5 bg-pawn-gold animate-scan-line" />
+              <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-pawn-gold rounded-tl-xl" />
+              <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-pawn-gold rounded-tr-xl" />
+              <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-pawn-gold rounded-bl-xl" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-pawn-gold rounded-br-xl" />
             </div>
           </div>
 
           {isInitializing && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white gap-4">
-              <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-400">Initializing Camera...</p>
+              <div className="w-10 h-10 border-4 border-brand-green/30 border-t-brand-green rounded-full animate-spin" />
+              <p className="text-xs font-bold uppercase tracking-widest text-pawn-gold">Initializing Camera...</p>
             </div>
           )}
 

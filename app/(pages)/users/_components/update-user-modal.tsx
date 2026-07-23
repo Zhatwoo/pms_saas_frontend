@@ -144,14 +144,14 @@ export function UpdateUserModal({
           className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="bg-emerald-900 px-6 py-5">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">
+          <div className="bg-pawn-sidebar px-6 py-5">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-pawn-gold">
               User Management
             </p>
             <div className="mt-2 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold text-white">Update User Profile</h2>
-                <p className="mt-1 text-base text-emerald-50/80">
+                <p className="mt-1 text-base text-white/80">
                   Modify account details for <span className="text-amber-300 font-bold">{user.email}</span>.
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function UpdateUserModal({
                   value={form.fullName}
                   onChange={(event) => updateField("fullName", event.target.value)}
                   placeholder="John Doe"
-                  className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
+                  className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-brand-green/50 focus:ring-4 focus:ring-brand-green/5"
                 />
               </div>
 
@@ -226,7 +226,7 @@ export function UpdateUserModal({
                   <select
                     value={form.role}
                     onChange={(event) => updateRole(event.target.value as UserRole)}
-                    className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-emerald-700/50 focus:ring-4 focus:ring-emerald-700/5"
+                    className="h-12 w-full rounded-md border border-input-border bg-input-bg px-4 text-base text-text-primary outline-none transition-all focus:border-brand-green/50 focus:ring-4 focus:ring-brand-green/5"
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>
@@ -262,7 +262,7 @@ export function UpdateUserModal({
                         {assignmentDescription}
                       </p>
                     </div>
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700">
+                    <span className="rounded-full bg-brand-green/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-green">
                       {isGlobalAccess ? "Global Access" : "View Only"}
                     </span>
                   </div>
@@ -291,7 +291,7 @@ export function UpdateUserModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-md bg-emerald-700 px-5 py-3 text-base font-bold text-white transition-colors hover:bg-emerald-800"
+                className="rounded-md bg-brand-green px-5 py-3 text-base font-bold text-white transition-colors hover:brightness-110"
               >
                 {isSubmitting ? "Updating..." : "Update Account"}
               </button>

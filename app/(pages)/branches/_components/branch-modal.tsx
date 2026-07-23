@@ -128,8 +128,8 @@ export function BranchModal({
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md animate-[fadeInUp_0.25s_ease-out] rounded-xl border border-border-main bg-surface shadow-2xl">
         {/* Header */}
-        <div className="bg-emerald-900 px-6 py-5">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-400">
+        <div className="bg-pawn-sidebar px-6 py-5">
+          <p className="text-xs font-bold uppercase tracking-[0.22em] text-pawn-gold">
             Branch Management
           </p>
           <div className="mt-2 flex items-start justify-between gap-4">
@@ -137,7 +137,7 @@ export function BranchModal({
               <h2 className="text-2xl font-bold text-white">
                 {mode === "create" ? "Create New Branch" : "Edit Branch"}
               </h2>
-              <p className="mt-1 text-base text-emerald-50/80">
+              <p className="mt-1 text-base text-white/80">
                 {mode === "create"
                   ? "Add a new pawnshop branch location"
                   : "Update branch information"}
@@ -267,7 +267,7 @@ export function BranchModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg border border-emerald-700 bg-pawn-sidebar px-4 py-2 text-xs font-bold text-amber-400 transition-opacity hover:opacity-90"
+              className="rounded-lg border border-pawn-sidebar-light bg-pawn-sidebar px-4 py-2 text-xs font-bold text-pawn-gold transition-opacity hover:opacity-90"
             >
               {isSubmitting
                 ? "Saving..."

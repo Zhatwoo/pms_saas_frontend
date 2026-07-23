@@ -6,6 +6,67 @@
   font-family: "Playfair Display", Georgia, serif;
 }
 
+/* Landing page shells — scale content width on 2560px+ / 4K */
+.landing-container {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 72rem; /* ~1152px / max-w-6xl */
+}
+
+.landing-container-wide {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 1400px;
+}
+
+.landing-section-pad {
+  padding-inline: 1rem;
+  padding-block: 5rem;
+}
+
+@media (min-width: 640px) {
+  .landing-section-pad {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .landing-section-pad {
+    padding-inline: 3rem;
+    padding-block: 7rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  .landing-container {
+    max-width: 1800px;
+  }
+
+  .landing-container-wide {
+    max-width: 2000px;
+  }
+
+  .landing-section-pad {
+    padding-inline: 4rem;
+    padding-block: 8rem;
+  }
+}
+
+@media (min-width: 3840px) {
+  .landing-container {
+    max-width: 2600px;
+  }
+
+  .landing-container-wide {
+    max-width: 2800px;
+  }
+
+  .landing-section-pad {
+    padding-inline: 6rem;
+    padding-block: 10rem;
+  }
+}
+
 /* Align `dark:*` utilities with ThemeProvider (html.light / html.dark), not OS preference */
 @custom-variant dark (&:where(.dark, .dark *));
 

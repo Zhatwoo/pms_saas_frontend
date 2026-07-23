@@ -15,7 +15,7 @@ export function PeriodTabs({ tabs, activeTab, onTabChange }: PeriodTabsProps) {
           onClick={() => onTabChange(tab)}
           className={`h-11 shrink-0 whitespace-nowrap px-3 text-[11px] font-medium transition-colors sm:px-5 sm:text-sm md:text-base ${
             tab === activeTab
-              ? "bg-emerald-900/60 text-amber-400 shadow-sm"
+              ? "bg-brand-green/60 text-pawn-gold shadow-sm"
               : "text-text-secondary hover:bg-surface-hover"
           }`}
         >

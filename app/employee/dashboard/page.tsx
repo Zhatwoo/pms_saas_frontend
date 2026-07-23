@@ -104,7 +104,7 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-emerald-900 dark:text-text-primary leading-tight">
+        <h1 className="text-2xl font-bold text-brand-green dark:text-text-primary leading-tight">
           Welcome{user?.fullName ? `, ${user.fullName}` : ""}
         </h1>
         <p className="mt-1 text-sm text-text-tertiary">

@@ -147,7 +147,7 @@ export function DateFilterSelector({
                       key={week.id}
                       type="button"
                       className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-hover ${
-                        weeklyId === week.id ? "bg-emerald-50 font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "text-text-primary"
+                        weeklyId === week.id ? "bg-brand-green/10 font-medium text-brand-green dark:bg-brand-green/20 dark:text-brand-green" : "text-text-primary"
                       }`}
                       onClick={() => {
                         setWeeklyId(week.id);

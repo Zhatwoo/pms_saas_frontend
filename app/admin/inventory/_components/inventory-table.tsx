@@ -70,7 +70,7 @@ export function InventoryTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-emerald-900 text-amber-400">
+              <tr className="bg-brand-green text-pawn-gold">
                 {["ID", "Item Name", "Category", "Branch", "Pawn Date", "Status", ""].map((h) => (
                   <th key={h} className="whitespace-nowrap px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-left">{h}</th>
                 ))}
@@ -90,7 +90,7 @@ export function InventoryTable() {
               ) : (
                 items.map((item, idx) => (
                   <tr key={item.id} className={`border-t border-border-subtle ${idx % 2 === 0 ? "bg-surface" : "bg-surface-secondary"} hover:bg-surface-hover transition-colors`}>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-emerald-800">{item.itemId}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-brand-green">{item.itemId}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-secondary">{item.itemName}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.category}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-xs text-text-tertiary">{item.branch}</td>

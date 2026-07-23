@@ -225,7 +225,7 @@ export function BranchTable({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1020px] text-sm">
             <thead>
-              <tr className="bg-emerald-900 text-amber-400">
+              <tr className="bg-pawn-sidebar text-pawn-gold">
                 <th className="whitespace-nowrap px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wide">
                   Branch ID
                 </th>

@@ -97,13 +97,13 @@ export function UserDetailDrawer({
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center animate-in fade-in zoom-in-95 duration-300">
           {/* Backdrop Blur overlap */}
           <div className="absolute inset-0 bg-black/10 backdrop-blur-md" />
-          <div className="relative flex items-center gap-3 rounded-xl border border-emerald-300/70 bg-emerald-100/70 px-5 py-3 shadow-xl backdrop-blur-sm">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
+          <div className="relative flex items-center gap-3 rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 shadow-xl backdrop-blur-sm">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green text-white">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </span>
-            <span className="text-sm font-semibold text-emerald-900">{toast}</span>
+            <span className="text-sm font-semibold text-brand-green">{toast}</span>
           </div>
         </div>
       )}
@@ -123,9 +123,9 @@ export function UserDetailDrawer({
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 bg-gradient-to-r from-emerald-900 to-emerald-800 px-6 py-5">
+        <div className="flex items-center justify-between border-b border-zinc-100 bg-pawn-sidebar px-6 py-5">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-pawn-gold">
               User Details
             </p>
             <h2 className="mt-1 text-lg font-bold text-white">
@@ -134,7 +134,7 @@ export function UserDetailDrawer({
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-emerald-300 transition-colors hover:bg-white/10 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-pawn-gold transition-colors hover:bg-white/10 hover:text-white"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -181,7 +181,7 @@ export function UserDetailDrawer({
                     <p className="text-[10px] font-bold uppercase tracking-wide text-text-muted">
                       Role
                     </p>
-                    <p className="mt-1 text-xs font-bold text-emerald-700">
+                    <p className="mt-1 text-xs font-bold text-brand-green">
                       {user.role.replace('_', ' ')}
                     </p>
                   </div>
@@ -216,7 +216,7 @@ export function UserDetailDrawer({
 
                   <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-surface p-4 shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-green/10 text-brand-green">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                         </svg>
@@ -226,7 +226,7 @@ export function UserDetailDrawer({
                         <p className="text-[10px] text-text-muted">Login permissions</p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-emerald-600 capitalize">
+                    <span className="text-xs font-bold text-brand-green capitalize">
                       {user.status === "Active" ? "Enabled" : "Disabled"}
                     </span>
                   </div>
@@ -248,7 +248,7 @@ export function UserDetailDrawer({
                           onClose();
                         }
                       }}
-                      className="flex items-center justify-center gap-2 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-emerald-700 hover:bg-emerald-50 hover:text-emerald-900"
+                      className="flex items-center justify-center gap-2 rounded-lg border border-border-main bg-surface px-3 py-2.5 text-xs font-semibold text-text-secondary transition-colors hover:border-brand-green hover:bg-brand-green/10 hover:text-brand-green"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -296,7 +296,7 @@ export function UserDetailDrawer({
                     {/* Current Branch Display */}
                     <div className="mb-4 flex items-center justify-between rounded-lg border border-border-subtle bg-surface px-4 py-3 shadow-sm">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-green/10 text-brand-green">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M3 21h18" />
                             <path d="M3 7v1h18V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z" />
@@ -309,8 +309,8 @@ export function UserDetailDrawer({
                           <p className="text-sm font-bold text-text-primary">{user.branch}</p>
                         </div>
                       </div>
-                      <div className="rounded-full bg-emerald-100 px-2 py-0.5">
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase">Active</span>
+                      <div className="rounded-full bg-brand-green/10 px-2 py-0.5">
+                        <span className="text-[10px] font-bold text-brand-green uppercase">Active</span>
                       </div>
                     </div>
 

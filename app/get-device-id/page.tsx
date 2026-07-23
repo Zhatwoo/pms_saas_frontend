@@ -28,14 +28,14 @@ export default function GetDeviceIdPage() {
     <div className="min-h-screen bg-zinc-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-emerald-800 px-8 py-8 text-center">
+        <div className="bg-brand-green px-8 py-8 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-8 w-8 text-white">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0H3" />
             </svg>
           </div>
           <h1 className="mt-3 text-xl font-bold text-white">Device ID Lookup</h1>
-          <p className="mt-1 text-sm text-emerald-200">
+          <p className="mt-1 text-sm text-white/70">
             {BRAND_CONFIG.companyName}
           </p>
         </div>
@@ -62,8 +62,8 @@ export default function GetDeviceIdPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4">
-                <p className="break-all font-mono text-sm font-bold text-emerald-900 text-center leading-relaxed">
+              <div className="rounded-xl border-2 border-brand-green/25 bg-brand-green/5 p-4">
+                <p className="break-all font-mono text-sm font-bold text-brand-green text-center leading-relaxed">
                   {fingerprint}
                 </p>
               </div>
@@ -75,8 +75,8 @@ export default function GetDeviceIdPage() {
               onClick={handleCopy}
               className={`mt-4 w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all ${
                 copied
-                  ? "bg-emerald-600 text-white"
-                  : "bg-emerald-700 text-white hover:bg-emerald-600"
+                  ? "bg-brand-green text-white"
+                  : "bg-brand-green/90 text-white hover:bg-brand-green"
               }`}
             >
               {copied ? (

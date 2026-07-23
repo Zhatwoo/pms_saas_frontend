@@ -203,7 +203,7 @@ export function QRReplacementRequestModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the damage, loss, or issue with the QR code..."
-              className="w-full px-3 py-2 border border-input-border bg-input-bg rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm text-text-primary resize-none transition-colors"
+              className="w-full px-3 py-2 border border-input-border bg-input-bg rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-green/20 text-sm text-text-primary resize-none transition-colors"
               rows={3}
             />
           </div>
@@ -244,9 +244,9 @@ export function QRReplacementRequestModal({
                     <button
                       type="button"
                       onClick={capturePhoto}
-                      className="h-12 w-12 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all border-4 border-emerald-500"
+                      className="h-12 w-12 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all border-4 border-brand-green"
                     >
-                      <div className="h-4 w-4 bg-emerald-500 rounded-full" />
+                      <div className="h-4 w-4 bg-brand-green rounded-full" />
                     </button>
                   </div>
                 </div>
@@ -255,9 +255,9 @@ export function QRReplacementRequestModal({
                   <button
                     type="button"
                     onClick={startCamera}
-                    className="flex h-32 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-emerald-500/20 bg-emerald-500/5 transition-colors hover:bg-emerald-500/10"
+                    className="flex h-32 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-brand-green/20 bg-brand-green/5 transition-colors hover:bg-brand-green/10"
                   >
-                    <div className="flex flex-col items-center justify-center text-emerald-600">
+                    <div className="flex flex-col items-center justify-center text-brand-green">
                       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mb-2">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                         <circle cx="12" cy="13" r="4"/>
@@ -297,7 +297,7 @@ export function QRReplacementRequestModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2 rounded-lg bg-brand-green text-white font-semibold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>

@@ -122,7 +122,7 @@ export function IncidentReportModal({ isOpen, onClose, prefillItem, missingItems
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Short incident title"
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
             />
           </label>
 
@@ -133,7 +133,7 @@ export function IncidentReportModal({ isOpen, onClose, prefillItem, missingItems
               onChange={(e) => setSummary(e.target.value)}
               rows={4}
               placeholder="Describe what happened and why the ticket needs attention."
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
             />
           </label>
 
@@ -143,7 +143,7 @@ export function IncidentReportModal({ isOpen, onClose, prefillItem, missingItems
               value={selectedMissingItemId}
               onChange={(e) => setSelectedMissingItemId(e.target.value)}
               disabled={missingItems.length === 0}
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
             >
               <option value="" disabled hidden>
                 Select a missing item
@@ -161,7 +161,7 @@ export function IncidentReportModal({ isOpen, onClose, prefillItem, missingItems
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none"
             >
               {categoryOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -171,7 +171,7 @@ export function IncidentReportModal({ isOpen, onClose, prefillItem, missingItems
 
           <label className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wide text-text-muted">Priority</span>
-            <select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-emerald-500 focus:outline-none">
+            <select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-full rounded-lg border border-border-main bg-surface px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none">
               {priorityOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -192,7 +192,7 @@ export function IncidentReportModal({ isOpen, onClose, prefillItem, missingItems
             <p className="text-xs text-text-muted">This form writes directly to the incident tickets table.</p>
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button type="button" onClick={onClose} className="rounded-lg border border-border-main px-4 py-2 text-sm font-semibold text-text-secondary transition-colors hover:bg-surface-secondary">Cancel</button>
-              <button type="submit" disabled={submitting} className="rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Saving...' : 'Save Ticket'}</button>
+              <button type="submit" disabled={submitting} className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">{submitting ? 'Saving...' : 'Save Ticket'}</button>
             </div>
           </div>
         </form>
