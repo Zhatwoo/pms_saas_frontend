@@ -634,6 +634,7 @@ export function AvatarPickerModal({
               Reset
             </button>
           </div>
+        </div>
 
         <div className="border-t border-zinc-200 px-5 py-5 dark:border-zinc-800 sm:px-6">
           {mode === "camera" ? (
