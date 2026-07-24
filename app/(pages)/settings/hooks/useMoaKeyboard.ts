@@ -11,12 +11,13 @@ type UseMoaKeyboardParams = {
   onDuplicate?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onSelectAll?: () => void;
+  onClearSelection?: () => void;
 };
 
 /**
  * Registers global keyboard shortcuts for the MOA editor.
- * Shortcuts: Delete, Ctrl+Z (Undo), Ctrl+Y (Redo), Ctrl+C (Copy), Ctrl+X (Cut),
- * Ctrl+V (Paste), Ctrl+D (Duplicate).
+ * Shortcuts: Delete, Escape, Ctrl+A (Select all), Ctrl+Z/Y, Ctrl+C/X/V/D.
  * The handler ignores events originating from input/textarea/contenteditable elements.
  */
 export function useMoaKeyboard({
@@ -27,6 +28,8 @@ export function useMoaKeyboard({
   onDuplicate,
   onUndo,
   onRedo,
+  onSelectAll,
+  onClearSelection,
 }: UseMoaKeyboardParams) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,8 +37,14 @@ export function useMoaKeyboard({
       const isEditable =
         target.isContentEditable ||
         target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA";
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT";
       if (isEditable) return;
+
+      if (e.key === "Escape") {
+        onClearSelection?.();
+        return;
+      }
 
       // Delete or Backspace key without modifiers
       if ((e.key === "Delete" || e.key === "Backspace") && !e.ctrlKey && !e.metaKey) {
@@ -44,8 +53,12 @@ export function useMoaKeyboard({
         return;
       }
 
-      if (e.ctrlKey) {
+      if (e.ctrlKey || e.metaKey) {
         switch (e.key.toLowerCase()) {
+          case "a":
+            e.preventDefault();
+            onSelectAll?.();
+            break;
           case "z":
             e.preventDefault();
             onUndo?.();
@@ -78,5 +91,15 @@ export function useMoaKeyboard({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onDelete, onCopy, onCut, onPaste, onDuplicate, onUndo, onRedo]);
+  }, [
+    onDelete,
+    onCopy,
+    onCut,
+    onPaste,
+    onDuplicate,
+    onUndo,
+    onRedo,
+    onSelectAll,
+    onClearSelection,
+  ]);
 }

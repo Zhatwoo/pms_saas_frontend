@@ -6,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  ImagePlus,
   Italic,
   Trash2,
   Underline,
@@ -13,6 +14,7 @@ import {
 import {
   MOA_FONT_OPTIONS,
   MOA_FONT_SIZES,
+  type MoaPaletteItemKind,
   type MoaTextAlign,
   type MoaTextStylePatch,
 } from "../moa-design-palette";
@@ -27,10 +29,15 @@ export function MoaTextTab({
   fontStyle,
   textDecoration,
   color,
+  fill,
   selectedId,
+  selectedKind,
+  hasImage,
   onFontFamilyChange,
   onFontSizeChange,
   onTextStyleChange,
+  onInsertImage,
+  onClearImage,
   onDeleteSelected,
   onClearAll,
 }: {
@@ -42,20 +49,39 @@ export function MoaTextTab({
   fontStyle: "normal" | "italic";
   textDecoration: "none" | "underline" | "line-through";
   color: string;
+  fill: string;
   selectedId: string | null;
+  selectedKind: MoaPaletteItemKind | null;
+  hasImage: boolean;
   onFontFamilyChange: (value: string) => void;
   onFontSizeChange: (value: number) => void;
   onTextStyleChange: (patch: MoaTextStylePatch) => void;
+  onInsertImage: () => void;
+  onClearImage: () => void;
   onDeleteSelected: () => void;
   onClearAll: () => void;
 }) {
   const toolsDisabled = !enabled;
+  const fillValue =
+    !fill || fill === "transparent" ? "#ffffff" : fill;
+  const showHeaderTools =
+    selectedKind === "header" ||
+    selectedKind === "section" ||
+    selectedKind === "body" ||
+    selectedKind === "shape" ||
+    selectedKind === "frame" ||
+    selectedKind === "chart" ||
+    selectedKind === "grid";
+  const showImageTools = selectedKind === "header" || selectedKind === "photo";
 
   return (
     <div className="space-y-3">
       <div>
         <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Text tools</h3>
-        <TabHint>Style the selected canvas element.</TabHint>
+        <TabHint>
+          Click a header field to style it alone. Ctrl/Shift+click for multi-select. Ctrl+A selects
+          all fields in the header (or all elements). Text tools apply to the current selection.
+        </TabHint>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -77,7 +103,7 @@ export function MoaTextTab({
         <label className="block space-y-1">
           <span className="text-[9px] font-semibold text-zinc-600">Size</span>
           <select
-            value={fontSize}
+            value={MOA_FONT_SIZES.includes(fontSize) ? fontSize : 11}
             disabled={toolsDisabled}
             onChange={(event) => onFontSizeChange(Number(event.target.value))}
             className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500 disabled:opacity-50"
@@ -180,6 +206,64 @@ export function MoaTextTab({
           </label>
         </div>
       </div>
+
+      {showHeaderTools ? (
+        <div className="space-y-1.5 border-t border-zinc-100 pt-3">
+          <span className="text-[9px] font-semibold text-zinc-600">Background</span>
+          <div className="flex items-center gap-1.5">
+            <label
+              title="Background color"
+              className={`inline-flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded border border-zinc-200 bg-white ${
+                toolsDisabled || !selectedId ? "opacity-40" : "hover:border-emerald-400"
+              }`}
+            >
+              <input
+                type="color"
+                value={fillValue}
+                disabled={toolsDisabled || !selectedId}
+                onChange={(event) => onTextStyleChange({ fill: event.target.value })}
+                className="h-8 w-8 cursor-pointer border-0 bg-transparent p-0"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={toolsDisabled || !selectedId}
+              onClick={() => onTextStyleChange({ fill: "transparent" })}
+              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-[9px] font-bold text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
+            >
+              Transparent
+            </button>
+            <span className="text-[8px] font-medium text-zinc-400">
+              {!fill || fill === "transparent" ? "Plain" : fill}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {showImageTools ? (
+        <div className="space-y-1.5 border-t border-zinc-100 pt-3">
+          <span className="text-[9px] font-semibold text-zinc-600">Image</span>
+          <div className="flex gap-1">
+            <button
+              type="button"
+              disabled={toolsDisabled || !selectedId}
+              onClick={onInsertImage}
+              className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[9px] font-bold text-emerald-800 hover:bg-emerald-100 disabled:opacity-40"
+            >
+              <ImagePlus className="h-3 w-3" />
+              Insert image
+            </button>
+            <button
+              type="button"
+              disabled={toolsDisabled || !selectedId || !hasImage}
+              onClick={onClearImage}
+              className="rounded border border-zinc-200 bg-white px-2 py-1.5 text-[9px] font-bold text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex gap-1 border-t border-zinc-100 pt-3">
         <button
