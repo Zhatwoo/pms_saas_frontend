@@ -472,7 +472,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               onClick={(e) => handleScroll(e, "home", "HOME")}
             >
               <Image
-                src="/logo.png"
+                src="/logo-icon.png"
                 alt={BRAND_CONFIG.shortCompanyName}
                 width={40}
                 height={40}
