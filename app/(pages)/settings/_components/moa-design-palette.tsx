@@ -95,6 +95,10 @@ export type MoaDesignElement = {
   headerFields: MoaHeaderField[];
   /** Key from MOA Field Config when kind is moaField. */
   fieldKey: string;
+  /** Optional image data URL for photo elements */
+  imageSrc?: string;
+  /** Optional table data for table elements (rows x columns) */
+  tableData?: string[][];
 };
 
 export type MoaHeaderFieldKey = "shopName" | "shopAddress" | "phoneNumber" | "email";
@@ -434,36 +438,35 @@ function ElementVisual({ element }: { element: MoaDesignElement }) {
       );
     case "photo":
       return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded border border-dashed border-zinc-400 bg-zinc-100">
-          <ImageIcon className="h-5 w-5 text-zinc-500" />
-          <span style={textStyle} className="w-full px-1 font-semibold">
-            {element.text || "Photo"}
-          </span>
+        <div className="flex h-full w-full items-center justify-center rounded border border-dashed border-zinc-400 bg-zinc-100">
+          {element.imageSrc ? (
+            <img src={element.imageSrc} alt="Photo" className="max-h-full max-w-full object-contain" />
+          ) : (
+            <ImageIcon className="h-5 w-5 text-zinc-500" />
+          )}
         </div>
       );
-    case "table":
-      return (
-        <div className="h-full w-full overflow-hidden rounded border border-zinc-400 bg-white text-[8px]">
-          <div className="grid grid-cols-3 border-b border-zinc-300 bg-emerald-50 font-bold">
-            <span className="border-r border-zinc-300 px-1 py-0.5">A</span>
-            <span className="border-r border-zinc-300 px-1 py-0.5">B</span>
-            <span className="px-1 py-0.5">C</span>
-          </div>
-          {[0, 1, 2].map((row) => (
-            <div key={row} className="grid grid-cols-3 border-b border-zinc-200 last:border-b-0">
-              <span className="border-r border-zinc-200 px-1 py-0.5">&nbsp;</span>
-              <span className="border-r border-zinc-200 px-1 py-0.5">&nbsp;</span>
-              <span className="px-1 py-0.5">&nbsp;</span>
+case "table":
+        return (
+          <div className="h-full w-full overflow-hidden rounded border border-zinc-400 bg-white text-[8px]">
+            <div className="grid grid-cols-3 border-b border-zinc-300 bg-emerald-50 font-bold">
+              <span className="border-r border-zinc-300 px-1 py-0.5">A</span>
+              <span className="border-r border-zinc-300 px-1 py-0.5">B</span>
+              <span className="px-1 py-0.5">C</span>
             </div>
-          ))}
-        </div>
-      );
+            {[0, 1, 2].map((row) => (
+              <div key={row} className="grid grid-cols-3 border-b border-zinc-200 last:border-b-0">
+                <span className="border-r border-zinc-200 px-1 py-0.5">&nbsp;</span>
+                <span className="border-r border-zinc-200 px-1 py-0.5">&nbsp;</span>
+                <span className="px-1 py-0.5">&nbsp;</span>
+              </div>
+            ))}
+          </div>
+        );
     case "chart":
       return (
         <div className="flex h-full w-full flex-col rounded border border-zinc-300 bg-white p-1.5">
-          <span style={textStyle} className="mb-1 w-full font-bold">
-            {element.text || "Chart"}
-          </span>
+
           <div className="flex flex-1 items-end justify-around gap-1 px-1">
             {[40, 70, 55, 85].map((h, i) => (
               <div
@@ -478,9 +481,7 @@ function ElementVisual({ element }: { element: MoaDesignElement }) {
     case "frame":
       return (
         <div className="flex h-full w-full items-center justify-center rounded border-2 border-zinc-500 bg-transparent px-1">
-          <span style={textStyle} className="w-full font-semibold">
-            {element.text || "Frame"}
-          </span>
+          {/* No text placeholder */}
         </div>
       );
     case "grid":
@@ -598,6 +599,8 @@ export function MoaDesignCanvasLayer({
   branchPreview?: MoaBranchPreview | null;
 }) {
   const layerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoUploadTarget, setPhotoUploadTarget] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [headerDropTargetId, setHeaderDropTargetId] = useState<string | null>(null);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
@@ -1025,6 +1028,22 @@ export function MoaDesignCanvasLayer({
         });
       }}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (!file || !photoUploadTarget) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            updateElement(photoUploadTarget, { imageSrc: ev.target?.result as string });
+            setPhotoUploadTarget(null);
+          };
+          reader.readAsDataURL(file);
+        }}
+      />
       {enabled && elements.length === 0 && (
         <div className="pointer-events-none absolute inset-x-6 top-[40%] -translate-y-1/2 rounded-xl border border-dashed border-emerald-400/80 bg-white/90 px-4 py-6 text-center shadow-sm">
           <p className="text-[12px] font-bold text-emerald-900">Blank MOA canvas</p>
@@ -1391,6 +1410,60 @@ export function MoaDesignCanvasLayer({
                 >
                   Duplicate
                 </button>
+                {(() => {
+                  const el = elements.find((e) => e.id === contextMenu.elementId);
+                  if (el?.kind === "photo") {
+                    return (
+                      <button
+                        type="button"
+                        className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                        onClick={() => {
+                          setPhotoUploadTarget(contextMenu.elementId);
+                          fileInputRef.current?.click();
+                          setContextMenu(null);
+                        }}
+                      >
+                        Insert Image
+                      </button>
+                    );
+                  }
+                  if (el?.kind === "table") {
+                    return (
+                      <>
+                        <button
+                          type="button"
+                          className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                          onClick={() => {
+                            const rows = el.tableData?.length ?? 0;
+                            const cols = el.tableData?.[0]?.length ?? 3;
+                            const newRows = [...(el.tableData ?? [])];
+                            newRows.push(Array(cols).fill(""));
+                            updateElement(el.id, { tableData: newRows });
+                            setContextMenu(null);
+                          }}
+                        >
+                          Add Row
+                        </button>
+                        <button
+                          type="button"
+                          className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                          onClick={() => {
+                            const rows = el.tableData?.length ?? 3;
+                            const newRows = (el.tableData ?? Array.from({ length: rows }, () => Array(3).fill(""))).map((row) => {
+                              const newRow = [...row, ""];
+                              return newRow;
+                            });
+                            updateElement(el.id, { tableData: newRows });
+                            setContextMenu(null);
+                          }}
+                        >
+                          Add Column
+                        </button>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
                 <div className="my-1 border-t border-zinc-100" />
                 <button
                   type="button"
@@ -1400,7 +1473,7 @@ export function MoaDesignCanvasLayer({
                     setContextMenu(null);
                   }}
                 >
-                  Bring front
+                  Bring to Front
                 </button>
                 <button
                   type="button"
