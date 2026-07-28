@@ -6,6 +6,33 @@ import type { MoaDesignElement } from "../../moa-design-palette";
 import { defaultChartValues, defaultTableData } from "./create";
 import { COLUMN_LAYOUT_FRACS, TABLE_THEME_COLORS } from "./options";
 
+/** Sample values shown in MOA Edit so fields reflect New Pawn data. */
+const MOA_FIELD_SAMPLE_VALUES: Record<string, string> = {
+  customerName: "JUAN DELA CRUZ",
+  customerAddress: "123 Sample St., Manila",
+  contactNo: "+63 917 000 0000",
+  idPresented: "Driver's License",
+  unitCode: "UNIT-001",
+  purchasedDate: "01/15/2026",
+  maturityDate: "01/25/2026",
+  expiryDate: "01/30/2026",
+  sellerName: "JUAN DELA CRUZ",
+  amount: "₱5,000.00",
+  storageFee: "₱150.00",
+  parkingFee: "₱0.00",
+  netProceeds: "₱4,850.00",
+  brandModel: "iPhone 13",
+  itemsIncluded: "Charger, Box",
+  condition: "Good",
+  serialNo: "SN-123456",
+  memory: "128GB",
+  remarks: "—",
+};
+
+function moaFieldSampleValue(fieldKey: string): string {
+  return MOA_FIELD_SAMPLE_VALUES[fieldKey] ?? "_______________";
+}
+
 function elementTextStyle(element: MoaDesignElement): CSSProperties {
   const size = element.fontSize;
   return {
@@ -451,9 +478,14 @@ export function MoaElementVisual({
       return (
         <div className="flex h-full w-full items-end gap-1.5 rounded border border-emerald-200 bg-white/95 px-1.5 py-1">
           <span style={textStyle} className="shrink-0 font-semibold whitespace-nowrap">
-            {element.text || "Field"}
+            {element.text || "Field"}:
           </span>
-          <span className="mb-0.5 min-w-0 flex-1 border-b border-zinc-400" />
+          <span
+            className="mb-0.5 min-w-0 flex-1 truncate border-b border-zinc-400 text-[10px] text-zinc-700"
+            title="Sample — filled from New Pawn when printed"
+          >
+            {moaFieldSampleValue(element.fieldKey)}
+          </span>
         </div>
       );
     case "body":
