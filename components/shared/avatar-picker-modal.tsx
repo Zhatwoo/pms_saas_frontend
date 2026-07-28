@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
 type PickerMode = "upload" | "camera";
 
@@ -86,6 +86,105 @@ function stopMediaTracks(stream: MediaStream | null) {
   stream.getTracks().forEach((track) => track.stop());
 }
 
+/* ────────────────────────────────────────────────────────────────────
+   Vertical Draggable Zoom Slider
+   A custom vertical range slider that supports both click and drag.
+   Top = max zoom, Bottom = min zoom.
+   ──────────────────────────────────────────────────────────────────── */
+function VerticalZoomSlider({
+  value,
+  min,
+  max,
+  step,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  disabled: boolean;
+  onChange: (v: number) => void;
+}) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingRef = useRef(false);
+  const [dragging, setDragging] = useState(false);
+
+  // Percent filled from the bottom (min at bottom, max at top)
+  const percent = ((value - min) / (max - min)) * 100;
+
+  const computeValue = useCallback(
+    (clientY: number) => {
+      const track = trackRef.current;
+      if (!track) return value;
+      const rect = track.getBoundingClientRect();
+      // Invert: top of track = max, bottom = min
+      const ratio = Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height));
+      const raw = min + ratio * (max - min);
+      return Math.round(raw / step) * step;
+    },
+    [min, max, step, value],
+  );
+
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMove = (e: PointerEvent) => {
+      if (!isDraggingRef.current) return;
+      onChange(computeValue(e.clientY));
+    };
+
+    const handleUp = () => {
+      isDraggingRef.current = false;
+      setDragging(false);
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+    };
+  }, [dragging, computeValue, onChange]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (disabled) return;
+    e.preventDefault();
+    isDraggingRef.current = true;
+    setDragging(true);
+    onChange(computeValue(e.clientY));
+  };
+
+  return (
+    <div
+      ref={trackRef}
+      onPointerDown={handlePointerDown}
+      className={`relative w-2 cursor-pointer rounded-full ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
+      style={{ touchAction: "none", height: "100%" }}
+    >
+      {/* Track background */}
+      <div className="absolute inset-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      {/* Filled portion (from bottom) */}
+      <div
+        className="absolute inset-x-0 bottom-0 rounded-full bg-emerald-500 transition-[height] duration-75"
+        style={{ height: `${percent}%` }}
+      />
+      {/* Thumb */}
+      <div
+        className={`absolute left-1/2 h-4.5 w-4.5 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-emerald-500 bg-white shadow-md transition-shadow dark:bg-zinc-200 ${
+          dragging ? "scale-110 shadow-lg shadow-emerald-500/30" : "hover:shadow-emerald-500/20"
+        }`}
+        style={{ bottom: `${percent}%` }}
+      />
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   Avatar Picker Modal
+   ──────────────────────────────────────────────────────────────────── */
 export function AvatarPickerModal({
   isOpen,
   isSaving = false,
@@ -220,8 +319,8 @@ export function AvatarPickerModal({
           zoom,
           positionX,
           positionY,
-          144, // Preview size: h-36 w-36 = 144px
-          0.85, // Slightly higher quality for preview
+          256, // Higher res preview for the larger preview area
+          0.85,
         );
         if (!cancelled) {
           setCroppedPreviewUrl(preview);
@@ -375,10 +474,21 @@ export function AvatarPickerModal({
     }
   };
 
+  const handleReset = () => {
+    setPreviewUrl(null);
+    setSourceImageUrl(null);
+    setZoom(1);
+    setPositionX(0);
+    setPositionY(0);
+    setMode("upload");
+    setError(null);
+  };
+
   if (!isOpen) return null;
 
   const activeAvatarUrl = croppedPreviewUrl || currentAvatarUrl || null;
   const canSave = Boolean(sourceImageUrl || previewUrl);
+  const zoomPercent = Math.round((zoom - 1) * 100);
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4">
@@ -388,7 +498,7 @@ export function AvatarPickerModal({
             <h3 className="text-3xl font-extrabold tracking-tight text-pawn-sidebar dark:text-white">
               Change Avatar
             </h3>
-            <p className="mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
               Upload, capture and customize your new profile picture.
             </p>
           </div>
@@ -399,7 +509,9 @@ export function AvatarPickerModal({
             aria-label="Close"
             className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-green/10 text-brand-green transition-colors hover:bg-brand-green/20 disabled:opacity-60"
           >
-            <span className="text-3xl leading-none">×</span>
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 6 6 18M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -440,19 +552,86 @@ export function AvatarPickerModal({
                 )}
               </div>
 
+              {/* Always reserve space to prevent layout shift */}
+              <p className={`mt-2 text-[11px] font-medium ${canSave ? "text-zinc-400 dark:text-zinc-500" : "text-transparent"}`}>
+                Drag to reposition
+              </p>
             </div>
 
+            {/* Vertical zoom slider — absolutely positioned to the right, outside the flow */}
+            <div
+              className="absolute top-0 flex flex-col items-center gap-1"
+              style={{ left: "calc(100% + 12px)", height: "calc(100% - 24px)" }}
+            >
+              {/* Zoom in button (top) */}
+              <button
+                type="button"
+                disabled={!canSave || zoom >= 2}
+                onClick={() => setZoom(Math.min(2, zoom + 0.1))}
+                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+                aria-label="Zoom in"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                </svg>
+              </button>
+
+              {/* Vertical slider track */}
+              <div className="flex-1">
+                <VerticalZoomSlider
+                  value={zoom}
+                  min={1}
+                  max={2}
+                  step={0.01}
+                  disabled={!canSave}
+                  onChange={setZoom}
+                />
+              </div>
+
+              {/* Zoom out button (bottom) */}
+              <button
+                type="button"
+                disabled={!canSave || zoom <= 1}
+                onClick={() => setZoom(Math.max(1, zoom - 0.1))}
+                className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
+                aria-label="Zoom out"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path fillRule="evenodd" d="M4 10a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H4.75A.75.75 0 0 1 4 10Z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              {/* Zoom percentage label — fixed width to prevent shifting */}
+              <span className="min-w-[38px] rounded-md bg-emerald-50 px-1.5 py-0.5 text-center text-[10px] font-bold tabular-nums text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                {zoomPercent}%
+              </span>
+            </div>
+          </div>
+
+          {/* ── Quick Action Buttons ── */}
+          <div className="mt-4 flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => setMode("camera")}
               disabled={isSaving}
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-green px-7 py-3 text-sm font-extrabold text-white shadow-sm transition-colors hover:opacity-90 disabled:opacity-60"
             >
-              <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current" strokeWidth="2">
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 stroke-current" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 7.5A2.5 2.5 0 0 1 6.5 5h3l1.5-2h2l1.5 2h3A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
               </svg>
-              Take Photo
+              Camera
+            </button>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={isSaving || !canSave}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 stroke-current" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+              </svg>
+              Reset
             </button>
           </div>
         </div>
@@ -531,8 +710,9 @@ export function AvatarPickerModal({
             </div>
           )}
 
+          {/* ── Error ── */}
           {error && (
-            <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 dark:border-rose-900/30 dark:bg-rose-950/30 dark:text-rose-400">
+            <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700 dark:border-rose-900/30 dark:bg-rose-950/30 dark:text-rose-400">
               {error}
             </p>
           )}
