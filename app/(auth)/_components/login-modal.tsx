@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { getAuthorizedRedirect, getDefaultRouteForRole } from "@/lib/auth";
 import { getDeviceFingerprint } from "@/lib/fingerprint";
 import { api, ApiError } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -66,36 +66,72 @@ function getDeviceAuthFailure(
 
 const termsSections = [
   {
-    title: "Website Information",
-    body: `The ${BRAND_CONFIG.companyName} website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.`,
+    title: "I. The QuickPawn Service",
+    body: "QuickPawn is a cloud-based pawnshop management system designed to help businesses manage operations such as customer records, pawn transactions, pawned items, loans, payments, renewals, redemptions, reports, and other available features. The features available to you may depend on your selected subscription plan. QuickPawn is a business management tool and does not provide legal, accounting, tax, financial, valuation, appraisal, or regulatory advice. You remain responsible for your business operations, decisions, records, and compliance with applicable laws.",
   },
   {
-    title: "No Online Transaction Guarantee",
-    body: `Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized ${BRAND_CONFIG.companyName} personnel.`,
+    title: "II. Account Registration and Security",
+    body: "You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your login credentials, ensuring only authorized users access your account, keeping your account information accurate and updated, and all activities conducted through your account. You must promptly notify Inspire if you suspect unauthorized access to your account, and you are responsible for ensuring your employees, representatives, and other authorized users comply with these Terms.",
   },
   {
-    title: "Customer Responsibilities",
-    body: "Customers are responsible for providing accurate contact information, valid identification, truthful item details, and lawful ownership documents when required. Customers should review official receipts, pawn tickets, and agreements before completing a branch transaction.",
+    title: "III. Subscription and Right to Use",
+    body: "Subject to these Terms and payment of applicable fees, Inspire grants you a limited, non-exclusive, non-transferable, non-sublicensable right to access and use QuickPawn during your active subscription solely for your internal business operations. You do not receive ownership of QuickPawn, its software, source code, design, interface, trademarks, or other intellectual property. You may not copy, modify, reverse engineer, resell, sublicense, distribute, or use QuickPawn to create or operate a competing product.",
   },
   {
-    title: "Service Availability",
-    body: "Services, branch schedules, item availability, prices, promotions, and business requirements may change without prior notice. Some services may depend on branch location, staff review, item condition, and applicable pawnshop regulations.",
+    title: "IV. Fees and Payment",
+    body: "You agree to pay the subscription fees applicable to your selected plan. Fees, billing frequency, user limits, feature limits, and other subscription conditions will be stated in the applicable pricing plan, order, invoice, or written agreement. Unless otherwise stated, fees are payable according to the selected billing schedule, applicable taxes and government charges may apply, subscription fees are non-refundable except where required by law or expressly agreed in writing, and failed or overdue payments may result in restricted or suspended access. If your subscription automatically renews, it will renew according to the applicable subscription terms unless cancelled before the renewal date.",
   },
   {
-    title: "Respectful Use",
-    body: "Visitors must not misuse the website, attempt unauthorized access to employee or administrator areas, submit false information, interfere with system security, or use the website for unlawful, harmful, or misleading activity.",
+    title: "V. Customer Data",
+    body: "“Customer Data” means information, records, files, personal information, transaction information, and other data submitted to or stored in QuickPawn by or on behalf of the Customer. As between the parties, you retain your rights and ownership interests in Customer Data. You are responsible for the accuracy and legality of Customer Data, having the necessary rights and authority to provide Customer Data to QuickPawn, complying with applicable privacy and data protection laws, and ensuring that your collection and use of personal information is lawful. You authorize Inspire to host, store, process, transmit, and use Customer Data as reasonably necessary to provide, maintain, secure, support, and improve QuickPawn, comply with legal obligations, and prevent fraud or abuse.",
   },
   {
-    title: "Internal Login",
-    body: `The login area is reserved for authorized ${BRAND_CONFIG.companyName} employees and administrators. Customers do not need an account to read the public information on this landing page.`,
+    title: "VI. Data Privacy",
+    body: "The use of QuickPawn may involve the processing of personal information. Inspire Next Global Inc. and its customers agree to comply with the Data Privacy Act of 2012 (Republic Act No. 10173) and other applicable Philippine data privacy laws and regulations. Customers are responsible for ensuring that personal information entered into QuickPawn is collected and processed lawfully. Inspire Next Global Inc. will take reasonable measures to protect information processed through the Service. For more information about how personal information is handled, please refer to the QuickPawn Privacy Policy.",
   },
   {
-    title: "Limitations",
-    body: `Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from ${BRAND_CONFIG.companyName} personnel.`,
+    title: "VII. Acceptable Use",
+    body: "You must use QuickPawn only for lawful business purposes. You must not use QuickPawn for unlawful, fraudulent, or abusive activities; violate applicable laws or the rights of others; upload viruses, malware, ransomware, or other harmful code; attempt to gain unauthorized access to QuickPawn or related systems; circumvent security features or usage limitations; reverse engineer, copy, or modify the Platform; resell, sublicense, or provide unauthorized access to QuickPawn; or use QuickPawn to develop or operate a competing service.",
   },
   {
-    title: "Acceptance",
-    body: `By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to ${BRAND_CONFIG.companyName} services.`,
+    title: "VIII. Service Availability and Changes",
+    body: "Inspire will use reasonable efforts to maintain QuickPawn. However, the Service may occasionally be unavailable due to maintenance, upgrades, technical issues, internet or third-party service failures, cybersecurity incidents, or events beyond Inspire's reasonable control. Inspire may update, modify, improve, or discontinue features of QuickPawn from time to time. Unless otherwise agreed in writing, Inspire does not guarantee uninterrupted or error-free operation of the Service.",
+  },
+  {
+    title: "IX. Suspension and Termination",
+    body: "Inspire may suspend or restrict access to QuickPawn if reasonably necessary to protect the security or integrity of the Service, prevent fraud, abuse, or unauthorized access, address a serious violation of these Terms, comply with applicable law, or address unpaid fees. You may cancel your subscription according to the applicable cancellation procedure. Upon termination or expiration of your subscription, your right to use QuickPawn ends, access to your account may be disabled, unpaid fees remain payable, and Customer Data may be retained or deleted in accordance with Inspire's applicable data retention practices and legal obligations. You are responsible for requesting and obtaining any necessary data export before the end of the applicable retention period.",
+  },
+  {
+    title: "X. Intellectual Property",
+    body: "QuickPawn and all related software, technology, design, content, documentation, trademarks, logos, and branding are owned by or licensed to Inspire Next Global Inc. You retain ownership of your Customer Data. You may not use Inspire or QuickPawn trademarks, logos, or branding without prior written permission.",
+  },
+  {
+    title: "XI. Disclaimers",
+    body: "To the maximum extent permitted by law, QuickPawn is provided on an “AS IS” and “AS AVAILABLE” basis. Inspire does not guarantee that the Service will always be uninterrupted, error-free, that all defects will be corrected, that QuickPawn will meet every specific business requirement, or that use of QuickPawn alone will ensure compliance with any law or regulation. You remain responsible for verifying important information and business transactions.",
+  },
+  {
+    title: "XII. Limitation of Liability",
+    body: "To the maximum extent permitted by applicable law, Inspire will not be liable for indirect, incidental, special, consequential, or punitive damages, including loss of profits, revenue, business opportunities, goodwill, data, or business interruption. Inspire's total aggregate liability arising out of or relating to QuickPawn or these Terms will not exceed the total subscription fees actually paid by the Customer to Inspire for QuickPawn during the twelve (12) months preceding the event giving rise to the claim. Nothing in these Terms limits liability that cannot legally be limited or excluded.",
+  },
+  {
+    title: "XIII. Customer Indemnification",
+    body: "To the extent permitted by law, you agree to defend, indemnify, and hold harmless Inspire, its affiliates, officers, directors, employees, contractors, and representatives from claims, damages, liabilities, costs, and expenses arising from your breach of these Terms, your misuse of QuickPawn, your violation of applicable law, your Customer Data, your violation of another person's rights, or your business operations and transactions.",
+  },
+  {
+    title: "XIV. Confidentiality",
+    body: "Each party agrees to protect the other party's confidential information and use it only for purposes related to the business relationship. This obligation does not apply to information that is publicly available, already lawfully known, independently developed, or required to be disclosed by law.",
+  },
+  {
+    title: "XV. Changes to These Terms",
+    body: "Inspire may update these Terms from time to time. Updated Terms may be posted on the QuickPawn website or provided through the Platform, email, or other reasonable means. If you continue to use QuickPawn after the updated Terms become effective, you agree to the revised Terms.",
+  },
+  {
+    title: "XVI. Governing Law and Disputes",
+    body: "These Terms are governed by the laws of the Republic of the Philippines. The parties will first attempt in good faith to resolve disputes through discussion and negotiation. If a dispute cannot be resolved, the parties may pursue remedies available under applicable Philippine law before the proper courts with jurisdiction.",
+  },
+  {
+    title: "XVII. Contact Information",
+    body: "Inspire Next Global Inc. — Name: Inspire Neo. Email: inspirenextglobal.marketing@gmail.com. Contact Number: 09929718800. Address: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig.",
   },
 ];
 
@@ -144,7 +180,7 @@ const legalModalContent = {
   terms: {
     title: "Terms of Service",
     ariaLabel: "Close terms of service",
-    intro: `These terms explain general use of the ${BRAND_CONFIG.companyName} website and public information for customers, visitors, and anyone learning about our pawnshop services.`,
+    intro: "These Terms of Service govern your access to and use of the QuickPawn Pawnshop Management System, a software-as-a-service platform owned and operated by Inspire Next Global Inc. By accessing or using QuickPawn, you agree to comply with these Terms.",
     sections: termsSections,
   },
 };
@@ -317,13 +353,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
         <div className="relative bg-white px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
           <div className="relative flex flex-col items-center">
             <div className="w-full max-w-[260px] sm:max-w-[320px]">
-              <Image
-                src={BRAND_CONFIG.loginLogo}
-                alt={`${BRAND_CONFIG.companyName} Logo`}
-                width={320}
-                height={180}
-                className="h-auto w-full object-contain"
-              />
+              <QuickPawnLogo variant="full" showTagline className="h-auto w-full" />
             </div>
           </div>
         </div>

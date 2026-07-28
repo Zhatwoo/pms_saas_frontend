@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { NavGroup, NavItem, Role } from "@/types";
 import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
-import { BRAND_CONFIG } from "@/lib/brand-config";
 import { getRoleLabel } from "@/lib/auth";
 import { LogoutIcon, MenuIcon, CloseIcon } from "@/lib/icons";
+import { QuickPawnLogo } from "./quickpawn-logo";
 import { LogoutModal } from "./logout-modal";
 import { useOptionalOpeningChecklist } from "@/contexts/opening-checklist-context";
 
@@ -358,13 +357,7 @@ export function Sidebar({
                     : "translate-x-0 opacity-100"
                 }`}
               >
-                <Image
-                  src={BRAND_CONFIG.sidebarLogo}
-                  alt={`${BRAND_CONFIG.shortCompanyName} Logo`}
-                  width={48}
-                  height={48}
-                  className="h-12 w-12 object-contain"
-                />
+                <QuickPawnLogo variant="mark" className="h-12 w-12" />
               </span>
             </button>
           <div
