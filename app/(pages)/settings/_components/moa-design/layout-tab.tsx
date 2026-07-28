@@ -30,7 +30,9 @@ export function MoaLayoutTab({
     <div className="space-y-4">
       {showLayout ? (
         <div>
-          <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Layout</h3>
+          {section === "all" ? (
+            <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Layout</h3>
+          ) : null}
           <TabHint>Click or drag Header, Section, Body, or Text onto the canvas.</TabHint>
           <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {LAYOUT_ITEMS.map((item) => (
@@ -48,7 +50,9 @@ export function MoaLayoutTab({
 
       {showHeader ? (
         <div>
-          <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Header fields</h3>
+          {section === "all" ? (
+            <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Header fields</h3>
+          ) : null}
           <TabHint>
             Select a Header on the canvas, then drag or click these fields into it.
           </TabHint>

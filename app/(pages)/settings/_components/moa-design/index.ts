@@ -1,9 +1,16 @@
 export { MoaDesignToolsPanel, type MoaDesignToolsPanelProps } from "./tools-panel";
 export { MoaContextualToolbar } from "./contextual-toolbar";
+export { MoaDocsToolbar } from "./docs-toolbar";
+export {
+  MoaDocsRuler,
+  defaultMarginsForPage,
+  marginsToPadding,
+  type MoaDocsMargins,
+} from "./docs-ruler";
 export { MoaCanvasTab } from "./canvas-tab";
 export { MoaLayoutTab } from "./layout-tab";
 export { MoaElementsTab } from "./elements-tab";
-export { MoaTextTab } from "./text-tab";
+export { MoaUploadsTab } from "./uploads-tab";
 export { MoaFieldConfigTab, type MoaFieldConfigTabProps } from "./field-config-tab";
 export {
   ELEMENT_CATEGORIES,

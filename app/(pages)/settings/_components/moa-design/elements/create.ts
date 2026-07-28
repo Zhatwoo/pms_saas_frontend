@@ -13,6 +13,8 @@ import type {
 } from "../../moa-design-palette";
 import type { MoaElementCreateOptions } from "./options";
 
+const DEFAULT_LINE_HEIGHT = 1.15;
+
 const SHAPE_KINDS = new Set<MoaShapeKind>([
   "rect",
   "square",
@@ -210,6 +212,8 @@ export function buildMoaDesignElement(
     fontWeight: kind === "header" || kind === "section" ? "bold" : "normal",
     fontStyle: "normal",
     textDecoration: "none",
+    lineHeight: DEFAULT_LINE_HEIGHT,
+    indent: 0,
     color: "#18181b",
     shape,
     fill,

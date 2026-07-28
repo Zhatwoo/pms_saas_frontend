@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -104,6 +105,10 @@ export type MoaDesignElement = {
   fontWeight: "normal" | "bold";
   fontStyle: "normal" | "italic";
   textDecoration: "none" | "underline" | "line-through";
+  /** CSS line-height multiplier (e.g. 1.15). */
+  lineHeight: number;
+  /** Text indent level (0–8); applied as padding-left for text surfaces. */
+  indent: number;
   color: string;
   shape: MoaShapeKind;
   fill: string;
@@ -218,6 +223,8 @@ export type MoaTextStylePatch = Partial<
     | "textDecoration"
     | "color"
     | "fill"
+    | "lineHeight"
+    | "indent"
   >
 >;
 
@@ -237,7 +244,9 @@ const DESIGN_STORAGE_KEY = "pms.moa.designElements.v1";
 const PAGE_SIZE_STORAGE_KEY = "pms.moa.pageSize.v1";
 const PAGE_COUNT_STORAGE_KEY = "pms.moa.pageCount.v1";
 const WATERMARK_STORAGE_KEY = "pms.moa.watermark.v1";
+const MARGINS_STORAGE_KEY = "pms.moa.margins.v1";
 export const MAX_MOA_PAGES = 10;
+export const DEFAULT_MOA_LINE_HEIGHT = 1.15;
 
 export type MoaDocumentType = "moa" | "redeem" | "buy_back";
 
@@ -339,6 +348,14 @@ function normalizeElement(raw: Partial<MoaDesignElement> & { id: string; kind: M
     fontWeight: raw.fontWeight ?? (raw.kind === "header" ? "bold" : "normal"),
     fontStyle: raw.fontStyle ?? "normal",
     textDecoration: raw.textDecoration ?? "none",
+    lineHeight: (() => {
+      const n = Number(raw.lineHeight);
+      return Number.isFinite(n) && n > 0 ? n : DEFAULT_MOA_LINE_HEIGHT;
+    })(),
+    indent: (() => {
+      const n = Number(raw.indent);
+      return Number.isFinite(n) ? Math.max(0, Math.min(8, Math.round(n))) : 0;
+    })(),
     color: raw.color ?? "#18181b",
     shape: normalizeShapeKind(raw.shape),
     fill: raw.fill ?? (raw.kind === "shape" ? "#ecfdf5" : "transparent"),
@@ -632,6 +649,45 @@ export function saveMoaWatermark(storageKey: string, settings: MoaWatermarkSetti
   }
 }
 
+export function loadMoaMargins(
+  storageKey: string,
+  fallback: { left: number; right: number; top: number; bottom: number },
+): { left: number; right: number; top: number; bottom: number } {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(MARGINS_STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Record<string, Partial<typeof fallback>>;
+    const saved = parsed[storageKey];
+    if (!saved) return fallback;
+    return {
+      left: Number.isFinite(Number(saved.left)) ? Number(saved.left) : fallback.left,
+      right: Number.isFinite(Number(saved.right)) ? Number(saved.right) : fallback.right,
+      top: Number.isFinite(Number(saved.top)) ? Number(saved.top) : fallback.top,
+      bottom: Number.isFinite(Number(saved.bottom)) ? Number(saved.bottom) : fallback.bottom,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+export function saveMoaMargins(
+  storageKey: string,
+  margins: { left: number; right: number; top: number; bottom: number },
+) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(MARGINS_STORAGE_KEY);
+    const parsed = raw
+      ? (JSON.parse(raw) as Record<string, typeof margins>)
+      : {};
+    parsed[storageKey] = margins;
+    window.localStorage.setItem(MARGINS_STORAGE_KEY, JSON.stringify(parsed));
+  } catch {
+    // ignore
+  }
+}
+
 /** Non-interactive diagonal watermark overlay for the design canvas. */
 export function MoaCanvasWatermark({ settings }: { settings: MoaWatermarkSettings }) {
   if (!settings.enabled || !settings.text.trim()) return null;
@@ -673,6 +729,8 @@ function elementTextStyle(element: MoaDesignElement): CSSProperties {
     fontStyle: element.fontStyle,
     textDecoration: element.textDecoration,
     color: element.color,
+    lineHeight: element.lineHeight ?? DEFAULT_MOA_LINE_HEIGHT,
+    paddingLeft: (element.indent ?? 0) * 24,
   };
 }
 
@@ -818,6 +876,59 @@ const TEXT_EDITABLE_KINDS = new Set<MoaPaletteItemKind>([
   "frame",
 ]);
 
+/** Hidden fieldKey marking the full-page Docs-style typing surface. */
+export const MOA_PAGE_DOC_FIELD_KEY = "__pageDoc__";
+
+function isPageDocument(element: MoaDesignElement): boolean {
+  return element.kind === "body" && element.fieldKey === MOA_PAGE_DOC_FIELD_KEY;
+}
+
+/** Find how much text fits in a textarea without scrolling. */
+function splitTextToFit(
+  textarea: HTMLTextAreaElement,
+  fullText: string,
+): { fit: string; overflow: string } {
+  if (!fullText) return { fit: "", overflow: "" };
+  const previous = textarea.value;
+  textarea.value = fullText;
+  if (textarea.scrollHeight <= textarea.clientHeight + 2) {
+    textarea.value = previous;
+    return { fit: fullText, overflow: "" };
+  }
+
+  let lo = 0;
+  let hi = fullText.length;
+  let best = 0;
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    textarea.value = fullText.slice(0, mid);
+    if (textarea.scrollHeight <= textarea.clientHeight + 2) {
+      best = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  // Prefer breaking at newline / space near the end so words aren't chopped mid-word.
+  let breakAt = best;
+  const windowStart = Math.max(0, best - 80);
+  const slice = fullText.slice(windowStart, best);
+  const nl = slice.lastIndexOf("\n");
+  const sp = slice.lastIndexOf(" ");
+  const localBreak = Math.max(nl, sp);
+  if (localBreak > 0 && best - (windowStart + localBreak) < 40) {
+    breakAt = windowStart + localBreak + 1;
+  }
+  if (breakAt <= 0) breakAt = Math.max(1, best);
+
+  textarea.value = previous;
+  return {
+    fit: fullText.slice(0, breakAt),
+    overflow: fullText.slice(breakAt),
+  };
+}
+
 function isTextEditableKind(kind: MoaPaletteItemKind): boolean {
   return TEXT_EDITABLE_KINDS.has(kind);
 }
@@ -875,6 +986,9 @@ export function MoaDesignCanvasLayer({
   defaultFontFamily,
   defaultFontSize,
   branchPreview,
+  pageIndex = 0,
+  onPaginatePageDoc,
+  spellCheck = true,
 }: {
   enabled: boolean;
   paletteDragging?: boolean;
@@ -889,9 +1003,16 @@ export function MoaDesignCanvasLayer({
   defaultFontFamily: string;
   defaultFontSize: number;
   branchPreview?: MoaBranchPreview | null;
+  /** 0-based page index for this canvas layer. */
+  pageIndex?: number;
+  /** Called when page document text no longer fits — keep `fitText` here, move `overflowText` to next page. */
+  onPaginatePageDoc?: (fitText: string, overflowText: string) => void;
+  spellCheck?: boolean;
 }) {
   const layerRef = useRef<HTMLDivElement>(null);
+  const pageDocRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const paginatingRef = useRef(false);
   const [photoUploadTarget, setPhotoUploadTarget] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [headerDropTargetId, setHeaderDropTargetId] = useState<string | null>(null);
@@ -907,6 +1028,56 @@ export function MoaDesignCanvasLayer({
   const [internalFieldIds, setInternalFieldIds] = useState<string[]>([]);
   // Visual-only: hide element hit-targets while dragging from palette so the layer receives the drop.
   const suppressElementHits = enabled && (paletteDragging || dragOver);
+  const pageDoc = elements.find(isPageDocument);
+  const designElements = elements.filter((el) => !isPageDocument(el));
+
+  const upsertPageDocument = (text: string) => {
+    const existing = elements.find(isPageDocument);
+    if (existing) {
+      onChangeElements(
+        elements.map((el) => (el.id === existing.id ? { ...el, text } : el)),
+      );
+      return;
+    }
+    const layer = layerRef.current;
+    const width = Math.max(200, (layer?.clientWidth ?? 700) - 16);
+    const height = Math.max(200, (layer?.clientHeight ?? 900) - 16);
+    const next = {
+      ...createMoaDesignElement("body", 8, 8, {
+        fontFamily: defaultFontFamily,
+        fontSize: defaultFontSize,
+      }),
+      fieldKey: MOA_PAGE_DOC_FIELD_KEY,
+      text,
+      width,
+      height,
+      fill: "transparent",
+      stroke: "transparent",
+      pageIndex,
+    };
+    onChangeElements([...elements, next]);
+  };
+
+  // When page text overflows the paper, push remainder to the next page (no inner scroll).
+  useLayoutEffect(() => {
+    if (!enabled || !onPaginatePageDoc || paginatingRef.current) return;
+    const ta = pageDocRef.current;
+    const text = pageDoc?.text ?? "";
+    if (!ta || !text) return;
+    if (ta.scrollHeight <= ta.clientHeight + 2) return;
+
+    paginatingRef.current = true;
+    const { fit, overflow } = splitTextToFit(ta, text);
+    if (!overflow || fit === text) {
+      paginatingRef.current = false;
+      return;
+    }
+    onPaginatePageDoc(fit, overflow);
+    requestAnimationFrame(() => {
+      paginatingRef.current = false;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-check when page doc text changes
+  }, [pageDoc?.text, enabled, onPaginatePageDoc]);
 
   const activeFieldIds = selectedFieldIds ?? internalFieldIds;
   const setActiveFieldIds = onSelectedFieldIdsChange ?? setInternalFieldIds;
@@ -1465,12 +1636,10 @@ export function MoaDesignCanvasLayer({
         : [...activeSelectedIds, id];
       if (nextIds.length === 0) nextIds = [id];
       onSelectedIdsChange(nextIds);
-      onSelect(id);
       // Ctrl+click toggle off alone — skip drag
       if (!nextIds.includes(id)) return;
     } else {
       onSelectedIdsChange?.([id]);
-      onSelect(id);
     }
 
     const el = elements.find((item) => item.id === id);
@@ -1544,7 +1713,6 @@ export function MoaDesignCanvasLayer({
     event.stopPropagation();
     clearFieldSelection();
     onSelectedIdsChange?.([id]);
-    onSelect(id);
     const el = elements.find((item) => item.id === id);
     if (!el) return;
     const startX = event.clientX;
@@ -1631,7 +1799,7 @@ export function MoaDesignCanvasLayer({
       }}
       onContextMenu={(event) => {
         if (!enabled) return;
-        if (event.target !== layerRef.current) return;
+        if (event.target !== layerRef.current && !(event.target as HTMLElement).dataset?.moaPageDoc) return;
         event.preventDefault();
         event.stopPropagation();
         clearFieldSelection();
@@ -1682,16 +1850,109 @@ export function MoaDesignCanvasLayer({
         ),
       )}
 
-      {enabled && elements.length === 0 && (
-        <div className="pointer-events-none absolute inset-x-6 top-[40%] -translate-y-1/2 rounded-xl border border-dashed border-emerald-400/80 bg-white/90 px-4 py-6 text-center shadow-sm">
-          <p className="text-[12px] font-bold text-emerald-900">Blank MOA canvas</p>
-          <p className="mt-1 text-[10px] font-medium text-emerald-800/80">
-            Drag Header / Layout, or drop Fields from the Fields tab onto the canvas
+      {/* Docs-style typing surface — click anywhere blank and type like Google Docs */}
+      {enabled ? (
+        <textarea
+          ref={pageDocRef}
+          data-moa-page-doc="true"
+          data-moa-no-drag
+          value={pageDoc?.text ?? ""}
+          placeholder="Click here and start typing…"
+          spellCheck={spellCheck}
+          className={`absolute inset-0 z-[5] resize-none overflow-hidden border-0 px-3 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 ${
+            pageDoc && activeSelectedIds.includes(pageDoc.id)
+              ? activeSelectedIds.length > 1
+                ? "bg-sky-50/30 shadow-[inset_0_0_0_2px_#38bdf8]"
+                : "bg-sky-50/40 shadow-[inset_0_0_0_2px_#38bdf8]"
+              : "bg-transparent"
+          }`}
+          style={{
+            fontFamily: pageDoc?.fontFamily ?? defaultFontFamily,
+            fontSize: pageDoc?.fontSize ?? defaultFontSize,
+            fontWeight: pageDoc?.fontWeight ?? "normal",
+            fontStyle: pageDoc?.fontStyle ?? "normal",
+            textDecoration: pageDoc?.textDecoration ?? "none",
+            color: pageDoc?.color ?? "#18181b",
+            textAlign: pageDoc?.textAlign ?? "left",
+            lineHeight: pageDoc?.lineHeight ?? DEFAULT_MOA_LINE_HEIGHT,
+            paddingLeft: 12 + (pageDoc?.indent ?? 0) * 24,
+            pointerEvents: suppressElementHits ? "none" : "auto",
+            caretColor: "#1a73e8",
+            paddingTop: Math.max(
+              12,
+              designElements
+                .filter((el) => el.kind === "header")
+                .reduce((max, el) => Math.max(max, el.y + el.height + 10), 12),
+            ),
+          }}
+          readOnly={Boolean(
+            pageDoc &&
+              activeSelectedIds.length > 1 &&
+              activeSelectedIds.includes(pageDoc.id),
+          )}
+          onClick={(event) => {
+            event.stopPropagation();
+            clearFieldSelection();
+            clearEditing();
+            if (pageDoc) {
+              onSelectedIdsChange?.([pageDoc.id]);
+            } else {
+              onSelectedIdsChange?.([]);
+              onSelect(null);
+            }
+          }}
+          onFocus={() => {
+            if (!pageDoc) upsertPageDocument("");
+          }}
+          onChange={(event) => {
+            if (
+              pageDoc &&
+              activeSelectedIds.length > 1 &&
+              activeSelectedIds.includes(pageDoc.id)
+            ) {
+              return;
+            }
+            upsertPageDocument(event.target.value);
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+        />
+      ) : pageDoc?.text ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-[5] overflow-hidden whitespace-pre-wrap px-3 py-3 text-zinc-900"
+          style={{
+            fontFamily: pageDoc.fontFamily,
+            fontSize: pageDoc.fontSize,
+            fontWeight: pageDoc.fontWeight,
+            fontStyle: pageDoc.fontStyle,
+            textDecoration: pageDoc.textDecoration,
+            color: pageDoc.color,
+            textAlign: pageDoc.textAlign,
+            lineHeight: pageDoc.lineHeight ?? DEFAULT_MOA_LINE_HEIGHT,
+            paddingLeft: 12 + (pageDoc.indent ?? 0) * 24,
+            paddingTop: Math.max(
+              12,
+              designElements
+                .filter((el) => el.kind === "header")
+                .reduce((max, el) => Math.max(max, el.y + el.height + 10), 12),
+            ),
+          }}
+        >
+          {pageDoc.text}
+        </div>
+      ) : null}
+
+      {enabled && designElements.length === 0 && !(pageDoc?.text) && (
+        <div className="pointer-events-none absolute inset-x-6 top-[42%] z-[6] -translate-y-1/2 text-center">
+          <p className="text-[13px] font-medium text-zinc-400">
+            Click anywhere and start typing
+          </p>
+          <p className="mt-1 text-[10px] text-zinc-400">
+            Or insert Fields / Layout / Elements from the left panel
           </p>
         </div>
       )}
 
-      {elements.map((element) => {
+      {designElements.map((element) => {
         const selected = activeSelectedIds.includes(element.id);
         const isHeader = element.kind === "header";
         const textStyle = elementTextStyle(element);
@@ -1713,7 +1974,7 @@ export function MoaDesignCanvasLayer({
             onClick={(event) => {
               if (!enabled) return;
               event.stopPropagation();
-              onSelect(element.id);
+              onSelectedIdsChange?.([element.id]);
             }}
             onPointerDown={(event) => startMove(event, element.id)}
             onDoubleClick={(event) => {
@@ -1833,9 +2094,7 @@ export function MoaDesignCanvasLayer({
                     className={`absolute rounded-sm px-0.5 hover:bg-white/60 ${
                       fieldSelected
                         ? "cursor-grab overflow-visible bg-sky-50/90 shadow-sm ring-2 ring-sky-500 active:cursor-grabbing"
-                        : selected
-                          ? "cursor-grab overflow-hidden ring-1 ring-sky-300/50 active:cursor-grabbing"
-                          : "cursor-grab overflow-hidden active:cursor-grabbing"
+                        : "cursor-grab overflow-hidden active:cursor-grabbing"
                     }`}
                     style={{
                       ...headerFieldLayoutStyle(element, field),
@@ -2532,6 +2791,28 @@ export function MoaDesignCanvasLayer({
               <>
                 <button
                   type="button"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                  onClick={() => {
+                    const next = createMoaDesignElement(
+                      "text",
+                      contextMenu.canvasX - 40,
+                      contextMenu.canvasY - 12,
+                      {
+                        fontFamily: defaultFontFamily,
+                        fontSize: defaultFontSize,
+                      },
+                    );
+                    onChangeElements([...elements, { ...next, text: "" }]);
+                    onSelectedIdsChange?.([next.id]);
+                    onSelect(next.id);
+                    setEditingTextId(next.id);
+                    setContextMenu(null);
+                  }}
+                >
+                  Add text box
+                </button>
+                <button
+                  type="button"
                   disabled={!clipboardElement}
                   className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50 disabled:opacity-50 disabled:hover:bg-transparent"
                   onClick={() => {
@@ -2594,7 +2875,9 @@ export function applyToolbarToSelected(
     patch.fontWeight !== undefined ||
     patch.fontStyle !== undefined ||
     patch.textDecoration !== undefined ||
-    patch.color !== undefined;
+    patch.color !== undefined ||
+    patch.lineHeight !== undefined ||
+    patch.indent !== undefined;
 
   const fieldStyleFromPatch = (field: MoaHeaderField): MoaHeaderField => {
     const nextSize =
