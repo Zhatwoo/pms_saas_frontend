@@ -60,9 +60,10 @@ interface OverallSummaryData {
 
 interface OverallSummaryStatsProps {
   data?: OverallSummaryData;
+  loading?: boolean;
 }
 
-export function OverallSummaryStats({ data }: OverallSummaryStatsProps) {
+export function OverallSummaryStats({ data, loading }: OverallSummaryStatsProps) {
   const allBranchSales = data?.allBranchSales;
   const branchSales = data?.branchSales;
   const hasBranchComparison =

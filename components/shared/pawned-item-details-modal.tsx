@@ -95,6 +95,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
   const [remarks, setRemarks] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [itemPhotoIndex, setItemPhotoIndex] = useState(0);
+  const [idPhotoIndex, setIdPhotoIndex] = useState(0);
   const [preview, setPreview] = useState<{ src: string; title: string } | null>(null);
   const [qrRequestStatus, setQrRequestStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -215,6 +216,7 @@ export function PawnedItemDetailsModal({ itemId, isOpen, onClose, onSaveRemarks,
 
   useEffect(() => {
     setItemPhotoIndex(0);
+    setIdPhotoIndex(0);
   }, [item?.id, itemPhotos.length]);
 
   useEffect(() => {
