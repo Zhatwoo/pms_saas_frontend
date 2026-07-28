@@ -1,133 +1,156 @@
-"use client";
+﻿"use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import dynamic from 'next/dynamic';
-import { api } from "@/lib/api";
-import { FeaturedSaleItems } from "./featured-sale-items";
+import { toast } from "sonner";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 import {
-  LandingBentoFeatures,
+  LandingBenefits,
+  LandingCloud,
+  LandingFaq,
   LandingHero,
+  LandingHowItHelps,
+  LandingIntro,
   LandingLightFooter,
+  LandingProblemSolution,
   LandingProcessPricing,
-  LandingSplitSection,
+  LandingStats,
   LandingTrustBar,
 } from "./landing-layout-sections";
-
-const HERO_IMAGES = ["image2.jpg", "image.png"] as const;
-
-// Lazy-load BranchMap component (Requirements: 12.1)
-const BranchMap = dynamic(
-  () => import('@/components/branch-map').then(mod => ({ default: mod.BranchMap })),
-  {
-    ssr: false, // Critical: Leaflet requires browser window
-    loading: () => (
-      <div className="h-40 w-full flex items-center justify-center bg-brand-green/10">
-        <span className="text-sm text-brand-green/60">Loading map...</span>
-      </div>
-    )
-  }
-);
 
 interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "PRICING", "WHAT WE BUY", "WHY US", "ITEMS FOR SALE", "REVIEWS", "BRANCHES", "CONTACT US"];
+const navItems = ["HOME", "PRODUCT", "WHY US", "HOW IT HELPS", "BENEFITS", "PRICING", "FAQ", "CONTACT US"];
 
 const sectionNavLabels: Record<string, string> = {
   home: "HOME",
-  pricing: "PRICING",
-  categories: "WHAT WE BUY",
+  product: "PRODUCT",
   "why-us": "WHY US",
-  "items-for-sale": "ITEMS FOR SALE",
-  reviews: "REVIEWS",
-  branches: "BRANCHES",
+  "how-it-helps": "HOW IT HELPS",
+  benefits: "BENEFITS",
+  pricing: "PRICING",
+  faq: "FAQ",
   "contact-us": "CONTACT US",
 };
 
 // Maps nav label text to a section ID when the label differs from the auto-generated id
-const navIdOverrides: Record<string, string> = {
-  "WHAT WE BUY": "categories",
-};
+const navIdOverrides: Record<string, string> = {};
 
 type LegalModalType = "privacy" | "terms" | null;
 
-interface PublicBranch {
-  id: string;
-  branch_code?: string | null;
-  name: string;
-  location?: string | null;
-}
-
 const termsSections = [
   {
-    title: "Website Information",
-    body: `The ${BRAND_CONFIG.companyName} website provides general information about our pawnshop services, branch operations, item selling, buy back services, and customer support. It is intended for customers and visitors who want to learn about our business.`,
+    title: "I. The QuickPawn Service",
+    body: "QuickPawn is a cloud-based pawnshop management system designed to help businesses manage operations such as customer records, pawn transactions, pawned items, loans, payments, renewals, redemptions, reports, and other available features. The features available to you may depend on your selected subscription plan. QuickPawn is a business management tool and does not provide legal, accounting, tax, financial, valuation, appraisal, or regulatory advice. You remain responsible for your business operations, decisions, records, and compliance with applicable laws.",
   },
   {
-    title: "No Online Transaction Guarantee",
-    body: `Information shown on the website does not guarantee approval of a pawn, sale, renewal, redemption, or any other transaction. Final service terms, item appraisal, pricing, fees, and acceptance are handled by authorized ${BRAND_CONFIG.companyName} personnel.`,
+    title: "II. Account Registration and Security",
+    body: "You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your login credentials, ensuring only authorized users access your account, keeping your account information accurate and updated, and all activities conducted through your account. You must promptly notify Inspire if you suspect unauthorized access to your account, and you are responsible for ensuring your employees, representatives, and other authorized users comply with these Terms.",
   },
   {
-    title: "Customer Responsibilities",
-    body: "Customers are responsible for providing accurate contact information, valid identification, truthful item details, and lawful ownership documents when required. Customers should review official receipts, pawn tickets, and agreements before completing a branch transaction.",
+    title: "III. Subscription and Right to Use",
+    body: "Subject to these Terms and payment of applicable fees, Inspire grants you a limited, non-exclusive, non-transferable, non-sublicensable right to access and use QuickPawn during your active subscription solely for your internal business operations. You do not receive ownership of QuickPawn, its software, source code, design, interface, trademarks, or other intellectual property. You may not copy, modify, reverse engineer, resell, sublicense, distribute, or use QuickPawn to create or operate a competing product.",
   },
   {
-    title: "Service Availability",
-    body: "Services, branch schedules, item availability, prices, promotions, and business requirements may change without prior notice. Some services may depend on branch location, staff review, item condition, and applicable pawnshop regulations.",
+    title: "IV. Fees and Payment",
+    body: "You agree to pay the subscription fees applicable to your selected plan. Fees, billing frequency, user limits, feature limits, and other subscription conditions will be stated in the applicable pricing plan, order, invoice, or written agreement. Unless otherwise stated, fees are payable according to the selected billing schedule, applicable taxes and government charges may apply, subscription fees are non-refundable except where required by law or expressly agreed in writing, and failed or overdue payments may result in restricted or suspended access. If your subscription automatically renews, it will renew according to the applicable subscription terms unless cancelled before the renewal date.",
   },
   {
-    title: "Respectful Use",
-    body: "Visitors must not misuse the website, attempt unauthorized access to employee or administrator areas, submit false information, interfere with system security, or use the website for unlawful, harmful, or misleading activity.",
+    title: "V. Customer Data",
+    body: "“Customer Data” means information, records, files, personal information, transaction information, and other data submitted to or stored in QuickPawn by or on behalf of the Customer. As between the parties, you retain your rights and ownership interests in Customer Data. You are responsible for the accuracy and legality of Customer Data, having the necessary rights and authority to provide Customer Data to QuickPawn, complying with applicable privacy and data protection laws, and ensuring that your collection and use of personal information is lawful. You authorize Inspire to host, store, process, transmit, and use Customer Data as reasonably necessary to provide, maintain, secure, support, and improve QuickPawn, comply with legal obligations, and prevent fraud or abuse.",
   },
   {
-    title: "Internal Login",
-    body: `The login area is reserved for authorized ${BRAND_CONFIG.companyName} employees and administrators. Customers do not need an account to read the public information on this landing page.`,
+    title: "VI. Data Privacy",
+    body: "The use of QuickPawn may involve the processing of personal information. Inspire Next Global Inc. and its customers agree to comply with the Data Privacy Act of 2012 (Republic Act No. 10173) and other applicable Philippine data privacy laws and regulations. Customers are responsible for ensuring that personal information entered into QuickPawn is collected and processed lawfully. Inspire Next Global Inc. will take reasonable measures to protect information processed through the Service. For more information about how personal information is handled, please refer to the QuickPawn Privacy Policy.",
   },
   {
-    title: "Limitations",
-    body: `Website content is provided for general guidance only and should not replace official branch documents, signed agreements, receipts, or direct assistance from ${BRAND_CONFIG.companyName} personnel.`,
+    title: "VII. Acceptable Use",
+    body: "You must use QuickPawn only for lawful business purposes. You must not use QuickPawn for unlawful, fraudulent, or abusive activities; violate applicable laws or the rights of others; upload viruses, malware, ransomware, or other harmful code; attempt to gain unauthorized access to QuickPawn or related systems; circumvent security features or usage limitations; reverse engineer, copy, or modify the Platform; resell, sublicense, or provide unauthorized access to QuickPawn; or use QuickPawn to develop or operate a competing service.",
   },
   {
-    title: "Acceptance",
-    body: `By using this website, you agree to these terms and to any official policies, notices, and legal requirements that apply to ${BRAND_CONFIG.companyName} services.`,
+    title: "VIII. Service Availability and Changes",
+    body: "Inspire will use reasonable efforts to maintain QuickPawn. However, the Service may occasionally be unavailable due to maintenance, upgrades, technical issues, internet or third-party service failures, cybersecurity incidents, or events beyond Inspire's reasonable control. Inspire may update, modify, improve, or discontinue features of QuickPawn from time to time. Unless otherwise agreed in writing, Inspire does not guarantee uninterrupted or error-free operation of the Service.",
+  },
+  {
+    title: "IX. Suspension and Termination",
+    body: "Inspire may suspend or restrict access to QuickPawn if reasonably necessary to protect the security or integrity of the Service, prevent fraud, abuse, or unauthorized access, address a serious violation of these Terms, comply with applicable law, or address unpaid fees. You may cancel your subscription according to the applicable cancellation procedure. Upon termination or expiration of your subscription, your right to use QuickPawn ends, access to your account may be disabled, unpaid fees remain payable, and Customer Data may be retained or deleted in accordance with Inspire's applicable data retention practices and legal obligations. You are responsible for requesting and obtaining any necessary data export before the end of the applicable retention period.",
+  },
+  {
+    title: "X. Intellectual Property",
+    body: "QuickPawn and all related software, technology, design, content, documentation, trademarks, logos, and branding are owned by or licensed to Inspire Next Global Inc. You retain ownership of your Customer Data. You may not use Inspire or QuickPawn trademarks, logos, or branding without prior written permission.",
+  },
+  {
+    title: "XI. Disclaimers",
+    body: "To the maximum extent permitted by law, QuickPawn is provided on an “AS IS” and “AS AVAILABLE” basis. Inspire does not guarantee that the Service will always be uninterrupted, error-free, that all defects will be corrected, that QuickPawn will meet every specific business requirement, or that use of QuickPawn alone will ensure compliance with any law or regulation. You remain responsible for verifying important information and business transactions.",
+  },
+  {
+    title: "XII. Limitation of Liability",
+    body: "To the maximum extent permitted by applicable law, Inspire will not be liable for indirect, incidental, special, consequential, or punitive damages, including loss of profits, revenue, business opportunities, goodwill, data, or business interruption. Inspire's total aggregate liability arising out of or relating to QuickPawn or these Terms will not exceed the total subscription fees actually paid by the Customer to Inspire for QuickPawn during the twelve (12) months preceding the event giving rise to the claim. Nothing in these Terms limits liability that cannot legally be limited or excluded.",
+  },
+  {
+    title: "XIII. Customer Indemnification",
+    body: "To the extent permitted by law, you agree to defend, indemnify, and hold harmless Inspire, its affiliates, officers, directors, employees, contractors, and representatives from claims, damages, liabilities, costs, and expenses arising from your breach of these Terms, your misuse of QuickPawn, your violation of applicable law, your Customer Data, your violation of another person's rights, or your business operations and transactions.",
+  },
+  {
+    title: "XIV. Confidentiality",
+    body: "Each party agrees to protect the other party's confidential information and use it only for purposes related to the business relationship. This obligation does not apply to information that is publicly available, already lawfully known, independently developed, or required to be disclosed by law.",
+  },
+  {
+    title: "XV. Changes to These Terms",
+    body: "Inspire may update these Terms from time to time. Updated Terms may be posted on the QuickPawn website or provided through the Platform, email, or other reasonable means. If you continue to use QuickPawn after the updated Terms become effective, you agree to the revised Terms.",
+  },
+  {
+    title: "XVI. Governing Law and Disputes",
+    body: "These Terms are governed by the laws of the Republic of the Philippines. The parties will first attempt in good faith to resolve disputes through discussion and negotiation. If a dispute cannot be resolved, the parties may pursue remedies available under applicable Philippine law before the proper courts with jurisdiction.",
+  },
+  {
+    title: "XVII. Contact Information",
+    body: "Inspire Next Global Inc. — Name: Inspire Neo. Email: inspirenextglobal.marketing@gmail.com. Contact Number: 09929718800. Address: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig.",
   },
 ];
 
 const privacySections = [
   {
-    title: "Information We May Collect",
-    body: `When customers contact us or complete branch transactions, ${BRAND_CONFIG.companyName} may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.`,
+    title: "I. Information We May Collect",
+    body: "Depending on how you use QuickPawn, we may collect or process: name and contact information; account and login information; business and user information; customer and transaction information entered into the Platform; pawn, payment, loan, renewal, and redemption records; device, browser, log, and technical information; and other information necessary to provide and operate the Service.",
   },
   {
-    title: "How We Use Information",
-    body: "We use customer information to verify identity, evaluate pawned or sold items, process transactions, issue receipts or pawn tickets, manage renewals and redemptions, respond to inquiries, improve service, and comply with legal or regulatory requirements.",
+    title: "II. How We Use Information",
+    body: "Information may be used to provide, operate, and maintain QuickPawn; create and manage user accounts; process and manage transactions; provide customer and technical support; maintain system security and prevent unauthorized access, fraud, and abuse; improve and develop the Service; perform backups and business continuity activities; comply with applicable laws and legal obligations; and perform other purposes reasonably necessary to provide the Service.",
   },
   {
-    title: "Branch and Transaction Records",
-    body: "Customer and transaction records may be stored in our internal Pawnshop Management System so authorized personnel can manage customer service, item inventory, payments, audit reviews, reports, and required business documentation.",
+    title: "III. Customer Data",
+    body: "Information entered into QuickPawn by a subscribing pawnshop or business (\"Customer Data\") generally remains under the control and ownership of that customer. The customer is responsible for ensuring that personal information entered into QuickPawn is collected and processed lawfully and in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173) and other applicable laws. Inspire may process Customer Data as necessary to provide, maintain, secure, support, and operate QuickPawn. Where applicable, the customer may act as the Personal Information Controller, while Inspire may act as a Personal Information Processor processing data on the customer's behalf.",
   },
   {
-    title: "Sharing of Information",
-    body: "We do not sell customer personal information. We may share information only when needed for business operations, customer requests, legal compliance, fraud prevention, security review, or cooperation with authorized government or regulatory offices.",
+    title: "IV. Data Sharing and Service Providers",
+    body: "We may share or provide access to information only as reasonably necessary to operate QuickPawn, including with authorized service providers such as hosting, cloud infrastructure, security, communication, payment, and other technology providers. We may also disclose information when required by law, legal process, or a lawful government request, or when reasonably necessary to protect the rights, property, security, and operation of Inspire, QuickPawn, our customers, or other persons. We do not sell personal information for purposes unrelated to providing or operating our services.",
   },
   {
-    title: "Data Protection",
-    body: "We use reasonable administrative, technical, and access-control safeguards to protect customer information. Only authorized employees and administrators may access customer records when needed for legitimate pawnshop operations.",
+    title: "V. Data Security",
+    body: "We implement reasonable technical, organizational, and administrative measures designed to protect personal information against unauthorized access, disclosure, alteration, loss, destruction, or unlawful processing. However, no system, network, or electronic transmission can guarantee absolute security. Users and customers are also responsible for protecting their account credentials and limiting access to authorized individuals.",
   },
   {
-    title: "Customer Choices",
-    body: `Customers may contact ${BRAND_CONFIG.companyName} to ask about their records, request corrections, or raise privacy concerns, subject to identity verification, record retention rules, and applicable law.`,
+    title: "VI. Data Retention",
+    body: "We retain information only for as long as reasonably necessary to provide the Service, fulfill legitimate business purposes, comply with legal obligations, resolve disputes, enforce agreements, maintain records, and protect our legitimate interests. After an account or subscription ends, Customer Data may be retained or deleted in accordance with applicable retention practices, legal requirements, and the applicable Terms of Service.",
   },
   {
-    title: "Website Visitors",
-    body: "Public visitors can browse the landing page without logging in. Basic technical information may still be processed by normal website hosting, browser, security, or analytics tools if they are enabled.",
+    title: "VII. Data Subject Rights",
+    body: "Subject to applicable law, data subjects may have rights under the Data Privacy Act of 2012, including the right to be informed, access, correct, object to certain processing, request erasure or blocking where applicable, and lodge a complaint with the National Privacy Commission. Requests relating to personal information should generally first be directed to the relevant customer or organization that collected the information. Requests relating to personal information directly controlled by Inspire may be sent to the contact details below.",
   },
   {
-    title: "Policy Updates",
-    body: "We may update this Privacy Policy as our services, systems, or legal requirements change. Updated policy content will apply once posted or otherwise made available.",
+    title: "VIII. Cookies and Technical Information",
+    body: "QuickPawn and related websites may use cookies, logs, and similar technologies to support functionality, security, authentication, performance, and system improvement. You may be able to control certain cookie settings through your browser or device. Disabling certain technologies may affect the availability or functionality of some features.",
+  },
+  {
+    title: "IX. Changes to This Privacy Policy",
+    body: "We may update this Privacy Policy from time to time to reflect changes in our services, practices, technology, or legal requirements. The updated version will be posted on the QuickPawn website with its updated effective date. Your continued use of QuickPawn after an updated Privacy Policy becomes effective constitutes your acknowledgment of the updated Policy.",
+  },
+  {
+    title: "X. Contact Information",
+    body: "Inspire Next Global Inc. — Name: Inspire Neo. Email: inspirenextglobal.marketing@gmail.com. Contact Number: 0992 971 8800. Address: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig.",
   },
 ];
 
@@ -135,212 +158,46 @@ const legalModalContent = {
   privacy: {
     title: "Privacy Policy",
     ariaLabel: "Close privacy policy",
-    intro: `This policy explains how ${BRAND_CONFIG.companyName} handles customer and visitor information for inquiries, branch transactions, item records, customer support, and required business documentation.`,
+    intro: "This Privacy Policy explains how Inspire Next Global Inc. (\"Inspire,\" \"we,\" \"us,\" or \"our\") collects, uses, stores, and protects personal information in connection with the QuickPawn Pawnshop Management System. By accessing or using QuickPawn, you acknowledge this Privacy Policy. Last updated: August 2026.",
     sections: privacySections,
   },
   terms: {
     title: "Terms of Service",
     ariaLabel: "Close terms of service",
-    intro: `These terms explain general use of the ${BRAND_CONFIG.companyName} website and public information for customers, visitors, and anyone learning about our pawnshop services.`,
+    intro: "These Terms of Service govern your access to and use of the QuickPawn Pawnshop Management System, a software-as-a-service platform owned and operated by Inspire Next Global Inc. By accessing or using QuickPawn, you agree to comply with these Terms.",
     sections: termsSections,
   },
 };
-
-const steps = [
-  {
-    step: "01",
-    title: "Send Your Item Details",
-    desc: "Message us on Facebook with photos and details of your item. We accept gadgets, appliances, accessories, and more.",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-        <circle cx="12" cy="13" r="3" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    step: "02",
-    title: "Get a Fair Offer",
-    desc: "Our team reviews your submission and gives you a fair, competitive buy-back price - usually within the same day.",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
-  {
-    step: "03",
-    title: "Get Paid Instantly",
-    desc: "Agree to the offer, drop off or ship your item, and get paid instantly. Cash on hand or digital transfer - your choice.",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-  },
-];
-
-const categories = [
-  {
-    name: "SMARTPHONES",
-    desc: "iPhone, Samsung and More",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
-      </svg>
-    ),
-  },
-  {
-    name: "LAPTOP & PCs",
-    desc: "All brands accepted",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8m-4-4v4" />
-      </svg>
-    ),
-  },
-  {
-    name: "APPLIANCES",
-    desc: "Smart and Large Electronics",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="2" y="3" width="20" height="18" rx="2" /><path d="M8 21h8M12 17v4M6 8h.01M6 12h.01" />
-      </svg>
-    ),
-  },
-  {
-    name: "GAMING CONSOLES",
-    desc: "PSP, Xbox or Nintendo",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M9 12h6M12 9v6M18 2l4 4-8 8-4-4 8-8z" />
-      </svg>
-    ),
-  },
-  {
-    name: "CAMERAS",
-    desc: "DSLR, mirrorless and action cams",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 4h-5L7 7H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" />
-      </svg>
-    ),
-  },
-  {
-    name: "SMARTWATCHES",
-    desc: "Apple Watch or Galaxy Watch",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <rect x="7" y="5" width="10" height="14" rx="2" /><path d="M9 5V3h6v2M9 19v2h6v-2M12 9v4l2 2" />
-      </svg>
-    ),
-  },
-  {
-    name: "AUDIO & EARPHONES",
-    desc: "Headphones, TWS or Speakers",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6M3 18a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5zm16 0a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5z" />
-      </svg>
-    ),
-  },
-  {
-    name: "OTHER ITEMS",
-    desc: "Ask us - we might buy it!",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-8 w-8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 3H8l-2 4h12l-2-4z" />
-      </svg>
-    ),
-  },
-];
-
-const reasons = [
-  {
-    title: "Same-Day Offers",
-    desc: "We respond fast. Submit your item in the morning and have an offer by afternoon - no waiting around.",
-  },
-  {
-    title: "Honest & Transparent",
-    desc: "Our pricing is based on current market values. We explain every offer so you know exactly what you're getting.",
-  },
-  {
-    title: "Secure Transactions",
-    desc: "Every deal is handled with full transparency. Your items and your money are always protected.",
-  },
-  {
-    title: "Trusted by Hundreds",
-    desc: `Hundreds of satisfied sellers trust ${BRAND_CONFIG.shortCompanyName} for their buy-back needs. Join our growing community today.`,
-  },
-];
-
-const allReviews = [
-  { name: "Manon M.", sold: "Sold an iPhone 12", initials: "MM", quote: "Super fast response! I messaged them about my old iPhone and got an offer within a few hours. Payment was smooth and no issues at all." },
-  { name: "Carlos R.", sold: "Sold a MacBook Pro", initials: "CR", quote: "Best buy-back shop I've tried. They gave me a fair price for my laptop and the whole process took less than a day. Highly recommend!" },
-  { name: "Mindy Meeks", sold: "Sold a Samsung Galaxy", initials: "MM", quote: "Very professional and trustworthy. They explained everything clearly and I felt comfortable with the whole transaction. Will sell again!" },
-  { name: "Taesan H.", sold: "Sold a MacBook Air", initials: "TH", quote: "No lowball offers like other shops. They gave me the great price for my laptop and paid on the spot." },
-  { name: "Joshua H.", sold: "Sold a PS5 Controller", initials: "JH", quote: `Legit and trustworthy! The offer was fair and they explained everything. Will definitely sell again with ${BRAND_CONFIG.shortCompanyName}. Highly recommended!` },
-  { name: "Maria L.", sold: "Sold an iPad Pro", initials: "ML", quote: "Quick and easy process. Got a great offer for my iPad and the payment was instant. Very satisfied with the service!" },
-];
 
 export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [activeNavItem, setActiveNavItem] = useState("HOME");
   const [underlineLeft, setUnderlineLeft] = useState(0);
   const [underlineWidth, setUnderlineWidth] = useState(0);
-  const [reviewIndex, setReviewIndex] = useState(0);
-  const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isNavVisible, setIsNavVisible] = useState(true);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
-  const [branchModalOpen, setBranchModalOpen] = useState(false);
-  const [publicBranches, setPublicBranches] = useState<PublicBranch[]>([]);
-  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
-  const [branchLoadError, setBranchLoadError] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const lastScrollY = useRef(0);
 
-  const totalSlides = allReviews.length;
-
-  const goToReview = (next: number) => {
-    setReviewIndex((next + totalSlides) % totalSlides);
-  };
-
-  const prevReview = () => goToReview(reviewIndex - 1);
-  const nextReview = () => goToReview(reviewIndex + 1);
-  const branchCountLabel =
-    publicBranches.length > 0
-      ? `${publicBranches.length} ${publicBranches.length === 1 ? "Branch" : "Branches"}`
-      : "View available branches";
-
-  const loadPublicBranches = async () => {
-    if (publicBranches.length > 0 || isLoadingBranches) return;
-
-    setIsLoadingBranches(true);
-    setBranchLoadError("");
-    try {
-      const data = await api.get<PublicBranch[]>("/auth/signup/branches", {
-        suppressApiIssueLogging: true,
-      });
-      setPublicBranches(Array.isArray(data) ? data : []);
-    } catch (error) {
-      setBranchLoadError(error instanceof Error ? error.message : "Could not load branches.");
-    } finally {
-      setIsLoadingBranches(false);
+  const handleContactSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
+      toast.error("Please fill in all fields.");
+      return;
     }
-  };
 
-  const openBranchModal = async () => {
-    setBranchModalOpen(true);
-    await loadPublicBranches();
+    const subject = encodeURIComponent(`QuickPawn inquiry from ${contactName.trim()}`);
+    const body = encodeURIComponent(
+      `${contactMessage.trim()}\n\n— ${contactName.trim()} (${contactEmail.trim()})`
+    );
+    window.location.href = `mailto:${BRAND_CONFIG.email}?subject=${subject}&body=${body}`;
   };
-
-  useEffect(() => {
-    void loadPublicBranches();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Prevent scrolling when mobile or tablet menu is open
   useEffect(() => {
@@ -359,13 +216,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       document.body.removeAttribute('data-scroll-lock');
     }
   }, [mobileMenuOpen, tabletMenuOpen]);
-
-  // For seamless sliding, we wrap the reviews
-  const extendedReviews = [
-    allReviews[allReviews.length - 1],
-    ...allReviews,
-    allReviews[0],
-  ];
 
   const handleScroll = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => {
     e.preventDefault();
@@ -394,14 +244,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       
       window.history.pushState(null, "", `#${id}`);
     }, 50);
-  };
-
-  const handleContactUsClick = () => {
-    const element = document.getElementById("contact-us");
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.history.pushState(null, "", "#contact-us");
-    }
   };
 
   useEffect(() => {
@@ -450,12 +292,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
   }, [activeNavItem]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHeroImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
-    }, 7000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#f4f2ee] selection:bg-brand-gold selection:text-brand-green">
@@ -471,13 +307,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               className="hidden items-center gap-2 lg:flex"
               onClick={(e) => handleScroll(e, "home", "HOME")}
             >
-              <Image
-                src="/logo-icon.png"
-                alt={BRAND_CONFIG.shortCompanyName}
-                width={40}
-                height={40}
-                className="rounded-lg"
-              />
+              <QuickPawnLogo variant="mark" className="h-10 w-10" />
               <span className="font-display text-lg font-bold text-brand-green">{BRAND_CONFIG.shortCompanyName}</span>
             </button>
             
@@ -556,7 +386,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
                 <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={42} height={42} className="rounded-lg shadow-lg" />
+                    <QuickPawnLogo variant="mark" className="h-[42px] w-[42px] shadow-lg" />
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
                       <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
@@ -624,7 +454,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
               <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={42} height={42} className="rounded-lg shadow-lg" />
+                  <QuickPawnLogo variant="mark" className="h-[42px] w-[42px] shadow-lg" />
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
                     <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
@@ -674,202 +504,98 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           </div>
         </nav>
 
-        <LandingHero onScroll={handleScroll} heroSrc={`/${HERO_IMAGES[heroImageIndex]}`} />
-        <LandingBentoFeatures onScroll={handleScroll} />
+        <LandingHero onScroll={handleScroll} />
+        <LandingIntro />
+        <LandingProblemSolution onScroll={handleScroll} />
+        <LandingHowItHelps />
+        <LandingStats />
+        <LandingBenefits />
+        <LandingCloud />
         <LandingProcessPricing onScroll={handleScroll} />
-        <LandingSplitSection onScroll={handleScroll} />
         <LandingTrustBar />
+        <LandingFaq />
 
-        <FeaturedSaleItems />
-
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ REVIEWS CAROUSEL ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="reviews" className="bg-white px-4 py-16 md:px-10 md:py-24 lg:pt-48 lg:pb-48">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">CUSTOMER REVIEWS</p>
-            <h2 className="font-display mt-2 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">What Our Sellers Say</h2>
-
-            <div className="relative mt-8 flex items-center gap-2 md:mt-12 md:gap-3 lg:gap-4">
-              {/* Left arrow */}
-              <button onClick={prevReview}
-                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white shadow-lg transition hover:bg-brand-green/90 active:scale-95 md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-              </button>
-
-              {/* Mobile: single card */}
-              <div className="flex-1 md:hidden">
-                <div className="rounded-2xl bg-brand-green p-5 text-white shadow-2xl">
-                  <div className="flex gap-1 mb-3">
-                    {[...Array(5)].map((_, si) => (
-                      <svg key={si} className="h-4 w-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <p className="text-sm leading-relaxed mb-4 text-white/90">&ldquo;{allReviews[reviewIndex].quote}&rdquo;</p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-gold text-sm font-black text-brand-green">
-                      {allReviews[reviewIndex].initials}
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-white">{allReviews[reviewIndex].name}</p>
-                      <p className="text-xs text-white/60">{allReviews[reviewIndex].sold}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Desktop: 3-card carousel */}
-              <div className="hidden flex-1 overflow-hidden py-8 md:block lg:py-10">
-                <div 
-                  className="flex transition-transform duration-500 ease-out"
-                  style={{ transform: `translateX(${(1 - (reviewIndex + 1)) * 33.333}%)` }}
-                >
-                  {extendedReviews.map((review, i) => {
-                    const isCenter = i === reviewIndex + 1;
-                    return (
-                      <div key={`${review.name}-${i}`} className="w-1/3 shrink-0 px-2 transition-all duration-500 lg:px-4">
-                        <div className={`h-full rounded-2xl p-4 shadow-lg transition-all duration-500 lg:p-6 ${
-                          isCenter
-                            ? "bg-brand-green text-white scale-105 shadow-2xl z-10"
-                            : "bg-brand-green/8 text-brand-green scale-95 opacity-50"
-                        }`}>
-                          <div className="flex gap-1 mb-4">
-                            {[...Array(5)].map((_, si) => (
-                              <svg key={si} className="h-4 w-4 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                          <p className={`mb-5 text-xs leading-relaxed lg:mb-6 lg:text-sm ${isCenter ? "text-white/90" : "text-zinc-600"}`}>
-                            &ldquo;{review.quote}&rdquo;
-                          </p>
-                          <div className="flex items-center gap-3">
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${isCenter ? "bg-brand-gold text-brand-green" : "bg-brand-green text-white"}`}>
-                              {review.initials}
-                            </div>
-                            <div className="min-w-0">
-                              <p className={`text-sm font-bold leading-tight ${isCenter ? "text-white" : "text-brand-green"}`}>{review.name}</p>
-                              <p className={`text-xs ${isCenter ? "text-white/60" : "text-zinc-400"}`}>{review.sold}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Right arrow */}
-              <button onClick={nextReview}
-                className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-white shadow-lg transition hover:bg-brand-green/90 active:scale-95 md:h-12 md:w-12">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 md:h-5 md:w-5">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </button>
+        {/* --- CLOSING / CONTACT --- */}
+        <section id="contact-us" className="bg-brand-gold px-6 py-20 md:px-12 md:py-28">
+          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
+            <div className="reveal-on-scroll text-center lg:text-left">
+              <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl">
+                Ready to Manage Your Pawnshop Smarter?
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-brand-green/85 md:text-lg">
+                The way you manage your business affects the way your business grows. Move away
+                from complicated, scattered processes and discover a more organized way to manage
+                your pawnshop. Start your journey with {BRAND_CONFIG.shortCompanyName} today.
+              </p>
+              <p className="mt-6 text-sm font-semibold text-brand-green/70">
+                Or contact us by sending a message to{" "}
+                <a href={`mailto:${BRAND_CONFIG.email}`} className="underline hover:text-brand-green">
+                  {BRAND_CONFIG.email}
+                </a>
+              </p>
             </div>
 
-            {/* Dots */}
-            <div className="mt-4 flex justify-center gap-2 md:mt-6">
-              {allReviews.map((_, i) => (
-                <button key={i} onClick={() => goToReview(i)}
-                  className={`h-2 rounded-full transition-all ${i === reviewIndex ? "w-6 bg-brand-green" : "w-2 bg-brand-green/30"}`} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ BRANCH LOCATIONS ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ */}
-        <section id="branches" className="bg-white px-6 pt-20 pb-32 md:px-12 md:pt-28 md:pb-40">
-          <div className="mx-auto max-w-6xl reveal-on-scroll">
-            <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FIND US</p>
-            <h2 className="font-display mt-2 text-4xl font-bold text-brand-green md:text-5xl">Our Branch Locations</h2>
-            <p className="mt-3 text-base text-brand-green/60">
-              {publicBranches.length > 0
-                ? `Visit us at any of our ${branchCountLabel.toLowerCase()}.`
-                : `Visit us at any available ${BRAND_CONFIG.companyName} branch.`}
-            </p>
-
-            {isLoadingBranches ? (
-              <div className="mt-10 rounded-2xl border border-brand-green/20 bg-brand-green/5 px-6 py-10 text-center text-sm font-bold text-brand-green/60">
-                Loading branch locations...
-              </div>
-            ) : branchLoadError ? (
-              <div className="mt-10 rounded-2xl border border-red-200 bg-red-50 px-6 py-5 text-sm font-semibold text-red-700">
-                {branchLoadError}
-              </div>
-            ) : publicBranches.length === 0 ? (
-              <div className="mt-10 rounded-2xl border border-brand-green/20 bg-brand-green/5 px-6 py-10 text-center text-sm font-bold text-brand-green/60">
-                Branch locations will be posted soon.
-              </div>
-            ) : (
-              <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {publicBranches.map((branch) => (
-                <div key={branch.id} className="rounded-2xl bg-brand-green overflow-hidden shadow-xl">
-                  {/* Interactive map with geocoding (Requirements: 9.1, 9.2) */}
-                  <BranchMap 
-                    branchName={branch.name}
-                    location={branch.location ?? null}
-                    branchId={branch.id}
+            <form
+              onSubmit={handleContactSubmit}
+              className="reveal-on-scroll reveal-delay-200 rounded-2xl bg-white p-6 shadow-xl sm:p-8"
+            >
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Request a demo</p>
+              <h3 className="font-display mt-1 text-xl font-bold text-brand-green">Talk to {BRAND_CONFIG.shortCompanyName}</h3>
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label htmlFor="landing-contact-name" className="text-xs font-semibold text-brand-green/70">
+                    Name
+                  </label>
+                  <input
+                    id="landing-contact-name"
+                    type="text"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green"
+                    placeholder="Juan Dela Cruz"
                   />
-                  <div className="p-5">
-                    <h3 className="font-black text-white text-lg">{branch.name}</h3>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-start gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 mt-0.5 text-brand-gold">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {branch.location?.trim() || "Address will be announced soon."}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-brand-gold">
-                          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        Branch hours may vary
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-white/60">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-brand-gold">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                        </svg>
-                        Contact through Facebook
-                      </div>
-                    </div>
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.location?.trim() || branch.name)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-4 block w-full rounded-xl bg-brand-gold py-2.5 text-center text-sm font-black text-brand-green transition-colors hover:bg-brand-gold"
-                    >
-                      Get Directions
-                    </a>
-                  </div>
                 </div>
-              ))}
+                <div>
+                  <label htmlFor="landing-contact-email" className="text-xs font-semibold text-brand-green/70">
+                    Email
+                  </label>
+                  <input
+                    id="landing-contact-email"
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green"
+                    placeholder="you@pawnshop.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="landing-contact-message" className="text-xs font-semibold text-brand-green/70">
+                    Message
+                  </label>
+                  <textarea
+                    id="landing-contact-message"
+                    rows={3}
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green"
+                    placeholder="Tell us about your pawnshop..."
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        </section>
-
-        {/* --- CONTACT CTA --- */}
-        <section
-          id="contact-us"
-          className="bg-brand-gold px-6 py-20 md:px-12 md:py-32"
-        >
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-4 text-center">
-            <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl lg:text-6xl">Ready to Turn Your Items Into Cash?</h2>
-            <p className="text-xl font-bold text-brand-green/90 md:text-2xl lg:text-3xl">
-              It only takes a minute to start.
-            </p>
+              <button
+                type="submit"
+                className="mt-6 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
+              >
+                Send Message
+              </button>
+            </form>
           </div>
         </section>
 
         <LandingLightFooter
           onScroll={handleScroll}
           onLoginClick={onLoginClick}
-          onOpenBranches={() => { void openBranchModal(); }}
           onOpenLegal={(type) => setLegalModal(type)}
-          branchCountLabel={branchCountLabel}
         />
 
         {legalModal && (
@@ -937,89 +663,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
                 >
                   I Understand
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {branchModalOpen && (
-          <div
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
-            onClick={() => setBranchModalOpen(false)}
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="branch-list-modal-title"
-              className="relative max-h-[86vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-stone-100 shadow-2xl"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <button
-                type="button"
-                onClick={() => setBranchModalOpen(false)}
-                aria-label="Close branch list"
-                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </button>
-
-              <div className="relative overflow-hidden bg-brand-green/90 px-6 pb-6 pt-7 text-white sm:px-8">
-                <div className="absolute right-[-28px] top-[-42px] h-36 w-36 rounded-full bg-white/5" />
-                <div className="absolute bottom-[-34px] left-[-18px] h-28 w-28 rounded-full bg-white/5" />
-                <div className="relative">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-gold">{BRAND_CONFIG.companyName}</p>
-                  <h3 id="branch-list-modal-title" className="mt-2 text-2xl font-bold">Available Branches</h3>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/85">
-                    Visit any active branch below for in-person appraisal, item drop-off, payment, renewal, redemption, or customer assistance.
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative bg-brand-green/90">
-                <div className="h-2 rounded-t-xl bg-stone-100" />
-                <div className="absolute left-1/2 top-0 h-1 w-16 -translate-x-1/2 rounded-full bg-white/30" />
-              </div>
-
-              <div className="max-h-[55vh] overflow-y-auto px-6 py-5 sm:px-8">
-                {isLoadingBranches ? (
-                  <p className="py-10 text-center text-sm font-semibold text-zinc-500">Loading branches...</p>
-                ) : branchLoadError ? (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                    {branchLoadError}
-                  </div>
-                ) : publicBranches.length === 0 ? (
-                  <p className="py-10 text-center text-sm font-semibold text-zinc-500">No public branches are available right now.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {publicBranches.map((branch) => (
-                      <section key={branch.id} className="rounded-xl border border-zinc-200 bg-white px-4 py-4 shadow-sm">
-                        <div className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-green/90 text-sm font-black text-white">
-                            {branch.branch_code || branch.name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-brand-green">{branch.name}</h4>
-                            <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                              {branch.location?.trim() || "Address will be announced soon."}
-                            </p>
-                          </div>
-                        </div>
-                      </section>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-zinc-200 bg-white/60 px-6 py-4 sm:px-8">
-                <button
-                  type="button"
-                  onClick={() => setBranchModalOpen(false)}
-                  className="w-full bg-brand-green/90 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-green/80"
-                >
-                  Close
                 </button>
               </div>
             </div>

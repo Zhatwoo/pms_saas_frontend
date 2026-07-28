@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { api } from "@/lib/api";
-import { BRAND_CONFIG } from "@/lib/brand-config";
+import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 interface BranchSummary {
   id: string;
@@ -172,13 +171,7 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
         <div className="relative flex w-full flex-col items-center justify-center bg-white px-8 py-10 md:w-2/5">
           <div className="relative flex flex-col items-center">
             <div className="w-full max-w-[280px]">
-              <Image
-                src={BRAND_CONFIG.loginLogo}
-                alt={`${BRAND_CONFIG.companyName} Logo`}
-                width={320}
-                height={180}
-                className="h-auto w-full object-contain"
-              />
+              <QuickPawnLogo variant="full" showTagline className="h-auto w-full" />
             </div>
             <p className="mt-4 text-center text-lg font-bold text-brand-green">
               Create account
