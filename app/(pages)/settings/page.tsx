@@ -23,23 +23,37 @@ import {
   type SlipSectionId,
 } from "./_components/moa-dnd";
 import {
+  MoaCanvasWatermark,
   MoaDesignCanvasLayer,
+  MAX_MOA_PAGES,
+  MOA_DOCUMENT_TYPES,
   MOA_FONT_OPTIONS,
   MOA_PAGE_SIZES,
+  DEFAULT_MOA_WATERMARK,
   applyToolbarToSelected,
+  createMoaDesignElement,
   loadMoaDesignElements,
+  loadMoaPageCount,
   loadMoaPageSize,
+  loadMoaWatermark,
+  moaDesignStorageKey,
   saveMoaDesignElements,
+  saveMoaPageCount,
   saveMoaPageSize,
+  saveMoaWatermark,
   type MoaDesignElement,
+  type MoaDocumentType,
+  type MoaElementCreateOptions,
   type MoaHeaderFieldKey,
   type MoaPageSizeId,
+  type MoaPaletteItemKind,
   type MoaTextAlign,
   type MoaTextStylePatch,
+  type MoaWatermarkSettings,
 } from "./_components/moa-design-palette";
 import { useMoaKeyboard } from "./hooks/useMoaKeyboard";
 import { MoaDesignToolsPanel } from "./_components/moa-design/tools-panel";
-
+import { MoaContextualToolbar } from "./_components/moa-design/contextual-toolbar";
 import { MoaFieldConfigTab } from "./_components/moa-design/field-config-tab";
 // Hook implementation resides in ./hooks/useMoaKeyboard.ts
 // ─── ResizableLine ───────────────────────────────────────────────────────────
@@ -328,6 +342,8 @@ export default function SettingsPage() {
   const [slipSectionOrder, setSlipSectionOrder] = useState<SlipSectionId[]>([...DEFAULT_SLIP_SECTION_ORDER]);
   const [moaDesignElements, setMoaDesignElements] = useState<MoaDesignElement[]>([]);
   const [selectedDesignId, setSelectedDesignId] = useState<string | null>(null);
+  const [selectedDesignIds, setSelectedDesignIds] = useState<string[]>([]);
+  const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
   const [moaHistory, setMoaHistory] = useState<MoaDesignElement[][]>([]);
   const [moaFuture, setMoaFuture] = useState<MoaDesignElement[][]>([]);
   const moaClipboardRef = useRef<MoaDesignElement | null>(null);
@@ -338,7 +354,14 @@ export default function SettingsPage() {
   const [moaDesignFontStyle, setMoaDesignFontStyle] = useState<"normal" | "italic">("normal");
   const [moaDesignTextDecoration, setMoaDesignTextDecoration] = useState<"none" | "underline" | "line-through">("none");
   const [moaDesignColor, setMoaDesignColor] = useState("#18181b");
+  const [moaDesignFill, setMoaDesignFill] = useState("transparent");
+  const moaImageInputRef = useRef<HTMLInputElement>(null);
   const [moaPageSizeId, setMoaPageSizeId] = useState<MoaPageSizeId>("long");
+  const [moaPageCount, setMoaPageCount] = useState(1);
+  const [moaDocumentType, setMoaDocumentType] = useState<MoaDocumentType>("moa");
+  const [moaWatermark, setMoaWatermark] = useState<MoaWatermarkSettings>({
+    ...DEFAULT_MOA_WATERMARK,
+  });
   const [isPaletteDragging, setIsPaletteDragging] = useState(false);
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
   const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
@@ -500,15 +523,23 @@ export default function SettingsPage() {
   }, []);
 
   const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+  const moaStorageKey = moaDesignStorageKey(moaDocumentType, selectedMoaCategory);
+  const activeDocumentLabel =
+    MOA_DOCUMENT_TYPES.find((item) => item.id === moaDocumentType)?.label ?? "MOA";
 
   useEffect(() => {
+    const loadedElements = loadMoaDesignElements(moaStorageKey);
     setSlipSectionOrder(loadSlipSectionOrder(selectedMoaCategory));
-    setMoaDesignElements(loadMoaDesignElements(selectedMoaCategory));
-    setMoaPageSizeId(loadMoaPageSize(selectedMoaCategory));
+    setMoaDesignElements(loadedElements);
+    setMoaPageSizeId(loadMoaPageSize(moaStorageKey));
+    setMoaPageCount(loadMoaPageCount(moaStorageKey, loadedElements));
+    setMoaWatermark(loadMoaWatermark(moaStorageKey));
     setSelectedDesignId(null);
+    setSelectedDesignIds([]);
+    setSelectedFieldIds([]);
     setMoaHistory([]);
     setMoaFuture([]);
-  }, [selectedMoaCategory]);
+  }, [moaStorageKey, selectedMoaCategory]);
 
   const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
 
@@ -523,7 +554,7 @@ export default function SettingsPage() {
       setMoaFuture([]);
     }
     setMoaDesignElements(next);
-    saveMoaDesignElements(selectedMoaCategory, next);
+    saveMoaDesignElements(moaStorageKey, next);
   };
 
   const handleUndo = () => {
@@ -543,9 +574,32 @@ export default function SettingsPage() {
   };
 
   const handleDeleteSelected = () => {
-    if (!selectedDesignId) return;
-    updateMoaDesignElements(moaDesignElements.filter((el) => el.id !== selectedDesignId));
+    if (selectedFieldIds.length > 0 && selectedDesignId) {
+      updateMoaDesignElements(
+        moaDesignElements.map((el) =>
+          el.id !== selectedDesignId || el.kind !== "header"
+            ? el
+            : {
+                ...el,
+                headerFields: el.headerFields.filter(
+                  (field) => !selectedFieldIds.includes(field.id),
+                ),
+              },
+        ),
+      );
+      setSelectedFieldIds([]);
+      return;
+    }
+    const ids =
+      selectedDesignIds.length > 0
+        ? selectedDesignIds
+        : selectedDesignId
+          ? [selectedDesignId]
+          : [];
+    if (ids.length === 0) return;
+    updateMoaDesignElements(moaDesignElements.filter((el) => !ids.includes(el.id)));
     setSelectedDesignId(null);
+    setSelectedDesignIds([]);
   };
 
   const handleCopySelected = () => {
@@ -609,24 +663,117 @@ export default function SettingsPage() {
     onDuplicate: () => { if (canEditMoa) handleDuplicateSelected(); },
     onUndo: () => { if (canEditMoa) handleUndo(); },
     onRedo: () => { if (canEditMoa) handleRedo(); },
+    onSelectAll: () => {
+      if (!canEditMoa) return;
+      const header = selectedDesignId
+        ? moaDesignElements.find((el) => el.id === selectedDesignId)
+        : null;
+      if (header?.kind === "header" && header.headerFields.length > 0) {
+        setSelectedFieldIds(header.headerFields.map((field) => field.id));
+        setSelectedDesignIds([header.id]);
+        return;
+      }
+      const ids = moaDesignElements.map((el) => el.id);
+      setSelectedDesignIds(ids);
+      setSelectedDesignId(ids[0] ?? null);
+      setSelectedFieldIds([]);
+    },
+    onClearSelection: () => {
+      setSelectedDesignId(null);
+      setSelectedDesignIds([]);
+      setSelectedFieldIds([]);
+    },
   });
 
   const handleMoaPageSizeChange = (id: MoaPageSizeId) => {
     setMoaPageSizeId(id);
-    saveMoaPageSize(selectedMoaCategory, id);
+    saveMoaPageSize(moaStorageKey, id);
+  };
+
+  const handleMoaDocumentTypeChange = (nextType: MoaDocumentType) => {
+    if (nextType === moaDocumentType) return;
+    setMoaDocumentType(nextType);
+    setSelectedDesignId(null);
+  };
+
+  const handleMoaWatermarkChange = (next: MoaWatermarkSettings) => {
+    setMoaWatermark(next);
+    saveMoaWatermark(moaStorageKey, next);
+  };
+
+  const handleAddMoaPage = () => {
+    if (moaPageCount >= MAX_MOA_PAGES) return;
+    const next = moaPageCount + 1;
+    setMoaPageCount(next);
+    saveMoaPageCount(moaStorageKey, next);
+    // Scroll to the new page after paint
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`moa-canvas-page-${next - 1}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  };
+
+  const handleRemoveMoaPage = () => {
+    if (moaPageCount <= 1) return;
+    const lastIndex = moaPageCount - 1;
+    const nextCount = moaPageCount - 1;
+    const remaining = moaDesignElements.filter((el) => (el.pageIndex ?? 0) !== lastIndex);
+    updateMoaDesignElements(remaining);
+    setMoaPageCount(nextCount);
+    saveMoaPageCount(moaStorageKey, nextCount);
+    const selected = moaDesignElements.find((el) => el.id === selectedDesignId);
+    if (selected && (selected.pageIndex ?? 0) === lastIndex) {
+      setSelectedDesignId(null);
+    }
+  };
+
+  const updatePageDesignElements = (pageIndex: number, nextPageElements: MoaDesignElement[]) => {
+    const stamped = nextPageElements.map((el) => ({ ...el, pageIndex }));
+    setMoaHistory((history) => [...history, moaDesignElements]);
+    setMoaFuture([]);
+    setMoaDesignElements((prev) => {
+      const others = prev.filter((el) => (el.pageIndex ?? 0) !== pageIndex);
+      const next = [...others, ...stamped];
+      saveMoaDesignElements(moaStorageKey, next);
+      return next;
+    });
   };
 
   const applyDesignStylePatch = (patch: MoaTextStylePatch) => {
     if (patch.fontFamily !== undefined) setMoaDesignFontFamily(patch.fontFamily);
-    if (patch.fontSize !== undefined) setMoaDesignFontSize(patch.fontSize);
+    if (patch.fontSize !== undefined) setMoaDesignFontSize(Number(patch.fontSize));
     if (patch.textAlign !== undefined) setMoaDesignTextAlign(patch.textAlign);
     if (patch.fontWeight !== undefined) setMoaDesignFontWeight(patch.fontWeight);
     if (patch.fontStyle !== undefined) setMoaDesignFontStyle(patch.fontStyle);
     if (patch.textDecoration !== undefined) setMoaDesignTextDecoration(patch.textDecoration);
     if (patch.color !== undefined) setMoaDesignColor(patch.color);
-    if (selectedDesignId) {
-      updateMoaDesignElements(applyToolbarToSelected(moaDesignElements, selectedDesignId, patch));
-    }
+    if (patch.fill !== undefined) setMoaDesignFill(patch.fill);
+
+    const ids =
+      selectedDesignIds.length > 0
+        ? selectedDesignIds
+        : selectedDesignId
+          ? [selectedDesignId]
+          : [];
+    const fieldIds = selectedFieldIds;
+    if (fieldIds.length === 0 && ids.length === 0) return;
+
+    const normalizedPatch: MoaTextStylePatch = {
+      ...patch,
+      ...(patch.fontSize !== undefined ? { fontSize: Number(patch.fontSize) } : {}),
+    };
+
+    setMoaHistory((history) => [...history, moaDesignElements]);
+    setMoaFuture([]);
+    setMoaDesignElements((prev) => {
+      const next = applyToolbarToSelected(prev, selectedDesignId, normalizedPatch, {
+        selectedIds: ids,
+        selectedFieldIds: fieldIds,
+      });
+      saveMoaDesignElements(moaStorageKey, next);
+      return next;
+    });
   };
 
   const handleDesignFontFamilyChange = (value: string) => {
@@ -637,11 +784,27 @@ export default function SettingsPage() {
     applyDesignStylePatch({ fontSize: value });
   };
 
-  const handleSelectDesignElement = (id: string | null) => {
-    setSelectedDesignId(id);
-    if (!id) return;
-    const selected = moaDesignElements.find((el) => el.id === id);
+  const syncToolbarFromSelection = (
+    elementId: string | null,
+    fieldIds: string[],
+  ) => {
+    if (!elementId) return;
+    const selected = moaDesignElements.find((el) => el.id === elementId);
     if (!selected) return;
+    if (fieldIds.length > 0 && selected.kind === "header") {
+      const field = selected.headerFields.find((item) => item.id === fieldIds[0]);
+      if (field) {
+        setMoaDesignFontFamily(field.fontFamily ?? selected.fontFamily);
+        setMoaDesignFontSize(field.fontSize ?? selected.fontSize);
+        setMoaDesignTextAlign(field.textAlign ?? selected.textAlign);
+        setMoaDesignFontWeight(field.fontWeight ?? selected.fontWeight);
+        setMoaDesignFontStyle(field.fontStyle ?? selected.fontStyle);
+        setMoaDesignTextDecoration(field.textDecoration ?? selected.textDecoration);
+        setMoaDesignColor(field.color ?? selected.color);
+        setMoaDesignFill(selected.fill || "transparent");
+        return;
+      }
+    }
     setMoaDesignFontFamily(selected.fontFamily);
     setMoaDesignFontSize(selected.fontSize);
     setMoaDesignTextAlign(selected.textAlign);
@@ -649,13 +812,72 @@ export default function SettingsPage() {
     setMoaDesignFontStyle(selected.fontStyle);
     setMoaDesignTextDecoration(selected.textDecoration);
     setMoaDesignColor(selected.color);
+    setMoaDesignFill(selected.fill || "transparent");
   };
+
+  const handleSelectDesignElement = (id: string | null) => {
+    setSelectedDesignId(id);
+    if (!id) {
+      setSelectedDesignIds([]);
+      return;
+    }
+    setSelectedDesignIds((prev) => (prev.includes(id) ? prev : [id]));
+    // Field toolbar sync happens in handleSelectedFieldIdsChange
+  };
+
+  const handleSelectedIdsChange = (ids: string[]) => {
+    setSelectedDesignIds(ids);
+    setSelectedDesignId(ids[0] ?? null);
+    // Element-level sync only. Field pickers call onSelectedFieldIdsChange after this
+    // and refresh the toolbar from the selected field(s).
+    if (ids[0]) syncToolbarFromSelection(ids[0], []);
+  };
+
+  const handleSelectedFieldIdsChange = (ids: string[]) => {
+    setSelectedFieldIds(ids);
+    const headerId =
+      selectedDesignId ??
+      moaDesignElements.find(
+        (el) =>
+          el.kind === "header" && el.headerFields.some((field) => ids.includes(field.id)),
+      )?.id ??
+      null;
+    if (headerId) {
+      setSelectedDesignId(headerId);
+      setSelectedDesignIds([headerId]);
+      syncToolbarFromSelection(headerId, ids);
+    }
+  };
+
+  const handleInsertSelectedImage = () => {
+    if (!selectedDesignId || !canEditMoa) return;
+    moaImageInputRef.current?.click();
+  };
+
+  const handleClearSelectedImage = () => {
+    if (!selectedDesignId || !canEditMoa) return;
+    updateMoaDesignElements(
+      moaDesignElements.map((el) =>
+        el.id === selectedDesignId ? { ...el, imageSrc: undefined } : el,
+      ),
+    );
+  };
+
+  const selectedDesignElement = selectedDesignId
+    ? moaDesignElements.find((el) => el.id === selectedDesignId) ?? null
+    : null;
 
   const handleAddHeaderField = (key: MoaHeaderFieldKey) => {
     if (!selectedDesignId) return;
     const selected = moaDesignElements.find((el) => el.id === selectedDesignId);
     if (!selected || selected.kind !== "header") return;
     if (selected.headerFields.some((field) => field.key === key)) return;
+    const size =
+      key === "shopAddress"
+        ? { width: 380, height: 36 }
+        : key === "shopName"
+          ? { width: 320, height: 24 }
+          : { width: 180, height: 22 };
     updateMoaDesignElements(
       moaDesignElements.map((el) =>
         el.id === selectedDesignId
@@ -670,14 +892,39 @@ export default function SettingsPage() {
                 y:
                   el.headerFields.length === 0
                     ? 8
-                    : Math.max(...el.headerFields.map((field) => field.y + 20)) + 6,
-                width: 180,
+                    : Math.max(
+                        ...el.headerFields.map((field) => field.y + (field.height || 22)),
+                      ) + 6,
+                width: size.width,
+                height: size.height,
               },
             ],
           }
           : el,
       ),
     );
+  };
+
+  const handleAddPaletteElement = (
+    kind: MoaPaletteItemKind,
+    options?: MoaElementCreateOptions,
+  ) => {
+    if (!canEditMoa) return;
+    const selected = selectedDesignId
+      ? moaDesignElements.find((el) => el.id === selectedDesignId)
+      : null;
+    const pageIndex = selected?.pageIndex ?? 0;
+    const offset = moaDesignElements.filter((el) => (el.pageIndex ?? 0) === pageIndex).length;
+    const next = createMoaDesignElement(kind, 32 + (offset % 5) * 16, 100 + (offset % 6) * 18, {
+      fontFamily: moaDesignFontFamily,
+      fontSize: moaDesignFontSize,
+      pageIndex,
+      ...options,
+    });
+    updateMoaDesignElements([...moaDesignElements, next]);
+    setSelectedDesignId(next.id);
+    setSelectedDesignIds([next.id]);
+    setSelectedFieldIds([]);
   };
 
   const reorderFinancialFields = (nextIds: string[]) => {
@@ -1728,80 +1975,326 @@ export default function SettingsPage() {
                 </div>
 
                 {isMoaEditMode && (
-                  <div className="overflow-x-auto rounded-lg border border-border-main bg-surface-secondary p-1.5">
-                    <div className="flex min-w-max items-center gap-1.5">
-                      {moaCategories.map((categoryName) => {
-                        const category = { value: categoryName, label: categoryName };
-                        const isActive = selectedMoaCategory === category.value;
-                        return (
-                          <button
-                            key={category.value}
-                            type="button"
-                            onClick={() => handleMoaCategoryChange(category.value)}
-                            disabled={!canEditMoa}
-                            className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${isActive
-                              ? "border-brand-green bg-brand-green text-white shadow-sm"
-                              : "border-border-main bg-surface text-zinc-700 hover:border-brand-green/40 hover:bg-brand-green/10 hover:text-brand-green dark:text-zinc-300"
+                  <div className="space-y-2">
+                    <div className="overflow-x-auto rounded-lg border border-border-main bg-surface-secondary p-1.5">
+                      <div className="flex min-w-max items-center gap-1.5">
+                        <span className="px-1 text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                          Form
+                        </span>
+                        {MOA_DOCUMENT_TYPES.map((doc) => {
+                          const isActive = moaDocumentType === doc.id;
+                          return (
+                            <button
+                              key={doc.id}
+                              type="button"
+                              title={doc.hint}
+                              onClick={() => handleMoaDocumentTypeChange(doc.id)}
+                              disabled={!canEditMoa}
+                              className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                                isActive
+                                  ? "border-sky-700 bg-sky-700 text-white shadow-sm"
+                                  : "border-border-main bg-surface text-zinc-700 hover:border-sky-500/40 hover:bg-sky-50 hover:text-sky-800 dark:text-zinc-300"
                               }`}
-                          >
-                            {category.label}
-                          </button>
-                        );
-                      })}
+                            >
+                              {doc.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto rounded-lg border border-border-main bg-surface-secondary p-1.5">
+                      <div className="flex min-w-max items-center gap-1.5">
+                        <span className="px-1 text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                          Category
+                        </span>
+                        {moaCategories.map((categoryName) => {
+                          const category = { value: categoryName, label: categoryName };
+                          const isActive = selectedMoaCategory === category.value;
+                          return (
+                            <button
+                              key={category.value}
+                              type="button"
+                              onClick={() => handleMoaCategoryChange(category.value)}
+                              disabled={!canEditMoa}
+                              className={`whitespace-nowrap rounded-md border px-3 py-2 text-[11px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${isActive
+                                ? "border-brand-green bg-brand-green text-white shadow-sm"
+                                : "border-border-main bg-surface text-zinc-700 hover:border-brand-green/40 hover:bg-brand-green/10 hover:text-brand-green dark:text-zinc-300"
+                                }`}
+                            >
+                              {category.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {isMoaEditMode && selectedMoaCategory !== DEFAULT_MOA_CATEGORY && (
                   <p className="rounded-md border border-brand-green/25 bg-brand-green/10 px-3 py-2 text-[10px] font-medium text-brand-green">
-                    Editing the MOA used for <strong>{selectedMoaCategory}</strong> transactions.
+                    Editing <strong>{activeDocumentLabel}</strong> for{" "}
+                    <strong>{selectedMoaCategory}</strong> transactions.
                   </p>
                 )}
 
                 {isMoaEditMode && canEditMoa && (
                   <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-[10px] font-medium text-sky-900">
-                    Blank canvas for <strong>{selectedMoaCategory === DEFAULT_MOA_CATEGORY ? "this category" : selectedMoaCategory}</strong> — drag Header, Section, Body, and Elements to build the MOA.
+                    Blank canvas for <strong>{activeDocumentLabel}</strong>
+                    {selectedMoaCategory !== DEFAULT_MOA_CATEGORY ? (
+                      <>
+                        {" "}
+                        · <strong>{selectedMoaCategory}</strong>
+                      </>
+                    ) : null}
+                    {" "}— use the left panel (Layout, Header, Elements, Fields) to build the form.
                   </p>
                 )}
 
-                <div className="min-w-0 overflow-x-auto rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
-                  <div className="flex min-w-0 flex-col items-stretch gap-6 xl:flex-row xl:items-start xl:justify-center">
+                {isMoaEditMode ? (
+                  <div className="overflow-hidden rounded-xl border border-border-main bg-white shadow-sm">
+                    <div className="flex min-h-[min(78vh,920px)] items-stretch">
+                      <aside className="relative flex shrink-0">
+                        <input
+                          ref={moaImageInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            event.target.value = "";
+                            if (!file || !selectedDesignId) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result !== "string") return;
+                              updateMoaDesignElements(
+                                moaDesignElements.map((el) =>
+                                  el.id === selectedDesignId
+                                    ? { ...el, imageSrc: reader.result as string }
+                                    : el,
+                                ),
+                              );
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        <MoaDesignToolsPanel
+                          enabled={canEditMoa}
+                          pageSize={moaPageSizeId}
+                          onPageSizeChange={handleMoaPageSizeChange}
+                          pageCount={moaPageCount}
+                          onAddPage={handleAddMoaPage}
+                          onRemovePage={handleRemoveMoaPage}
+                          watermark={moaWatermark}
+                          onWatermarkChange={handleMoaWatermarkChange}
+                          fontFamily={moaDesignFontFamily}
+                          fontSize={moaDesignFontSize}
+                          textAlign={moaDesignTextAlign}
+                          fontWeight={moaDesignFontWeight}
+                          fontStyle={moaDesignFontStyle}
+                          textDecoration={moaDesignTextDecoration}
+                          color={moaDesignColor}
+                          fill={moaDesignFill}
+                          selectedKind={selectedDesignElement?.kind ?? null}
+                          hasImage={Boolean(selectedDesignElement?.imageSrc)}
+                          onFontFamilyChange={handleDesignFontFamilyChange}
+                          onFontSizeChange={handleDesignFontSizeChange}
+                          onTextStyleChange={applyDesignStylePatch}
+                          onInsertImage={handleInsertSelectedImage}
+                          onClearImage={handleClearSelectedImage}
+                          selectedId={selectedDesignId}
+                          onPaletteDragStateChange={setIsPaletteDragging}
+                          onAddHeaderField={handleAddHeaderField}
+                          onAddElement={handleAddPaletteElement}
+                          onDeleteSelected={() => {
+                            if (!selectedDesignId) return;
+                            updateMoaDesignElements(
+                              moaDesignElements.filter((el) => el.id !== selectedDesignId),
+                            );
+                            setSelectedDesignId(null);
+                          }}
+                          onClearAll={() => {
+                            updateMoaDesignElements([]);
+                            setSelectedDesignId(null);
+                          }}
+                          fieldConfig={
+                            <MoaFieldConfigTab
+                              enabled={canEditMoa}
+                              categoryLabel={
+                                selectedMoaCategory === DEFAULT_MOA_CATEGORY
+                                  ? "all categories"
+                                  : selectedMoaCategory
+                              }
+                              groupSuffix={selectedMoaCategory}
+                              financialOptions={FINANCIAL_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              unitOptions={UNIT_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: topLabels[field.key],
+                              }))}
+                              financialFields={financialFields}
+                              unitFields={unitFields}
+                              customFinancialFields={customFinancialFields}
+                              customUnitFields={customUnitFields}
+                              newFinancialField={newFinancialField}
+                              newUnitField={newUnitField}
+                              onReorderFinancial={reorderFinancialFields}
+                              onReorderUnit={reorderUnitFields}
+                              onReorderCustomFinancial={reorderCustomFinancialFields}
+                              onReorderCustomUnit={reorderCustomUnitFields}
+                              onToggleFinancial={(key) =>
+                                toggleMoaSectionField(
+                                  key as FinancialFieldKey,
+                                  financialFields,
+                                  setFinancialFields,
+                                )
+                              }
+                              onToggleUnit={(key) =>
+                                toggleMoaSectionField(
+                                  key as UnitFieldKey,
+                                  unitFields,
+                                  setUnitFields,
+                                )
+                              }
+                              onCustomFinancialLabelChange={(id, label) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onCustomUnitLabelChange={(id, label) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.map((field) =>
+                                    field.id === id ? { ...field, label } : field,
+                                  ),
+                                )
+                              }
+                              onRemoveCustomFinancial={(id) =>
+                                setCustomFinancialFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onRemoveCustomUnit={(id) =>
+                                setCustomUnitFields((fields) =>
+                                  fields.filter((field) => field.id !== id),
+                                )
+                              }
+                              onNewFinancialChange={setNewFinancialField}
+                              onNewUnitChange={setNewUnitField}
+                              onAddCustomFinancial={() =>
+                                addCustomMoaField(
+                                  newFinancialField,
+                                  setNewFinancialField,
+                                  setCustomFinancialFields,
+                                )
+                              }
+                              onAddCustomUnit={() =>
+                                addCustomMoaField(
+                                  newUnitField,
+                                  setNewUnitField,
+                                  setCustomUnitFields,
+                                )
+                              }
+                              onPaletteDragStateChange={setIsPaletteDragging}
+                            />
+                          }
+                        />
+                      </aside>
+                      <div className="flex min-w-0 flex-1 flex-col bg-zinc-100">
+                        <MoaContextualToolbar
+                          enabled={canEditMoa}
+                          hasSelection={Boolean(selectedDesignId)}
+                          fontFamily={moaDesignFontFamily}
+                          fontSize={moaDesignFontSize}
+                          textAlign={moaDesignTextAlign}
+                          fontWeight={moaDesignFontWeight}
+                          fontStyle={moaDesignFontStyle}
+                          textDecoration={moaDesignTextDecoration}
+                          color={moaDesignColor}
+                          selectedKind={selectedDesignElement?.kind ?? null}
+                          onFontFamilyChange={handleDesignFontFamilyChange}
+                          onFontSizeChange={handleDesignFontSizeChange}
+                          onTextStyleChange={applyDesignStylePatch}
+                          onDeleteSelected={() => {
+                            if (!selectedDesignId) return;
+                            updateMoaDesignElements(
+                              moaDesignElements.filter((el) => el.id !== selectedDesignId),
+                            );
+                            setSelectedDesignId(null);
+                            setSelectedDesignIds([]);
+                            setSelectedFieldIds([]);
+                          }}
+                        />
+                        <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-5">
+                          <div
+                            className="mx-auto flex w-full min-w-0 flex-col gap-6"
+                            style={{ maxWidth: moaPageSize.screenWidthPx }}
+                          >
+                            {/* MOA blank canvas pages */}
+                            {Array.from({ length: moaPageCount }, (_, pageIndex) => {
+                          const pageElements = moaDesignElements.filter(
+                            (el) => (el.pageIndex ?? 0) === pageIndex,
+                          );
+                          return (
+                            <div key={`moa-page-${pageIndex}`} id={`moa-canvas-page-${pageIndex}`} className="space-y-2">
+                              {moaPageCount > 1 ? (
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+                                  Page {pageIndex + 1} of {moaPageCount}
+                                </p>
+                              ) : null}
+                              <MoaPaperScale
+                                paperWidth={moaPageSize.screenWidthPx}
+                                paperHeight={moaPageSize.screenHeightPx}
+                              >
+                                <div
+                                  className={`${MOA_SETTINGS_PAPER_CLASS} relative bg-white`}
+                                  style={{
+                                    padding: moaPageSize.padding,
+                                    boxSizing: "border-box",
+                                    width: moaPageSize.screenWidthPx,
+                                    height: moaPageSize.screenHeightPx,
+                                    maxHeight: moaPageSize.screenHeightPx,
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgb(228_228_231_/_0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgb(228_228_231_/_0.45)_1px,transparent_1px)] bg-[size:24px_24px]" />
+                                  <MoaCanvasWatermark settings={moaWatermark} />
+                                  <MoaDesignCanvasLayer
+                                    enabled={canEditMoa}
+                                    paletteDragging={isPaletteDragging}
+                                    elements={pageElements}
+                                    selectedId={selectedDesignId}
+                                    selectedIds={selectedDesignIds}
+                                    onSelect={handleSelectDesignElement}
+                                    onSelectedIdsChange={handleSelectedIdsChange}
+                                    selectedFieldIds={selectedFieldIds}
+                                    onSelectedFieldIdsChange={handleSelectedFieldIdsChange}
+                                    onChangeElements={(next) =>
+                                      updatePageDesignElements(pageIndex, next)
+                                    }
+                                    defaultFontFamily={moaDesignFontFamily}
+                                    defaultFontSize={moaDesignFontSize}
+                                    branchPreview={shopSettings}
+                                  />
+                                </div>
+                              </MoaPaperScale>
+                            </div>
+                          );
+                        })}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="min-w-0 overflow-x-auto rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
                     <div
-                      className="flex w-full min-w-0 flex-1 flex-col gap-6"
+                      className="mx-auto flex w-full min-w-0 flex-col gap-6"
                       style={{ maxWidth: moaPageSize.screenWidthPx }}
                     >
-                      {isMoaEditMode ? (
-                        <MoaPaperScale
-                          paperWidth={moaPageSize.screenWidthPx}
-                          paperHeight={moaPageSize.screenHeightPx}
-                        >
-                          <div
-                            className={`${MOA_SETTINGS_PAPER_CLASS} relative bg-white`}
-                            style={{
-                              padding: moaPageSize.padding,
-                              boxSizing: "border-box",
-                              width: moaPageSize.screenWidthPx,
-                              height: moaPageSize.screenHeightPx,
-                              maxHeight: moaPageSize.screenHeightPx,
-                              overflow: "hidden",
-                            }}
-                          >
-                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(228_228_231_/_0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgb(228_228_231_/_0.45)_1px,transparent_1px)] bg-[size:24px_24px]" />
-                            <MoaDesignCanvasLayer
-                              enabled={canEditMoa}
-                              paletteDragging={isPaletteDragging}
-                              elements={moaDesignElements}
-                              selectedId={selectedDesignId}
-                              onSelect={handleSelectDesignElement}
-                              onChangeElements={updateMoaDesignElements}
-                              defaultFontFamily={moaDesignFontFamily}
-                              defaultFontSize={moaDesignFontSize}
-                              branchPreview={shopSettings}
-                            />
-                          </div>
-                        </MoaPaperScale>
-                      ) : (
-                        <>
+                      <>
                           {/* PAGE 1: SLIPS (Original & Customer Copy) */}
                           <MoaPaperScale
                             paperWidth={moaPageSize.screenWidthPx}
@@ -2133,131 +2626,13 @@ export default function SettingsPage() {
                             </div>
                           </MoaPaperScale>
                         </>
-                      )}
                     </div>
-                    {isMoaEditMode && (
-                      <aside className="w-full min-w-0 xl:sticky xl:top-4 xl:w-80 xl:max-h-[calc(100vh-5rem)] flex-none xl:overflow-y-auto">
-                        <MoaDesignToolsPanel
-                          enabled={canEditMoa}
-                          pageSize={moaPageSizeId}
-                          onPageSizeChange={handleMoaPageSizeChange}
-                          fontFamily={moaDesignFontFamily}
-                          fontSize={moaDesignFontSize}
-                          textAlign={moaDesignTextAlign}
-                          fontWeight={moaDesignFontWeight}
-                          fontStyle={moaDesignFontStyle}
-                          textDecoration={moaDesignTextDecoration}
-                          color={moaDesignColor}
-                          onFontFamilyChange={handleDesignFontFamilyChange}
-                          onFontSizeChange={handleDesignFontSizeChange}
-                          onTextStyleChange={applyDesignStylePatch}
-                          selectedId={selectedDesignId}
-                          onPaletteDragStateChange={setIsPaletteDragging}
-                          onAddHeaderField={handleAddHeaderField}
-                          onDeleteSelected={() => {
-                            if (!selectedDesignId) return;
-                            updateMoaDesignElements(
-                              moaDesignElements.filter((el) => el.id !== selectedDesignId),
-                            );
-                            setSelectedDesignId(null);
-                          }}
-                          onClearAll={() => {
-                            updateMoaDesignElements([]);
-                            setSelectedDesignId(null);
-                          }}
-                          fieldConfig={
-                            <MoaFieldConfigTab
-                              enabled={canEditMoa}
-                              categoryLabel={
-                                selectedMoaCategory === DEFAULT_MOA_CATEGORY
-                                  ? "all categories"
-                                  : selectedMoaCategory
-                              }
-                              groupSuffix={selectedMoaCategory}
-                              financialOptions={FINANCIAL_FIELD_OPTIONS.map((field) => ({
-                                key: field.key,
-                                label: topLabels[field.key],
-                              }))}
-                              unitOptions={UNIT_FIELD_OPTIONS.map((field) => ({
-                                key: field.key,
-                                label: topLabels[field.key],
-                              }))}
-                              financialFields={financialFields}
-                              unitFields={unitFields}
-                              customFinancialFields={customFinancialFields}
-                              customUnitFields={customUnitFields}
-                              newFinancialField={newFinancialField}
-                              newUnitField={newUnitField}
-                              onReorderFinancial={reorderFinancialFields}
-                              onReorderUnit={reorderUnitFields}
-                              onReorderCustomFinancial={reorderCustomFinancialFields}
-                              onReorderCustomUnit={reorderCustomUnitFields}
-                              onToggleFinancial={(key) =>
-                                toggleMoaSectionField(
-                                  key as FinancialFieldKey,
-                                  financialFields,
-                                  setFinancialFields,
-                                )
-                              }
-                              onToggleUnit={(key) =>
-                                toggleMoaSectionField(
-                                  key as UnitFieldKey,
-                                  unitFields,
-                                  setUnitFields,
-                                )
-                              }
-                              onCustomFinancialLabelChange={(id, label) =>
-                                setCustomFinancialFields((fields) =>
-                                  fields.map((field) =>
-                                    field.id === id ? { ...field, label } : field,
-                                  ),
-                                )
-                              }
-                              onCustomUnitLabelChange={(id, label) =>
-                                setCustomUnitFields((fields) =>
-                                  fields.map((field) =>
-                                    field.id === id ? { ...field, label } : field,
-                                  ),
-                                )
-                              }
-                              onRemoveCustomFinancial={(id) =>
-                                setCustomFinancialFields((fields) =>
-                                  fields.filter((field) => field.id !== id),
-                                )
-                              }
-                              onRemoveCustomUnit={(id) =>
-                                setCustomUnitFields((fields) =>
-                                  fields.filter((field) => field.id !== id),
-                                )
-                              }
-                              onNewFinancialChange={setNewFinancialField}
-                              onNewUnitChange={setNewUnitField}
-                              onAddCustomFinancial={() =>
-                                addCustomMoaField(
-                                  newFinancialField,
-                                  setNewFinancialField,
-                                  setCustomFinancialFields,
-                                )
-                              }
-                              onAddCustomUnit={() =>
-                                addCustomMoaField(
-                                  newUnitField,
-                                  setNewUnitField,
-                                  setCustomUnitFields,
-                                )
-                              }
-                              onPaletteDragStateChange={setIsPaletteDragging}
-                            />
-                          }
-                        />
-                      </aside>
-                    )}
                   </div>
-                </div>
+                )}
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    Design tools (Canvas / Layout / Elements / Text / Fields tabs) are frontend-only for now.
+                    Design tools (Layout / Header / Elements / Text / Fields / Canvas) are frontend-only for now.
                   </p>
 
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
