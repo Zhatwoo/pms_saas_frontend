@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -123,8 +123,9 @@ export function QRReplacementRequestModal({
       setReason("damaged");
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to submit replacement request");
+    } catch (error: unknown) {
+      const message = error instanceof ApiError ? error.message : "Failed to submit replacement request";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

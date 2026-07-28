@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatPeso } from "@/lib/currency";
+import type { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 export interface RevenueTrendData {
   month: string;
@@ -60,7 +61,10 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
                 border: "1px solid #e4e4e7",
                 fontSize: "12px",
               }}
-              formatter={(value: any) => [formatPeso(value), "Revenue"]}
+              formatter={(value: ValueType | undefined) => [
+                formatPeso(Array.isArray(value) ? value[0] : value),
+                "Revenue",
+              ]}
             />
             <Line
               type="monotone"

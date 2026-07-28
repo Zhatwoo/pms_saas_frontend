@@ -306,7 +306,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
       >
         <button
           onClick={onClose}
-          className="absolute right-1.5 top-1.5 sm:right-3 sm:top-3 z-10 flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          className="absolute right-1.5 top-1.5 sm:right-3 sm:top-3 z-20 flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-black/5 text-zinc-500 hover:bg-black/10 hover:text-zinc-700"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-3 w-3 sm:h-4 sm:w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -314,18 +314,17 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
         </button>
 
         {/* Header */}
-        <div className="relative bg-brand-green px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
-          <div className="absolute right-[-20px] top-[-30px] h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full bg-white/5" />
-          <div className="absolute bottom-[15px] left-[-10px] h-16 w-16 sm:h-20 sm:w-20 md:h-28 md:w-28 rounded-full bg-white/5" />
-          <div className="absolute bottom-[-10px] right-[30px] h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 rounded-full bg-white/5" />
+        <div className="relative bg-white px-4 pb-4 pt-6 sm:px-8 sm:pb-8 sm:pt-10">
           <div className="relative flex flex-col items-center">
-            <div className="rounded-lg sm:rounded-2xl bg-black/20 p-1 sm:p-2">
-              <div className="overflow-hidden rounded-md sm:rounded-xl ring-2 ring-amber-400/60">
-                <Image src={BRAND_CONFIG.loginLogo} alt={`${BRAND_CONFIG.shortCompanyName} Logo`} width={64} height={64} className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24 object-cover" />
-              </div>
+            <div className="w-full max-w-[260px] sm:max-w-[320px]">
+              <Image
+                src={BRAND_CONFIG.loginLogo}
+                alt={`${BRAND_CONFIG.companyName} Logo`}
+                width={320}
+                height={180}
+                className="h-auto w-full object-contain"
+              />
             </div>
-            <h2 className="mt-1.5 sm:mt-3 text-sm sm:text-lg font-bold text-white">{BRAND_CONFIG.companyName}</h2>
-            <p className="text-sm sm:text-lg font-bold text-amber-400">Pawnshop</p>
           </div>
         </div>
 
