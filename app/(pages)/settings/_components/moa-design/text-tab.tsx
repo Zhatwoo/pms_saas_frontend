@@ -18,7 +18,7 @@ import {
   type MoaTextAlign,
   type MoaTextStylePatch,
 } from "../moa-design-palette";
-import { TabHint, ToolBtn } from "./ui";
+import { ToolBtn } from "./ui";
 
 export function MoaTextTab({
   enabled,
@@ -76,14 +76,6 @@ export function MoaTextTab({
 
   return (
     <div className="space-y-3">
-      <div>
-        <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Text tools</h3>
-        <TabHint>
-          Click a header field to style it alone. Ctrl/Shift+click for multi-select. Ctrl+A selects
-          all fields in the header (or all elements). Text tools apply to the current selection.
-        </TabHint>
-      </div>
-
       <div className="grid grid-cols-2 gap-2">
         <label className="block space-y-1">
           <span className="text-[9px] font-semibold text-zinc-600">Font</span>
