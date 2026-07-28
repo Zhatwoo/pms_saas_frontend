@@ -618,7 +618,7 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
         <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
           Simple, transparent pricing
         </h2>
-        <p className="mx-auto mt-4 max-w-xl text-brand-green/60">
+        <p className="mx-auto mt-4 max-w-xl text-brand-green/60 uqhd:max-w-2xl uqhd:text-xl uhd:max-w-3xl uhd:text-2xl">
           Choose the plan that fits your pawnshop. Scale as you grow — no hidden fees.
         </p>
       </div>
@@ -634,27 +634,27 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
             }`}
           >
             {plan.popular && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gold px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-green">
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gold px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-green uqhd:px-4 uqhd:text-xs uhd:text-sm">
                 Most popular
               </span>
             )}
-            <p className={`text-xs font-bold uppercase tracking-widest ${plan.popular ? "text-brand-gold" : "text-brand-green/50"}`}>
+            <p className={`text-xs font-bold uppercase tracking-widest uqhd:text-sm ${plan.popular ? "text-brand-gold" : "text-brand-green/50"}`}>
               {plan.name}
             </p>
             <div className="mt-3 flex items-baseline gap-1">
-              <p className="font-display text-4xl font-bold">{plan.price}</p>
+              <p className="font-display text-4xl font-bold uqhd:text-5xl uhd:text-6xl">{plan.price}</p>
               {plan.period ? (
-                <span className={`text-sm font-semibold ${plan.popular ? "text-white/60" : "text-brand-green/45"}`}>
+                <span className={`text-sm font-semibold uqhd:text-base ${plan.popular ? "text-white/60" : "text-brand-green/45"}`}>
                   {plan.period}
                 </span>
               ) : null}
             </div>
-            <p className={`mt-2 text-sm ${plan.popular ? "text-white/70" : "text-brand-green/55"}`}>
+            <p className={`mt-2 text-sm uqhd:text-base ${plan.popular ? "text-white/70" : "text-brand-green/55"}`}>
               {plan.audience}
             </p>
-            <ul className="mt-6 flex-1 space-y-3">
+            <ul className="mt-6 flex-1 space-y-3 uqhd:mt-8 uqhd:space-y-4">
               {plan.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm">
+                <li key={f} className="flex items-start gap-2 text-sm uqhd:text-base uhd:text-lg">
                   <span className={`mt-0.5 ${plan.popular ? "text-brand-gold" : "text-brand-green"}`}>✓</span>
                   <span className={plan.popular ? "text-white/85" : "text-brand-green/75"}>{f}</span>
                 </li>
@@ -689,8 +689,8 @@ export function LandingTrustBar() {
     <div className="border-y border-brand-green/10 bg-[#f9f8f5] px-4 py-8">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
         {items.map((item) => (
-          <div key={item} className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-green/45">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+          <div key={item} className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-green/45 uqhd:text-sm uhd:text-base">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-gold uqhd:h-2 uqhd:w-2" />
             {item}
           </div>
         ))}
@@ -764,14 +764,14 @@ export function LandingLightFooter({
   onOpenLegal: (type: "privacy" | "terms") => void;
 }) {
   return (
-    <footer className="bg-[#eceae6] px-6 py-14 md:px-12 lg:px-16">
-      <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-2 lg:grid-cols-4">
+    <footer className="bg-[#eceae6] px-6 py-14 md:px-12 lg:px-16 uqhd:px-20 uqhd:py-20 uhd:px-28 uhd:py-24">
+      <div className="landing-container-wide grid gap-10 md:grid-cols-2 lg:grid-cols-4 uqhd:gap-14">
         <div className="lg:col-span-1">
           <div className="flex items-center gap-3">
             <QuickPawnLogo variant="mark" className="h-11 w-11" />
             <div>
-              <p className="font-display text-xl font-bold text-brand-green">{BRAND_CONFIG.shortCompanyName}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold">{BRAND_CONFIG.tagline}</p>
+              <p className="font-display text-xl font-bold text-brand-green uqhd:text-2xl uhd:text-3xl">{BRAND_CONFIG.shortCompanyName}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold uqhd:text-xs">{BRAND_CONFIG.tagline}</p>
             </div>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-brand-green/55">
@@ -849,7 +849,7 @@ export function LandingLightFooter({
         </div>
       </div>
 
-      <div className="mx-auto mt-12 max-w-7xl border-t border-brand-green/10 pt-6 text-center text-xs text-brand-green/45">
+      <div className="landing-container-wide mt-12 border-t border-brand-green/10 pt-6 text-center text-xs text-brand-green/45 uqhd:mt-16 uqhd:text-sm">
         © 2026 {BRAND_CONFIG.companyName}. All rights reserved.
       </div>
     </footer>

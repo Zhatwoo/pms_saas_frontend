@@ -233,7 +233,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     
     // Small delay to let menu start closing, then scroll
     setTimeout(() => {
-      const offset = 64; // Header height
+      const offset =
+        window.innerWidth >= 3840 ? 96 : window.innerWidth >= 2560 ? 80 : 64; // Header height by viewport
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - offset;
       
@@ -300,7 +301,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       <div className="relative z-10">
         {/* ─── NAV ─── */}
         <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-brand-green/10 bg-white/90 backdrop-blur-md transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
-          <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 md:px-6 lg:px-12">
+          <div className="landing-container-wide flex h-16 items-center justify-between px-4 md:px-6 lg:px-12 uqhd:h-20 uhd:h-24">
             {/* Logo - Desktop only (lg and up) */}
             <button
               type="button"
@@ -341,13 +342,13 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             </button>
 
             {/* Desktop nav links */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8">
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8 uqhd:gap-10 uhd:gap-12">
               {navItems.map((item, index) => {
                 const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
                 return (
                   <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
                     onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
+                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
                     {item}
                   </a>
                 );
@@ -360,7 +361,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm"
+                className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm uqhd:px-5 uqhd:py-2.5 uqhd:text-base"
               >
                 Login / Sign Up
               </button>
