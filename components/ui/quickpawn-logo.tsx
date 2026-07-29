@@ -1,12 +1,10 @@
-"use client";
-
 import React from "react";
 
 interface QuickPawnLogoProps {
-  /** "mark" = gear+chip icon only, "full" = icon + wordmark, "wordmark" = text only */
+  /** "mark" = icon only, "full"/"wordmark" = icon + wordmark */
   variant?: "mark" | "full" | "wordmark";
   className?: string;
-  /** Show the "PAWNSHOP MANAGEMENT SYSTEM" tagline under the wordmark (full variant only) */
+  /** Whether to render the tagline beneath the wordmark */
   showTagline?: boolean;
   /** Primary color override (defaults to var(--brand-green, #0B5D3B)) */
   primaryColor?: string;
