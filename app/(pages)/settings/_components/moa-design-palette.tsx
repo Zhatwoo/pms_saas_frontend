@@ -119,6 +119,27 @@ export type MoaDesignElement = {
   fieldKey: string;
   /** Optional image data URL for photo / header elements */
   imageSrc?: string;
+  /** Image border radius in px (crop/rounded effect) */
+  imageBorderRadius?: number;
+  /** Image box shadow preset */
+  imageShadow?: "none" | "sm" | "md" | "lg" | "xl" | "3d";
+  /** Image opacity 0–100 */
+  imageOpacity?: number;
+  /** Image object-fit mode */
+  imageFit?: "cover" | "contain" | "fill" | "none";
+  /** Image CSS filter preset */
+  imageFilter?: "none" | "grayscale" | "sepia" | "blur" | "brightness" | "contrast" | "saturate";
+  /** Image border width in px */
+  imageBorderWidth?: number;
+  /** Image border color */
+  imageBorderColor?: string;
+  /** Crop insets as % of element size (0–90). Clips the image from each edge. */
+  imageCropTop?: number;
+  imageCropRight?: number;
+  imageCropBottom?: number;
+  imageCropLeft?: number;
+  /** Image rotation in degrees */
+  imageRotation?: number;
   /** Optional table data for table elements (rows x columns) */
   tableData?: string[][];
   /** Bar heights (0–100) for chart elements */
@@ -430,6 +451,18 @@ function normalizeElement(raw: Partial<MoaDesignElement> & { id: string; kind: M
       : [],
     fieldKey: raw.fieldKey ?? "",
     imageSrc: typeof raw.imageSrc === "string" ? raw.imageSrc : undefined,
+    imageBorderRadius: typeof raw.imageBorderRadius === "number" ? raw.imageBorderRadius : undefined,
+    imageShadow: typeof raw.imageShadow === "string" && ["none","sm","md","lg","xl","3d"].includes(raw.imageShadow) ? raw.imageShadow as MoaDesignElement["imageShadow"] : undefined,
+    imageOpacity: typeof raw.imageOpacity === "number" ? raw.imageOpacity : undefined,
+    imageFit: typeof raw.imageFit === "string" && ["cover","contain","fill","none"].includes(raw.imageFit) ? raw.imageFit as MoaDesignElement["imageFit"] : undefined,
+    imageFilter: typeof raw.imageFilter === "string" && ["none","grayscale","sepia","blur","brightness","contrast","saturate"].includes(raw.imageFilter) ? raw.imageFilter as MoaDesignElement["imageFilter"] : undefined,
+    imageBorderWidth: typeof raw.imageBorderWidth === "number" ? raw.imageBorderWidth : undefined,
+    imageBorderColor: typeof raw.imageBorderColor === "string" ? raw.imageBorderColor : undefined,
+    imageCropTop: typeof raw.imageCropTop === "number" ? raw.imageCropTop : undefined,
+    imageCropRight: typeof raw.imageCropRight === "number" ? raw.imageCropRight : undefined,
+    imageCropBottom: typeof raw.imageCropBottom === "number" ? raw.imageCropBottom : undefined,
+    imageCropLeft: typeof raw.imageCropLeft === "number" ? raw.imageCropLeft : undefined,
+    imageRotation: typeof raw.imageRotation === "number" ? raw.imageRotation : undefined,
     tableData: Array.isArray(raw.tableData)
       ? raw.tableData.map((row) =>
           Array.isArray(row) ? row.map((cell) => String(cell ?? "")) : [],
@@ -733,6 +766,191 @@ export function saveMoaMargins(
   } catch {
     // ignore
   }
+}
+
+/** Interactive crop overlay: draggable edges to set crop insets. */
+function CropOverlay({
+  element,
+  onCropChange,
+  onDone,
+}: {
+  element: MoaDesignElement;
+  onCropChange: (patch: Partial<MoaDesignElement>) => void;
+  onDone: () => void;
+}) {
+  const cropT = element.imageCropTop ?? 0;
+  const cropR = element.imageCropRight ?? 0;
+  const cropB = element.imageCropBottom ?? 0;
+  const cropL = element.imageCropLeft ?? 0;
+
+  const startCropDrag = (
+    e: React.PointerEvent,
+    edge: "top" | "right" | "bottom" | "left",
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const startPos = edge === "top" || edge === "bottom" ? e.clientY : e.clientX;
+    const size = edge === "top" || edge === "bottom" ? element.height : element.width;
+    const startVal =
+      edge === "top" ? cropT : edge === "right" ? cropR : edge === "bottom" ? cropB : cropL;
+
+    const onMove = (ev: PointerEvent) => {
+      const delta = (edge === "top" || edge === "bottom" ? ev.clientY : ev.clientX) - startPos;
+      const sign = edge === "top" || edge === "left" ? 1 : -1;
+      const pctDelta = (delta * sign * 100) / size;
+      const next = Math.max(0, Math.min(80, Math.round(startVal + pctDelta)));
+      const key =
+        edge === "top"
+          ? "imageCropTop"
+          : edge === "right"
+            ? "imageCropRight"
+            : edge === "bottom"
+              ? "imageCropBottom"
+              : "imageCropLeft";
+      onCropChange({ [key]: next });
+    };
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
+  const handleStyle = "absolute bg-white border-2 border-blue-500 z-[60]";
+  const barStyle = "absolute bg-blue-500/20 z-[55]";
+
+  return (
+    <>
+      {/* Dimmed areas outside crop */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[54]"
+        style={{
+          background: `linear-gradient(to bottom, rgba(0,0,0,.45) ${cropT}%, transparent ${cropT}%, transparent ${100 - cropB}%, rgba(0,0,0,.45) ${100 - cropB}%)`,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute z-[54]"
+        style={{
+          top: `${cropT}%`,
+          bottom: `${cropB}%`,
+          left: 0,
+          width: `${cropL}%`,
+          background: "rgba(0,0,0,.45)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute z-[54]"
+        style={{
+          top: `${cropT}%`,
+          bottom: `${cropB}%`,
+          right: 0,
+          width: `${cropR}%`,
+          background: "rgba(0,0,0,.45)",
+        }}
+      />
+
+      {/* Crop border */}
+      <div
+        className="pointer-events-none absolute z-[56] border-2 border-dashed border-blue-400"
+        style={{
+          top: `${cropT}%`,
+          right: `${cropR}%`,
+          bottom: `${cropB}%`,
+          left: `${cropL}%`,
+        }}
+      />
+
+      {/* Drag handles — top */}
+      <div
+        className={`${handleStyle} cursor-n-resize rounded-sm`}
+        style={{ top: `calc(${cropT}% - 4px)`, left: "50%", transform: "translateX(-50%)", width: 24, height: 8 }}
+        onPointerDown={(e) => startCropDrag(e, "top")}
+      />
+      {/* bottom */}
+      <div
+        className={`${handleStyle} cursor-s-resize rounded-sm`}
+        style={{ bottom: `calc(${cropB}% - 4px)`, left: "50%", transform: "translateX(-50%)", width: 24, height: 8 }}
+        onPointerDown={(e) => startCropDrag(e, "bottom")}
+      />
+      {/* left */}
+      <div
+        className={`${handleStyle} cursor-w-resize rounded-sm`}
+        style={{ left: `calc(${cropL}% - 4px)`, top: "50%", transform: "translateY(-50%)", width: 8, height: 24 }}
+        onPointerDown={(e) => startCropDrag(e, "left")}
+      />
+      {/* right */}
+      <div
+        className={`${handleStyle} cursor-e-resize rounded-sm`}
+        style={{ right: `calc(${cropR}% - 4px)`, top: "50%", transform: "translateY(-50%)", width: 8, height: 24 }}
+        onPointerDown={(e) => startCropDrag(e, "right")}
+      />
+
+      {/* Done button */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDone();
+        }}
+        className="absolute -bottom-8 left-1/2 z-[60] -translate-x-1/2 whitespace-nowrap rounded bg-blue-600 px-3 py-1 text-[10px] font-bold text-white shadow-lg hover:bg-blue-700"
+      >
+        Done cropping
+      </button>
+    </>
+  );
+}
+
+const IMAGE_SHADOW_MAP: Record<string, string> = {
+  none: "none",
+  sm: "0 1px 2px rgba(0,0,0,.12)",
+  md: "0 2px 6px rgba(0,0,0,.18)",
+  lg: "0 4px 14px rgba(0,0,0,.22)",
+  xl: "0 8px 28px rgba(0,0,0,.28)",
+  "3d": "4px 4px 0 rgba(0,0,0,.25), 6px 6px 0 rgba(0,0,0,.10)",
+};
+
+const IMAGE_FILTER_MAP: Record<string, string> = {
+  none: "none",
+  grayscale: "grayscale(100%)",
+  sepia: "sepia(100%)",
+  blur: "blur(2px)",
+  brightness: "brightness(1.3)",
+  contrast: "contrast(1.5)",
+  saturate: "saturate(2)",
+};
+
+export function getImageStyles(el: MoaDesignElement): React.CSSProperties {
+  const s: React.CSSProperties = {};
+  if (el.imageBorderRadius) s.borderRadius = el.imageBorderRadius;
+  if (el.imageShadow && el.imageShadow !== "none")
+    s.boxShadow = IMAGE_SHADOW_MAP[el.imageShadow] ?? "none";
+  if (el.imageOpacity != null && el.imageOpacity < 100)
+    s.opacity = el.imageOpacity / 100;
+  if (el.imageFilter && el.imageFilter !== "none")
+    s.filter = IMAGE_FILTER_MAP[el.imageFilter] ?? "none";
+  if (el.imageBorderWidth)
+    s.border = `${el.imageBorderWidth}px solid ${el.imageBorderColor || "#000"}`;
+  if (el.imageFit) s.objectFit = el.imageFit;
+  if (el.imageRotation) s.transform = `rotate(${el.imageRotation}deg)`;
+  return s;
+}
+
+/** Returns clip-path inset() CSS for cropped images, or undefined if no crop. */
+export function getImageCropClip(el: MoaDesignElement): string | undefined {
+  const t = el.imageCropTop ?? 0;
+  const r = el.imageCropRight ?? 0;
+  const b = el.imageCropBottom ?? 0;
+  const l = el.imageCropLeft ?? 0;
+  if (t === 0 && r === 0 && b === 0 && l === 0) return undefined;
+  return `inset(${t}% ${r}% ${b}% ${l}%)`;
+}
+
+/** Returns style for the image wrapper div when crop is active. */
+export function getImageCropWrapperStyle(el: MoaDesignElement): React.CSSProperties | undefined {
+  const clip = getImageCropClip(el);
+  if (!clip) return undefined;
+  return { clipPath: clip };
 }
 
 /** Watermark overlays — draggable when `editable` so owner can arrange placement. */
@@ -1098,6 +1316,8 @@ export function MoaDesignCanvasLayer({
   pageIndex = 0,
   onPaginatePageDoc,
   spellCheck = true,
+  cropModeId,
+  onCropModeChange,
 }: {
   enabled: boolean;
   paletteDragging?: boolean;
@@ -1117,6 +1337,8 @@ export function MoaDesignCanvasLayer({
   /** Called when page document text no longer fits — keep `fitText` here, move `overflowText` to next page. */
   onPaginatePageDoc?: (fitText: string, overflowText: string) => void;
   spellCheck?: boolean;
+  cropModeId?: string | null;
+  onCropModeChange?: (id: string | null) => void;
 }) {
   const layerRef = useRef<HTMLDivElement>(null);
   const pageDocRef = useRef<HTMLTextAreaElement>(null);
@@ -1275,8 +1497,8 @@ export function MoaDesignCanvasLayer({
     fieldId: string,
     mode: "replace" | "toggle" | "keep-if-selected",
   ) => {
+    // Use onSelect only — onSelectedIdsChange clears field selection
     onSelect(headerId);
-    onSelectedIdsChange?.([headerId]);
     const header = elements.find((el) => el.id === headerId);
     const headerFieldIds = new Set((header?.headerFields ?? []).map((field) => field.id));
     setActiveFieldIds((() => {
@@ -1296,20 +1518,26 @@ export function MoaDesignCanvasLayer({
     })());
   };
 
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
+    const onPointerDown = (event: PointerEvent) => {
+      // Don't close if clicking inside the context menu itself
+      if (contextMenuRef.current?.contains(event.target as Node)) return;
+      close();
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         close();
         clearFieldSelection();
       }
     };
-    window.addEventListener("click", close);
+    window.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("scroll", close, true);
     window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("click", close);
+      window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("scroll", close, true);
       window.removeEventListener("keydown", onKey);
     };
@@ -1529,19 +1757,21 @@ export function MoaDesignCanvasLayer({
     const field = header?.headerFields.find((item) => item.id === fieldId);
     if (!header || !field) return;
 
-    // Single-select unless this field is already part of a multi-selection (group drag).
-    const movingIds =
-      activeFieldIds.includes(fieldId) && activeFieldIds.length > 0
-        ? activeFieldIds.filter((id) =>
-            header.headerFields.some((item) => item.id === id),
-          )
-        : [fieldId];
+    // Plain click → select only this field. If it was already part of a multi
+    // selection, keep the group for drag; collapse to one on click-without-drag.
+    const groupDrag =
+      activeFieldIds.length > 1 && activeFieldIds.includes(fieldId);
+    const movingIds = groupDrag
+      ? activeFieldIds.filter((id) =>
+          header.headerFields.some((item) => item.id === id),
+        )
+      : [fieldId];
 
+    // Select the header element without triggering handleSelectedIdsChange
+    // (which clears field selection). onSelect preserves existing multi-select
+    // and we set field ids right after.
     onSelect(headerId);
-    onSelectedIdsChange?.([headerId]);
-    // Set field selection AFTER element selection so toolbar sync keeps field styles
-    // (onSelectedIdsChange syncs from the header parent first).
-    setActiveFieldIds(movingIds);
+    setActiveFieldIds(groupDrag ? movingIds : [fieldId]);
 
     const startX = event.clientX;
     const startY = event.clientY;
@@ -1574,10 +1804,15 @@ export function MoaDesignCanvasLayer({
         height: item.height || 22,
       }));
     const bounds = { width: header.width, height: header.height };
+    let dragged = false;
 
     const onMove = (moveEvent: PointerEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
+      if (!dragged) {
+        if (Math.hypot(dx, dy) < 4) return;
+        dragged = true;
+      }
       const rawX = primary.x + dx;
       const rawY = primary.y + dy;
       const snapped = snapMovingBox(
@@ -1624,6 +1859,10 @@ export function MoaDesignCanvasLayer({
       setAlignGuides([]);
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      // Click without drag on a multi-selected field → select only that field
+      if (!dragged && groupDrag) {
+        setActiveFieldIds([fieldId]);
+      }
     };
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
@@ -1806,6 +2045,7 @@ export function MoaDesignCanvasLayer({
     clearFieldSelection();
 
     let nextIds = [id];
+    let preserveMultiForDrag = false;
     if (multiKey && onSelectedIdsChange) {
       nextIds = activeSelectedIds.includes(id)
         ? activeSelectedIds.filter((item) => item !== id)
@@ -1814,6 +2054,10 @@ export function MoaDesignCanvasLayer({
       onSelectedIdsChange(nextIds);
       // Ctrl+click toggle off alone — skip drag
       if (!nextIds.includes(id)) return;
+    } else if (activeSelectedIds.length > 1 && activeSelectedIds.includes(id)) {
+      // Keep multi-select for group drag; collapse to one if click without drag
+      preserveMultiForDrag = true;
+      nextIds = activeSelectedIds;
     } else {
       onSelectedIdsChange?.([id]);
     }
@@ -1878,6 +2122,10 @@ export function MoaDesignCanvasLayer({
       setAlignGuides([]);
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      if (!dragging && preserveMultiForDrag) {
+        onSelectedIdsChange?.([id]);
+        onSelect(id);
+      }
     };
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
@@ -2167,10 +2415,17 @@ export function MoaDesignCanvasLayer({
             }}
             onClick={(event) => {
               if (!enabled) return;
+              // If a header-field child was the actual click target, skip —
+              // field selection is handled by startHeaderFieldMove.
+              if ((event.target as HTMLElement).closest("[data-moa-no-drag]")) return;
               event.stopPropagation();
               onSelectedIdsChange?.([element.id]);
             }}
-            onPointerDown={(event) => startMove(event, element.id)}
+            onPointerDown={(event) => {
+              // Don't start element-level drag when clicking inside a header field
+              if (isHeader && (event.target as HTMLElement).closest("[data-moa-no-drag]")) return;
+              startMove(event, element.id);
+            }}
             onDoubleClick={(event) => {
               if (!enabled) return;
               event.stopPropagation();
@@ -2265,12 +2520,21 @@ export function MoaDesignCanvasLayer({
                 }}
               >
                 {element.imageSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={element.imageSrc}
-                    alt=""
-                    className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-                  />
+                  <div
+                    className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden"
+                    style={getImageCropWrapperStyle(element)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={element.imageSrc}
+                      alt=""
+                      className="h-full w-full"
+                      style={{
+                        objectFit: element.imageFit || "cover",
+                        ...getImageStyles(element),
+                      }}
+                    />
+                  </div>
                 ) : null}
                 {element.headerFields.length === 0 && !element.text && editingTextId !== element.id ? (
                   <span className="pointer-events-none absolute inset-x-2 top-1/2 -translate-y-1/2 text-center text-[9px] font-semibold uppercase tracking-wide text-zinc-400">
@@ -2447,6 +2711,15 @@ export function MoaDesignCanvasLayer({
                 ))}
               </>
             )}
+
+            {/* Crop overlay — interactive drag handles on each edge */}
+            {enabled && cropModeId === element.id && element.imageSrc && (
+              <CropOverlay
+                element={element}
+                onCropChange={(patch) => updateElement(element.id, patch)}
+                onDone={() => onCropModeChange?.(null)}
+              />
+            )}
           </div>
         );
       })}
@@ -2455,6 +2728,7 @@ export function MoaDesignCanvasLayer({
         enabled &&
         createPortal(
           <div
+            ref={contextMenuRef}
             className="fixed z-[9999] min-w-[190px] overflow-hidden rounded-lg border border-zinc-200 bg-white py-1 shadow-xl"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(event) => event.stopPropagation()}

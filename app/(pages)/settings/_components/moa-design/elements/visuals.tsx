@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react";
 import { Image as ImageIcon } from "lucide-react";
 import type { MoaDesignElement } from "../../moa-design-palette";
+import { getImageStyles, getImageCropWrapperStyle } from "../../moa-design-palette";
 import { defaultChartValues, defaultTableData } from "./create";
 import { COLUMN_LAYOUT_FRACS, TABLE_THEME_COLORS } from "./options";
 
@@ -352,12 +353,21 @@ export function MoaElementVisual({
       return (
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded border border-dashed border-zinc-400 bg-zinc-100">
           {element.imageSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={element.imageSrc}
-              alt="Photo"
-              className="h-full w-full object-cover"
-            />
+            <div
+              className="h-full w-full overflow-hidden"
+              style={getImageCropWrapperStyle(element)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={element.imageSrc}
+                alt="Photo"
+                className="h-full w-full"
+                style={{
+                  objectFit: element.imageFit || "cover",
+                  ...getImageStyles(element),
+                }}
+              />
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-1 text-zinc-500">
               <ImageIcon className="h-5 w-5" />

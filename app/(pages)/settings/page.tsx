@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 import { Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
@@ -11,7 +12,13 @@ import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
 import { fetchCategories } from "@/lib/categories";
-import { MOA_LEGAL_PAGE, MOA_PRINT_CSS, MOA_PRINT_SCREEN_CSS, MOA_SIGNATURE_LINE_CLASS } from "@/lib/print-templates";
+import {
+  MOA_LEGAL_PAGE,
+  MOA_PRINT_CSS,
+  MOA_PRINT_SCREEN_CSS,
+  MOA_SIGNATURE_LINE_CLASS,
+  printMoaSlipDocument,
+} from "@/lib/print-templates";
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
 import { InterestRatesSettings } from "./_components/interest-rates-settings";
 import CategoriesSettings from "./_components/categories-settings";
@@ -61,6 +68,7 @@ import {
 import { useMoaKeyboard } from "./hooks/useMoaKeyboard";
 import { MoaDesignToolsPanel } from "./_components/moa-design/tools-panel";
 import { MoaDocsToolbar } from "./_components/moa-design/docs-toolbar";
+import { ImageOptionsPanel } from "./_components/moa-design/image-options-panel";
 import {
   MoaDocsRuler,
   defaultMarginsForPage,
@@ -73,6 +81,7 @@ import {
   createDefaultMoaDesign,
   createSampleMoaFieldValues,
   hasMoaDesign,
+  MoaDesignPrintPages,
   MoaDesignViewModal,
   normalizeMoaDesignBlob,
   placePackOnPage,
@@ -80,6 +89,10 @@ import {
   type MoaComponentTemplate,
   type MoaDesignBlob,
 } from "@/lib/moa";
+import {
+  loadCustomMoaComponentTemplates,
+  saveCustomMoaComponentTemplates,
+} from "@/lib/moa/component-templates";
 // Hook implementation resides in ./hooks/useMoaKeyboard.ts
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -205,8 +218,12 @@ type MoaTemplateVariant = {
   unitFields: UnitFieldKey[];
   customFinancialFields: CustomMoaField[];
   customUnitFields: CustomMoaField[];
-  /** Canvas layout saved with Save / Send to all branches. */
+  /** Canvas layout for the active form (usually MOA). */
   design?: MoaDesignBlob;
+  /** Per form-type designs (moa / redeem / buy_back). */
+  document_designs?: Partial<Record<MoaDocumentType, MoaDesignBlob>>;
+  /** Custom Templates-tab packs synced across branches. */
+  component_templates?: MoaComponentTemplate[];
 };
 
 const DEFAULT_MOA_CATEGORY = "__default__";
@@ -391,6 +408,10 @@ export default function SettingsPage() {
   const [moaHistory, setMoaHistory] = useState<MoaDesignElement[][]>([]);
   const [moaFuture, setMoaFuture] = useState<MoaDesignElement[][]>([]);
   const moaClipboardRef = useRef<MoaDesignElement[]>([]);
+  const [imageCropModeId, setImageCropModeId] = useState<string | null>(null);
+  const [showImageOptions, setShowImageOptions] = useState(false);
+  const [imageReplaceTargetId, setImageReplaceTargetId] = useState<string | null>(null);
+  const imageReplaceInputRef = useRef<HTMLInputElement>(null);
   /** Focus target after Ctrl+A so Delete / shortcuts work without textarea lag. */
   const moaCanvasFocusRef = useRef<HTMLDivElement>(null);
   const moaDesignElementsRef = useRef(moaDesignElements);
@@ -434,6 +455,8 @@ export default function SettingsPage() {
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [moaDirty, setMoaDirty] = useState(false);
+  const [isSavingMoa, setIsSavingMoa] = useState(false);
   const initialTopLabelsRef = useRef(topLabels);
   const initialExtensionRowsRef = useRef(extensionRows);
 
@@ -509,6 +532,22 @@ export default function SettingsPage() {
               ? data.customUnitFields
               : [],
             design: normalizeMoaDesignBlob((data as { design?: unknown }).design) ?? undefined,
+            document_designs: (() => {
+              const raw = (data as { document_designs?: Record<string, unknown> }).document_designs;
+              if (!raw || typeof raw !== "object") return undefined;
+              const next: Partial<Record<MoaDocumentType, MoaDesignBlob>> = {};
+              (["moa", "redeem", "buy_back"] as MoaDocumentType[]).forEach((key) => {
+                const normalized = normalizeMoaDesignBlob(raw[key]);
+                if (normalized) next[key] = normalized;
+              });
+              return Object.keys(next).length > 0 ? next : undefined;
+            })(),
+            component_templates: Array.isArray(
+              (data as { component_templates?: unknown }).component_templates,
+            )
+              ? ((data as { component_templates?: MoaComponentTemplate[] })
+                  .component_templates as MoaComponentTemplate[])
+              : undefined,
           };
           const loadedCategoryTemplates = Object.fromEntries(
             Object.entries(data.category_templates ?? {}).map(([category, template]) => [
@@ -535,6 +574,9 @@ export default function SettingsPage() {
                 design:
                   normalizeMoaDesignBlob((template as { design?: unknown }).design) ??
                   loadedDefault.design,
+                document_designs:
+                  (template as MoaTemplateVariant).document_designs ??
+                  loadedDefault.document_designs,
               },
             ]),
           );
@@ -549,6 +591,12 @@ export default function SettingsPage() {
           setCustomUnitFields(loadedDefault.customUnitFields);
           setDefaultMoaTemplate(loadedDefault);
           setCategoryMoaTemplates(loadedCategoryTemplates);
+          if (Array.isArray(loadedDefault.component_templates)) {
+            saveCustomMoaComponentTemplates(
+              loadedDefault.component_templates.filter((t) => t && !t.builtin),
+            );
+          }
+          setMoaDirty(false);
         }
       } catch (error) {
         console.error("Failed to fetch MOA template:", error);
@@ -594,7 +642,19 @@ export default function SettingsPage() {
       selectedMoaCategory === DEFAULT_MOA_CATEGORY
         ? defaultMoaTemplate
         : categoryMoaTemplates[selectedMoaCategory] ?? defaultMoaTemplate;
-    const fromApi = template?.design ? normalizeMoaDesignBlob(template.design) : null;
+
+    // Only apply API design into MOA form keys. Redeem / Buy back stay on
+    // localStorage (or document_designs[type]) so API MOA design cannot wipe them.
+    const fromDocDesigns =
+      moaDocumentType !== "moa" && template?.document_designs?.[moaDocumentType]
+        ? normalizeMoaDesignBlob(template.document_designs[moaDocumentType])
+        : null;
+    const fromApiMoa =
+      moaDocumentType === "moa" && template?.design
+        ? normalizeMoaDesignBlob(template.design)
+        : null;
+    const fromApi = fromDocDesigns ?? fromApiMoa;
+
     const fromLs = loadMoaDesignElements(moaStorageKey);
     if (fromApi && hasMoaDesign(fromApi)) {
       applyMoaDesign(fromApi, moaStorageKey);
@@ -615,7 +675,7 @@ export default function SettingsPage() {
     }
     applyMoaDesign(createDefaultMoaDesign(), moaStorageKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate when storage key / templates change
-  }, [moaStorageKey, selectedMoaCategory, defaultMoaTemplate, categoryMoaTemplates]);
+  }, [moaStorageKey, selectedMoaCategory, defaultMoaTemplate, categoryMoaTemplates, moaDocumentType]);
 
   const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
 
@@ -631,6 +691,7 @@ export default function SettingsPage() {
     }
     setMoaDesignElements(next);
     saveMoaDesignElements(moaStorageKey, next);
+    setMoaDirty(true);
   };
 
   const handleUndo = () => {
@@ -858,17 +919,30 @@ export default function SettingsPage() {
     setMoaMargins(nextMargins);
     saveMoaMargins(moaStorageKey, nextMargins);
     saveMoaPageSize(moaStorageKey, id);
+    setMoaDirty(true);
   };
 
   const handleMoaDocumentTypeChange = (nextType: MoaDocumentType) => {
     if (nextType === moaDocumentType) return;
+    // Checkpoint current design into in-memory template before switching form.
+    const checkpoint = getCurrentMoaTemplate();
+    if (selectedMoaCategory === DEFAULT_MOA_CATEGORY) {
+      setDefaultMoaTemplate(checkpoint);
+    } else {
+      setCategoryMoaTemplates((prev) => ({
+        ...prev,
+        [selectedMoaCategory]: checkpoint,
+      }));
+    }
     setMoaDocumentType(nextType);
     setSelectedDesignId(null);
+    setMoaDirty(true);
   };
 
   const handleMoaWatermarkChange = (next: MoaWatermarkSettings) => {
     setMoaWatermark(next);
     saveMoaWatermark(moaStorageKey, next);
+    setMoaDirty(true);
   };
 
   const handleAddMoaPage = () => {
@@ -1164,18 +1238,21 @@ export default function SettingsPage() {
     setSelectedDesignId(id);
     if (!id) {
       setSelectedDesignIds([]);
+      setSelectedFieldIds([]);
       return;
     }
-    // Always collapse to the clicked element. Multi-select is owned by
-    // handleSelectedIdsChange (Ctrl/Shift click, Ctrl+A) so it won't race.
-    setSelectedDesignIds([id]);
+    // Preserve multi-select (marquee / Ctrl+A) when onSelect(firstId) follows
+    // onSelectedIdsChange(allIds). Plain click on a new id collapses to one.
+    setSelectedDesignIds((prev) =>
+      prev.length > 1 && prev.includes(id) ? prev : [id],
+    );
   };
 
   const handleSelectedIdsChange = (ids: string[]) => {
     setSelectedDesignIds(ids);
     setSelectedDesignId(ids[0] ?? null);
-    // Element-level sync only. Field pickers call onSelectedFieldIdsChange after this
-    // and refresh the toolbar from the selected field(s).
+    // Element-level selection clears header-field picks (field handlers re-set after).
+    setSelectedFieldIds([]);
     if (ids[0]) syncToolbarFromSelection(ids[0], []);
   };
 
@@ -1430,6 +1507,50 @@ export default function SettingsPage() {
     setMoaFuture([]);
   };
 
+  const handlePrintMoaDesign = async () => {
+    const design = getCurrentMoaDesign();
+    if (!hasMoaDesign(design)) {
+      alert("Add layout elements on the canvas before printing, or use the eye preview.");
+      return;
+    }
+
+    const host = document.createElement("div");
+    host.setAttribute("aria-hidden", "true");
+    host.style.cssText =
+      "position:fixed;left:-12000px;top:0;width:auto;height:auto;opacity:0;pointer-events:none;";
+    document.body.appendChild(host);
+
+    const root = createRoot(host);
+    const values = createSampleMoaFieldValues(shopSettings);
+
+    try {
+      await new Promise<void>((resolve) => {
+        root.render(
+          <div id="moa-slip-printable" className="moa-paper-effect bg-white text-zinc-800">
+            <MoaDesignPrintPages design={design} values={values} />
+          </div>,
+        );
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+
+      const printable = host.querySelector("#moa-slip-printable");
+      if (!printable) {
+        throw new Error("Printable MOA was not rendered");
+      }
+      await printMoaSlipDocument(printable.outerHTML, {
+        pageSizeId: design.pageSizeId,
+      });
+    } catch (error) {
+      console.error("MOA design print failed:", error);
+      alert("Failed to print MOA design. Try Preview, then print from there.");
+    } finally {
+      root.unmount();
+      host.remove();
+    }
+  };
+
   const handleApplyTemplatePack = (template: MoaComponentTemplate) => {
     if (!canEditMoa) return;
     const pageIndex =
@@ -1451,17 +1572,40 @@ export default function SettingsPage() {
     applyMoaDesign(templateToDesignBlob(template));
   };
 
-  const getCurrentMoaTemplate = (): MoaTemplateVariant => ({
-    terms_text: resolvedTermsText,
-    labels: { ...topLabels },
-    lineWidths: { ...lineWidths },
-    extensionRows: extensionRows.map((row) => ({ ...row })),
-    financialFields: [...financialFields],
-    unitFields: [...unitFields],
-    customFinancialFields: customFinancialFields.map((field) => ({ ...field })),
-    customUnitFields: customUnitFields.map((field) => ({ ...field })),
-    design: getCurrentMoaDesign(),
-  });
+  const getCurrentMoaTemplate = (): MoaTemplateVariant => {
+    const currentDesign = getCurrentMoaDesign();
+    const baseTemplate =
+      selectedMoaCategory === DEFAULT_MOA_CATEGORY
+        ? defaultMoaTemplate
+        : categoryMoaTemplates[selectedMoaCategory] ?? defaultMoaTemplate;
+    const prevDocs = baseTemplate?.document_designs ?? {};
+    const document_designs: Partial<Record<MoaDocumentType, MoaDesignBlob>> = {
+      ...prevDocs,
+      [moaDocumentType]: cloneMoaDesignBlob(currentDesign),
+    };
+    if (!document_designs.moa && moaDocumentType !== "moa" && baseTemplate?.design) {
+      document_designs.moa = cloneMoaDesignBlob(baseTemplate.design);
+    }
+
+    return {
+      terms_text: resolvedTermsText,
+      labels: { ...topLabels },
+      lineWidths: { ...lineWidths },
+      extensionRows: extensionRows.map((row) => ({ ...row })),
+      financialFields: [...financialFields],
+      unitFields: [...unitFields],
+      customFinancialFields: customFinancialFields.map((field) => ({ ...field })),
+      customUnitFields: customUnitFields.map((field) => ({ ...field })),
+      design:
+        moaDocumentType === "moa"
+          ? currentDesign
+          : document_designs.moa
+            ? cloneMoaDesignBlob(document_designs.moa)
+            : currentDesign,
+      document_designs,
+      component_templates: loadCustomMoaComponentTemplates(),
+    };
+  };
 
   const applyMoaTemplate = (
     template: MoaTemplateVariant,
@@ -1477,7 +1621,11 @@ export default function SettingsPage() {
     setCustomUnitFields(template.customUnitFields.map((field) => ({ ...field })));
     setNewFinancialField("");
     setNewUnitField("");
-    applyMoaDesign(template.design, storageKey);
+    const designForForm =
+      moaDocumentType === "moa"
+        ? template.design
+        : template.document_designs?.[moaDocumentType] ?? null;
+    applyMoaDesign(designForForm, storageKey);
   };
 
   const toggleMoaSectionField = <T extends string>(
@@ -1553,8 +1701,15 @@ export default function SettingsPage() {
     selectedMoaCategory,
   ]);
 
-  const handleApplyMoaToAllCategories = () => {
+  const handleApplyMoaToAllCategories = async () => {
     if (!canEditMoa || moaCategories.length === 0) return;
+    if (
+      !window.confirm(
+        "Apply the current template (including canvas design) to ALL categories, then save?",
+      )
+    ) {
+      return;
+    }
 
     const currentTemplate = getCurrentMoaTemplate();
     const templatesForAllCategories = Object.fromEntries(
@@ -1572,13 +1727,22 @@ export default function SettingsPage() {
           design: currentTemplate.design
             ? cloneMoaDesignBlob(currentTemplate.design)
             : createDefaultMoaDesign(),
+          document_designs: currentTemplate.document_designs
+            ? Object.fromEntries(
+                Object.entries(currentTemplate.document_designs).map(([key, value]) => [
+                  key,
+                  value ? cloneMoaDesignBlob(value) : value,
+                ]),
+              )
+            : undefined,
         },
       ]),
     );
 
     setCategoryMoaTemplates(templatesForAllCategories);
     setDefaultMoaTemplate(currentTemplate);
-    setMoaSavedAt(null);
+    setMoaDirty(true);
+    await handleSaveMoa(currentTemplate, templatesForAllCategories);
   };
 
   const handleTempShopSettingChange = (field: keyof typeof shopSettings, value: string) => {
@@ -1630,14 +1794,25 @@ export default function SettingsPage() {
     setProfileToast(null);
   };
 
-  const handleSaveMoa = async () => {
+  const handleSaveMoa = async (
+    overrideCurrent?: MoaTemplateVariant,
+    overrideCategoryTemplates?: Record<string, MoaTemplateVariant>,
+  ) => {
     try {
-      const currentTemplate = getCurrentMoaTemplate();
+      const currentTemplate = overrideCurrent ?? getCurrentMoaTemplate();
+      if (!hasMoaDesign(currentTemplate.design) && moaDocumentType === "moa") {
+        const ok = window.confirm(
+          "Canvas design is empty. Save anyway? New Pawn will fall back to the classic slip.",
+        );
+        if (!ok) return;
+      }
+
+      setIsSavingMoa(true);
       const nextDefaultTemplate =
         selectedMoaCategory === DEFAULT_MOA_CATEGORY
           ? currentTemplate
           : defaultMoaTemplate ?? currentTemplate;
-      const nextCategoryTemplates = {
+      const nextCategoryTemplates = overrideCategoryTemplates ?? {
         ...categoryMoaTemplates,
         ...(selectedMoaCategory === DEFAULT_MOA_CATEGORY
           ? {}
@@ -1647,21 +1822,41 @@ export default function SettingsPage() {
       await api.post(`/settings/moa_template`, {
         ...nextDefaultTemplate,
         category_templates: nextCategoryTemplates,
+        component_templates: loadCustomMoaComponentTemplates(),
       });
       setDefaultMoaTemplate(nextDefaultTemplate);
       setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
+      setMoaDirty(false);
       window.dispatchEvent(new CustomEvent("moa-template-updated"));
     } catch (error) {
       console.error("Failed to save MOA template:", error);
       alert("Failed to save MOA template. Please try again.");
+    } finally {
+      setIsSavingMoa(false);
     }
   };
 
   const handleSendToAllBranches = async () => {
+    if (!isSuperAdmin) return;
+    if (moaDirty) {
+      const ok = window.confirm(
+        "You have unsaved MOA changes. Save and send to all branches now?",
+      );
+      if (!ok) return;
+    }
     setSendStatus("sending");
     try {
       const currentTemplate = getCurrentMoaTemplate();
+      if (!hasMoaDesign(currentTemplate.design) && moaDocumentType === "moa") {
+        const ok = window.confirm(
+          "Canvas design is empty. Send anyway? Branches will fall back to the classic slip.",
+        );
+        if (!ok) {
+          setSendStatus("idle");
+          return;
+        }
+      }
       const nextDefaultTemplate =
         selectedMoaCategory === DEFAULT_MOA_CATEGORY
           ? currentTemplate
@@ -1673,16 +1868,17 @@ export default function SettingsPage() {
           : { [selectedMoaCategory]: currentTemplate }),
       };
 
-      // Broadcast to production + development via the existing MOA save endpoint.
       await api.post(`/settings/moa_template`, {
         ...nextDefaultTemplate,
         category_templates: nextCategoryTemplates,
+        component_templates: loadCustomMoaComponentTemplates(),
         broadcastToAllEnvironments: true,
       });
 
       setDefaultMoaTemplate(nextDefaultTemplate);
       setCategoryMoaTemplates(nextCategoryTemplates);
       setMoaSavedAt(new Date().toLocaleString());
+      setMoaDirty(false);
       setSendStatus("sent");
       window.dispatchEvent(new CustomEvent("moa-template-updated"));
       setTimeout(() => setSendStatus("idle"), 2500);
@@ -2505,6 +2701,21 @@ export default function SettingsPage() {
                           )}
                           onApplyTemplatePack={handleApplyTemplatePack}
                           onApplyTemplateFull={handleApplyTemplateFull}
+                          termsText={termsText}
+                          onTermsChange={(value) => {
+                            setTermsText(value);
+                            setMoaDirty(true);
+                          }}
+                          termsHeading={topLabels.termsHeading || "TERMS AND CONDITIONS"}
+                          onTermsHeadingChange={(value) => {
+                            setTopLabels((prev) => ({ ...prev, termsHeading: value }));
+                            setMoaDirty(true);
+                          }}
+                          termsPreamble={topLabels.termsPreamble || ""}
+                          onTermsPreambleChange={(value) => {
+                            setTopLabels((prev) => ({ ...prev, termsPreamble: value }));
+                            setMoaDirty(true);
+                          }}
                           onUseUploadedImage={(dataUrl) => {
                             if (!selectedDesignId) {
                               const next = createMoaDesignElement("photo", 32, 100, {
@@ -2617,6 +2828,30 @@ export default function SettingsPage() {
                         />
                       </aside>
                       <div className="flex min-w-0 flex-1 flex-col bg-zinc-100">
+                        {/* Hidden file input for replace image */}
+                        <input
+                          ref={imageReplaceInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !imageReplaceTargetId) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              updateMoaDesignElements(
+                                moaDesignElements.map((el) =>
+                                  el.id === imageReplaceTargetId
+                                    ? { ...el, imageSrc: ev.target?.result as string }
+                                    : el,
+                                ),
+                              );
+                              setImageReplaceTargetId(null);
+                            };
+                            reader.readAsDataURL(file);
+                            e.target.value = "";
+                          }}
+                        />
                         <MoaDocsToolbar
                           enabled={canEditMoa}
                           hasSelection={
@@ -2683,7 +2918,9 @@ export default function SettingsPage() {
                           onInsertQr={handleInsertQr}
                           onListFormat={formatSelectedTextAsList}
                           onToggleSpellCheck={() => setMoaSpellCheck((prev) => !prev)}
-                          onPrint={() => window.print()}
+                          onPrint={() => {
+                            void handlePrintMoaDesign();
+                          }}
                           onClearFormatting={() =>
                             applyDesignStylePatch({
                               fontFamily: MOA_FONT_OPTIONS[0].value,
@@ -2698,6 +2935,31 @@ export default function SettingsPage() {
                               indent: 0,
                             })
                           }
+                          selectedElement={
+                            selectedDesignId
+                              ? moaDesignElements.find((el) => el.id === selectedDesignId) ?? null
+                              : null
+                          }
+                          onImageStyleChange={(patch) => {
+                            if (!selectedDesignId) return;
+                            updateMoaDesignElements(
+                              moaDesignElements.map((el) =>
+                                el.id === selectedDesignId ? { ...el, ...patch } : el,
+                              ),
+                            );
+                          }}
+                          isCropMode={imageCropModeId === selectedDesignId && !!selectedDesignId}
+                          onToggleCropMode={() => {
+                            setImageCropModeId((prev) =>
+                              prev === selectedDesignId ? null : selectedDesignId,
+                            );
+                          }}
+                          onOpenImageOptions={() => setShowImageOptions(true)}
+                          onReplaceImage={() => {
+                            if (!selectedDesignId) return;
+                            setImageReplaceTargetId(selectedDesignId);
+                            imageReplaceInputRef.current?.click();
+                          }}
                         />
                         <MoaDocsRuler
                           paperWidthPx={moaPageSize.screenWidthPx}
@@ -2775,6 +3037,8 @@ export default function SettingsPage() {
                                       handlePaginatePageDoc(pageIndex, fitText, overflowText)
                                     }
                                     spellCheck={moaSpellCheck}
+                                    cropModeId={imageCropModeId}
+                                    onCropModeChange={setImageCropModeId}
                                   />
                                 </div>
                               </MoaPaperScale>
@@ -2784,6 +3048,31 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Image Options sidebar */}
+                      {showImageOptions && selectedDesignId && (() => {
+                        const imgEl = moaDesignElements.find((el) => el.id === selectedDesignId);
+                        if (!imgEl?.imageSrc) return null;
+                        return (
+                          <aside className="w-[260px] shrink-0 overflow-y-auto">
+                            <ImageOptionsPanel
+                              element={imgEl}
+                              onUpdate={(patch) => {
+                                updateMoaDesignElements(
+                                  moaDesignElements.map((el) =>
+                                    el.id === selectedDesignId ? { ...el, ...patch } : el,
+                                  ),
+                                );
+                              }}
+                              onClose={() => setShowImageOptions(false)}
+                              onReplaceImage={() => {
+                                setImageReplaceTargetId(selectedDesignId);
+                                imageReplaceInputRef.current?.click();
+                              }}
+                            />
+                          </aside>
+                        );
+                      })()}
                     </div>
                   </div>
                 ) : (
@@ -3128,20 +3417,30 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="sticky bottom-0 z-20 flex flex-col gap-3 border-t border-border-main bg-white/95 px-3 py-3 backdrop-blur sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    Use the eye icon to preview the canvas as it appears in New Pawn. Save or Send to apply to all branches.
+                    {moaDirty ? (
+                      <span className="font-bold text-amber-700">Unsaved changes.</span>
+                    ) : (
+                      <span>All changes saved locally to template.</span>
+                    )}{" "}
+                    Eye icon = preview · Save / Send applies to branches.
+                    {moaDocumentType !== "moa" ? (
+                      <span className="ml-1 text-sky-700">
+                        ({activeDocumentLabel} design is stored separately from MOA.)
+                      </span>
+                    ) : null}
                   </p>
 
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
                     <ActionButton
-                      onClick={handleSaveMoa}
-                      disabled={!canEditMoa || !isSuperAdmin}
+                      onClick={() => void handleSaveMoa()}
+                      disabled={!isSuperAdmin || isSavingMoa}
                       variant="success"
                       size="sm"
                       className="w-full sm:w-auto"
                     >
-                      Save MOA Template
+                      {isSavingMoa ? "Saving…" : moaDirty ? "Save MOA Template *" : "Save MOA Template"}
                     </ActionButton>
                     <ActionButton
                       onClick={handleSendToAllBranches}

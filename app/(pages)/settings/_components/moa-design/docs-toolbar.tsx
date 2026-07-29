@@ -10,7 +10,9 @@ import {
   Bold,
   CheckSquare,
   ChevronDown,
+  Circle,
   Columns2,
+  Crop,
   Highlighter,
   Image as ImageIcon,
   IndentDecrease,
@@ -39,6 +41,7 @@ import {
 import {
   MOA_FONT_OPTIONS,
   MOA_FONT_SIZES,
+  type MoaDesignElement,
   type MoaPaletteItemKind,
   type MoaTextAlign,
   type MoaTextStylePatch,
@@ -255,6 +258,12 @@ export function MoaDocsToolbar({
   onToggleSpellCheck,
   onPrint,
   onClearFormatting,
+  selectedElement,
+  onImageStyleChange,
+  onToggleCropMode,
+  onOpenImageOptions,
+  onReplaceImage,
+  isCropMode,
 }: {
   enabled: boolean;
   hasSelection: boolean;
@@ -286,6 +295,12 @@ export function MoaDocsToolbar({
   onToggleSpellCheck?: () => void;
   onPrint: () => void;
   onClearFormatting: () => void;
+  selectedElement?: MoaDesignElement | null;
+  onImageStyleChange?: (patch: Partial<MoaDesignElement>) => void;
+  onToggleCropMode?: () => void;
+  onOpenImageOptions?: () => void;
+  onReplaceImage?: () => void;
+  isCropMode?: boolean;
 }) {
   const styleDisabled = !enabled || !hasSelection;
   const styleId = currentStyleId(fontSize, fontWeight, fontStyle);
@@ -324,6 +339,7 @@ export function MoaDocsToolbar({
   };
 
   return (
+    <>
     <div className="flex flex-wrap items-center gap-0.5 border-b border-[#c4c7c5] bg-[#edf2fa] px-2 py-1.5">
       {/* Search / Menus */}
       <DocsBtn title="Menus" disabled className="gap-1 px-2 text-[11px] font-medium">
@@ -627,5 +643,39 @@ export function MoaDocsToolbar({
         <RemoveFormatting className="h-4 w-4" />
       </DocsBtn>
     </div>
+
+    {/* Image toolbar row — shown when a photo/header with image is selected */}
+    {selectedElement?.imageSrc ? (
+      <div className="flex items-center gap-1 border-b border-[#c4c7c5] bg-[#f0f4e8] px-2 py-1">
+        <DocsBtn
+          title="Crop image"
+          active={isCropMode}
+          onClick={onToggleCropMode}
+        >
+          <Crop className="h-4 w-4" />
+        </DocsBtn>
+
+        <Sep />
+
+        <button
+          type="button"
+          onClick={onOpenImageOptions}
+          className="inline-flex h-7 items-center gap-1.5 rounded px-2 text-[11px] font-medium text-[#444746] hover:bg-[#e8eaed]"
+        >
+          Image options
+        </button>
+
+        <button
+          type="button"
+          onClick={onReplaceImage}
+          className="inline-flex h-7 items-center gap-1.5 rounded px-2 text-[11px] font-medium text-[#444746] hover:bg-[#e8eaed]"
+        >
+          Replace image
+        </button>
+      </div>
+    ) : null}
+    </>
   );
 }
+
+
