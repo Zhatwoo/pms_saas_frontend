@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 import {
@@ -182,21 +183,37 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactMessage, setContactMessage] = useState("");
+  const [isSendingContact, setIsSendingContact] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const lastScrollY = useRef(0);
 
-  const handleContactSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
       toast.error("Please fill in all fields.");
       return;
     }
 
-    const subject = encodeURIComponent(`QuickPawn inquiry from ${contactName.trim()}`);
-    const body = encodeURIComponent(
-      `${contactMessage.trim()}\n\n— ${contactName.trim()} (${contactEmail.trim()})`
-    );
-    window.location.href = `mailto:${BRAND_CONFIG.email}?subject=${subject}&body=${body}`;
+    setIsSendingContact(true);
+    try {
+      await api.post(
+        "/contact",
+        {
+          name: contactName.trim(),
+          email: contactEmail.trim(),
+          message: contactMessage.trim(),
+        },
+        { suppressApiIssueLogging: true },
+      );
+      toast.success("Message sent! We'll get back to you shortly.");
+      setContactName("");
+      setContactEmail("");
+      setContactMessage("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not send your message. Please try again.");
+    } finally {
+      setIsSendingContact(false);
+    }
   };
 
   // Prevent scrolling when mobile or tablet menu is open
@@ -305,11 +322,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             {/* Logo - Desktop only (lg and up) */}
             <button
               type="button"
-              className="hidden items-center gap-2 lg:flex"
+              className="hidden items-center lg:flex"
               onClick={(e) => handleScroll(e, "home", "HOME")}
             >
-              <QuickPawnLogo variant="mark" className="h-10 w-10" />
-              <span className="font-display text-lg font-bold text-brand-green">{BRAND_CONFIG.shortCompanyName}</span>
+              <QuickPawnLogo variant="full" className="h-10 w-auto" />
             </button>
             
             {/* Burger menu icon - Mobile and Tablet only (below lg) */}
@@ -552,7 +568,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     type="text"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green"
+                    disabled={isSendingContact}
+                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
                     placeholder="Juan Dela Cruz"
                   />
                 </div>
@@ -565,7 +582,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     type="email"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green"
+                    disabled={isSendingContact}
+                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
                     placeholder="you@pawnshop.com"
                   />
                 </div>
@@ -578,16 +596,18 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     rows={3}
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
-                    className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green"
+                    disabled={isSendingContact}
+                    className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
                     placeholder="Tell us about your pawnshop..."
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="mt-6 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
+                disabled={isSendingContact}
+                className="mt-6 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Send Message
+                {isSendingContact ? "Sending..." : "Send Message"}
               </button>
             </form>
           </div>

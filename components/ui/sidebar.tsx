@@ -339,7 +339,7 @@ export function Sidebar({
                     ? "Expand sidebar"
                     : "Collapse sidebar"
               }
-              className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition hover:bg-pawn-sidebar-light"
+              className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition hover:bg-pawn-sidebar-light"
             >
               <span
                 className={`absolute inset-0 flex items-center justify-center transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
@@ -386,7 +386,7 @@ export function Sidebar({
                 onToggle();
               }}
               aria-label="Collapse sidebar"
-              className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] hover:bg-pawn-sidebar-light opacity-100"
+              className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] hover:bg-pawn-sidebar-light opacity-100"
             >
               {isMobileOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
