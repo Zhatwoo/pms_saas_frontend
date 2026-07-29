@@ -174,45 +174,53 @@ export function MoaDesignPrintPages({
         return (
           <div
             key={`design-page-${pageIndex}`}
-            className="moa-print-page mx-auto w-full min-w-0 flex-none overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md moa-paper-effect"
+            className="moa-print-page moa-design-print-page mx-auto w-full min-w-0 flex-none overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md moa-paper-effect"
             style={{
               width: page.screenWidthPx,
               height: page.screenHeightPx,
               maxWidth: page.screenWidthPx,
               maxHeight: page.screenHeightPx,
-              padding: marginsToPadding(design.margins),
+              padding: 0,
               boxSizing: "border-box",
               position: "relative",
             }}
           >
-            <MoaCanvasWatermark settings={design.watermark} />
-            {pageDoc?.text ? (
-              <div
-                className="absolute inset-0 z-[1] overflow-hidden whitespace-pre-wrap px-3 py-3"
-                style={{
-                  fontFamily: pageDoc.fontFamily,
-                  fontSize: pageDoc.fontSize,
-                  fontWeight: pageDoc.fontWeight,
-                  fontStyle: pageDoc.fontStyle,
-                  textDecoration: pageDoc.textDecoration,
-                  color: pageDoc.color,
-                  textAlign: pageDoc.textAlign,
-                  lineHeight: pageDoc.lineHeight,
-                  paddingLeft: 12 + (pageDoc.indent ?? 0) * 24,
-                }}
-              >
-                {pageDoc.text}
+            <div
+              className="relative h-full w-full overflow-hidden"
+              style={{
+                padding: marginsToPadding(design.margins),
+                boxSizing: "border-box",
+              }}
+            >
+              <MoaCanvasWatermark settings={design.watermark} />
+              {pageDoc?.text ? (
+                <div
+                  className="absolute inset-0 z-[1] overflow-hidden whitespace-pre-wrap px-3 py-3"
+                  style={{
+                    fontFamily: pageDoc.fontFamily,
+                    fontSize: pageDoc.fontSize,
+                    fontWeight: pageDoc.fontWeight,
+                    fontStyle: pageDoc.fontStyle,
+                    textDecoration: pageDoc.textDecoration,
+                    color: pageDoc.color,
+                    textAlign: pageDoc.textAlign,
+                    lineHeight: pageDoc.lineHeight,
+                    paddingLeft: 12 + (pageDoc.indent ?? 0) * 24,
+                  }}
+                >
+                  {pageDoc.text}
+                </div>
+              ) : null}
+              <div className="relative z-[2] h-full w-full">
+                {pageElements.map((el) => (
+                  <PrintElement
+                    key={el.id}
+                    element={el}
+                    values={values}
+                    branch={branch}
+                  />
+                ))}
               </div>
-            ) : null}
-            <div className="relative z-[2] h-full w-full">
-              {pageElements.map((el) => (
-                <PrintElement
-                  key={el.id}
-                  element={el}
-                  values={values}
-                  branch={branch}
-                />
-              ))}
             </div>
           </div>
         );

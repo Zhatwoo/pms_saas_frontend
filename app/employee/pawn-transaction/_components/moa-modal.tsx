@@ -468,7 +468,9 @@ export function MoaModal({
     });
 
     try {
-      await printMoaSlipDocument(wrapper.outerHTML);
+      await printMoaSlipDocument(wrapper.outerHTML, {
+        pageSizeId: hasMoaDesign(design) ? design?.pageSizeId : "long",
+      });
     } catch (err) {
       console.error("Print failed:", err);
     }
@@ -1259,7 +1261,10 @@ export function MoaModal({
                 </>
               ) : (
                 <p className="text-[10px] text-zinc-400 font-medium italic">
-                  View or print the memorandum of agreement slip. Use Legal (8.5×13 in) paper size when printing.
+                  View or print the memorandum of agreement slip.
+                  {useDesignLayout && design
+                    ? ` Paper: ${design.pageSizeId === "letter" ? "Letter (8.5×11)" : design.pageSizeId === "a4" ? "A4" : "Long (8.5×13)"}.`
+                    : " Use Legal / Long (8.5×13 in) paper when printing the classic slip."}
                 </p>
               )}
             </div>

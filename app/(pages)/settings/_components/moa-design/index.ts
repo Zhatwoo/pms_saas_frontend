@@ -12,6 +12,7 @@ export { MoaLayoutTab } from "./layout-tab";
 export { MoaElementsTab } from "./elements-tab";
 export { MoaUploadsTab } from "./uploads-tab";
 export { MoaTemplatesTab } from "./templates-tab";
+export { MoaTermsTab } from "./terms-tab";
 export { MoaFieldConfigTab, type MoaFieldConfigTabProps } from "./field-config-tab";
 export {
   ELEMENT_CATEGORIES,
