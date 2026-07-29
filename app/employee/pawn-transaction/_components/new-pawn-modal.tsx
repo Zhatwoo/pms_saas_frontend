@@ -309,24 +309,25 @@ export function NewPawnModal({
     }
   }, [isMoaOpen, branchId, loadBranchCashForMoa]);
 
+  const fetchNextUnitCode = useCallback(async () => {
+    try {
+      const { unitCode } = await api.get<{ unitCode: string }>("/pawn-tickets/next-unit-code");
+      if (unitCode) {
+        setForm(prev => ({ ...prev, unitCode }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch next unit code:", error);
+      // Fallback to a placeholder if API fails
+      setForm(prev => ({ ...prev, unitCode: `PENDING-${BRAND_CONFIG.shortCompanyName.toLowerCase()}-xxxxx` }));
+    }
+  }, []);
+
   // Auto-generate Unit Code when modal opens
   useEffect(() => {
     if (isOpen) {
-      const fetchNextCode = async () => {
-        try {
-          const { unitCode } = await api.get<{ unitCode: string }>("/pawn-tickets/next-unit-code");
-          if (unitCode) {
-            setForm(prev => ({ ...prev, unitCode }));
-          }
-        } catch (error) {
-          console.error("Failed to fetch next unit code:", error);
-          // Fallback to a placeholder if API fails
-          setForm(prev => ({ ...prev, unitCode: `PENDING-${BRAND_CONFIG.shortCompanyName.toLowerCase()}-xxxxx` }));
-        }
-      };
-      fetchNextCode();
+      void fetchNextUnitCode();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchNextUnitCode]);
 
   useEffect(() => {
     if (!isOpen || !branchId || branchId === "__all__") {
@@ -973,6 +974,9 @@ export function NewPawnModal({
         const msg = error instanceof Error ? error.message : String(error);
         setErrorMessage(msg);
         toast.error(msg);
+        if (/unit code|item_id|unique constraint/i.test(msg)) {
+          void fetchNextUnitCode();
+        }
       }
     } finally {
       setIsSaving(false);

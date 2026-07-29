@@ -30,9 +30,9 @@ export interface BrandConfig {
 export const BRAND_CONFIG: BrandConfig = {
   companyName: "QuickPawn",
   shortCompanyName: "QuickPawn",
-  companyLogo: "/logo-icon.png",
-  loginLogo: "/logo.png",
-  sidebarLogo: "/logo-icon.png",
+  companyLogo: "/PMS_logo_theme.svg",
+  loginLogo: "/PMS_logo_theme.svg",
+  sidebarLogo: "/PMS_logo_theme.svg",
   favicon: "/favicon.ico",
   primaryColor: "#0B5D3B",
   secondaryColor: "#E8C547",
