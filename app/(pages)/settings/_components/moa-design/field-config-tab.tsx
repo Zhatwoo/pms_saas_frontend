@@ -295,6 +295,8 @@ export type MoaFieldConfigTabProps = {
   groupSuffix: string;
   financialOptions: Array<MoaFieldConfigOption<string>>;
   unitOptions: Array<MoaFieldConfigOption<string>>;
+  /** Customer / ticket fields from New Pawn → MOA reflection */
+  customerOptions?: Array<MoaFieldConfigOption<string>>;
   financialFields: string[];
   unitFields: string[];
   customFinancialFields: MoaCustomField[];
@@ -319,12 +321,79 @@ export type MoaFieldConfigTabProps = {
   onPaletteDragStateChange?: (dragging: boolean) => void;
 };
 
+/** Always-available fields (customer / ticket) — click or drag onto canvas. */
+function ReflectionFieldList({
+  title,
+  hint,
+  enabled,
+  options,
+  onInsertOntoCanvas,
+  onPaletteDragStateChange,
+}: {
+  title: string;
+  hint: string;
+  enabled: boolean;
+  options: Array<MoaFieldConfigOption<string>>;
+  onInsertOntoCanvas?: (payload: MoaConfigFieldPayload) => void;
+  onPaletteDragStateChange?: (dragging: boolean) => void;
+}) {
+  const draggedRef = useRef(false);
+
+  return (
+    <div className="space-y-2 rounded-lg border border-sky-200 bg-sky-50/40 p-2">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-sky-900">{title}</p>
+        <p className="mt-0.5 text-[9px] font-medium text-sky-800/80">{hint}</p>
+      </div>
+      <div className="space-y-1">
+        {options.map((field) => (
+          <button
+            key={field.key}
+            type="button"
+            draggable={enabled}
+            disabled={!enabled}
+            title="Click to insert · Drag onto canvas"
+            onDragStart={(event) => {
+              draggedRef.current = true;
+              startConfigFieldDrag(
+                event,
+                { key: field.key, label: field.label },
+                onPaletteDragStateChange,
+              );
+            }}
+            onDragEnd={() => {
+              onPaletteDragStateChange?.(false);
+              window.setTimeout(() => {
+                draggedRef.current = false;
+              }, 0);
+            }}
+            onClick={() => {
+              if (draggedRef.current) return;
+              if (!enabled || !onInsertOntoCanvas) return;
+              onInsertOntoCanvas({ key: field.key, label: field.label });
+            }}
+            className="flex w-full items-center justify-between gap-2 rounded-md border border-sky-200 bg-white px-2 py-1.5 text-left transition hover:border-sky-400 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="min-w-0 truncate text-[10px] font-semibold text-zinc-800">
+              {field.label}
+            </span>
+            <span className="shrink-0 text-[8px] font-bold uppercase tracking-wide text-sky-600">
+              Insert
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function MoaFieldConfigTab({
   enabled,
   categoryLabel,
   groupSuffix,
   financialOptions,
   unitOptions,
+  customerOptions = [],
   financialFields,
   unitFields,
   customFinancialFields,
@@ -353,8 +422,20 @@ export function MoaFieldConfigTab({
       <div>
         <TabHint>
           Click a field to insert it on the canvas, or drag for precise placement.
+          Customer fields show sample New Pawn data (reflection).
         </TabHint>
       </div>
+
+      {customerOptions.length > 0 ? (
+        <ReflectionFieldList
+          title="Customer & Ticket (New Pawn)"
+          hint={`Reflection fields for ${categoryLabel} — filled from New Pawn when printed.`}
+          enabled={enabled}
+          options={customerOptions}
+          onInsertOntoCanvas={onInsertOntoCanvas}
+          onPaletteDragStateChange={onPaletteDragStateChange}
+        />
+      ) : null}
 
       <FieldSection
         title="Financial Details"

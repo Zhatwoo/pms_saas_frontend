@@ -18,6 +18,14 @@ import {
   printMoaSlipDocument,
 } from "@/lib/print-templates";
 import { MoaCutGuide } from "@/components/shared/moa-cut-guide";
+import {
+  MoaDesignPrintPages,
+  hasMoaDesign,
+  normalizeMoaDesignBlob,
+  type MoaDesignBlob,
+  type MoaFieldValueContext,
+} from "@/lib/moa";
+import { MOA_PAGE_SIZES } from "@/app/(pages)/settings/_components/moa-design-palette";
 
 interface MoaModalProps {
   isOpen: boolean;
@@ -98,6 +106,7 @@ type MoaTemplate = {
   unitFields?: UnitFieldKey[];
   customFinancialFields?: CustomMoaField[];
   customUnitFields?: CustomMoaField[];
+  design?: MoaDesignBlob;
   category_templates?: Record<string, {
     terms_text?: string;
     labels?: MoaLabels;
@@ -106,6 +115,7 @@ type MoaTemplate = {
     unitFields?: UnitFieldKey[];
     customFinancialFields?: CustomMoaField[];
     customUnitFields?: CustomMoaField[];
+    design?: MoaDesignBlob;
   }>;
 };
 
@@ -121,7 +131,17 @@ const MOA_PAGE_STYLE = {
 };
 
 /** Scales legal-size MOA pages to fit mobile/tablet modal width (screen only). */
-function MoaPreviewScale({ children }: { children: ReactNode }) {
+function MoaPreviewScale({
+  children,
+  pageCount = 2,
+  pageWidthPx = MOA_LEGAL_PAGE.screenWidthPx,
+  pageHeightPx = MOA_LEGAL_PAGE.screenHeightPx,
+}: {
+  children: ReactNode;
+  pageCount?: number;
+  pageWidthPx?: number;
+  pageHeightPx?: number;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
@@ -131,30 +151,29 @@ function MoaPreviewScale({ children }: { children: ReactNode }) {
     const update = () => {
       const available = el.clientWidth;
       if (available <= 0) return;
-      setScale(Math.min(1, available / MOA_LEGAL_PAGE.screenWidthPx));
+      setScale(Math.min(1, available / pageWidthPx));
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [pageWidthPx]);
 
-  const pageCount = 2;
-  const scaledHeight = MOA_LEGAL_PAGE.screenHeightPx * scale * pageCount;
+  const scaledHeight = pageHeightPx * scale * Math.max(1, pageCount);
 
   return (
     <div ref={containerRef} className="w-full min-w-0 overflow-x-hidden p-2 sm:p-4">
       <div
         className="relative mx-auto"
         style={{
-          width: MOA_LEGAL_PAGE.screenWidthPx * scale,
+          width: pageWidthPx * scale,
           height: scaledHeight,
         }}
       >
         <div
           className="absolute left-0 top-0 origin-top-left space-y-0"
           style={{
-            width: MOA_LEGAL_PAGE.screenWidthPx,
+            width: pageWidthPx,
             transform: `scale(${scale})`,
           }}
         >
@@ -329,10 +348,12 @@ export function MoaModal({
   const [unitFields, setUnitFields] = useState<UnitFieldKey[]>(DEFAULT_UNIT_FIELDS);
   const [customFinancialFields, setCustomFinancialFields] = useState<CustomMoaField[]>([]);
   const [customUnitFields, setCustomUnitFields] = useState<CustomMoaField[]>([]);
+  const [design, setDesign] = useState<MoaDesignBlob | null>(null);
   const [shopInfo, setShopInfo] = useState<{
     shopName?: string;
     shopAddress?: string;
     phoneNumber?: string;
+    email?: string;
   } | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const templateFetchRef = useRef(0);
@@ -375,6 +396,8 @@ export function MoaModal({
       ?? moaTemplate.customUnitFields
       ?? [],
     );
+    const rawDesign = categoryTemplate?.design ?? moaTemplate.design;
+    setDesign(normalizeMoaDesignBlob(rawDesign));
   };
 
   useEffect(() => {
@@ -390,7 +413,14 @@ export function MoaModal({
             cache: "no-store",
           }),
           api.get<unknown[]>(`/settings/interest_rates`),
-          api.get<{ shopInfo?: { shopName?: string; shopAddress?: string; phoneNumber?: string } }>(`/settings/general`),
+          api.get<{
+            shopInfo?: {
+              shopName?: string;
+              shopAddress?: string;
+              phoneNumber?: string;
+              email?: string;
+            };
+          }>(`/settings/general`),
         ]);
 
         if (cancelled || fetchId !== templateFetchRef.current) return;
@@ -445,13 +475,15 @@ export function MoaModal({
   };
 
   useEffect(() => {
-    if (!isOpen || !autoPrint || !labels) return;
+    if (!isOpen || !autoPrint) return;
+    if (!labels && !hasMoaDesign(design)) return;
 
+    const minPages = hasMoaDesign(design) ? Math.max(1, design?.pageCount ?? 1) : 2;
     let cancelled = false;
     const tryPrint = (attempt = 0) => {
       if (cancelled) return;
       const pageCount = printRef.current?.querySelectorAll(".moa-print-page").length ?? 0;
-      if (pageCount >= 2 || attempt >= 8) {
+      if (pageCount >= minPages || attempt >= 8) {
         void handlePrint();
         return;
       }
@@ -463,7 +495,7 @@ export function MoaModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [isOpen, autoPrint, labels, termsText]);
+  }, [isOpen, autoPrint, labels, termsText, design]);
 
   useEffect(() => {
     if (autoPrint && isOpen) {
@@ -593,6 +625,45 @@ export function MoaModal({
   const termsReceivedPresence = labels?.termsReceivedPresence || DEFAULT_TERMS_RECEIVED_PRESENCE;
   const customerFullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(" ").trim() || "Customer";
 
+  const useDesignLayout = hasMoaDesign(design);
+  const previewPage =
+    useDesignLayout && design
+      ? MOA_PAGE_SIZES[design.pageSizeId] ?? MOA_PAGE_SIZES.long
+      : {
+          screenWidthPx: MOA_LEGAL_PAGE.screenWidthPx,
+          screenHeightPx: MOA_LEGAL_PAGE.screenHeightPx,
+        };
+
+  const designValues: MoaFieldValueContext = {
+    customerName: fullName,
+    customerAddress: data.address || "—",
+    contactNo: data.contactNo || "—",
+    idPresented: data.idPresented || "—",
+    unitCode: data.unitCode || "—",
+    purchasedDate: data.purchasedDate || new Date().toLocaleDateString(),
+    maturityDate: maturityDates[0] || "—",
+    expiryDate: gracePeriodEnd || "—",
+    sellerName: fullName,
+    amount: financialValues.amount,
+    storageFee: financialValues.storageFee,
+    parkingFee: financialValues.parkingFee,
+    netProceeds: financialValues.netProceeds,
+    brandModel: unitValues.brandModel,
+    itemsIncluded: unitValues.itemsIncluded,
+    condition: unitValues.condition,
+    serialNo: unitValues.serialNo,
+    memory: unitValues.memory,
+    remarks: unitValues.remarks,
+    shopName: headerPrimary,
+    shopAddress: headerSecondary || shopInfo?.shopAddress || "",
+    phoneNumber: headerPhone || shopInfo?.phoneNumber || "",
+    email: shopInfo?.email || "",
+    customValues: {
+      ...persistedMoaValues,
+      ...(data.customMoaValues ?? {}),
+    },
+  };
+
   const handleFinalizeRequest = () => {
     if (isLoading || confirmDisabled) return;
     setIsFinalizeConfirmOpen(true);
@@ -644,9 +715,16 @@ export function MoaModal({
 
         {/* MOA Content - Matches Image 2 */}
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <MoaPreviewScale>
+          <MoaPreviewScale
+            pageCount={useDesignLayout ? (design?.pageCount ?? 1) : 2}
+            pageWidthPx={previewPage.screenWidthPx}
+            pageHeightPx={previewPage.screenHeightPx}
+          >
           <div id="moa-slip-printable" ref={printRef} className="max-w-full bg-white text-zinc-800 moa-paper-effect">
-            
+            {useDesignLayout && design ? (
+              <MoaDesignPrintPages design={design} values={designValues} />
+            ) : (
+            <>
             {/* PAGE 1: SLIPS (Original & Customer Copy) */}
             <div className={`${MOA_PAGE_CLASS} moa-slip-sheet`} style={MOA_PAGE_STYLE}>
               <div className="moa-slip-halves">
@@ -1158,6 +1236,8 @@ export function MoaModal({
               </div>
               </div>
             </div>
+            </>
+            )}
           </div>
           </MoaPreviewScale>
         </div>

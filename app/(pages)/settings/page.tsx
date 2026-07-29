@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
 import { useAuth } from "@/contexts/auth-context";
@@ -67,6 +68,18 @@ import {
   type MoaDocsMargins,
 } from "./_components/moa-design/docs-ruler";
 import { MoaFieldConfigTab } from "./_components/moa-design/field-config-tab";
+import {
+  cloneMoaDesignBlob,
+  createDefaultMoaDesign,
+  createSampleMoaFieldValues,
+  hasMoaDesign,
+  MoaDesignViewModal,
+  normalizeMoaDesignBlob,
+  placePackOnPage,
+  templateToDesignBlob,
+  type MoaComponentTemplate,
+  type MoaDesignBlob,
+} from "@/lib/moa";
 // Hook implementation resides in ./hooks/useMoaKeyboard.ts
 // ─── ResizableLine ───────────────────────────────────────────────────────────
 // Must be defined OUTSIDE SettingsPage so React can use hooks inside it.
@@ -167,6 +180,19 @@ const UNIT_FIELD_OPTIONS: Array<{ key: UnitFieldKey; valueKey: UnitFieldKey }> =
   { key: "remarks", valueKey: "remarks" },
 ];
 
+/** Customer / ticket fields that reflect New Pawn Transaction data onto MOA. */
+const CUSTOMER_TICKET_FIELD_OPTIONS: Array<{ key: string; label: string }> = [
+  { key: "customerName", label: "Customer name" },
+  { key: "customerAddress", label: "Customer address" },
+  { key: "contactNo", label: "Contact no." },
+  { key: "idPresented", label: "ID presented" },
+  { key: "unitCode", label: "Unit code" },
+  { key: "purchasedDate", label: "Purchased date" },
+  { key: "maturityDate", label: "Maturity date" },
+  { key: "expiryDate", label: "Expiry / grace date" },
+  { key: "sellerName", label: "Seller name" },
+];
+
 const DEFAULT_FINANCIAL_FIELDS = FINANCIAL_FIELD_OPTIONS.map((field) => field.key);
 const DEFAULT_UNIT_FIELDS = UNIT_FIELD_OPTIONS.map((field) => field.key);
 
@@ -179,6 +205,8 @@ type MoaTemplateVariant = {
   unitFields: UnitFieldKey[];
   customFinancialFields: CustomMoaField[];
   customUnitFields: CustomMoaField[];
+  /** Canvas layout saved with Save / Send to all branches. */
+  design?: MoaDesignBlob;
 };
 
 const DEFAULT_MOA_CATEGORY = "__default__";
@@ -275,7 +303,6 @@ export default function SettingsPage() {
   const [profileEmail, setProfileEmail] = useState("");
 
   const [isMoaEditMode, setIsMoaEditMode] = useState(false);
-  const [isMoaLocked, setIsMoaLocked] = useState(false);
   const [moaFields, setMoaFields] = useState({
     unitCode: "",
     purchasedDate: "",
@@ -388,9 +415,10 @@ export default function SettingsPage() {
   const [moaPageSizeId, setMoaPageSizeId] = useState<MoaPageSizeId>("long");
   const [moaPageCount, setMoaPageCount] = useState(1);
   const [moaDocumentType, setMoaDocumentType] = useState<MoaDocumentType>("moa");
-  const [moaWatermark, setMoaWatermark] = useState<MoaWatermarkSettings>({
-    ...DEFAULT_MOA_WATERMARK,
-  });
+  const [moaWatermark, setMoaWatermark] = useState<MoaWatermarkSettings>(() => ({
+    enabled: DEFAULT_MOA_WATERMARK.enabled,
+    items: DEFAULT_MOA_WATERMARK.items.map((item) => ({ ...item })),
+  }));
   const [isPaletteDragging, setIsPaletteDragging] = useState(false);
   const [termsText, setTermsText] = useState(DEFAULT_TERMS_TEXT);
   const [financialFields, setFinancialFields] = useState<FinancialFieldKey[]>(DEFAULT_FINANCIAL_FIELDS);
@@ -480,6 +508,7 @@ export default function SettingsPage() {
             customUnitFields: Array.isArray(data.customUnitFields)
               ? data.customUnitFields
               : [],
+            design: normalizeMoaDesignBlob((data as { design?: unknown }).design) ?? undefined,
           };
           const loadedCategoryTemplates = Object.fromEntries(
             Object.entries(data.category_templates ?? {}).map(([category, template]) => [
@@ -503,6 +532,9 @@ export default function SettingsPage() {
                 customUnitFields: Array.isArray(template.customUnitFields)
                   ? template.customUnitFields
                   : loadedDefault.customUnitFields,
+                design:
+                  normalizeMoaDesignBlob((template as { design?: unknown }).design) ??
+                  loadedDefault.design,
               },
             ]),
           );
@@ -551,26 +583,39 @@ export default function SettingsPage() {
     return () => window.removeEventListener("categories-updated", handleCategoriesUpdated);
   }, []);
 
-  const canEditMoa = isSuperAdmin && isMoaEditMode && !isMoaLocked;
+  const canEditMoa = isSuperAdmin && isMoaEditMode;
   const moaStorageKey = moaDesignStorageKey(moaDocumentType, selectedMoaCategory);
   const activeDocumentLabel =
     MOA_DOCUMENT_TYPES.find((item) => item.id === moaDocumentType)?.label ?? "MOA";
 
   useEffect(() => {
-    const loadedElements = loadMoaDesignElements(moaStorageKey);
-    const pageSizeId = loadMoaPageSize(moaStorageKey);
     setSlipSectionOrder(loadSlipSectionOrder(selectedMoaCategory));
-    setMoaDesignElements(loadedElements);
-    setMoaPageSizeId(pageSizeId);
-    setMoaPageCount(loadMoaPageCount(moaStorageKey, loadedElements));
-    setMoaWatermark(loadMoaWatermark(moaStorageKey));
-    setMoaMargins(loadMoaMargins(moaStorageKey, defaultMarginsForPage(pageSizeId)));
-    setSelectedDesignId(null);
-    setSelectedDesignIds([]);
-    setSelectedFieldIds([]);
-    setMoaHistory([]);
-    setMoaFuture([]);
-  }, [moaStorageKey, selectedMoaCategory]);
+    const template =
+      selectedMoaCategory === DEFAULT_MOA_CATEGORY
+        ? defaultMoaTemplate
+        : categoryMoaTemplates[selectedMoaCategory] ?? defaultMoaTemplate;
+    const fromApi = template?.design ? normalizeMoaDesignBlob(template.design) : null;
+    const fromLs = loadMoaDesignElements(moaStorageKey);
+    if (fromApi && hasMoaDesign(fromApi)) {
+      applyMoaDesign(fromApi, moaStorageKey);
+      return;
+    }
+    if (fromLs.length > 0) {
+      setMoaDesignElements(fromLs);
+      setMoaPageSizeId(loadMoaPageSize(moaStorageKey));
+      setMoaPageCount(loadMoaPageCount(moaStorageKey, fromLs));
+      setMoaWatermark(loadMoaWatermark(moaStorageKey));
+      setMoaMargins(loadMoaMargins(moaStorageKey, defaultMarginsForPage(loadMoaPageSize(moaStorageKey))));
+      setSelectedDesignId(null);
+      setSelectedDesignIds([]);
+      setSelectedFieldIds([]);
+      setMoaHistory([]);
+      setMoaFuture([]);
+      return;
+    }
+    applyMoaDesign(createDefaultMoaDesign(), moaStorageKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate when storage key / templates change
+  }, [moaStorageKey, selectedMoaCategory, defaultMoaTemplate, categoryMoaTemplates]);
 
   const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
 
@@ -1346,6 +1391,66 @@ export default function SettingsPage() {
     );
   };
 
+  const getCurrentMoaDesign = (): MoaDesignBlob => ({
+    elements: moaDesignElements.map((el) => ({
+      ...el,
+      headerFields: el.headerFields.map((field) => ({ ...field })),
+    })),
+    pageSizeId: moaPageSizeId,
+    pageCount: moaPageCount,
+    watermark: {
+      enabled: moaWatermark.enabled,
+      items: moaWatermark.items.map((item) => ({ ...item })),
+    },
+    margins: { ...moaMargins },
+  });
+
+  const applyMoaDesign = (
+    raw: MoaDesignBlob | null | undefined,
+    storageKey = moaStorageKey,
+  ) => {
+    const design =
+      raw && hasMoaDesign(raw)
+        ? cloneMoaDesignBlob(raw)
+        : createDefaultMoaDesign();
+    setMoaDesignElements(design.elements);
+    setMoaPageSizeId(design.pageSizeId);
+    setMoaPageCount(design.pageCount);
+    setMoaWatermark(design.watermark);
+    setMoaMargins(design.margins);
+    saveMoaDesignElements(storageKey, design.elements);
+    saveMoaPageSize(storageKey, design.pageSizeId);
+    saveMoaPageCount(storageKey, design.pageCount);
+    saveMoaWatermark(storageKey, design.watermark);
+    saveMoaMargins(storageKey, design.margins);
+    setSelectedDesignId(null);
+    setSelectedDesignIds([]);
+    setSelectedFieldIds([]);
+    setMoaHistory([]);
+    setMoaFuture([]);
+  };
+
+  const handleApplyTemplatePack = (template: MoaComponentTemplate) => {
+    if (!canEditMoa) return;
+    const pageIndex =
+      moaDesignElements.find((el) => el.id === selectedDesignId)?.pageIndex ?? 0;
+    const placed = placePackOnPage(
+      template.elements,
+      moaDesignElements,
+      pageIndex,
+    );
+    updateMoaDesignElements([...moaDesignElements, ...placed]);
+    if (placed[0]) {
+      setSelectedDesignId(placed[0].id);
+      setSelectedDesignIds(placed.map((el) => el.id));
+    }
+  };
+
+  const handleApplyTemplateFull = (template: MoaComponentTemplate) => {
+    if (!canEditMoa) return;
+    applyMoaDesign(templateToDesignBlob(template));
+  };
+
   const getCurrentMoaTemplate = (): MoaTemplateVariant => ({
     terms_text: resolvedTermsText,
     labels: { ...topLabels },
@@ -1355,9 +1460,13 @@ export default function SettingsPage() {
     unitFields: [...unitFields],
     customFinancialFields: customFinancialFields.map((field) => ({ ...field })),
     customUnitFields: customUnitFields.map((field) => ({ ...field })),
+    design: getCurrentMoaDesign(),
   });
 
-  const applyMoaTemplate = (template: MoaTemplateVariant) => {
+  const applyMoaTemplate = (
+    template: MoaTemplateVariant,
+    storageKey = moaStorageKey,
+  ) => {
     setTermsText(normalizeMoaTerms(template.terms_text));
     setTopLabels((prev) => ({ ...prev, ...template.labels }));
     setLineWidths({ ...template.lineWidths });
@@ -1368,6 +1477,7 @@ export default function SettingsPage() {
     setCustomUnitFields(template.customUnitFields.map((field) => ({ ...field })));
     setNewFinancialField("");
     setNewUnitField("");
+    applyMoaDesign(template.design, storageKey);
   };
 
   const toggleMoaSectionField = <T extends string>(
@@ -1418,7 +1528,10 @@ export default function SettingsPage() {
         : nextCategoryTemplates[nextCategory] ?? nextDefaultTemplate;
 
     setSelectedMoaCategory(nextCategory);
-    applyMoaTemplate(nextTemplate);
+    applyMoaTemplate(
+      nextTemplate,
+      moaDesignStorageKey(moaDocumentType, nextCategory),
+    );
   };
 
   useEffect(() => {
@@ -1456,6 +1569,9 @@ export default function SettingsPage() {
           unitFields: [...currentTemplate.unitFields],
           customFinancialFields: currentTemplate.customFinancialFields.map((field) => ({ ...field })),
           customUnitFields: currentTemplate.customUnitFields.map((field) => ({ ...field })),
+          design: currentTemplate.design
+            ? cloneMoaDesignBlob(currentTemplate.design)
+            : createDefaultMoaDesign(),
         },
       ]),
     );
@@ -2251,15 +2367,7 @@ export default function SettingsPage() {
               <div className="space-y-3 px-3 py-4 sm:px-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                   <button
-                    onClick={() =>
-                      setIsMoaEditMode((v) => {
-                        const next = !v;
-                        if (next) {
-                          setIsMoaLocked(false);
-                        }
-                        return next;
-                      })
-                    }
+                    onClick={() => setIsMoaEditMode((v) => !v)}
                     disabled={!isSuperAdmin}
                     className={`w-full rounded-lg px-4 py-2 text-[11px] font-bold transition-colors sm:w-auto ${isMoaEditMode
                       ? "border border-brand-green bg-brand-green text-white"
@@ -2269,25 +2377,15 @@ export default function SettingsPage() {
                     {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
                   </button>
 
-                  <label className={`inline-flex w-full items-center gap-2 rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 sm:w-auto ${!isSuperAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={isMoaLocked}
-                      onChange={(e) => setIsMoaLocked(e.target.checked)}
-                      disabled={!isSuperAdmin}
-                      className="h-3.5 w-3.5 shrink-0 rounded border-zinc-300 text-brand-green focus:ring-brand-green disabled:cursor-not-allowed"
-                    />
-                    Lock Template (Prevent Editing)
-                  </label>
-
                   <button
-                    onClick={() => {
-                      updateSlipSectionOrder([...DEFAULT_SLIP_SECTION_ORDER]);
-                    }}
-                    disabled={!canEditMoa}
-                    className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-[11px] font-bold text-zinc-700 transition-colors hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed dark:text-zinc-300 sm:w-auto"
+                    type="button"
+                    onClick={() => setShowPrintPreview(true)}
+                    disabled={!isMoaEditMode}
+                    title="Preview MOA (view only)"
+                    aria-label="Preview MOA (view only)"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-sky-700 bg-sky-50 text-sky-800 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Reset Section Layout
+                    <Eye className="h-4 w-4" strokeWidth={2.25} />
                   </button>
 
                   <button
@@ -2397,6 +2495,16 @@ export default function SettingsPage() {
                           onPaletteDragStateChange={setIsPaletteDragging}
                           onAddHeaderField={handleAddHeaderField}
                           onAddElement={handleAddPaletteElement}
+                          currentDesign={getCurrentMoaDesign()}
+                          selectedElements={moaDesignElements.filter((el) =>
+                            selectedDesignIds.length > 0
+                              ? selectedDesignIds.includes(el.id)
+                              : selectedDesignId
+                                ? el.id === selectedDesignId
+                                : false,
+                          )}
+                          onApplyTemplatePack={handleApplyTemplatePack}
+                          onApplyTemplateFull={handleApplyTemplateFull}
                           onUseUploadedImage={(dataUrl) => {
                             if (!selectedDesignId) {
                               const next = createMoaDesignElement("photo", 32, 100, {
@@ -2437,6 +2545,7 @@ export default function SettingsPage() {
                                 key: field.key,
                                 label: topLabels[field.key],
                               }))}
+                              customerOptions={CUSTOMER_TICKET_FIELD_OPTIONS}
                               financialFields={financialFields}
                               unitFields={unitFields}
                               customFinancialFields={customFinancialFields}
@@ -2639,8 +2748,12 @@ export default function SettingsPage() {
                                     overflow: "hidden",
                                   }}
                                 >
-                                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgb(228_228_231_/_0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgb(228_228_231_/_0.45)_1px,transparent_1px)] bg-[size:24px_24px]" />
-                                  <MoaCanvasWatermark settings={moaWatermark} />
+                                  {/* Plain document paper — no grid lines */}
+                                  <MoaCanvasWatermark
+                                    settings={moaWatermark}
+                                    editable={canEditMoa}
+                                    onChange={handleMoaWatermarkChange}
+                                  />
                                   <MoaDesignCanvasLayer
                                     enabled={canEditMoa}
                                     paletteDragging={isPaletteDragging}
@@ -3017,7 +3130,7 @@ export default function SettingsPage() {
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                   <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                    Design tools (Layout / Header / Elements / Text / Fields / Canvas) are frontend-only for now.
+                    Use the eye icon to preview the canvas as it appears in New Pawn. Save or Send to apply to all branches.
                   </p>
 
                   <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
@@ -3055,6 +3168,15 @@ export default function SettingsPage() {
           )}
 
         </div>
+
+        <MoaDesignViewModal
+          isOpen={showPrintPreview}
+          onClose={() => setShowPrintPreview(false)}
+          design={getCurrentMoaDesign()}
+          values={createSampleMoaFieldValues(shopSettings)}
+          title={topLabels.moaTitle || "Memorandum of Agreement Slip"}
+          subtitle="View only — sample data · same layout as New Pawn Transaction"
+        />
 
         {activeTab === "Profile" && (
           <aside className="min-w-0 space-y-4">
