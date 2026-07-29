@@ -284,27 +284,6 @@ class ApiClient {
           lower.includes("service unavailable"));
 
       if (likelyProxyBackendDown) {
-        fetch("http://127.0.0.1:7631/ingest/72ea5a90-3237-42ea-a50b-59d1cc22d712", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Debug-Session-Id": "70f8a0",
-          },
-          body: JSON.stringify({
-            sessionId: "70f8a0",
-            runId: "proxy-detect",
-            hypothesisId: "H1",
-            location: "PMS_frontend/lib/api.ts:parseErrorFromBody",
-            message: "Non-JSON 5xx from /api (rewrite target unreachable)",
-            data: {
-              path,
-              resStatus: status,
-              bodyLen: trimmedText.length,
-              snippet: trimmedText.slice(0, 160),
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
         if (!suppressLogging) {
           this.logApiIssue(
             status,

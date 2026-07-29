@@ -150,10 +150,10 @@ export function TransactionViewModal({
               QR Code
             </p>
             {isAdminOrSuperAdmin ? (
-              (transaction.qrCode || transaction.qr_code) ? (
+              (transaction.qrCode) ? (
                 <div className="mt-4 flex justify-center">
                   <img
-                    src={transaction.qrCode || transaction.qr_code}
+                    src={transaction.qrCode}
                     alt={`${transaction.unit || transaction.transactionNo} QR code`}
                     className="h-48 w-48 rounded-2xl border border-pawn-sidebar/10 bg-white p-3 object-contain shadow-lg"
                   />

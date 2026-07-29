@@ -118,7 +118,6 @@ export function TransactionTable({
 }: TransactionTableProps) {
   const { user } = useAuth();
   const isAdminOrSuperAdmin = user?.role?.toLowerCase().includes("admin");
-  console.log("TransactionTable Auth:", { role: user?.role, isAdminOrSuperAdmin });
 
   // Filter columns based on user role - remove QR Code column for non-admins
   const visibleColumns = isAdminOrSuperAdmin 
@@ -343,14 +342,22 @@ export function TransactionTable({
                       if (col.key === "qrCode") {
                         return (
                           <td key={col.key} className="whitespace-nowrap px-4 py-3 text-center">
-                            {(row.qrCode || row.qr_code) ? (
+                            {row.qrCode ? (
                               <div className="flex justify-center">
                                   <img
-                                    src={row.qrCode || row.qr_code}
+                                    src={row.qrCode}
                                     alt={`${row.unit || row.transactionNo} QR code`}
                                     className="h-10 w-10 rounded-md border border-border-main bg-white p-0.5 object-contain"
-                                    onError={(e) => console.warn("QR Image failed to load:", (row.qrCode || row.qr_code))}
+                                    onError={(e) => {
+                                      const target = e.currentTarget;
+                                      target.style.display = "none";
+                                      const fallback = target.nextElementSibling;
+                                      if (fallback) (fallback as HTMLElement).style.display = "flex";
+                                    }}
                                   />
+                                  <div className="hidden h-10 w-10 items-center justify-center rounded-md border border-border-main bg-surface-secondary text-[9px] font-bold text-text-muted">
+                                    N/A
+                                  </div>
                               </div>
                             ) : (
                               <span className="text-text-muted">-</span>

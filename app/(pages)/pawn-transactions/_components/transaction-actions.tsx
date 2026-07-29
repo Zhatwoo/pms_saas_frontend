@@ -59,7 +59,6 @@ const plusIcon = (
 interface TransactionActionsProps {
   search: string;
   purposeFilter: TransactionPurposeFilter;
-  selectedBranchLabel: string;
   onSearchChange: (value: string) => void;
   onPurposeFilterChange: (value: TransactionPurposeFilter) => void;
   viewMode?: ViewMode;
