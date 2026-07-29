@@ -88,6 +88,10 @@ const balanceIcon = (
   </svg>
 );
 
+interface BranchFinanceSummaryRecord {
+  currentBalance: number;
+}
+
 interface TransactionStatsProps {
   data?: TransactionStatsData;
   isLoading?: boolean;
@@ -104,7 +108,7 @@ export function TransactionStats({ data, isLoading = false, selectedDate }: Tran
   useEffect(() => {
     let active = true;
     if (isSuperAdmin) {
-      api.get<any[]>('/branch-finance/summary')
+      api.get<BranchFinanceSummaryRecord[]>('/branch-finance/summary')
         .then((res) => {
            if (!active) return;
            const total = res.reduce((acc, curr) => acc + (curr.currentBalance || 0), 0);

@@ -1,9 +1,12 @@
 // hooks/useMoaKeyboard.ts
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type UseMoaKeyboardParams = {
+  enabled?: boolean;
+  /** When true, Delete/Backspace apply to canvas selection even if focus is in a page-doc textarea. */
+  canvasSelectionActive?: boolean;
   onDelete?: () => void;
   onCopy?: () => void;
   onCut?: () => void;
@@ -11,15 +14,20 @@ type UseMoaKeyboardParams = {
   onDuplicate?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onSelectAll?: () => void;
+  onClearSelection?: () => void;
+  onToggleBold?: () => void;
+  onToggleItalic?: () => void;
+  onToggleUnderline?: () => void;
 };
 
 /**
  * Registers global keyboard shortcuts for the MOA editor.
- * Shortcuts: Delete, Ctrl+Z (Undo), Ctrl+Y (Redo), Ctrl+C (Copy), Ctrl+X (Cut),
- * Ctrl+V (Paste), Ctrl+D (Duplicate).
- * The handler ignores events originating from input/textarea/contenteditable elements.
+ * Handlers are read from a ref so the listener is registered once (avoids rebind lag).
  */
 export function useMoaKeyboard({
+  enabled = true,
+  canvasSelectionActive = false,
   onDelete,
   onCopy,
   onCut,
@@ -27,56 +35,152 @@ export function useMoaKeyboard({
   onDuplicate,
   onUndo,
   onRedo,
+  onSelectAll,
+  onClearSelection,
+  onToggleBold,
+  onToggleItalic,
+  onToggleUnderline,
 }: UseMoaKeyboardParams) {
+  const handlersRef = useRef({
+    enabled,
+    canvasSelectionActive,
+    onDelete,
+    onCopy,
+    onCut,
+    onPaste,
+    onDuplicate,
+    onUndo,
+    onRedo,
+    onSelectAll,
+    onClearSelection,
+    onToggleBold,
+    onToggleItalic,
+    onToggleUnderline,
+  });
+  handlersRef.current = {
+    enabled,
+    canvasSelectionActive,
+    onDelete,
+    onCopy,
+    onCut,
+    onPaste,
+    onDuplicate,
+    onUndo,
+    onRedo,
+    onSelectAll,
+    onClearSelection,
+    onToggleBold,
+    onToggleItalic,
+    onToggleUnderline,
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isEditable =
-        target.isContentEditable ||
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA";
-      if (isEditable) return;
+      const h = handlersRef.current;
+      if (!h.enabled) return;
 
-      // Delete or Backspace key without modifiers
-      if ((e.key === "Delete" || e.key === "Backspace") && !e.ctrlKey && !e.metaKey) {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const tag = target.tagName;
+      const isPageDocTextarea =
+        tag === "TEXTAREA" && target.dataset.moaPageDoc === "true";
+      const isOtherEditable =
+        target.isContentEditable ||
+        tag === "INPUT" ||
+        tag === "SELECT" ||
+        (tag === "TEXTAREA" && !isPageDocTextarea);
+
+      // Never steal shortcuts from settings inputs / other forms
+      if (isOtherEditable) return;
+
+      const mod = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      // Ctrl/Cmd+A — select all text across pages (works inside page-doc)
+      if (mod && key === "a") {
         e.preventDefault();
-        onDelete?.();
+        e.stopPropagation();
+        h.onSelectAll?.();
         return;
       }
 
-      if (e.ctrlKey) {
-        switch (e.key.toLowerCase()) {
-          case "z":
-            e.preventDefault();
-            onUndo?.();
-            break;
-          case "y":
-            e.preventDefault();
-            onRedo?.();
-            break;
-          case "c":
-            e.preventDefault();
-            onCopy?.();
-            break;
-          case "x":
-            e.preventDefault();
-            onCut?.();
-            break;
-          case "v":
-            e.preventDefault();
-            onPaste?.();
-            break;
-          case "d":
-            e.preventDefault();
-            onDuplicate?.();
-            break;
-          default:
-            break;
+      // Formatting shortcuts work in page-doc and on canvas selection
+      if (mod && key === "b") {
+        e.preventDefault();
+        h.onToggleBold?.();
+        return;
+      }
+      if (mod && key === "i") {
+        e.preventDefault();
+        h.onToggleItalic?.();
+        return;
+      }
+      if (mod && key === "u") {
+        e.preventDefault();
+        h.onToggleUnderline?.();
+        return;
+      }
+
+      // Escape always clears selection
+      if (e.key === "Escape") {
+        h.onClearSelection?.();
+        return;
+      }
+
+      // While typing in a single page-doc (not a canvas multi-selection), let native edit keys work
+      if (isPageDocTextarea && !h.canvasSelectionActive) {
+        if (mod && (key === "z" || key === "y")) {
+          // still allow undo/redo while typing
+        } else {
+          return;
         }
+      }
+
+      if ((e.key === "Delete" || e.key === "Backspace") && !mod) {
+        if (isPageDocTextarea && !h.canvasSelectionActive) return;
+        e.preventDefault();
+        h.onDelete?.();
+        return;
+      }
+
+      if (!mod) return;
+
+      switch (key) {
+        case "z":
+          e.preventDefault();
+          if (e.shiftKey) h.onRedo?.();
+          else h.onUndo?.();
+          break;
+        case "y":
+          e.preventDefault();
+          h.onRedo?.();
+          break;
+        case "c":
+          if (isPageDocTextarea && !h.canvasSelectionActive) return;
+          e.preventDefault();
+          h.onCopy?.();
+          break;
+        case "x":
+          if (isPageDocTextarea && !h.canvasSelectionActive) return;
+          e.preventDefault();
+          h.onCut?.();
+          break;
+        case "v":
+          if (isPageDocTextarea && !h.canvasSelectionActive) return;
+          e.preventDefault();
+          h.onPaste?.();
+          break;
+        case "d":
+          e.preventDefault();
+          h.onDuplicate?.();
+          break;
+        default:
+          break;
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onDelete, onCopy, onCut, onPaste, onDuplicate, onUndo, onRedo]);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, []);
 }

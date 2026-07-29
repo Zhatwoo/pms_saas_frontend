@@ -70,7 +70,7 @@ export function NotificationsPanel({ notifications = [] }: NotificationsPanelPro
                 >
                   {infoIcon}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-text-primary">
+                    <p className="text-sm font-medium text-text-primary break-all">
                       {item.message}
                     </p>
                     <p className="mt-0.5 text-xs text-text-muted">{item.time}</p>

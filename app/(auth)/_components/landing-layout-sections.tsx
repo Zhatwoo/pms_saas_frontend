@@ -1,36 +1,105 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 type ScrollHandler = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => void;
 
-const bentoFeatures = [
+const withQuickPawn = [
+  "Organize customer information",
+  "Manage pawn transactions",
+  "Track pawned items",
+  "Monitor loans and payments",
+  "Manage important transaction details",
+  "Access transaction history",
+  "Generate business reports",
+  "Monitor daily operations",
+  "Manage your business information in one centralized system",
+];
+
+const problemPoints = [
+  "Who your customers are",
+  "What items have been pawned",
+  "How much was loaned",
+  "When payments are due",
+  "Which transactions have been renewed",
+  "Which items have been redeemed",
+  "What transactions have been completed",
+  "What is happening across your business",
+];
+
+const manualRisks = [
+  "Time-consuming recordkeeping",
+  "Difficulty finding transaction information",
+  "Disorganized customer records",
+  "Increased risk of human error",
+  "Limited visibility over business operations",
+  "Difficulty monitoring multiple transactions",
+  "Challenges when the business begins to grow",
+];
+
+const howItHelps = [
   {
-    title: "Fair Buy-Back Offers",
-    desc: "Market-based pricing with clear explanations — no lowball games.",
-    className: "md:col-span-2 md:row-span-1 min-h-[240px] md:min-h-[280px]",
-    image: "/one.png",
+    title: "Manage Your Customers",
+    desc: "Keep customer information organized and easily accessible when you need it.",
   },
   {
-    title: "What We Buy",
-    desc: "Phones, laptops, consoles, cameras, and more.",
-    className: "min-h-[220px]",
-    image: "/two.png",
+    title: "Manage Your Pawn Transactions",
+    desc: "Create, monitor, and manage pawn transactions through a more structured process.",
   },
   {
-    title: "Same-Day Response",
-    desc: "Submit in the morning, get an offer by afternoon.",
-    className: "min-h-[220px]",
-    image: "/three.png",
+    title: "Track Pawned Items",
+    desc: "Keep important item information connected to its corresponding transaction and customer record.",
   },
   {
-    title: "Secure Hand-off",
-    desc: "Transparent deals with protected payment options.",
-    className: "min-h-[220px]",
-    image: "/itemsweaccept.png",
+    title: "Monitor Loans and Payments",
+    desc: "Keep track of important loan details, payments, balances, and transaction information.",
   },
+  {
+    title: "Stay on Top of Important Dates",
+    desc: "Monitor important transaction dates and details to help prevent information from being overlooked.",
+  },
+  {
+    title: "Review Transaction History",
+    desc: "Access organized transaction records for easier monitoring, checking, and reference.",
+  },
+  {
+    title: "Understand Your Operations",
+    desc: "Use reports and organized business information to gain better visibility into your pawnshop.",
+  },
+];
+
+const benefits = [
+  {
+    title: "Stay Organized",
+    desc: "Keep customer, item, loan, payment, and transaction information in one centralized system.",
+  },
+  {
+    title: "Reduce Human Error",
+    desc: "A more structured system can help reduce mistakes caused by disorganized or inconsistent recordkeeping.",
+  },
+  {
+    title: "Improved Visibility",
+    desc: "Get a clearer view of important business information and daily pawnshop operations.",
+  },
+  {
+    title: "Work More Efficiently",
+    desc: "Help your team manage everyday operations with a more organized workflow.",
+  },
+  {
+    title: "Prepare for Growth",
+    desc: "Use a management system that can support your pawnshop as your business continues to grow.",
+  },
+];
+
+const cloudPoints = [
+  "Centralized access to business information",
+  "Easier system management",
+  "Reduced dependence on local files and manual records",
+  "More convenient access for authorized users",
+  "A system designed to support modern business operations",
 ];
 
 const subscriptionPlans = [
@@ -87,175 +156,455 @@ const subscriptionPlans = [
   },
 ];
 
+const faqs = [
+  {
+    q: "What is QuickPawn?",
+    a: "QuickPawn is a Pawnshop Management System designed to help pawnshops manage their customers, pawn transactions, items, loans, payments, records, and daily business operations through one centralized platform.",
+  },
+  {
+    q: "Who can use QuickPawn?",
+    a: "QuickPawn is designed for pawnshop owners, managers, employees, and businesses that want a more organized way to manage pawnshop operations.",
+  },
+  {
+    q: "Is QuickPawn cloud-based?",
+    a: "QuickPawn is designed as a SaaS-based platform, allowing users to access the system through an online environment. Specific access and subscription details may depend on the selected plan.",
+  },
+  {
+    q: "How much is QuickPawn?",
+    a: "Pricing depends on the plan and features your pawnshop needs. See the Pricing section above, or contact us for a custom quote.",
+  },
+  {
+    q: "Can QuickPawn support multiple branches?",
+    a: "The system can be designed to support businesses with multiple branches, depending on the available subscription plan and system configuration.",
+  },
+  {
+    q: "Can I manage customer information in QuickPawn?",
+    a: "QuickPawn helps organize customer information so authorized users can access important records more efficiently.",
+  },
+  {
+    q: "Can I generate reports in QuickPawn?",
+    a: "QuickPawn includes reporting and monitoring capabilities designed to help businesses gain better visibility into their operations.",
+  },
+  {
+    q: "How can I get started?",
+    a: `Click "Try QuickPawn Now" or "Request a Demo" to begin exploring how QuickPawn can help improve your pawnshop operations. Or contact us by sending a message to ${BRAND_CONFIG.email}.`,
+  },
+  {
+    q: "Is QuickPawn right for my pawnshop?",
+    a: "If you want to spend less time dealing with scattered records and more time managing your business, QuickPawn may be the right solution for you.",
+  },
+];
+
+/* ── Mini dashboard mock building block (reused across bento cards) ── */
+function MiniDashboardCard({
+  label,
+  rows,
+}: {
+  label: string;
+  rows: { name: string; value: string; tone?: "gold" | "white" }[];
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-black/5 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <div className="flex items-center gap-1.5 border-b border-black/5 bg-[#faf9f6] px-3 py-2">
+        <span className="h-2 w-2 rounded-full bg-black/10" />
+        <span className="h-2 w-2 rounded-full bg-black/10" />
+        <span className="h-2 w-2 rounded-full bg-black/10" />
+        <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-wider text-black/35">{label}</span>
+      </div>
+      <div className="space-y-2 p-3">
+        {rows.map((row) => (
+          <div key={row.name} className="flex items-center justify-between rounded-lg bg-[#f6f5f2] px-3 py-2">
+            <span className="text-[11px] font-medium text-brand-green/70">{row.name}</span>
+            <span
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                row.tone === "gold" ? "bg-brand-gold/20 text-brand-green" : "bg-brand-green text-white"
+              }`}
+            >
+              {row.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function LandingHero({
   onScroll,
-  heroSrc,
 }: {
   onScroll: ScrollHandler;
-  heroSrc: string;
 }) {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section id="home" className="relative min-h-[100svh] overflow-hidden bg-[#f4f2ee] pt-16 uqhd:pt-20 uhd:pt-24">
-      <div className="absolute inset-0" aria-hidden>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={heroSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#f4f2ee] via-[#f4f2ee]/92 to-[#f4f2ee]/55" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#f4f2ee] via-transparent to-[#f4f2ee]/40" />
+    <section id="home" className="relative overflow-hidden bg-[#f4f2ee] pt-32 pb-20 sm:pt-36 md:pt-40">
+      <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+        <motion.p
+          className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-green/60"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {BRAND_CONFIG.tagline}
+        </motion.p>
+        <motion.h1
+          className="font-display mt-5 text-[clamp(2.4rem,6vw,4.25rem)] font-bold leading-[1.05] tracking-tight text-brand-green"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+        >
+          Run Your Pawnshop{" "}
+          <span className="italic text-brand-gold">Smarter</span> with {BRAND_CONFIG.shortCompanyName}
+        </motion.h1>
+        <motion.p
+          className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-brand-green/65 sm:text-lg"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        >
+          An all-in-one platform designed to help you manage customers, pawn transactions, items,
+          loans, payments, and daily operations in one organized system — spend less time on
+          scattered records and more time growing your business.
+        </motion.p>
+        <motion.div
+          className="mt-9 flex flex-wrap items-center justify-center gap-3"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <a
+            href="#contact-us"
+            onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+            className="inline-flex items-center justify-center rounded-full bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
+          >
+            Try {BRAND_CONFIG.shortCompanyName} Now
+          </a>
+          <a
+            href="#pricing"
+            onClick={(e) => onScroll(e, "pricing", "PRICING")}
+            className="inline-flex items-center justify-center rounded-full border border-brand-green/20 bg-white px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-brand-green transition hover:border-brand-green"
+          >
+            View pricing
+          </a>
+        </motion.div>
       </div>
 
-      <div className="landing-container-wide relative z-10 grid min-h-[calc(100svh-4rem)] items-center gap-10 px-4 py-14 sm:px-6 md:px-12 lg:grid-cols-2 lg:gap-12 lg:py-20 uqhd:min-h-[calc(100svh-5rem)] uqhd:gap-16 uqhd:py-24 uhd:gap-24 uhd:py-32">
-        <motion.div
-          className="max-w-xl uqhd:max-w-2xl uhd:max-w-3xl"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-green/70 uqhd:text-sm uhd:text-base">
-            {BRAND_CONFIG.tagline}
-          </p>
-          <h1 className="font-display mt-4 text-[clamp(2.4rem,5vw,3.75rem)] font-bold leading-[1.08] tracking-tight text-brand-green uqhd:text-[4.5rem] uhd:text-[6rem]">
-            The operating system for{" "}
-            <span className="italic text-brand-gold">modern buy-back</span>.
-          </h1>
-          <p className="mt-5 max-w-lg text-base leading-relaxed text-brand-green/70 sm:text-lg uqhd:max-w-xl uqhd:text-xl uhd:max-w-2xl uhd:text-2xl">
-            Fair cash for gadgets, jewelry, and pre-loved valuables. Send photos, get a clear offer,
-            and walk away with cash — fast, transparent, and built for real people.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3 uqhd:mt-10 uqhd:gap-4 uhd:mt-12">
-            <a
-              href="#pricing"
-              onClick={(e) => onScroll(e, "pricing", "PRICING")}
-              className="inline-flex items-center justify-center rounded-md bg-brand-gold px-6 py-3 text-xs font-black uppercase tracking-wider text-brand-green transition hover:brightness-105 uqhd:px-8 uqhd:py-3.5 uqhd:text-sm uhd:px-10 uhd:py-4 uhd:text-base"
-            >
-              View pricing
-            </a>
-            <a
-              href="#items-for-sale"
-              onClick={(e) => onScroll(e, "items-for-sale", "ITEMS FOR SALE")}
-              className="inline-flex items-center justify-center rounded-md border border-brand-green/25 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-wider text-brand-green backdrop-blur-sm transition hover:border-brand-green uqhd:px-8 uqhd:py-3.5 uqhd:text-sm uhd:px-10 uhd:py-4 uhd:text-base"
-            >
-              Explore items
-            </a>
+      {/* ── Bento grid of dashboard mock cards ── */}
+      <motion.div
+        className="reveal-on-scroll relative mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-4 px-4 sm:px-6 md:grid-cols-2 md:gap-5"
+        initial={prefersReducedMotion ? false : { opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <div className="rounded-2xl bg-gradient-to-br from-[#eef0e8] to-[#dfe6d6] p-6 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Every transaction, tracked</p>
+          <h3 className="font-display mt-2 text-xl font-bold text-brand-green">
+            One system for every pawn transaction
+          </h3>
+          <div className="mt-5">
+            <MiniDashboardCard
+              label={`${BRAND_CONFIG.shortCompanyName} · Transactions`}
+              rows={[
+                { name: "New pawn — J. Santos", value: "Active", tone: "gold" },
+                { name: "Renewal — M. Cruz", value: "Due today" },
+                { name: "Redemption — A. Reyes", value: "Completed", tone: "gold" },
+              ]}
+            />
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="relative mx-auto w-full max-w-lg lg:max-w-none"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 32, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {/* Laptop mock */}
-          <div className="relative mx-auto w-full max-w-[520px] uqhd:max-w-[720px] uhd:max-w-[960px]">
-            <div className="rounded-t-xl border border-brand-green/15 bg-[#1a1f1c] p-2 shadow-2xl shadow-brand-green/20 uqhd:rounded-t-2xl uqhd:p-3 uhd:p-4">
-              <div className="overflow-hidden rounded-lg bg-gradient-to-br from-brand-green to-[#083528] uqhd:rounded-xl">
-                <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2 uqhd:px-4 uqhd:py-3">
-                  <span className="h-2 w-2 rounded-full bg-red-400/80 uqhd:h-2.5 uqhd:w-2.5" />
-                  <span className="h-2 w-2 rounded-full bg-brand-gold/80 uqhd:h-2.5 uqhd:w-2.5" />
-                  <span className="h-2 w-2 rounded-full bg-emerald-400/80 uqhd:h-2.5 uqhd:w-2.5" />
-                  <span className="ml-2 text-[10px] font-medium text-white/40 uqhd:text-xs uhd:text-sm">
-                    {BRAND_CONFIG.shortCompanyName} Dashboard
-                  </span>
-                </div>
-                <div className="grid gap-3 p-4 sm:grid-cols-3 uqhd:gap-4 uqhd:p-6 uhd:gap-5 uhd:p-8">
-                  {["Offers", "Inventory", "Branches"].map((label, i) => (
-                    <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-3 uqhd:p-4 uhd:rounded-xl uhd:p-5">
-                      <p className="text-[10px] uppercase tracking-wider text-brand-gold/80 uqhd:text-xs uhd:text-sm">{label}</p>
-                      <p className="mt-1 text-lg font-black text-white uqhd:text-2xl uhd:text-3xl">{["128", "64", "12"][i]}</p>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10 uqhd:h-2">
-                        <div
-                          className="h-full rounded-full bg-brand-gold"
-                          style={{ width: `${[72, 54, 88][i]}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="px-4 pb-4 uqhd:px-6 uqhd:pb-6 uhd:px-8 uhd:pb-8">
-                  <div className="h-24 rounded-lg border border-white/10 bg-white/5 p-3 uqhd:h-36 uhd:h-48">
-                    <div className="flex h-full items-end gap-1">
-                      {[40, 65, 45, 80, 55, 90, 70, 85].map((h, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 rounded-sm bg-brand-gold/80"
-                          style={{ height: `${h}%` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mx-auto h-3 w-[88%] rounded-b-md bg-[#2a2f2c] uqhd:h-4" />
-            <div className="mx-auto h-1.5 w-[60%] rounded-b-sm bg-[#3a3f3c] uqhd:h-2" />
+        <div className="rounded-2xl bg-gradient-to-br from-[#f2ecd9] to-[#e7dcb8] p-6 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Complete visibility</p>
+          <h3 className="font-display mt-2 text-xl font-bold text-brand-green">
+            Every item, connected to its record
+          </h3>
+          <div className="mt-5">
+            <MiniDashboardCard
+              label={`${BRAND_CONFIG.shortCompanyName} · Inventory`}
+              rows={[
+                { name: "Gold ring 18k — Item #2291", value: "In vault" },
+                { name: "Laptop — Item #2294", value: "Released", tone: "gold" },
+                { name: "Watch — Item #2296", value: "Pending" },
+              ]}
+            />
           </div>
+        </div>
 
-          {/* Floating metrics card */}
-          <motion.div
-            className="absolute -bottom-2 left-0 right-auto w-[200px] rounded-xl border border-brand-green/10 bg-white p-4 shadow-xl shadow-brand-green/10 sm:left-[-12px] sm:w-[220px] uqhd:w-[280px] uqhd:p-5 uhd:w-[340px] uhd:p-6"
-            animate={prefersReducedMotion ? undefined : { y: [0, -6, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-green/45 uqhd:text-xs">
-              Live metrics
-            </p>
-            <p className="mt-2 text-2xl font-black text-brand-green uqhd:text-3xl uhd:text-4xl">₱2.4M</p>
-            <p className="text-xs text-brand-green/55 uqhd:text-sm">Paid to sellers this month</p>
-            <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-green/8 px-2 py-1 text-[10px] font-bold text-brand-green uqhd:text-xs">
-              <span className="text-emerald-600">↑ 18%</span> vs last month
+        <div className="rounded-2xl bg-gradient-to-br from-[#e9eef2] to-[#d3dfe8] p-6 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Never miss a due date</p>
+          <h3 className="font-display mt-2 text-xl font-bold text-brand-green">
+            Loans and payments, always in view
+          </h3>
+          <div className="mt-5">
+            <MiniDashboardCard
+              label={`${BRAND_CONFIG.shortCompanyName} · Loans`}
+              rows={[
+                { name: "Balance due — Branch 1", value: "₱48,200" },
+                { name: "Payments this week", value: "₱312,900", tone: "gold" },
+                { name: "Overdue accounts", value: "3" },
+              ]}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-gradient-to-br from-[#eef0e8] to-[#dbe4cd] p-6 md:p-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">One centralized view</p>
+          <h3 className="font-display mt-2 text-xl font-bold text-brand-green">
+            Reports that explain your business
+          </h3>
+          <div className="mt-5">
+            <MiniDashboardCard
+              label={`${BRAND_CONFIG.shortCompanyName} · Reports`}
+              rows={[
+                { name: "Daily transactions", value: "128", tone: "gold" },
+                { name: "Active branches", value: "5" },
+                { name: "Monthly growth", value: "+18%", tone: "gold" },
+              ]}
+            />
+          </div>
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
+export function LandingIntro() {
+  return (
+    <section id="product" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-5xl">
+        <div className="reveal-on-scroll text-center">
+          <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Meet {BRAND_CONFIG.shortCompanyName}</p>
+          <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
+            A Smarter Way to Manage Your Pawnshop
+          </h2>
+          <p className="mx-auto mt-5 max-w-3xl text-brand-green/65">
+            Running a pawnshop requires accuracy, organization, and complete visibility over every
+            transaction. From customer information and pawned items to loans, payments,
+            redemptions, renewals, and daily operations, every detail matters. {BRAND_CONFIG.shortCompanyName}{" "}
+            brings essential pawnshop processes into one centralized platform, helping you organize
+            your records, monitor transactions, and manage your business more efficiently — instead
+            of relying on scattered files, manual records, and disconnected processes.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-14 grid gap-x-8 gap-y-3 md:grid-cols-3">
+          {withQuickPawn.map((item, i) => (
+            <div
+              key={item}
+              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} flex items-start gap-3 rounded-xl border border-brand-green/10 bg-[#f9f8f5] px-4 py-3`}
+            >
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-green text-brand-gold">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              </span>
+              <span className="text-sm font-semibold text-brand-green/85">{item}</span>
             </div>
-          </motion.div>
-        </motion.div>
+          ))}
+        </div>
+
+        <p className="reveal-on-scroll mt-10 text-center font-display text-xl font-bold italic text-brand-green md:text-2xl">
+          One System. Better Visibility. Smarter Operations.
+        </p>
       </div>
     </section>
   );
 }
 
-export function LandingBentoFeatures({ onScroll }: { onScroll: ScrollHandler }) {
+export function LandingProblemSolution({ onScroll }: { onScroll: ScrollHandler }) {
   return (
-    <section id="categories" className="landing-section-pad bg-white">
-      <div className="landing-container text-center">
-        <p className="text-sm font-bold uppercase tracking-widest text-brand-gold uqhd:text-base uhd:text-lg">Unified experience</p>
-        <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl uqhd:text-6xl uhd:text-7xl">
-          Everything you need to sell with confidence
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-brand-green/60 uqhd:max-w-3xl uqhd:text-xl uhd:max-w-4xl uhd:text-2xl">
-          From first photo to final payout — {BRAND_CONFIG.shortCompanyName} keeps the process simple,
-          fair, and transparent.
-        </p>
-      </div>
+    <section id="why-us" className="bg-brand-green px-4 py-20 text-white sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-5xl">
+        <div className="reveal-on-scroll text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold">The problem</p>
+          <h2 className="font-display mt-3 text-3xl font-bold leading-tight md:text-4xl lg:text-5xl">
+            Running a pawnshop comes with a lot to manage
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70">
+            Every day, pawnshop owners and employees deal with important information and
+            transactions. You need to keep track of:
+          </p>
+        </div>
 
-      <div className="landing-container mt-12 grid gap-4 md:grid-cols-3 md:grid-rows-2 uqhd:mt-16 uqhd:gap-6 uhd:mt-20 uhd:gap-8">
-        {bentoFeatures.map((feature, index) => (
-          <a
-            key={feature.title}
-            href={index === 1 ? "#categories" : "#pricing"}
-            onClick={(e) =>
-              onScroll(
-                e,
-                index === 1 ? "categories" : "pricing",
-                index === 1 ? "WHAT WE BUY" : "PRICING"
-              )
-            }
-            className={`group relative overflow-hidden rounded-2xl uqhd:rounded-3xl ${feature.className} ${
-              index === 0 ? "md:col-span-2" : ""
-            } ${index === 1 ? "md:col-span-1 md:row-span-2 md:min-h-full" : ""} uqhd:min-h-[320px] uhd:min-h-[420px]`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={feature.image}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-green via-brand-green/50 to-brand-green/20" />
-            <div className="absolute inset-x-0 bottom-0 p-5 text-left md:p-6 uqhd:p-8 uhd:p-10">
-              <h3 className="font-display text-xl font-bold text-white md:text-2xl uqhd:text-3xl uhd:text-4xl">{feature.title}</h3>
-              <p className="mt-1 text-sm text-white/75 uqhd:text-base uhd:text-lg">{feature.desc}</p>
+        <div className="mx-auto mt-10 grid gap-3 sm:grid-cols-2">
+          {problemPoints.map((p, i) => (
+            <div
+              key={p}
+              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3`}
+            >
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gold" />
+              <span className="text-sm text-white/85">{p}</span>
             </div>
+          ))}
+        </div>
+
+        <p className="reveal-on-scroll mt-10 text-center text-sm leading-relaxed text-white/70">
+          When information is difficult to organize, daily operations can become slower and more
+          complicated. Manual processes can lead to:
+        </p>
+        <div className="reveal-on-scroll mt-4 flex flex-wrap justify-center gap-2">
+          {manualRisks.map((r) => (
+            <span
+              key={r}
+              className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/75"
+            >
+              {r}
+            </span>
+          ))}
+        </div>
+
+        <div className="reveal-on-scroll reveal-delay-200 mt-14 rounded-2xl bg-white p-8 text-center shadow-2xl md:p-12">
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold">
+            The {BRAND_CONFIG.shortCompanyName} solution
+          </p>
+          <h3 className="font-display mt-3 text-2xl font-bold leading-tight text-brand-green md:text-3xl">
+            Bring your essential operations together
+          </h3>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-brand-green/65">
+            {BRAND_CONFIG.shortCompanyName} helps bring your essential pawnshop operations together
+            in one centralized management system. From the first customer transaction to the final
+            redemption, {BRAND_CONFIG.shortCompanyName} helps you manage your pawnshop journey with
+            greater organization and confidence.
+          </p>
+          <a
+            href="#contact-us"
+            onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+            className="mt-7 inline-flex items-center justify-center rounded-full bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
+          >
+            See how it works
           </a>
-        ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function LandingHowItHelps() {
+  return (
+    <section id="how-it-helps" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-6xl">
+        <div className="reveal-on-scroll text-center">
+          <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Centralized platform</p>
+          <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
+            How {BRAND_CONFIG.shortCompanyName} Helps Your Business
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-brand-green/60">
+            Instead of using multiple tools to manage different parts of your business,{" "}
+            {BRAND_CONFIG.shortCompanyName} provides a centralized system that helps connect your
+            important business information.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {howItHelps.map((item, i) => (
+            <div
+              key={item.title}
+              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} rounded-2xl bg-[#f9f8f5] p-6 transition hover:bg-brand-gold/10`}
+            >
+              <h3 className="font-display text-lg font-bold text-brand-green">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-brand-green/65">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function LandingStats() {
+  const stats = [
+    { value: "1", label: "Centralized system for every branch" },
+    { value: "24/7", label: "Cloud-based access, anytime" },
+    { value: "100%", label: "Visibility over daily operations" },
+  ];
+
+  return (
+    <section className="bg-[#0c0f0c] px-4 py-20 text-white sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-5xl text-center">
+        <p className="reveal-on-scroll text-sm font-bold uppercase tracking-widest text-brand-gold">
+          No more scattered records
+        </p>
+        <h2 className="reveal-on-scroll font-display mt-3 text-4xl font-bold leading-tight sm:text-5xl md:text-6xl">
+          One System. <span className="text-brand-gold">Better Visibility.</span>
+        </h2>
+        <p className="reveal-on-scroll mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-white/60">
+          {BRAND_CONFIG.shortCompanyName} is where pawnshop owners bring their operations together —
+          connect your branches, organize your records, and monitor your business with confidence.
+        </p>
+
+        <div className="mx-auto mt-14 grid gap-8 sm:grid-cols-3">
+          {stats.map((stat, i) => (
+            <div key={stat.label} className={`reveal-on-scroll reveal-delay-${(i + 1) * 150}`}>
+              <p className="font-display text-5xl font-black text-brand-gold sm:text-6xl">{stat.value}</p>
+              <p className="mt-3 text-sm text-white/60">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function LandingBenefits() {
+  return (
+    <section id="benefits" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-6xl">
+        <div className="reveal-on-scroll text-center">
+          <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Benefits</p>
+          <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
+            Why Do Pawnshop Owners Choose a Smarter Way?
+          </h2>
+        </div>
+
+        <div className="mx-auto mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+          {benefits.map((b, i) => (
+            <div
+              key={b.title}
+              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} rounded-2xl bg-[#f9f8f5] p-6`}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-brand-gold">
+                <span className="font-display text-sm font-black">{String(i + 1).padStart(2, "0")}</span>
+              </div>
+              <h3 className="mt-4 font-display text-base font-bold text-brand-green">{b.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-brand-green/60">{b.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function LandingCloud() {
+  return (
+    <section id="cloud" className="relative overflow-hidden bg-[#f4f2ee] px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-2 lg:items-center">
+        <div className="reveal-on-scroll">
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold">Cloud-based SaaS</p>
+          <h2 className="font-display mt-3 text-3xl font-bold leading-tight text-brand-green md:text-4xl">
+            Access Your Pawnshop Management System Wherever Your Business Takes You
+          </h2>
+          <p className="mt-4 text-sm leading-relaxed text-brand-green/65">
+            {BRAND_CONFIG.shortCompanyName} is offered as a cloud-based Software-as-a-Service
+            platform, allowing your business to access the system through an online environment
+            without the need to manage complicated infrastructure on your own.
+          </p>
+        </div>
+        <div className="reveal-on-scroll reveal-delay-200 rounded-2xl bg-brand-green p-8 text-white shadow-xl">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-gold">With a cloud-based system, you get:</p>
+          <ul className="mt-5 space-y-3">
+            {cloudPoints.map((p) => (
+              <li key={p} className="flex items-start gap-3 text-sm text-white/85">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gold text-brand-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                </span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
@@ -263,10 +612,10 @@ export function LandingBentoFeatures({ onScroll }: { onScroll: ScrollHandler }) 
 
 export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler }) {
   return (
-    <section id="pricing" className="landing-section-pad bg-[#f4f2ee]">
-      <div className="landing-container text-center">
-        <p className="text-sm font-bold uppercase tracking-widest text-brand-gold uqhd:text-base uhd:text-lg">Pricing</p>
-        <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl uqhd:text-6xl uhd:text-7xl">
+    <section id="pricing" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-6xl text-center reveal-on-scroll">
+        <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Pricing</p>
+        <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
           Simple, transparent pricing
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-brand-green/60 uqhd:max-w-2xl uqhd:text-xl uhd:max-w-3xl uhd:text-2xl">
@@ -274,14 +623,14 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
         </p>
       </div>
 
-      <div className="landing-container mt-12 grid gap-6 md:grid-cols-3 md:items-stretch uqhd:mt-16 uqhd:gap-8 uhd:mt-20 uhd:gap-10">
-        {subscriptionPlans.map((plan) => (
+      <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-3 md:items-stretch">
+        {subscriptionPlans.map((plan, i) => (
           <div
             key={plan.name}
-            className={`relative flex flex-col rounded-2xl border p-7 shadow-sm uqhd:rounded-3xl uqhd:p-9 uhd:p-11 ${
+            className={`reveal-on-scroll reveal-delay-${Math.min(500, i * 150) || 100} relative flex flex-col rounded-2xl border p-7 ${
               plan.popular
                 ? "border-brand-green bg-brand-green text-white shadow-xl shadow-brand-green/25 md:scale-[1.03]"
-                : "border-brand-green/10 bg-white text-brand-green"
+                : "border-brand-green/10 bg-[#f9f8f5] text-brand-green"
             }`}
           >
             {plan.popular && (
@@ -314,7 +663,7 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
             <a
               href={`#${plan.ctaTarget}`}
               onClick={(e) => onScroll(e, plan.ctaTarget, plan.ctaNav)}
-              className={`mt-8 block rounded-md py-3 text-center text-xs font-black uppercase tracking-wider transition uqhd:mt-10 uqhd:py-3.5 uqhd:text-sm uhd:py-4 uhd:text-base ${
+              className={`mt-8 block rounded-full py-3 text-center text-xs font-black uppercase tracking-wider transition ${
                 plan.popular
                   ? "bg-brand-gold text-brand-green hover:brightness-105"
                   : "border border-brand-green/20 text-brand-green hover:bg-brand-green hover:text-white"
@@ -329,73 +678,16 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
   );
 }
 
-export function LandingSplitSection({ onScroll }: { onScroll: ScrollHandler }) {
-  return (
-    <section id="why-us" className="grid lg:grid-cols-2">
-      <div className="flex flex-col justify-center bg-white px-6 py-16 sm:px-10 md:px-16 md:py-24 lg:px-20 uqhd:px-24 uqhd:py-32 uhd:px-32 uhd:py-40">
-        <div className="mx-auto w-full max-w-xl uqhd:max-w-2xl uhd:max-w-3xl">
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold uqhd:text-sm uhd:text-base">
-            Next-gen service
-          </p>
-          <h2 className="font-display mt-4 text-3xl font-bold leading-tight text-brand-green md:text-4xl uqhd:text-5xl uhd:text-6xl">
-            Built for the speed of cash
-          </h2>
-          <p className="mt-4 max-w-md text-brand-green/65 uqhd:max-w-lg uqhd:text-lg uhd:max-w-xl uhd:text-xl">
-            We designed every step around speed and trust — so you spend less time waiting and more
-            time getting paid fairly.
-          </p>
-          <ul className="mt-8 space-y-4 uqhd:mt-10 uqhd:space-y-5">
-            {[
-              { title: "Honest valuations", desc: "Offers based on real market value." },
-              { title: "Protected hand-off", desc: "Clear process from drop-off to payout." },
-            ].map((item) => (
-              <li key={item.title} className="flex gap-3">
-                <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-green text-brand-gold uqhd:h-10 uqhd:w-10">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4 uqhd:h-5 uqhd:w-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
-                </span>
-                <div>
-                  <p className="font-bold text-brand-green uqhd:text-lg uhd:text-xl">{item.title}</p>
-                  <p className="text-sm text-brand-green/55 uqhd:text-base">{item.desc}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <a
-            href="#contact-us"
-            onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
-            className="mt-10 inline-flex w-fit items-center justify-center rounded-md bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90 uqhd:px-9 uqhd:py-4 uqhd:text-sm uhd:text-base"
-          >
-            Contact us
-          </a>
-        </div>
-      </div>
-      <div className="relative min-h-[320px] lg:min-h-full uqhd:min-h-[640px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/image2.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-brand-green/35" />
-        <div className="absolute bottom-8 left-8 right-8 uqhd:bottom-12 uqhd:left-12 uhd:bottom-16 uhd:left-16">
-          <p className="font-display text-2xl font-bold text-white md:text-3xl uqhd:text-5xl uhd:text-6xl">
-            {BRAND_CONFIG.shortCompanyName}
-          </p>
-          <p className="mt-1 text-sm uppercase tracking-[0.2em] text-brand-gold uqhd:text-base uhd:text-lg">Trusted buy-back partner</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export function LandingTrustBar() {
   const items = [
-    "Fair market offers",
-    "Same-day response",
-    "Secure transactions",
-    "Multi-branch support",
+    "Centralized records",
+    "Real-time visibility",
+    "Multi-branch ready",
+    "Cloud-based access",
   ];
   return (
-    <div className="border-y border-brand-green/10 bg-white px-4 py-8 uqhd:py-12 uhd:py-14">
-      <div className="landing-container flex flex-wrap items-center justify-center gap-x-10 gap-y-4 uqhd:gap-x-16 uhd:gap-x-20">
+    <div className="border-y border-brand-green/10 bg-[#f9f8f5] px-4 py-8">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-4">
         {items.map((item) => (
           <div key={item} className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-green/45 uqhd:text-sm uhd:text-base">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-gold uqhd:h-2 uqhd:w-2" />
@@ -407,32 +699,83 @@ export function LandingTrustBar() {
   );
 }
 
+export function LandingFaq() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <section id="faq" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <div className="mx-auto max-w-3xl">
+        <div className="reveal-on-scroll text-center">
+          <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">FAQ</p>
+          <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl">
+            Frequently Asked Questions
+          </h2>
+        </div>
+
+        <div className="mt-10 space-y-3">
+          {faqs.map((item, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <div
+                key={item.q}
+                className="reveal-on-scroll overflow-hidden rounded-xl border border-brand-green/10 bg-[#f9f8f5]"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-sm font-bold text-brand-green">{item.q}</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    className={`h-4 w-4 shrink-0 text-brand-gold transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                <div
+                  className="grid transition-all duration-300 ease-in-out"
+                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                >
+                  <div className="overflow-hidden">
+                    <p className="px-5 pb-4 text-sm leading-relaxed text-brand-green/65">{item.a}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function LandingLightFooter({
   onScroll,
   onLoginClick,
-  onOpenBranches,
   onOpenLegal,
-  branchCountLabel,
 }: {
   onScroll: ScrollHandler;
   onLoginClick: () => void;
-  onOpenBranches: () => void;
   onOpenLegal: (type: "privacy" | "terms") => void;
-  branchCountLabel: string;
 }) {
   return (
     <footer className="bg-[#eceae6] px-6 py-14 md:px-12 lg:px-16 uqhd:px-20 uqhd:py-20 uhd:px-28 uhd:py-24">
       <div className="landing-container-wide grid gap-10 md:grid-cols-2 lg:grid-cols-4 uqhd:gap-14">
         <div className="lg:col-span-1">
           <div className="flex items-center gap-3">
-            <Image src={BRAND_CONFIG.companyLogo} alt={BRAND_CONFIG.shortCompanyName} width={44} height={44} className="rounded-lg uqhd:h-14 uqhd:w-14" />
+            <QuickPawnLogo variant="mark" className="h-11 w-11" />
             <div>
               <p className="font-display text-xl font-bold text-brand-green uqhd:text-2xl uhd:text-3xl">{BRAND_CONFIG.shortCompanyName}</p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold uqhd:text-xs">{BRAND_CONFIG.tagline}</p>
             </div>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-brand-green/55 uqhd:text-base uhd:text-lg">
-            Your trusted partner for buying back pre-loved gadgets and valuables — fast, fair, and friendly.
+          <p className="mt-4 text-sm leading-relaxed text-brand-green/55">
+            Manage Smarter. Pawn Better. Grow with Confidence.
           </p>
         </div>
 
@@ -440,9 +783,9 @@ export function LandingLightFooter({
           <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Product</p>
           <ul className="mt-4 space-y-2 text-sm text-brand-green/60">
             {[
+              ["Product", "product", "PRODUCT"],
+              ["How it helps", "how-it-helps", "HOW IT HELPS"],
               ["Pricing", "pricing", "PRICING"],
-              ["What we buy", "categories", "WHAT WE BUY"],
-              ["Items for sale", "items-for-sale", "ITEMS FOR SALE"],
             ].map(([label, id, nav]) => (
               <li key={id}>
                 <a href={`#${id}`} onClick={(e) => onScroll(e, id, nav)} className="hover:text-brand-green">
@@ -462,14 +805,14 @@ export function LandingLightFooter({
               </a>
             </li>
             <li>
-              <a href="#branches" onClick={(e) => onScroll(e, "branches", "BRANCHES")} className="hover:text-brand-green">
-                Branches ({branchCountLabel})
+              <a href="#benefits" onClick={(e) => onScroll(e, "benefits", "BENEFITS")} className="hover:text-brand-green">
+                Benefits
               </a>
             </li>
             <li>
-              <button type="button" onClick={onOpenBranches} className="hover:text-brand-green">
-                Visit us
-              </button>
+              <a href="#faq" onClick={(e) => onScroll(e, "faq", "FAQ")} className="hover:text-brand-green">
+                FAQ
+              </a>
             </li>
           </ul>
         </div>
@@ -480,6 +823,11 @@ export function LandingLightFooter({
             <li>
               <a href="#contact-us" onClick={(e) => onScroll(e, "contact-us", "CONTACT US")} className="hover:text-brand-green">
                 Contact
+              </a>
+            </li>
+            <li>
+              <a href={`mailto:${BRAND_CONFIG.email}`} className="hover:text-brand-green">
+                {BRAND_CONFIG.email}
               </a>
             </li>
             <li>

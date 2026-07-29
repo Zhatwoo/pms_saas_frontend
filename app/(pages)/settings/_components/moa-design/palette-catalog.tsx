@@ -30,10 +30,10 @@ export const LAYOUT_ITEMS: MoaPaletteCatalogItem[] = [
 ];
 
 export const ELEMENT_ITEMS: MoaPaletteCatalogItem[] = [
-  { kind: "shape", label: "Shape", icon: <Shapes className="h-4 w-4" />, hint: "Box / circle / line" },
-  { kind: "photo", label: "Photo", icon: <ImageIcon className="h-4 w-4" />, hint: "Image placeholder" },
-  { kind: "table", label: "Table", icon: <Table2 className="h-4 w-4" />, hint: "Simple table" },
-  { kind: "chart", label: "Chart", icon: <BarChart3 className="h-4 w-4" />, hint: "Bar chart stub" },
-  { kind: "frame", label: "Frame", icon: <Frame className="h-4 w-4" />, hint: "Bordered frame" },
-  { kind: "grid", label: "Grid", icon: <LayoutGrid className="h-4 w-4" />, hint: "2×2 grid" },
+  { kind: "shape", label: "Shape", icon: <Shapes className="h-4 w-4" />, hint: "Open shape choices" },
+  { kind: "photo", label: "Photo", icon: <ImageIcon className="h-4 w-4" />, hint: "Open photo sizes" },
+  { kind: "table", label: "Table", icon: <Table2 className="h-4 w-4" />, hint: "Open table sizes" },
+  { kind: "chart", label: "Chart", icon: <BarChart3 className="h-4 w-4" />, hint: "Open chart styles" },
+  { kind: "frame", label: "Frame", icon: <Frame className="h-4 w-4" />, hint: "Open frame styles" },
+  { kind: "grid", label: "Grid", icon: <LayoutGrid className="h-4 w-4" />, hint: "Open grid sizes" },
 ];

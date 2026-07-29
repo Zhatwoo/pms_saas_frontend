@@ -67,6 +67,21 @@ interface ReserveLayawayModalProps {
   branchName: string;
 }
 
+/** Raw shape of a single item returned by `GET /inventory/for-sale`. */
+interface ForSaleApiItem {
+  id: string;
+  itemId?: string;
+  itemName?: string;
+  description?: string;
+  details?: string;
+  category?: string;
+  branch?: string;
+  availableDate?: string;
+  available_date?: string;
+  price?: number | string;
+  status?: string;
+}
+
 interface SaleItem {
   id: string;
   itemId: string;
@@ -115,8 +130,8 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
       setIsLoading(true);
       try {
         const branchQ = selectedBranch?.id !== "__all__" ? `&branch=${selectedBranch.id}` : "";
-        const response = await api.get<{ items: any[] }>(`/inventory/for-sale?status=Available&search=${searchQuery}&limit=100${branchQ}`);
-        const mapped = (response.items || []).map((item) => ({
+        const response = await api.get<{ items: ForSaleApiItem[] }>(`/inventory/for-sale?status=Available&search=${searchQuery}&limit=100${branchQ}`);
+        const mapped: SaleItem[] = (response.items || []).map((item) => ({
           id: item.id,
           itemId: item.itemId || item.id,
           itemName: item.itemName || "Untitled Item",
@@ -125,7 +140,7 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
           branch: item.branch || branchName,
           availableDate: item.availableDate || item.available_date || "",
           price: Number(item.price || 0),
-          status: item.status || "Available",
+          status: (item.status as SaleItem["status"]) || "Available",
         }));
         setItems(mapped);
       } catch (fetchError) {
@@ -262,8 +277,8 @@ export function ReserveLayawayModal({ isOpen, onClose, onSuccess, branchId, bran
       onClose();
       toast.success("Reserve / Layaway transaction recorded successfully!");
       setIsConfirmOpen(false);
-    } catch (confirmError: any) {
-      const msg = confirmError?.message || "Failed to process reserve / layaway transaction.";
+    } catch (confirmError) {
+      const msg = confirmError instanceof Error ? confirmError.message : "Failed to process reserve / layaway transaction.";
       setError(msg);
       toast.error(msg);
       setIsConfirmOpen(false);

@@ -1,8 +1,11 @@
 export interface BrandConfig {
   companyName: string;
   shortCompanyName: string;
+  /** Icon-only mark (square) for tight slots like nav bars and the sidebar toggle. */
   companyLogo: string;
+  /** Full wordmark (wide, includes company name + tagline) for login/signup screens. */
   loginLogo: string;
+  /** Icon-only mark (square) for the sidebar. */
   sidebarLogo: string;
   favicon: string;
   
@@ -25,21 +28,21 @@ export interface BrandConfig {
 }
 
 export const BRAND_CONFIG: BrandConfig = {
-  companyName: "Pawnshop Company",
-  shortCompanyName: "Pawnshop",
-  companyLogo: "/logo.png",
+  companyName: "QuickPawn",
+  shortCompanyName: "QuickPawn",
+  companyLogo: "/logo-icon.png",
   loginLogo: "/logo.png",
-  sidebarLogo: "/logo.png",
+  sidebarLogo: "/logo-icon.png",
   favicon: "/favicon.ico",
   primaryColor: "#0B5D3B",
   secondaryColor: "#E8C547",
   accentColor: "#d4a843",
   backgroundColor: "#ffffff",
-  phone: "+63 XXX XXX XXXX",
-  email: "lorem@example.com",
+  phone: "0992 971 8800",
+  email: "inspirenextglobal.marketing@gmail.com",
   website: "www.example.com",
-  address: "Lorem Ipsum Address",
+  address: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
   footerText: "Generic Footer",
   welcomeMessage: "Generic welcome message",
-  tagline: "BUY BACK SHOP",
+  tagline: "PAWNSHOP MANAGEMENT SYSTEM",
 };

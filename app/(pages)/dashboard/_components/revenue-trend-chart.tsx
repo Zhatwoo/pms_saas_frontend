@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatPeso } from "@/lib/currency";
+import type { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 export interface RevenueTrendData {
   month: string;
@@ -38,21 +39,23 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
           >
           <LineChart
             data={data}
-            margin={{ top: 5, right: 10, left: -10, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: -15, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#71717a" }}
+              tick={{ fontSize: 10, fill: "#71717a" }}
+              interval="preserveStartEnd"
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#71717a" }}
+              tick={{ fontSize: 10, fill: "#71717a" }}
               ticks={[0, 1500, 3000, 4500, 6000]}
               domain={[0, 6000]}
+              width={35}
             />
             <Tooltip
               contentStyle={{
@@ -60,7 +63,10 @@ export function RevenueTrendChart({ data = [] }: RevenueTrendChartProps) {
                 border: "1px solid #e4e4e7",
                 fontSize: "12px",
               }}
-              formatter={(value: any) => [formatPeso(value), "Revenue"]}
+              formatter={(value: ValueType | undefined) => [
+                formatPeso(Array.isArray(value) ? value[0] : value),
+                "Revenue",
+              ]}
             />
             <Line
               type="monotone"
