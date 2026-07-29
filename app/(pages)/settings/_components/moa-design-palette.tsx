@@ -260,18 +260,47 @@ export const MOA_DOCUMENT_TYPES: Array<{
   { id: "buy_back", label: "Buy back slip", hint: "Buy back transaction slip" },
 ];
 
-export type MoaWatermarkSettings = {
-  enabled: boolean;
+export type MoaWatermarkItem = {
+  id: string;
   text: string;
   opacity: number;
   rotation: number;
+  /** Horizontal position as % of canvas width (0–100). */
+  xPercent: number;
+  /** Vertical position as % of canvas height (0–100). */
+  yPercent: number;
 };
+
+export type MoaWatermarkSettings = {
+  enabled: boolean;
+  items: MoaWatermarkItem[];
+};
+
+export function createMoaWatermarkItem(
+  partial?: Partial<MoaWatermarkItem>,
+): MoaWatermarkItem {
+  return {
+    id: partial?.id ?? `wm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    text: partial?.text?.trim() ? partial.text : "ORIGINAL",
+    opacity:
+      typeof partial?.opacity === "number"
+        ? Math.min(0.5, Math.max(0.04, partial.opacity))
+        : 0.12,
+    rotation: typeof partial?.rotation === "number" ? partial.rotation : -28,
+    xPercent:
+      typeof partial?.xPercent === "number"
+        ? Math.min(100, Math.max(0, partial.xPercent))
+        : 50,
+    yPercent:
+      typeof partial?.yPercent === "number"
+        ? Math.min(100, Math.max(0, partial.yPercent))
+        : 50,
+  };
+}
 
 export const DEFAULT_MOA_WATERMARK: MoaWatermarkSettings = {
   enabled: false,
-  text: "ORIGINAL",
-  opacity: 0.12,
-  rotation: -28,
+  items: [createMoaWatermarkItem({ text: "ORIGINAL", opacity: 0.12, rotation: -28 })],
 };
 
 /** Composite localStorage key: document type + category (frontend-only). */
@@ -610,16 +639,34 @@ export function saveMoaPageCount(storageKey: string, pageCount: number) {
   }
 }
 
-function normalizeWatermark(raw: Partial<MoaWatermarkSettings> | null | undefined): MoaWatermarkSettings {
+function normalizeWatermark(raw: Partial<MoaWatermarkSettings> & {
+  text?: string;
+  opacity?: number;
+  rotation?: number;
+} | null | undefined): MoaWatermarkSettings {
+  // Migrate legacy single-watermark shape { enabled, text, opacity, rotation }
+  if (raw && !Array.isArray(raw.items) && typeof raw.text === "string") {
+    return {
+      enabled: Boolean(raw.enabled),
+      items: [
+        createMoaWatermarkItem({
+          text: raw.text,
+          opacity: raw.opacity,
+          rotation: raw.rotation,
+          xPercent: 50,
+          yPercent: 50,
+        }),
+      ],
+    };
+  }
+
+  const items = Array.isArray(raw?.items) && raw.items.length > 0
+    ? raw.items.map((item) => createMoaWatermarkItem(item))
+    : DEFAULT_MOA_WATERMARK.items.map((item) => ({ ...item, id: createMoaWatermarkItem().id }));
+
   return {
     enabled: Boolean(raw?.enabled),
-    text: typeof raw?.text === "string" && raw.text.trim() ? raw.text : DEFAULT_MOA_WATERMARK.text,
-    opacity:
-      typeof raw?.opacity === "number"
-        ? Math.min(0.5, Math.max(0.04, raw.opacity))
-        : DEFAULT_MOA_WATERMARK.opacity,
-    rotation:
-      typeof raw?.rotation === "number" ? raw.rotation : DEFAULT_MOA_WATERMARK.rotation,
+    items,
   };
 }
 
@@ -688,23 +735,85 @@ export function saveMoaMargins(
   }
 }
 
-/** Non-interactive diagonal watermark overlay for the design canvas. */
-export function MoaCanvasWatermark({ settings }: { settings: MoaWatermarkSettings }) {
-  if (!settings.enabled || !settings.text.trim()) return null;
+/** Watermark overlays — draggable when `editable` so owner can arrange placement. */
+export function MoaCanvasWatermark({
+  settings,
+  editable = false,
+  onChange,
+}: {
+  settings: MoaWatermarkSettings;
+  editable?: boolean;
+  onChange?: (next: MoaWatermarkSettings) => void;
+}) {
+  if (!settings.enabled || settings.items.length === 0) return null;
+
+  const startDrag = (
+    event: ReactPointerEvent,
+    itemId: string,
+  ) => {
+    if (!editable || !onChange) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const parent = (event.currentTarget as HTMLElement).parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const item = settings.items.find((wm) => wm.id === itemId);
+    if (!item) return;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const xPercent = Math.min(
+        100,
+        Math.max(0, ((moveEvent.clientX - rect.left) / rect.width) * 100),
+      );
+      const yPercent = Math.min(
+        100,
+        Math.max(0, ((moveEvent.clientY - rect.top) / rect.height) * 100),
+      );
+      onChange({
+        ...settings,
+        items: settings.items.map((wm) =>
+          wm.id === itemId ? { ...wm, xPercent, yPercent } : wm,
+        ),
+      });
+    };
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[5] overflow-hidden"
-      aria-hidden
+      className={`absolute inset-0 z-[8] overflow-hidden ${editable ? "" : "pointer-events-none"}`}
+      aria-hidden={!editable}
     >
-      <div
-        className="absolute left-1/2 top-1/2 max-w-[90%] select-none truncate text-center text-[42px] font-bold uppercase tracking-[0.18em] text-zinc-800"
-        style={{
-          opacity: settings.opacity,
-          transform: `translate(-50%, -50%) rotate(${settings.rotation}deg)`,
-        }}
-      >
-        {settings.text}
-      </div>
+      {settings.items.map((item) => {
+        if (!item.text.trim()) return null;
+        return (
+          <div
+            key={item.id}
+            data-moa-watermark
+            className={`absolute max-w-[90%] select-none truncate text-center text-[36px] font-bold uppercase tracking-[0.18em] text-zinc-800 ${
+              editable ? "cursor-grab active:cursor-grabbing" : "pointer-events-none"
+            }`}
+            style={{
+              left: `${item.xPercent}%`,
+              top: `${item.yPercent}%`,
+              opacity: item.opacity,
+              transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
+              textShadow: "none",
+              filter: "none",
+              pointerEvents: editable ? "auto" : "none",
+            }}
+            onPointerDown={(event) => startDrag(event, item.id)}
+            title={editable ? "Drag to arrange watermark" : undefined}
+          >
+            {item.text}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1026,6 +1135,12 @@ export function MoaDesignCanvasLayer({
   >(null);
   const [alignGuides, setAlignGuides] = useState<AlignGuide[]>([]);
   const [internalFieldIds, setInternalFieldIds] = useState<string[]>([]);
+  const [marquee, setMarquee] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  } | null>(null);
   // Visual-only: hide element hit-targets while dragging from palette so the layer receives the drop.
   const suppressElementHits = enabled && (paletteDragging || dragOver);
   const pageDoc = elements.find(isPageDocument);
@@ -1092,6 +1207,67 @@ export function MoaDesignCanvasLayer({
   const clearEditing = () => {
     setEditingTextId(null);
     setEditingTableId(null);
+  };
+
+  /** Marquee multi-select: Ctrl/Cmd + drag (so normal drag/click stays Docs typing). */
+  const startMarqueeSelect = (event: ReactPointerEvent) => {
+    if (!enabled || event.button !== 0) return;
+    if (!(event.ctrlKey || event.metaKey)) return;
+    if (editingTextId || editingTableId) return;
+    event.preventDefault();
+    event.stopPropagation();
+    clearFieldSelection();
+    clearEditing();
+    pageDocRef.current?.blur();
+
+    const rect = layerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const originX = event.clientX - rect.left;
+    const originY = event.clientY - rect.top;
+    let current = { x: originX, y: originY, w: 0, h: 0 };
+    setMarquee(current);
+    let moved = false;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const cx = moveEvent.clientX - rect.left;
+      const cy = moveEvent.clientY - rect.top;
+      const x = Math.min(originX, cx);
+      const y = Math.min(originY, cy);
+      const w = Math.abs(cx - originX);
+      const h = Math.abs(cy - originY);
+      if (w > 3 || h > 3) moved = true;
+      current = { x, y, w, h };
+      setMarquee(current);
+    };
+
+    const onUp = () => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      setMarquee(null);
+      if (!moved) {
+        onSelectedIdsChange?.([]);
+        onSelect(null);
+        return;
+      }
+      const box = current;
+      const hit = designElements
+        .filter((el) => {
+          const ex2 = el.x + el.width;
+          const ey2 = el.y + el.height;
+          return (
+            el.x < box.x + box.w &&
+            ex2 > box.x &&
+            el.y < box.y + box.h &&
+            ey2 > box.y
+          );
+        })
+        .map((el) => el.id);
+      onSelectedIdsChange?.(hit);
+      onSelect(hit[0] ?? null);
+    };
+
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
   };
 
   const selectHeaderFields = (
@@ -1791,15 +1967,14 @@ export function MoaDesignCanvasLayer({
       onClick={(event) => {
         if (!enabled) return;
         if (event.target === layerRef.current) {
-          clearFieldSelection();
-          clearEditing();
-          onSelectedIdsChange?.([]);
-          onSelect(null);
+          // Selection clear handled by marquee (click without drag)
         }
       }}
+      onPointerDown={enabled ? startMarqueeSelect : undefined}
       onContextMenu={(event) => {
         if (!enabled) return;
-        if (event.target !== layerRef.current && !(event.target as HTMLElement).dataset?.moaPageDoc) return;
+        const target = event.target as HTMLElement;
+        if (event.target !== layerRef.current && !target.dataset?.moaPageDoc) return;
         event.preventDefault();
         event.stopPropagation();
         clearFieldSelection();
@@ -1850,7 +2025,7 @@ export function MoaDesignCanvasLayer({
         ),
       )}
 
-      {/* Docs-style typing surface — click anywhere blank and type like Google Docs */}
+      {/* Docs typing surface — click blank paper and type like a document */}
       {enabled ? (
         <textarea
           ref={pageDocRef}
@@ -1859,12 +2034,12 @@ export function MoaDesignCanvasLayer({
           value={pageDoc?.text ?? ""}
           placeholder="Click here and start typing…"
           spellCheck={spellCheck}
-          className={`absolute inset-0 z-[5] resize-none overflow-hidden border-0 px-3 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 ${
+          className={`absolute inset-0 z-[5] resize-none overflow-hidden border-0 bg-transparent px-3 py-3 text-zinc-900 outline-none placeholder:text-zinc-400 ${
             pageDoc && activeSelectedIds.includes(pageDoc.id)
               ? activeSelectedIds.length > 1
                 ? "bg-sky-50/30 shadow-[inset_0_0_0_2px_#38bdf8]"
-                : "bg-sky-50/40 shadow-[inset_0_0_0_2px_#38bdf8]"
-              : "bg-transparent"
+                : "bg-sky-50/20 shadow-[inset_0_0_0_2px_#38bdf8]"
+              : ""
           }`}
           style={{
             fontFamily: pageDoc?.fontFamily ?? defaultFontFamily,
@@ -1914,11 +2089,17 @@ export function MoaDesignCanvasLayer({
             }
             upsertPageDocument(event.target.value);
           }}
-          onPointerDown={(event) => event.stopPropagation()}
+          onPointerDown={(event) => {
+            if (event.ctrlKey || event.metaKey) {
+              startMarqueeSelect(event);
+              return;
+            }
+            event.stopPropagation();
+          }}
         />
       ) : pageDoc?.text ? (
         <div
-          className="pointer-events-none absolute inset-0 z-[5] overflow-hidden whitespace-pre-wrap px-3 py-3 text-zinc-900"
+          className="pointer-events-none absolute inset-0 z-[5] overflow-hidden whitespace-pre-wrap bg-transparent px-3 py-3 text-zinc-900"
           style={{
             fontFamily: pageDoc.fontFamily,
             fontSize: pageDoc.fontSize,
@@ -1941,13 +2122,26 @@ export function MoaDesignCanvasLayer({
         </div>
       ) : null}
 
+      {/* Marquee selection rectangle */}
+      {marquee && (marquee.w > 2 || marquee.h > 2) ? (
+        <div
+          className="pointer-events-none absolute z-[60] border border-dashed border-sky-600 bg-sky-400/15"
+          style={{
+            left: marquee.x,
+            top: marquee.y,
+            width: marquee.w,
+            height: marquee.h,
+          }}
+        />
+      ) : null}
+
       {enabled && designElements.length === 0 && !(pageDoc?.text) && (
         <div className="pointer-events-none absolute inset-x-6 top-[42%] z-[6] -translate-y-1/2 text-center">
           <p className="text-[13px] font-medium text-zinc-400">
             Click anywhere and start typing
           </p>
           <p className="mt-1 text-[10px] text-zinc-400">
-            Or insert Fields / Layout / Elements from the left panel
+            Or insert Fields / Layout / Elements from the left panel · Ctrl+drag to multi-select
           </p>
         </div>
       )}
@@ -1961,8 +2155,8 @@ export function MoaDesignCanvasLayer({
           <div
             key={element.id}
             className={`absolute ${enabled && editingTextId !== element.id ? "cursor-move" : ""} ${
-              selected ? "z-40 ring-2 ring-sky-500 ring-offset-1" : "z-30"
-            } ${headerDropTargetId === element.id ? "ring-2 ring-emerald-500 ring-offset-1" : ""}`}
+              selected ? "z-40 ring-2 ring-sky-500" : "z-30"
+            } ${headerDropTargetId === element.id ? "ring-2 ring-emerald-500" : ""}`}
             style={{
               left: element.x,
               top: element.y,
