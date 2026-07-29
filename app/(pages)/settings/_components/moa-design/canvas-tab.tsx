@@ -1,9 +1,10 @@
 "use client";
 
-import { Droplets, FilePlus2, FileType, Trash2 } from "lucide-react";
+import { Droplets, FilePlus2, FileType, Plus, Trash2 } from "lucide-react";
 import {
   MAX_MOA_PAGES,
   MOA_PAGE_SIZES,
+  createMoaWatermarkItem,
   type MoaPageSize,
   type MoaPageSizeId,
   type MoaWatermarkSettings,
@@ -32,6 +33,44 @@ export function MoaCanvasTab({
   const active = MOA_PAGE_SIZES[pageSize];
   const canAdd = enabled && pageCount < MAX_MOA_PAGES;
   const canRemove = enabled && pageCount > 1;
+  const items = watermark.items ?? [];
+
+  const updateItem = (id: string, patch: Partial<(typeof items)[number]>) => {
+    onWatermarkChange({
+      ...watermark,
+      items: items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    });
+  };
+
+  const addWatermark = () => {
+    const offset = items.length * 8;
+    onWatermarkChange({
+      ...watermark,
+      enabled: true,
+      items: [
+        ...items,
+        createMoaWatermarkItem({
+          text: "ORIGINAL",
+          opacity: 0.12,
+          rotation: -28,
+          xPercent: Math.min(90, 50 + offset),
+          yPercent: Math.min(90, 50 + offset),
+        }),
+      ],
+    });
+  };
+
+  const removeWatermark = (id: string) => {
+    const nextItems = items.filter((item) => item.id !== id);
+    onWatermarkChange({
+      ...watermark,
+      items:
+        nextItems.length > 0
+          ? nextItems
+          : [createMoaWatermarkItem({ text: "ORIGINAL" })],
+      enabled: nextItems.length > 0 ? watermark.enabled : false,
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -54,7 +93,7 @@ export function MoaCanvasTab({
               onClick={() => onPageSizeChange(size.id)}
               className={`rounded-lg border px-2 py-2 text-left transition disabled:opacity-50 ${
                 isActive
-                  ? "border-emerald-600 bg-emerald-50 shadow-sm"
+                  ? "border-emerald-600 bg-emerald-50"
                   : "border-zinc-200 bg-white hover:border-emerald-400 hover:bg-emerald-50/60"
               }`}
             >
@@ -103,7 +142,7 @@ export function MoaCanvasTab({
             type="button"
             disabled={!canAdd}
             onClick={onAddPage}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-600 px-2.5 py-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-600 bg-emerald-600 px-2.5 py-2 text-[10px] font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400"
           >
             <FilePlus2 className="h-3.5 w-3.5" />
             Add another canvas
@@ -127,12 +166,12 @@ export function MoaCanvasTab({
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Watermark</h3>
-            <TabHint>Diagonal overlay text on every page (frontend preview).</TabHint>
+            <TabHint>Add overlays and drag them on the canvas to arrange.</TabHint>
           </div>
           <Droplets className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-700" />
         </div>
 
-        <label className="mt-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-2">
+        <label className="mt-2 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-2 shadow-none">
           <input
             type="checkbox"
             disabled={!enabled}
@@ -145,61 +184,93 @@ export function MoaCanvasTab({
           <span className="text-[10px] font-bold text-zinc-700">Show watermark</span>
         </label>
 
-        <label className="mt-1.5 block space-y-1">
-          <span className="text-[9px] font-semibold text-zinc-600">Text</span>
-          <input
-            type="text"
-            disabled={!enabled || !watermark.enabled}
-            value={watermark.text}
-            onChange={(event) =>
-              onWatermarkChange({ ...watermark, text: event.target.value })
-            }
-            placeholder="ORIGINAL"
-            className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] outline-none focus:border-emerald-500 disabled:opacity-50"
-          />
-        </label>
+        <div className="mt-2 space-y-2">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className="space-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50/80 p-2 shadow-none"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+                  Watermark {index + 1}
+                </span>
+                {items.length > 1 ? (
+                  <button
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => removeWatermark(item.id)}
+                    className="rounded p-0.5 text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    title="Remove watermark"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                ) : null}
+              </div>
 
-        <label className="mt-1.5 block space-y-1">
-          <span className="text-[9px] font-semibold text-zinc-600">
-            Opacity · {Math.round(watermark.opacity * 100)}%
-          </span>
-          <input
-            type="range"
-            min={4}
-            max={40}
-            step={1}
-            disabled={!enabled || !watermark.enabled}
-            value={Math.round(watermark.opacity * 100)}
-            onChange={(event) =>
-              onWatermarkChange({
-                ...watermark,
-                opacity: Number(event.target.value) / 100,
-              })
-            }
-            className="w-full accent-emerald-600 disabled:opacity-50"
-          />
-        </label>
+              <label className="block space-y-1">
+                <span className="text-[9px] font-semibold text-zinc-600">Text</span>
+                <input
+                  type="text"
+                  disabled={!enabled || !watermark.enabled}
+                  value={item.text}
+                  onChange={(event) => updateItem(item.id, { text: event.target.value })}
+                  placeholder="ORIGINAL"
+                  className="w-full rounded border border-zinc-300 bg-white px-2 py-1.5 text-[10px] text-zinc-800 shadow-none outline-none focus:border-emerald-500 focus:ring-0 disabled:opacity-50"
+                />
+              </label>
 
-        <label className="mt-1.5 block space-y-1">
-          <span className="text-[9px] font-semibold text-zinc-600">
-            Rotation · {watermark.rotation}°
-          </span>
-          <input
-            type="range"
-            min={-45}
-            max={45}
-            step={1}
-            disabled={!enabled || !watermark.enabled}
-            value={watermark.rotation}
-            onChange={(event) =>
-              onWatermarkChange({
-                ...watermark,
-                rotation: Number(event.target.value),
-              })
-            }
-            className="w-full accent-emerald-600 disabled:opacity-50"
-          />
-        </label>
+              <label className="block space-y-1">
+                <span className="text-[9px] font-semibold text-zinc-600">
+                  Opacity · {Math.round(item.opacity * 100)}%
+                </span>
+                <input
+                  type="range"
+                  min={4}
+                  max={40}
+                  step={1}
+                  disabled={!enabled || !watermark.enabled}
+                  value={Math.round(item.opacity * 100)}
+                  onChange={(event) =>
+                    updateItem(item.id, { opacity: Number(event.target.value) / 100 })
+                  }
+                  className="w-full accent-emerald-600 disabled:opacity-50"
+                />
+              </label>
+
+              <label className="block space-y-1">
+                <span className="text-[9px] font-semibold text-zinc-600">
+                  Rotation · {item.rotation}°
+                </span>
+                <input
+                  type="range"
+                  min={-45}
+                  max={45}
+                  step={1}
+                  disabled={!enabled || !watermark.enabled}
+                  value={item.rotation}
+                  onChange={(event) =>
+                    updateItem(item.id, { rotation: Number(event.target.value) })
+                  }
+                  className="w-full accent-emerald-600 disabled:opacity-50"
+                />
+              </label>
+
+              <p className="text-[8px] font-medium text-zinc-400">
+                Drag this watermark on the canvas to place it.
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          disabled={!enabled}
+          onClick={addWatermark}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-zinc-700 transition hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add another watermark
+        </button>
       </div>
     </div>
   );

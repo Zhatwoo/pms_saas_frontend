@@ -6,24 +6,36 @@ import {
   FileType,
   Heading,
   LayoutTemplate,
+  Library,
   ListChecks,
   Search,
   Shapes,
   Upload,
 } from "lucide-react";
 import type {
+  MoaDesignElement,
   MoaElementCreateOptions,
   MoaHeaderFieldKey,
   MoaPageSizeId,
   MoaPaletteItemKind,
   MoaWatermarkSettings,
 } from "../moa-design-palette";
+import type { MoaDesignBlob } from "@/lib/moa";
+import type { MoaComponentTemplate } from "@/lib/moa/component-templates";
 import { MoaCanvasTab } from "./canvas-tab";
 import { MoaElementsTab } from "./elements-tab";
 import { MoaLayoutTab } from "./layout-tab";
+import { MoaTemplatesTab } from "./templates-tab";
 import { MoaUploadsTab } from "./uploads-tab";
 
-type MoaToolsTabId = "layout" | "header" | "elements" | "uploads" | "fields" | "canvas";
+type MoaToolsTabId =
+  | "layout"
+  | "header"
+  | "elements"
+  | "uploads"
+  | "fields"
+  | "templates"
+  | "canvas";
 
 const NAV: Array<{
   id: MoaToolsTabId;
@@ -35,6 +47,7 @@ const NAV: Array<{
   { id: "elements", label: "Elements", icon: Shapes },
   { id: "uploads", label: "Uploads", icon: Upload },
   { id: "fields", label: "Fields", icon: ListChecks },
+  { id: "templates", label: "Templates", icon: Library },
   { id: "canvas", label: "Canvas", icon: FileType },
 ];
 
@@ -54,12 +67,16 @@ export type MoaDesignToolsPanelProps = {
   onUseUploadedImage?: (dataUrl: string) => void;
   /** MOA Field Config content (Financial / Unit fields). */
   fieldConfig?: ReactNode;
+  currentDesign: MoaDesignBlob;
+  selectedElements: MoaDesignElement[];
+  onApplyTemplatePack: (template: MoaComponentTemplate) => void;
+  onApplyTemplateFull: (template: MoaComponentTemplate) => void;
 };
 
 /**
  * Canva-like MOA designer chrome:
  * narrow icon rail + secondary browse panel (Layout / Header / Elements / …).
- * Text styling lives in the Docs toolbar above the canvas.
+ * Search styling lives in the Docs toolbar above the canvas.
  */
 export function MoaDesignToolsPanel({
   enabled,
@@ -75,6 +92,10 @@ export function MoaDesignToolsPanel({
   onAddElement,
   onUseUploadedImage,
   fieldConfig,
+  currentDesign,
+  selectedElements,
+  onApplyTemplatePack,
+  onApplyTemplateFull,
 }: MoaDesignToolsPanelProps) {
   const [activeTab, setActiveTab] = useState<MoaToolsTabId>("layout");
   const [panelOpen, setPanelOpen] = useState(true);
@@ -97,7 +118,6 @@ export function MoaDesignToolsPanel({
 
   return (
     <div className="flex h-full min-h-[min(75vh,860px)] shrink-0 overflow-hidden border-r border-zinc-200 bg-white">
-      {/* Icon rail */}
       <nav
         aria-label="MOA design categories"
         className="flex w-16 flex-col items-stretch gap-0.5 border-r border-zinc-200 bg-zinc-50 py-2"
@@ -124,7 +144,6 @@ export function MoaDesignToolsPanel({
         })}
       </nav>
 
-      {/* Secondary panel */}
       {panelOpen ? (
         <div className="flex w-[min(100vw-4rem,280px)] flex-col bg-white sm:w-[300px]">
           <div className="flex items-center gap-2 border-b border-zinc-100 px-3 py-2.5">
@@ -141,7 +160,9 @@ export function MoaDesignToolsPanel({
                         ? "Your image library"
                         : activeTab === "fields"
                           ? "MOA financial & unit fields"
-                          : "Page size, pages, watermark"}
+                          : activeTab === "templates"
+                            ? "Ready-made packs & saved layouts"
+                            : "Page size, pages, watermark"}
               </p>
             </div>
             <button
@@ -214,6 +235,17 @@ export function MoaDesignToolsPanel({
                 ) : null}
                 {fieldConfig}
               </div>
+            ) : null}
+
+            {activeTab === "templates" ? (
+              <MoaTemplatesTab
+                enabled={enabled}
+                searchQuery={query}
+                currentDesign={currentDesign}
+                selectedElements={selectedElements}
+                onApplyPack={onApplyTemplatePack}
+                onApplyFull={onApplyTemplateFull}
+              />
             ) : null}
 
             {activeTab === "canvas" ? (
