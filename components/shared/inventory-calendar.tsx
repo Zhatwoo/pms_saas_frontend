@@ -2,8 +2,16 @@
 
 import { useEffect, useState } from "react";
 
+export interface CalendarItem {
+  itemName?: string;
+  status: string;
+  pawnDate?: string;
+  availableDate?: string;
+  date?: string;
+}
+
 interface CalendarProps {
-  items: any[];
+  items: CalendarItem[];
   selectedDate?: string | null;
   onSelectDate?: (date: string) => void;
   calendarData?: Record<string, number>;

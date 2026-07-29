@@ -428,7 +428,13 @@ export default function DevicesPage() {
 
   const branchScopedDevices = useMemo(() => {
     if (isAllBranches) return devices;
-    return devices.filter((device) => getDeviceBranchId(device) === selectedBranch.id);
+    // PENDING requests always surface regardless of the selected branch — the
+    // requesting employee may have no branch assigned yet, and a pending
+    // device request needs super admin attention no matter which branch tab
+    // happens to be selected.
+    return devices.filter(
+      (device) => device.status === "PENDING" || getDeviceBranchId(device) === selectedBranch.id,
+    );
   }, [devices, isAllBranches, selectedBranch.id]);
 
   const filtered = branchScopedDevices.filter((d) => {
@@ -720,7 +726,7 @@ export default function DevicesPage() {
                             {device.recent_users.map((u, i) => (
                               <div key={u.id ?? i} className="flex items-center gap-1.5">
                                 <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-green/10 text-[9px] font-bold text-brand-green dark:bg-brand-green/20">
-                                  {(u.full_name ?? u.email ?? "?")[0].toUpperCase()}
+                                  {(u.full_name || u.email || "?").charAt(0).toUpperCase()}
                                 </div>
                                 <div>
                                   <div className="text-xs font-medium leading-tight text-text-secondary">{u.full_name ?? u.email}</div>

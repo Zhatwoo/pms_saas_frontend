@@ -7,7 +7,7 @@ export function formatPeso(
 ) {
   const raw =
     typeof value === "string"
-      ? value.replace(/,/g, "").replace(/₱/g, "").trim()
+      ? value.replace(/[^0-9.-]+/g, "").trim()
       : value;
   const amount = Number(raw ?? 0);
 

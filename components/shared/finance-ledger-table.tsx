@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type ReactNode } from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
 import type { Column } from "@/components/shared/data-table";
@@ -304,11 +304,11 @@ export function FinanceLedgerTable({
           columns={columns}
           data={paginated}
           emptyMessage="No financial activity found for the selected filters."
-          renderCell={(key, value, row) => {
+          renderCell={(key, rawValue, row) => {
             if (key === "date") {
               return (
                 <div>
-                  <span className="text-sm text-text-secondary">{fmtDate(value)}</span>
+                  <span className="text-sm text-text-secondary">{fmtDate(rawValue as string)}</span>
                   {row.time ? (
                     <div className="text-xs text-text-muted">{fmtTime(row.time)}</div>
                   ) : null}
@@ -316,7 +316,7 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "type") {
-              const cfg = TYPE_CONFIG[value as LedgerEntryType] ?? TYPE_CONFIG.other;
+              const cfg = TYPE_CONFIG[rawValue as LedgerEntryType] ?? TYPE_CONFIG.other;
               return (
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${cfg.bgClass}`}
@@ -327,6 +327,7 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "itemName") {
+              const value = rawValue as string | undefined;
               return (
                 <span
                   className="block max-w-[180px] truncate text-sm font-medium text-text-primary"
@@ -348,6 +349,7 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "cashIn") {
+              const value = rawValue as number;
               return (
                 <span className={`text-sm font-bold ${value > 0 ? "text-emerald-600" : "text-text-muted"}`}>
                   {value > 0 ? `+${fmt(value)}` : "—"}
@@ -355,6 +357,7 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "cashOut") {
+              const value = rawValue as number;
               return (
                 <span className={`text-sm font-bold ${value > 0 ? "text-red-600" : "text-text-muted"}`}>
                   {value > 0 ? `-${fmt(value)}` : "—"}
@@ -362,6 +365,7 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "branchName") {
+              const value = rawValue as string | undefined;
               return (
                 <span className="text-sm font-medium text-text-secondary">
                   {value || "—"}
@@ -369,11 +373,12 @@ export function FinanceLedgerTable({
               );
             }
             if (key === "reference") {
+              const value = rawValue as string | undefined;
               return (
                 <span className="text-xs font-mono text-text-muted">{value || "—"}</span>
               );
             }
-            return value;
+            return rawValue as ReactNode;
           }}
         />
       </div>

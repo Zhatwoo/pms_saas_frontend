@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { api } from "@/lib/api";
-import { BRAND_CONFIG } from "@/lib/brand-config";
+import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 interface BranchSummary {
   id: string;
@@ -169,25 +168,12 @@ export function SignupModal({ onClose, onSwitchToLogin }: SignupModalProps) {
         </button>
 
         {/* Left Side Branding */}
-        <div className="relative flex w-full flex-col items-center justify-center bg-brand-green px-8 py-10 md:w-2/5">
-          <div className="absolute right-[-20px] top-[-30px] h-40 w-40 rounded-full bg-white/5" />
-          <div className="absolute bottom-[-40px] left-[-40px] h-40 w-40 rounded-full bg-white/5" />
+        <div className="relative flex w-full flex-col items-center justify-center bg-white px-8 py-10 md:w-2/5">
           <div className="relative flex flex-col items-center">
-            <div className="rounded-2xl bg-black/20 p-2">
-              <div className="overflow-hidden rounded-xl ring-2 ring-amber-400/60">
-                <Image
-                  src={BRAND_CONFIG.loginLogo}
-                  alt={`${BRAND_CONFIG.shortCompanyName} Logo`}
-                  width={120}
-                  height={120}
-                  className="h-28 w-28 object-contain"
-                />
-              </div>
+            <div className="w-full max-w-[280px]">
+              <QuickPawnLogo variant="full" showTagline className="h-auto w-full" />
             </div>
-            <h2 className="mt-4 text-center text-xl font-bold text-white">
-              {BRAND_CONFIG.companyName}
-            </h2>
-            <p className="text-center text-lg font-bold text-amber-400">
+            <p className="mt-4 text-center text-lg font-bold text-brand-green">
               Create account
             </p>
           </div>

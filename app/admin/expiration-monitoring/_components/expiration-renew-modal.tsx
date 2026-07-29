@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, type ComponentType } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { calculateGadgetInterest } from "@/lib/interest";
@@ -78,6 +78,27 @@ interface RenewModalProps {
   initialSearchCode?: string;
 }
 
+interface PawnedItemCustomer {
+  full_name?: string;
+  contact_number?: string;
+}
+
+interface RawPawnedItem {
+  id: string;
+  customers?: PawnedItemCustomer[] | PawnedItemCustomer | null;
+  itemId?: string;
+  itemName?: string;
+  serialNumber?: string;
+  itemsIncluded?: string;
+  condition?: string;
+  memoryStorage?: string;
+  category?: string;
+  remarks?: string;
+  pawnDate?: string;
+  created_at?: string;
+  amount?: number | string;
+}
+
 interface PawnItemDetails {
   id: string;
   name: string;
@@ -125,14 +146,14 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   const totalToPay = isReappraiseActive ? newPrincipal : (interestCalc.interestAmount * itemsRenewed);
 
-  const triggerSearch = async (code: string, preFetchedItem?: any) => {
+  const triggerSearch = async (code: string, preFetchedItem?: RawPawnedItem) => {
     if (!code && !preFetchedItem) return;
     setIsLoading(true);
     setError(null);
     try {
       let item = preFetchedItem;
       if (!item) {
-        const response = await api.get<{ items: any[] }>(`/inventory/pawned?status=Active&search=${code}`);
+        const response = await api.get<{ items: RawPawnedItem[] }>(`/inventory/pawned?status=Active&search=${code}`);
         if (response.items && response.items.length > 0) {
           item = response.items[0];
         }
@@ -206,8 +227,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       if (onSuccess) onSuccess();
       onClose();
       toast.success(`Transaction ${isReappraiseActive ? "reappraised" : "renewed"} successfully!`);
-    } catch (err: any) {
-      const msg = err.message || "Failed to process transaction.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -236,8 +257,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       } else {
         await executeTransaction(null);
       }
-    } catch (err: any) {
-      const msg = err.message || "Failed to process transaction.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to process transaction.";
       setError(msg);
       toast.error(msg);
       setIsLoading(false);
@@ -524,7 +545,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
 // ── Sub-components ────────────────────────────────────────────────────────
 
-function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: any, isDark?: boolean }) {
+function SectionHeader({ title, icon: Icon, isDark = false }: { title: string, icon: ComponentType<{ className?: string }>, isDark?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${isDark ? 'bg-pawn-sidebar text-pawn-gold' : 'bg-white text-brand-green shadow-sm border border-brand-green/10 dark:bg-surface dark:border-border-subtle'}`}>

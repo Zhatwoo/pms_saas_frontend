@@ -1,6 +1,6 @@
 "use client";
 
-import type { DragEvent } from "react";
+import { useRef, type DragEvent } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {
   MOA_CONFIG_FIELD_MIME,
@@ -48,6 +48,7 @@ type FieldSectionProps<T extends string> = {
   onRemoveCustom: (id: string) => void;
   onNewFieldChange: (value: string) => void;
   onAddCustom: () => void;
+  onInsertOntoCanvas?: (payload: MoaConfigFieldPayload) => void;
   onPaletteDragStateChange?: (dragging: boolean) => void;
 };
 
@@ -68,10 +69,17 @@ function FieldSection<T extends string>({
   onRemoveCustom,
   onNewFieldChange,
   onAddCustom,
+  onInsertOntoCanvas,
   onPaletteDragStateChange,
 }: FieldSectionProps<T>) {
   const inactive = options.filter((field) => !activeKeys.includes(field.key));
   const labelByKey = new Map(options.map((field) => [field.key, field.label]));
+  const draggedRef = useRef(false);
+
+  const insertField = (payload: MoaConfigFieldPayload) => {
+    if (!enabled || !onInsertOntoCanvas) return;
+    onInsertOntoCanvas(payload);
+  };
 
   return (
     <div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-2">
@@ -94,25 +102,37 @@ function FieldSection<T extends string>({
                 handleLabel={`Reorder ${label}`}
               >
                 <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                  <span
+                  <button
+                    type="button"
                     draggable={enabled}
-                    title="Drag onto canvas"
-                    onDragStart={(event) =>
+                    disabled={!enabled}
+                    title="Click to insert · Drag onto canvas"
+                    onDragStart={(event) => {
+                      draggedRef.current = true;
                       startConfigFieldDrag(
                         event,
                         { key: String(key), label },
                         onPaletteDragStateChange,
-                      )
-                    }
-                    onDragEnd={() => onPaletteDragStateChange?.(false)}
-                    className={`min-w-0 flex-1 truncate rounded px-1 py-0.5 text-[10px] font-semibold text-zinc-800 ${
+                      );
+                    }}
+                    onDragEnd={() => {
+                      onPaletteDragStateChange?.(false);
+                      window.setTimeout(() => {
+                        draggedRef.current = false;
+                      }, 0);
+                    }}
+                    onClick={() => {
+                      if (draggedRef.current) return;
+                      insertField({ key: String(key), label });
+                    }}
+                    className={`min-w-0 flex-1 truncate rounded px-1 py-0.5 text-left text-[10px] font-semibold text-zinc-800 ${
                       enabled
-                        ? "cursor-grab hover:bg-white active:cursor-grabbing"
+                        ? "cursor-pointer hover:bg-emerald-50 hover:text-emerald-900 active:cursor-grabbing"
                         : ""
                     }`}
                   >
                     {label}
-                  </span>
+                  </button>
                   <button
                     type="button"
                     data-moa-no-dnd
@@ -144,15 +164,20 @@ function FieldSection<T extends string>({
               <button
                 type="button"
                 disabled={!enabled}
-                onClick={() => onAddActive(field.key)}
+                onClick={() => {
+                  onAddActive(field.key);
+                  insertField({ key: String(field.key), label: field.label });
+                }}
                 className="flex min-w-0 flex-1 items-center gap-2 rounded px-1.5 py-1 text-left text-[10px] font-semibold text-zinc-500 transition hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-40"
               >
                 <Plus className="h-3 w-3 shrink-0 text-emerald-600" />
                 <span className="truncate">{field.label}</span>
               </button>
-              <span
+              <button
+                type="button"
                 draggable={enabled}
-                title="Drag onto canvas"
+                disabled={!enabled}
+                title="Click or drag onto canvas"
                 onDragStart={(event) =>
                   startConfigFieldDrag(
                     event,
@@ -161,12 +186,16 @@ function FieldSection<T extends string>({
                   )
                 }
                 onDragEnd={() => onPaletteDragStateChange?.(false)}
+                onClick={() => {
+                  if (!activeKeys.includes(field.key)) onAddActive(field.key);
+                  insertField({ key: String(field.key), label: field.label });
+                }}
                 className={`shrink-0 rounded border border-dashed border-emerald-300 px-1.5 py-0.5 text-[8px] font-bold text-emerald-700 ${
-                  enabled ? "cursor-grab hover:bg-emerald-50 active:cursor-grabbing" : "opacity-40"
+                  enabled ? "cursor-pointer hover:bg-emerald-50 active:cursor-grabbing" : "opacity-40"
                 }`}
               >
-                Drag
-              </span>
+                Insert
+              </button>
             </div>
           ))}
         </div>
@@ -187,9 +216,11 @@ function FieldSection<T extends string>({
               handleLabel={`Reorder ${field.label}`}
             >
               <div className="flex min-w-0 flex-1 items-center gap-1">
-                <span
+                <button
+                  type="button"
                   draggable={enabled}
-                  title="Drag onto canvas"
+                  disabled={!enabled}
+                  title="Click or drag onto canvas"
                   onDragStart={(event) =>
                     startConfigFieldDrag(
                       event,
@@ -198,12 +229,15 @@ function FieldSection<T extends string>({
                     )
                   }
                   onDragEnd={() => onPaletteDragStateChange?.(false)}
+                  onClick={() =>
+                    insertField({ key: field.id, label: field.label || "Custom field" })
+                  }
                   className={`shrink-0 rounded border border-dashed border-emerald-300 px-1.5 py-0.5 text-[8px] font-bold text-emerald-700 ${
-                    enabled ? "cursor-grab hover:bg-emerald-50 active:cursor-grabbing" : "opacity-40"
+                    enabled ? "cursor-pointer hover:bg-emerald-50 active:cursor-grabbing" : "opacity-40"
                   }`}
                 >
-                  Drag
-                </span>
+                  Insert
+                </button>
                 <input
                   data-moa-no-dnd
                   value={field.label}
@@ -281,6 +315,7 @@ export type MoaFieldConfigTabProps = {
   onNewUnitChange: (value: string) => void;
   onAddCustomFinancial: () => void;
   onAddCustomUnit: () => void;
+  onInsertOntoCanvas?: (payload: MoaConfigFieldPayload) => void;
   onPaletteDragStateChange?: (dragging: boolean) => void;
 };
 
@@ -310,15 +345,14 @@ export function MoaFieldConfigTab({
   onNewUnitChange,
   onAddCustomFinancial,
   onAddCustomUnit,
+  onInsertOntoCanvas,
   onPaletteDragStateChange,
 }: MoaFieldConfigTabProps) {
   return (
     <div className="space-y-3">
       <div>
-        <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">MOA Field Config</h3>
         <TabHint>
-          Configure fields for {categoryLabel}. Drag a field label onto the canvas. Use the grip to
-          reorder, trash to remove.
+          Click a field to insert it on the canvas, or drag for precise placement.
         </TabHint>
       </div>
 
@@ -339,6 +373,7 @@ export function MoaFieldConfigTab({
         onRemoveCustom={onRemoveCustomFinancial}
         onNewFieldChange={onNewFinancialChange}
         onAddCustom={onAddCustomFinancial}
+        onInsertOntoCanvas={onInsertOntoCanvas}
         onPaletteDragStateChange={onPaletteDragStateChange}
       />
 
@@ -359,6 +394,7 @@ export function MoaFieldConfigTab({
         onRemoveCustom={onRemoveCustomUnit}
         onNewFieldChange={onNewUnitChange}
         onAddCustom={onAddCustomUnit}
+        onInsertOntoCanvas={onInsertOntoCanvas}
         onPaletteDragStateChange={onPaletteDragStateChange}
       />
     </div>

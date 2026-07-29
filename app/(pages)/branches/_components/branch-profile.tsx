@@ -24,6 +24,32 @@ interface BranchUserApiRecord {
   branch_id?: string | null;
 }
 
+interface BranchActivityLogRecord {
+  id?: string;
+  action: string;
+  details: string;
+  created_at: string;
+  module?: string;
+}
+
+interface BranchFinanceSummaryRecord {
+  branchId: string;
+  breakdown: {
+    pawnOut: number;
+    redeemIn: number;
+    renewalIn: number;
+  };
+}
+
+interface BranchLedgerEntryRecord {
+  type: string;
+  date: string;
+  itemName?: string;
+  description?: string;
+  cashIn: number;
+  cashOut: number;
+}
+
 // Removed MOCK_INVENTORY, MOCK_TRANSACTIONS, MOCK_LOGS
 
 /* ── SVG icons ────────────────────────────────────────────── */
@@ -286,7 +312,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
   };
 
   const formatLogEntry = (action: string, detailsStr: string) => {
-    let detailsObj: any = null;
+    let detailsObj: Record<string, string> | null = null;
     let isJson = false;
     
     if (detailsStr) {
@@ -391,7 +417,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
           setInvAlerts(alertsArr);
           
           // Activity (from logs)
-          const logs = await api.get<any[]>(`/activity-logs?branchId=${branch.id}`).catch(() => []);
+          const logs = await api.get<BranchActivityLogRecord[]>(`/activity-logs?branchId=${branch.id}`).catch(() => []);
           const invLogs = logs.filter(l => l.module === 'Inventory' || (l.action && l.action.toLowerCase().includes('item'))).slice(0, 4);
           setInvActivity(invLogs.map(l => {
             const parsed = formatLogEntry(l.action, l.details);
@@ -412,11 +438,11 @@ export function BranchProfile({ branch }: BranchProfileProps) {
       } else if (activeTab === "transactions") {
         try {
           // Finance Summary
-          const finRes = await api.get<any[]>(`/branch-finance/summary?branch=${branch.id}`);
+          const finRes = await api.get<BranchFinanceSummaryRecord[]>(`/branch-finance/summary?branch=${branch.id}`);
           const summary = finRes.find((s) => s.branchId === branch.id);
-          
+
           // Ledger
-          const ledgerRes = await api.get<{entries: any[]}>(`/branch-finance/ledger?branch=${branch.id}&limit=5`).catch(() => ({entries: []}));
+          const ledgerRes = await api.get<{entries: BranchLedgerEntryRecord[]}>(`/branch-finance/ledger?branch=${branch.id}&limit=5`).catch(() => ({entries: []}));
           
           if (summary) {
             setFinanceSummary(prev => ({
@@ -475,7 +501,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
         }
       } else if (activeTab === "logs") {
         try {
-          const logs = await api.get<any[]>(`/activity-logs?branchId=${branch.id}`).catch(() => []);
+          const logs = await api.get<BranchActivityLogRecord[]>(`/activity-logs?branchId=${branch.id}`).catch(() => []);
           setActivityLogs(logs.slice(0, 10).map(l => {
             const actionLower = (l.action || "").toLowerCase();
             let icon = "check";

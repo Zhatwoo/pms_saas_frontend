@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { AlertBanner } from "@/components/shared/alert-banner";
 import { PaginationFooter } from "@/components/shared/pagination";
@@ -188,17 +188,17 @@ export function InventoryTable() {
       <DataTable
         columns={columns}
         data={inventoryItems}
-        renderCell={(key, value, row) => {
+        renderCell={(key, rawValue, row) => {
           if (key === "status") {
-            return <StatusBadge label={value} variant="yellow" />;
+            return <StatusBadge label={rawValue as string} variant="yellow" />;
           }
           if (key === "stockLevel") {
-            return <StockLevelBadge level={value} />;
+            return <StockLevelBadge level={rawValue as number} />;
           }
           if (key === "actions") {
             return <ActionsDropdown itemId={row.itemId} />;
           }
-          return value;
+          return rawValue as ReactNode;
         }}
       />
 

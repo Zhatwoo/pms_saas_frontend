@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicPaths = ["/login"];
+const publicPaths = ["/", "/login"];
 const SESSION_EXPIRED_REASON = "session-expired";
 
 export function proxy(request: NextRequest) {

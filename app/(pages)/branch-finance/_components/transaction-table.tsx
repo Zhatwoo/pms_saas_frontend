@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { DataTable } from "@/components/shared/data-table";
 import { PaginationFooter } from "@/components/shared/pagination";
 import type { Column } from "@/components/shared/data-table";
@@ -101,9 +101,10 @@ export function TransactionTable({
       <DataTable
         columns={columns}
         data={paginated}
-        renderCell={(key, value, row) => {
+        renderCell={(key, rawValue, row) => {
+          const value = rawValue as string | number | null | undefined;
           if (key === "date") {
-            return <span className="text-sm text-text-secondary">{fmtDate(value)}</span>;
+            return <span className="text-sm text-text-secondary">{fmtDate(value as string | null)}</span>;
           }
           if (key === "type") {
             const cfg = typeConfig[value as keyof typeof typeConfig];
@@ -125,7 +126,7 @@ export function TransactionTable({
             const prefix = txType === "TRANSFER_OUT" ? "-" : "+";
             return (
               <span className={`text-sm font-bold ${color}`}>
-                {prefix}{fmt(value)}
+                {prefix}{fmt(value as number)}
               </span>
             );
           }
@@ -152,16 +153,16 @@ export function TransactionTable({
             );
           }
           if (key === "approvalDate") {
-            return <span className="text-sm text-text-secondary">{fmtDate(value)}</span>;
+            return <span className="text-sm text-text-secondary">{fmtDate(value as string | null)}</span>;
           }
           if (key === "notes") {
             return (
-              <span className="max-w-[140px] truncate text-sm text-text-muted" title={value}>
+              <span className="max-w-[140px] truncate text-sm text-text-muted" title={value as string | undefined}>
                 {value || "—"}
               </span>
             );
           }
-          return value;
+          return value as ReactNode;
         }}
       />
 
