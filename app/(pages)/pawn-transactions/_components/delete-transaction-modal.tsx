@@ -66,9 +66,9 @@ export function DeleteTransactionModal({
             Delete Transaction
           </h3>
           <p className="mt-2 text-center text-xs leading-relaxed text-text-tertiary">
-            Remove <span className="font-bold text-text-primary">{transaction.transactionNo}</span> from{" "}
-            <span className="font-bold text-text-primary">{transaction.branch}</span>? This only deletes
-            the local mock record on this screen.
+            Are you sure you want to void transaction{" "}
+            <span className="font-bold text-text-primary">{transaction.transactionNo}</span> from{" "}
+            <span className="font-bold text-text-primary">{transaction.branch}</span>? This action cannot be undone.
           </p>
         </div>
 

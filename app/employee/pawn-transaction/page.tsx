@@ -501,6 +501,7 @@ export default function EmployeePawnTransactionsPage() {
   const [allTransactions, setAllTransactions] = useState<TransactionRow[]>([]);
   const [selectedDateLedgerRows, setSelectedDateLedgerRows] = useState<TransactionRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDayOpen, setIsDayOpen] = useState(true);
   const [highlightedTransactionNo, setHighlightedTransactionNo] = useState<string | null>(null);
   const [passwordModal, setPasswordModal] = useState<{ open: boolean; onConfirm: () => void }>({
     open: false,
@@ -582,6 +583,7 @@ export default function EmployeePawnTransactionsPage() {
           const session = await api.get<BranchBusinessSessionPeek>(
             `/branch-finance/business-session?branch=${encodeURIComponent(branchIdForApi)}`,
           );
+          setIsDayOpen(session.operationalCashAllowed === true);
           if (session.operationalCashAllowed) {
             operationalCutoffAt = session.operationalCutoffAt ?? null;
             if (session.sealedTransactionIds) {
@@ -1139,8 +1141,20 @@ export default function EmployeePawnTransactionsPage() {
       </div>
 
       <div className="print-hide flex flex-col gap-4">
+      <BranchDaySessionToolbar
+        branchId={branchIdForApi}
+        logoutAfterEndDay
+        syncOpeningChecklist={refreshOpeningChecklistFromServer}
+        onSessionChanged={() => {
+          if (!modulesAllowed) return;
+          void fetchSelectedDateStats();
+          void fetchTransactions();
+        }}
+      />
+
       <TransactionActions
         activeFilter={activeFilter}
+        isDayOpen={isDayOpen}
         onFilterChange={(f) => setActiveFilter(f)}
         onRenewClick={() => handleActionWithPassword(() => setIsRenewModalOpen(true))}
         onRedeem={() => handleActionWithPassword(() => setIsRedeemModalOpen(true))}
@@ -1151,17 +1165,6 @@ export default function EmployeePawnTransactionsPage() {
         })}
         onSalesTransfer={() => handleActionWithPassword(() => setIsSalesTransferModalOpen(true))}
         onNewPawn={() => handleActionWithPassword(openNewPawnForm)}
-      />
-
-      <BranchDaySessionToolbar
-        branchId={branchIdForApi}
-        logoutAfterEndDay
-        syncOpeningChecklist={refreshOpeningChecklistFromServer}
-        onSessionChanged={() => {
-          if (!modulesAllowed) return;
-          void fetchSelectedDateStats();
-          void fetchTransactions();
-        }}
       />
 
       <TransactionStats data={currentStats} isLoading={isLoading} />

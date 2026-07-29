@@ -52,7 +52,6 @@ export interface TransactionRow {
   storage: string;
   notes: string;
   qrCode?: string;
-  qr_code?: string;
   serialNumber?: string;
   itemsIncluded?: string;
   condition?: string;
@@ -68,10 +67,16 @@ export interface TransactionRow {
 export interface TransactionStatsData {
   pawnedToday: number;
   buyBack: number;
+  buyOut?: number;
   renewed: number;
   soldItem: number;
+  redeemed?: number;
+  boughtBack?: number;
+  transfer?: number;
   startingBalance: number;
   endingBalance: number;
+  sessionOpenedAt?: string | null;
+  sealedTransactionIds?: string[];
 }
 
 export const PURPOSE_OPTIONS: PurposeType[] = [
