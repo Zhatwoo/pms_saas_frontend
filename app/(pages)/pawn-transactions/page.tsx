@@ -845,7 +845,6 @@ export default function PawnTransactionsPage() {
         <TransactionActions
           search={search}
           purposeFilter={purposeFilter}
-          selectedBranchLabel={selectedBranch.name}
           onSearchChange={setSearch}
           onPurposeFilterChange={setPurposeFilter}
           viewMode={viewMode}

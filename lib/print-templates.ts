@@ -290,8 +290,45 @@ export const MOA_LEGAL_PAGE = {
   screenHeightPx: 1248,
 } as const;
 
+export type MoaPrintPageMetrics = {
+  width: string;
+  height: string;
+  padding: string;
+  screenWidthPx: number;
+  screenHeightPx: number;
+};
+
+/** Map design canvas pageSizeId → print metrics. */
+export function moaPrintPageMetrics(
+  pageSizeId?: string | null,
+): MoaPrintPageMetrics {
+  if (pageSizeId === "letter") {
+    return {
+      width: "8.5in",
+      height: "11in",
+      padding: "0.15in 0.32in",
+      screenWidthPx: 816,
+      screenHeightPx: 1056,
+    };
+  }
+  if (pageSizeId === "a4") {
+    return {
+      width: "210mm",
+      height: "297mm",
+      padding: "0.15in 0.28in",
+      screenWidthPx: 794,
+      screenHeightPx: 1123,
+    };
+  }
+  return { ...MOA_LEGAL_PAGE };
+}
+
+export function moaPrintPageRuleCss(page: MoaPrintPageMetrics = MOA_LEGAL_PAGE) {
+  return `@page { size: ${page.width} ${page.height} portrait; margin: 0; }`;
+}
+
 /** MOA: `@page` rule — 8.5 × 13 portrait, zero margin (content carries its own padding). */
-export const MOA_PRINT_PAGE_RULE_CSS = `@page { size: 8.5in 13in portrait; margin: 0; }`;
+export const MOA_PRINT_PAGE_RULE_CSS = moaPrintPageRuleCss(MOA_LEGAL_PAGE);
 
 /** ${BRAND_CONFIG.shortCompanyName} diagonal watermark — shared by settings preview, MOA modal, and print iframe. */
 export const MOA_WATERMARK_CSS = `
@@ -821,7 +858,35 @@ export const MOA_PRINT_LAYOUT_CSS = `
   }
 `;
 
-export function buildMoaSlipPrintHtml(slipHtml: string): string {
+export function buildMoaSlipPrintHtml(
+  slipHtml: string,
+  pageSizeId?: string | null,
+): string {
+  const page = moaPrintPageMetrics(pageSizeId);
+  const pageOverrideCss = `
+    ${moaPrintPageRuleCss(page)}
+    #moa-slip-printable {
+      width: ${page.width} !important;
+      max-width: ${page.width} !important;
+    }
+    .moa-print-page,
+    #moa-preview-page1,
+    #moa-preview-page2 {
+      width: ${page.width} !important;
+      height: ${page.height} !important;
+      max-width: ${page.width} !important;
+      max-height: ${page.height} !important;
+      padding: ${page.padding} !important;
+    }
+    .moa-print-page.moa-design-print-page {
+      padding: 0 !important;
+      width: ${page.width} !important;
+      height: ${page.height} !important;
+      max-width: ${page.width} !important;
+      max-height: ${page.height} !important;
+    }
+  `;
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -835,6 +900,10 @@ export function buildMoaSlipPrintHtml(slipHtml: string): string {
     ${MOA_PRINT_SCREEN_CSS}
     @media print {
       ${MOA_PRINT_CSS}
+    }
+    ${pageOverrideCss}
+    @media print {
+      ${pageOverrideCss}
     }
   </style>
 </head>
@@ -860,8 +929,12 @@ export function isMobilePrintEnvironment(): boolean {
  * Print MOA HTML in a way that works on mobile.
  * Zero-size iframes cause Android Chrome to print the parent page (modal UI included).
  */
-export async function printMoaSlipDocument(slipHtml: string): Promise<void> {
-  const html = buildMoaSlipPrintHtml(slipHtml);
+export async function printMoaSlipDocument(
+  slipHtml: string,
+  options?: { pageSizeId?: string | null },
+): Promise<void> {
+  const page = moaPrintPageMetrics(options?.pageSizeId);
+  const html = buildMoaSlipPrintHtml(slipHtml, options?.pageSizeId);
   const usePopup = isMobilePrintEnvironment();
 
   if (usePopup) {
@@ -922,8 +995,8 @@ export async function printMoaSlipDocument(slipHtml: string): Promise<void> {
     "position:fixed",
     "left:0",
     "top:0",
-    `width:${MOA_LEGAL_PAGE.screenWidthPx}px`,
-    `height:${MOA_LEGAL_PAGE.screenHeightPx}px`,
+    `width:${page.screenWidthPx}px`,
+    `height:${page.screenHeightPx}px`,
     "opacity:0",
     "pointer-events:none",
     "border:0",

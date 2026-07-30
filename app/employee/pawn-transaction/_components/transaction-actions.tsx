@@ -142,6 +142,7 @@ interface TransactionActionsProps {
   onBuyBack?: () => void;
   onReserveLayaway?: () => void;
   onSalesTransfer?: () => void;
+  isDayOpen?: boolean;
 }
 
 export function TransactionActions({
@@ -154,26 +155,39 @@ export function TransactionActions({
   onBuyBack,
   onReserveLayaway,
   onSalesTransfer,
+  isDayOpen = true,
 }: TransactionActionsProps) {
   return (
     <div className="rounded-xl border border-border-main bg-surface p-4 shadow-sm transition-colors duration-300">
+      {!isDayOpen && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
+          <svg className="h-4 w-4 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Day session is not started yet. Click <strong>"START DAY"</strong> on the toolbar above to submit starting cash before processing transactions.</span>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
+            disabled={!isDayOpen}
             onClick={onNewPawn}
-            className="flex items-center gap-1.5 rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:brightness-110 whitespace-nowrap"
+            title={!isDayOpen ? "Start day session first to post transactions" : undefined}
+            className="flex items-center gap-1.5 rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:brightness-110 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:brightness-100"
           >
             {plusIcon}
             New Pawn
           </button>
 
           <button
+            disabled={!isDayOpen}
+            title={!isDayOpen ? "Start day session first to post transactions" : undefined}
             onClick={() => {
+              if (!isDayOpen) return;
               onFilterChange?.("Renew");
               onRenewClick?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 ${activeFilter === "Renew"
+            className={`flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed ${activeFilter === "Renew"
                 ? "ring-2 ring-orange-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
               }`}
@@ -183,11 +197,14 @@ export function TransactionActions({
           </button>
 
           <button
+            disabled={!isDayOpen}
+            title={!isDayOpen ? "Start day session first to post transactions" : undefined}
             onClick={() => {
+              if (!isDayOpen) return;
               onFilterChange?.("Sells / Transfer");
               onSalesTransfer?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-purple-700 ${activeFilter === "Sells / Transfer"
+            className={`flex items-center gap-1.5 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-purple-700 disabled:opacity-40 disabled:cursor-not-allowed ${activeFilter === "Sells / Transfer"
                 ? "ring-2 ring-purple-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
               }`}
@@ -197,11 +214,14 @@ export function TransactionActions({
           </button>
 
           <button
+            disabled={!isDayOpen}
+            title={!isDayOpen ? "Start day session first to post transactions" : undefined}
             onClick={() => {
+              if (!isDayOpen) return;
               onFilterChange?.("Buy Out");
               onRedeem?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 ${activeFilter === "Buy Out" || activeFilter === "Redeem"
+            className={`flex items-center gap-1.5 rounded-lg bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-700 disabled:opacity-40 disabled:cursor-not-allowed ${activeFilter === "Buy Out" || activeFilter === "Redeem"
                 ? "ring-2 ring-sky-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
               }`}
@@ -211,11 +231,14 @@ export function TransactionActions({
           </button>
 
           <button
+            disabled={!isDayOpen}
+            title={!isDayOpen ? "Start day session first to post transactions" : undefined}
             onClick={() => {
+              if (!isDayOpen) return;
               onFilterChange?.("Buy Back");
               onBuyBack?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 ${activeFilter === "Buy Back"
+            className={`flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed ${activeFilter === "Buy Back"
                 ? "ring-2 ring-indigo-400 ring-offset-1 ring-offset-surface"
                 : "opacity-80 hover:opacity-100"
               }`}
@@ -225,11 +248,14 @@ export function TransactionActions({
           </button>
 
           <button
+            disabled={!isDayOpen}
+            title={!isDayOpen ? "Start day session first to post transactions" : undefined}
             onClick={() => {
+              if (!isDayOpen) return;
               onFilterChange?.("Reserve / Layaway");
               onReserveLayaway?.();
             }}
-            className={`flex items-center gap-1.5 rounded-lg bg-pawn-gold px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm transition hover:opacity-90 ${activeFilter === "Reserve / Layaway"
+            className={`flex items-center gap-1.5 rounded-lg bg-pawn-gold px-4 py-2 text-xs font-bold text-zinc-900 shadow-sm transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed ${activeFilter === "Reserve / Layaway"
                 ? "ring-2 ring-pawn-gold/40 ring-offset-1 ring-offset-surface"
                 : "opacity-90 hover:opacity-100"
               }`}

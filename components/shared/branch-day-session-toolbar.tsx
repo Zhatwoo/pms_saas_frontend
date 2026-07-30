@@ -374,11 +374,7 @@ export function BranchDaySessionToolbar({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              disabled={
-                loading ||
-                !needsStart ||
-                checklistHandlesStarting
-              }
+              disabled={loading || !needsStart}
               onClick={() => setStartOpen(true)}
               className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-xs font-bold uppercase tracking-wide text-pawn-gold shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
