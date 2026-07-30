@@ -140,7 +140,7 @@ export default function BranchesPage() {
     }
     // Super admin selected a specific branch
     return branches.filter(
-      (b) => b.branchId === selectedBranch.id,
+      (b) => b.id === selectedBranch.id,
     );
   }, [branches, selectedBranch, isAllBranches, canSwitchBranch, user?.branchId]);
 
@@ -156,7 +156,7 @@ export default function BranchesPage() {
     const num = Number(b.totalValue.replace(/[₱,]/g, "")) || 0;
     return acc + num;
   }, 0);
-  const formattedTotal = formatPeso(totalValue.toLocaleString());
+  const formattedTotal = formatPeso(totalValue);
 
   // Viewing context label
   const viewingLabel = isAllBranches
@@ -192,25 +192,19 @@ export default function BranchesPage() {
   }
 
   async function handleTerminateBranch(branch: BranchRow) {
-    console.log("[handleTerminateBranch] Terminating branch:", branch);
-    
     if (!branch.id) {
-      const msg = "Unable to terminate branch: missing branch ID";
-      console.error("[handleTerminateBranch]", msg);
-      setErrorMessage(msg);
+      setErrorMessage("Unable to terminate branch: missing branch ID");
+
       return;
     }
 
     try {
-      console.log(`[handleTerminateBranch] Sending PATCH to /branches/${branch.id}`);
-      const result = await api.fetch<BranchApiItem>(`/branches/${branch.id}`, {
+      await api.fetch<BranchApiItem>(`/branches/${branch.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           status: "Terminated",
         }),
       });
-      
-      console.log("[handleTerminateBranch] API response:", result);
 
       await loadBranches();
       await refreshBranches();
