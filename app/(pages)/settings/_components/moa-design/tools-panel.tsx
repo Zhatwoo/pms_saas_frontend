@@ -3,6 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   ChevronLeft,
+  FileText,
   FileType,
   Heading,
   LayoutTemplate,
@@ -26,6 +27,7 @@ import { MoaCanvasTab } from "./canvas-tab";
 import { MoaElementsTab } from "./elements-tab";
 import { MoaLayoutTab } from "./layout-tab";
 import { MoaTemplatesTab } from "./templates-tab";
+import { MoaTermsTab } from "./terms-tab";
 import { MoaUploadsTab } from "./uploads-tab";
 
 type MoaToolsTabId =
@@ -35,6 +37,7 @@ type MoaToolsTabId =
   | "uploads"
   | "fields"
   | "templates"
+  | "terms"
   | "canvas";
 
 const NAV: Array<{
@@ -48,6 +51,7 @@ const NAV: Array<{
   { id: "uploads", label: "Uploads", icon: Upload },
   { id: "fields", label: "Fields", icon: ListChecks },
   { id: "templates", label: "Templates", icon: Library },
+  { id: "terms", label: "Terms", icon: FileText },
   { id: "canvas", label: "Canvas", icon: FileType },
 ];
 
@@ -63,21 +67,20 @@ export type MoaDesignToolsPanelProps = {
   onPaletteDragStateChange?: (dragging: boolean) => void;
   onAddHeaderField?: (key: MoaHeaderFieldKey) => void;
   onAddElement?: (kind: MoaPaletteItemKind, options?: MoaElementCreateOptions) => void;
-  /** Apply an uploaded image to the selected element. */
   onUseUploadedImage?: (dataUrl: string) => void;
-  /** MOA Field Config content (Financial / Unit fields). */
   fieldConfig?: ReactNode;
   currentDesign: MoaDesignBlob;
   selectedElements: MoaDesignElement[];
   onApplyTemplatePack: (template: MoaComponentTemplate) => void;
   onApplyTemplateFull: (template: MoaComponentTemplate) => void;
+  termsText: string;
+  onTermsChange: (value: string) => void;
+  termsHeading: string;
+  onTermsHeadingChange: (value: string) => void;
+  termsPreamble: string;
+  onTermsPreambleChange: (value: string) => void;
 };
 
-/**
- * Canva-like MOA designer chrome:
- * narrow icon rail + secondary browse panel (Layout / Header / Elements / …).
- * Search styling lives in the Docs toolbar above the canvas.
- */
 export function MoaDesignToolsPanel({
   enabled,
   pageSize,
@@ -96,6 +99,12 @@ export function MoaDesignToolsPanel({
   selectedElements,
   onApplyTemplatePack,
   onApplyTemplateFull,
+  termsText,
+  onTermsChange,
+  termsHeading,
+  onTermsHeadingChange,
+  termsPreamble,
+  onTermsPreambleChange,
 }: MoaDesignToolsPanelProps) {
   const [activeTab, setActiveTab] = useState<MoaToolsTabId>("layout");
   const [panelOpen, setPanelOpen] = useState(true);
@@ -116,11 +125,16 @@ export function MoaDesignToolsPanel({
     setQuery("");
   };
 
+  const showSearch =
+    activeTab !== "canvas" &&
+    activeTab !== "uploads" &&
+    activeTab !== "terms";
+
   return (
     <div className="flex h-full min-h-[min(75vh,860px)] shrink-0 overflow-hidden border-r border-zinc-200 bg-white">
       <nav
         aria-label="MOA design categories"
-        className="flex w-16 flex-col items-stretch gap-0.5 border-r border-zinc-200 bg-zinc-50 py-2"
+        className="flex w-16 flex-col items-stretch gap-0.5 overflow-y-auto border-r border-zinc-200 bg-zinc-50 py-2"
       >
         {NAV.map((tab) => {
           const Icon = tab.icon;
@@ -162,7 +176,9 @@ export function MoaDesignToolsPanel({
                           ? "MOA financial & unit fields"
                           : activeTab === "templates"
                             ? "Ready-made packs & saved layouts"
-                            : "Page size, pages, watermark"}
+                            : activeTab === "terms"
+                              ? "Classic reverse-side terms text"
+                              : "Page size, pages, watermark"}
               </p>
             </div>
             <button
@@ -175,7 +191,7 @@ export function MoaDesignToolsPanel({
             </button>
           </div>
 
-          {activeTab !== "canvas" && activeTab !== "uploads" ? (
+          {showSearch ? (
             <div className="border-b border-zinc-100 px-3 py-2">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
@@ -245,6 +261,18 @@ export function MoaDesignToolsPanel({
                 selectedElements={selectedElements}
                 onApplyPack={onApplyTemplatePack}
                 onApplyFull={onApplyTemplateFull}
+              />
+            ) : null}
+
+            {activeTab === "terms" ? (
+              <MoaTermsTab
+                enabled={enabled}
+                termsText={termsText}
+                onTermsChange={onTermsChange}
+                termsHeading={termsHeading}
+                onTermsHeadingChange={onTermsHeadingChange}
+                termsPreamble={termsPreamble}
+                onTermsPreambleChange={onTermsPreambleChange}
               />
             ) : null}
 
