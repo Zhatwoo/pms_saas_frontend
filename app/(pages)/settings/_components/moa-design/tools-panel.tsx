@@ -131,10 +131,10 @@ export function MoaDesignToolsPanel({
     activeTab !== "terms";
 
   return (
-    <div className="flex h-full min-h-[min(75vh,860px)] shrink-0 overflow-hidden border-r border-zinc-200 bg-white">
+    <div className="flex h-full min-h-[min(75vh,860px)] shrink-0 self-stretch overflow-hidden bg-white">
       <nav
         aria-label="MOA design categories"
-        className="flex w-16 flex-col items-stretch gap-0.5 overflow-y-auto border-r border-zinc-200 bg-zinc-50 py-2"
+        className="flex w-[76px] shrink-0 flex-col items-stretch gap-0.5 overflow-y-auto border-r border-zinc-200 bg-zinc-50 py-2"
       >
         {NAV.map((tab) => {
           const Icon = tab.icon;
@@ -145,21 +145,23 @@ export function MoaDesignToolsPanel({
               type="button"
               title={tab.label}
               onClick={() => selectTab(tab.id)}
-              className={`mx-1 flex flex-col items-center gap-0.5 rounded-lg px-1 py-2.5 text-[8px] font-bold transition ${
+              className={`mx-1 flex min-w-0 flex-col items-center gap-1 rounded-lg px-0.5 py-2.5 transition ${
                 active
                   ? "bg-white text-emerald-800 shadow-sm ring-1 ring-emerald-200"
                   : "text-zinc-500 hover:bg-white/80 hover:text-zinc-800"
               }`}
             >
-              <Icon className={`h-4 w-4 ${active ? "text-emerald-700" : "text-zinc-400"}`} />
-              {tab.label}
+              <Icon className={`h-4 w-4 shrink-0 ${active ? "text-emerald-700" : "text-zinc-400"}`} />
+              <span className="w-full truncate text-center text-[9px] font-bold leading-none">
+                {tab.label}
+              </span>
             </button>
           );
         })}
       </nav>
 
       {panelOpen ? (
-        <div className="flex w-[min(100vw-4rem,280px)] flex-col bg-white sm:w-[300px]">
+        <div className="flex w-[min(100vw-76px,280px)] flex-col bg-white sm:w-[300px]">
           <div className="flex items-center gap-2 border-b border-zinc-100 px-3 py-2.5">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-zinc-900">{activeMeta.label}</p>
@@ -205,7 +207,7 @@ export function MoaDesignToolsPanel({
             </div>
           ) : null}
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <div className="max-h-[70vh] min-h-0 flex-1 overflow-y-auto p-3">
             {activeTab === "layout" ? (
               <MoaLayoutTab
                 enabled={enabled}

@@ -660,6 +660,7 @@ export function MoaModal({
     shopAddress: headerSecondary || shopInfo?.shopAddress || "",
     phoneNumber: headerPhone || shopInfo?.phoneNumber || "",
     email: shopInfo?.email || "",
+    processedBy: data.processedBy || "",
     customValues: {
       ...persistedMoaValues,
       ...(data.customMoaValues ?? {}),

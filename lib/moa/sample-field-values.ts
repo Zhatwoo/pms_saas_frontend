@@ -49,5 +49,6 @@ export function createSampleMoaFieldValues(
     shopAddress: shop.shopAddress || "",
     phoneNumber: shop.phoneNumber || "",
     email: shop.email || "",
+    processedBy: "MARIA SANTOS",
   };
 }

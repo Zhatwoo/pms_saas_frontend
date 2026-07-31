@@ -11,6 +11,7 @@ import { PasswordChangeRequestCard } from "@/components/shared/password-change-r
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
+import { TransactionConfirmModal } from "@/components/shared/transaction-confirm-modal";
 import { fetchCategories } from "@/lib/categories";
 import {
   MOA_LEGAL_PAGE,
@@ -455,6 +456,20 @@ export default function SettingsPage() {
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [moaConfirm, setMoaConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    resolve: (ok: boolean) => void;
+  } | null>(null);
+  const requestMoaConfirm = (opts: {
+    title: string;
+    message: string;
+    confirmLabel: string;
+  }) =>
+    new Promise<boolean>((resolve) => {
+      setMoaConfirm({ ...opts, resolve });
+    });
   const [moaDirty, setMoaDirty] = useState(false);
   const [isSavingMoa, setIsSavingMoa] = useState(false);
   const initialTopLabelsRef = useRef(topLabels);
@@ -1703,13 +1718,13 @@ export default function SettingsPage() {
 
   const handleApplyMoaToAllCategories = async () => {
     if (!canEditMoa || moaCategories.length === 0) return;
-    if (
-      !window.confirm(
+    const okApplyAll = await requestMoaConfirm({
+      title: "Apply to all categories",
+      message:
         "Apply the current template (including canvas design) to ALL categories, then save?",
-      )
-    ) {
-      return;
-    }
+      confirmLabel: "Apply & save",
+    });
+    if (!okApplyAll) return;
 
     const currentTemplate = getCurrentMoaTemplate();
     const templatesForAllCategories = Object.fromEntries(
@@ -1801,9 +1816,12 @@ export default function SettingsPage() {
     try {
       const currentTemplate = overrideCurrent ?? getCurrentMoaTemplate();
       if (!hasMoaDesign(currentTemplate.design) && moaDocumentType === "moa") {
-        const ok = window.confirm(
-          "Canvas design is empty. Save anyway? New Pawn will fall back to the classic slip.",
-        );
+        const ok = await requestMoaConfirm({
+          title: "Empty canvas design",
+          message:
+            "Canvas design is empty. Save anyway? New Pawn will fall back to the classic slip.",
+          confirmLabel: "Save anyway",
+        });
         if (!ok) return;
       }
 
@@ -1840,18 +1858,23 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     if (!isSuperAdmin) return;
     if (moaDirty) {
-      const ok = window.confirm(
-        "You have unsaved MOA changes. Save and send to all branches now?",
-      );
+      const ok = await requestMoaConfirm({
+        title: "Unsaved changes",
+        message: "You have unsaved MOA changes. Save and send to all branches now?",
+        confirmLabel: "Save & send",
+      });
       if (!ok) return;
     }
     setSendStatus("sending");
     try {
       const currentTemplate = getCurrentMoaTemplate();
       if (!hasMoaDesign(currentTemplate.design) && moaDocumentType === "moa") {
-        const ok = window.confirm(
-          "Canvas design is empty. Send anyway? Branches will fall back to the classic slip.",
-        );
+        const ok = await requestMoaConfirm({
+          title: "Empty canvas design",
+          message:
+            "Canvas design is empty. Send anyway? Branches will fall back to the classic slip.",
+          confirmLabel: "Send anyway",
+        });
         if (!ok) {
           setSendStatus("idle");
           return;
@@ -2653,9 +2676,9 @@ export default function SettingsPage() {
                 {/* Context hints removed — info now in sidebar & toolbar */}
 
                 {isMoaEditMode ? (
-                  <div className="overflow-hidden rounded-xl border border-border-main bg-white shadow-sm">
+                  <div className="overflow-clip rounded-xl border border-border-main bg-white shadow-sm">
                     <div className="flex min-h-[min(78vh,920px)] items-stretch">
-                      <aside className="relative flex shrink-0">
+                      <aside className="relative z-10 flex shrink-0 items-stretch border-r border-zinc-200 bg-zinc-50">
                         <input
                           ref={moaImageInputRef}
                           type="file"
@@ -3417,8 +3440,8 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                <div className="sticky bottom-0 z-20 flex flex-col gap-3 border-t border-border-main bg-white/95 px-3 py-3 backdrop-blur sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                <div className="flex flex-col gap-3 rounded-xl border border-border-main bg-white px-3 py-3 shadow-sm dark:bg-zinc-900 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
+                  <p className="min-w-0 flex-1 text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                     {moaDirty ? (
                       <span className="font-bold text-amber-700">Unsaved changes.</span>
                     ) : (
@@ -3467,6 +3490,21 @@ export default function SettingsPage() {
           )}
 
         </div>
+
+        <TransactionConfirmModal
+          isOpen={moaConfirm !== null}
+          title={moaConfirm?.title ?? ""}
+          message={moaConfirm?.message ?? ""}
+          confirmLabel={moaConfirm?.confirmLabel ?? "Confirm"}
+          onClose={() => {
+            moaConfirm?.resolve(false);
+            setMoaConfirm(null);
+          }}
+          onConfirm={() => {
+            moaConfirm?.resolve(true);
+            setMoaConfirm(null);
+          }}
+        />
 
         <MoaDesignViewModal
           isOpen={showPrintPreview}

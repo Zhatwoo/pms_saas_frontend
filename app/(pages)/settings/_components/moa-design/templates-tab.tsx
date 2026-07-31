@@ -21,7 +21,15 @@ import {
   type MoaComponentTemplate,
 } from "@/lib/moa/component-templates";
 import type { MoaDesignBlob } from "@/lib/moa";
+import { TransactionConfirmModal } from "@/components/shared/transaction-confirm-modal";
 import { TabHint } from "./ui";
+
+type PendingConfirm = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  action: () => void;
+};
 
 export function MoaTemplatesTab({
   enabled,
@@ -44,6 +52,9 @@ export function MoaTemplatesTab({
   const [saveName, setSaveName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(
+    null,
+  );
 
   useEffect(() => {
     setCustom(loadCustomMoaComponentTemplates());
@@ -130,9 +141,15 @@ export function MoaTemplatesTab({
 
   const handleDelete = (id: string) => {
     if (!enabled) return;
-    if (!window.confirm("Delete this template?")) return;
-    persist(deleteMoaComponentTemplate(custom, id));
-    if (editingId === id) setEditingId(null);
+    setPendingConfirm({
+      title: "Delete template",
+      message: "This template will be permanently removed. This action cannot be undone.",
+      confirmLabel: "Delete",
+      action: () => {
+        persist(deleteMoaComponentTemplate(custom, id));
+        if (editingId === id) setEditingId(null);
+      },
+    });
   };
 
   const handleRenameCommit = (id: string) => {
@@ -144,27 +161,26 @@ export function MoaTemplatesTab({
 
   const handleUpdateFromCanvas = (id: string) => {
     if (!enabled) return;
-    if (
-      !window.confirm(
-        "Replace this template with the current canvas layout?",
-      )
-    ) {
-      return;
-    }
-    persist(updateCustomTemplateFromDesign(custom, id, currentDesign));
+    setPendingConfirm({
+      title: "Update template",
+      message: "Replace this template with the current canvas layout?",
+      confirmLabel: "Update",
+      action: () => {
+        persist(updateCustomTemplateFromDesign(custom, id, currentDesign));
+      },
+    });
   };
 
   const handleApply = (template: MoaComponentTemplate) => {
     if (!enabled) return;
     if (template.kind === "full") {
-      if (
-        !window.confirm(
-          "Replace the entire canvas with this template? Current layout will be overwritten.",
-        )
-      ) {
-        return;
-      }
-      onApplyFull(template);
+      setPendingConfirm({
+        title: "Apply full layout",
+        message:
+          "Replace the entire canvas with this template? Your current layout will be overwritten.",
+        confirmLabel: "Apply layout",
+        action: () => onApplyFull(template),
+      });
       return;
     }
     onApplyPack(template);
@@ -354,6 +370,18 @@ export function MoaTemplatesTab({
           })
         )}
       </div>
+
+      <TransactionConfirmModal
+        isOpen={pendingConfirm !== null}
+        title={pendingConfirm?.title ?? ""}
+        message={pendingConfirm?.message ?? ""}
+        confirmLabel={pendingConfirm?.confirmLabel ?? "Confirm"}
+        onClose={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          pendingConfirm?.action();
+          setPendingConfirm(null);
+        }}
+      />
     </div>
   );
 }
