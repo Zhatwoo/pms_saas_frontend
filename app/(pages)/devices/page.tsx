@@ -451,20 +451,14 @@ export default function DevicesPage() {
     const matchStatus = statusFilter === "ALL" || d.status === statusFilter;
     return matchSearch && matchStatus;
   }).sort((a, b) => {
-    // Priority 1: PENDING status always on top
+    // Priority 1: PENDING status always on top (requests requiring authorization)
     if (a.status === "PENDING" && b.status !== "PENDING") return -1;
     if (b.status === "PENDING" && a.status !== "PENDING") return 1;
     
-    // Priority 2: Branch name (if showing all branches)
-    if (isAllBranches) {
-      const branchA = getDeviceBranchName(a) ?? "";
-      const branchB = getDeviceBranchName(b) ?? "";
-      const branchComparison = branchA.localeCompare(branchB);
-      if (branchComparison !== 0) return branchComparison;
-    }
-    
-    // Priority 3: Most recent created_at
-    return new Date(b.created_at ?? b.createdAt).getTime() - new Date(a.created_at ?? a.createdAt).getTime();
+    // Priority 2: Most recent created_at (latest to oldest)
+    const timeA = new Date(a.created_at ?? a.createdAt ?? 0).getTime();
+    const timeB = new Date(b.created_at ?? b.createdAt ?? 0).getTime();
+    return timeB - timeA;
   });
 
   const counts = {
