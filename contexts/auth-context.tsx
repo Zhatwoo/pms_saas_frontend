@@ -20,6 +20,7 @@ interface AuthContextValue {
   login: (email: string, password: string, deviceFingerprint: string) => Promise<User>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
+  updateUser: (user: User) => void;
   isSessionExpiryActive: boolean;
   requireReLogin: (message?: string) => void;
   forceLogoutToLogin: (message?: string) => void;
@@ -257,6 +258,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return normalizedUser;
   }, [clearSessionExpiryTimers, refreshProfile]);
 
+  const updateUser = useCallback((updatedUser: User) => {
+    const normalized = normalizeUser(updatedUser);
+    if (normalized) {
+      setUser(normalized);
+      localStorage.setItem("pms_user", JSON.stringify(normalized));
+    }
+  }, []);
+
   const logout = useCallback(() => {
     clearSessionExpiryTimers();
     isHandlingSessionExpiryRef.current = false;
@@ -275,6 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         refreshProfile,
+        updateUser,
         isSessionExpiryActive,
         requireReLogin,
         forceLogoutToLogin,

@@ -99,6 +99,10 @@ export function PasswordChangeRequestCard() {
   const [showDirectCurrentPassword, setShowDirectCurrentPassword] = useState(false);
   const [showDirectNewPassword, setShowDirectNewPassword] = useState(false);
   const [showDirectConfirmPassword, setShowDirectConfirmPassword] = useState(false);
+  const [directOtp, setDirectOtp] = useState("");
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
   const [isChangingDirect, setIsChangingDirect] = useState(false);
   const [activationCurrentPassword, setActivationCurrentPassword] = useState("");
   const [activationNewPassword, setActivationNewPassword] = useState("");
@@ -194,6 +198,9 @@ export function PasswordChangeRequestCard() {
   const openChangePassword = () => {
     setError(null);
     setSuccess(null);
+    setOtpMessage(null);
+    setDirectOtp("");
+    setIsOtpSent(false);
     if (canChangeDirectly) {
       setIsDirectChangeModalOpen(true);
       return;
@@ -205,10 +212,55 @@ export function PasswordChangeRequestCard() {
     setIsRequestModalOpen(true);
   };
 
+  const sendPasswordOtp = async () => {
+    const trimmedCurrentPassword = directCurrentPassword.trim();
+    const trimmedNewPassword = directNewPassword.trim();
+    const trimmedConfirmPassword = directConfirmPassword.trim();
+    setError(null);
+    setOtpMessage(null);
+
+    if (trimmedCurrentPassword.length < 6) {
+      setError("Current password must be at least 6 characters.");
+      return;
+    }
+
+    if (trimmedNewPassword.length < 6) {
+      setError("New password must be at least 6 characters.");
+      return;
+    }
+
+    if (trimmedNewPassword !== trimmedConfirmPassword) {
+      setError("New password confirmation does not match.");
+      return;
+    }
+
+    if (trimmedCurrentPassword === trimmedNewPassword) {
+      setError("New password must be different from current password.");
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const result = await api.post<{ message?: string }>("/auth/request-password-otp", {
+        currentPassword: trimmedCurrentPassword,
+        newPassword: trimmedNewPassword,
+        confirmPassword: trimmedConfirmPassword,
+      });
+
+      setIsOtpSent(true);
+      setOtpMessage(result.message || "A 6-digit verification code was sent to your email.");
+    } catch (err) {
+      setError(mapPasswordRequestError(err));
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
   const submitDirectChange = async () => {
     const trimmedCurrentPassword = directCurrentPassword.trim();
     const trimmedNewPassword = directNewPassword.trim();
     const trimmedConfirmPassword = directConfirmPassword.trim();
+    const trimmedOtp = directOtp.trim();
     setError(null);
     setSuccess(null);
 
@@ -228,7 +280,12 @@ export function PasswordChangeRequestCard() {
     }
 
     if (trimmedCurrentPassword === trimmedNewPassword) {
-      setError("New password must be different from the current password.");
+      setError("New password must be different from current password.");
+      return;
+    }
+
+    if (!trimmedOtp || trimmedOtp.length !== 6) {
+      setError("Please enter the 6-digit verification code sent to your email.");
       return;
     }
 
@@ -241,16 +298,19 @@ export function PasswordChangeRequestCard() {
       );
 
       const result = await api.post<{ message?: string }>(
-        "/auth/change-password",
+        "/auth/verify-password-otp",
         {
           currentPassword: trimmedCurrentPassword,
           newPassword: trimmedNewPassword,
+          otp: trimmedOtp,
         },
         { suppressAuthExpired: true },
       );
       setDirectCurrentPassword("");
       setDirectNewPassword("");
       setDirectConfirmPassword("");
+      setDirectOtp("");
+      setIsOtpSent(false);
       setShowDirectCurrentPassword(false);
       setShowDirectNewPassword(false);
       setShowDirectConfirmPassword(false);
@@ -620,21 +680,21 @@ export function PasswordChangeRequestCard() {
             <div className="h-1.5 bg-brand-green" />
             <div className="p-6">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-green">
-                Super Admin
+                Super Admin Security
               </p>
               <h3 className="mt-2 text-xl font-black text-text-primary">Change Password</h3>
               <p className="mt-2 text-sm leading-6 text-text-secondary">
-                Enter your current password and your new password. This change takes effect immediately.
+                Enter your old password, new password, and verify with an email OTP code.
               </p>
 
               <div className="mt-4 space-y-3">
                 <PasswordField
-                  label="Current Password"
+                  label="Old Password"
                   value={directCurrentPassword}
                   visible={showDirectCurrentPassword}
                   onToggle={() => setShowDirectCurrentPassword((value) => !value)}
                   onChange={setDirectCurrentPassword}
-                  placeholder="Enter current password"
+                  placeholder="Enter current old password"
                 />
                 <PasswordField
                   label="New Password"
@@ -652,24 +712,68 @@ export function PasswordChangeRequestCard() {
                   onChange={setDirectConfirmPassword}
                   placeholder="Confirm new password"
                 />
+
+                {isOtpSent && (
+                  <div className="mt-4 rounded-xl border border-brand-green/30 bg-brand-green/10 p-3.5 space-y-2">
+                    <p className="text-xs font-semibold text-brand-green">
+                      {otpMessage || `A 6-digit verification code was sent to ${user?.email}.`}
+                    </p>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase tracking-wide text-text-primary">
+                        6-Digit Verification Code (OTP)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={directOtp}
+                        onChange={(e) => setDirectOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="123456"
+                        className="h-11 w-full rounded-lg border border-brand-green bg-input-bg px-3 text-center text-lg font-mono font-bold tracking-[0.3em] text-text-primary outline-none focus:ring-2 focus:ring-brand-green/30"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {error && <p className="mt-3 text-xs font-semibold text-red-600">{error}</p>}
-              <div className="mt-5 flex justify-end gap-2">
+
+              <div className="mt-5 flex items-center justify-between gap-2 pt-2 border-t border-border-main">
                 <button
                   onClick={() => setIsDirectChangeModalOpen(false)}
-                  disabled={isChangingDirect}
+                  disabled={isChangingDirect || isSendingOtp}
                   className="rounded-lg border border-border-main px-4 py-2 text-xs font-bold text-text-secondary hover:bg-surface-hover disabled:opacity-60"
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={() => void submitDirectChange()}
-                  disabled={isChangingDirect}
-                  className="rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
-                >
-                  {isChangingDirect ? "Saving..." : "Change Password"}
-                </button>
+
+                <div className="flex items-center gap-2">
+                  {!isOtpSent ? (
+                    <button
+                      onClick={() => void sendPasswordOtp()}
+                      disabled={isSendingOtp}
+                      className="rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
+                    >
+                      {isSendingOtp ? "Sending Code..." : "Send Verification Code"}
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => void sendPasswordOtp()}
+                        disabled={isSendingOtp || isChangingDirect}
+                        className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-surface px-3 py-2 text-xs font-bold text-text-primary hover:bg-surface-hover disabled:opacity-60"
+                      >
+                        {isSendingOtp ? "Resending..." : "Resend Code"}
+                      </button>
+                      <button
+                        onClick={() => void submitDirectChange()}
+                        disabled={isChangingDirect}
+                        className="rounded-lg bg-brand-green px-4 py-2 text-xs font-bold text-white hover:opacity-90 disabled:opacity-60"
+                      >
+                        {isChangingDirect ? "Verifying..." : "Verify & Change Password"}
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -7,6 +7,8 @@ import { AppLayout } from "@/components/ui/app-layout";
 import { getNavForRole } from "@/lib/constants";
 import { getDefaultRouteForRole } from "@/lib/auth";
 
+import { OnboardingModal } from "@/components/ui/onboarding-modal";
+
 export default function ProtectedLayout({
   children,
 }: {
@@ -48,16 +50,23 @@ export default function ProtectedLayout({
         .slice(0, 2)
     : user.email.charAt(0).toUpperCase();
 
+  const showOnboarding = Boolean(
+    user.role === "super_admin" && !user.onboardingCompleted
+  );
+
   return (
-    <AppLayout
-      navGroups={navGroups}
-      userInitials={initials}
-      userName={user.fullName || user.email}
-      userRole={user.role}
-      userAvatarUrl={user.avatarUrl}
-      onLogout={logout}
-    >
-      {children}
-    </AppLayout>
+    <>
+      <AppLayout
+        navGroups={navGroups}
+        userInitials={initials}
+        userName={user.fullName || user.email}
+        userRole={user.role}
+        userAvatarUrl={user.avatarUrl}
+        onLogout={logout}
+      >
+        {children}
+      </AppLayout>
+      <OnboardingModal isOpen={showOnboarding} />
+    </>
   );
 }

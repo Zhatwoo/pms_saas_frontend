@@ -12,6 +12,8 @@ export interface User {
   branchName?: string;
   avatarUrl?: string;
   notificationSound?: string;
+  onboardingCompleted?: boolean;
+  subscriptionPlan?: { name: string; maxBranches: number };
 }
 
 export interface NavItem {
