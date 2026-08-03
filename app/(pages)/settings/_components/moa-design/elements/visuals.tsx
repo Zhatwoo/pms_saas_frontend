@@ -15,6 +15,7 @@ const MOA_FIELD_SAMPLE_VALUES: Record<string, string> = {
   idPresented: "Driver's License",
   unitCode: "UNIT-001",
   purchasedDate: "01/15/2026",
+  agreementDate: "January 15, 2026",
   maturityDate: "01/25/2026",
   expiryDate: "01/30/2026",
   sellerName: "JUAN DELA CRUZ",
@@ -28,9 +29,14 @@ const MOA_FIELD_SAMPLE_VALUES: Record<string, string> = {
   serialNo: "SN-123456",
   memory: "128GB",
   remarks: "—",
+  processedBy: "MARIA SANTOS",
+  representedBy: "MARIA SANTOS",
+  signatureBlank: "\u00A0",
+  witnessName: "\u00A0",
 };
 
 function moaFieldSampleValue(fieldKey: string): string {
+  if (fieldKey === "signatureBlank" || fieldKey === "signature") return "\u00A0";
   return MOA_FIELD_SAMPLE_VALUES[fieldKey] ?? "_______________";
 }
 

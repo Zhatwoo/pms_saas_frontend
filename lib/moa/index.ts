@@ -9,13 +9,13 @@ export {
   createDefaultMoaDesign,
   createGeneralMoaDesign,
   createPawnRenewalDesign,
-  createPrivacyPolicyDesign,
   createRedemptionDesign,
-  createTermsOfServiceDesign,
   emptyMoaDesignFallback,
 } from "./default-design";
 export {
   resolveMoaFieldValue,
+  fillMoaPlaceholders,
+  buildMoaFieldMap,
   type MoaFieldValueContext,
 } from "./resolve-field-values";
 export { MoaDesignPrintPages } from "./moa-design-print";

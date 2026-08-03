@@ -579,6 +579,11 @@ export function MoaModal({
   };
 
   const schedule = getInterestRateSchedule(data.category);
+  const firstPeriodRate = schedule[0]?.percentage ?? schedule[1]?.percentage;
+  const interestRateLabel =
+    firstPeriodRate != null && Number.isFinite(Number(firstPeriodRate))
+      ? `${Number(firstPeriodRate)}% (1st period)`
+      : "";
 
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
   const formatCompactDate = (date: Date) => {
@@ -661,6 +666,18 @@ export function MoaModal({
     phoneNumber: headerPhone || shopInfo?.phoneNumber || "",
     email: shopInfo?.email || "",
     processedBy: data.processedBy || "",
+    interestRate: interestRateLabel,
+    idNumber:
+      data.customMoaValues?.idNumber ||
+      data.customMoaValues?.["ID Number"] ||
+      persistedMoaValues.idNumber ||
+      persistedMoaValues["ID Number"] ||
+      "",
+    witnessName:
+      data.customMoaValues?.witnessName ||
+      data.customMoaValues?.["Witness"] ||
+      persistedMoaValues.witnessName ||
+      "",
     customValues: {
       ...persistedMoaValues,
       ...(data.customMoaValues ?? {}),

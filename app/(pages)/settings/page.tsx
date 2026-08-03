@@ -551,7 +551,7 @@ export default function SettingsPage() {
               const raw = (data as { document_designs?: Record<string, unknown> }).document_designs;
               if (!raw || typeof raw !== "object") return undefined;
               const next: Partial<Record<MoaDocumentType, MoaDesignBlob>> = {};
-              (["moa", "redeem", "buy_back"] as MoaDocumentType[]).forEach((key) => {
+              (["moa", "redeem", "buy_back", "renewal"] as MoaDocumentType[]).forEach((key) => {
                 const normalized = normalizeMoaDesignBlob(raw[key]);
                 if (normalized) next[key] = normalized;
               });

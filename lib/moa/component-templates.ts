@@ -15,9 +15,7 @@ import {
   createDefaultMoaDesign,
   createGeneralMoaDesign,
   createPawnRenewalDesign,
-  createPrivacyPolicyDesign,
   createRedemptionDesign,
-  createTermsOfServiceDesign,
 } from "./default-design";
 
 export type MoaComponentTemplateKind = "pack" | "full";
@@ -240,8 +238,6 @@ export function getBuiltinMoaComponentTemplates(): MoaComponentTemplate[] {
   const redemption = createRedemptionDesign();
   const buyBack = createBuyBackDesign();
   const renewal = createPawnRenewalDesign();
-  const tos = createTermsOfServiceDesign();
-  const privacy = createPrivacyPolicyDesign();
 
   const asFull = (
     id: string,
@@ -286,18 +282,6 @@ export function getBuiltinMoaComponentTemplates(): MoaComponentTemplate[] {
       "Pawn Renewal Slip",
       "QUICKPAWN Agreements PDF — renewal payment & new loan period",
       renewal,
-    ),
-    asFull(
-      "builtin-full-tos",
-      "Terms of Service",
-      "QUICKPAWN Agreements PDF — platform Terms of Service (pages 2–9)",
-      tos,
-    ),
-    asFull(
-      "builtin-full-privacy",
-      "Privacy Policy",
-      "QUICKPAWN Agreements PDF — Privacy Policy (pages 11–14)",
-      privacy,
     ),
     builtin(
       "builtin-shop-header",

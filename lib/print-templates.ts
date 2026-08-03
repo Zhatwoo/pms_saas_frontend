@@ -697,6 +697,11 @@ export const MOA_PRINT_SCREEN_CSS = `
     page-break-after: avoid !important;
     break-after: avoid !important;
   }
+  #moa-slip-printable .moa-print-page.moa-design-print-page {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
   #moa-slip-printable .no-print,
   #moa-slip-printable .no-print * {
     display: none !important;
@@ -826,6 +831,15 @@ export const MOA_PRINT_CSS = `
   .moa-print-page:nth-child(2) .space-y-3 > * + * { margin-top: 0.3rem !important; }
   .moa-print-page:nth-child(2) .pt-4 { padding-top: 0.35rem !important; }
   .moa-print-page:nth-child(2) .my-6 { margin-top: 0.35rem !important; margin-bottom: 0.35rem !important; }
+  /* Canvas designs keep absolute px layout — do not apply classic slip padding/font crush */
+  .moa-print-page.moa-design-print-page,
+  .moa-print-page.moa-design-print-page:nth-child(2) {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
 `;
 
 /** Minimal layout CSS for MOA slip iframe print (Tailwind-independent). */
@@ -884,6 +898,16 @@ export function buildMoaSlipPrintHtml(
       height: ${page.height} !important;
       max-width: ${page.width} !important;
       max-height: ${page.height} !important;
+      border: none !important;
+      box-shadow: none !important;
+      /* Preserve canvas px layout (96dpi: 816px = 8.5in) inside the paper size */
+      overflow: hidden !important;
+    }
+    .moa-print-page.moa-design-print-page [data-moa-design-el],
+    .moa-print-page.moa-design-print-page [style*="position: absolute"],
+    .moa-print-page.moa-design-print-page [style*="position:absolute"] {
+      /* Inline styles already set absolute; keep them from being overridden */
+      position: absolute !important;
     }
   `;
 

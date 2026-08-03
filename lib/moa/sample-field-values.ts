@@ -50,5 +50,8 @@ export function createSampleMoaFieldValues(
     phoneNumber: shop.phoneNumber || "",
     email: shop.email || "",
     processedBy: "MARIA SANTOS",
+    interestRate: "5% (1st period)",
+    idNumber: "ID-1234-5678",
+    witnessName: "",
   };
 }
