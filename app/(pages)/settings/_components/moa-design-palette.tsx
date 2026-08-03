@@ -269,16 +269,19 @@ const MARGINS_STORAGE_KEY = "pms.moa.margins.v1";
 export const MAX_MOA_PAGES = 10;
 export const DEFAULT_MOA_LINE_HEIGHT = 1.15;
 
-export type MoaDocumentType = "moa" | "redeem" | "buy_back";
+export type MoaDocumentType = "moa" | "redeem" | "buy_back" | "tos" | "privacy" | "renewal";
 
 export const MOA_DOCUMENT_TYPES: Array<{
   id: MoaDocumentType;
   label: string;
   hint: string;
 }> = [
-  { id: "moa", label: "MOA", hint: "Memorandum of Agreement" },
-  { id: "redeem", label: "Redeem slip", hint: "Redeem transaction slip" },
-  { id: "buy_back", label: "Buy back slip", hint: "Buy back transaction slip" },
+  { id: "moa", label: "General MOA", hint: "Pawn Loan Agreement" },
+  { id: "redeem", label: "Redemption Slip", hint: "Redemption transaction slip" },
+  { id: "buy_back", label: "Buy Back Slip", hint: "Buy back transaction slip" },
+  { id: "renewal", label: "Pawn Renewal Slip", hint: "Pawn renewal transaction slip" },
+  { id: "tos", label: "Terms of Service", hint: "QUICKPAWN Terms of Service" },
+  { id: "privacy", label: "Privacy Policy", hint: "QUICKPAWN Privacy Policy" },
 ];
 
 export type MoaWatermarkItem = {

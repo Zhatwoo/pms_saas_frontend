@@ -351,7 +351,11 @@ export function MoaElementVisual({
       return <ShapeVisual element={element} />;
     case "photo":
       return (
-        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded border border-dashed border-zinc-400 bg-zinc-100">
+        <div
+          className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded ${
+            element.imageSrc ? "" : "border border-dashed border-zinc-400 bg-zinc-100"
+          }`}
+        >
           {element.imageSrc ? (
             <div
               className="h-full w-full overflow-hidden"

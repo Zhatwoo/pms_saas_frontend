@@ -24,6 +24,8 @@ export type MoaFieldValueContext = {
   shopAddress: string;
   phoneNumber: string;
   email: string;
+  /** Employee who processed the transaction (fills representative/processed-by fields). */
+  processedBy?: string;
   customValues?: Record<string, string>;
 };
 
@@ -57,6 +59,8 @@ export function resolveMoaFieldValue(
     shopAddress: ctx.shopAddress,
     phoneNumber: ctx.phoneNumber,
     email: ctx.email,
+    processedBy: ctx.processedBy ?? "",
+    representedBy: ctx.processedBy ?? "",
   };
 
   const value = map[fieldKey];
