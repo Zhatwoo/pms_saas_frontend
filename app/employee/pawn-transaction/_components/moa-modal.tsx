@@ -22,6 +22,8 @@ import {
   MoaDesignPrintPages,
   hasMoaDesign,
   normalizeMoaDesignBlob,
+  parsePersistedMoaValues,
+  stripPersistedMoaFieldsFromRemarks,
   type MoaDesignBlob,
   type MoaFieldValueContext,
 } from "@/lib/moa";
@@ -256,29 +258,6 @@ function normalizeTermsText(rawText?: string) {
     .filter(Boolean);
 
   return normalizedLines.join("\n");
-}
-
-function parsePersistedMoaValues(remarks?: string) {
-  const metadataLine = (remarks ?? "")
-    .split(/\r?\n/)
-    .find((line) => line.startsWith("[MOA Fields] "));
-  if (!metadataLine) return {};
-
-  return Object.fromEntries(
-    metadataLine
-      .slice("[MOA Fields] ".length)
-      .split(";")
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-      .map((entry) => {
-        const separatorIndex = entry.indexOf(":");
-        if (separatorIndex < 0) return [entry, ""];
-        return [
-          entry.slice(0, separatorIndex).trim(),
-          entry.slice(separatorIndex + 1).trim(),
-        ];
-      }),
-  );
 }
 
 function numberToWords(num: number): string {
@@ -536,11 +515,7 @@ export function MoaModal({
     Number(data.parkingFee)
     || Number(persistedMoaValues["Parking fee"])
     || 0;
-  const visibleRemarks = data.remarks
-    .split(/\r?\n/)
-    .filter((line) => !line.startsWith("[MOA Fields] "))
-    .join("\n")
-    .trim();
+  const visibleRemarks = stripPersistedMoaFieldsFromRemarks(data.remarks);
   const savedStorageFee = Number(data.storageFee) || 0;
   const storageFee =
     savedStorageFee > 0

@@ -32,6 +32,16 @@ export type MoaFieldValueContext = {
   idNumber?: string;
   /** Optional witness name (blank line if omitted). */
   witnessName?: string;
+  /** Pawn Renewal Slip — slip / transaction identifiers. */
+  renewalSlipNo?: string;
+  transactionNo?: string;
+  /** Maturity before the current renewal. */
+  prevMaturityDate?: string;
+  /** Renewal payment breakdown (also used to fill payment tables). */
+  interestPaid?: string;
+  serviceFee?: string;
+  otherCharges?: string;
+  totalAmountPaid?: string;
   customValues?: Record<string, string>;
 };
 
@@ -107,6 +117,13 @@ export function buildMoaFieldMap(
     interestRate: ctx.interestRate ?? "",
     idNumber: ctx.idNumber ?? "",
     witnessName: ctx.witnessName ?? "",
+    renewalSlipNo: ctx.renewalSlipNo ?? "",
+    transactionNo: ctx.transactionNo ?? "",
+    prevMaturityDate: ctx.prevMaturityDate ?? "",
+    interestPaid: ctx.interestPaid ?? "",
+    serviceFee: ctx.serviceFee ?? "",
+    otherCharges: ctx.otherCharges ?? "",
+    totalAmountPaid: ctx.totalAmountPaid ?? "",
     signatureBlank: "",
     signature: "",
     // PDF / General MOA aliases
@@ -115,6 +132,7 @@ export function buildMoaFieldMap(
     brand,
     model,
     appraisedValue: ctx.amount,
+    originalLoanAmount: ctx.amount,
     ...dateParts,
   };
 }
