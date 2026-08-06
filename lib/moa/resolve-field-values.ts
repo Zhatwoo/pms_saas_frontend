@@ -1,5 +1,30 @@
 /** Resolve MOA canvas fieldKey / header fields from New Pawn + shop data. */
 
+import { JEWELRY_FIELD_OPTIONS } from "./jewelry-fields";
+
+function resolveCustomFieldValue(
+  fieldKey: string,
+  customValues?: Record<string, string>,
+): string | undefined {
+  if (!customValues) return undefined;
+
+  const direct = customValues[fieldKey];
+  if (direct != null && String(direct).trim()) return String(direct).trim();
+
+  const jewelry = JEWELRY_FIELD_OPTIONS.find((field) => field.key === fieldKey);
+  if (jewelry) {
+    const byLabel = customValues[jewelry.persistLabel];
+    if (byLabel != null && String(byLabel).trim()) return String(byLabel).trim();
+  }
+
+  const caseInsensitive = Object.entries(customValues).find(
+    ([key]) => key.trim().toLowerCase() === fieldKey.trim().toLowerCase(),
+  );
+  if (caseInsensitive?.[1]?.trim()) return caseInsensitive[1].trim();
+
+  return undefined;
+}
+
 export type MoaFieldValueContext = {
   customerName: string;
   customerAddress: string;
@@ -15,11 +40,20 @@ export type MoaFieldValueContext = {
   parkingFee: string;
   netProceeds: string;
   brandModel: string;
+  brand?: string;
+  model?: string;
   itemsIncluded: string;
   condition: string;
   serialNo: string;
   memory: string;
   remarks: string;
+  itemType?: string;
+  metalType?: string;
+  karat?: string;
+  weightGrams?: string;
+  stoneType?: string;
+  stoneCarat?: string;
+  hallmarkStamp?: string;
   shopName: string;
   shopAddress: string;
   phoneNumber: string;
@@ -45,7 +79,15 @@ export type MoaFieldValueContext = {
   customValues?: Record<string, string>;
 };
 
-function splitBrandModel(brandModel: string): { brand: string; model: string } {
+function splitBrandModel(
+  brandModel: string,
+  explicitBrand?: string,
+  explicitModel?: string,
+): { brand: string; model: string } {
+  const brand = String(explicitBrand ?? "").trim();
+  const model = String(explicitModel ?? "").trim();
+  if (brand || model) return { brand, model };
+
   const raw = String(brandModel || "").trim();
   if (!raw || raw === "—" || raw === "---") return { brand: "", model: "" };
   const parts = raw.split(/\s+/);
@@ -83,7 +125,10 @@ function agreementDateParts(purchasedDate: string): {
 export function buildMoaFieldMap(
   ctx: MoaFieldValueContext,
 ): Record<string, string> {
-  const { brand, model } = splitBrandModel(ctx.brandModel);
+  const { brand, model } = splitBrandModel(ctx.brandModel, ctx.brand, ctx.model);
+  const composedBrandModel =
+    ctx.brandModel ||
+    [brand, model].filter(Boolean).join(" ").trim();
   const dateParts = agreementDateParts(ctx.purchasedDate);
   const ticket = ctx.unitCode;
   const rep = ctx.processedBy ?? "";
@@ -102,12 +147,19 @@ export function buildMoaFieldMap(
     storageFee: ctx.storageFee,
     parkingFee: ctx.parkingFee,
     netProceeds: ctx.netProceeds,
-    brandModel: ctx.brandModel,
+    brandModel: composedBrandModel,
     itemsIncluded: ctx.itemsIncluded,
     condition: ctx.condition,
     serialNo: ctx.serialNo,
     memory: ctx.memory,
     remarks: ctx.remarks,
+    itemType: ctx.itemType ?? "",
+    metalType: ctx.metalType ?? "",
+    karat: ctx.karat ?? "",
+    weightGrams: ctx.weightGrams ?? "",
+    stoneType: ctx.stoneType ?? "",
+    stoneCarat: ctx.stoneCarat ?? "",
+    hallmarkStamp: ctx.hallmarkStamp ?? "",
     shopName: ctx.shopName,
     shopAddress: ctx.shopAddress,
     phoneNumber: ctx.phoneNumber,
@@ -131,7 +183,7 @@ export function buildMoaFieldMap(
     pawnTicketNo: ticket,
     brand,
     model,
-    appraisedValue: ctx.amount,
+    appraisedValue: ctx.customValues?.appraisedValue || ctx.amount,
     originalLoanAmount: ctx.amount,
     ...dateParts,
   };
@@ -141,7 +193,8 @@ export function resolveMoaFieldValue(
   fieldKey: string,
   ctx: MoaFieldValueContext,
 ): string {
-  if (ctx.customValues?.[fieldKey]) return ctx.customValues[fieldKey];
+  const custom = resolveCustomFieldValue(fieldKey, ctx.customValues);
+  if (custom) return custom;
 
   const map = buildMoaFieldMap(ctx);
   const value = map[fieldKey];

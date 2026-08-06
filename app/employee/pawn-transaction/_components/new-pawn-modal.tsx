@@ -15,6 +15,19 @@ import { PhilippineAddressFields } from "@/components/shared/philippine-address-
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { calculatePeriodicStorageFee, setInterestRatesCache, type InterestRateGroup } from "@/lib/interest";
 import {
+  buildJewelryPersistEntries,
+  buildVisibleMoaFormRequirements,
+  canvasHasAmountField,
+  collectCanvasFieldLabels,
+  collectMoaCanvasFieldKeys,
+  findFirstBlankMoaRequirement,
+  JEWELRY_FIELD_OPTIONS,
+  JEWELRY_FORM_FIELD_KEYS,
+  resolveAmountFieldLabel,
+  resolveEmployeeDocumentDesign,
+  type MoaDesignBlob,
+} from "@/lib/moa";
+import {
   isTransactionPasswordError,
   TRANSACTION_PASSWORD_VERIFY_MESSAGE,
   transactionPasswordErrorClass,
@@ -34,9 +47,11 @@ type MoaCategoryTemplate = {
   unitFields?: UnitFieldKey[];
   customFinancialFields?: CustomMoaField[];
   customUnitFields?: CustomMoaField[];
+  design?: MoaDesignBlob;
 };
 type MoaTemplateSettings = MoaCategoryTemplate & {
   category_templates?: Record<string, MoaCategoryTemplate>;
+  design?: MoaDesignBlob;
 };
 type InterestRateCategoryGroup = {
   categories?: string[];
@@ -124,6 +139,8 @@ function createEmptyForm() {
     idPresented: "",
     unitCode: "",
     unitName: "",
+    brand: "",
+    model: "",
     category: "",
     categorySpecify: "",
     serialNumber: "",
@@ -132,6 +149,13 @@ function createEmptyForm() {
     conditionSpecify: "",
     memory: "",
     memoryUnit: "GB",
+    itemType: "",
+    metalType: "",
+    karat: "",
+    weightGrams: "",
+    stoneType: "",
+    stoneCarat: "",
+    hallmarkStamp: "",
     remarks: "",
     amount: "",
     purchasedDate: getTodayDate(),
@@ -201,6 +225,7 @@ export function NewPawnModal({
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [defaultMoaFieldConfig, setDefaultMoaFieldConfig] = useState<MoaCategoryTemplate>({});
   const [categoryMoaFieldConfigs, setCategoryMoaFieldConfigs] = useState<Record<string, MoaCategoryTemplate>>({});
+  const [moaTemplate, setMoaTemplate] = useState<MoaTemplateSettings>({});
 
   useEffect(() => {
     async function loadCats() {
@@ -232,6 +257,7 @@ export function NewPawnModal({
 
         const filtered = cats.filter(c => assignedCategories.has(c.name.toLowerCase().trim()));
         setCategoriesList(filtered.map(c => c.name));
+        setMoaTemplate(moaTemplate);
         setDefaultMoaFieldConfig(moaTemplate);
         setCategoryMoaFieldConfigs(moaTemplate.category_templates ?? {});
         if (rates && Array.isArray(rates)) {
@@ -276,9 +302,91 @@ export function NewPawnModal({
     ...(activeMoaFieldConfig.customUnitFields ?? []),
   ];
 
+  const activeMoaDesign = useMemo(
+    () => resolveEmployeeDocumentDesign(moaTemplate, "moa", resolvedMoaCategory),
+    [moaTemplate, resolvedMoaCategory],
+  );
+
+  const canvasFieldKeys = useMemo(
+    () => collectMoaCanvasFieldKeys(activeMoaDesign),
+    [activeMoaDesign],
+  );
+
+  const canvasFieldLabels = useMemo(
+    () => collectCanvasFieldLabels(activeMoaDesign),
+    [activeMoaDesign],
+  );
+
+  const usesCanvasFields = canvasFieldKeys.size > 0;
+
   const showFinancialField = (field: FinancialFieldKey) =>
-    activeFinancialFields.includes(field);
-  const showUnitField = (field: UnitFieldKey) => activeUnitFields.includes(field);
+    usesCanvasFields
+      ? field === "amount"
+        ? canvasHasAmountField(canvasFieldKeys)
+        : canvasFieldKeys.has(field)
+      : activeFinancialFields.includes(field);
+
+  const showUnitField = (field: UnitFieldKey) =>
+    usesCanvasFields ? canvasFieldKeys.has(field) : activeUnitFields.includes(field);
+
+  const showBrandField = () => usesCanvasFields && canvasFieldKeys.has("brand");
+  const showModelField = () => usesCanvasFields && canvasFieldKeys.has("model");
+  const showPurchasedDateField = () =>
+    !usesCanvasFields || canvasFieldKeys.has("purchasedDate");
+
+  const canvasFieldLabel = (fieldKey: string, fallback: string) =>
+    canvasFieldLabels.get(fieldKey) ?? activeMoaLabels[fieldKey] ?? fallback;
+
+  const amountFieldLabel = resolveAmountFieldLabel(
+    canvasFieldLabels,
+    activeMoaLabels,
+    canvasFieldKeys,
+  );
+
+  const showJewelryField = (key: (typeof JEWELRY_FORM_FIELD_KEYS)[number]) =>
+    usesCanvasFields && canvasFieldKeys.has(key);
+
+  const hasJewelryCanvasFields = JEWELRY_FORM_FIELD_KEYS.some((key) =>
+    showJewelryField(key),
+  );
+
+  const jewelryFieldLabel = (key: (typeof JEWELRY_FORM_FIELD_KEYS)[number]) =>
+    JEWELRY_FIELD_OPTIONS.find((field) => field.key === key)?.label ?? key;
+
+  const getVisibleMoaRequirements = useCallback(
+    () =>
+      buildVisibleMoaFormRequirements({
+        form,
+        usesCanvasFields,
+        canvasFieldKeys,
+        canvasFieldLabels,
+        activeUnitFields,
+        activeFinancialFields,
+        activeCustomFields,
+        activeMoaLabels,
+        amountFieldLabel,
+      }),
+    [
+      form,
+      usesCanvasFields,
+      canvasFieldKeys,
+      canvasFieldLabels,
+      activeUnitFields,
+      activeFinancialFields,
+      activeCustomFields,
+      activeMoaLabels,
+      amountFieldLabel,
+    ],
+  );
+
+  const validateVisibleMoaFields = (actionLabel: string): boolean => {
+    const blank = findFirstBlankMoaRequirement(getVisibleMoaRequirements());
+    if (blank) {
+      setErrorMessage(`${blank.label} is required ${actionLabel}.`);
+      return false;
+    }
+    return true;
+  };
 
   const loadBranchCashForMoa = useCallback(async () => {
     if (!branchId || branchId === "__all__") {
@@ -449,7 +557,7 @@ export function NewPawnModal({
     }));
 
     // Reset QR if key fields change
-    if (["unitCode", "unitName", "serialNumber", "categorySpecify"].includes(name)) {
+    if (["unitCode", "unitName", "brand", "model", "serialNumber", "categorySpecify"].includes(name)) {
       setQrUrl(null);
     }
   };
@@ -591,29 +699,31 @@ export function NewPawnModal({
   );
 
   const handleGenerateQR = () => {
-    // Required fields for QR generation
     const resolvedCategory = getResolvedCategory();
     const unitCodeReady = form.unitCode && !form.unitCode.startsWith("PENDING");
-    const requiredFields = {
+
+    const customerRequiredFields = {
       firstName: "First Name",
       lastName: "Last Name",
-      address: "Street Address",
       barangay: "Barangay",
       city: "City",
       contactNo: "Contact Number",
       idPresented: "ID Type",
-      unitName: "Unit Name",
-      serialNumber: "Serial Number",
-      amount: "Loan Amount",
-      purchasedDate: "Purchased Date"
     };
 
-    for (const [key, label] of Object.entries(requiredFields)) {
+    for (const [key, label] of Object.entries(customerRequiredFields)) {
       if (!form[key as keyof typeof form]) {
         setErrorMessage(`${label} is required before generating QR.`);
         return;
       }
     }
+
+    if (!selectedCustomerId && !form.address.trim()) {
+      setErrorMessage("Street / Address is required before generating QR.");
+      return;
+    }
+
+    if (!validateVisibleMoaFields("before generating QR")) return;
 
     // Require email for new customers
     if (!selectedCustomerId) {
@@ -685,21 +795,16 @@ export function NewPawnModal({
     const resolvedCategory = getResolvedCategory();
     const unitCodeReady = form.unitCode && !form.unitCode.startsWith("PENDING");
 
-    // 1. Check all required fields - Customer
-    const requiredFields = {
+    const customerRequiredFields = {
       firstName: "First Name",
       lastName: "Last Name",
       barangay: "Barangay",
       city: "City",
       contactNo: "Contact Number",
       idPresented: "ID Type",
-      unitName: "Unit Name",
-      serialNumber: "Serial Number",
-      amount: "Loan Amount",
-      purchasedDate: "Purchased Date"
     };
 
-    for (const [key, label] of Object.entries(requiredFields)) {
+    for (const [key, label] of Object.entries(customerRequiredFields)) {
       if (!form[key as keyof typeof form]) {
         setErrorMessage(`${label} is required.`);
         return;
@@ -710,6 +815,8 @@ export function NewPawnModal({
       toast.error("Street / Address is required.");
       return;
     }
+
+    if (!validateVisibleMoaFields("before generating the ticket")) return;
 
     if (!resolvedCategory) {
       setErrorMessage(
@@ -799,6 +906,15 @@ export function NewPawnModal({
       ...(showFinancialField("parkingFee") && form.parkingFeeAmount
         ? [{ label: "Parking fee", value: form.parkingFeeAmount }]
         : []),
+      ...(usesCanvasFields
+        ? buildJewelryPersistEntries(
+            Object.fromEntries(
+              JEWELRY_FORM_FIELD_KEYS.filter((key) => canvasFieldKeys.has(key)).map(
+                (key) => [key, form[key]],
+              ),
+            ) as Partial<Record<(typeof JEWELRY_FORM_FIELD_KEYS)[number], string>>,
+          )
+        : []),
       ...activeCustomFields
         .map((field) => ({
           label: field.label,
@@ -820,6 +936,12 @@ export function NewPawnModal({
     const verificationMode = getVerificationMode(form.idPresented);
     const resolvedCategory = getResolvedCategory();
     const resolvedCondition = getResolvedCondition();
+
+    if (!validateVisibleMoaFields("before finalizing the ticket")) {
+      setIsSaving(false);
+      isProcessingRef.current = false;
+      return;
+    }
 
     if (verificationMode === "no-id" && !form.profilePhoto) {
       setIsSaving(false);
@@ -1299,7 +1421,13 @@ export function NewPawnModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Input label="Unit Code" name="unitCode" value={form.unitCode} onChange={handleChange} bg="bg-zinc-200" readOnly={true} />
                     {showUnitField("brandModel") && (
-                      <Input label={activeMoaLabels.brandModel || "Unit Name / Brand and Model"} name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
+                      <Input label={canvasFieldLabel("brandModel", activeMoaLabels.brandModel || "Unit Name / Brand and Model")} name="unitName" value={form.unitName} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
+                    )}
+                    {showBrandField() && (
+                      <Input label={canvasFieldLabel("brand", "Brand")} name="brand" value={form.brand} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. Apple" />
+                    )}
+                    {showModelField() && (
+                      <Input label={canvasFieldLabel("model", "Model")} name="model" value={form.model} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. iPhone 15 Pro" />
                     )}
                   </div>
 
@@ -1384,6 +1512,37 @@ export function NewPawnModal({
                       bg="bg-zinc-100 dark:bg-surface-hover"
                       placeholder="Enter specific category"
                     />
+                  )}
+
+                  {hasJewelryCanvasFields && (
+                    <div className="space-y-3 rounded-2xl border border-pawn-gold/30 bg-pawn-gold/5 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pawn-gold">
+                        Item Description (MOA fields)
+                      </p>
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        {showJewelryField("itemType") && (
+                          <Input label={jewelryFieldLabel("itemType")} name="itemType" value={form.itemType} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. Ring, Necklace, Bracelet" />
+                        )}
+                        {showJewelryField("metalType") && (
+                          <Input label={jewelryFieldLabel("metalType")} name="metalType" value={form.metalType} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. Gold, Silver, Platinum" />
+                        )}
+                        {showJewelryField("karat") && (
+                          <Input label={jewelryFieldLabel("karat")} name="karat" value={form.karat} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. 18K, 14K" />
+                        )}
+                        {showJewelryField("weightGrams") && (
+                          <Input label={jewelryFieldLabel("weightGrams")} name="weightGrams" value={form.weightGrams} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. 5.2" />
+                        )}
+                        {showJewelryField("stoneType") && (
+                          <Input label={jewelryFieldLabel("stoneType")} name="stoneType" value={form.stoneType} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. Diamond, Ruby (optional)" />
+                        )}
+                        {showJewelryField("stoneCarat") && (
+                          <Input label={jewelryFieldLabel("stoneCarat")} name="stoneCarat" value={form.stoneCarat} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. 0.25 ct (if any)" />
+                        )}
+                        {showJewelryField("hallmarkStamp") && (
+                          <Input label={jewelryFieldLabel("hallmarkStamp")} name="hallmarkStamp" value={form.hallmarkStamp} onChange={handleChange} bg="bg-zinc-100 dark:bg-surface-hover" placeholder="e.g. 750, 916" />
+                        )}
+                      </div>
+                    </div>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1495,9 +1654,11 @@ export function NewPawnModal({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {showFinancialField("amount") && (
-                      <Input label={activeMoaLabels.amount || "Amount"} name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
+                      <Input label={amountFieldLabel} name="amount" value={form.amount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
                     )}
-                    <Input label="Purchased Date" name="purchasedDate" value={form.purchasedDate} onChange={handleChange} type="date" bg="bg-zinc-100 dark:bg-surface-hover" />
+                    {showPurchasedDateField() && (
+                      <Input label={canvasFieldLabel("purchasedDate", activeMoaLabels.purchasedDate || "Purchased Date")} name="purchasedDate" value={form.purchasedDate} onChange={handleChange} type="date" bg="bg-zinc-100 dark:bg-surface-hover" />
+                    )}
                     {showFinancialField("parkingFee") && (
                       <Input label={activeMoaLabels.parkingFee || "Parking Fee"} name="parkingFeeAmount" value={form.parkingFeeAmount} onChange={handleChange} type="number" bg="bg-zinc-100 dark:bg-surface-hover" prefix="₱" />
                     )}

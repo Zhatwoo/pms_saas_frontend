@@ -34,6 +34,7 @@ import {
   SpellCheck,
   Strikethrough,
   Table2,
+  Trash2,
   Type,
   Underline,
   Undo2,
@@ -257,6 +258,7 @@ export function MoaDocsToolbar({
   onListFormat,
   onToggleSpellCheck,
   onPrint,
+  onDeleteSelected,
   onClearFormatting,
   selectedElement,
   onImageStyleChange,
@@ -294,6 +296,7 @@ export function MoaDocsToolbar({
   onListFormat?: (kind: "bullet" | "number" | "check") => void;
   onToggleSpellCheck?: () => void;
   onPrint: () => void;
+  onDeleteSelected?: () => void;
   onClearFormatting: () => void;
   selectedElement?: MoaDesignElement | null;
   onImageStyleChange?: (patch: Partial<MoaDesignElement>) => void;
@@ -633,6 +636,14 @@ export function MoaDocsToolbar({
       </DocsBtn>
 
       <Sep />
+
+      <DocsBtn
+        title="Delete selected (Del)"
+        disabled={!enabled || !hasSelection}
+        onClick={() => onDeleteSelected?.()}
+      >
+        <Trash2 className="h-4 w-4" />
+      </DocsBtn>
 
       {/* Clear formatting */}
       <DocsBtn
