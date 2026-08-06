@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { calculateGadgetInterest } from "@/lib/interest";
+import { calculateGadgetInterest, getInterestRateSchedule } from "@/lib/interest";
 import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
@@ -103,14 +103,78 @@ interface PawnedItemApiResponse {
   category?: string;
   remarks?: string;
   pawnDate?: string;
+  pawn_date?: string;
   created_at?: string;
   amount?: number | string;
   interestRateSnapshot?: unknown;
   interest_rate_snapshot?: unknown;
+  maturityDate?: string | null;
+  maturity_date?: string | null;
+  expiryDate?: string | null;
+  expiry_date?: string | null;
+  expirationDate?: string | null;
+  expiration_date?: string | null;
+  renewalCount?: number;
+  renewals?: Array<{ date?: string | null; amount?: number | string | null }>;
   customers?:
     | { full_name?: string; contact_number?: string }
     | { full_name?: string; contact_number?: string }[]
     | null;
+}
+
+function formatDisplayDate(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    const raw = String(value).trim();
+    return raw || "";
+  }
+  return d.toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+/** Resolve expiration from API fields, then compute from pawn/renewal + interest schedule. */
+function resolveExpirationDate(item: PawnedItemApiResponse): string {
+  const fromApi =
+    item.expirationDate ||
+    item.expiration_date ||
+    item.expiryDate ||
+    item.expiry_date ||
+    item.maturityDate ||
+    item.maturity_date;
+  if (fromApi) {
+    const formatted = formatDisplayDate(fromApi);
+    if (formatted) return formatted;
+  }
+
+  const lastRenewal = (item.renewals || [])
+    .map((r) => r.date)
+    .filter((d): d is string => Boolean(d))
+    .sort()
+    .at(-1);
+  const pawnRaw = lastRenewal || item.pawnDate || item.pawn_date || item.created_at;
+  if (!pawnRaw) return "Not set";
+
+  const base = new Date(pawnRaw);
+  if (Number.isNaN(base.getTime())) return "Not set";
+
+  const rateGroup = getContractInterestRateGroup(
+    item.category,
+    item.interestRateSnapshot ?? item.interest_rate_snapshot ?? null,
+  );
+  const schedule = getInterestRateSchedule(item.category, rateGroup);
+  // Match inventory service: maturity = defaultDuration, expiry = maturity + grace
+  const maturityDay = schedule[3]?.endDay ?? rateGroup?.defaultDuration ?? 30;
+  const graceExtra = Math.max(
+    0,
+    (schedule[4]?.endDay ?? maturityDay + (rateGroup?.gracePeriodDuration ?? 4)) - maturityDay,
+  );
+  const expiry = new Date(base);
+  expiry.setDate(expiry.getDate() + maturityDay + graceExtra);
+  return formatDisplayDate(expiry) || "Not set";
 }
 
 interface PawnItemDetails {
@@ -205,8 +269,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           remarks: item.remarks || "---",
           storageFee: "0.00",
           parkingFee: "0.00",
-          purchasedDate: item.pawnDate || item.created_at || "---",
-          expirationDate: "---",
+          purchasedDate:
+            formatDisplayDate(item.pawnDate || item.pawn_date || item.created_at) ||
+            "Not set",
+          expirationDate: resolveExpirationDate(item),
           amount: Number(item.amount || 0),
           interestRateSnapshot: item.interestRateSnapshot ?? item.interest_rate_snapshot ?? null,
         };
@@ -929,15 +995,33 @@ function ActionToggle({ label, isActive, onClick, sub, compact = false }: { labe
         compact ? "p-2.5" : "p-3"
       } ${
         isActive
-          ? "border-2 border-pawn-gold bg-brand-green/10 shadow-lg dark:border-pawn-gold dark:bg-brand-green/40"
-          : "border border-white/10 bg-white/10 text-white/40 hover:border-pawn-gold/60 dark:border-white/10 dark:bg-surface/5 dark:text-white/40 dark:hover:bg-white/5"
+          ? "border-2 border-pawn-gold bg-white shadow-lg dark:border-pawn-gold dark:bg-white"
+          : "border border-white/25 bg-white/10 text-white/80 hover:border-pawn-gold/60 hover:bg-white/15 dark:border-white/20 dark:bg-white/10 dark:text-white/75 dark:hover:bg-white/15"
       }`}
     >
-      <div className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${isActive ? "border-brand-green dark:border-white" : "border-current"}`}>
-        {isActive && <div className="h-1 w-1 rounded-full bg-brand-green dark:bg-white" />}
+      <div
+        className={`mb-1 flex h-3 w-3 items-center justify-center rounded-full border-2 ${
+          isActive ? "border-brand-green" : "border-white/70"
+        }`}
+      >
+        {isActive && <div className="h-1.5 w-1.5 rounded-full bg-brand-green" />}
       </div>
-      <p className={`font-black uppercase tracking-tight ${compact ? "text-[9px]" : "text-[10px]"} ${isActive ? "text-brand-green dark:text-white" : "text-current"}`}>{label}</p>
-      {sub && <p className={`font-bold leading-none ${compact ? "text-[7px]" : "text-[8px]"} ${isActive ? "text-brand-green/60 dark:text-white/60" : "text-current"}`}>{sub}</p>}
+      <p
+        className={`font-black uppercase tracking-tight ${compact ? "text-[9px]" : "text-[10px]"} ${
+          isActive ? "text-brand-green" : "text-white"
+        }`}
+      >
+        {label}
+      </p>
+      {sub ? (
+        <p
+          className={`font-bold leading-none ${compact ? "text-[7px]" : "text-[8px]"} ${
+            isActive ? "text-brand-green/70" : "text-white/70"
+          }`}
+        >
+          {sub}
+        </p>
+      ) : null}
     </button>
   );
 }
