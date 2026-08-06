@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { calculateGadgetInterest, getInterestRateSchedule } from "@/lib/interest";
+import { calculateGadgetInterest, getInterestRateSchedule, calculatePeriodicStorageFee } from "@/lib/interest";
 import { getContractInterestRateGroup } from "@/lib/pawn-transaction-mapper";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,6 +17,14 @@ import {
   transactionPasswordErrorClass,
   transactionPasswordInputClass,
 } from "@/lib/transaction-password";
+import type { RenewalSlipSource } from "@/lib/moa";
+import {
+  formatFeeDisplay,
+  resolveParkingFeeFromRemarks,
+  resolveStorageFeeFromRemarks,
+  stripPersistedMoaFieldsFromRemarks,
+} from "@/lib/moa/persisted-moa-fields";
+import { RenewalSlipModal } from "./renewal-slip-modal";
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -117,8 +125,24 @@ interface PawnedItemApiResponse {
   renewalCount?: number;
   renewals?: Array<{ date?: string | null; amount?: number | string | null }>;
   customers?:
-    | { full_name?: string; contact_number?: string }
-    | { full_name?: string; contact_number?: string }[]
+    | {
+        full_name?: string;
+        contact_number?: string;
+        address?: string;
+        barangay?: string;
+        city?: string;
+        region?: string;
+        id_presented?: string;
+      }
+    | {
+        full_name?: string;
+        contact_number?: string;
+        address?: string;
+        barangay?: string;
+        city?: string;
+        region?: string;
+        id_presented?: string;
+      }[]
     | null;
 }
 
@@ -156,10 +180,10 @@ function resolveExpirationDate(item: PawnedItemApiResponse): string {
     .sort()
     .at(-1);
   const pawnRaw = lastRenewal || item.pawnDate || item.pawn_date || item.created_at;
-  if (!pawnRaw) return "Not set";
+  if (!pawnRaw) return "";
 
   const base = new Date(pawnRaw);
-  if (Number.isNaN(base.getTime())) return "Not set";
+  if (Number.isNaN(base.getTime())) return "";
 
   const rateGroup = getContractInterestRateGroup(
     item.category,
@@ -174,7 +198,69 @@ function resolveExpirationDate(item: PawnedItemApiResponse): string {
   );
   const expiry = new Date(base);
   expiry.setDate(expiry.getDate() + maturityDay + graceExtra);
-  return formatDisplayDate(expiry) || "Not set";
+  return formatDisplayDate(expiry);
+}
+
+function resolveMaturityDate(item: PawnedItemApiResponse): string {
+  const fromApi = item.maturityDate || item.maturity_date;
+  if (fromApi) {
+    const formatted = formatDisplayDate(fromApi);
+    if (formatted) return formatted;
+  }
+
+  const lastRenewal = (item.renewals || [])
+    .map((r) => r.date)
+    .filter((d): d is string => Boolean(d))
+    .sort()
+    .at(-1);
+  const pawnRaw = lastRenewal || item.pawnDate || item.pawn_date || item.created_at;
+  if (!pawnRaw) return "";
+
+  const base = new Date(pawnRaw);
+  if (Number.isNaN(base.getTime())) return "";
+
+  const rateGroup = getContractInterestRateGroup(
+    item.category,
+    item.interestRateSnapshot ?? item.interest_rate_snapshot ?? null,
+  );
+  const schedule = getInterestRateSchedule(item.category, rateGroup);
+  const maturityDay = schedule[3]?.endDay ?? rateGroup?.defaultDuration ?? 30;
+  const maturity = new Date(base);
+  maturity.setDate(maturity.getDate() + maturityDay);
+  return formatDisplayDate(maturity);
+}
+
+function formatCustomerAddress(customer: {
+  address?: string;
+  barangay?: string;
+  city?: string;
+  region?: string;
+} | null | undefined): string {
+  if (!customer) return "";
+  return [customer.address, customer.barangay, customer.city, customer.region]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+/** New maturity/expiry after renewing `periods` contract periods from today. */
+function computePostRenewalDates(
+  category: string,
+  interestRateSnapshot: unknown,
+  periods: number,
+): { maturityDate: string; expiryDate: string } {
+  const rateGroup = getContractInterestRateGroup(category, interestRateSnapshot);
+  const durationPerPeriod = Math.max(1, rateGroup?.defaultDuration ?? 30);
+  const grace = Math.max(0, rateGroup?.gracePeriodDuration ?? 4);
+  const totalDays = durationPerPeriod * Math.max(1, periods);
+  const maturity = new Date();
+  maturity.setDate(maturity.getDate() + totalDays);
+  const expiry = new Date(maturity);
+  expiry.setDate(expiry.getDate() + grace);
+  return {
+    maturityDate: formatDisplayDate(maturity),
+    expiryDate: formatDisplayDate(expiry),
+  };
 }
 
 interface PawnItemDetails {
@@ -188,10 +274,13 @@ interface PawnItemDetails {
   memory: string;
   category: string;
   contactNumber: string;
+  customerAddress: string;
+  idPresented: string;
   remarks: string;
   storageFee: string;
   parkingFee: string;
   purchasedDate: string;
+  maturityDate: string;
   expirationDate: string;
   amount: number;
   interestRateSnapshot?: unknown;
@@ -212,6 +301,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isProofModalOpen, setIsProofModalOpen] = useState(false);
+  const [isRenewalSlipOpen, setIsRenewalSlipOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -239,6 +329,50 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
   const totalToPay = isReappraiseActive ? newPrincipal : (interestCalc.interestAmount * itemsRenewed);
   const interestDue = interestCalc.interestAmount * itemsRenewed;
 
+  const renewalSlipSource = useMemo((): RenewalSlipSource | null => {
+    if (!selectedItem || isReappraiseActive) return null;
+    const postDates = computePostRenewalDates(
+      selectedItem.category,
+      selectedItem.interestRateSnapshot,
+      itemsRenewed,
+    );
+    return {
+      customerName: selectedItem.name,
+      customerAddress: selectedItem.customerAddress,
+      contactNo: selectedItem.contactNumber,
+      idPresented: selectedItem.idPresented,
+      unitCode: selectedItem.unitCode,
+      brandModel: selectedItem.unit,
+      serialNo: selectedItem.serialNumber,
+      itemsIncluded: selectedItem.itemsIncluded,
+      condition: selectedItem.condition,
+      memory: selectedItem.memory,
+      remarks: selectedItem.remarks,
+      category: selectedItem.category,
+      purchasedDate: selectedItem.purchasedDate,
+      prevMaturityDate: selectedItem.maturityDate || selectedItem.expirationDate,
+      maturityDate: postDates.maturityDate,
+      expiryDate: postDates.expiryDate,
+      principalAmount: selectedItem.amount,
+      interestPaid: interestDue,
+      serviceFee: 0,
+      otherCharges: 0,
+      storageFee: selectedItem.storageFee,
+      parkingFee: selectedItem.parkingFee,
+      periodsRenewed: itemsRenewed,
+      processedBy: adminForm.approvedBy || user?.fullName || "",
+      renewalSlipNo: "",
+      transactionNo: "",
+    };
+  }, [
+    selectedItem,
+    isReappraiseActive,
+    itemsRenewed,
+    interestDue,
+    adminForm.approvedBy,
+    user?.fullName,
+  ]);
+
   const triggerSearch = async (code: string, preFetchedItem?: PawnedItemApiResponse) => {
     if (!code && !preFetchedItem) return;
     setIsLoading(true);
@@ -254,26 +388,39 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
 
       if (item) {
         const customer = Array.isArray(item.customers) ? item.customers[0] : item.customers;
-        
-        const details = {
+        const amount = Number(item.amount || 0);
+        const remarksRaw = item.remarks || "";
+        const parkingFromRemarks = resolveParkingFeeFromRemarks(remarksRaw);
+        const storageFromRemarks = resolveStorageFeeFromRemarks(remarksRaw);
+        const storageComputed =
+          storageFromRemarks > 0
+            ? storageFromRemarks
+            : amount > 0
+              ? calculatePeriodicStorageFee(amount, item.category)
+              : 0;
+
+        const details: PawnItemDetails = {
           id: item.id,
-          name: customer?.full_name || "---",
-          unitCode: item.itemId || "---",
-          unit: item.itemName || "---",
-          serialNumber: item.serialNumber || "---",
-          itemsIncluded: item.itemsIncluded || "---",
-          condition: item.condition || "---",
-          memory: item.memoryStorage || "---",
-          category: item.category || "---",
-          contactNumber: customer?.contact_number || "---",
-          remarks: item.remarks || "---",
-          storageFee: "0.00",
-          parkingFee: "0.00",
+          name: customer?.full_name || "",
+          unitCode: item.itemId || "",
+          unit: item.itemName || "",
+          serialNumber: item.serialNumber || "",
+          itemsIncluded: item.itemsIncluded || "",
+          condition: item.condition || "",
+          memory: item.memoryStorage || "",
+          category: item.category || "",
+          contactNumber: customer?.contact_number || "",
+          customerAddress: formatCustomerAddress(customer),
+          idPresented: customer?.id_presented || "",
+          remarks: stripPersistedMoaFieldsFromRemarks(remarksRaw),
+          storageFee: formatFeeDisplay(storageComputed),
+          parkingFee: formatFeeDisplay(parkingFromRemarks),
           purchasedDate:
             formatDisplayDate(item.pawnDate || item.pawn_date || item.created_at) ||
-            "Not set",
+            "",
+          maturityDate: resolveMaturityDate(item),
           expirationDate: resolveExpirationDate(item),
-          amount: Number(item.amount || 0),
+          amount,
           interestRateSnapshot: item.interestRateSnapshot ?? item.interest_rate_snapshot ?? null,
         };
         setSelectedItem(details);
@@ -372,7 +519,7 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       await api.post("/auth/verify-password", { password: adminForm.password });
       if (!isReappraiseActive) {
         setIsConfirmOpen(false);
-        setIsProofModalOpen(true);
+        setIsRenewalSlipOpen(true);
         setIsLoading(false);
         isProcessingRef.current = false;
       } else {
@@ -408,6 +555,8 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
       setItemsRenewed(1);
       setIsConfirmOpen(false);
       setIsCancelConfirmOpen(false);
+      setIsRenewalSlipOpen(false);
+      setIsProofModalOpen(false);
     }
     if (isOpen) {
       setIsCancelConfirmOpen(false);
@@ -886,6 +1035,18 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
         isOpen={isScannerOpen} 
         onScan={handleQrScan} 
         onClose={() => setIsScannerOpen(false)} 
+      />
+      <RenewalSlipModal
+        isOpen={isRenewalSlipOpen}
+        source={renewalSlipSource}
+        isConfirming={isLoading}
+        onClose={() => {
+          if (!isLoading) setIsRenewalSlipOpen(false);
+        }}
+        onConfirm={() => {
+          setIsRenewalSlipOpen(false);
+          setIsProofModalOpen(true);
+        }}
       />
       <RenewalProofModal
         isOpen={isProofModalOpen}

@@ -2336,7 +2336,13 @@ export default function SettingsPage() {
   return (
     <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
       <div className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
-        {["Profile", "Notifications", "Shop", "Manage Categories", "MOA"].map((tab) => (
+        {[
+          "Profile",
+          "Notifications",
+          "Shop",
+          "Manage Categories",
+          "MOA",
+        ].map((tab) => (
           <button
             key={tab}
             type="button"
@@ -2346,7 +2352,7 @@ export default function SettingsPage() {
               : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
           >
-            {tab}
+            {tab === "MOA" ? "Slip Edit" : tab}
           </button>
         ))}
       </div>
@@ -2576,7 +2582,9 @@ export default function SettingsPage() {
             <section className="overflow-visible rounded-xl border border-border-main bg-surface pb-4 shadow-sm">
               <div className="border-b border-border-main px-3 py-3 sm:px-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
+                  <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                    Slip Edit & Templates
+                  </h2>
                   <span className="rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-brand-green">
                     Super Admin Only
                   </span>
@@ -2593,15 +2601,15 @@ export default function SettingsPage() {
                       : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
+                    {isMoaEditMode ? "Exit Slip Edit" : "Slip Edit"}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowPrintPreview(true)}
-                    disabled={!isMoaEditMode}
-                    title="Preview MOA (view only)"
-                    aria-label="Preview MOA (view only)"
+                    disabled={!hasMoaDesign(getCurrentMoaDesign()) && !isMoaEditMode}
+                    title="Preview slip (view only)"
+                    aria-label="Preview slip (view only)"
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-sky-700 bg-sky-50 text-sky-800 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Eye className="h-4 w-4" strokeWidth={2.25} />
@@ -3100,6 +3108,20 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="min-w-0 overflow-x-auto rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
+                    {hasMoaDesign(getCurrentMoaDesign()) ? (
+                      <div
+                        className="mx-auto flex w-full min-w-0 flex-col gap-4"
+                        style={{ maxWidth: moaPageSize.screenWidthPx }}
+                      >
+                        <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                          Latest saved slip design (sample data). Open Slip Edit to change templates.
+                        </p>
+                        <MoaDesignPrintPages
+                          design={getCurrentMoaDesign()}
+                          values={createSampleMoaFieldValues(shopSettings)}
+                        />
+                      </div>
+                    ) : (
                     <div
                       className="mx-auto flex w-full min-w-0 flex-col gap-6"
                       style={{ maxWidth: moaPageSize.screenWidthPx }}
@@ -3437,6 +3459,7 @@ export default function SettingsPage() {
                           </MoaPaperScale>
                         </>
                     </div>
+                    )}
                   </div>
                 )}
 
@@ -3463,7 +3486,7 @@ export default function SettingsPage() {
                       size="sm"
                       className="w-full sm:w-auto"
                     >
-                      {isSavingMoa ? "Saving…" : moaDirty ? "Save MOA Template *" : "Save MOA Template"}
+                      {isSavingMoa ? "Saving…" : moaDirty ? "Save Slip Template *" : "Save Slip Template"}
                     </ActionButton>
                     <ActionButton
                       onClick={handleSendToAllBranches}
@@ -3482,7 +3505,7 @@ export default function SettingsPage() {
                 {(moaSavedAt || sendStatus === "sent") && (
                   <div className="rounded-md border border-brand-green/20 bg-brand-green/10 px-3 py-2 text-[10px] text-brand-green">
                     {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
-                    {sendStatus === "sent" && <span>MOA template sent to all branches.</span>}
+                    {sendStatus === "sent" && <span>Slip template sent to all branches.</span>}
                   </div>
                 )}
               </div>
@@ -3511,7 +3534,7 @@ export default function SettingsPage() {
           onClose={() => setShowPrintPreview(false)}
           design={getCurrentMoaDesign()}
           values={createSampleMoaFieldValues(shopSettings)}
-          title={topLabels.moaTitle || "Memorandum of Agreement Slip"}
+          title={topLabels.moaTitle || "Slip Template Preview"}
           subtitle="View only — sample data · same layout as New Pawn Transaction"
         />
 

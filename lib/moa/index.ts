@@ -20,10 +20,26 @@ export {
 } from "./resolve-field-values";
 export { MoaDesignPrintPages } from "./moa-design-print";
 export { MoaDesignViewModal } from "./moa-design-view-modal";
+export { pickDocumentDesign, pickSavedDocumentDesign, builtinDesignFor } from "./pick-document-design";
+export { resolveEmployeeDocumentDesign, loadDocumentDesignFromLocalStorage } from "./load-local-document-design";
+export {
+  buildRenewalSlipFieldValues,
+  applyRenewalPaymentTableAmounts,
+  type RenewalSlipSource,
+  type RenewalSlipShopInfo,
+} from "./build-renewal-slip-values";
 export {
   createSampleMoaFieldValues,
   type MoaShopPreviewInfo,
 } from "./sample-field-values";
+export {
+  parsePersistedMoaValues,
+  stripPersistedMoaFieldsFromRemarks,
+  resolveParkingFeeFromRemarks,
+  resolveStorageFeeFromRemarks,
+  formatFeeDisplay,
+  MOA_FIELDS_REMARKS_PREFIX,
+} from "./persisted-moa-fields";
 export {
   createTemplateFromDesign,
   createTemplateFromElements,
