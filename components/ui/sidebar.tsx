@@ -33,6 +33,7 @@ function NavItemComponent({
   disabled,
   isExpanded,
   onToggle,
+  onSidebarToggle,
 }: {
   item: NavItem;
   collapsed: boolean;
@@ -41,6 +42,7 @@ function NavItemComponent({
   disabled?: boolean;
   isExpanded: boolean;
   onToggle: () => void;
+  onSidebarToggle?: () => void;
 }) {
   const hasSubItems = item.subItems && item.subItems.length > 0;
   const isAllowedDuringRestriction = (href?: string) =>
@@ -64,7 +66,10 @@ function NavItemComponent({
             if (effectivelyDisabled) {
               return;
             }
-            if (!collapsed) {
+            if (collapsed) {
+              onSidebarToggle?.();
+              onToggle();
+            } else {
               // If we're about to expand (isExpanded is currently false), navigate to first sub-item
               if (!isExpanded && item.subItems && item.subItems.length > 0) {
                 router.push(item.subItems[0].href);
@@ -422,6 +427,7 @@ export function Sidebar({
                   disabled={disabled}
                   isExpanded={expandedKey === item.label}
                   onToggle={() => handleToggle(item.label)}
+                  onSidebarToggle={onToggle}
                 />
               ))}
             </div>
