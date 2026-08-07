@@ -10,7 +10,13 @@ import {
 } from "@/app/(pages)/settings/_components/moa-design-palette";
 import type { MoaDocsMargins } from "@/app/(pages)/settings/_components/moa-design/docs-ruler";
 import { cloneMoaDesignBlob, type MoaDesignBlob } from "./design-blob";
-import { createDefaultMoaDesign } from "./default-design";
+import {
+  createBuyBackDesign,
+  createDefaultMoaDesign,
+  createGeneralMoaDesign,
+  createPawnRenewalDesign,
+  createRedemptionDesign,
+} from "./default-design";
 
 export type MoaComponentTemplateKind = "pack" | "full";
 
@@ -227,20 +233,55 @@ function builtin(
 }
 
 export function getBuiltinMoaComponentTemplates(): MoaComponentTemplate[] {
-  const full = createDefaultMoaDesign();
+  const starter = createDefaultMoaDesign();
+  const generalMoa = createGeneralMoaDesign();
+  const redemption = createRedemptionDesign();
+  const buyBack = createBuyBackDesign();
+  const renewal = createPawnRenewalDesign();
+
+  const asFull = (
+    id: string,
+    name: string,
+    description: string,
+    design: MoaDesignBlob,
+  ) =>
+    builtin(id, name, description, "full", design.elements, {
+      pageSizeId: design.pageSizeId,
+      pageCount: design.pageCount,
+      watermark: design.watermark,
+      margins: design.margins,
+    });
+
   return [
-    builtin(
+    asFull(
       "builtin-full-starter",
       "Full starter slip",
       "Complete MOA layout — replaces the whole canvas",
-      "full",
-      full.elements,
-      {
-        pageSizeId: full.pageSizeId,
-        pageCount: full.pageCount,
-        watermark: full.watermark,
-        margins: full.margins,
-      },
+      starter,
+    ),
+    asFull(
+      "builtin-full-general-moa",
+      "General MOA / Pawn Loan",
+      "QUICKPAWN Agreements PDF — pawn loan agreement with terms & signatures",
+      generalMoa,
+    ),
+    asFull(
+      "builtin-full-redemption",
+      "Redemption Slip",
+      "QUICKPAWN Agreements PDF — redemption form with payment breakdown",
+      redemption,
+    ),
+    asFull(
+      "builtin-full-buyback",
+      "Buy Back Slip",
+      "QUICKPAWN Agreements PDF — buy back transaction slip",
+      buyBack,
+    ),
+    asFull(
+      "builtin-full-renewal",
+      "Pawn Renewal Slip",
+      "QUICKPAWN Agreements PDF — renewal payment & new loan period",
+      renewal,
     ),
     builtin(
       "builtin-shop-header",

@@ -69,7 +69,6 @@ function ExpirationMonitoringPageContent() {
   const router = useRouter();
   const [isBlastSending, setIsBlastSending] = useState(false);
   const [sendingItemId, setSendingItemId] = useState<string | null>(null);
-  const renewingItemId: string | null = null;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const canRenew = user?.role === "admin" || user?.role === "employee";
   const userRole = user?.role || "employee";
@@ -239,7 +238,7 @@ function ExpirationMonitoringPageContent() {
         onSendEmail={handleSendSingleEmail}
         sendingItemId={sendingItemId}
         onRenew={handleRenew}
-        renewingItemId={renewingItemId}
+        renewingItemId={null}
         onExpire={handleExpire}
         expiringItemId={confirmExpireId}
         canRenew={canRenew}

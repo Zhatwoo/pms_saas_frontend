@@ -15,6 +15,7 @@ const MOA_FIELD_SAMPLE_VALUES: Record<string, string> = {
   idPresented: "Driver's License",
   unitCode: "UNIT-001",
   purchasedDate: "01/15/2026",
+  agreementDate: "January 15, 2026",
   maturityDate: "01/25/2026",
   expiryDate: "01/30/2026",
   sellerName: "JUAN DELA CRUZ",
@@ -28,9 +29,22 @@ const MOA_FIELD_SAMPLE_VALUES: Record<string, string> = {
   serialNo: "SN-123456",
   memory: "128GB",
   remarks: "—",
+  itemType: "Ring",
+  metalType: "Gold",
+  karat: "18K",
+  weightGrams: "5.2 g",
+  stoneType: "Diamond",
+  stoneCarat: "0.25 ct",
+  hallmarkStamp: "750",
+  appraisedValue: "₱5,000.00",
+  processedBy: "MARIA SANTOS",
+  representedBy: "MARIA SANTOS",
+  signatureBlank: "\u00A0",
+  witnessName: "\u00A0",
 };
 
 function moaFieldSampleValue(fieldKey: string): string {
+  if (fieldKey === "signatureBlank" || fieldKey === "signature") return "\u00A0";
   return MOA_FIELD_SAMPLE_VALUES[fieldKey] ?? "_______________";
 }
 
@@ -339,10 +353,16 @@ export function MoaElementVisual({
   element,
   editingTable,
   onTableCellChange,
+  resolveFieldValue,
+  /** Print / employee preview — no edit chrome (borders, dashed boxes, helper labels). */
+  forPrint = false,
 }: {
   element: MoaDesignElement;
   editingTable?: boolean;
   onTableCellChange?: (row: number, col: number, value: string) => void;
+  /** When set (print / employee preview), fill moaField from live data instead of samples. */
+  resolveFieldValue?: (fieldKey: string) => string;
+  forPrint?: boolean;
 }) {
   const textStyle = elementTextStyle(element);
 
@@ -351,7 +371,13 @@ export function MoaElementVisual({
       return <ShapeVisual element={element} />;
     case "photo":
       return (
-        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded border border-dashed border-zinc-400 bg-zinc-100">
+        <div
+          className={`relative flex h-full w-full items-center justify-center overflow-hidden rounded ${
+            element.imageSrc || forPrint
+              ? ""
+              : "border border-dashed border-zinc-400 bg-zinc-100"
+          }`}
+        >
           {element.imageSrc ? (
             <div
               className="h-full w-full overflow-hidden"
@@ -368,7 +394,7 @@ export function MoaElementVisual({
                 }}
               />
             </div>
-          ) : (
+          ) : forPrint ? null : (
             <div className="flex flex-col items-center gap-1 text-zinc-500">
               <ImageIcon className="h-5 w-5" />
               <span className="text-[8px] font-semibold">Double-click to upload</span>
@@ -476,6 +502,13 @@ export function MoaElementVisual({
       );
     }
     case "section":
+      if (forPrint) {
+        return (
+          <div className="flex h-full w-full items-center px-0.5" style={textStyle}>
+            {element.text || ""}
+          </div>
+        );
+      }
       return (
         <div className="flex h-full w-full flex-col rounded border border-sky-300 bg-sky-50/60 px-2 py-1">
           <span style={textStyle} className="w-full">
@@ -484,7 +517,25 @@ export function MoaElementVisual({
           <span className="mt-0.5 text-[8px] text-sky-700/80">Section content area</span>
         </div>
       );
-    case "moaField":
+    case "moaField": {
+      const value = resolveFieldValue
+        ? resolveFieldValue(element.fieldKey)
+        : moaFieldSampleValue(element.fieldKey);
+      if (forPrint) {
+        return (
+          <div className="flex h-full w-full items-end gap-1.5 px-0.5 py-0.5">
+            <span style={textStyle} className="shrink-0 font-semibold whitespace-nowrap">
+              {element.text || "Field"}:
+            </span>
+            <span
+              className="mb-0.5 min-w-0 flex-1 truncate border-b border-zinc-500 text-[10px] text-zinc-800"
+              style={{ ...textStyle, fontWeight: "normal" }}
+            >
+              {value === "—" || value === "\u00A0" ? "\u00A0" : value}
+            </span>
+          </div>
+        );
+      }
       return (
         <div className="flex h-full w-full items-end gap-1.5 rounded border border-emerald-200 bg-white/95 px-1.5 py-1">
           <span style={textStyle} className="shrink-0 font-semibold whitespace-nowrap">
@@ -492,15 +543,30 @@ export function MoaElementVisual({
           </span>
           <span
             className="mb-0.5 min-w-0 flex-1 truncate border-b border-zinc-400 text-[10px] text-zinc-700"
-            title="Sample — filled from New Pawn when printed"
+            title={
+              resolveFieldValue
+                ? undefined
+                : "Sample — filled from New Pawn when printed"
+            }
           >
-            {moaFieldSampleValue(element.fieldKey)}
+            {value}
           </span>
         </div>
       );
+    }
     case "body":
     case "text":
     default:
+      if (forPrint) {
+        return (
+          <div
+            className="h-full w-full overflow-hidden px-0.5 py-0.5"
+            style={textStyle}
+          >
+            {element.text || ""}
+          </div>
+        );
+      }
       return (
         <div
           className="h-full w-full overflow-hidden rounded border border-dashed border-zinc-300 bg-white/90 px-1.5 py-1"

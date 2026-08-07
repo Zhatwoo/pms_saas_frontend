@@ -20,6 +20,7 @@ export interface BranchRow {
   contactNumber: string;
   createdAt?: string;
   status: string;
+  maintainingBalance?: number;
   pawnedItems: number;
   forSaleItems: number;
   totalValue: string;

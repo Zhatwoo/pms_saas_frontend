@@ -1,7 +1,13 @@
 "use client";
 
-/** Read-only MOA design pages for employee print / preview. */
+/**
+ * Read-only MOA design pages for employee print / preview.
+ * Paper + absolute layer match Settings Slip Edit canvas so layout stays identical.
+ * Print iframe has no Tailwind — critical box layout uses inline styles;
+ * MoaElementVisual still needs host-page Tailwind for screen preview (same as Edit).
+ */
 
+import type { CSSProperties } from "react";
 import {
   MOA_PAGE_SIZES,
   MoaCanvasWatermark,
@@ -14,12 +20,90 @@ import { marginsToPadding } from "@/app/(pages)/settings/_components/moa-design/
 import { MoaElementVisual } from "@/app/(pages)/settings/_components/moa-design/elements/visuals";
 import type { MoaDesignBlob } from "./design-blob";
 import {
+  fillMoaPlaceholders,
   resolveMoaFieldValue,
   type MoaFieldValueContext,
 } from "./resolve-field-values";
 
 function isPageDoc(el: MoaDesignElement) {
   return el.kind === "body" && el.fieldKey === MOA_PAGE_DOC_FIELD_KEY;
+}
+
+function PrintHeader({
+  element,
+  branch,
+}: {
+  element: MoaDesignElement;
+  branch: MoaBranchPreview;
+}) {
+  const hasStroke =
+    Boolean(element.stroke) &&
+    element.stroke !== "transparent" &&
+    element.stroke !== "#d4d4d8" &&
+    element.stroke !== "#e4e4e7";
+
+  return (
+    <div
+      data-moa-design-el={element.id}
+      style={{
+        position: "absolute",
+        left: element.x,
+        top: element.y,
+        width: element.width,
+        height: element.height,
+        boxSizing: "border-box",
+        overflow: "hidden",
+        border: hasStroke ? `1px solid ${element.stroke}` : "none",
+        background:
+          element.fill && element.fill !== "transparent" ? element.fill : "transparent",
+      }}
+    >
+      {element.headerFields.map((field) => (
+        <div
+          key={field.id}
+          style={{
+            position: "absolute",
+            left: field.x,
+            top: field.y,
+            width: field.width,
+            height: field.height || 22,
+            overflow: "hidden",
+            wordBreak: "break-word",
+            lineHeight: 1.2,
+            fontFamily: field.fontFamily ?? element.fontFamily,
+            fontSize: field.fontSize ?? element.fontSize,
+            fontWeight: field.fontWeight ?? element.fontWeight,
+            fontStyle: field.fontStyle ?? element.fontStyle,
+            textDecoration: field.textDecoration ?? element.textDecoration,
+            color: field.color ?? element.color,
+            textAlign: field.textAlign ?? element.textAlign,
+          }}
+        >
+          {resolveHeaderFieldValue(field.key, branch)}
+        </div>
+      ))}
+      {element.text ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 8,
+            right: 8,
+            bottom: 8,
+            fontFamily: element.fontFamily,
+            fontSize: element.fontSize,
+            fontWeight: element.fontWeight,
+            fontStyle: element.fontStyle,
+            textDecoration: element.textDecoration,
+            color: element.color,
+            textAlign: element.textAlign,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {element.text}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function PrintElement({
@@ -31,116 +115,36 @@ function PrintElement({
   values: MoaFieldValueContext;
   branch: MoaBranchPreview;
 }) {
-  const style = {
-    fontFamily: element.fontFamily,
-    fontSize: element.fontSize,
-    textAlign: element.textAlign,
-    fontWeight: element.fontWeight,
-    fontStyle: element.fontStyle,
-    textDecoration: element.textDecoration,
-    color: element.color,
-    lineHeight: element.lineHeight,
-  } as const;
-
   if (element.kind === "header") {
-    return (
-      <div
-        className="absolute overflow-hidden rounded border"
-        style={{
-          left: element.x,
-          top: element.y,
-          width: element.width,
-          height: element.height,
-          borderColor: element.stroke || "#d4d4d8",
-          background:
-            element.fill && element.fill !== "transparent" ? element.fill : "transparent",
-        }}
-      >
-        {element.headerFields.map((field) => (
-          <div
-            key={field.id}
-            className="absolute overflow-hidden break-words leading-tight"
-            style={{
-              left: field.x,
-              top: field.y,
-              width: field.width,
-              height: field.height || 22,
-              fontFamily: field.fontFamily ?? element.fontFamily,
-              fontSize: field.fontSize ?? element.fontSize,
-              fontWeight: field.fontWeight ?? element.fontWeight,
-              fontStyle: field.fontStyle ?? element.fontStyle,
-              textDecoration: field.textDecoration ?? element.textDecoration,
-              color: field.color ?? element.color,
-              textAlign: field.textAlign ?? element.textAlign,
-            }}
-          >
-            {resolveHeaderFieldValue(field.key, branch)}
-          </div>
-        ))}
-        {element.text ? (
-          <div className="px-2 py-1" style={style}>
-            {element.text}
-          </div>
-        ) : null}
-      </div>
-    );
+    return <PrintHeader element={element} branch={branch} />;
   }
 
-  if (element.kind === "moaField") {
-    const value = resolveMoaFieldValue(element.fieldKey, values);
-    return (
-      <div
-        className="absolute flex items-end gap-1.5 overflow-hidden px-1"
-        style={{
-          left: element.x,
-          top: element.y,
-          width: element.width,
-          height: element.height,
-        }}
-      >
-        <span className="shrink-0 font-semibold whitespace-nowrap" style={style}>
-          {element.text || element.fieldKey}:
-        </span>
-        <span
-          className="min-w-0 flex-1 truncate border-b border-zinc-500 pb-0.5"
-          style={{ ...style, fontWeight: "normal" }}
-        >
-          {value}
-        </span>
-      </div>
-    );
-  }
+  const boxStyle: CSSProperties = {
+    position: "absolute",
+    left: element.x,
+    top: element.y,
+    width: element.width,
+    height: element.height,
+    boxSizing: "border-box",
+    overflow: "hidden",
+  };
 
-  if (isPageDoc(element) || element.kind === "text" || element.kind === "body" || element.kind === "section") {
-    return (
-      <div
-        className="absolute overflow-hidden whitespace-pre-wrap px-1"
-        style={{
-          left: element.x,
-          top: element.y,
-          width: element.width,
-          height: element.height,
-          ...style,
-          paddingLeft: 4 + (element.indent ?? 0) * 24,
-        }}
-      >
-        {element.text}
-      </div>
-    );
-  }
+  // Same visual components as Slip Edit canvas (keeps spacing/borders identical).
+  const visualElement: MoaDesignElement =
+    element.kind === "text" || element.kind === "body" || element.kind === "section"
+      ? {
+          ...element,
+          text: fillMoaPlaceholders(element.text || "", values),
+        }
+      : element;
 
-  // Shapes / photo / table / chart / etc. — reuse editor visual (read-only)
   return (
-    <div
-      className="absolute overflow-hidden"
-      style={{
-        left: element.x,
-        top: element.y,
-        width: element.width,
-        height: element.height,
-      }}
-    >
-      <MoaElementVisual element={element} />
+    <div data-moa-design-el={element.id} style={boxStyle}>
+      <MoaElementVisual
+        element={visualElement}
+        forPrint
+        resolveFieldValue={(fieldKey) => resolveMoaFieldValue(fieldKey, values)}
+      />
     </div>
   );
 }
@@ -174,53 +178,72 @@ export function MoaDesignPrintPages({
         return (
           <div
             key={`design-page-${pageIndex}`}
-            className="moa-print-page moa-design-print-page mx-auto w-full min-w-0 flex-none overflow-hidden border border-zinc-300 bg-white text-[9.5px] leading-normal text-zinc-800 shadow-md moa-paper-effect"
+            className="moa-print-page moa-design-print-page moa-paper-effect"
+            data-moa-design-page="true"
+            data-screen-width={page.screenWidthPx}
+            data-screen-height={page.screenHeightPx}
             style={{
+              // Match Settings Slip Edit paper box exactly.
               width: page.screenWidthPx,
               height: page.screenHeightPx,
               maxWidth: page.screenWidthPx,
               maxHeight: page.screenHeightPx,
-              padding: 0,
+              padding: marginsToPadding(design.margins),
               boxSizing: "border-box",
               position: "relative",
+              overflow: "hidden",
+              background: "#fff",
+              color: "#27272a",
+              fontSize: 9.5,
+              lineHeight: 1.25,
+              border: "none",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+              marginLeft: "auto",
+              marginRight: "auto",
+              marginBottom: pageIndex < pageCount - 1 ? 24 : 0,
             }}
           >
+            <MoaCanvasWatermark settings={design.watermark} />
+            {pageDoc?.text ? (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 1,
+                  overflow: "hidden",
+                  whiteSpace: "pre-wrap",
+                  padding: 12,
+                  paddingLeft: 12 + (pageDoc.indent ?? 0) * 24,
+                  fontFamily: pageDoc.fontFamily,
+                  fontSize: pageDoc.fontSize,
+                  fontWeight: pageDoc.fontWeight,
+                  fontStyle: pageDoc.fontStyle,
+                  textDecoration: pageDoc.textDecoration,
+                  color: pageDoc.color,
+                  textAlign: pageDoc.textAlign,
+                  lineHeight: pageDoc.lineHeight,
+                }}
+              >
+                {fillMoaPlaceholders(pageDoc.text, values)}
+              </div>
+            ) : null}
+            {/* Same absolute inset-0 canvas layer as MoaDesignCanvasLayer */}
             <div
-              className="relative h-full w-full overflow-hidden"
               style={{
-                padding: marginsToPadding(design.margins),
-                boxSizing: "border-box",
+                position: "absolute",
+                inset: 0,
+                zIndex: 2,
+                overflow: "hidden",
               }}
             >
-              <MoaCanvasWatermark settings={design.watermark} />
-              {pageDoc?.text ? (
-                <div
-                  className="absolute inset-0 z-[1] overflow-hidden whitespace-pre-wrap px-3 py-3"
-                  style={{
-                    fontFamily: pageDoc.fontFamily,
-                    fontSize: pageDoc.fontSize,
-                    fontWeight: pageDoc.fontWeight,
-                    fontStyle: pageDoc.fontStyle,
-                    textDecoration: pageDoc.textDecoration,
-                    color: pageDoc.color,
-                    textAlign: pageDoc.textAlign,
-                    lineHeight: pageDoc.lineHeight,
-                    paddingLeft: 12 + (pageDoc.indent ?? 0) * 24,
-                  }}
-                >
-                  {pageDoc.text}
-                </div>
-              ) : null}
-              <div className="relative z-[2] h-full w-full">
-                {pageElements.map((el) => (
-                  <PrintElement
-                    key={el.id}
-                    element={el}
-                    values={values}
-                    branch={branch}
-                  />
-                ))}
-              </div>
+              {pageElements.map((el) => (
+                <PrintElement
+                  key={el.id}
+                  element={el}
+                  values={values}
+                  branch={branch}
+                />
+              ))}
             </div>
           </div>
         );

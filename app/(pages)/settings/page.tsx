@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { Eye } from "lucide-react";
 import { api } from "@/lib/api";
@@ -11,6 +11,7 @@ import { PasswordChangeRequestCard } from "@/components/shared/password-change-r
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
 import { ActionButton } from "@/components/shared/action-button";
 import { NotificationSoundSettings } from "@/components/shared/notification-sound-settings";
+import { TransactionConfirmModal } from "@/components/shared/transaction-confirm-modal";
 import { fetchCategories } from "@/lib/categories";
 import {
   MOA_LEGAL_PAGE,
@@ -81,7 +82,10 @@ import {
   createDefaultMoaDesign,
   createSampleMoaFieldValues,
   hasMoaDesign,
+  JEWELRY_FIELD_OPTIONS,
+  jewelryFieldInsertLayout,
   MoaDesignPrintPages,
+  resolveMoaFieldValue,
   MoaDesignViewModal,
   normalizeMoaDesignBlob,
   placePackOnPage,
@@ -455,6 +459,20 @@ export default function SettingsPage() {
   const [moaSavedAt, setMoaSavedAt] = useState<string | null>(null);
   const [sendStatus, setSendStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [moaConfirm, setMoaConfirm] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    resolve: (ok: boolean) => void;
+  } | null>(null);
+  const requestMoaConfirm = (opts: {
+    title: string;
+    message: string;
+    confirmLabel: string;
+  }) =>
+    new Promise<boolean>((resolve) => {
+      setMoaConfirm({ ...opts, resolve });
+    });
   const [moaDirty, setMoaDirty] = useState(false);
   const [isSavingMoa, setIsSavingMoa] = useState(false);
   const initialTopLabelsRef = useRef(topLabels);
@@ -536,7 +554,7 @@ export default function SettingsPage() {
               const raw = (data as { document_designs?: Record<string, unknown> }).document_designs;
               if (!raw || typeof raw !== "object") return undefined;
               const next: Partial<Record<MoaDocumentType, MoaDesignBlob>> = {};
-              (["moa", "redeem", "buy_back"] as MoaDocumentType[]).forEach((key) => {
+              (["moa", "redeem", "buy_back", "renewal"] as MoaDocumentType[]).forEach((key) => {
                 const normalized = normalizeMoaDesignBlob(raw[key]);
                 if (normalized) next[key] = normalized;
               });
@@ -679,6 +697,31 @@ export default function SettingsPage() {
 
   const moaPageSize = MOA_PAGE_SIZES[moaPageSizeId];
 
+  /** One scaled canvas + label — inner doc panel scrolls when page 2+ exists. */
+  const moaCanvasScrollHeightPx = useMemo(() => {
+    const scaledPage = Math.ceil(moaPageSize.screenHeightPx * (moaZoom / 100));
+    const pageLabel = moaPageCount > 1 ? 28 : 0;
+    return scaledPage + pageLabel + 32;
+  }, [moaPageSize.screenHeightPx, moaZoom, moaPageCount]);
+
+  const moaSampleFieldValues = useMemo(
+    () => createSampleMoaFieldValues(shopSettings),
+    [shopSettings],
+  );
+
+  const resolveMoaCanvasFieldValue = useCallback(
+    (fieldKey: string) => resolveMoaFieldValue(fieldKey, moaSampleFieldValues),
+    [moaSampleFieldValues],
+  );
+
+  const scrollMoaElementIntoView = useCallback((elementId: string) => {
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-moa-element-id="${elementId}"]`)
+        ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }, []);
+
   const updateSlipSectionOrder = (next: SlipSectionId[]) => {
     setSlipSectionOrder(next);
     saveSlipSectionOrder(selectedMoaCategory, next);
@@ -737,23 +780,16 @@ export default function SettingsPage() {
     updateMoaDesignElements(
       elements
         .map((el) => {
-          // Clear page-document text instead of removing the surface
           if (ids.has(el.id) && el.fieldKey === MOA_PAGE_DOC_FIELD_KEY) {
             return { ...el, text: "" };
           }
-          if (el.kind === "header" && ids.has(el.id)) {
-            // Header in selection (Ctrl+A) → clear all fields + label text
-            if (fieldSet.size === 0) {
-              return { ...el, headerFields: [], text: "" };
+          if (el.kind === "header" && fieldSet.size > 0 && ids.has(el.id)) {
+            const remaining = el.headerFields.filter((field) => !fieldSet.has(field.id));
+            if (fieldSet.size < el.headerFields.length) {
+              return { ...el, headerFields: remaining };
             }
-            return {
-              ...el,
-              headerFields: el.headerFields.filter((field) => !fieldSet.has(field.id)),
-              ...(el.text ? { text: "" } : {}),
-            };
           }
-          // Field-only selection (header box not selected)
-          if (el.kind === "header" && fieldSet.size > 0) {
+          if (el.kind === "header" && fieldSet.size > 0 && !ids.has(el.id)) {
             return {
               ...el,
               headerFields: el.headerFields.filter((field) => !fieldSet.has(field.id)),
@@ -764,8 +800,7 @@ export default function SettingsPage() {
         .filter((el) => {
           if (!ids.has(el.id)) return true;
           if (el.fieldKey === MOA_PAGE_DOC_FIELD_KEY) return true;
-          if (el.kind === "header") return true; // keep header boxes; content cleared above
-          return false; // delete text / section / body / moaField / etc.
+          return false;
         }),
     );
     setSelectedDesignId(null);
@@ -882,7 +917,10 @@ export default function SettingsPage() {
 
   useMoaKeyboard({
     enabled: canEditMoa,
-    canvasSelectionActive: selectedDesignIds.length > 1,
+    canvasSelectionActive:
+      selectedDesignIds.length > 0 ||
+      Boolean(selectedDesignId) ||
+      selectedFieldIds.length > 0,
     onDelete: handleDeleteSelected,
     onCopy: handleCopySelected,
     onCut: handleCutSelected,
@@ -1356,12 +1394,14 @@ export default function SettingsPage() {
       ? moaDesignElements.find((el) => el.id === selectedDesignId)
       : null;
     const pageIndex = selected?.pageIndex ?? 0;
-    const offset = moaDesignElements.filter((el) => (el.pageIndex ?? 0) === pageIndex).length;
+    const existingOnPage = moaDesignElements.filter(
+      (el) => (el.pageIndex ?? 0) === pageIndex,
+    ).length;
     const next = {
       ...createMoaConfigFieldElement(
         payload,
-        40 + (offset % 5) * 16,
-        120 + (offset % 6) * 28,
+        40 + (existingOnPage % 5) * 16,
+        320 + (existingOnPage % 6) * 28,
         {
           fontFamily: moaDesignFontFamily,
           fontSize: moaDesignFontSize,
@@ -1373,6 +1413,34 @@ export default function SettingsPage() {
     setSelectedDesignId(next.id);
     setSelectedDesignIds([next.id]);
     setSelectedFieldIds([]);
+    scrollMoaElementIntoView(next.id);
+  };
+
+  const handleInsertAllJewelryFields = () => {
+    if (!canEditMoa) return;
+    const selected = selectedDesignId
+      ? moaDesignElements.find((el) => el.id === selectedDesignId)
+      : null;
+    const pageIndex = selected?.pageIndex ?? 0;
+    const layout = jewelryFieldInsertLayout();
+    const newElements = layout.map((field) => ({
+      ...createMoaConfigFieldElement(
+        { key: field.key, label: field.label },
+        field.x,
+        field.y,
+        {
+          fontFamily: moaDesignFontFamily,
+          fontSize: moaDesignFontSize,
+        },
+      ),
+      pageIndex,
+    }));
+    updateMoaDesignElements([...moaDesignElements, ...newElements]);
+    const last = newElements[newElements.length - 1];
+    setSelectedDesignId(last.id);
+    setSelectedDesignIds([last.id]);
+    setSelectedFieldIds([]);
+    scrollMoaElementIntoView(newElements[0].id);
   };
 
   const reorderFinancialFields = (nextIds: string[]) => {
@@ -1703,13 +1771,13 @@ export default function SettingsPage() {
 
   const handleApplyMoaToAllCategories = async () => {
     if (!canEditMoa || moaCategories.length === 0) return;
-    if (
-      !window.confirm(
+    const okApplyAll = await requestMoaConfirm({
+      title: "Apply to all categories",
+      message:
         "Apply the current template (including canvas design) to ALL categories, then save?",
-      )
-    ) {
-      return;
-    }
+      confirmLabel: "Apply & save",
+    });
+    if (!okApplyAll) return;
 
     const currentTemplate = getCurrentMoaTemplate();
     const templatesForAllCategories = Object.fromEntries(
@@ -1801,9 +1869,12 @@ export default function SettingsPage() {
     try {
       const currentTemplate = overrideCurrent ?? getCurrentMoaTemplate();
       if (!hasMoaDesign(currentTemplate.design) && moaDocumentType === "moa") {
-        const ok = window.confirm(
-          "Canvas design is empty. Save anyway? New Pawn will fall back to the classic slip.",
-        );
+        const ok = await requestMoaConfirm({
+          title: "Empty canvas design",
+          message:
+            "Canvas design is empty. Save anyway? New Pawn will fall back to the classic slip.",
+          confirmLabel: "Save anyway",
+        });
         if (!ok) return;
       }
 
@@ -1840,18 +1911,23 @@ export default function SettingsPage() {
   const handleSendToAllBranches = async () => {
     if (!isSuperAdmin) return;
     if (moaDirty) {
-      const ok = window.confirm(
-        "You have unsaved MOA changes. Save and send to all branches now?",
-      );
+      const ok = await requestMoaConfirm({
+        title: "Unsaved changes",
+        message: "You have unsaved MOA changes. Save and send to all branches now?",
+        confirmLabel: "Save & send",
+      });
       if (!ok) return;
     }
     setSendStatus("sending");
     try {
       const currentTemplate = getCurrentMoaTemplate();
       if (!hasMoaDesign(currentTemplate.design) && moaDocumentType === "moa") {
-        const ok = window.confirm(
-          "Canvas design is empty. Send anyway? Branches will fall back to the classic slip.",
-        );
+        const ok = await requestMoaConfirm({
+          title: "Empty canvas design",
+          message:
+            "Canvas design is empty. Send anyway? Branches will fall back to the classic slip.",
+          confirmLabel: "Send anyway",
+        });
         if (!ok) {
           setSendStatus("idle");
           return;
@@ -2313,7 +2389,13 @@ export default function SettingsPage() {
   return (
     <div className="w-full max-w-none space-y-6 [&_button]:text-sm [&_h2]:text-sm [&_h3]:text-base [&_input]:text-sm [&_label]:text-xs [&_p]:text-sm [&_span]:text-xs">
       <div className="flex w-full flex-nowrap gap-1 overflow-x-auto rounded-lg border border-border-main bg-surface p-1 sm:w-fit">
-        {["Profile", "Notifications", "Shop", "Manage Categories", "MOA"].map((tab) => (
+        {[
+          "Profile",
+          "Notifications",
+          "Shop",
+          "Manage Categories",
+          "MOA",
+        ].map((tab) => (
           <button
             key={tab}
             type="button"
@@ -2323,7 +2405,7 @@ export default function SettingsPage() {
               : "text-text-tertiary hover:bg-surface-hover hover:text-text-primary"
               }`}
           >
-            {tab}
+            {tab === "MOA" ? "Slip Edit" : tab}
           </button>
         ))}
       </div>
@@ -2553,7 +2635,9 @@ export default function SettingsPage() {
             <section className="overflow-visible rounded-xl border border-border-main bg-surface pb-4 shadow-sm">
               <div className="border-b border-border-main px-3 py-3 sm:px-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">Memorandum of Agreement Template</h2>
+                  <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                    Slip Edit & Templates
+                  </h2>
                   <span className="rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-brand-green">
                     Super Admin Only
                   </span>
@@ -2570,15 +2654,15 @@ export default function SettingsPage() {
                       : "border border-border-main bg-surface-secondary text-zinc-700 hover:bg-surface-hover dark:text-zinc-300"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    {isMoaEditMode ? "Exit Edit Mode" : "Edit Mode"}
+                    {isMoaEditMode ? "Exit Slip Edit" : "Slip Edit"}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowPrintPreview(true)}
-                    disabled={!isMoaEditMode}
-                    title="Preview MOA (view only)"
-                    aria-label="Preview MOA (view only)"
+                    disabled={!hasMoaDesign(getCurrentMoaDesign()) && !isMoaEditMode}
+                    title="Preview slip (view only)"
+                    aria-label="Preview slip (view only)"
                     className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-sky-700 bg-sky-50 text-sky-800 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Eye className="h-4 w-4" strokeWidth={2.25} />
@@ -2654,8 +2738,8 @@ export default function SettingsPage() {
 
                 {isMoaEditMode ? (
                   <div className="overflow-hidden rounded-xl border border-border-main bg-white shadow-sm">
-                    <div className="flex min-h-[min(78vh,920px)] items-stretch">
-                      <aside className="relative flex shrink-0">
+                    <div className="flex h-[min(78vh,920px)] max-h-[min(78vh,920px)] min-h-0 items-stretch overflow-hidden">
+                      <aside className="relative z-10 flex shrink-0 items-stretch border-r border-zinc-200 bg-zinc-50">
                         <input
                           ref={moaImageInputRef}
                           type="file"
@@ -2757,6 +2841,10 @@ export default function SettingsPage() {
                                 label: topLabels[field.key],
                               }))}
                               customerOptions={CUSTOMER_TICKET_FIELD_OPTIONS}
+                              jewelryOptions={JEWELRY_FIELD_OPTIONS.map((field) => ({
+                                key: field.key,
+                                label: field.label,
+                              }))}
                               financialFields={financialFields}
                               unitFields={unitFields}
                               customFinancialFields={customFinancialFields}
@@ -2822,12 +2910,13 @@ export default function SettingsPage() {
                                 )
                               }
                               onInsertOntoCanvas={handleInsertConfigField}
+                              onInsertAllJewelryOntoCanvas={handleInsertAllJewelryFields}
                               onPaletteDragStateChange={setIsPaletteDragging}
                             />
                           }
                         />
                       </aside>
-                      <div className="flex min-w-0 flex-1 flex-col bg-zinc-100">
+                      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-zinc-100">
                         {/* Hidden file input for replace image */}
                         <input
                           ref={imageReplaceInputRef}
@@ -2921,6 +3010,7 @@ export default function SettingsPage() {
                           onPrint={() => {
                             void handlePrintMoaDesign();
                           }}
+                          onDeleteSelected={handleDeleteSelected}
                           onClearFormatting={() =>
                             applyDesignStylePatch({
                               fontFamily: MOA_FONT_OPTIONS[0].value,
@@ -2970,7 +3060,10 @@ export default function SettingsPage() {
                             saveMoaMargins(moaStorageKey, next);
                           }}
                         />
-                        <div className="min-h-0 flex-1 overflow-auto p-3 sm:p-5">
+                        <div
+                          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-3 sm:p-5"
+                          style={{ maxHeight: moaCanvasScrollHeightPx }}
+                        >
                           {/* Sentinel: receives focus after Ctrl+A so Delete/toolbar shortcuts stay snappy */}
                           <div
                             ref={moaCanvasFocusRef}
@@ -3039,6 +3132,8 @@ export default function SettingsPage() {
                                     spellCheck={moaSpellCheck}
                                     cropModeId={imageCropModeId}
                                     onCropModeChange={setImageCropModeId}
+                                    onDeleteSelected={handleDeleteSelected}
+                                    resolveFieldValue={resolveMoaCanvasFieldValue}
                                   />
                                 </div>
                               </MoaPaperScale>
@@ -3077,6 +3172,25 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="min-w-0 overflow-x-auto rounded-md border border-border-main bg-surface-secondary p-2 shadow-inner sm:p-4 lg:p-6 dark:bg-surface-secondary">
+                    {hasMoaDesign(getCurrentMoaDesign()) ? (
+                      <div
+                        className="overflow-y-auto overscroll-contain"
+                        style={{ maxHeight: moaCanvasScrollHeightPx + 48 }}
+                      >
+                        <div
+                          className="mx-auto flex w-full min-w-0 flex-col gap-4"
+                          style={{ maxWidth: moaPageSize.screenWidthPx }}
+                        >
+                          <p className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                            Latest saved slip design (sample data). Open Slip Edit to change templates.
+                          </p>
+                          <MoaDesignPrintPages
+                            design={getCurrentMoaDesign()}
+                            values={createSampleMoaFieldValues(shopSettings)}
+                          />
+                        </div>
+                      </div>
+                    ) : (
                     <div
                       className="mx-auto flex w-full min-w-0 flex-col gap-6"
                       style={{ maxWidth: moaPageSize.screenWidthPx }}
@@ -3414,11 +3528,12 @@ export default function SettingsPage() {
                           </MoaPaperScale>
                         </>
                     </div>
+                    )}
                   </div>
                 )}
 
-                <div className="sticky bottom-0 z-20 flex flex-col gap-3 border-t border-border-main bg-white/95 px-3 py-3 backdrop-blur sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                <div className="flex flex-col gap-3 rounded-xl border border-border-main bg-white px-3 py-3 shadow-sm dark:bg-zinc-900 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4">
+                  <p className="min-w-0 flex-1 text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                     {moaDirty ? (
                       <span className="font-bold text-amber-700">Unsaved changes.</span>
                     ) : (
@@ -3440,7 +3555,7 @@ export default function SettingsPage() {
                       size="sm"
                       className="w-full sm:w-auto"
                     >
-                      {isSavingMoa ? "Saving…" : moaDirty ? "Save MOA Template *" : "Save MOA Template"}
+                      {isSavingMoa ? "Saving…" : moaDirty ? "Save Slip Template *" : "Save Slip Template"}
                     </ActionButton>
                     <ActionButton
                       onClick={handleSendToAllBranches}
@@ -3459,7 +3574,7 @@ export default function SettingsPage() {
                 {(moaSavedAt || sendStatus === "sent") && (
                   <div className="rounded-md border border-brand-green/20 bg-brand-green/10 px-3 py-2 text-[10px] text-brand-green">
                     {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
-                    {sendStatus === "sent" && <span>MOA template sent to all branches.</span>}
+                    {sendStatus === "sent" && <span>Slip template sent to all branches.</span>}
                   </div>
                 )}
               </div>
@@ -3468,12 +3583,27 @@ export default function SettingsPage() {
 
         </div>
 
+        <TransactionConfirmModal
+          isOpen={moaConfirm !== null}
+          title={moaConfirm?.title ?? ""}
+          message={moaConfirm?.message ?? ""}
+          confirmLabel={moaConfirm?.confirmLabel ?? "Confirm"}
+          onClose={() => {
+            moaConfirm?.resolve(false);
+            setMoaConfirm(null);
+          }}
+          onConfirm={() => {
+            moaConfirm?.resolve(true);
+            setMoaConfirm(null);
+          }}
+        />
+
         <MoaDesignViewModal
           isOpen={showPrintPreview}
           onClose={() => setShowPrintPreview(false)}
           design={getCurrentMoaDesign()}
           values={createSampleMoaFieldValues(shopSettings)}
-          title={topLabels.moaTitle || "Memorandum of Agreement Slip"}
+          title={topLabels.moaTitle || "Slip Template Preview"}
           subtitle="View only — sample data · same layout as New Pawn Transaction"
         />
 

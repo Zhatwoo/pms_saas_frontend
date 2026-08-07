@@ -11,7 +11,7 @@ import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 interface LoginModalProps {
   onClose: () => void;
-  onRequestSignUp?: () => void;
+
 }
 
 type ViewState = "login" | "unauthorized-device" | "request-sent";
@@ -185,7 +185,7 @@ const legalModalContent = {
   },
 };
 
-export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
+export function LoginModal({ onClose }: LoginModalProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -435,10 +435,7 @@ export function LoginModal({ onClose, onRequestSignUp }: LoginModalProps) {
               </form>
 
               <div className="my-2.5 sm:my-4 h-px bg-zinc-200" />
-              <p className="text-center text-[10px] sm:text-xs text-zinc-500">
-                Don&apos;t have an account?{" "}
-                <button type="button" onClick={() => { onClose(); onRequestSignUp?.(); }} className="font-bold text-brand-green hover:underline">Sign Up</button>
-              </p>
+
               <div className="mt-2.5 sm:mt-4 text-center text-[8px] sm:text-[10px] text-zinc-400">
                 <p>
                   {BRAND_CONFIG.companyName} ·{" "}

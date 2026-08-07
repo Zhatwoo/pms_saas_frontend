@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { BRAND_CONFIG } from "@/lib/brand-config";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
@@ -610,7 +610,138 @@ export function LandingCloud() {
   );
 }
 
+interface ApiPlan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  badge?: string;
+  isPopular?: boolean;
+  monthlyPrice: number;
+  annualPrice: number;
+  currency: string;
+  billingType: "monthly" | "annual" | "both";
+  limits?: {
+    branchLimit: number;
+    userLimit: number;
+    storageGb: number;
+  } | null;
+  features: string[];
+  inclusions: string[];
+  addons: { id: string; name: string; price: number; unit?: string }[];
+}
+
 export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler }) {
+  const [plans, setPlans] = useState<ApiPlan[]>([]);
+  const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/public/plans")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.plans) && data.plans.length > 0) {
+          setPlans(data.plans);
+        }
+      })
+      .catch(() => {
+        // Fallback plans if backend not running
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const displayPlans = plans.length > 0 ? plans : [
+    {
+      id: "1",
+      name: "Basic",
+      slug: "basic",
+      badge: undefined,
+      isPopular: false,
+      monthlyPrice: 5000,
+      annualPrice: 55000,
+      currency: "PHP",
+      billingType: "both" as const,
+      limits: { branchLimit: 2, userLimit: 13, storageGb: 2 },
+      features: [
+        "2 Branches",
+        "SUPER ADMIN - 1",
+        "ADMIN - 1 (per branch)",
+        "EMPLOYEE - 5 (per branch)",
+        "Up to 13 Users/Accounts",
+        "2GB Storage",
+        "30 Days Tech Support/ Training",
+        "Free Trial (1 week)",
+      ],
+      inclusions: ["30 Days Tech Support/ Training", "Free Trial (1 week)"],
+      addons: [
+        { id: "a1", name: "Additional Branch", price: 35000 },
+        { id: "a2", name: "Additional Super Admin", price: 1500 },
+        { id: "a3", name: "Additional Admin", price: 1500 },
+        { id: "a4", name: "Additional Employee", price: 1200 },
+        { id: "a5", name: "Additional Storage (1GB)", price: 2000 },
+      ],
+    },
+    {
+      id: "2",
+      name: "Standard",
+      slug: "standard",
+      badge: "Most Popular",
+      isPopular: true,
+      monthlyPrice: 10000,
+      annualPrice: 110000,
+      currency: "PHP",
+      billingType: "both" as const,
+      limits: { branchLimit: 4, userLimit: 33, storageGb: 5 },
+      features: [
+        "4 Branches",
+        "SUPER ADMIN - 1",
+        "ADMIN - 1 (per branch)",
+        "EMPLOYEE - 5 (per branch)",
+        "Up to 33 Users/Accounts",
+        "5GB Storage",
+        "3 months Tech Support/ Training",
+        "Free Trial (1 week)",
+      ],
+      inclusions: ["3 months Tech Support/ Training", "Free Trial (1 week)"],
+      addons: [
+        { id: "a1", name: "Additional Branch", price: 35000 },
+        { id: "a2", name: "Additional Super Admin", price: 1500 },
+        { id: "a3", name: "Additional Admin", price: 1500 },
+        { id: "a4", name: "Additional Employee", price: 1200 },
+        { id: "a5", name: "Additional Storage (1GB)", price: 2000 },
+      ],
+    },
+    {
+      id: "3",
+      name: "Customized",
+      slug: "customized",
+      badge: "Customized",
+      isPopular: false,
+      monthlyPrice: 0,
+      annualPrice: 0,
+      currency: "PHP",
+      billingType: "both" as const,
+      limits: null,
+      features: [
+        "Customized Number of Branches",
+        "Additional Features",
+        "Customized users",
+        "Customized Interface",
+        "Free Trial (1 week)",
+        "Price may Vary",
+      ],
+      inclusions: [],
+      addons: [],
+    },
+  ];
+
+  // Collect all unique add-ons across plans for bottom banner
+  const allAddons = Array.from(
+    new Map(
+      displayPlans.flatMap((p) => p.addons || []).map((a) => [a.name, a])
+    ).values()
+  );
+
   return (
     <section id="pricing" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
       <div className="mx-auto max-w-6xl text-center reveal-on-scroll">
@@ -621,62 +752,126 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
         <p className="mx-auto mt-4 max-w-xl text-brand-green/60 uqhd:max-w-2xl uqhd:text-xl uhd:max-w-3xl uhd:text-2xl">
           Choose the plan that fits your pawnshop. Scale as you grow — no hidden fees.
         </p>
+
+        {/* Monthly / Annual Toggle */}
+        <div className="mt-8 flex justify-center items-center gap-3">
+          <span className={`text-xs font-bold ${cycle === "monthly" ? "text-brand-green" : "text-brand-green/40"}`}>
+            Monthly Billing
+          </span>
+          <button
+            type="button"
+            onClick={() => setCycle(cycle === "monthly" ? "annual" : "monthly")}
+            className="relative h-6 w-12 rounded-full bg-brand-green p-1 transition-colors"
+          >
+            <span
+              className={`block h-4 w-4 rounded-full bg-brand-gold transition-transform ${
+                cycle === "annual" ? "translate-x-6" : "translate-x-0"
+              }`}
+            />
+          </button>
+          <span className={`text-xs font-bold ${cycle === "annual" ? "text-brand-green" : "text-brand-green/40"}`}>
+            Annual Billing <span className="text-brand-gold font-extrabold">(Save up to 15%)</span>
+          </span>
+        </div>
       </div>
 
+      {/* Pricing Cards Grid */}
       <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-3 md:items-stretch">
-        {subscriptionPlans.map((plan, i) => (
-          <div
-            key={plan.name}
-            className={`reveal-on-scroll reveal-delay-${Math.min(500, i * 150) || 100} relative flex flex-col rounded-2xl border p-7 ${
-              plan.popular
-                ? "border-brand-green bg-brand-green text-white shadow-xl shadow-brand-green/25 md:scale-[1.03]"
-                : "border-brand-green/10 bg-[#f9f8f5] text-brand-green"
-            }`}
-          >
-            {plan.popular && (
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-gold px-3 py-1 text-[10px] font-black uppercase tracking-wider text-brand-green uqhd:px-4 uqhd:text-xs uhd:text-sm">
-                Most popular
-              </span>
-            )}
-            <p className={`text-xs font-bold uppercase tracking-widest uqhd:text-sm ${plan.popular ? "text-brand-gold" : "text-brand-green/50"}`}>
-              {plan.name}
-            </p>
-            <div className="mt-3 flex items-baseline gap-1">
-              <p className="font-display text-4xl font-bold uqhd:text-5xl uhd:text-6xl">{plan.price}</p>
-              {plan.period ? (
-                <span className={`text-sm font-semibold uqhd:text-base ${plan.popular ? "text-white/60" : "text-brand-green/45"}`}>
-                  {plan.period}
-                </span>
-              ) : null}
-            </div>
-            <p className={`mt-2 text-sm uqhd:text-base ${plan.popular ? "text-white/70" : "text-brand-green/55"}`}>
-              {plan.audience}
-            </p>
-            <ul className="mt-6 flex-1 space-y-3 uqhd:mt-8 uqhd:space-y-4">
-              {plan.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm uqhd:text-base uhd:text-lg">
-                  <span className={`mt-0.5 ${plan.popular ? "text-brand-gold" : "text-brand-green"}`}>✓</span>
-                  <span className={plan.popular ? "text-white/85" : "text-brand-green/75"}>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <a
-              href={`#${plan.ctaTarget}`}
-              onClick={(e) => onScroll(e, plan.ctaTarget, plan.ctaNav)}
-              className={`mt-8 block rounded-full py-3 text-center text-xs font-black uppercase tracking-wider transition ${
-                plan.popular
-                  ? "bg-brand-gold text-brand-green hover:brightness-105"
-                  : "border border-brand-green/20 text-brand-green hover:bg-brand-green hover:text-white"
+        {displayPlans.map((plan, i) => {
+          const rawPrice = cycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
+          const formattedPrice = rawPrice === 0 ? "---" : `₱${rawPrice.toLocaleString()}`;
+          const periodText = rawPrice === 0 ? "/yearly" : cycle === "annual" ? "/yearly" : "/mo";
+
+          return (
+            <div
+              key={plan.id || plan.name}
+              className={`reveal-on-scroll relative flex flex-col rounded-3xl border p-8 transition-all ${
+                plan.isPopular
+                  ? "border-brand-green bg-[#004d40] text-white shadow-2xl md:scale-[1.03]"
+                  : "border-brand-green/10 bg-[#004d40] text-white shadow-lg"
               }`}
             >
-              {plan.cta}
-            </a>
-          </div>
-        ))}
+              {/* Bookmark-like Yellow Badge for Most Availed */}
+              {plan.isPopular && (
+                <div className="absolute top-0 right-6 bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-b-lg shadow-md flex items-center gap-1">
+                  ★ Most Availed
+                </div>
+              )}
+
+              <p className="text-center text-base font-bold tracking-wider text-white mb-2 pt-2">
+                {plan.name}
+              </p>
+
+              <div className="mt-2 text-center pb-6 border-b border-white/20">
+                <p className="font-display text-4xl font-extrabold text-white md:text-5xl">
+                  {formattedPrice}
+                </p>
+                <span className="text-xs font-medium text-white/70">
+                  {periodText}
+                </span>
+              </div>
+
+              {/* Dynamic Feature Checklist */}
+              <ul className="mt-6 flex-1 space-y-2.5 text-xs text-white/90">
+                {plan.features.map((f, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold text-white">
+                      ✓
+                    </span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <a
+                href="#contact-us"
+                onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+                className="mt-8 block rounded-full bg-white py-3 text-center text-xs font-black uppercase tracking-wider text-[#004d40] transition hover:bg-brand-gold hover:text-brand-green shadow-md"
+              >
+                Get Started
+              </a>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Add-ons Banner Section */}
+      {allAddons.length > 0 && (
+        <div className="mx-auto mt-10 max-w-6xl rounded-3xl bg-[#00bfa5] p-8 text-white shadow-xl">
+          <h3 className="text-center text-2xl font-black tracking-widest uppercase mb-6 text-white drop-shadow-sm">
+            ADD ONS
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3 text-xs font-semibold">
+            <div className="space-y-3">
+              {allAddons.map((addon) => (
+                <div key={addon.name} className="flex items-center gap-3">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] text-white">
+                    ✓
+                  </span>
+                  <span>
+                    {addon.name} {addon.price > 0 ? `- ${addon.price.toLocaleString()}` : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 pt-4 md:pt-0 border-t md:border-t-0 md:border-l border-white/20 md:pl-8">
+              <p className="font-bold uppercase tracking-wider text-white/90">
+                ADDITIONAL FEATURE / CUSTOMIZATION
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-white/80">
+                <li>Cash Loan Feature</li>
+                <li>Valid ID Verification</li>
+                <li>ETC.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
+
 
 export function LandingTrustBar() {
   const items = [

@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AuthLandingPage } from "../_components/auth-landing-page";
 import { LoginModal } from "../_components/login-modal";
-import { SignupModal } from "../_components/signup-modal";
+
 import { toast } from "sonner";
 
 const SESSION_EXPIRED_REASON = "session-expired";
@@ -20,7 +20,7 @@ export default function LoginPage() {
 function LoginExperience() {
   const searchParams = useSearchParams();
   const [showLogin, setShowLogin] = useState(false);
-  const [showSignup, setShowSignup] = useState(false);
+
   const hasShownSessionExpiredRef = useRef(false);
   const hasShownNoticeRef = useRef(false);
 
@@ -28,7 +28,7 @@ function LoginExperience() {
     const notice = searchParams.get("notice");
     if (!notice || hasShownNoticeRef.current) return;
     hasShownNoticeRef.current = true;
-    setShowSignup(false);
+
     setShowLogin(true);
     toast.info(notice);
   }, [searchParams]);
@@ -38,7 +38,7 @@ function LoginExperience() {
     if (hasShownSessionExpiredRef.current) return;
 
     hasShownSessionExpiredRef.current = true;
-    setShowSignup(false);
+
     setShowLogin(true);
 
     const alreadyShown =
@@ -57,28 +57,16 @@ function LoginExperience() {
     <>
       <AuthLandingPage
         onLoginClick={() => {
-          setShowSignup(false);
           setShowLogin(true);
         }}
       />
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}
-          onRequestSignUp={() => {
-            setShowLogin(false);
-            setShowSignup(true);
-          }}
+
         />
       )}
-      {showSignup && (
-        <SignupModal
-          onClose={() => setShowSignup(false)}
-          onSwitchToLogin={() => {
-            setShowSignup(false);
-            setShowLogin(true);
-          }}
-        />
-      )}
+
     </>
   );
 }
