@@ -36,6 +36,8 @@ const sectionNavLabels: Record<string, string> = {
   "contact-us": "CONTACT US",
 };
 
+const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(BRAND_CONFIG.email)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+
 // Maps nav label text to a section ID when the label differs from the auto-generated id
 const navIdOverrides: Record<string, string> = {};
 
@@ -546,7 +548,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </p>
               <p className="mt-6 text-sm font-semibold text-brand-green/70">
                 Or contact us by sending a message to{" "}
-                <a href={`mailto:${BRAND_CONFIG.email}`} className="underline hover:text-brand-green">
+                <a
+                  href={supportEmailComposeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-brand-green"
+                >
                   {BRAND_CONFIG.email}
                 </a>
               </p>

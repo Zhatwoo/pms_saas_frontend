@@ -7,6 +7,8 @@ import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 type ScrollHandler = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => void;
 
+const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(BRAND_CONFIG.email)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+
 const withQuickPawn = [
   "Organize customer information",
   "Manage pawn transactions",
@@ -1021,7 +1023,12 @@ export function LandingLightFooter({
               </a>
             </li>
             <li>
-              <a href={`mailto:${BRAND_CONFIG.email}`} className="hover:text-brand-green">
+              <a
+                href={supportEmailComposeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-brand-green"
+              >
                 {BRAND_CONFIG.email}
               </a>
             </li>
