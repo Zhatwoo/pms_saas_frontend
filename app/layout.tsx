@@ -6,6 +6,11 @@ import { BRAND_CONFIG } from "@/lib/brand-config";
 export const metadata: Metadata = {
   title: BRAND_CONFIG.companyName,
   description: `${BRAND_CONFIG.companyName} management system with role-based access control`,
+  icons: {
+    icon: "/icon.jpg",
+    shortcut: "/icon.jpg",
+    apple: "/icon.jpg",
+  },
 };
 
 export default function RootLayout({
