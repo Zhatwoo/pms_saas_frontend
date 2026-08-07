@@ -22,6 +22,7 @@ interface BranchApiItem {
   location: string;
   contact_number?: string | null;
   status: string;
+  maintaining_balance?: number | string | null;
 }
 
 type BranchFormData = {
@@ -31,6 +32,7 @@ type BranchFormData = {
   location: string;
   contactNumber: string;
   status: string;
+  maintainingBalance?: number;
 };
 
 type OverviewStats = Record<string, { pawnedItems: number; forSaleItems: number; totalValue: number }>;
@@ -44,6 +46,7 @@ function toBranchRow(branch: BranchApiItem, stats?: OverviewStats): BranchRow {
     location: branch.location,
     contactNumber: branch.contact_number ?? "",
     status: branch.status,
+    maintainingBalance: Number(branch.maintaining_balance ?? 0),
     pawnedItems: s?.pawnedItems ?? 0,
     forSaleItems: s?.forSaleItems ?? 0,
     totalValue: s ? `₱${s.totalValue.toLocaleString("en-PH", { minimumFractionDigits: 0 })}` : "₱0",
@@ -176,6 +179,7 @@ export default function BranchesPage() {
       location: branch.location,
       contactNumber: branch.contactNumber || "+63",
       status: branch.status,
+      maintainingBalance: branch.maintainingBalance,
     });
     setModalMode("edit");
     setModalOpen(true);
@@ -227,6 +231,7 @@ export default function BranchesPage() {
           location: data.location,
           contact_number: data.contactNumber,
           status: data.status,
+          maintaining_balance: data.maintainingBalance,
         });
 
         // Force immediate refresh after add.
@@ -241,6 +246,7 @@ export default function BranchesPage() {
             location: data.location,
             contact_number: data.contactNumber,
             status: data.status,
+            maintaining_balance: data.maintainingBalance,
           }),
         });
 
@@ -363,6 +369,7 @@ export default function BranchesPage() {
         initialData={editingBranch}
         mode={modalMode}
         nextBranchCode={nextBranchCode}
+        showMaintainingBalance={canCreateBranch}
       />
 
       {/* Detail Drawer */}

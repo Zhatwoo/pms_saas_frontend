@@ -10,6 +10,7 @@ interface BranchFormData {
   location: string;
   contactNumber: string;
   status: string;
+  maintainingBalance?: number;
 }
 
 interface BranchModalProps {
@@ -19,6 +20,7 @@ interface BranchModalProps {
   initialData?: BranchFormData | null;
   mode: "create" | "edit";
   nextBranchCode: string;
+  showMaintainingBalance?: boolean;
 }
 
 const statusOptions = ["Active", "Inactive", "Process", "Terminated"];
@@ -30,11 +32,13 @@ export function BranchModal({
   initialData,
   mode,
   nextBranchCode,
+  showMaintainingBalance = false,
 }: BranchModalProps) {
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [contactNumber, setContactNumber] = useState("+63");
   const [status, setStatus] = useState("Active");
+  const [maintainingBalance, setMaintainingBalance] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,11 +54,13 @@ export function BranchModal({
       setLocation(initialData.location);
       setContactNumber(initialData.contactNumber || "+63");
       setStatus(initialData.status);
+      setMaintainingBalance(initialData.maintainingBalance ?? 0);
     } else {
       setName("");
       setLocation("");
       setContactNumber("+63");
       setStatus("Active");
+      setMaintainingBalance(0);
     }
     setErrors({});
   }, [initialData, isOpen]);
@@ -105,6 +111,7 @@ export function BranchModal({
         location: location.trim(),
         contactNumber: contactNumber.trim(),
         status,
+        maintainingBalance,
       });
 
       if (success) {
@@ -253,6 +260,23 @@ export function BranchModal({
               <span className="text-[10px] text-red-500">{errors.status}</span>
             )}
           </div>
+
+          {showMaintainingBalance && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-text-secondary">
+                Maintaining Balance
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={maintainingBalance}
+                onChange={(e) => setMaintainingBalance(Number(e.target.value) || 0)}
+                className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-pawn-sidebar"
+              />
+              <span className="text-[10px] text-text-muted">Super-admin low-cash warning threshold. Set to 0 to disable.</span>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">
