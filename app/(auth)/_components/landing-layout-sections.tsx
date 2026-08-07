@@ -7,7 +7,8 @@ import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 type ScrollHandler = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => void;
 
-const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(BRAND_CONFIG.email)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+const footerSupportEmail = "quickpawn.pms@gmail.com";
+const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(footerSupportEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
 
 const withQuickPawn = [
   "Organize customer information",
@@ -1055,7 +1056,7 @@ export function LandingLightFooter({
                   rel="noreferrer"
                   className="hover:text-brand-green"
                 >
-                  {BRAND_CONFIG.email}
+                  {footerSupportEmail}
                 </a>
               </li>
               <li>
