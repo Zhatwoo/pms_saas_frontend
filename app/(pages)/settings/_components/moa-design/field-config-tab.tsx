@@ -297,6 +297,8 @@ export type MoaFieldConfigTabProps = {
   unitOptions: Array<MoaFieldConfigOption<string>>;
   /** Customer / ticket fields from New Pawn → MOA reflection */
   customerOptions?: Array<MoaFieldConfigOption<string>>;
+  /** Jewelry item description fields (New Pawn → MOA reflection) */
+  jewelryOptions?: Array<MoaFieldConfigOption<string>>;
   financialFields: string[];
   unitFields: string[];
   customFinancialFields: MoaCustomField[];
@@ -318,6 +320,7 @@ export type MoaFieldConfigTabProps = {
   onAddCustomFinancial: () => void;
   onAddCustomUnit: () => void;
   onInsertOntoCanvas?: (payload: MoaConfigFieldPayload) => void;
+  onInsertAllJewelryOntoCanvas?: () => void;
   onPaletteDragStateChange?: (dragging: boolean) => void;
 };
 
@@ -328,6 +331,8 @@ function ReflectionFieldList({
   enabled,
   options,
   onInsertOntoCanvas,
+  onInsertAllOntoCanvas,
+  insertAllLabel = "Insert all",
   onPaletteDragStateChange,
 }: {
   title: string;
@@ -335,15 +340,29 @@ function ReflectionFieldList({
   enabled: boolean;
   options: Array<MoaFieldConfigOption<string>>;
   onInsertOntoCanvas?: (payload: MoaConfigFieldPayload) => void;
+  onInsertAllOntoCanvas?: () => void;
+  insertAllLabel?: string;
   onPaletteDragStateChange?: (dragging: boolean) => void;
 }) {
   const draggedRef = useRef(false);
 
   return (
     <div className="space-y-2 rounded-lg border border-sky-200 bg-sky-50/40 p-2">
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-wide text-sky-900">{title}</p>
-        <p className="mt-0.5 text-[9px] font-medium text-sky-800/80">{hint}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-sky-900">{title}</p>
+          <p className="mt-0.5 text-[9px] font-medium text-sky-800/80">{hint}</p>
+        </div>
+        {onInsertAllOntoCanvas ? (
+          <button
+            type="button"
+            disabled={!enabled}
+            onClick={onInsertAllOntoCanvas}
+            className="shrink-0 rounded bg-sky-700 px-2 py-1 text-[8px] font-bold uppercase tracking-wide text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {insertAllLabel}
+          </button>
+        ) : null}
       </div>
       <div className="space-y-1">
         {options.map((field) => (
@@ -394,6 +413,7 @@ export function MoaFieldConfigTab({
   financialOptions,
   unitOptions,
   customerOptions = [],
+  jewelryOptions = [],
   financialFields,
   unitFields,
   customFinancialFields,
@@ -415,6 +435,7 @@ export function MoaFieldConfigTab({
   onAddCustomFinancial,
   onAddCustomUnit,
   onInsertOntoCanvas,
+  onInsertAllJewelryOntoCanvas,
   onPaletteDragStateChange,
 }: MoaFieldConfigTabProps) {
   return (
@@ -433,6 +454,19 @@ export function MoaFieldConfigTab({
           enabled={enabled}
           options={customerOptions}
           onInsertOntoCanvas={onInsertOntoCanvas}
+          onPaletteDragStateChange={onPaletteDragStateChange}
+        />
+      ) : null}
+
+      {jewelryOptions.length > 0 ? (
+        <ReflectionFieldList
+          title="Jewelry Item Description"
+          hint="Filled from New Pawn when category is Jewelry — click or drag onto the canvas."
+          enabled={enabled}
+          options={jewelryOptions}
+          onInsertOntoCanvas={onInsertOntoCanvas}
+          onInsertAllOntoCanvas={onInsertAllJewelryOntoCanvas}
+          insertAllLabel="Insert all"
           onPaletteDragStateChange={onPaletteDragStateChange}
         />
       ) : null}

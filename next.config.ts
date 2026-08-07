@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/public/plans",
+        destination: `${process.env.ADMIN_BACKEND_URL || process.env.BACKEND_URL || "http://127.0.0.1:4000"}/api/public/plans`,
+      },
+      {
         source: "/api/:path*",
         destination: `${process.env.BACKEND_URL || "http://127.0.0.1:4000"}/api/:path*`,
       },

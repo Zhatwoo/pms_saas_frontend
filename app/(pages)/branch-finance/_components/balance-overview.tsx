@@ -7,6 +7,8 @@ interface BalanceCardProps {
   totalAdded: number;
   totalTransferred: number;
   lastUpdated: string;
+  maintainingBalance?: number;
+  isLowBudget?: boolean;
   onAddFunds?: () => void;
 }
 
@@ -16,6 +18,8 @@ interface BranchBalanceRow {
   startingBalance: number;
   currentBalance: number;
   status: string;
+  maintainingBalance?: number;
+  isLowBudget?: boolean;
 }
 
 /* ── Icons ─────────────────────────────────────────────── */
@@ -88,6 +92,8 @@ function SingleBranchCard({
   totalAdded,
   totalTransferred,
   lastUpdated,
+  maintainingBalance = 0,
+  isLowBudget = false,
   onAddFunds,
 }: BalanceCardProps) {
   const delta = currentBalance - startingBalance;
@@ -102,6 +108,11 @@ function SingleBranchCard({
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-pawn-gold backdrop-blur-sm">
             <WalletIcon />
           </div>
+          {isLowBudget && (
+            <div className="mx-4 mb-2 rounded-lg border border-amber-300/50 bg-amber-400/15 px-3 py-2 text-xs font-semibold text-amber-100 md:mx-6">
+              Low budget warning: cash is at or below the maintaining balance of {fmt(maintainingBalance)}.
+            </div>
+          )}
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-white md:text-xl">{branchName}</h2>
             <p className="text-xs font-medium uppercase tracking-wider text-pawn-gold-light/70">
@@ -283,7 +294,7 @@ function AggregateBranchCard({
                     : "bg-zinc-500/15 text-zinc-300"
                 }`}
               >
-                {b.status}
+                {b.isLowBudget ? "Low Budget" : b.status}
               </span>
             </div>
             
@@ -295,6 +306,7 @@ function AggregateBranchCard({
               <div className="text-right">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-text/70">Current</p>
                 <p className="text-sm font-extrabold text-brand-green">{fmt(b.currentBalance)}</p>
+                {b.isLowBudget && <p className="text-[10px] font-semibold text-amber-600">Min: {fmt(b.maintainingBalance ?? 0)}</p>}
               </div>
             </div>
           </div>
@@ -314,6 +326,8 @@ export interface BranchBalance {
   totalTransferred: number;
   lastUpdated: string;
   status: string;
+  maintainingBalance?: number;
+  isLowBudget?: boolean;
 }
 
 interface BalanceOverviewProps {
@@ -348,6 +362,8 @@ export function BalanceOverview({
           startingBalance: b.startingBalance,
           currentBalance: b.currentBalance,
           status: b.status,
+          maintainingBalance: b.maintainingBalance,
+          isLowBudget: b.isLowBudget,
         }))}
       />
     );
@@ -364,6 +380,7 @@ export function BalanceOverview({
         totalTransferred={0}
         lastUpdated={new Date().toISOString()}
         onAddFunds={onAddFunds}
+        maintainingBalance={0}
       />
     );
   }
@@ -377,6 +394,8 @@ export function BalanceOverview({
       totalTransferred={branch.totalTransferred}
       lastUpdated={branch.lastUpdated}
       onAddFunds={onAddFunds}
+      maintainingBalance={branch.maintainingBalance}
+      isLowBudget={branch.isLowBudget}
     />
   );
 }

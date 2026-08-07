@@ -22,6 +22,10 @@ import {
   MoaDesignPrintPages,
   hasMoaDesign,
   normalizeMoaDesignBlob,
+  parsePersistedMoaValues,
+  readJewelryFieldValues,
+  resolveEmployeeDocumentDesign,
+  stripPersistedMoaFieldsFromRemarks,
   type MoaDesignBlob,
   type MoaFieldValueContext,
 } from "@/lib/moa";
@@ -43,10 +47,19 @@ interface MoaModalProps {
     contactNo: string;
     unitCode: string;
     unitName: string;
+    brand?: string;
+    model?: string;
     category: string;
     serialNumber: string;
     itemsIncluded: string;
     condition: string;
+    itemType?: string;
+    metalType?: string;
+    karat?: string;
+    weightGrams?: string;
+    stoneType?: string;
+    stoneCarat?: string;
+    hallmarkStamp?: string;
     remarks: string;
     memory: string;
     amount: string;
@@ -258,29 +271,6 @@ function normalizeTermsText(rawText?: string) {
   return normalizedLines.join("\n");
 }
 
-function parsePersistedMoaValues(remarks?: string) {
-  const metadataLine = (remarks ?? "")
-    .split(/\r?\n/)
-    .find((line) => line.startsWith("[MOA Fields] "));
-  if (!metadataLine) return {};
-
-  return Object.fromEntries(
-    metadataLine
-      .slice("[MOA Fields] ".length)
-      .split(";")
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-      .map((entry) => {
-        const separatorIndex = entry.indexOf(":");
-        if (separatorIndex < 0) return [entry, ""];
-        return [
-          entry.slice(0, separatorIndex).trim(),
-          entry.slice(separatorIndex + 1).trim(),
-        ];
-      }),
-  );
-}
-
 function numberToWords(num: number): string {
   const ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
   const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
@@ -396,8 +386,8 @@ export function MoaModal({
       ?? moaTemplate.customUnitFields
       ?? [],
     );
-    const rawDesign = categoryTemplate?.design ?? moaTemplate.design;
-    setDesign(normalizeMoaDesignBlob(rawDesign));
+    const resolvedDesign = resolveEmployeeDocumentDesign(moaTemplate, "moa", category);
+    setDesign(hasMoaDesign(resolvedDesign) ? resolvedDesign : null);
   };
 
   useEffect(() => {
@@ -536,11 +526,7 @@ export function MoaModal({
     Number(data.parkingFee)
     || Number(persistedMoaValues["Parking fee"])
     || 0;
-  const visibleRemarks = data.remarks
-    .split(/\r?\n/)
-    .filter((line) => !line.startsWith("[MOA Fields] "))
-    .join("\n")
-    .trim();
+  const visibleRemarks = stripPersistedMoaFieldsFromRemarks(data.remarks);
   const savedStorageFee = Number(data.storageFee) || 0;
   const storageFee =
     savedStorageFee > 0
@@ -556,7 +542,10 @@ export function MoaModal({
     netProceeds: formatPeso(netProceeds),
   };
   const unitValues: Record<UnitFieldKey, string> = {
-    brandModel: data.unitName || "---",
+    brandModel:
+      data.unitName ||
+      [data.brand, data.model].filter(Boolean).join(" ").trim() ||
+      "---",
     itemsIncluded: data.itemsIncluded || "---",
     condition: data.condition || "---",
     serialNo: data.serialNumber || "---",
@@ -579,6 +568,23 @@ export function MoaModal({
   };
 
   const schedule = getInterestRateSchedule(data.category);
+  const firstPeriodRate = schedule[0]?.percentage ?? schedule[1]?.percentage;
+  const interestRateLabel =
+    firstPeriodRate != null && Number.isFinite(Number(firstPeriodRate))
+      ? `${Number(firstPeriodRate)}% (1st period)`
+      : "";
+
+  const jewelryValues = readJewelryFieldValues(persistedMoaValues, {
+    itemType: data.itemType,
+    metalType: data.metalType,
+    karat: data.karat,
+    weightGrams: data.weightGrams,
+    stoneType: data.stoneType,
+    stoneCarat: data.stoneCarat,
+    hallmarkStamp: data.hallmarkStamp,
+    condition: data.condition,
+    appraisedValue: financialValues.amount,
+  });
 
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
   const formatCompactDate = (date: Date) => {
@@ -651,18 +657,42 @@ export function MoaModal({
     parkingFee: financialValues.parkingFee,
     netProceeds: financialValues.netProceeds,
     brandModel: unitValues.brandModel,
+    brand: data.brand ?? "",
+    model: data.model ?? "",
     itemsIncluded: unitValues.itemsIncluded,
     condition: unitValues.condition,
     serialNo: unitValues.serialNo,
     memory: unitValues.memory,
     remarks: unitValues.remarks,
+    itemType: jewelryValues.itemType,
+    metalType: jewelryValues.metalType,
+    karat: jewelryValues.karat,
+    weightGrams: jewelryValues.weightGrams,
+    stoneType: jewelryValues.stoneType,
+    stoneCarat: jewelryValues.stoneCarat,
+    hallmarkStamp: jewelryValues.hallmarkStamp,
     shopName: headerPrimary,
     shopAddress: headerSecondary || shopInfo?.shopAddress || "",
     phoneNumber: headerPhone || shopInfo?.phoneNumber || "",
     email: shopInfo?.email || "",
+    processedBy: data.processedBy || "",
+    interestRate: interestRateLabel,
+    idNumber:
+      data.customMoaValues?.idNumber ||
+      data.customMoaValues?.["ID Number"] ||
+      persistedMoaValues.idNumber ||
+      persistedMoaValues["ID Number"] ||
+      "",
+    witnessName:
+      data.customMoaValues?.witnessName ||
+      data.customMoaValues?.["Witness"] ||
+      persistedMoaValues.witnessName ||
+      "",
     customValues: {
       ...persistedMoaValues,
       ...(data.customMoaValues ?? {}),
+      ...jewelryValues,
+      appraisedValue: jewelryValues.appraisedValue || financialValues.amount,
     },
   };
 

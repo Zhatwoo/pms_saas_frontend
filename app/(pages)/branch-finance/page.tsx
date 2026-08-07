@@ -73,6 +73,8 @@ interface DashboardSummary {
     status: string;
     startingBalance: number;
     currentBalance: number;
+    maintainingBalance: number;
+    isLowBudget: boolean;
     totalAdded: number;
     totalTransferred: number;
     lastUpdated: string | null;
@@ -326,6 +328,8 @@ export default function BranchFinancePage() {
           name: summary.branchName,
           startingBalance: summary.startingBalance,
           currentBalance: summary.currentBalance,
+          maintainingBalance: fallback?.maintainingBalance ?? 0,
+          isLowBudget: fallback?.isLowBudget ?? false,
           totalAdded: fallback?.totalAdded ?? 0,
           totalTransferred: fallback?.totalTransferred ?? 0,
           lastUpdated: fallback?.lastUpdated ?? new Date().toISOString(),
@@ -339,6 +343,8 @@ export default function BranchFinancePage() {
       name: branch.name,
       startingBalance: branch.startingBalance,
       currentBalance: branch.currentBalance,
+      maintainingBalance: branch.maintainingBalance,
+      isLowBudget: branch.isLowBudget,
       totalAdded: branch.totalAdded,
       totalTransferred: branch.totalTransferred,
       lastUpdated: branch.lastUpdated ?? new Date().toISOString(),

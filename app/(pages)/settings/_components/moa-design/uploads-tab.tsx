@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Trash2, Upload } from "lucide-react";
+import { TransactionConfirmModal } from "@/components/shared/transaction-confirm-modal";
 import { TabHint } from "./ui";
 
 const STORAGE_KEY = "pms.moa.uploads.v1";
@@ -42,6 +43,7 @@ export function MoaUploadsTab({
 }) {
   const [uploads, setUploads] = useState<MoaUploadedImage[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -157,11 +159,7 @@ export function MoaUploadsTab({
               <button
                 type="button"
                 disabled={!enabled}
-                onClick={() => {
-                  if (!window.confirm("Delete all uploaded images?")) return;
-                  setUploads([]);
-                  saveUploads([]);
-                }}
+                onClick={() => setShowClearConfirm(true)}
                 className="text-[9px] font-semibold text-red-500 hover:underline disabled:opacity-40"
               >
                 Clear all
@@ -208,6 +206,19 @@ export function MoaUploadsTab({
           <p className="text-[10px] text-zinc-400">No images uploaded yet</p>
         </div>
       )}
+
+      <TransactionConfirmModal
+        isOpen={showClearConfirm}
+        title="Clear all uploads"
+        message="Delete all uploaded images? This action cannot be undone."
+        confirmLabel="Delete all"
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={() => {
+          setUploads([]);
+          saveUploads([]);
+          setShowClearConfirm(false);
+        }}
+      />
     </div>
   );
 }

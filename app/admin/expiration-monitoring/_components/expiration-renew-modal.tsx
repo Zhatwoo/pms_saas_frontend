@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, type ComponentType } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { calculateGadgetInterest } from "@/lib/interest";
+import { calculateGadgetInterest, getInterestRateSchedule } from "@/lib/interest";
 import { formatDateToYMD, getTransactionDateTimeFields } from "@/lib/time";
 import { useAuth } from "@/contexts/auth-context";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
@@ -15,6 +15,47 @@ import {
   transactionPasswordInputClass,
 } from "@/lib/transaction-password";
 
+function formatDisplayDate(value: string | Date | null | undefined): string {
+  if (!value) return "";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).trim() || "";
+  return d.toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function resolveExpirationDate(item: {
+  pawnDate?: string;
+  pawn_date?: string;
+  created_at?: string;
+  category?: string;
+  expirationDate?: string | null;
+  maturityDate?: string | null;
+  renewals?: Array<{ date?: string | null }>;
+}): string {
+  const fromApi = item.expirationDate || item.maturityDate;
+  if (fromApi) {
+    const formatted = formatDisplayDate(fromApi);
+    if (formatted) return formatted;
+  }
+  const lastRenewal = (item.renewals || [])
+    .map((r) => r.date)
+    .filter((d): d is string => Boolean(d))
+    .sort()
+    .at(-1);
+  const pawnRaw = lastRenewal || item.pawnDate || item.pawn_date || item.created_at;
+  if (!pawnRaw) return "Not set";
+  const base = new Date(pawnRaw);
+  if (Number.isNaN(base.getTime())) return "Not set";
+  const schedule = getInterestRateSchedule(item.category);
+  const maturityDay = schedule[3]?.endDay ?? 30;
+  const graceEnd = schedule[4]?.endDay ?? maturityDay + 4;
+  const expiry = new Date(base);
+  expiry.setDate(expiry.getDate() + graceEnd);
+  return formatDisplayDate(expiry) || "Not set";
+}
 
 /* ── Inline SVG Icon Components (replacing lucide-react) ── */
 function X({ className }: { className?: string }) {
@@ -95,8 +136,12 @@ interface RawPawnedItem {
   category?: string;
   remarks?: string;
   pawnDate?: string;
+  pawn_date?: string;
   created_at?: string;
   amount?: number | string;
+  maturityDate?: string | null;
+  expirationDate?: string | null;
+  renewals?: Array<{ date?: string | null }>;
 }
 
 interface PawnItemDetails {
@@ -176,8 +221,10 @@ export function RenewModal({ isOpen, onClose, branchName, branchId, onSuccess, i
           remarks: item.remarks || "---",
           storageFee: "0.00",
           parkingFee: "0.00",
-          purchasedDate: item.pawnDate || item.created_at || "---",
-          expirationDate: "---",
+          purchasedDate:
+            formatDisplayDate(item.pawnDate || item.pawn_date || item.created_at) ||
+            "Not set",
+          expirationDate: resolveExpirationDate(item),
           amount: Number(item.amount || 0)
         };
         setSelectedItem(details);
