@@ -1015,39 +1015,66 @@ export function LandingLightFooter({
         </div>
 
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Support</p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-green/60">
-            <li>
-              <a href="#contact-us" onClick={(e) => onScroll(e, "contact-us", "CONTACT US")} className="hover:text-brand-green">
-                Contact
-              </a>
-            </li>
-            <li>
-              <a
-                href={supportEmailComposeUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-brand-green"
-              >
-                {BRAND_CONFIG.email}
-              </a>
-            </li>
-            <li>
-              <button type="button" onClick={onLoginClick} className="hover:text-brand-green">
-                Staff login
-              </button>
-            </li>
-            <li>
-              <button type="button" onClick={() => onOpenLegal("privacy")} className="hover:text-brand-green">
-                Privacy policy
-              </button>
-            </li>
-            <li>
-              <button type="button" onClick={() => onOpenLegal("terms")} className="hover:text-brand-green">
-                Terms of service
-              </button>
-            </li>
-          </ul>
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Connect with us</p>
+          <div className="mt-4 space-y-4 text-sm text-brand-green/60">
+            <div className="space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-green/45">Social Media Accounts:</p>
+              <ul className="space-y-2">
+                <li>
+                  <a
+                    href="https://www.facebook.com/QuickPawn.PMS"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-brand-green"
+                  >
+                    Facebook: QuickPawn Pawnshop Management System
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.instagram.com/quick_pawn/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-brand-green"
+                  >
+                    Instagram: quick_pawn
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <ul className="space-y-2">
+              <li>
+                <a href="#contact-us" onClick={(e) => onScroll(e, "contact-us", "CONTACT US")} className="hover:text-brand-green">
+                  Contact
+                </a>
+              </li>
+              <li>
+                <a
+                  href={supportEmailComposeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-brand-green"
+                >
+                  {BRAND_CONFIG.email}
+                </a>
+              </li>
+              <li>
+                <button type="button" onClick={onLoginClick} className="hover:text-brand-green">
+                  Staff login
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => onOpenLegal("privacy")} className="hover:text-brand-green">
+                  Privacy policy
+                </button>
+              </li>
+              <li>
+                <button type="button" onClick={() => onOpenLegal("terms")} className="hover:text-brand-green">
+                  Terms of service
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
