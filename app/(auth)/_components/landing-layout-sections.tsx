@@ -563,11 +563,8 @@ export function LandingBenefits() {
           {benefits.map((b, i) => (
             <div
               key={b.title}
-              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} rounded-2xl bg-[#f9f8f5] p-6`}
+              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} rounded-2xl bg-[#f9f8f5] p-6 transition duration-300 hover:-translate-y-1 hover:bg-brand-gold/10 hover:shadow-lg`}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-green text-brand-gold">
-                <span className="font-display text-sm font-black">{String(i + 1).padStart(2, "0")}</span>
-              </div>
               <h3 className="mt-4 font-display text-base font-bold text-brand-green">{b.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-brand-green/60">{b.desc}</p>
             </div>
