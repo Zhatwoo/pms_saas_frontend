@@ -23,6 +23,8 @@ import {
   hasMoaDesign,
   normalizeMoaDesignBlob,
   parsePersistedMoaValues,
+  readJewelryFieldValues,
+  resolveEmployeeDocumentDesign,
   stripPersistedMoaFieldsFromRemarks,
   type MoaDesignBlob,
   type MoaFieldValueContext,
@@ -45,10 +47,19 @@ interface MoaModalProps {
     contactNo: string;
     unitCode: string;
     unitName: string;
+    brand?: string;
+    model?: string;
     category: string;
     serialNumber: string;
     itemsIncluded: string;
     condition: string;
+    itemType?: string;
+    metalType?: string;
+    karat?: string;
+    weightGrams?: string;
+    stoneType?: string;
+    stoneCarat?: string;
+    hallmarkStamp?: string;
     remarks: string;
     memory: string;
     amount: string;
@@ -375,8 +386,8 @@ export function MoaModal({
       ?? moaTemplate.customUnitFields
       ?? [],
     );
-    const rawDesign = categoryTemplate?.design ?? moaTemplate.design;
-    setDesign(normalizeMoaDesignBlob(rawDesign));
+    const resolvedDesign = resolveEmployeeDocumentDesign(moaTemplate, "moa", category);
+    setDesign(hasMoaDesign(resolvedDesign) ? resolvedDesign : null);
   };
 
   useEffect(() => {
@@ -531,7 +542,10 @@ export function MoaModal({
     netProceeds: formatPeso(netProceeds),
   };
   const unitValues: Record<UnitFieldKey, string> = {
-    brandModel: data.unitName || "---",
+    brandModel:
+      data.unitName ||
+      [data.brand, data.model].filter(Boolean).join(" ").trim() ||
+      "---",
     itemsIncluded: data.itemsIncluded || "---",
     condition: data.condition || "---",
     serialNo: data.serialNumber || "---",
@@ -559,6 +573,18 @@ export function MoaModal({
     firstPeriodRate != null && Number.isFinite(Number(firstPeriodRate))
       ? `${Number(firstPeriodRate)}% (1st period)`
       : "";
+
+  const jewelryValues = readJewelryFieldValues(persistedMoaValues, {
+    itemType: data.itemType,
+    metalType: data.metalType,
+    karat: data.karat,
+    weightGrams: data.weightGrams,
+    stoneType: data.stoneType,
+    stoneCarat: data.stoneCarat,
+    hallmarkStamp: data.hallmarkStamp,
+    condition: data.condition,
+    appraisedValue: financialValues.amount,
+  });
 
   const baseDate = data.purchasedDate ? new Date(data.purchasedDate) : new Date();
   const formatCompactDate = (date: Date) => {
@@ -631,11 +657,20 @@ export function MoaModal({
     parkingFee: financialValues.parkingFee,
     netProceeds: financialValues.netProceeds,
     brandModel: unitValues.brandModel,
+    brand: data.brand ?? "",
+    model: data.model ?? "",
     itemsIncluded: unitValues.itemsIncluded,
     condition: unitValues.condition,
     serialNo: unitValues.serialNo,
     memory: unitValues.memory,
     remarks: unitValues.remarks,
+    itemType: jewelryValues.itemType,
+    metalType: jewelryValues.metalType,
+    karat: jewelryValues.karat,
+    weightGrams: jewelryValues.weightGrams,
+    stoneType: jewelryValues.stoneType,
+    stoneCarat: jewelryValues.stoneCarat,
+    hallmarkStamp: jewelryValues.hallmarkStamp,
     shopName: headerPrimary,
     shopAddress: headerSecondary || shopInfo?.shopAddress || "",
     phoneNumber: headerPhone || shopInfo?.phoneNumber || "",
@@ -656,6 +691,8 @@ export function MoaModal({
     customValues: {
       ...persistedMoaValues,
       ...(data.customMoaValues ?? {}),
+      ...jewelryValues,
+      appraisedValue: jewelryValues.appraisedValue || financialValues.amount,
     },
   };
 

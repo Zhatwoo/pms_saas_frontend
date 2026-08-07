@@ -342,15 +342,25 @@ export type MoaConfigFieldPayload = {
 type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 const RESIZE_HANDLES: Array<{ handle: ResizeHandle; className: string; cursor: string }> = [
-  { handle: "nw", className: "-left-1.5 -top-1.5", cursor: "cursor-nwse-resize" },
-  { handle: "n", className: "left-1/2 -top-1.5 -translate-x-1/2", cursor: "cursor-ns-resize" },
-  { handle: "ne", className: "-right-1.5 -top-1.5", cursor: "cursor-nesw-resize" },
-  { handle: "e", className: "-right-1.5 top-1/2 -translate-y-1/2", cursor: "cursor-ew-resize" },
-  { handle: "se", className: "-bottom-1.5 -right-1.5", cursor: "cursor-nwse-resize" },
-  { handle: "s", className: "left-1/2 -bottom-1.5 -translate-x-1/2", cursor: "cursor-ns-resize" },
-  { handle: "sw", className: "-bottom-1.5 -left-1.5", cursor: "cursor-nesw-resize" },
-  { handle: "w", className: "-left-1.5 top-1/2 -translate-y-1/2", cursor: "cursor-ew-resize" },
+  { handle: "nw", className: "-left-2 -top-2", cursor: "cursor-nwse-resize" },
+  { handle: "n", className: "left-1/2 -top-2 -translate-x-1/2", cursor: "cursor-ns-resize" },
+  { handle: "ne", className: "-right-2 -top-2", cursor: "cursor-nesw-resize" },
+  { handle: "e", className: "-right-2 top-1/2 -translate-y-1/2", cursor: "cursor-ew-resize" },
+  { handle: "se", className: "-bottom-2 -right-2", cursor: "cursor-nwse-resize" },
+  { handle: "s", className: "left-1/2 -bottom-2 -translate-x-1/2", cursor: "cursor-ns-resize" },
+  { handle: "sw", className: "-bottom-2 -left-2", cursor: "cursor-nesw-resize" },
+  { handle: "w", className: "-left-2 top-1/2 -translate-y-1/2", cursor: "cursor-ew-resize" },
 ];
+
+/** Map screen pointer delta → canvas coords when paper is CSS-scaled (MoaPaperScale). */
+function getCanvasPointerScale(layerEl: HTMLElement | null): number {
+  if (!layerEl) return 1;
+  const rect = layerEl.getBoundingClientRect();
+  const logical = layerEl.clientWidth;
+  if (!logical || !rect.width) return 1;
+  const scale = rect.width / logical;
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
 
 export function createMoaDesignElement(
   kind: MoaPaletteItemKind,
@@ -680,7 +690,7 @@ function normalizeWatermark(raw: Partial<MoaWatermarkSettings> & {
 } | null | undefined): MoaWatermarkSettings {
   // Migrate legacy single-watermark shape { enabled, text, opacity, rotation }
   if (raw && !Array.isArray(raw.items) && typeof raw.text === "string") {
-    return {
+  return {
       enabled: Boolean(raw.enabled),
       items: [
         createMoaWatermarkItem({
@@ -821,7 +831,7 @@ function CropOverlay({
   const handleStyle = "absolute bg-white border-2 border-blue-500 z-[60]";
   const barStyle = "absolute bg-blue-500/20 z-[55]";
 
-  return (
+      return (
     <>
       {/* Dimmed areas outside crop */}
       <div
@@ -1003,7 +1013,7 @@ export function MoaCanvasWatermark({
     document.addEventListener("pointerup", onUp);
   };
 
-  return (
+      return (
     <div
       className={`absolute inset-0 z-[8] overflow-hidden ${editable ? "" : "pointer-events-none"}`}
       aria-hidden={!editable}
@@ -1017,7 +1027,7 @@ export function MoaCanvasWatermark({
             className={`absolute max-w-[90%] select-none truncate text-center text-[36px] font-bold uppercase tracking-[0.18em] text-zinc-800 ${
               editable ? "cursor-grab active:cursor-grabbing" : "pointer-events-none"
             }`}
-            style={{
+              style={{
               left: `${item.xPercent}%`,
               top: `${item.yPercent}%`,
               opacity: item.opacity,
@@ -1030,11 +1040,11 @@ export function MoaCanvasWatermark({
             title={editable ? "Drag to arrange watermark" : undefined}
           >
             {item.text}
-          </div>
-        );
+        </div>
+      );
       })}
-    </div>
-  );
+        </div>
+      );
 }
 
 function cssFontSize(size: number | string | undefined): string | undefined {
@@ -1265,16 +1275,19 @@ function ElementVisual({
   element,
   editingTable,
   onTableCellChange,
+  resolveFieldValue,
 }: {
   element: MoaDesignElement;
   editingTable?: boolean;
   onTableCellChange?: (row: number, col: number, value: string) => void;
+  resolveFieldValue?: (fieldKey: string) => string;
 }) {
-  return (
+      return (
     <MoaElementVisual
       element={element}
       editingTable={editingTable}
       onTableCellChange={onTableCellChange}
+      resolveFieldValue={resolveFieldValue}
     />
   );
 }
@@ -1319,6 +1332,8 @@ export function MoaDesignCanvasLayer({
   spellCheck = true,
   cropModeId,
   onCropModeChange,
+  onDeleteSelected,
+  resolveFieldValue,
 }: {
   enabled: boolean;
   paletteDragging?: boolean;
@@ -1340,8 +1355,14 @@ export function MoaDesignCanvasLayer({
   spellCheck?: boolean;
   cropModeId?: string | null;
   onCropModeChange?: (id: string | null) => void;
+  /** Delete current canvas selection (Del / toolbar / floating button). */
+  onDeleteSelected?: () => void;
+  /** Live/sample values for moaField preview on the canvas. */
+  resolveFieldValue?: (fieldKey: string) => string;
 }) {
   const layerRef = useRef<HTMLDivElement>(null);
+  const elementsRef = useRef(elements);
+  elementsRef.current = elements;
   const pageDocRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const paginatingRef = useRef(false);
@@ -1557,7 +1578,9 @@ export function MoaDesignCanvasLayer({
   }, [elements, activeFieldIds, setActiveFieldIds]);
 
   const updateElement = (id: string, patch: Partial<MoaDesignElement>) => {
-    onChangeElements(elements.map((el) => (el.id === id ? { ...el, ...patch } : el)));
+    onChangeElements(
+      elementsRef.current.map((el) => (el.id === id ? { ...el, ...patch } : el)),
+    );
   };
 
   const applyTextAlignToElement = (id: string, textAlign: MoaTextAlign) => {
@@ -1891,6 +1914,13 @@ export function MoaDesignCanvasLayer({
 
     const startX = event.clientX;
     const startY = event.clientY;
+    const scale = getCanvasPointerScale(layerRef.current);
+    const captureEl = event.currentTarget as HTMLElement;
+    try {
+      captureEl.setPointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
     const originX = field.x;
     const originY = field.y;
     const originW = field.width;
@@ -1899,8 +1929,8 @@ export function MoaDesignCanvasLayer({
     const minH = 16;
 
     const onMove = (moveEvent: PointerEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
+      const dx = (moveEvent.clientX - startX) / scale;
+      const dy = (moveEvent.clientY - startY) / scale;
       let nextX = originX;
       let nextY = originY;
       let nextW = originW;
@@ -1923,7 +1953,7 @@ export function MoaDesignCanvasLayer({
       nextH = Math.min(nextH, header.height - nextY);
 
       onChangeElements(
-        elements.map((el) =>
+        elementsRef.current.map((el) =>
           el.id !== headerId
             ? el
             : {
@@ -1937,7 +1967,12 @@ export function MoaDesignCanvasLayer({
         ),
       );
     };
-    const onUp = () => {
+    const onUp = (upEvent: PointerEvent) => {
+      try {
+        captureEl.releasePointerCapture(upEvent.pointerId);
+      } catch {
+        /* ignore */
+      }
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
     };
@@ -2063,18 +2098,25 @@ export function MoaDesignCanvasLayer({
       onSelectedIdsChange?.([id]);
     }
 
-    const el = elements.find((item) => item.id === id);
+    const el = elementsRef.current.find((item) => item.id === id);
     if (!el) return;
     const startX = event.clientX;
     const startY = event.clientY;
+    const scale = getCanvasPointerScale(layerRef.current);
+    const captureEl = event.currentTarget as HTMLElement;
+    try {
+      captureEl.setPointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
     const movingIds =
       nextIds.includes(id) && nextIds.length > 1 ? nextIds : [id];
     const origins = new Map(
-      elements
+      elementsRef.current
         .filter((item) => movingIds.includes(item.id))
         .map((item) => [item.id, { x: item.x, y: item.y }] as const),
     );
-    const others: SnapBox[] = elements
+    const others: SnapBox[] = elementsRef.current
       .filter((item) => !movingIds.includes(item.id))
       .map((item) => ({
         x: item.x,
@@ -2085,10 +2127,10 @@ export function MoaDesignCanvasLayer({
     let dragging = false;
 
     const onMove = (moveEvent: PointerEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
+      const dx = (moveEvent.clientX - startX) / scale;
+      const dy = (moveEvent.clientY - startY) / scale;
       if (!dragging) {
-        if (Math.hypot(dx, dy) < 4) return;
+        if (Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY) < 4) return;
         dragging = true;
       }
       const primary = origins.get(id);
@@ -2108,7 +2150,7 @@ export function MoaDesignCanvasLayer({
       const snappedDy = snapped.y - primary.y;
       setAlignGuides(snapped.guides);
       onChangeElements(
-        elements.map((item) => {
+        elementsRef.current.map((item) => {
           const origin = origins.get(item.id);
           if (!origin) return item;
           return {
@@ -2119,7 +2161,12 @@ export function MoaDesignCanvasLayer({
         }),
       );
     };
-    const onUp = () => {
+    const onUp = (upEvent: PointerEvent) => {
+      try {
+        captureEl.releasePointerCapture(upEvent.pointerId);
+      } catch {
+        /* ignore */
+      }
       setAlignGuides([]);
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
@@ -2138,18 +2185,26 @@ export function MoaDesignCanvasLayer({
     event.stopPropagation();
     clearFieldSelection();
     onSelectedIdsChange?.([id]);
-    const el = elements.find((item) => item.id === id);
+    onSelect(id);
+    const el = elementsRef.current.find((item) => item.id === id);
     if (!el) return;
     const startX = event.clientX;
     const startY = event.clientY;
+    const scale = getCanvasPointerScale(layerRef.current);
+    const captureEl = event.currentTarget as HTMLElement;
+    try {
+      captureEl.setPointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
     const originX = el.x;
     const originY = el.y;
     const originW = el.width;
     const originH = el.height;
 
     const onMove = (moveEvent: PointerEvent) => {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
+      const dx = (moveEvent.clientX - startX) / scale;
+      const dy = (moveEvent.clientY - startY) / scale;
       let nextX = originX;
       let nextY = originY;
       let nextW = originW;
@@ -2173,7 +2228,12 @@ export function MoaDesignCanvasLayer({
         height: nextH,
       });
     };
-    const onUp = () => {
+    const onUp = (upEvent: PointerEvent) => {
+      try {
+        captureEl.releasePointerCapture(upEvent.pointerId);
+      } catch {
+        /* ignore */
+      }
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
     };
@@ -2403,7 +2463,8 @@ export function MoaDesignCanvasLayer({
         return (
           <div
             key={element.id}
-            className={`absolute ${enabled && editingTextId !== element.id ? "cursor-move" : ""} ${
+            data-moa-element-id={element.id}
+            className={`absolute overflow-visible ${enabled && editingTextId !== element.id ? "cursor-move" : ""} ${
               selected ? "z-40 ring-2 ring-sky-500" : "z-30"
             } ${headerDropTargetId === element.id ? "ring-2 ring-emerald-500" : ""}`}
             style={{
@@ -2685,6 +2746,7 @@ export function MoaDesignCanvasLayer({
               <ElementVisual
                 element={element}
                 editingTable={editingTableId === element.id}
+                resolveFieldValue={resolveFieldValue}
                 onTableCellChange={(row, col, value) => {
                   const data = (element.tableData?.length
                     ? element.tableData
@@ -2698,16 +2760,56 @@ export function MoaDesignCanvasLayer({
               />
             )}
 
-            {enabled && selected && (
+            {enabled &&
+            selected &&
+            selectedId === element.id &&
+            editingTextId !== element.id &&
+            onDeleteSelected ? (
+              <button
+                type="button"
+                aria-label="Delete element"
+                title="Delete (Del)"
+                data-moa-no-drag
+                className="absolute -right-2 -top-2 z-[60] flex h-5 w-5 items-center justify-center rounded-full border border-red-300 bg-white text-red-600 shadow-sm transition-colors hover:bg-red-50"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteSelected();
+                }}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" />
+                  <path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            ) : null}
+
+            {enabled && selected && selectedId === element.id && (
               <>
                 {RESIZE_HANDLES.map(({ handle, className, cursor }) => (
                   <button
                     key={handle}
                     type="button"
                     data-moa-resize={handle}
+                    data-moa-no-drag
                     aria-label={`Resize ${handle}`}
-                    className={`absolute z-50 h-3 w-3 rounded-sm border border-sky-500 bg-white shadow ${className} ${cursor}`}
-                    onPointerDown={(event) => startResize(event, element.id, handle)}
+                    className={`absolute z-[100] h-3.5 w-3.5 touch-none rounded-sm border-2 border-sky-500 bg-white shadow ${className} ${cursor}`}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                      startResize(event, element.id, handle);
+                    }}
                   />
                 ))}
               </>
@@ -2750,10 +2852,10 @@ export function MoaDesignCanvasLayer({
                           ? `${menuFieldIds.length} fields selected · Ctrl/Shift+click to add`
                           : "1 field selected · Ctrl+click for multi"}
                       </div>
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
-                        onClick={() => {
+                <button
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                  onClick={() => {
                           selectAllHeaderFields(contextMenu.headerId);
                           setContextMenu(null);
                         }}
@@ -2806,54 +2908,54 @@ export function MoaDesignCanvasLayer({
                                 contextMenu.headerId,
                                 contextMenu.fieldId,
                               );
-                              setContextMenu(null);
-                            }}
-                          >
-                            Place beside previous
-                          </button>
-                          <button
-                            type="button"
-                            className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
-                            onClick={() => {
-                              placeFieldOnOwnLine(contextMenu.headerId, contextMenu.fieldId);
-                              setContextMenu(null);
-                            }}
-                          >
-                            Move to new line
-                          </button>
+                    setContextMenu(null);
+                  }}
+                >
+                  Place beside previous
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                  onClick={() => {
+                    placeFieldOnOwnLine(contextMenu.headerId, contextMenu.fieldId);
+                    setContextMenu(null);
+                  }}
+                >
+                  Move to new line
+                </button>
                         </>
                       ) : null}
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
-                        onClick={() => {
+                <button
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                  onClick={() => {
                           moveSelectedFields(contextMenu.headerId, menuFieldIds, -1);
-                          setContextMenu(null);
-                        }}
-                      >
+                    setContextMenu(null);
+                  }}
+                >
                         Nudge up{multi ? ` (${menuFieldIds.length})` : ""}
-                      </button>
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
-                        onClick={() => {
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                  onClick={() => {
                           moveSelectedFields(contextMenu.headerId, menuFieldIds, 1);
-                          setContextMenu(null);
-                        }}
-                      >
+                    setContextMenu(null);
+                  }}
+                >
                         Nudge down{multi ? ` (${menuFieldIds.length})` : ""}
-                      </button>
-                      <div className="my-1 border-t border-zinc-100" />
-                      <button
-                        type="button"
-                        className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50"
-                        onClick={() => {
+                </button>
+                <div className="my-1 border-t border-zinc-100" />
+                <button
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-red-600 hover:bg-red-50"
+                  onClick={() => {
                           removeHeaderFields(contextMenu.headerId, menuFieldIds);
-                          setContextMenu(null);
-                        }}
-                      >
+                    setContextMenu(null);
+                  }}
+                >
                         Remove {multi ? `${menuFieldIds.length} fields` : "field"}
-                      </button>
+                </button>
                     </>
                   );
                 })()}
@@ -3038,17 +3140,17 @@ export function MoaDesignCanvasLayer({
                   if (el?.kind === "photo") {
                     return (
                       <>
-                        <button
-                          type="button"
-                          className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
-                          onClick={() => {
-                            setPhotoUploadTarget(contextMenu.elementId);
-                            fileInputRef.current?.click();
-                            setContextMenu(null);
-                          }}
-                        >
+                      <button
+                        type="button"
+                        className="block w-full px-3 py-1.5 text-left text-[11px] font-semibold text-zinc-700 hover:bg-emerald-50"
+                        onClick={() => {
+                          setPhotoUploadTarget(contextMenu.elementId);
+                          fileInputRef.current?.click();
+                          setContextMenu(null);
+                        }}
+                      >
                           Insert image
-                        </button>
+                      </button>
                         {el.imageSrc ? (
                           <button
                             type="button"

@@ -33,6 +33,33 @@ export {
   type MoaShopPreviewInfo,
 } from "./sample-field-values";
 export {
+  collectMoaCanvasFieldKeys,
+  moaCanvasHasFieldKeys,
+} from "./canvas-field-keys";
+export {
+  MOA_AUTO_FILLED_FIELD_KEYS,
+  MOA_AMOUNT_FIELD_KEYS,
+  canvasFieldNeedsInput,
+  canvasHasAmountField,
+  collectCanvasFieldLabels,
+  resolveAmountFieldLabel,
+  buildVisibleMoaFormRequirements,
+  findFirstBlankMoaRequirement,
+  type MoaFormFieldRequirement,
+  type VisibleMoaFormInput,
+  type BuildVisibleMoaFormRequirementsOptions,
+} from "./canvas-form-fields";
+export {
+  JEWELRY_FIELD_OPTIONS,
+  JEWELRY_FORM_FIELD_KEYS,
+  isJewelryCategory,
+  readJewelryFieldValues,
+  buildJewelryPersistEntries,
+  jewelryFieldInsertLayout,
+  type JewelryFieldKey,
+  type JewelryFormFieldKey,
+} from "./jewelry-fields";
+export {
   parsePersistedMoaValues,
   stripPersistedMoaFieldsFromRemarks,
   resolveParkingFeeFromRemarks,
