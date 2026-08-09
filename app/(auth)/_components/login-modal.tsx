@@ -131,7 +131,13 @@ const termsSections = [
   },
   {
     title: "XVII. Contact Information",
-    body: "Inspire Next Global Inc. — Name: Inspire Neo. Email: inspirenextglobal.marketing@gmail.com. Contact Number: 09929718800. Address: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig.",
+    body: "Inspire Next Global Inc.",
+    contactItems: [
+      { label: "Name", value: "Inspire Neo" },
+      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
+      { label: "Contact Number", value: "09929718800" },
+      { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
+    ],
   },
 ];
 
@@ -571,6 +577,15 @@ export function LoginModal({ onClose }: LoginModalProps) {
                       <div>
                         <h4 className="text-sm font-bold text-brand-green">{section.title}</h4>
                         <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
+                        {section.contactItems && (
+                          <ul className="mt-2 space-y-1.5">
+                            {section.contactItems.map((item: { label: string; value: string }) => (
+                              <li key={item.label} className="text-sm text-zinc-600">
+                                <span className="font-bold text-brand-green">{item.label}:</span>{" "}{item.value}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     </div>
                   </section>
