@@ -36,6 +36,8 @@ const sectionNavLabels: Record<string, string> = {
   "contact-us": "CONTACT US",
 };
 
+const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(BRAND_CONFIG.email)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+
 // Maps nav label text to a section ID when the label differs from the auto-generated id
 const navIdOverrides: Record<string, string> = {};
 
@@ -108,7 +110,13 @@ const termsSections = [
   },
   {
     title: "XVII. Contact Information",
-    body: "Inspire Next Global Inc. — Name: Inspire Neo. Email: inspirenextglobal.marketing@gmail.com. Contact Number: 09929718800. Address: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig.",
+    body: "Inspire Next Global Inc.",
+    contactItems: [
+      { label: "Name", value: "Inspire Neo" },
+      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
+      { label: "Contact Number", value: "09929718800" },
+      { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
+    ],
   },
 ];
 
@@ -151,7 +159,13 @@ const privacySections = [
   },
   {
     title: "X. Contact Information",
-    body: "Inspire Next Global Inc. — Name: Inspire Neo. Email: inspirenextglobal.marketing@gmail.com. Contact Number: 0992 971 8800. Address: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig.",
+    body: "Inspire Next Global Inc.",
+    contactItems: [
+      { label: "Name", value: "Inspire Neo" },
+      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
+      { label: "Contact Number", value: "09929718800" },
+      { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
+    ],
   },
 ];
 
@@ -546,7 +560,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               </p>
               <p className="mt-6 text-sm font-semibold text-brand-green/70">
                 Or contact us by sending a message to{" "}
-                <a href={`mailto:${BRAND_CONFIG.email}`} className="underline hover:text-brand-green">
+                <a
+                  href={supportEmailComposeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-brand-green"
+                >
                   {BRAND_CONFIG.email}
                 </a>
               </p>
@@ -670,6 +689,15 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                         <div>
                           <h4 className="text-sm font-bold text-brand-green">{section.title}</h4>
                           <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
+                          {section.contactItems && (
+                            <ul className="mt-2 space-y-1.5">
+                              {section.contactItems.map((item: { label: string; value: string }) => (
+                                <li key={item.label} className="text-sm text-zinc-600">
+                                  <span className="font-bold text-brand-green">{item.label}:</span>{" "}{item.value}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
                       </div>
                     </section>
