@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { SocialIconLink } from "@/lib/social-links";
 import { LandingVideoPlaceholder } from "@/app/(auth)/_components/landing-video-placeholder";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
@@ -153,7 +154,7 @@ const subscriptionPlans = [
     cta: "Get started",
     popular: false,
     ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT US",
+    ctaNav: "CONTACT",
   },
   {
     name: "Professional",
@@ -170,7 +171,7 @@ const subscriptionPlans = [
     cta: "Start free trial",
     popular: true,
     ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT US",
+    ctaNav: "CONTACT",
   },
   {
     name: "Enterprise",
@@ -187,7 +188,7 @@ const subscriptionPlans = [
     cta: "Contact sales",
     popular: false,
     ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT US",
+    ctaNav: "CONTACT",
   },
 ];
 
@@ -658,7 +659,7 @@ export function LandingHero({
         >
           <a
             href="#contact-us"
-            onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+            onClick={(e) => onScroll(e, "contact-us", "CONTACT")}
             className="inline-flex items-center justify-center rounded-full bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
           >
             Try {BRAND_CONFIG.shortCompanyName} Now
@@ -1223,7 +1224,7 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
 
               <a
                 href="#contact-us"
-                onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+                onClick={(e) => onScroll(e, "contact-us", "CONTACT")}
                 className="mt-8 block rounded-full bg-white py-3 text-center text-xs font-black uppercase tracking-wider text-[#004d40] transition hover:bg-brand-gold hover:text-brand-green shadow-md"
               >
                 Get Started
@@ -1405,12 +1406,13 @@ export function LandingLightFooter({
         </div>
 
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Product</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Explore</p>
           <ul className="mt-4 space-y-2 text-sm text-white/65">
             {[
               ["Product", "product", "PRODUCT"],
-              ["How it helps", "how-it-helps", "HOW IT HELPS"],
+              ["Features", "why-us", "FEATURES"],
               ["Pricing", "pricing", "PRICING"],
+              ["Contact", "contact-us", "CONTACT"],
             ].map(([label, id, nav]) => (
               <li key={id}>
                 <a href={`#${id}`} onClick={(e) => onScroll(e, id, nav)} className="transition-colors hover:text-brand-gold">
@@ -1425,17 +1427,27 @@ export function LandingLightFooter({
           <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Company</p>
           <ul className="mt-4 space-y-2 text-sm text-white/65">
             <li>
-              <a href="#why-us" onClick={(e) => onScroll(e, "why-us", "WHY US")} className="transition-colors hover:text-brand-gold">
-                Why us
+              <Link href="/about" className="transition-colors hover:text-brand-gold">
+                About us
+              </Link>
+            </li>
+            <li>
+              <a
+                href={BRAND_CONFIG.parentCompany.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-brand-gold"
+              >
+                {BRAND_CONFIG.parentCompany.shortName} website
               </a>
             </li>
             <li>
-              <a href="#benefits" onClick={(e) => onScroll(e, "benefits", "BENEFITS")} className="transition-colors hover:text-brand-gold">
-                Benefits
-              </a>
+              <Link href="/social" className="transition-colors hover:text-brand-gold">
+                Social media
+              </Link>
             </li>
             <li>
-              <a href="#faq" onClick={(e) => onScroll(e, "faq", "FAQ")} className="transition-colors hover:text-brand-gold">
+              <a href="#faq" onClick={(e) => onScroll(e, "faq", "CONTACT")} className="transition-colors hover:text-brand-gold">
                 FAQ
               </a>
             </li>
@@ -1466,30 +1478,22 @@ export function LandingLightFooter({
         <div>
           <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Connect with us</p>
           <div className="mt-4 space-y-4 text-sm text-white/65">
-            <div className="flex items-center gap-3">
-              <a
-                href="https://www.facebook.com/QuickPawn.PMS"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Facebook"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-all duration-200 hover:scale-110 hover:border-transparent hover:bg-[#1877F2] hover:text-white"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4.5 w-4.5">
-                  <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z" />
-                </svg>
-              </a>
-              <a
-                href="https://www.instagram.com/quick_pawn/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-all duration-200 hover:scale-110 hover:border-transparent hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:text-white"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4.5 w-4.5">
-                  <path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153a4.908 4.908 0 0 1 1.153 1.772c.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 0 1-1.153 1.772 4.915 4.915 0 0 1-1.772 1.153c-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 0 1-1.772-1.153 4.904 4.904 0 0 1-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428a4.88 4.88 0 0 1 1.153-1.772A4.897 4.897 0 0 1 5.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2Zm0 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm6.5-.25a1.25 1.25 0 1 0-2.5 0 1.25 1.25 0 0 0 2.5 0ZM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
-                </svg>
-              </a>
+            <div className="flex flex-wrap items-center gap-3">
+              {BRAND_CONFIG.socialMedia.map((account) => (
+                <SocialIconLink key={account.url} account={account} />
+              ))}
             </div>
+            <Link href="/social" className="block transition-colors hover:text-brand-gold">
+              View all social accounts
+            </Link>
+            <a
+              href={supportEmailComposeUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="block transition-colors hover:text-brand-gold"
+            >
+              Email Us
+            </a>
           </div>
         </div>
       </div>

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
+import { LandingChatbot } from "./landing-chatbot";
 import {
   LandingBenefits,
   LandingCloud,
@@ -23,24 +25,35 @@ interface AuthLandingPageProps {
   onLoginClick: () => void;
 }
 
-const navItems = ["HOME", "PRODUCT", "WHY US", "HOW IT HELPS", "BENEFITS", "PRICING", "FAQ", "CONTACT US"];
+type LandingNavItem = {
+  label: string;
+  href: string;
+  scrollId?: string;
+};
+
+const navItems: LandingNavItem[] = [
+  { label: "HOME", href: "#home", scrollId: "home" },
+  { label: "PRODUCT", href: "#product", scrollId: "product" },
+  { label: "FEATURES", href: "#why-us", scrollId: "why-us" },
+  { label: "PRICING", href: "#pricing", scrollId: "pricing" },
+  { label: "COMPANY", href: "/about" },
+  { label: "CONTACT", href: "#contact-us", scrollId: "contact-us" },
+];
 
 const sectionNavLabels: Record<string, string> = {
   home: "HOME",
   product: "PRODUCT",
-  "why-us": "WHY US",
-  "how-it-helps": "HOW IT HELPS",
-  benefits: "BENEFITS",
+  "why-us": "FEATURES",
+  "how-it-helps": "FEATURES",
+  benefits: "FEATURES",
+  cloud: "FEATURES",
   pricing: "PRICING",
-  faq: "FAQ",
-  "contact-us": "CONTACT US",
+  faq: "CONTACT",
+  "contact-us": "CONTACT",
 };
 
 const requestDemoEmail = "quickpawn.pms@gmail.com";
 const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(requestDemoEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
-
-// Maps nav label text to a section ID when the label differs from the auto-generated id
-const navIdOverrides: Record<string, string> = {};
 
 type LegalModalType = "privacy" | "terms" | null;
 
@@ -192,15 +205,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [isAtTop, setIsAtTop] = useState(true);
-  const [isNavVisible, setIsNavVisible] = useState(true);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactMessage, setContactMessage] = useState("");
   const [isSendingContact, setIsSendingContact] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const lastScrollY = useRef(0);
 
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -288,17 +298,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       const sections = document.querySelectorAll("section[id]");
       const { scrollY, innerHeight } = window;
       setShowBackToTop(scrollY > innerHeight * 0.5);
-      setIsAtTop(scrollY <= 10);
 
-      // Hide nav on scroll down, show on scroll up
-      if (scrollY > lastScrollY.current + 10 && scrollY > 100) {
-        setIsNavVisible(false);
-      } else if (scrollY < lastScrollY.current - 10 || scrollY <= 50) {
-        setIsNavVisible(true);
-      }
-      lastScrollY.current = scrollY;
-
-      // Check if we're in any section
       let foundSection = false;
       sections.forEach((section) => {
         const rect = section.getBoundingClientRect();
@@ -310,10 +310,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           }
         }
       });
-      
-      // Only set CONTACT US if we're actually at the bottom and no other section was found
+
       if (!foundSection && scrollY + innerHeight >= document.documentElement.scrollHeight - 60) {
-        setActiveNavItem("CONTACT US");
+        setActiveNavItem("CONTACT");
       }
     };
     window.addEventListener("scroll", handleScrollSync);
@@ -321,9 +320,14 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   }, []);
 
   useEffect(() => {
-    const activeRef = navRefs.current[navItems.indexOf(activeNavItem)];
+    const activeRef = navRefs.current[navItems.findIndex((item) => item.label === activeNavItem)];
     if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
   }, [activeNavItem]);
+
+  const navLinkClass = (label: string) =>
+    `whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${
+      activeNavItem === label ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"
+    }`;
 
 
   return (
@@ -332,7 +336,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
       <div className="relative z-10">
         {/* ─── NAV ─── */}
-        <nav className={`fixed left-0 right-0 top-0 z-[80] border-b border-brand-green/10 bg-white/90 backdrop-blur-md transition-transform duration-300 ease-in-out ${(isNavVisible || mobileMenuOpen || tabletMenuOpen) ? "translate-y-0" : "-translate-y-full"}`}>
+        <nav className="fixed left-0 right-0 top-0 z-[80] border-b border-brand-green/10 bg-white/95 shadow-sm backdrop-blur-md">
           <div className="landing-container-wide flex h-16 items-center justify-between px-4 md:px-6 lg:px-12 uqhd:h-20 uhd:h-24">
             {/* Logo - Desktop only (lg and up) */}
             <button
@@ -349,9 +353,6 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Show navbar when opening menu
-                setIsNavVisible(true);
-                // Toggle appropriate menu based on screen size
                 if (window.innerWidth >= 768 && window.innerWidth < 1024) {
                   setTabletMenuOpen((prev) => !prev);
                 } else {
@@ -373,17 +374,29 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             </button>
 
             {/* Desktop nav links */}
-            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-4 lg:flex xl:gap-8 uqhd:gap-10 uhd:gap-12">
-              {navItems.map((item, index) => {
-                const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
-                return (
-                  <a key={item} ref={(el) => { navRefs.current[index] = el; }} href={`#${id}`}
-                    onClick={(e) => handleScroll(e, id, item)}
-                    className={`whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${activeNavItem === item ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"}`}>
-                    {item}
+            <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 lg:flex xl:gap-8 uqhd:gap-10 uhd:gap-12">
+              {navItems.map((item, index) =>
+                item.scrollId ? (
+                  <a
+                    key={item.label}
+                    ref={(el) => { navRefs.current[index] = el; }}
+                    href={item.href}
+                    onClick={(e) => handleScroll(e, item.scrollId!, item.label)}
+                    className={navLinkClass(item.label)}
+                  >
+                    {item.label}
                   </a>
-                );
-              })}
+                ) : (
+                  <Link
+                    key={item.label}
+                    ref={(el) => { navRefs.current[index] = el; }}
+                    href={item.href}
+                    className={navLinkClass(item.label)}
+                  >
+                    {item.label}
+                  </Link>
+                ),
+              )}
               <span className="absolute -bottom-1 h-0.5 bg-brand-gold transition-all duration-300" style={{ left: `${underlineLeft}px`, width: `${underlineWidth}px` }} />
             </div>
 
@@ -439,27 +452,38 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
                   <div className="space-y-2">
                     {navItems.map((item, index) => {
-                      const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
-                      const isActive = activeNavItem === item;
-                      return (
-                        <a
-                          key={`tablet-${item}`}
-                          ref={(el) => {
-                            navRefs.current[index] = el;
-                          }}
-                          href={`#${id}`}
-                          onClick={(e) => {
-                            handleScroll(e, id, item);
-                          }}
-                          className={`group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
-                            isActive
-                              ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
-                              : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
-                          }`}
-                        >
+                      const isActive = activeNavItem === item.label;
+                      const sharedClass = `group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
+                        isActive
+                          ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
+                          : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
+                      }`;
+                      const inner = (
+                        <>
                           <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
-                          <span>{item}</span>
+                          <span>{item.label}</span>
+                        </>
+                      );
+                      return item.scrollId ? (
+                        <a
+                          key={`tablet-${item.label}`}
+                          ref={(el) => { navRefs.current[index] = el; }}
+                          href={item.href}
+                          onClick={(e) => handleScroll(e, item.scrollId!, item.label)}
+                          className={sharedClass}
+                        >
+                          {inner}
                         </a>
+                      ) : (
+                        <Link
+                          key={`tablet-${item.label}`}
+                          ref={(el) => { navRefs.current[index] = el; }}
+                          href={item.href}
+                          onClick={() => setTabletMenuOpen(false)}
+                          className={sharedClass}
+                        >
+                          {inner}
+                        </Link>
                       );
                     })}
                   </div>
@@ -506,24 +530,36 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
                 <div className="space-y-2">
                   {navItems.map((item) => {
-                    const id = navIdOverrides[item] ?? item.toLowerCase().replace(/ /g, "-");
-                    const isActive = activeNavItem === item;
-                    return (
-                      <a
-                        key={item}
-                        href={`#${id}`}
-                        onClick={(e) => {
-                          handleScroll(e, id, item);
-                        }}
-                        className={`group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
-                          isActive
-                            ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
-                            : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
-                        }`}
-                      >
+                    const isActive = activeNavItem === item.label;
+                    const sharedClass = `group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
+                      isActive
+                        ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
+                        : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
+                    }`;
+                    const inner = (
+                      <>
                         <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
-                        <span>{item}</span>
+                        <span>{item.label}</span>
+                      </>
+                    );
+                    return item.scrollId ? (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        onClick={(e) => handleScroll(e, item.scrollId!, item.label)}
+                        className={sharedClass}
+                      >
+                        {inner}
                       </a>
+                    ) : (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={sharedClass}
+                      >
+                        {inner}
+                      </Link>
                     );
                   })}
                 </div>
@@ -746,7 +782,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       {/* Back to top button */}
       <button
         type="button"
-        className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
+        className={`fixed bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
           setActiveNavItem("HOME");
@@ -758,6 +794,19 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
         </svg>
       </button>
+
+      <LandingChatbot
+        onScrollToContact={() => {
+          const element = document.getElementById("contact-us");
+          if (!element) return;
+          const offset =
+            window.innerWidth >= 3840 ? 96 : window.innerWidth >= 2560 ? 80 : 64;
+          const top = element.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: "smooth" });
+          window.history.pushState(null, "", "#contact-us");
+          setActiveNavItem("CONTACT");
+        }}
+      />
     </div>
   );
 }
