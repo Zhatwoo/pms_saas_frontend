@@ -36,8 +36,7 @@ const sectionNavLabels: Record<string, string> = {
   "contact-us": "CONTACT US",
 };
 
-const requestDemoEmail = "quickpawn.pms@gmail.com";
-const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(requestDemoEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(BRAND_CONFIG.email)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
 
 // Maps nav label text to a section ID when the label differs from the auto-generated id
 const navIdOverrides: Record<string, string> = {};
@@ -114,7 +113,7 @@ const termsSections = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "quickpawn.pms@gmail.com" },
+      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],
@@ -163,7 +162,7 @@ const privacySections = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "quickpawn.pms@gmail.com" },
+      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],
@@ -567,7 +566,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                   rel="noreferrer"
                   className="underline hover:text-brand-green"
                 >
-                  {requestDemoEmail}
+                  {BRAND_CONFIG.email}
                 </a>
               </p>
             </div>

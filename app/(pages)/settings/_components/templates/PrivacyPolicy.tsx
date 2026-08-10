@@ -76,7 +76,7 @@ export const PrivacyPolicyTemplate = () => {
         <h2 className="text-lg font-bold mt-6 mb-2">X. CONTACT INFORMATION</h2>
         <p>Inspire Next Global Inc.</p>
         <p><strong>Name:</strong> Inspire Neo</p>
-        <p><strong>Email:</strong> quickpawn.pms@gmail.com</p>
+        <p><strong>Email:</strong> inspirenextglobal.marketing@gmail.com</p>
         <p><strong>Contact Number:</strong> 09929718800</p>
         <p><strong>Address:</strong> 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig</p>
         

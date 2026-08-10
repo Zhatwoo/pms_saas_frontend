@@ -7,7 +7,7 @@ import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 type ScrollHandler = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => void;
 
-const footerSupportEmail = BRAND_CONFIG.email;
+const footerSupportEmail = "quickpawn.pms@gmail.com";
 const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(footerSupportEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
 
 const withQuickPawn = [
