@@ -393,7 +393,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 onClick={onLoginClick}
                 className="rounded-md bg-brand-green px-3 py-2 text-xs font-black text-white transition hover:bg-brand-green/90 sm:px-4 sm:text-sm uqhd:px-5 uqhd:py-2.5 uqhd:text-base"
               >
-                Login / Sign Up
+                Login
               </button>
 
               {/* Removed redundant buttons - now using unified burger menu on left */}
