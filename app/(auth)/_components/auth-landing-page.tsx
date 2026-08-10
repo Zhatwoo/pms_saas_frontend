@@ -196,6 +196,9 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("10:00 AM");
+  const [meetingPlatform, setMeetingPlatform] = useState("Google Meet");
   const [contactMessage, setContactMessage] = useState("");
   const [isSendingContact, setIsSendingContact] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
@@ -203,8 +206,8 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
-      toast.error("Please fill in all fields.");
+    if (!contactName.trim() || !contactEmail.trim()) {
+      toast.error("Please enter your name and email address.");
       return;
     }
 
@@ -215,16 +218,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {
           name: contactName.trim(),
           email: contactEmail.trim(),
-          message: contactMessage.trim(),
+          preferredDate: preferredDate || undefined,
+          preferredTime: preferredTime || undefined,
+          meetingPlatform: meetingPlatform || undefined,
+          message: contactMessage.trim() || undefined,
         },
         { suppressApiIssueLogging: true },
       );
-      toast.success("Message sent! We'll get back to you shortly.");
+      toast.success("Demo request scheduled! We'll send you an invitation shortly.");
       setContactName("");
       setContactEmail("");
+      setPreferredDate("");
+      setPreferredTime("10:00 AM");
+      setMeetingPlatform("Google Meet");
       setContactMessage("");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not send your message. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Could not schedule demo. Please try again.");
     } finally {
       setIsSendingContact(false);
     }
@@ -575,58 +584,144 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               onSubmit={handleContactSubmit}
               className="reveal-on-scroll reveal-delay-200 rounded-2xl bg-white p-6 shadow-xl sm:p-8"
             >
-              <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Request a demo</p>
-              <h3 className="font-display mt-1 text-xl font-bold text-brand-green">Talk to {BRAND_CONFIG.shortCompanyName}</h3>
-              <div className="mt-5 space-y-4">
-                <div>
-                  <label htmlFor="landing-contact-name" className="text-xs font-semibold text-brand-green/70">
-                    Name
-                  </label>
-                  <input
-                    id="landing-contact-name"
-                    type="text"
-                    value={contactName}
-                    onChange={(e) => setContactName(e.target.value)}
-                    disabled={isSendingContact}
-                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
-                    placeholder="Juan Dela Cruz"
-                  />
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Schedule a demo</p>
+              <h3 className="font-display mt-1 text-xl font-bold text-brand-green">Book a Live Demo with {BRAND_CONFIG.shortCompanyName}</h3>
+              <p className="mt-1 text-xs text-zinc-500">Pick a date, time, and your preferred meeting platform.</p>
+
+              <div className="mt-5 space-y-3.5">
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="landing-contact-name" className="text-xs font-semibold text-brand-green/70">
+                      Full Name *
+                    </label>
+                    <input
+                      id="landing-contact-name"
+                      type="text"
+                      required
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      disabled={isSendingContact}
+                      className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                      placeholder="Juan Dela Cruz"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="landing-contact-email" className="text-xs font-semibold text-brand-green/70">
+                      Email Address *
+                    </label>
+                    <input
+                      id="landing-contact-email"
+                      type="email"
+                      required
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      disabled={isSendingContact}
+                      className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                      placeholder="you@pawnshop.com"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label htmlFor="landing-contact-email" className="text-xs font-semibold text-brand-green/70">
-                    Email
-                  </label>
-                  <input
-                    id="landing-contact-email"
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    disabled={isSendingContact}
-                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
-                    placeholder="you@pawnshop.com"
-                  />
+
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="landing-contact-date" className="text-xs font-semibold text-brand-green/70">
+                      Preferred Date
+                    </label>
+                    <div className="relative mt-1 flex items-center overflow-hidden rounded-md border border-brand-green/20 bg-white focus-within:border-brand-green">
+                      <input
+                        id="landing-contact-date"
+                        type="date"
+                        min={new Date().toISOString().split("T")[0]}
+                        value={preferredDate}
+                        onChange={(e) => setPreferredDate(e.target.value)}
+                        onClick={(e) => {
+                          try {
+                            e.currentTarget.showPicker();
+                          } catch {}
+                        }}
+                        disabled={isSendingContact}
+                        className="w-full cursor-pointer bg-transparent px-3 py-2 text-sm text-brand-green outline-none disabled:opacity-60"
+                      />
+                      <div
+                        onClick={() => {
+                          const el = document.getElementById("landing-contact-date") as HTMLInputElement | null;
+                          try {
+                            el?.showPicker();
+                          } catch {
+                            el?.focus();
+                          }
+                        }}
+                        className="flex h-full cursor-pointer items-center justify-center px-3 text-brand-green/50 hover:text-brand-green"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="landing-contact-time" className="text-xs font-semibold text-brand-green/70">
+                      Preferred Time
+                    </label>
+                    <select
+                      id="landing-contact-time"
+                      value={preferredTime}
+                      onChange={(e) => setPreferredTime(e.target.value)}
+                      disabled={isSendingContact}
+                      className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60 bg-white"
+                    >
+                      <option value="09:00 AM">09:00 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="01:00 PM">01:00 PM</option>
+                      <option value="02:00 PM">02:00 PM</option>
+                      <option value="03:00 PM">03:00 PM</option>
+                      <option value="04:00 PM">04:00 PM</option>
+                      <option value="05:00 PM">05:00 PM</option>
+                    </select>
+                  </div>
                 </div>
+
+                <div>
+                  <label htmlFor="landing-contact-platform" className="text-xs font-semibold text-brand-green/70">
+                    Preferred Meeting Platform
+                  </label>
+                  <select
+                    id="landing-contact-platform"
+                    value={meetingPlatform}
+                    onChange={(e) => setMeetingPlatform(e.target.value)}
+                    disabled={isSendingContact}
+                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60 bg-white"
+                  >
+                    <option value="Google Meet">Google Meet (GMeet)</option>
+                    <option value="Zoom">Zoom Meeting</option>
+                    <option value="Microsoft Teams">Microsoft Teams</option>
+                    <option value="Phone Call">Phone Call / Mobile</option>
+                  </select>
+                </div>
+
                 <div>
                   <label htmlFor="landing-contact-message" className="text-xs font-semibold text-brand-green/70">
-                    Message
+                    Additional Notes / Questions (Optional)
                   </label>
                   <textarea
                     id="landing-contact-message"
-                    rows={3}
+                    rows={2}
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
                     disabled={isSendingContact}
-                    className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
-                    placeholder="Tell us about your pawnshop..."
+                    className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                    placeholder="Tell us about your pawnshop or specific topics to cover..."
                   />
                 </div>
               </div>
+
               <button
                 type="submit"
                 disabled={isSendingContact}
-                className="mt-6 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-5 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSendingContact ? "Sending..." : "Send Message"}
+                {isSendingContact ? "Scheduling Demo..." : "Schedule Demo"}
               </button>
             </form>
           </div>
