@@ -29,6 +29,7 @@ interface HeaderProps {
   branchName?: string;
   hideBranchSelector?: boolean;
   onMenuToggle?: () => void;
+  disabled?: boolean;
 }
 
 const MANILA_TZ = "Asia/Manila";
@@ -83,6 +84,7 @@ export function Header({
   branchName,
   hideBranchSelector = false,
   onMenuToggle,
+  disabled = false,
 }: HeaderProps) {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -489,7 +491,9 @@ export function Header({
   );
 
   return (
-    <header className="grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border-main bg-header-bg px-4 py-3 md:px-6 md:py-4 transition-colors duration-300">
+    <header className={`grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border-main bg-header-bg px-4 py-3 md:px-6 md:py-4 transition-colors duration-300 ${
+      disabled ? "pointer-events-none opacity-60" : ""
+    }`}>
       {/* Left: hamburger only */}
       <div className="flex min-w-0 items-center gap-2 md:gap-4">
         {onMenuToggle && (
