@@ -1,14 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { SocialIconLink } from "@/lib/social-links";
+import { LandingVideoPlaceholder } from "@/app/(auth)/_components/landing-video-placeholder";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 type ScrollHandler = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => void;
 
-const footerSupportEmail = "quickpawn.pms@gmail.com";
+const footerSupportEmail = BRAND_CONFIG.email;
 const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(footerSupportEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+const footerAddress = "11th ave. corner 36th st. Uptown Bonifacio Global City, Taguig, Philippines, 1634";
+const footerAddressMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(footerAddress)}`;
+
+export const landingClosingSurfaceClass =
+  "bg-[radial-gradient(circle_at_top,#0d6b45_0%,#0B5D3B_42%,#063827_100%)] text-white";
+
+export function LandingClosingShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className={`relative overflow-hidden ${landingClosingSurfaceClass}`}>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 top-0 h-56 w-56 rounded-full bg-brand-gold/10 blur-3xl" />
+        <div className="absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+      </div>
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
 
 const withQuickPawn = [
   "Organize customer information",
@@ -47,30 +68,42 @@ const howItHelps = [
   {
     title: "Manage Your Customers",
     desc: "Keep customer information organized and easily accessible when you need it.",
+    variant: "profiles" as const,
   },
   {
     title: "Manage Your Pawn Transactions",
     desc: "Create, monitor, and manage pawn transactions through a more structured process.",
+    variant: "transactions" as const,
   },
   {
     title: "Track Pawned Items",
     desc: "Keep important item information connected to its corresponding transaction and customer record.",
+    variant: "inventory" as const,
   },
   {
     title: "Monitor Loans and Payments",
     desc: "Keep track of important loan details, payments, balances, and transaction information.",
+    variant: "payments" as const,
   },
   {
     title: "Stay on Top of Important Dates",
     desc: "Monitor important transaction dates and details to help prevent information from being overlooked.",
+    variant: "calendar" as const,
   },
   {
     title: "Review Transaction History",
     desc: "Access organized transaction records for easier monitoring, checking, and reference.",
+    variant: "history" as const,
   },
   {
     title: "Understand Your Operations",
     desc: "Use reports and organized business information to gain better visibility into your pawnshop.",
+    variant: "analytics" as const,
+  },
+  {
+    title: "Manage Multiple Branches",
+    desc: "Connect branch locations in one system so owners and admins can monitor operations from a single view.",
+    variant: "branches" as const,
   },
 ];
 
@@ -121,7 +154,7 @@ const subscriptionPlans = [
     cta: "Get started",
     popular: false,
     ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT US",
+    ctaNav: "CONTACT",
   },
   {
     name: "Professional",
@@ -138,7 +171,7 @@ const subscriptionPlans = [
     cta: "Start free trial",
     popular: true,
     ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT US",
+    ctaNav: "CONTACT",
   },
   {
     name: "Enterprise",
@@ -155,7 +188,7 @@ const subscriptionPlans = [
     cta: "Contact sales",
     popular: false,
     ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT US",
+    ctaNav: "CONTACT",
   },
 ];
 
@@ -199,6 +232,84 @@ const faqs = [
 ];
 
 /* ── Mini dashboard mock building block (reused across bento cards) ── */
+function LandingVideoModal({
+  title,
+  onClose,
+}: {
+  title: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f0c] shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <p className="text-sm font-bold text-white">{title}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            aria-label="Close video"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4">
+              <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <LandingVideoPlaceholder title={title} variant="dark" />
+      </div>
+    </div>
+  );
+}
+
+function LandingVideoFrame({
+  title,
+  caption,
+}: {
+  title: string;
+  caption: string;
+}) {
+  return (
+    <div className="reveal-on-scroll reveal-delay-200 mx-auto w-full max-w-xl lg:max-w-none">
+      <div className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-gradient-to-b from-white/15 to-white/5 p-3 shadow-[0_24px_60px_rgba(0,0,0,0.35)] transition-transform duration-500 hover:-translate-y-1">
+        <div className="mb-2 flex justify-center">
+          <span className="h-1 w-1 rounded-full bg-black/50 ring-1 ring-white/20" aria-hidden="true" />
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-black/30">
+          <LandingVideoPlaceholder title={title} label={caption} variant="dark" />
+        </div>
+
+        <p className="mt-3 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-white/45">
+          Placeholder preview
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function MiniDashboardCard({
   label,
   rows,
@@ -229,6 +340,277 @@ function MiniDashboardCard({
         ))}
       </div>
     </div>
+  );
+}
+
+type HowItHelpsVariant =
+  | "profiles"
+  | "transactions"
+  | "inventory"
+  | "payments"
+  | "calendar"
+  | "history"
+  | "analytics"
+  | "branches";
+
+function HowItHelpsLaptopScreen({ variant }: { variant: HowItHelpsVariant }) {
+  if (variant === "profiles") {
+    return (
+      <div className="flex h-full flex-col bg-gradient-to-br from-[#eef4f1] to-white p-3">
+        <div className="mb-2 h-1.5 w-12 rounded-full bg-brand-green/15" />
+        {[
+          { initials: "JS", name: "J. Santos", status: "Active" },
+          { initials: "MC", name: "M. Cruz", status: "Updated" },
+          { initials: "AR", name: "A. Reyes", status: "Saved" },
+        ].map((profile) => (
+          <div key={profile.initials} className="mb-1.5 flex items-center gap-2 rounded-lg bg-white/80 px-2 py-1.5 shadow-sm">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-green text-[8px] font-bold text-white">
+              {profile.initials}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[9px] font-semibold text-brand-green">{profile.name}</p>
+              <p className="text-[7px] text-brand-green/45">{profile.status}</p>
+            </div>
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === "transactions") {
+    return (
+      <div className="flex h-full flex-col justify-center bg-gradient-to-br from-[#f7f3ea] to-white p-3">
+        <div className="flex items-center justify-between gap-1">
+          {[
+            { label: "New", active: true },
+            { label: "Renew", active: false },
+            { label: "Redeem", active: false },
+          ].map((step, index) => (
+            <div key={step.label} className="flex flex-1 flex-col items-center">
+              <span
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-[7px] font-bold ${
+                  step.active ? "bg-brand-green text-white" : "bg-brand-green/10 text-brand-green/50"
+                }`}
+              >
+                {index + 1}
+              </span>
+              <span className="mt-1 text-[7px] font-semibold text-brand-green/70">{step.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 rounded-lg border border-brand-green/10 bg-white p-2">
+          <p className="text-[8px] font-bold uppercase tracking-wider text-brand-green/45">Ticket #4821</p>
+          <p className="mt-0.5 text-[10px] font-bold text-brand-green">Pawn transaction active</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "inventory") {
+    return (
+      <div className="grid h-full grid-cols-2 gap-1.5 bg-gradient-to-br from-[#eef0f4] to-white p-2.5">
+        {[
+          { label: "Ring 18k", tone: "gold" },
+          { label: "Laptop", tone: "green" },
+          { label: "Watch", tone: "green" },
+          { label: "Chain", tone: "gold" },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className={`flex flex-col justify-end rounded-md p-1.5 ${
+              item.tone === "gold" ? "bg-brand-gold/20" : "bg-brand-green/10"
+            }`}
+          >
+            <div className="mb-1 h-5 rounded bg-white/70" />
+            <p className="text-[7px] font-bold text-brand-green">{item.label}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === "payments") {
+    return (
+      <div className="flex h-full flex-col justify-between bg-gradient-to-br from-[#edf6f2] to-white p-3">
+        <div>
+          <p className="text-[8px] font-semibold uppercase tracking-wider text-brand-green/45">Outstanding</p>
+          <p className="font-display text-lg font-black leading-none text-brand-green">P48,200</p>
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="rounded-lg bg-brand-gold/20 px-2 py-1.5">
+            <p className="text-[7px] text-brand-green/55">Received</p>
+            <p className="text-[9px] font-bold text-brand-green">P12,500</p>
+          </div>
+          <div className="rounded-lg bg-brand-green/10 px-2 py-1.5">
+            <p className="text-[7px] text-brand-green/55">Interest</p>
+            <p className="text-[9px] font-bold text-brand-green">P1,200</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "calendar") {
+    const days = ["S", "M", "T", "W", "T", "F", "S"];
+    return (
+      <div className="flex h-full flex-col bg-gradient-to-br from-[#f8f4ea] to-white p-2.5">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[8px] font-bold text-brand-green">March 2026</p>
+          <span className="rounded-full bg-brand-gold/25 px-1.5 py-0.5 text-[7px] font-bold text-brand-green">Due</span>
+        </div>
+        <div className="grid grid-cols-7 gap-0.5 text-center">
+          {days.map((day, dayIndex) => (
+            <span key={`${day}-${dayIndex}`} className="text-[6px] font-bold text-brand-green/35">
+              {day}
+            </span>
+          ))}
+          {Array.from({ length: 14 }).map((_, index) => {
+            const dayNum = index + 1;
+            const highlighted = dayNum === 14;
+            return (
+              <span
+                key={dayNum}
+                className={`flex h-3.5 items-center justify-center rounded text-[6px] font-semibold ${
+                  highlighted ? "bg-brand-green text-white" : "text-brand-green/55"
+                }`}
+              >
+                {dayNum}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "history") {
+    return (
+      <div className="relative h-full bg-gradient-to-br from-[#eef2ef] to-white p-3 pl-4">
+        <div className="absolute bottom-3 left-[11px] top-3 w-px bg-brand-green/15" />
+        {[
+          { time: "10:24 AM", label: "Redemption logged" },
+          { time: "09:12 AM", label: "Renewal processed" },
+          { time: "Yesterday", label: "18 records archived" },
+        ].map((entry) => (
+          <div key={entry.label} className="relative mb-2 pl-3">
+            <span className="absolute left-0 top-1 h-1.5 w-1.5 -translate-x-[3px] rounded-full bg-brand-gold" />
+            <p className="text-[7px] font-semibold text-brand-green/45">{entry.time}</p>
+            <p className="text-[8px] font-bold text-brand-green">{entry.label}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === "branches") {
+    return (
+      <div className="flex h-full flex-col gap-1.5 bg-gradient-to-br from-[#eef4f8] to-white p-2.5">
+        {[
+          { name: "Main Branch", status: "Online", active: true },
+          { name: "Quezon Ave", status: "Online", active: false },
+          { name: "Makati", status: "Synced", active: false },
+        ].map((branch) => (
+          <div
+            key={branch.name}
+            className={`flex items-center justify-between rounded-lg px-2 py-1.5 ${
+              branch.active ? "bg-brand-green text-white" : "bg-white/85 text-brand-green shadow-sm"
+            }`}
+          >
+            <div>
+              <p className="text-[8px] font-bold">{branch.name}</p>
+              <p className={`text-[7px] ${branch.active ? "text-white/70" : "text-brand-green/45"}`}>{branch.status}</p>
+            </div>
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                branch.active ? "bg-brand-gold" : "bg-brand-green/30"
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col justify-end bg-gradient-to-br from-[#edf3ef] to-white p-3">
+      <div className="mb-2 flex h-12 items-end justify-between gap-1">
+        {[3, 5, 4, 6].map((height, barIndex) => (
+          <div key={barIndex} className="flex flex-1 flex-col items-center gap-1">
+            <div
+              className={`w-full rounded-t ${barIndex % 2 === 0 ? "bg-brand-gold/70" : "bg-brand-green/70"}`}
+              style={{ height: `${height * 6}px` }}
+            />
+            <span className="text-[6px] font-semibold text-brand-green/40">W{barIndex + 1}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[8px] font-bold text-brand-green">Weekly performance overview</p>
+    </div>
+  );
+}
+
+function HowItHelpsLaptopCard({
+  title,
+  desc,
+  variant,
+  index,
+  prefersReducedMotion,
+}: {
+  title: string;
+  desc: string;
+  variant: HowItHelpsVariant;
+  index: number;
+  prefersReducedMotion: boolean | null;
+}) {
+  return (
+    <motion.article
+      className="group/card flex flex-col items-center"
+      initial={prefersReducedMotion ? false : { opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-48px" }}
+      transition={{ duration: 0.55, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="relative w-full max-w-[290px] [perspective:1200px]">
+        <motion.div
+          className={`relative origin-bottom transition-[transform,filter] duration-500 ease-out ${
+            prefersReducedMotion
+              ? "group-hover/card:-translate-y-1"
+              : "group-hover/card:[transform:rotateX(10deg)_translateY(-10px)_scale(1.02)]"
+          }`}
+        >
+          <div className="overflow-hidden rounded-t-[18px] border border-[#334155] bg-gradient-to-b from-[#475569] via-[#334155] to-[#1e293b] p-[10px] pb-2 shadow-[0_20px_40px_rgba(0,77,64,0.16)] transition-shadow duration-500 group-hover/card:shadow-[0_28px_50px_rgba(0,77,64,0.24)]">
+            <div className="mb-2 flex justify-center">
+              <span className="h-1 w-1 rounded-full bg-black/50 ring-1 ring-white/10" aria-hidden="true" />
+            </div>
+            <div className="aspect-[16/10] overflow-hidden rounded-[6px] border border-black/20 bg-[#f4f2ee] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)] transition-[filter,transform] duration-500 group-hover/card:brightness-[1.03] group-hover/card:saturate-[1.05]">
+              <HowItHelpsLaptopScreen variant={variant} />
+            </div>
+          </div>
+
+          <div className="mx-auto h-[3px] w-[94%] bg-gradient-to-r from-transparent via-[#64748b] to-transparent" />
+
+          <div className="rounded-b-[16px] rounded-t-[3px] border border-t-0 border-[#94a3b8] bg-gradient-to-b from-[#dbeafe] via-[#cbd5e1] to-[#94a3b8] px-5 pb-3 pt-2.5 shadow-[0_16px_30px_rgba(15,23,42,0.18)]">
+            <div className="grid grid-cols-10 gap-[3px]">
+              {Array.from({ length: 30 }).map((_, keyIndex) => (
+                <div
+                  key={keyIndex}
+                  className="h-[6px] rounded-[2px] bg-white/45 transition-colors duration-300 group-hover/card:bg-brand-gold/35"
+                />
+              ))}
+            </div>
+            <div className="mx-auto mt-2.5 h-[20px] w-[42%] rounded-md border border-black/5 bg-white/30 shadow-inner transition-colors duration-300 group-hover/card:bg-white/45" />
+          </div>
+        </motion.div>
+
+        <div className="mx-auto mt-3 h-2.5 w-[68%] rounded-[50%] bg-brand-green/10 blur-md transition-all duration-500 group-hover/card:w-[82%] group-hover/card:bg-brand-gold/20" />
+      </div>
+
+      <div className="mt-6 w-full max-w-[290px] rounded-2xl border border-brand-green/8 bg-[#f9f8f5] px-4 py-4 text-center transition-all duration-300 group-hover/card:border-brand-gold/30 group-hover/card:bg-brand-gold/8 group-hover/card:shadow-lg group-hover/card:shadow-brand-gold/10">
+        <h3 className="font-display text-base font-bold text-brand-green md:text-lg">{title}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-brand-green/65">{desc}</p>
+      </div>
+    </motion.article>
   );
 }
 
@@ -277,7 +659,7 @@ export function LandingHero({
         >
           <a
             href="#contact-us"
-            onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+            onClick={(e) => onScroll(e, "contact-us", "CONTACT")}
             className="inline-flex items-center justify-center rounded-full bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
           >
             Try {BRAND_CONFIG.shortCompanyName} Now
@@ -415,9 +797,11 @@ export function LandingIntro() {
 }
 
 export function LandingProblemSolution({ onScroll }: { onScroll: ScrollHandler }) {
+  const router = useRouter();
+
   return (
     <section id="why-us" className="bg-brand-green px-4 py-20 text-white sm:px-6 md:px-12 md:py-28">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <div className="reveal-on-scroll text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold">The problem</p>
           <h2 className="font-display mt-3 text-3xl font-bold leading-tight md:text-4xl lg:text-5xl">
@@ -429,31 +813,40 @@ export function LandingProblemSolution({ onScroll }: { onScroll: ScrollHandler }
           </p>
         </div>
 
-        <div className="mx-auto mt-10 grid gap-3 sm:grid-cols-2">
-          {problemPoints.map((p, i) => (
-            <div
-              key={p}
-              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3`}
-            >
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gold" />
-              <span className="text-sm text-white/85">{p}</span>
+        <div className="mx-auto mt-10 grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-10">
+          <div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {problemPoints.map((p, i) => (
+                <div
+                  key={p}
+                  className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3`}
+                >
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-gold" />
+                  <span className="text-sm text-white/85">{p}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <p className="reveal-on-scroll mt-10 text-center text-sm leading-relaxed text-white/70">
-          When information is difficult to organize, daily operations can become slower and more
-          complicated. Manual processes can lead to:
-        </p>
-        <div className="reveal-on-scroll mt-4 flex flex-wrap justify-center gap-2">
-          {manualRisks.map((r) => (
-            <span
-              key={r}
-              className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/75"
-            >
-              {r}
-            </span>
-          ))}
+            <p className="reveal-on-scroll mt-8 text-sm leading-relaxed text-white/70 lg:mt-10">
+              When information is difficult to organize, daily operations can become slower and more
+              complicated. Manual processes can lead to:
+            </p>
+            <div className="reveal-on-scroll mt-4 flex flex-wrap gap-2">
+              {manualRisks.map((r) => (
+                <span
+                  key={r}
+                  className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/75"
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <LandingVideoFrame
+            title="QuickPawn commercial"
+            caption="Commercial preview"
+          />
         </div>
 
         <div className="reveal-on-scroll reveal-delay-200 mt-14 rounded-2xl bg-white p-8 text-center shadow-2xl md:p-12">
@@ -469,13 +862,16 @@ export function LandingProblemSolution({ onScroll }: { onScroll: ScrollHandler }
             redemption, {BRAND_CONFIG.shortCompanyName} helps you manage your pawnshop journey with
             greater organization and confidence.
           </p>
-          <a
-            href="#contact-us"
-            onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
-            className="mt-7 inline-flex items-center justify-center rounded-full bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
+          <Link
+            href="/see-how-it-works"
+            onClick={(event) => {
+              event.preventDefault();
+              router.push("/see-how-it-works");
+            }}
+            className="relative z-10 mt-7 inline-flex items-center justify-center rounded-full bg-brand-green px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90"
           >
             See how it works
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -483,9 +879,11 @@ export function LandingProblemSolution({ onScroll }: { onScroll: ScrollHandler }
 }
 
 export function LandingHowItHelps() {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <section id="how-it-helps" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <div className="reveal-on-scroll text-center">
           <p className="text-sm font-bold uppercase tracking-widest text-brand-gold">Centralized platform</p>
           <h2 className="font-display mt-3 text-3xl font-bold text-brand-green md:text-4xl lg:text-5xl">
@@ -498,15 +896,16 @@ export function LandingHowItHelps() {
           </p>
         </div>
 
-        <div className="mx-auto mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {howItHelps.map((item, i) => (
-            <div
+            <HowItHelpsLaptopCard
               key={item.title}
-              className={`reveal-on-scroll reveal-delay-${Math.min(500, (i % 5) * 100 || 100)} rounded-2xl bg-[#f9f8f5] p-6 transition hover:bg-brand-gold/10`}
-            >
-              <h3 className="font-display text-lg font-bold text-brand-green">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-brand-green/65">{item.desc}</p>
-            </div>
+              title={item.title}
+              desc={item.desc}
+              variant={item.variant}
+              index={i}
+              prefersReducedMotion={prefersReducedMotion}
+            />
           ))}
         </div>
       </div>
@@ -776,7 +1175,7 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
       </div>
 
       {/* Pricing Cards Grid */}
-      <div className="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-3 md:items-stretch">
+      <div className="mx-auto mt-12 grid max-w-6xl gap-6 overflow-visible md:grid-cols-3 md:items-stretch">
         {displayPlans.map((plan, i) => {
           const rawPrice = cycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
           const formattedPrice = rawPrice === 0 ? "---" : `₱${rawPrice.toLocaleString()}`;
@@ -785,15 +1184,15 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
           return (
             <div
               key={plan.id || plan.name}
-              className={`reveal-on-scroll relative flex flex-col rounded-3xl border p-8 transition-all ${
+              className={`reveal-on-scroll group/card relative flex flex-col rounded-3xl border-2 p-8 transition-all duration-300 ease-out hover:-translate-y-1 ${
                 plan.isPopular
-                  ? "border-brand-green bg-[#004d40] text-white shadow-2xl md:scale-[1.03]"
-                  : "border-brand-green/10 bg-[#004d40] text-white shadow-lg"
+                  ? "border-white/10 bg-[#004d40] text-white shadow-2xl md:scale-[1.03] hover:border-brand-gold hover:shadow-[0_0_0_1px_#E8C547,0_0_28px_rgba(232,197,71,0.32)]"
+                  : "border-white/10 bg-[#004d40] text-white shadow-lg hover:border-brand-gold hover:shadow-[0_0_0_1px_#E8C547,0_0_24px_rgba(232,197,71,0.28)]"
               }`}
             >
               {/* Bookmark-like Yellow Badge for Most Availed */}
               {plan.isPopular && (
-                <div className="absolute top-0 right-6 bg-brand-gold text-brand-green text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-b-lg shadow-md flex items-center gap-1">
+                <div className="absolute top-0 right-6 flex items-center gap-1 rounded-b-lg bg-brand-gold px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-brand-green shadow-md">
                   ★ Most Availed
                 </div>
               )}
@@ -811,11 +1210,11 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
                 </span>
               </div>
 
-              {/* Dynamic Feature Checklist */}
-              <ul className="mt-6 flex-1 space-y-2.5 text-xs text-white/90">
+              {/* Dynamic Feature Checklist (Inclusion Tags) */}
+              <ul className="mt-6 flex-1 space-y-2 text-xs text-white/90">
                 {plan.features.map((f, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold text-white">
+                  <li key={idx} className="flex items-start gap-2.5 px-2.5 py-2">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-gold/25 text-[10px] font-bold text-brand-gold">
                       ✓
                     </span>
                     <span>{f}</span>
@@ -825,7 +1224,7 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
 
               <a
                 href="#contact-us"
-                onClick={(e) => onScroll(e, "contact-us", "CONTACT US")}
+                onClick={(e) => onScroll(e, "contact-us", "CONTACT")}
                 className="mt-8 block rounded-full bg-white py-3 text-center text-xs font-black uppercase tracking-wider text-[#004d40] transition hover:bg-brand-gold hover:text-brand-green shadow-md"
               >
                 Get Started
@@ -953,37 +1352,70 @@ export function LandingLightFooter({
   onScroll,
   onLoginClick,
   onOpenLegal,
+  continued = false,
 }: {
   onScroll: ScrollHandler;
   onLoginClick: () => void;
   onOpenLegal: (type: "privacy" | "terms") => void;
+  continued?: boolean;
 }) {
   return (
-    <footer className="bg-[#eceae6] px-6 py-14 md:px-12 lg:px-16 uqhd:px-20 uqhd:py-20 uhd:px-28 uhd:py-24">
-      <div className="landing-container-wide grid gap-10 md:grid-cols-2 lg:grid-cols-5 uqhd:gap-14">
+    <footer
+      className={
+        continued
+          ? "relative px-6 pb-14 pt-6 md:px-12 lg:px-16 uqhd:px-20 uqhd:pb-20 uhd:px-28 uhd:pb-24"
+          : `relative overflow-hidden ${landingClosingSurfaceClass} px-6 pb-14 pt-14 md:px-12 lg:px-16 uqhd:px-20 uqhd:pb-20 uhd:px-28 uhd:pb-24`
+      }
+    >
+      {!continued && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-24 top-0 h-56 w-56 rounded-full bg-brand-gold/10 blur-3xl" />
+          <div className="absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+        </div>
+      )}
+
+      <div className="landing-container-wide relative grid gap-10 md:grid-cols-2 lg:grid-cols-5 uqhd:gap-14">
         <div className="lg:col-span-1">
           <div className="flex items-center gap-3">
             <QuickPawnLogo variant="mark" className="h-11 w-11" />
             <div>
-              <p className="font-display text-xl font-bold text-brand-green uqhd:text-2xl uhd:text-3xl">{BRAND_CONFIG.shortCompanyName}</p>
+              <p className="font-display text-xl font-bold text-white uqhd:text-2xl uhd:text-3xl">{BRAND_CONFIG.shortCompanyName}</p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold uqhd:text-xs">{BRAND_CONFIG.tagline}</p>
             </div>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-brand-green/55">
-            Manage Smarter. Pawn Better. Grow with Confidence.
-          </p>
+          <div className="mt-5 space-y-3 text-sm text-white/70">
+            <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Contact Details</p>
+            <div className="space-y-2">
+              <p className="leading-relaxed text-white/80">
+                <span className="font-semibold text-white">Email:</span>{" "}
+                <a href={supportEmailComposeUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
+                  quickpawn.pms@gmail.com
+                </a>
+              </p>
+              <p className="leading-relaxed text-white/80">
+                <span className="font-semibold text-white">Telephone:</span> 253221002
+              </p>
+              <p className="leading-relaxed text-white/80">
+                <span className="font-semibold text-white">Address:</span>{" "}
+                <a href={footerAddressMapUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
+                  {footerAddress}
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
 
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Product</p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-green/60">
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Explore</p>
+          <ul className="mt-4 space-y-2 text-sm text-white/65">
             {[
               ["Product", "product", "PRODUCT"],
-              ["How it helps", "how-it-helps", "HOW IT HELPS"],
+              ["Features", "why-us", "FEATURES"],
               ["Pricing", "pricing", "PRICING"],
+              ["Contact", "contact-us", "CONTACT"],
             ].map(([label, id, nav]) => (
               <li key={id}>
-                <a href={`#${id}`} onClick={(e) => onScroll(e, id, nav)} className="hover:text-brand-green transition-colors">
+                <a href={`#${id}`} onClick={(e) => onScroll(e, id, nav)} className="transition-colors hover:text-brand-gold">
                   {label}
                 </a>
               </li>
@@ -992,20 +1424,30 @@ export function LandingLightFooter({
         </div>
 
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Company</p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-green/60">
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Company</p>
+          <ul className="mt-4 space-y-2 text-sm text-white/65">
             <li>
-              <a href="#why-us" onClick={(e) => onScroll(e, "why-us", "WHY US")} className="hover:text-brand-green transition-colors">
-                Why us
+              <Link href="/about" className="transition-colors hover:text-brand-gold">
+                About us
+              </Link>
+            </li>
+            <li>
+              <a
+                href={BRAND_CONFIG.parentCompany.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-brand-gold"
+              >
+                {BRAND_CONFIG.parentCompany.shortName} website
               </a>
             </li>
             <li>
-              <a href="#benefits" onClick={(e) => onScroll(e, "benefits", "BENEFITS")} className="hover:text-brand-green transition-colors">
-                Benefits
-              </a>
+              <Link href="/social" className="transition-colors hover:text-brand-gold">
+                Social media
+              </Link>
             </li>
             <li>
-              <a href="#faq" onClick={(e) => onScroll(e, "faq", "FAQ")} className="hover:text-brand-green transition-colors">
+              <a href="#faq" onClick={(e) => onScroll(e, "faq", "CONTACT")} className="transition-colors hover:text-brand-gold">
                 FAQ
               </a>
             </li>
@@ -1013,20 +1455,20 @@ export function LandingLightFooter({
         </div>
 
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Quick Links</p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-green/60">
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Quick Links</p>
+          <ul className="mt-4 space-y-2 text-sm text-white/65">
             <li>
-              <button type="button" onClick={onLoginClick} className="hover:text-brand-green transition-colors">
+              <button type="button" onClick={onLoginClick} className="transition-colors hover:text-brand-gold">
                 Staff login
               </button>
             </li>
             <li>
-              <button type="button" onClick={() => onOpenLegal("privacy")} className="hover:text-brand-green transition-colors">
+              <button type="button" onClick={() => onOpenLegal("privacy")} className="transition-colors hover:text-brand-gold">
                 Privacy policy
               </button>
             </li>
             <li>
-              <button type="button" onClick={() => onOpenLegal("terms")} className="hover:text-brand-green transition-colors">
+              <button type="button" onClick={() => onOpenLegal("terms")} className="transition-colors hover:text-brand-gold">
                 Terms of service
               </button>
             </li>
@@ -1034,37 +1476,21 @@ export function LandingLightFooter({
         </div>
 
         <div>
-          <p className="text-[11px] font-black uppercase tracking-widest text-brand-green">Connect with us</p>
-          <div className="mt-4 space-y-4 text-sm text-brand-green/60">
-            <div className="flex items-center gap-3">
-              <a
-                href="https://www.facebook.com/QuickPawn.PMS"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Facebook"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/10 text-brand-green/60 transition-all duration-200 hover:bg-[#1877F2] hover:text-white hover:scale-110"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4.5 w-4.5">
-                  <path d="M9.198 21.5h4v-8.01h3.604l.396-3.98h-4V7.5a1 1 0 0 1 1-1h3v-4h-3a5 5 0 0 0-5 5v2.01h-2l-.396 3.98h2.396v8.01Z" />
-                </svg>
-              </a>
-              <a
-                href="https://www.instagram.com/quick_pawn/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Instagram"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/10 text-brand-green/60 transition-all duration-200 hover:bg-gradient-to-br hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:text-white hover:scale-110"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-4.5 w-4.5">
-                  <path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153a4.908 4.908 0 0 1 1.153 1.772c.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 0 1-1.153 1.772 4.915 4.915 0 0 1-1.772 1.153c-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 0 1-1.772-1.153 4.904 4.904 0 0 1-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428a4.88 4.88 0 0 1 1.153-1.772A4.897 4.897 0 0 1 5.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2Zm0 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm6.5-.25a1.25 1.25 0 1 0-2.5 0 1.25 1.25 0 0 0 2.5 0ZM12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z" />
-                </svg>
-              </a>
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Connect with us</p>
+          <div className="mt-4 space-y-4 text-sm text-white/65">
+            <div className="flex flex-wrap items-center gap-3">
+              {BRAND_CONFIG.socialMedia.map((account) => (
+                <SocialIconLink key={account.url} account={account} />
+              ))}
             </div>
+            <Link href="/social" className="block transition-colors hover:text-brand-gold">
+              View all social accounts
+            </Link>
             <a
               href={supportEmailComposeUrl}
               target="_blank"
               rel="noreferrer"
-              className="block hover:text-brand-green transition-colors"
+              className="block transition-colors hover:text-brand-gold"
             >
               Email Us
             </a>
@@ -1072,7 +1498,7 @@ export function LandingLightFooter({
         </div>
       </div>
 
-      <div className="landing-container-wide mt-12 border-t border-brand-green/10 pt-6 text-center text-xs text-brand-green/45 uqhd:mt-16 uqhd:text-sm">
+      <div className="landing-container-wide relative mt-12 border-t border-white/10 pt-6 text-center text-xs text-white/45 uqhd:mt-16 uqhd:text-sm">
         © 2026 {BRAND_CONFIG.companyName}. All rights reserved.
       </div>
     </footer>

@@ -146,7 +146,7 @@ const termsSections: LegalSection[] = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
+      { label: "Email", value: "quickpawn.pms@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],
