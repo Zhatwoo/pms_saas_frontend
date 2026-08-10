@@ -85,6 +85,7 @@ export function AppLayout({
           branchName={branchName || (isAllBranches ? "All Branches" : selectedBranch.name)}
           hideBranchSelector={hideBranchSelector}
           onMenuToggle={() => setMobileMenuOpen(true)}
+          disabled={isRestricted}
         />
         <main className="flex-1 overflow-y-auto bg-pawn-content p-4 md:p-6 lg:p-8 transition-colors duration-300">
           <BranchTransferAcknowledgement />

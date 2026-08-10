@@ -29,6 +29,7 @@ export function OnboardingModal({ isOpen }: OnboardingModalProps) {
   // Branch form state
   const [branchName, setBranchName] = useState("Main Branch");
   const [location, setLocation] = useState("");
+  const [contactType, setContactType] = useState<"mobile" | "telephone">("mobile");
   const [contactNumber, setContactNumber] = useState("");
 
   if (!isOpen || !user || user.role !== "super_admin" || user.onboardingCompleted) {
@@ -63,12 +64,26 @@ export function OnboardingModal({ isOpen }: OnboardingModalProps) {
       return;
     }
 
+    const digitsOnly = trimmedContact.replace(/\D/g, "");
+    if (contactType === "mobile") {
+      if (!/^09\d{9}$/.test(digitsOnly)) {
+        setErrorMsg("Mobile number must be exactly 11 digits starting with 09 (e.g. 09XXXXXXXXX).");
+        return;
+      }
+    } else if (contactType === "telephone") {
+      if (digitsOnly.length < 7 || digitsOnly.length > 15) {
+        setErrorMsg("Telephone number must be between 7 and 15 digits.");
+        return;
+      }
+    }
+
     try {
       setIsSubmitting(true);
       const updatedUser = await api.post<any>("/auth/complete-onboarding", {
         branchName: trimmedName,
         location: trimmedLocation,
         contactNumber: trimmedContact,
+        contactType,
       });
 
       if (updatedUser) {
@@ -92,7 +107,15 @@ export function OnboardingModal({ isOpen }: OnboardingModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 transition-all duration-300">
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center overflow-y-auto bg-slate-950/80 backdrop-blur-md p-4 sm:p-6 transition-all duration-300"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+    >
       <div className="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/95 text-slate-100 shadow-2xl shadow-emerald-950/30">
         {/* Decorative background glow */}
         <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
@@ -288,22 +311,68 @@ export function OnboardingModal({ isOpen }: OnboardingModalProps) {
                   </div>
                 </div>
 
-                {/* Contact Number */}
+                {/* Contact Number with Type Toggle */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                    Contact Number <span className="text-emerald-400">*</span>
-                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                      Contact Number <span className="text-emerald-400">*</span>
+                    </label>
+                    <div className="inline-flex items-center gap-1 rounded-lg bg-slate-950/80 p-0.5 border border-slate-800 self-start sm:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContactType("mobile");
+                          setErrorMsg(null);
+                        }}
+                        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
+                          contactType === "mobile"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Mobile (11 digits)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContactType("telephone");
+                          setErrorMsg(null);
+                        }}
+                        className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all cursor-pointer ${
+                          contactType === "telephone"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "text-slate-400 hover:text-slate-200"
+                        }`}
+                      >
+                        Telephone (Landline)
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
                     <input
                       type="text"
                       required
                       value={contactNumber}
-                      onChange={(e) => setContactNumber(e.target.value)}
-                      placeholder="e.g. 09171234567"
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        const maxLen = contactType === "mobile" ? 11 : 15;
+                        setContactNumber(val.slice(0, maxLen));
+                      }}
+                      placeholder={
+                        contactType === "mobile"
+                          ? "09XXXXXXXXX"
+                          : ""
+                      }
                       className="w-full rounded-xl border border-slate-800 bg-slate-950/70 pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
                     />
                   </div>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    {contactType === "mobile"
+                      ? "11 digits starting with 09 (e.g. 09XXXXXXXXX)"
+                      : "Telephone number up to 15 digits"}
+                  </p>
                 </div>
               </div>
 

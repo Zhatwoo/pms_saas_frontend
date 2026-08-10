@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import { getTransactionDateTimeFields } from "@/lib/time";
 import { formatPeso } from "@/lib/currency";
 import { QrScanner } from "@/components/shared/qr-scanner";
+import { useAuth } from "@/contexts/auth-context";
 import { uploadBuybackProof } from "@/lib/fund-transfer-storage";
+import type { BuyBackSlipSource } from "@/lib/moa/build-buy-back-slip-values";
+import { BuyBackSlipModal } from "./buy-back-slip-modal";
 import {
   isTransactionPasswordError,
   TRANSACTION_PASSWORD_VERIFY_MESSAGE,
@@ -87,33 +90,110 @@ interface BuyBackModalProps {
   onSuccess?: () => void;
 }
 
-interface ForSaleItem {
+interface BuyBackItem {
+  /** pawned_items.id */
+  id: string;
+  /** sale_items.id when listed in Items For Sale (Available) */
+  saleItemId: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  amount: number;
+  price: number;
+  status: string;
+  pawnDate?: string;
+  customers: {
+    full_name: string;
+    contact_number: string;
+  };
+}
+
+type PawnedItemApi = {
   id: string;
   itemId: string;
   itemName: string;
   category: string;
-  amount: number; // Original loan or cost
-  price: number; // Added for buyback price
+  amount: number;
   status: string;
   pawnDate?: string;
   customers?: {
     full_name: string;
     contact_number: string;
   };
+};
+
+type SaleItemApi = {
+  id: string;
+  itemId: string;
+  itemName: string;
+  category: string;
+  price: number;
+  status: string;
+  availableDate?: string;
+  originalPawnId?: string | null;
+};
+
+function matchesBuyBackSearch(item: BuyBackItem, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    item.itemId.toLowerCase().includes(q) ||
+    item.itemName.toLowerCase().includes(q) ||
+    (item.customers?.full_name || "").toLowerCase().includes(q)
+  );
+}
+
+function mapPawnToBuyBackItem(
+  pawn: PawnedItemApi,
+  options: { saleItemId: string; displayStatus?: string; fallbackPrice?: number },
+): BuyBackItem {
+  const amount = Number(pawn.amount || options.fallbackPrice || 0);
+  return {
+    id: pawn.id,
+    saleItemId: options.saleItemId,
+    itemId: pawn.itemId,
+    itemName: pawn.itemName,
+    category: pawn.category,
+    amount,
+    price: amount,
+    status: options.displayStatus || pawn.status,
+    pawnDate: pawn.pawnDate,
+    customers: {
+      full_name: pawn.customers?.full_name?.trim() || "",
+      contact_number: pawn.customers?.contact_number?.trim() || "",
+    },
+  };
+}
+
+function hasOriginalPawner(pawn: PawnedItemApi): boolean {
+  return Boolean(pawn.customers?.full_name?.trim());
+}
+
+function isEligibleExpiredPawn(
+  pawn: PawnedItemApi,
+  soldPawnIds: Set<string>,
+): boolean {
+  if (pawn.status !== "Expired") return false;
+  if (!hasOriginalPawner(pawn)) return false;
+  if (soldPawnIds.has(pawn.id)) return false;
+  return true;
 }
 
 export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess }: BuyBackModalProps) {
+  const { user } = useAuth();
+  const processedByName = user?.fullName?.trim() || "Employee";
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedItem, setSelectedItem] = useState<ForSaleItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<BuyBackItem | null>(null);
   const [buyBackPrice, setBuyBackPrice] = useState<string>("");
   const [adminForm, setAdminForm] = useState({
     processedBy: "",
     password: "",
   });
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isBuyBackSlipOpen, setIsBuyBackSlipOpen] = useState(false);
 
   const isProcessingRef = useRef(false);
-  const [items, setItems] = useState<ForSaleItem[]>([]);
+  const [items, setItems] = useState<BuyBackItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,29 +205,69 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
   const [isUploadingProof, setIsUploadingProof] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setIsBuyBackSlipOpen(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (user?.fullName) {
+      setAdminForm((prev) => ({ ...prev, processedBy: user.fullName }));
+    }
+  }, [user, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !branchId || branchId === "__all__") {
+      if (isOpen) setItems([]);
+      return;
+    }
 
     const fetchItems = async () => {
       setIsLoading(true);
       try {
-        // Search items that are Expired or For Sale
-        const response = await api.get<{ items: ForSaleItem[] }>(`/inventory/pawned?status=Expired&search=${searchQuery}`);
+        const listParams = new URLSearchParams({
+          branch: branchId,
+          limit: "100",
+        });
 
-        const mapped = (response.items || []).map(item => ({
-          id: item.id,
-          itemId: item.itemId,
-          itemName: item.itemName,
-          category: item.category,
-          amount: Number(item.amount || 0),
-          price: Number(item.amount || 0), // Default to original amount
-          status: item.status,
-          pawnDate: item.pawnDate,
-          customers: item.customers
-        }));
-        
-        setItems(mapped);
+        const [forSaleRes, expiredRes] = await Promise.all([
+          api.get<{ items: SaleItemApi[] }>(
+            `/inventory/for-sale?${listParams.toString()}`,
+          ),
+          api.get<{ items: PawnedItemApi[] }>(
+            `/inventory/pawned?status=Expired&${listParams.toString()}`,
+          ),
+        ]);
+
+        const soldPawnIds = new Set<string>();
+        const availableSaleByPawnId = new Map<string, string>();
+
+        for (const sale of forSaleRes.items || []) {
+          if (!sale.originalPawnId) continue;
+          const pawnId = sale.originalPawnId;
+          if ((sale.status || "").trim() === "Sold") {
+            soldPawnIds.add(pawnId);
+            continue;
+          }
+          if ((sale.status || "").trim() === "Available") {
+            availableSaleByPawnId.set(pawnId, sale.id);
+          }
+        }
+
+        const eligibleItems = (expiredRes.items || [])
+          .filter((pawn) => isEligibleExpiredPawn(pawn, soldPawnIds))
+          .map((pawn) =>
+            mapPawnToBuyBackItem(pawn, {
+              saleItemId: availableSaleByPawnId.get(pawn.id) || "",
+              displayStatus: availableSaleByPawnId.has(pawn.id) ? "For Sale" : "Expired",
+            }),
+          )
+          .filter((item) => matchesBuyBackSearch(item, searchQuery));
+
+        setItems(eligibleItems);
       } catch (err) {
         console.error("Failed to fetch items for buy back:", err);
+        setItems([]);
       } finally {
         setIsLoading(false);
       }
@@ -155,7 +275,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
     const timeout = setTimeout(fetchItems, 300);
     return () => clearTimeout(timeout);
-  }, [isOpen, searchQuery]);
+  }, [isOpen, branchId, searchQuery]);
 
   const handleQrScan = (text: string) => {
     // 1. Try to extract from "Code: ID | ..." format
@@ -212,7 +332,27 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
     setProofUploadError(null);
   };
 
-  const handleConfirmBuyBack = async () => {
+  const buyBackSlipSource = useMemo((): BuyBackSlipSource | null => {
+    if (!selectedItem) return null;
+    const price = Number(buyBackPrice);
+    if (!buyBackPrice || isNaN(price) || price <= 0) return null;
+    return {
+      customerName: selectedItem.customers.full_name,
+      contactNo: selectedItem.customers.contact_number,
+      unitCode: selectedItem.itemId,
+      brandModel: selectedItem.itemName,
+      category: selectedItem.category,
+      pawnDate: selectedItem.pawnDate,
+      originalLoanAmount: selectedItem.amount,
+      buyBackPrice: price,
+      processingFee: 0,
+      otherCharges: 0,
+      processedBy: adminForm.processedBy || processedByName,
+      buyBackSlipNo: `BB-${selectedItem.itemId}`,
+    };
+  }, [selectedItem, buyBackPrice, adminForm.processedBy, processedByName]);
+
+  const handleRequestFinalize = async () => {
     if (isProcessingRef.current) return;
     if (!selectedItem) return;
     setError(null);
@@ -236,8 +376,32 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
     isProcessingRef.current = true;
     setIsConfirming(true);
     try {
-      // 1. Verify Password
       await api.post("/auth/verify-password", { password: adminForm.password });
+      setIsBuyBackSlipOpen(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to verify password.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsConfirming(false);
+      isProcessingRef.current = false;
+    }
+  };
+
+  const executeBuyBack = async () => {
+    if (isProcessingRef.current) return;
+    if (!selectedItem) return;
+    setError(null);
+
+    const price = Number(buyBackPrice);
+    if (!buyBackPrice || isNaN(price) || price <= 0) {
+      setError("Please enter a valid Buy Back (Repurchase) price.");
+      return;
+    }
+
+    isProcessingRef.current = true;
+    setIsConfirming(true);
+    try {
 
       // 2. Upload Proof (if file is selected)
       let proofUrl: string | undefined = undefined;
@@ -263,8 +427,8 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
         }
       }
 
-      // 3. Create Sale Transaction
-      await api.post("/transactions", {
+      // 3. Create Buy Back transaction
+      const transactionPayload: Record<string, unknown> = {
         ...getTransactionDateTimeFields(),
         purpose: "Buy Back",
         branch_id: branchId,
@@ -274,13 +438,15 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
         unit: selectedItem.itemName,
         unit_code: selectedItem.itemId,
         pawn_amount: selectedItem.amount,
-        details: `Repurchased by ${selectedItem.customers?.full_name || 'Original Owner'} | Status before sale: ${selectedItem.status} | Processed by: ${adminForm.processedBy || 'Admin'}`,
-        related_pawned_item_id: selectedItem.id,
+        details: `Repurchased by ${selectedItem.customers.full_name} | Status before sale: ${selectedItem.status} | Processed by: ${adminForm.processedBy || processedByName}`,
         buyback_proof: proofUrl,
-      });
+      };
 
-      await api.patch(`/inventory/pawned/${selectedItem.id}`, { status: 'Redeemed' });
+      transactionPayload.related_pawned_item_id = selectedItem.id;
 
+      await api.post("/transactions", transactionPayload);
+
+      setIsBuyBackSlipOpen(false);
       if (onSuccess) {
         onSuccess();
       }
@@ -377,8 +543,15 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                   <div className="w-12 h-12 rounded-full bg-zinc-50 flex items-center justify-center mb-3 text-zinc-300">
                     {packageIcon(24)}
                   </div>
-                  <p className="text-sm font-bold text-zinc-400">No expired items found</p>
-                  <p className="text-[10px] text-zinc-400/60 uppercase mt-1 tracking-tighter">Try different unit code or name</p>
+                  <p className="text-sm font-bold text-zinc-400">No eligible items for buy back</p>
+                  <p className="text-[10px] text-zinc-400/80 mt-2 leading-relaxed max-w-[280px]">
+                    Only expired pawn items with an original pawner — not yet sold — appear here.
+                  </p>
+                  <p className="text-[10px] text-zinc-400/60 uppercase mt-2 tracking-tighter">
+                    {searchQuery.trim()
+                      ? "Try a different unit code, item name, or customer"
+                      : "Manual Items For Sale and sold items are not eligible"}
+                  </p>
                 </div>
               ) : (
                 items.map((item) => (
@@ -402,7 +575,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                     </div>
                     <h4 className="font-black text-zinc-800 dark:text-white leading-tight pr-8">{item.itemName}</h4>
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-border">
-                      <p className="text-[10px] font-bold text-zinc-400 dark:text-pawn-gold capitalize">{item.customers?.full_name || 'Unknown'}</p>
+                      <p className="text-[10px] font-bold text-zinc-400 dark:text-pawn-gold capitalize">{item.customers.full_name}</p>
                       <p className="font-black text-zinc-900 dark:text-pawn-gold text-xs">₱ {item.amount.toLocaleString()}</p>
                     </div>
                   </button>
@@ -430,7 +603,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                       {selectedItem.itemName}
                     </h2>
                     <p className="text-zinc-500 font-bold flex items-center gap-2">
-                      Owner: {selectedItem.customers?.full_name || 'Original Pawner'} • {selectedItem.customers?.contact_number || 'No Contact'}
+                      Owner: {selectedItem.customers.full_name} • {selectedItem.customers.contact_number || 'No Contact'}
                     </p>
                   </div>
                   <div className="bg-red-50 border border-red-100 px-4 py-2 rounded-xl flex items-center gap-3">
@@ -483,17 +656,20 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">Processed By</label>
+                          <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">
+                            Processed By
+                          </label>
                           <input
                             type="text"
-                            placeholder="Admin Name"
-                            className="w-full h-12 px-4 bg-brand-green/80 border-2 border-brand-green/60 rounded-xl outline-none focus:border-brand-green transition-all text-sm font-medium"
-                            value={adminForm.processedBy}
-                            onChange={(e) => setAdminForm({...adminForm, processedBy: e.target.value})}
+                            readOnly
+                            className="w-full h-12 px-4 bg-brand-green/60 border-2 border-brand-green/60 rounded-xl text-sm font-bold text-white outline-none cursor-default opacity-90"
+                            value={adminForm.processedBy || processedByName}
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">Admin Password</label>
+                          <label className="text-[10px] font-black text-pawn-gold uppercase tracking-widest ml-1">
+                            Admin Password
+                          </label>
                           <input
                             type="password"
                             placeholder="••••••••"
@@ -585,7 +761,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                       </div>
 
                       <button
-                        onClick={handleConfirmBuyBack}
+                        onClick={() => void handleRequestFinalize()}
                         disabled={isConfirming || isUploadingProof}
                         className="w-full h-14 bg-brand-green hover:bg-brand-green/90 disabled:bg-brand-green/30 text-white rounded-xl text-sm font-black uppercase tracking-wider shadow-lg shadow-brand-green/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:cursor-not-allowed"
                       >
@@ -617,7 +793,7 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
                 </div>
                 <h3 className="text-2xl font-black text-zinc-300 uppercase tracking-tight">Select Item to Repurchase</h3>
                 <p className="text-zinc-400 font-bold max-w-xs mt-2 leading-relaxed italic">
-                  &quot;Only items with Expired or For Sale status are eligible for a Buy Back arrangement.&quot;
+                  &quot;Only expired pawn items from a pawn transaction — with an original pawner and not yet sold — are eligible for buy back.&quot;
                 </p>
               </div>
             )}
@@ -629,6 +805,15 @@ export function BuyBackModal({ isOpen, onClose, branchId, branchName, onSuccess 
         isOpen={isScannerOpen} 
         onScan={handleQrScan} 
         onClose={() => setIsScannerOpen(false)} 
+      />
+      <BuyBackSlipModal
+        isOpen={isBuyBackSlipOpen}
+        source={buyBackSlipSource}
+        isConfirming={isConfirming || isUploadingProof}
+        onClose={() => {
+          if (!isConfirming && !isUploadingProof) setIsBuyBackSlipOpen(false);
+        }}
+        onConfirm={() => void executeBuyBack()}
       />
     </div>
   );

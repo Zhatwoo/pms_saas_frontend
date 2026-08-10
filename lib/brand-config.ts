@@ -1,3 +1,12 @@
+export type SocialPlatform = "facebook" | "instagram" | "tiktok";
+
+export type SocialAccount = {
+  platform: SocialPlatform;
+  pageName: string;
+  handle: string;
+  url: string;
+};
+
 export interface BrandConfig {
   companyName: string;
   shortCompanyName: string;
@@ -8,7 +17,7 @@ export interface BrandConfig {
   /** Icon-only mark (square) for the sidebar. */
   sidebarLogo: string;
   favicon: string;
-  
+
   // Theme Colors
   primaryColor: string;     // e.g., emerald green
   secondaryColor: string;   // e.g., gold
@@ -25,6 +34,18 @@ export interface BrandConfig {
   footerText: string;
   welcomeMessage: string;
   tagline: string;
+
+  /** Parent company (INGI) — linked from About page. */
+  parentCompany: {
+    legalName: string;
+    shortName: string;
+    website: string;
+    tagline: string;
+    socialMedia: SocialAccount[];
+  };
+
+  /** Official QuickPawn social accounts. */
+  socialMedia: SocialAccount[];
 }
 
 export const BRAND_CONFIG: BrandConfig = {
@@ -39,10 +60,50 @@ export const BRAND_CONFIG: BrandConfig = {
   accentColor: "#d4a843",
   backgroundColor: "#ffffff",
   phone: "0992 971 8800",
-  email: "inspirenextglobal.marketing@gmail.com",
+  email: "quickpawn.pms@gmail.com",
   website: "www.example.com",
   address: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
   footerText: "Generic Footer",
   welcomeMessage: "Generic welcome message",
   tagline: "PAWNSHOP MANAGEMENT SYSTEM",
+  socialMedia: [
+    {
+      platform: "facebook",
+      pageName: "QuickPawn Pawnshop Management System",
+      handle: "QuickPawn.PMS",
+      url: "https://www.facebook.com/QuickPawn.PMS",
+    },
+    {
+      platform: "instagram",
+      pageName: "QuickPawn",
+      handle: "quick_pawn",
+      url: "https://www.instagram.com/quick_pawn/",
+    },
+  ],
+  parentCompany: {
+    legalName: "Inspire Next Global Inc.",
+    shortName: "INGI",
+    website: "https://inspirenextglobal.com/",
+    tagline: "Bringing Japan closer to every Filipino home and business",
+    socialMedia: [
+      {
+        platform: "facebook",
+        pageName: "Inspire Next Global Inc.",
+        handle: "inspirenextglobalinc",
+        url: "https://www.facebook.com/inspirenextglobalinc",
+      },
+      {
+        platform: "instagram",
+        pageName: "Inspire Next Global Inc.",
+        handle: "inspirenextglobal_inc",
+        url: "https://www.instagram.com/inspirenextglobal_inc/",
+      },
+      {
+        platform: "tiktok",
+        pageName: "Inspire Next Global Inc.",
+        handle: "inspirenextglobalinc",
+        url: "https://www.tiktok.com/@inspirenextglobalinc",
+      },
+    ],
+  },
 };
