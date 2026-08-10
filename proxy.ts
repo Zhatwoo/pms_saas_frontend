@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicPaths = ["/", "/login"];
+const publicPaths = ["/", "/login", "/see-how-it-works"];
 const SESSION_EXPIRED_REASON = "session-expired";
 
 export function proxy(request: NextRequest) {
@@ -34,8 +34,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Has token + on login page -> redirect to dashboard
-  if (token && isPublicPath) {
+  // Has token + on login/home only -> redirect to dashboard
+  if (token && (pathname === "/" || pathname.startsWith("/login"))) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

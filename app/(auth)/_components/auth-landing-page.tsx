@@ -17,6 +17,7 @@ import {
   LandingProcessPricing,
   LandingStats,
   LandingTrustBar,
+  LandingClosingShell,
 } from "./landing-layout-sections";
 
 interface AuthLandingPageProps {
@@ -546,40 +547,30 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         <LandingTrustBar />
         <LandingFaq />
 
-        {/* --- CLOSING / CONTACT --- */}
-        <section id="contact-us" className="bg-brand-gold px-6 py-20 md:px-12 md:py-28">
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="reveal-on-scroll text-center lg:text-left">
-              <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl">
-                Ready to Manage Your Pawnshop Smarter?
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-brand-green/85 md:text-lg">
-                The way you manage your business affects the way your business grows. Move away
-                from complicated, scattered processes and discover a more organized way to manage
-                your pawnshop. Start your journey with {BRAND_CONFIG.shortCompanyName} today.
-              </p>
-              <p className="mt-6 text-sm font-semibold text-brand-green/70">
-                Or contact us by sending a message to{" "}
-                <a
-                  href={supportEmailComposeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline hover:text-brand-green"
-                >
-                  {BRAND_CONFIG.email}
-                </a>
-              </p>
-            </div>
+        {/* --- CLOSING / CONTACT + FOOTER --- */}
+        <LandingClosingShell>
+          <section id="contact-us" className="px-6 pb-4 pt-20 md:px-12 md:pb-6 md:pt-28 lg:px-16 uqhd:px-20 uhd:px-28">
+            <div className="-translate-y-[5%]">
+              <div className="mx-auto max-w-4xl text-center">
+                <p className="reveal-on-scroll text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold">Get started</p>
+                <h2 className="reveal-on-scroll font-display mt-4 text-3xl font-bold leading-tight md:text-5xl">
+                  Ready to Manage Your Pawnshop{" "}
+                  <span className="text-brand-gold">Smarter?</span>
+                </h2>
+                <p className="reveal-on-scroll mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
+                  The way you manage your business affects the way your business grows. Move away from
+                  complicated, scattered processes and discover a more organized way to manage your
+                  pawnshop with {BRAND_CONFIG.shortCompanyName}.
+                </p>
+              </div>
 
-            <form
-              onSubmit={handleContactSubmit}
-              className="reveal-on-scroll reveal-delay-200 rounded-2xl bg-white p-6 shadow-xl sm:p-8"
-            >
-              <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Request a demo</p>
-              <h3 className="font-display mt-1 text-xl font-bold text-brand-green">Talk to {BRAND_CONFIG.shortCompanyName}</h3>
-              <div className="mt-5 space-y-4">
-                <div>
-                  <label htmlFor="landing-contact-name" className="text-xs font-semibold text-brand-green/70">
+              <form
+                onSubmit={handleContactSubmit}
+                className="reveal-on-scroll reveal-delay-200 mx-auto mt-12 max-w-3xl"
+              >
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="text-left">
+                  <label htmlFor="landing-contact-name" className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
                     Name
                   </label>
                   <input
@@ -588,12 +579,12 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     disabled={isSendingContact}
-                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                    className="mt-2 w-full border-b border-white/25 bg-transparent px-0 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-gold disabled:opacity-60"
                     placeholder="Juan Dela Cruz"
                   />
                 </div>
-                <div>
-                  <label htmlFor="landing-contact-email" className="text-xs font-semibold text-brand-green/70">
+                <div className="text-left">
+                  <label htmlFor="landing-contact-email" className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
                     Email
                   </label>
                   <input
@@ -602,41 +593,58 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     disabled={isSendingContact}
-                    className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                    className="mt-2 w-full border-b border-white/25 bg-transparent px-0 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-gold disabled:opacity-60"
                     placeholder="you@pawnshop.com"
                   />
                 </div>
-                <div>
-                  <label htmlFor="landing-contact-message" className="text-xs font-semibold text-brand-green/70">
-                    Message
-                  </label>
-                  <textarea
-                    id="landing-contact-message"
-                    rows={3}
-                    value={contactMessage}
-                    onChange={(e) => setContactMessage(e.target.value)}
-                    disabled={isSendingContact}
-                    className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2.5 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
-                    placeholder="Tell us about your pawnshop..."
-                  />
-                </div>
               </div>
-              <button
-                type="submit"
-                disabled={isSendingContact}
-                className="mt-6 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSendingContact ? "Sending..." : "Send Message"}
-              </button>
-            </form>
-          </div>
-        </section>
 
-        <LandingLightFooter
-          onScroll={handleScroll}
-          onLoginClick={onLoginClick}
-          onOpenLegal={(type) => setLegalModal(type)}
-        />
+              <div className="mt-6 text-left">
+                <label htmlFor="landing-contact-message" className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
+                  Message
+                </label>
+                <textarea
+                  id="landing-contact-message"
+                  rows={4}
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                  disabled={isSendingContact}
+                  className="mt-2 w-full resize-none border-b border-white/25 bg-transparent px-0 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-gold disabled:opacity-60"
+                  placeholder="Tell us about your pawnshop..."
+                />
+              </div>
+
+              <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
+                <button
+                  type="submit"
+                  disabled={isSendingContact}
+                  className="inline-flex min-w-[220px] items-center justify-center rounded-full bg-brand-gold px-8 py-3.5 text-xs font-black uppercase tracking-wider text-brand-green transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSendingContact ? "Sending..." : "Send Message"}
+                </button>
+                <p className="text-sm text-white/55">
+                  Or email{" "}
+                  <a
+                    href={supportEmailComposeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-brand-gold underline decoration-brand-gold/40 underline-offset-4 transition hover:text-white"
+                  >
+                    {BRAND_CONFIG.email}
+                  </a>
+                </p>
+              </div>
+            </form>
+            </div>
+          </section>
+
+          <LandingLightFooter
+            continued
+            onScroll={handleScroll}
+            onLoginClick={onLoginClick}
+            onOpenLegal={(type) => setLegalModal(type)}
+          />
+        </LandingClosingShell>
 
         {legalModal && (
           <div
