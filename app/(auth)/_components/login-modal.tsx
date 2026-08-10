@@ -17,6 +17,12 @@ interface LoginModalProps {
 type ViewState = "login" | "unauthorized-device" | "request-sent";
 type LegalModalType = "privacy" | "terms" | null;
 
+type LegalSection = {
+  title: string;
+  body: string;
+  contactItems?: { label: string; value: string }[];
+};
+
 const DEVICE_AUTH_CODES = new Set([
   "UNKNOWN_DEVICE",
   "DEVICE_PENDING",
@@ -64,7 +70,7 @@ function getDeviceAuthFailure(
   return null;
 }
 
-const termsSections = [
+const termsSections: LegalSection[] = [
   {
     title: "I. The QuickPawn Service",
     body: "QuickPawn is a cloud-based pawnshop management system designed to help businesses manage operations such as customer records, pawn transactions, pawned items, loans, payments, renewals, redemptions, reports, and other available features. The features available to you may depend on your selected subscription plan. QuickPawn is a business management tool and does not provide legal, accounting, tax, financial, valuation, appraisal, or regulatory advice. You remain responsible for your business operations, decisions, records, and compliance with applicable laws.",
@@ -141,7 +147,7 @@ const termsSections = [
   },
 ];
 
-const privacySections = [
+const privacySections: LegalSection[] = [
   {
     title: "Information We May Collect",
     body: `When customers contact us or complete branch transactions, ${BRAND_CONFIG.companyName} may collect information such as name, contact details, identification details, item descriptions, photos, transaction records, and service-related documents.`,
@@ -579,7 +585,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
                         <p className="mt-1 text-sm leading-relaxed text-zinc-600">{section.body}</p>
                         {section.contactItems && (
                           <ul className="mt-2 space-y-1.5">
-                            {section.contactItems.map((item: { label: string; value: string }) => (
+                            {section.contactItems.map((item) => (
                               <li key={item.label} className="text-sm text-zinc-600">
                                 <span className="font-bold text-brand-green">{item.label}:</span>{" "}{item.value}
                               </li>
