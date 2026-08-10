@@ -766,7 +766,7 @@ export function createTermsOfServiceDesign(): MoaDesignBlob {
     para(
       p,
       "s16b",
-      "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: inspirenextglobal.marketing@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
+      "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: quickpawn.pms@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
       658,
       96,
       1,
@@ -883,7 +883,7 @@ export function createPrivacyPolicyDesign(): MoaDesignBlob {
     para(
       p,
       "s10b",
-      "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: inspirenextglobal.marketing@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
+      "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: quickpawn.pms@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
       328,
       96,
       1,
