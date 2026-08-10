@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://api.qrserver.com; connect-src 'self' ws: wss: http: https:; frame-src 'none'; object-src 'none';" }
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://api.qrserver.com https://img.youtube.com https://i.ytimg.com; connect-src 'self' ws: wss: http: https:; frame-src https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none';" }
         ],
       },
     ];
