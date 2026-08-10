@@ -40,6 +40,8 @@ const navItems: LandingNavItem[] = [
   { label: "CONTACT", href: "#contact-us", scrollId: "contact-us" },
 ];
 
+const HERO_IMAGES = ["/image2.jpg", "/image.png"] as const;
+
 const sectionNavLabels: Record<string, string> = {
   home: "HOME",
   product: "PRODUCT",
@@ -205,6 +207,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [tabletMenuOpen, setTabletMenuOpen] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [heroImageIndex, setHeroImageIndex] = useState(0);
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -323,6 +326,13 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
     const activeRef = navRefs.current[navItems.findIndex((item) => item.label === activeNavItem)];
     if (activeRef) { setUnderlineLeft(activeRef.offsetLeft); setUnderlineWidth(activeRef.offsetWidth); }
   }, [activeNavItem]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeroImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 7000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navLinkClass = (label: string) =>
     `whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${
@@ -572,13 +582,14 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           </div>
         </nav>
 
+        <LandingHero onScroll={handleScroll} heroSrc={HERO_IMAGES[heroImageIndex]} />
+
         <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,#0d6b45_0%,#0B5D3B_42%,#063827_100%)] text-white">
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -left-24 top-0 h-56 w-56 rounded-full bg-brand-gold/10 blur-3xl" />
             <div className="absolute -right-16 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
           </div>
           <div className="relative">
-            <LandingHero onScroll={handleScroll} />
             <LandingIntro />
             <LandingProblemSolution onScroll={handleScroll} />
             <LandingHowItHelps />
