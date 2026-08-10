@@ -63,8 +63,9 @@ export default function ProtectedLayout({
         userRole={user.role}
         userAvatarUrl={user.avatarUrl}
         onLogout={logout}
+        isRestricted={showOnboarding}
       >
-        {children}
+        {showOnboarding ? null : children}
       </AppLayout>
       <OnboardingModal isOpen={showOnboarding} />
     </>
