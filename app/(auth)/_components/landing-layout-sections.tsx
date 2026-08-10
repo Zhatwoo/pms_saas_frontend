@@ -11,8 +11,10 @@ import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
 
 type ScrollHandler = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => void;
 
-const footerSupportEmail = "quickpawn.pms@gmail.com";
+const footerSupportEmail = BRAND_CONFIG.email;
 const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(footerSupportEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
+const footerAddress = "11th ave. corner 36th st. Uptown Bonifacio Global City, Taguig, Philippines, 1634";
+const footerAddressMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(footerAddress)}`;
 
 export const landingClosingSurfaceClass =
   "bg-[radial-gradient(circle_at_top,#0d6b45_0%,#0B5D3B_42%,#063827_100%)] text-white";
@@ -1381,9 +1383,26 @@ export function LandingLightFooter({
               <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold uqhd:text-xs">{BRAND_CONFIG.tagline}</p>
             </div>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-white/60">
-            Manage Smarter. Pawn Better. Grow with Confidence.
-          </p>
+          <div className="mt-5 space-y-3 text-sm text-white/70">
+            <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Contact Details</p>
+            <div className="space-y-2">
+              <p className="leading-relaxed text-white/80">
+                <span className="font-semibold text-white">Email:</span>{" "}
+                <a href={supportEmailComposeUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
+                  quickpawn.pms@gmail.com
+                </a>
+              </p>
+              <p className="leading-relaxed text-white/80">
+                <span className="font-semibold text-white">Telephone:</span> 253221002
+              </p>
+              <p className="leading-relaxed text-white/80">
+                <span className="font-semibold text-white">Address:</span>{" "}
+                <a href={footerAddressMapUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
+                  {footerAddress}
+                </a>
+              </p>
+            </div>
+          </div>
         </div>
 
         <div>

@@ -14,7 +14,13 @@ interface LoginModalProps {
 
 }
 
-type ViewState = "login" | "unauthorized-device" | "request-sent";
+type ViewState =
+  | "login"
+  | "unauthorized-device"
+  | "request-sent"
+  | "forgot-password"
+  | "reset-otp"
+  | "reset-success";
 type LegalModalType = "privacy" | "terms" | null;
 
 type LegalSection = {
@@ -140,7 +146,7 @@ const termsSections: LegalSection[] = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "inspirenextglobal.marketing@gmail.com" },
+      { label: "Email", value: "quickpawn.pms@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],
@@ -212,6 +218,75 @@ export function LoginModal({ onClose }: LoginModalProps) {
   const [deviceFingerprint, setDeviceFingerprint] = useState<string>("");
   const [fingerprintError, setFingerprintError] = useState<string>("");
   const [isRequestingAuth, setIsRequestingAuth] = useState(false);
+
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isRequestingResetOtp, setIsRequestingResetOtp] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetSuccessMessage, setResetSuccessMessage] = useState("");
+
+  const handleRequestResetOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetEmail = (resetEmail || email).trim();
+    if (!targetEmail) {
+      setResetError("Please enter your email address.");
+      return;
+    }
+    setResetError("");
+    setIsRequestingResetOtp(true);
+    try {
+      const res = await api.post<{ message: string }>("/auth/forgot-password", {
+        email: targetEmail,
+      });
+      setResetSuccessMessage(res.message || "Verification code sent to your email.");
+      setView("reset-otp");
+    } catch (err) {
+      setResetError(
+        err instanceof Error ? err.message : "Failed to send verification code. Please try again.",
+      );
+    } finally {
+      setIsRequestingResetOtp(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+
+    if (!resetOtp.trim()) {
+      setResetError("Please enter the 6-digit verification code.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setResetError("Password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setResetError("Passwords do not match.");
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const targetEmail = (resetEmail || email).trim();
+      await api.post("/auth/reset-password", {
+        email: targetEmail,
+        otp: resetOtp.trim(),
+        newPassword: newPassword.trim(),
+      });
+      setView("reset-success");
+    } catch (err) {
+      setResetError(
+        err instanceof Error ? err.message : "Failed to reset password. Please try again.",
+      );
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   useEffect(() => {
     getDeviceFingerprint()
@@ -429,7 +504,17 @@ export function LoginModal({ onClose }: LoginModalProps) {
                   </div>
                   <div className="mt-1 sm:mt-2 flex justify-end gap-1 text-[10px] sm:text-xs">
                     <span className="text-zinc-500">Forgot password?</span>
-                    <button type="button" className="font-bold text-brand-green hover:underline">Reset here</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setResetEmail(email);
+                        setResetError("");
+                        setView("forgot-password");
+                      }}
+                      className="font-bold text-brand-green hover:underline"
+                    >
+                      Reset here
+                    </button>
                   </div>
                 </div>
 
@@ -528,6 +613,202 @@ export function LoginModal({ onClose }: LoginModalProps) {
                 className="mt-3 sm:mt-6 w-full bg-brand-green py-2 sm:py-3 text-[11px] sm:text-sm font-bold text-white transition-colors hover:brightness-110"
               >
                 Close
+              </button>
+            </div>
+          )}
+
+          {view === "forgot-password" && (
+            <div>
+              <h3 className="text-base sm:text-xl font-bold text-brand-green">Reset Password</h3>
+              <p className="mt-0.5 text-[10px] sm:text-xs text-zinc-500">
+                Enter your registered email address to receive a 6-digit verification code.
+              </p>
+
+              {resetError && (
+                <div className="mt-2.5 sm:mt-4 rounded-lg bg-red-50 px-2.5 py-1.5 sm:px-4 sm:py-2.5 text-[10px] sm:text-xs font-medium text-red-600">
+                  {resetError}
+                </div>
+              )}
+
+              <form onSubmit={handleRequestResetOtp} className="mt-3 sm:mt-6 space-y-3 sm:space-y-4">
+                <div>
+                  <label className="mb-1 block text-[10px] sm:text-xs font-bold text-zinc-700">EMAIL ADDRESS</label>
+                  <div className="flex items-center overflow-hidden border border-zinc-300 bg-white">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center border-r border-zinc-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-zinc-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                      </svg>
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={resetEmail || email}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="h-9 sm:h-11 flex-1 bg-transparent px-2 sm:px-3 text-[10px] sm:text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isRequestingResetOtp}
+                  className="w-full bg-brand-green py-2 sm:py-3 text-xs sm:text-base font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
+                >
+                  {isRequestingResetOtp ? "Sending Verification Code..." : "Send Verification Code"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setView("login"); setResetError(""); }}
+                  className="w-full py-1.5 text-[10px] sm:text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+                >
+                  Back to Sign In
+                </button>
+              </form>
+            </div>
+          )}
+
+          {view === "reset-otp" && (
+            <div>
+              <h3 className="text-base sm:text-xl font-bold text-brand-green">Set New Password</h3>
+              <p className="mt-0.5 text-[10px] sm:text-xs text-zinc-500">
+                Enter the code sent to <span className="font-bold text-zinc-700">{resetEmail || email}</span>
+              </p>
+
+              {resetSuccessMessage && !resetError && (
+                <div className="mt-2.5 sm:mt-3 rounded-lg bg-emerald-50 px-2.5 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-medium text-emerald-700">
+                  {resetSuccessMessage}
+                </div>
+              )}
+
+              {resetError && (
+                <div className="mt-2.5 sm:mt-3 rounded-lg bg-red-50 px-2.5 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-medium text-red-600">
+                  {resetError}
+                </div>
+              )}
+
+              <form onSubmit={handleResetPassword} className="mt-3 sm:mt-5 space-y-2.5 sm:space-y-3.5">
+                <div>
+                  <label className="mb-1 block text-[10px] sm:text-xs font-bold text-zinc-700">VERIFICATION CODE</label>
+                  <div className="flex items-center overflow-hidden border border-zinc-300 bg-white">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center border-r border-zinc-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-zinc-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={resetOtp}
+                      onChange={(e) => setResetOtp(e.target.value)}
+                      className="h-9 sm:h-11 flex-1 bg-transparent px-2 sm:px-3 text-xs sm:text-sm font-mono tracking-widest text-zinc-900 outline-none placeholder:tracking-normal placeholder:font-sans placeholder:text-zinc-400"
+                      placeholder="6-digit code"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-[10px] sm:text-xs font-bold text-zinc-700">NEW PASSWORD</label>
+                  <div className="flex items-center overflow-hidden border border-zinc-300 bg-white">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center border-r border-zinc-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-zinc-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                      </svg>
+                    </div>
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="h-9 sm:h-11 flex-1 bg-transparent px-2 sm:px-3 text-[10px] sm:text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
+                      placeholder="At least 6 characters"
+                    />
+                    <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center text-zinc-400 hover:text-zinc-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5 sm:h-5 sm:w-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-[10px] sm:text-xs font-bold text-zinc-700">CONFIRM NEW PASSWORD</label>
+                  <div className="flex items-center overflow-hidden border border-zinc-300 bg-white">
+                    <div className="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center border-r border-zinc-200">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-zinc-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                    </div>
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="h-9 sm:h-11 flex-1 bg-transparent px-2 sm:px-3 text-[10px] sm:text-xs text-zinc-900 outline-none placeholder:text-zinc-400"
+                      placeholder="Confirm new password"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isResettingPassword}
+                  className="w-full bg-brand-green py-2 sm:py-3 text-xs sm:text-base font-bold text-white transition-colors hover:brightness-110 disabled:opacity-50"
+                >
+                  {isResettingPassword ? "Updating Password..." : "Reset Password"}
+                </button>
+
+                <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                  <button
+                    type="button"
+                    onClick={handleRequestResetOtp}
+                    disabled={isRequestingResetOtp}
+                    className="font-bold text-brand-green hover:underline disabled:opacity-50"
+                  >
+                    {isRequestingResetOtp ? "Resending..." : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setView("login"); setResetError(""); }}
+                    className="font-semibold text-zinc-500 hover:text-zinc-700"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {view === "reset-success" && (
+            <div className="flex flex-col items-center py-3 sm:py-6 text-center">
+              <div className="flex h-10 w-10 sm:h-14 sm:w-14 md:h-16 md:w-16 items-center justify-center rounded-full bg-emerald-100">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 sm:h-7 sm:w-7 md:h-8 md:w-8 text-emerald-700">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </div>
+              <h3 className="mt-2 sm:mt-4 text-sm sm:text-lg font-bold text-zinc-900">Password Reset Complete!</h3>
+              <p className="mt-1 sm:mt-2 text-[10px] sm:text-xs text-zinc-500 leading-relaxed">
+                Your password has been successfully updated with Supabase Authentication. You can now sign in with your new password.
+              </p>
+              <button
+                onClick={() => {
+                  if (resetEmail) setEmail(resetEmail);
+                  setPassword("");
+                  setResetOtp("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  setError("");
+                  setResetError("");
+                  setView("login");
+                }}
+                className="mt-3 sm:mt-6 w-full bg-brand-green py-2 sm:py-3 text-[11px] sm:text-sm font-bold text-white transition-colors hover:brightness-110"
+              >
+                Sign In Now
               </button>
             </div>
           )}

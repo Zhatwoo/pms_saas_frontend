@@ -60,7 +60,7 @@ export const BRAND_CONFIG: BrandConfig = {
   accentColor: "#d4a843",
   backgroundColor: "#ffffff",
   phone: "0992 971 8800",
-  email: "inspirenextglobal.marketing@gmail.com",
+  email: "quickpawn.pms@gmail.com",
   website: "www.example.com",
   address: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
   footerText: "Generic Footer",
