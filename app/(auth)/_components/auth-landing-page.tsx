@@ -208,14 +208,17 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const [legalModal, setLegalModal] = useState<LegalModalType>(null);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("10:00 AM");
+  const [meetingPlatform, setMeetingPlatform] = useState("Google Meet");
   const [contactMessage, setContactMessage] = useState("");
   const [isSendingContact, setIsSendingContact] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
-      toast.error("Please fill in all fields.");
+    if (!contactName.trim() || !contactEmail.trim()) {
+      toast.error("Please enter your name and email address.");
       return;
     }
 
@@ -226,16 +229,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         {
           name: contactName.trim(),
           email: contactEmail.trim(),
-          message: contactMessage.trim(),
+          preferredDate: preferredDate || undefined,
+          preferredTime: preferredTime || undefined,
+          meetingPlatform: meetingPlatform || undefined,
+          message: contactMessage.trim() || undefined,
         },
         { suppressApiIssueLogging: true },
       );
-      toast.success("Message sent! We'll get back to you shortly.");
+      toast.success("Demo request scheduled! We'll send you an invitation shortly.");
       setContactName("");
       setContactEmail("");
+      setPreferredDate("");
+      setPreferredTime("10:00 AM");
+      setMeetingPlatform("Google Meet");
       setContactMessage("");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not send your message. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Could not schedule demo. Please try again.");
     } finally {
       setIsSendingContact(false);
     }
@@ -247,7 +256,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       // Store scroll position
       const scrollY = window.scrollY;
       document.body.setAttribute('data-scroll-lock', scrollY.toString());
-      
+
       // Add styles to prevent scrolling
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = '0px'; // Prevent layout shift from scrollbar
@@ -262,29 +271,29 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   const handleScroll = (e: React.MouseEvent<HTMLElement>, id: string, item: string) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const element = document.getElementById(id);
     if (!element) return;
-    
+
     // Update active nav item immediately
     setActiveNavItem(item);
-    
+
     // Close the menu
     setMobileMenuOpen(false);
     setTabletMenuOpen(false);
-    
+
     // Small delay to let menu start closing, then scroll
     setTimeout(() => {
       const offset =
         window.innerWidth >= 3840 ? 96 : window.innerWidth >= 2560 ? 80 : 64; // Header height by viewport
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - offset;
-      
+
       window.scrollTo({
         top: offsetPosition,
         behavior: "smooth"
       });
-      
+
       window.history.pushState(null, "", `#${id}`);
     }, 50);
   };
@@ -325,8 +334,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
   }, [activeNavItem]);
 
   const navLinkClass = (label: string) =>
-    `whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${
-      activeNavItem === label ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"
+    `whitespace-nowrap text-[11px] font-bold tracking-wider transition-colors xl:text-sm uqhd:text-base uhd:text-lg ${activeNavItem === label ? "text-brand-gold" : "text-brand-green/70 hover:text-brand-green"
     }`;
 
 
@@ -346,7 +354,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             >
               <QuickPawnLogo variant="full" className="h-10 w-auto" />
             </button>
-            
+
             {/* Burger menu icon - Mobile and Tablet only (below lg) */}
             <button
               type="button"
@@ -419,94 +427,91 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
           {/* Tablet side panel menu */}
           <div className={`fixed inset-0 z-[70] hidden md:block lg:hidden ${tabletMenuOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
             {/* Backdrop blur overlay - positioned to exclude header from blur */}
-            <div 
-              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${
-                tabletMenuOpen ? "opacity-100" : "opacity-0"
-              }`}
+            <div
+              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${tabletMenuOpen ? "opacity-100" : "opacity-0"
+                }`}
               style={{ clipPath: 'polygon(0 4rem, 100% 4rem, 100% 100%, 0 100%)' }}
               onClick={() => setTabletMenuOpen(false)}
               aria-hidden="true"
             />
 
             <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-                <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <QuickPawnLogo variant="mark" className="h-[42px] w-[42px] shadow-lg" />
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
-                      <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
-                    </div>
+              <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <QuickPawnLogo variant="mark" className="h-[42px] w-[42px] shadow-lg" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
+                    <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setTabletMenuOpen(false)}
-                    aria-label="Close tablet navigation"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-gold/30 bg-brand-gold/10 text-brand-gold transition-all duration-200 hover:bg-brand-gold hover:text-brand-green hover:scale-110 hover:rotate-90 active:scale-95"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setTabletMenuOpen(false)}
+                  aria-label="Close tablet navigation"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-gold/30 bg-brand-gold/10 text-brand-gold transition-all duration-200 hover:bg-brand-gold hover:text-brand-green hover:scale-110 hover:rotate-90 active:scale-95"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
 
-                <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
-                  <div className="space-y-2">
-                    {navItems.map((item, index) => {
-                      const isActive = activeNavItem === item.label;
-                      const sharedClass = `group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
-                        isActive
-                          ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
-                          : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
+              <div className="flex-1 overflow-y-auto px-4 py-6 bg-gradient-to-b from-transparent to-black/10">
+                <div className="space-y-2">
+                  {navItems.map((item, index) => {
+                    const isActive = activeNavItem === item.label;
+                    const sharedClass = `group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${isActive
+                        ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
+                        : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
                       }`;
-                      const inner = (
-                        <>
-                          <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
-                          <span>{item.label}</span>
-                        </>
-                      );
-                      return item.scrollId ? (
-                        <a
-                          key={`tablet-${item.label}`}
-                          ref={(el) => { navRefs.current[index] = el; }}
-                          href={item.href}
-                          onClick={(e) => handleScroll(e, item.scrollId!, item.label)}
-                          className={sharedClass}
-                        >
-                          {inner}
-                        </a>
-                      ) : (
-                        <Link
-                          key={`tablet-${item.label}`}
-                          ref={(el) => { navRefs.current[index] = el; }}
-                          href={item.href}
-                          onClick={() => setTabletMenuOpen(false)}
-                          className={sharedClass}
-                        >
-                          {inner}
-                        </Link>
-                      );
-                    })}
-                  </div>
+                    const inner = (
+                      <>
+                        <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
+                        <span>{item.label}</span>
+                      </>
+                    );
+                    return item.scrollId ? (
+                      <a
+                        key={`tablet-${item.label}`}
+                        ref={(el) => { navRefs.current[index] = el; }}
+                        href={item.href}
+                        onClick={(e) => handleScroll(e, item.scrollId!, item.label)}
+                        className={sharedClass}
+                      >
+                        {inner}
+                      </a>
+                    ) : (
+                      <Link
+                        key={`tablet-${item.label}`}
+                        ref={(el) => { navRefs.current[index] = el; }}
+                        href={item.href}
+                        onClick={() => setTabletMenuOpen(false)}
+                        className={sharedClass}
+                      >
+                        {inner}
+                      </Link>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
-                  <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 {BRAND_CONFIG.companyName}</p>
-                </div>
-              </aside>
-            </div>
+              <div className="border-t border-brand-gold/20 bg-brand-green/30 backdrop-blur-sm p-4">
+                <p className="text-center text-[10px] text-white/50 tracking-wide">© 2026 {BRAND_CONFIG.companyName}</p>
+              </div>
+            </aside>
+          </div>
 
           {/* Mobile drawer menu */}
           <div className={`fixed inset-0 z-[70] md:hidden ${mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"}`}>
             {/* Backdrop blur overlay - positioned to exclude header from blur */}
-            <div 
-              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${
-                mobileMenuOpen ? "opacity-100" : "opacity-0"
-              }`}
+            <div
+              className={`absolute left-0 right-0 bottom-0 top-0 bg-black/30 backdrop-blur-md transition-opacity duration-500 ${mobileMenuOpen ? "opacity-100" : "opacity-0"
+                }`}
               style={{ clipPath: 'polygon(0 4rem, 100% 4rem, 100% 100%, 0 100%)' }}
               onClick={() => setMobileMenuOpen(false)}
               aria-hidden="true"
             />
-            
+
             <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
               <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                 <div className="flex items-center gap-3">
@@ -531,11 +536,10 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
                 <div className="space-y-2">
                   {navItems.map((item) => {
                     const isActive = activeNavItem === item.label;
-                    const sharedClass = `group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${
-                      isActive
+                    const sharedClass = `group flex items-center gap-3 rounded-lg border-2 px-4 py-3.5 text-[11px] font-black uppercase tracking-[0.16em] transition-all duration-200 ${isActive
                         ? "border-brand-gold bg-brand-gold/20 text-brand-gold shadow-lg shadow-brand-gold/20 scale-[1.02]"
                         : "border-white/10 bg-white/5 text-white/80 hover:border-brand-gold/50 hover:bg-brand-gold/10 hover:text-brand-gold hover:scale-[1.02] hover:shadow-md"
-                    }`;
+                      }`;
                     const inner = (
                       <>
                         <span className={`h-2.5 w-2.5 rounded-full transition-all duration-200 ${isActive ? "bg-brand-gold shadow-sm shadow-brand-gold/50" : "bg-white/30 group-hover:bg-brand-gold/70 group-hover:shadow-sm"}`} />
@@ -616,77 +620,149 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
 
                 <form
                   onSubmit={handleContactSubmit}
-                  className="reveal-on-scroll reveal-delay-200 mx-auto mt-12 max-w-3xl"
+                  className="reveal-on-scroll reveal-delay-200 rounded-2xl bg-white p-6 shadow-xl sm:p-8"
                 >
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="text-left">
-                      <label htmlFor="landing-contact-name" className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
-                        Name
-                      </label>
-                      <input
-                        id="landing-contact-name"
-                        type="text"
-                        value={contactName}
-                        onChange={(e) => setContactName(e.target.value)}
-                        disabled={isSendingContact}
-                        className="mt-2 w-full border-b border-white/25 bg-transparent px-0 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-gold disabled:opacity-60"
-                        placeholder="Juan Dela Cruz"
-                      />
-                    </div>
-                    <div className="text-left">
-                      <label htmlFor="landing-contact-email" className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
-                        Email
-                      </label>
-                      <input
-                        id="landing-contact-email"
-                        type="email"
-                        value={contactEmail}
-                        onChange={(e) => setContactEmail(e.target.value)}
-                        disabled={isSendingContact}
-                        className="mt-2 w-full border-b border-white/25 bg-transparent px-0 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-gold disabled:opacity-60"
-                        placeholder="you@pawnshop.com"
-                      />
-                    </div>
-                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-green/50">Schedule a demo</p>
+                  <h3 className="font-display mt-1 text-xl font-bold text-brand-green">Book a Live Demo with {BRAND_CONFIG.shortCompanyName}</h3>
+                  <p className="mt-1 text-xs text-zinc-500">Pick a date, time, and your preferred meeting platform.</p>
 
-                  <div className="mt-6 text-left">
-                    <label htmlFor="landing-contact-message" className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand-gold">
-                      Message
-                    </label>
-                    <textarea
-                      id="landing-contact-message"
-                      rows={4}
-                      value={contactMessage}
-                      onChange={(e) => setContactMessage(e.target.value)}
-                      disabled={isSendingContact}
-                      className="mt-2 w-full resize-none border-b border-white/25 bg-transparent px-0 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-brand-gold disabled:opacity-60"
-                      placeholder="Tell us about your pawnshop..."
-                    />
-                  </div>
+                  <div className="mt-5 space-y-3.5">
+                    <div className="grid gap-3.5 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="landing-contact-name" className="text-xs font-semibold text-brand-green/70">
+                          Full Name *
+                        </label>
+                        <input
+                          id="landing-contact-name"
+                          type="text"
+                          required
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          disabled={isSendingContact}
+                          className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                          placeholder="Juan Dela Cruz"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="landing-contact-email" className="text-xs font-semibold text-brand-green/70">
+                          Email Address *
+                        </label>
+                        <input
+                          id="landing-contact-email"
+                          type="email"
+                          required
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          disabled={isSendingContact}
+                          className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                          placeholder="you@pawnshop.com"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
-                    <button
-                      type="submit"
-                      disabled={isSendingContact}
-                      className="inline-flex min-w-[220px] items-center justify-center rounded-full bg-brand-gold px-8 py-3.5 text-xs font-black uppercase tracking-wider text-brand-green transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isSendingContact ? "Sending..." : "Send Message"}
-                    </button>
-                    <p className="text-sm text-white/55">
-                      Or email{" "}
-                      <a
-                        href={supportEmailComposeUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-semibold text-brand-gold underline decoration-brand-gold/40 underline-offset-4 transition hover:text-white"
+                    <div className="grid gap-3.5 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="landing-contact-date" className="text-xs font-semibold text-brand-green/70">
+                          Preferred Date
+                        </label>
+                        <div className="relative mt-1 flex items-center overflow-hidden rounded-md border border-brand-green/20 bg-white focus-within:border-brand-green">
+                          <input
+                            id="landing-contact-date"
+                            type="date"
+                            min={new Date().toISOString().split("T")[0]}
+                            value={preferredDate}
+                            onChange={(e) => setPreferredDate(e.target.value)}
+                            onClick={(e) => {
+                              try {
+                                e.currentTarget.showPicker();
+                              } catch { }
+                            }}
+                            disabled={isSendingContact}
+                            className="w-full cursor-pointer bg-transparent px-3 py-2 text-sm text-brand-green outline-none disabled:opacity-60"
+                          />
+                          <div
+                            onClick={() => {
+                              const el = document.getElementById("landing-contact-date") as HTMLInputElement | null;
+                              try {
+                                el?.showPicker();
+                              } catch {
+                                el?.focus();
+                              }
+                            }}
+                            className="flex h-full cursor-pointer items-center justify-center px-3 text-brand-green/50 hover:text-brand-green"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor="landing-contact-time" className="text-xs font-semibold text-brand-green/70">
+                          Preferred Time
+                        </label>
+                        <select
+                          id="landing-contact-time"
+                          value={preferredTime}
+                          onChange={(e) => setPreferredTime(e.target.value)}
+                          disabled={isSendingContact}
+                          className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60 bg-white"
+                        >
+                          <option value="09:00 AM">09:00 AM</option>
+                          <option value="10:00 AM">10:00 AM</option>
+                          <option value="11:00 AM">11:00 AM</option>
+                          <option value="01:00 PM">01:00 PM</option>
+                          <option value="02:00 PM">02:00 PM</option>
+                          <option value="03:00 PM">03:00 PM</option>
+                          <option value="04:00 PM">04:00 PM</option>
+                          <option value="05:00 PM">05:00 PM</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="landing-contact-platform" className="text-xs font-semibold text-brand-green/70">
+                        Preferred Meeting Platform
+                      </label>
+                      <select
+                        id="landing-contact-platform"
+                        value={meetingPlatform}
+                        onChange={(e) => setMeetingPlatform(e.target.value)}
+                        disabled={isSendingContact}
+                        className="mt-1 w-full rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60 bg-white"
                       >
-                        {BRAND_CONFIG.email}
-                      </a>
-                    </p>
+                        <option value="Google Meet">Google Meet (GMeet)</option>
+                        <option value="Zoom">Zoom Meeting</option>
+                        <option value="Microsoft Teams">Microsoft Teams</option>
+                        <option value="Phone Call">Phone Call / Mobile</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label htmlFor="landing-contact-message" className="text-xs font-semibold text-brand-green/70">
+                        Additional Notes / Questions (Optional)
+                      </label>
+                      <textarea
+                        id="landing-contact-message"
+                        rows={2}
+                        value={contactMessage}
+                        onChange={(e) => setContactMessage(e.target.value)}
+                        disabled={isSendingContact}
+                        className="mt-1 w-full resize-none rounded-md border border-brand-green/20 px-3 py-2 text-sm text-brand-green outline-none transition focus:border-brand-green disabled:opacity-60"
+                        placeholder="Tell us about your pawnshop or specific topics to cover..."
+                      />
+                    </div>
                   </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSendingContact}
+                    className="mt-5 w-full rounded-md bg-brand-green py-3 text-xs font-black uppercase tracking-wider text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSendingContact ? "Scheduling Demo..." : "Schedule Demo"}
+                  </button>
                 </form>
               </div>
-
             </section>
 
             <LandingLightFooter
