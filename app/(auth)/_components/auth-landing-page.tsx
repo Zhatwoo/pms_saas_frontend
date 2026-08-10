@@ -547,30 +547,22 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         <LandingTrustBar />
         <LandingFaq />
 
-        {/* --- CLOSING / CONTACT --- */}
-        <section id="contact-us" className="bg-brand-gold px-6 py-20 md:px-12 md:py-28">
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="reveal-on-scroll text-center lg:text-left">
-              <h2 className="font-display text-4xl font-bold tracking-tight text-brand-green md:text-5xl">
-                Ready to Manage Your Pawnshop Smarter?
-              </h2>
-              <p className="mt-4 text-base leading-relaxed text-brand-green/85 md:text-lg">
-                The way you manage your business affects the way your business grows. Move away
-                from complicated, scattered processes and discover a more organized way to manage
-                your pawnshop. Start your journey with {BRAND_CONFIG.shortCompanyName} today.
-              </p>
-              <p className="mt-6 text-sm font-semibold text-brand-green/70">
-                Or contact us by sending a message to{" "}
-                <a
-                  href={supportEmailComposeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline hover:text-brand-green"
-                >
-                  {BRAND_CONFIG.email}
-                </a>
-              </p>
-            </div>
+        {/* --- CLOSING / CONTACT + FOOTER --- */}
+        <LandingClosingShell>
+          <section id="contact-us" className="px-6 pb-4 pt-20 md:px-12 md:pb-6 md:pt-28 lg:px-16 uqhd:px-20 uhd:px-28">
+            <div className="-translate-y-[5%]">
+              <div className="mx-auto max-w-4xl text-center">
+                <p className="reveal-on-scroll text-[11px] font-bold uppercase tracking-[0.28em] text-brand-gold">Get started</p>
+                <h2 className="reveal-on-scroll font-display mt-4 text-3xl font-bold leading-tight md:text-5xl">
+                  Ready to Manage Your Pawnshop{" "}
+                  <span className="text-brand-gold">Smarter?</span>
+                </h2>
+                <p className="reveal-on-scroll mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/70 md:text-lg">
+                  The way you manage your business affects the way your business grows. Move away from
+                  complicated, scattered processes and discover a more organized way to manage your
+                  pawnshop with {BRAND_CONFIG.shortCompanyName}.
+                </p>
+              </div>
 
               <form
                 onSubmit={handleContactSubmit}
