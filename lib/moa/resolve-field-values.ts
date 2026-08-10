@@ -68,12 +68,17 @@ export type MoaFieldValueContext = {
   witnessName?: string;
   /** Pawn Renewal Slip — slip / transaction identifiers. */
   renewalSlipNo?: string;
+  /** Buy Back Slip — slip identifier. */
+  buyBackSlipNo?: string;
   transactionNo?: string;
+  /** Buy Back Slip — repurchase price breakdown. */
+  buyBackPrice?: string;
   /** Maturity before the current renewal. */
   prevMaturityDate?: string;
-  /** Renewal payment breakdown (also used to fill payment tables). */
+  /** Renewal / buy-back payment breakdown (also used to fill payment tables). */
   interestPaid?: string;
   serviceFee?: string;
+  processingFee?: string;
   otherCharges?: string;
   totalAmountPaid?: string;
   customValues?: Record<string, string>;
@@ -170,10 +175,13 @@ export function buildMoaFieldMap(
     idNumber: ctx.idNumber ?? "",
     witnessName: ctx.witnessName ?? "",
     renewalSlipNo: ctx.renewalSlipNo ?? "",
+    buyBackSlipNo: ctx.buyBackSlipNo ?? "",
+    buyBackPrice: ctx.buyBackPrice ?? "",
     transactionNo: ctx.transactionNo ?? "",
     prevMaturityDate: ctx.prevMaturityDate ?? "",
     interestPaid: ctx.interestPaid ?? "",
     serviceFee: ctx.serviceFee ?? "",
+    processingFee: ctx.processingFee ?? "",
     otherCharges: ctx.otherCharges ?? "",
     totalAmountPaid: ctx.totalAmountPaid ?? "",
     signatureBlank: "",
