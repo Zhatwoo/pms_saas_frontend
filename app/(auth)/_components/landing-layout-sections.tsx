@@ -616,14 +616,30 @@ function HowItHelpsLaptopCard({
 
 export function LandingHero({
   onScroll,
+  heroSrc,
 }: {
   onScroll: ScrollHandler;
+  heroSrc: string;
 }) {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section id="home" className="relative overflow-hidden bg-[#f4f2ee] pt-32 pb-20 sm:pt-36 md:pt-40">
-      <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+    <section id="home" className="relative min-h-[92svh] overflow-hidden bg-[#f4f2ee] pt-32 pb-20 sm:pt-36 md:pt-40">
+      <div className="absolute inset-0" aria-hidden>
+        <motion.img
+          key={heroSrc}
+          src={heroSrc}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#f4f2ee] via-[#f4f2ee]/92 to-[#f4f2ee]/55" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#f4f2ee] via-transparent to-[#f4f2ee]/40" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-6">
         <motion.p
           className="text-[11px] font-bold uppercase tracking-[0.28em] text-brand-green/60"
           initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
@@ -791,6 +807,49 @@ export function LandingIntro() {
         <p className="reveal-on-scroll mt-10 text-center font-display text-xl font-bold italic text-brand-green md:text-2xl">
           One System. Better Visibility. Smarter Operations.
         </p>
+
+        <div className="reveal-on-scroll mt-14 overflow-hidden rounded-3xl border border-brand-green/10 bg-[#f9f8f5] shadow-[0_16px_50px_rgba(11,93,59,0.10)] lg:grid lg:grid-cols-2">
+          <div className="relative min-h-[280px] lg:min-h-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/itemsweaccept.png"
+              alt="Jewelry, gadgets, and valuables accepted at pawnshops"
+              className="absolute inset-0 h-full w-full object-cover transition duration-700 hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-green/85 via-brand-green/25 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold">What pawnshops manage</p>
+              <h3 className="font-display mt-2 text-2xl font-bold text-white md:text-3xl">
+                Jewelry, gadgets, and more
+              </h3>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-white/80">
+                Track every item type your shop accepts — from gold and watches to laptops and electronics.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col justify-center p-8 md:p-10 lg:p-12">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold">Built for real pawnshops</p>
+            <h3 className="font-display mt-3 text-2xl font-bold text-brand-green md:text-3xl">
+              Every item, connected to its record
+            </h3>
+            <p className="mt-4 text-sm leading-relaxed text-brand-green/65">
+              {BRAND_CONFIG.shortCompanyName} helps you organize pawned items, loan details, renewals,
+              redemptions, and inventory — so your team always knows what is in the vault and what is due.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {["Gold & jewelry tracking", "Electronics & gadgets", "Complete transaction history"].map((item) => (
+                <li key={item} className="flex items-center gap-3 text-sm font-semibold text-brand-green/80">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-green text-brand-gold">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -989,20 +1048,25 @@ export function LandingCloud() {
             without the need to manage complicated infrastructure on your own.
           </p>
         </div>
-        <div className="reveal-on-scroll reveal-delay-200 rounded-2xl bg-brand-green p-8 text-white shadow-xl">
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-gold">With a cloud-based system, you get:</p>
-          <ul className="mt-5 space-y-3">
-            {cloudPoints.map((p) => (
-              <li key={p} className="flex items-start gap-3 text-sm text-white/85">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gold text-brand-green">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                  </svg>
-                </span>
-                {p}
-              </li>
-            ))}
-          </ul>
+        <div className="reveal-on-scroll reveal-delay-200 relative min-h-[360px] overflow-hidden rounded-2xl shadow-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/image2.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-brand-green/78" />
+          <div className="relative flex h-full flex-col justify-center p-8 text-white">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-gold">With a cloud-based system, you get:</p>
+            <ul className="mt-5 space-y-3">
+              {cloudPoints.map((p) => (
+                <li key={p} className="flex items-start gap-3 text-sm text-white/85">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-gold text-brand-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-3.5 w-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  </span>
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </section>
