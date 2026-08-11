@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { LANDING_DASHBOARD_SCREENSHOTS } from "@/lib/landing-media";
 import { SocialIconLink } from "@/lib/social-links";
 import { LandingVideoPlaceholder } from "@/app/(auth)/_components/landing-video-placeholder";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
@@ -807,6 +808,48 @@ export function LandingIntro() {
         <p className="reveal-on-scroll mt-10 text-center font-display text-xl font-bold italic text-brand-green md:text-2xl">
           One System. Better Visibility. Smarter Operations.
         </p>
+
+        <div className="reveal-on-scroll mt-14 space-y-6">
+          <div className="text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand-gold">Inside the platform</p>
+            <h3 className="font-display mt-2 text-2xl font-bold text-brand-green md:text-3xl">
+              See your pawnshop at a glance
+            </h3>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-brand-green/65">
+              Track contracts, sales, inventory, and branch performance from one centralized dashboard.
+            </p>
+          </div>
+
+          <div className="grid gap-6">
+            {LANDING_DASHBOARD_SCREENSHOTS.map((screenshot) => (
+              <figure
+                key={screenshot.src}
+                className="overflow-hidden rounded-3xl border border-brand-green/10 bg-[#f9f8f5] shadow-[0_20px_60px_rgba(11,93,59,0.12)]"
+              >
+                <div className="border-b border-brand-green/10 bg-brand-green px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    <span className="ml-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+                      {BRAND_CONFIG.shortCompanyName} Dashboard
+                    </span>
+                  </div>
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={screenshot.src}
+                  alt={screenshot.alt}
+                  className="block h-auto w-full"
+                  loading="lazy"
+                />
+                <figcaption className="border-t border-brand-green/10 px-5 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-brand-green/55">
+                  {screenshot.caption}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
 
         <div className="reveal-on-scroll mt-14 overflow-hidden rounded-3xl border border-brand-green/10 bg-[#f9f8f5] shadow-[0_16px_50px_rgba(11,93,59,0.10)] lg:grid lg:grid-cols-2">
           <div className="relative min-h-[280px] lg:min-h-full">

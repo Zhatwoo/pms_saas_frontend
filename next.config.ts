@@ -1,6 +1,13 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
+const turbopackRoot = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: turbopackRoot,
+  },
   productionBrowserSourceMaps: false,
   allowedDevOrigins: ["192.168.1.220", "localhost:3000", "127.0.0.1:3000", "0.0.0.0:3000"],
   async headers() {
