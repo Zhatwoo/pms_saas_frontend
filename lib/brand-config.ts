@@ -54,7 +54,7 @@ export const BRAND_CONFIG: BrandConfig = {
   companyLogo: "/PMS_logo_theme.svg",
   loginLogo: "/PMS_logo_theme.svg",
   sidebarLogo: "/PMS_logo_theme.svg",
-  favicon: "/favicon.ico",
+  favicon: "/logo_quickpawn-removebg-preview.png",
   primaryColor: "#0B5D3B",
   secondaryColor: "#E8C547",
   accentColor: "#d4a843",
