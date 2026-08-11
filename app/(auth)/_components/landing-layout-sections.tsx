@@ -1484,7 +1484,7 @@ export function LandingLightFooter({
       <div className="landing-container-wide relative grid gap-10 md:grid-cols-2 lg:grid-cols-5 uqhd:gap-14">
         <div className="lg:col-span-1">
           <div className="flex items-center gap-3">
-            <QuickPawnLogo variant="mark" className="h-11 w-11" />
+            <QuickPawnLogo variant="mark" className="h-28 w-28" />
             <div>
               <p className="font-display text-xl font-bold text-white uqhd:text-2xl uhd:text-3xl">{BRAND_CONFIG.shortCompanyName}</p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold uqhd:text-xs">{BRAND_CONFIG.tagline}</p>

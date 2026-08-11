@@ -362,7 +362,7 @@ export function Sidebar({
                     : "translate-x-0 opacity-100"
                 }`}
               >
-                <QuickPawnLogo variant="mark" className="h-12 w-12" />
+                <QuickPawnLogo variant="mark" className="h-28 w-28" />
               </span>
             </button>
           <div
