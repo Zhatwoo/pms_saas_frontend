@@ -1664,6 +1664,7 @@ export function LandingLightFooter({
   onOpenLegal: (type: "privacy" | "terms") => void;
   continued?: boolean;
 }) {
+  const [ingiLogoAvailable, setIngiLogoAvailable] = useState(true);
   return (
     <footer
       className={
@@ -1787,6 +1788,26 @@ export function LandingLightFooter({
               {BRAND_CONFIG.socialMedia.map((account) => (
                 <SocialIconLink key={account.url} account={account} />
               ))}
+              <a
+                href="https://inspirenextglobal.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Inspire Next Global"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white/75 transition-all duration-200 hover:scale-110"
+              >
+                {ingiLogoAvailable ? (
+                  <img
+                    src="/inspire logo.jpg"
+                    alt="Inspire Next Global"
+                    className="h-9 w-9 rounded-full object-cover"
+                    onError={() => setIngiLogoAvailable(false)}
+                  />
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4.5 w-4.5" aria-hidden="true">
+                    <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm5.5 13.5a8.3 8.3 0 01-1.1.9c-.5.35-1.2.05-1.5-.4-.3-.45-.15-1.05.35-1.4.45-.32 1.05-.58 1.6-.9.5-.3.95-.7 1.2-1.2.25-.5.05-1.15-.55-1.4-.65-.3-1.35.05-1.75.6-.4.6-1.05 1-1.8 1.2-.8.2-1.6.15-2.35-.05-.7-.2-1.35-.55-2-.95-.6-.4-1.3-.75-2-.95-.85-.25-1.75-.25-2.6 0-.6.18-1.2.5-1.7.9a1 1 0 01-1.35-1.45 8.3 8.3 0 011.1-.9c.5-.35 1.2-.05 1.5.4.3.45.15 1.05-.35 1.4-.45.32-1.05.58-1.6.9-.5.3-.95.7-1.2 1.2-.25.5-.05 1.15.55 1.4.65.3 1.35-.05 1.75-.6.4-.6 1.05-1 1.8-1.2.8-.2 1.6-.15 2.35.05.7.2 1.35.55 2 .95.6.4 1.3.75 2 .95.85.25 1.75.25 2.6 0 .6-.18 1.2-.5 1.7-.9.5-.4 1.15-.05 1.35.45.2.5-.15 1.05-.65 1.35z" />
+                  </svg>
+                )}
+              </a>
             </div>
             <Link href="/social" className="block transition-colors hover:text-brand-gold">
               View all social accounts
