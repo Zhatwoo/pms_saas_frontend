@@ -598,7 +598,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <LandingProblemSolution onScroll={handleScroll} />
             <LandingHowItHelps />
             <LandingStats />
-            <LandingBenefits />
+            <LandingBenefits
+              onScrollToContact={() =>
+                handleScroll({ preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.MouseEvent<HTMLElement>, "contact-us", "CONTACT")
+              }
+            />
             <LandingCloud />
             <LandingProcessPricing onScroll={handleScroll} />
             <LandingTrustBar />
@@ -869,7 +873,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       {/* Back to top button */}
       <button
         type="button"
-        className={`fixed bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
+        className={`fixed bottom-24 right-6 z-[85] flex h-14 w-14 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-xl shadow-brand-gold/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
           setActiveNavItem("HOME");
@@ -877,7 +881,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         }}
         aria-label="Back to top"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-6 w-6">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
         </svg>
       </button>
