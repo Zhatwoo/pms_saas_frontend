@@ -25,7 +25,7 @@ export interface BrandConfig {
   backgroundColor: string;  // e.g., white
 
   // Contact Info
-  phone: string;
+  phone?: string;
   email: string;
   website: string;
   address: string;
@@ -59,7 +59,6 @@ export const BRAND_CONFIG: BrandConfig = {
   secondaryColor: "#E8C547",
   accentColor: "#d4a843",
   backgroundColor: "#ffffff",
-  phone: "0992 971 8800",
   email: "quickpawn.pms@gmail.com",
   website: "www.example.com",
   address: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",

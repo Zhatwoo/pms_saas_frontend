@@ -163,12 +163,7 @@ export function AboutPage() {
                     {BRAND_CONFIG.email}
                   </a>
                 </li>
-                <li>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-brand-gold">Phone</p>
-                  <a href={`tel:${BRAND_CONFIG.phone.replace(/\s/g, "")}`} className="mt-1 inline-block hover:text-brand-gold">
-                    {BRAND_CONFIG.phone}
-                  </a>
-                </li>
+                
               </ul>
               <p className="mt-8 text-xs leading-relaxed text-white/55">
                 For careers, partnerships, and company news, visit the official {ingi.shortName} website.
