@@ -37,7 +37,7 @@ export function SocialPage() {
 
         <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="inline-flex items-center gap-3 text-white transition hover:opacity-90">
-            <QuickPawnLogo className="h-9 w-auto brightness-0 invert" />
+            <QuickPawnLogo className="h-10 md:h-12 lg:h-14 w-auto brightness-0 invert" />
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
