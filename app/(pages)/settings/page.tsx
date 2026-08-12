@@ -481,7 +481,7 @@ export default function SettingsPage() {
   const [shopSettings, setShopSettings] = useState({
     shopName: BRAND_CONFIG.companyName,
     shopAddress: BRAND_CONFIG.address,
-    phoneNumber: BRAND_CONFIG.phone,
+    phoneNumber: BRAND_CONFIG.phone ?? "",
     email: BRAND_CONFIG.email,
   });
 
@@ -497,7 +497,7 @@ export default function SettingsPage() {
   const [tempShopSettings, setTempShopSettings] = useState({
     shopName: BRAND_CONFIG.companyName,
     shopAddress: BRAND_CONFIG.address,
-    phoneNumber: BRAND_CONFIG.phone,
+    phoneNumber: BRAND_CONFIG.phone ?? "",
     email: BRAND_CONFIG.email,
   });
 

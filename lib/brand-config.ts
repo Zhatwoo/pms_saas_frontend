@@ -25,7 +25,7 @@ export interface BrandConfig {
   backgroundColor: string;  // e.g., white
 
   // Contact Info
-  phone: string;
+  phone?: string;
   email: string;
   website: string;
   address: string;
@@ -54,12 +54,11 @@ export const BRAND_CONFIG: BrandConfig = {
   companyLogo: "/PMS_logo_theme.svg",
   loginLogo: "/PMS_logo_theme.svg",
   sidebarLogo: "/PMS_logo_theme.svg",
-  favicon: "/favicon.ico",
+  favicon: "/logo_quickpawn-removebg-preview.png",
   primaryColor: "#0B5D3B",
   secondaryColor: "#E8C547",
   accentColor: "#d4a843",
   backgroundColor: "#ffffff",
-  phone: "0992 971 8800",
   email: "quickpawn.pms@gmail.com",
   website: "www.example.com",
   address: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",

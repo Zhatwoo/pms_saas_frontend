@@ -362,7 +362,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
               className="hidden items-center lg:flex"
               onClick={(e) => handleScroll(e, "home", "HOME")}
             >
-              <QuickPawnLogo variant="full" className="h-10 w-auto" />
+              <QuickPawnLogo variant="full" className="h-10 md:h-12 lg:h-14 w-auto" />
             </button>
 
             {/* Burger menu icon - Mobile and Tablet only (below lg) */}
@@ -448,7 +448,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <aside className={`absolute left-0 top-0 flex h-dvh w-[330px] max-w-[82vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${tabletMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
               <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <QuickPawnLogo variant="mark" className="h-[42px] w-[42px] shadow-lg" />
+                  <QuickPawnLogo variant="mark" className="h-[120px] w-[120px] shadow-lg" />
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
                     <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
@@ -525,7 +525,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <aside className={`absolute left-0 top-0 flex h-dvh w-[300px] max-w-[85vw] flex-col overflow-hidden border-r border-brand-gold/30 bg-gradient-to-b from-brand-green to-brand-green/95 shadow-2xl shadow-black/50 transition-transform duration-500 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
               <div className="flex items-center justify-between border-b border-brand-gold/20 bg-brand-green/50 backdrop-blur-sm px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <QuickPawnLogo variant="mark" className="h-[42px] w-[42px] shadow-lg" />
+                  <QuickPawnLogo variant="mark" className="h-[96px] w-[96px] shadow-lg" />
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.22em] text-brand-gold drop-shadow-sm">{BRAND_CONFIG.shortCompanyName} PawnShop</p>
                     <p className="text-[8px] font-semibold text-white/60 tracking-wider">{BRAND_CONFIG.tagline}</p>
@@ -598,7 +598,11 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
             <LandingProblemSolution onScroll={handleScroll} />
             <LandingHowItHelps />
             <LandingStats />
-            <LandingBenefits />
+            <LandingBenefits
+              onScrollToContact={() =>
+                handleScroll({ preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.MouseEvent<HTMLElement>, "contact-us", "CONTACT")
+              }
+            />
             <LandingCloud />
             <LandingProcessPricing onScroll={handleScroll} />
             <LandingTrustBar />
@@ -869,7 +873,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
       {/* Back to top button */}
       <button
         type="button"
-        className={`fixed bottom-24 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-lg transition-all duration-300 hover:scale-110 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
+        className={`fixed bottom-24 right-6 z-[85] flex h-14 w-14 items-center justify-center rounded-full bg-brand-gold text-brand-green shadow-xl shadow-brand-gold/30 transition-all duration-300 hover:scale-105 hover:bg-white hover:text-brand-green ${showBackToTop ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-12 opacity-0"}`}
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });
           setActiveNavItem("HOME");
@@ -877,7 +881,7 @@ export function AuthLandingPage({ onLoginClick }: AuthLandingPageProps) {
         }}
         aria-label="Back to top"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} className="h-6 w-6">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
         </svg>
       </button>
