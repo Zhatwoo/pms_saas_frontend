@@ -494,7 +494,7 @@ export function Header({
     <header className={`grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-border-main bg-header-bg px-4 py-3 md:px-6 md:py-4 transition-colors duration-300 ${
       disabled ? "pointer-events-none opacity-60" : ""
     }`}>
-      {/* Left: hamburger only */}
+      {/* Left: hamburger and page title with branch badge */}
       <div className="flex min-w-0 items-center gap-2 md:gap-4">
         {onMenuToggle && (
           <button
@@ -507,9 +507,16 @@ export function Header({
           </button>
         )}
         {/* Page title: show beside burger on mobile and keep on desktop/tablet */}
-        <h1 className="block max-w-[9rem] truncate text-xs font-bold leading-tight text-text-primary sm:max-w-[10rem] sm:text-sm md:max-w-[12rem] md:text-sm lg:max-w-none lg:text-base xl:text-lg">
-          {title}
-        </h1>
+        <div className="flex min-w-0 flex-col items-start gap-0.5">
+          <h1 className="block max-w-[9rem] truncate text-xs font-bold leading-tight text-text-primary sm:max-w-[10rem] sm:text-sm md:max-w-[12rem] md:text-sm lg:max-w-none lg:text-base xl:text-lg">
+            {title}
+          </h1>
+          {branchName && (
+            <span className="inline-block rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green truncate max-w-[160px]" title={branchName}>
+              📍 {branchName}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Center: title and clock */}
