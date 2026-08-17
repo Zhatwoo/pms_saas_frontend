@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
@@ -40,6 +41,7 @@ interface PawnKpisResponse {
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
+  const router = useRouter();
   const { selectedBranch, isAllBranches } = useBranch();
   const { isComplete } = useOpeningChecklist();
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +65,11 @@ export default function EmployeeDashboard() {
   const [revenueTrendData, setRevenueTrendData] = useState<RevenueTrendData[]>([]);
   const [notificationsData, setNotificationsData] = useState<NotificationItem[]>([]);
   const [itemsAttentionData, setItemsAttentionData] = useState<AttentionItem[]>([]);
+  const isAdmin = user?.role === "admin";
+  const pawnTransactionsPath = isAdmin ? "/admin/pawn-transactions" : "/employee/pawn-transaction";
+  const itemsForSalePath = isAdmin
+    ? "/admin/inventory/items-for-sale"
+    : "/employee/inventory/items-for-sale";
 
   useEffect(() => {
     if (!isComplete) {
@@ -122,7 +129,13 @@ export default function EmployeeDashboard() {
         </div>
       ) : (
         <div className="space-y-5">
-          <OverallSummaryStats data={overallData} />
+          <OverallSummaryStats
+            data={overallData}
+            onTotalContractsClick={() => router.push(pawnTransactionsPath)}
+            onActiveClick={() => router.push(pawnTransactionsPath)}
+            onRedeemedClick={() => router.push(pawnTransactionsPath)}
+            onSalesClick={() => router.push(itemsForSalePath)}
+          />
           <DashboardStats data={kpiData} />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
