@@ -69,7 +69,7 @@ export const privacySections: LegalSection[] = [
   },
   {
     title: "X. Contact Information",
-    body: "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: quickpawn.pms@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
+    body: "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: inquire.quickpawn.pms@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
   },
 ];
 
@@ -189,7 +189,7 @@ export const termsSections: LegalSection[] = [
   },
   {
     title: "XVII. Contact Information",
-    body: "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: quickpawn.pms@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
+    body: "Inspire Next Global Inc.\nName: Inspire Neo\nEmail: inquire.quickpawn.pms@gmail.com\nContact Number: 09929718800\nAddress: 6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
   },
 ];
 
