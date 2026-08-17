@@ -60,10 +60,19 @@ interface OverallSummaryData {
 
 interface OverallSummaryStatsProps {
   data?: OverallSummaryData;
-  loading?: boolean;
+  onTotalContractsClick?: () => void;
+  onActiveClick?: () => void;
+  onRedeemedClick?: () => void;
+  onSalesClick?: () => void;
 }
 
-export function OverallSummaryStats({ data, loading }: OverallSummaryStatsProps) {
+export function OverallSummaryStats({
+  data,
+  onTotalContractsClick,
+  onActiveClick,
+  onRedeemedClick,
+  onSalesClick,
+}: OverallSummaryStatsProps) {
   const allBranchSales = data?.allBranchSales;
   const branchSales = data?.branchSales;
   const hasBranchComparison =
@@ -75,18 +84,34 @@ export function OverallSummaryStats({ data, loading }: OverallSummaryStatsProps)
         label="Total Contracts"
         value={data?.totalContracts || 0}
         icon={folderIcon}
+        onClick={onTotalContractsClick}
       />
       <StatCard
         label="Active"
         value={data?.active || 0}
         icon={<div className="text-brand-green">{checkIcon}</div>}
+        onClick={onActiveClick}
       />
       <StatCard
         label="Redeemed"
         value={data?.redeemed || 0}
         icon={<div className="text-brand-green">{checkIcon}</div>}
+        onClick={onRedeemedClick}
       />
-      <div className="flex items-center gap-4 rounded-lg bg-brand-green p-5 shadow-sm">
+      <div
+        onClick={onSalesClick}
+        onKeyDown={(event) => {
+          if (onSalesClick && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onSalesClick();
+          }
+        }}
+        role={onSalesClick ? "button" : undefined}
+        tabIndex={onSalesClick ? 0 : undefined}
+        className={`flex items-center gap-4 rounded-lg bg-brand-green p-5 text-left shadow-sm transition-all duration-300 ${
+          onSalesClick ? "cursor-pointer hover:shadow-md active:scale-[0.98]" : ""
+        }`}
+      >
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-pawn-gold">
           {salesIcon}
         </div>

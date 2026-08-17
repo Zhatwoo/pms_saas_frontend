@@ -52,13 +52,63 @@ export function StatCard({
   onClick,
   loading = false,
 }: StatCardProps) {
+  const classNameValue = `flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 text-left transition-all duration-300 ${
+    onClick ? "cursor-pointer hover:shadow-md hover:border-zinc-300 active:scale-[0.98]" : ""
+  } ${className}`;
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={classNameValue}>
+        <StatCardContent
+          label={label}
+          value={value}
+          subtitle={subtitle}
+          change={change}
+          changeType={changeType}
+          icon={icon}
+          borderColor={borderColor}
+          labelClassName={labelClassName}
+          valueClassName={valueClassName}
+          loading={loading}
+        />
+      </button>
+    );
+  }
+
   return (
-    <div
-      onClick={onClick}
-      className={`flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 transition-all duration-300 ${
-        onClick ? "cursor-pointer hover:shadow-md hover:border-zinc-300 active:scale-[0.98]" : ""
-      } ${className}`}
-    >
+    <div className={classNameValue}>
+      <StatCardContent
+        label={label}
+        value={value}
+        subtitle={subtitle}
+        change={change}
+        changeType={changeType}
+        icon={icon}
+        borderColor={borderColor}
+        labelClassName={labelClassName}
+        valueClassName={valueClassName}
+        loading={loading}
+      />
+    </div>
+  );
+}
+
+type StatCardContentProps = Omit<StatCardProps, "onClick" | "className">;
+
+function StatCardContent({
+  label,
+  value,
+  subtitle,
+  change,
+  changeType,
+  icon,
+  borderColor = "border-[var(--emerald-border)]",
+  labelClassName = "",
+  valueClassName = "",
+  loading = false,
+}: StatCardContentProps) {
+  return (
+    <>
       <div className={`mb-4 h-1 w-full rounded-full ${borderColor}`} />
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -90,6 +140,6 @@ export function StatCard({
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
