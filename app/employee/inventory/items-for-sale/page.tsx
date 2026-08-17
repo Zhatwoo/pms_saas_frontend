@@ -10,6 +10,7 @@ import { SaleCalendar } from "@/app/(pages)/inventory/items-for-sale/_components
 import { useBranch } from "@/contexts/branch-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { SellsTransferModal } from "@/app/employee/pawn-transaction/_components/sells-transfer-modal";
+import { SaleItemQrPreview } from "@/components/shared/sale-item-qr-preview";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -509,6 +510,7 @@ export default function EmployeeItemsForSalePage() {
             </div>
 
             <div className="space-y-4 p-5 sm:space-y-6 sm:p-8">
+              <SaleItemQrPreview itemId={viewingItem.itemId} compact />
               <div className="grid grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Retail Price</p>

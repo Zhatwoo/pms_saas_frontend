@@ -17,6 +17,7 @@ import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { buildQrSheetDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
 import { AddItemModal } from "@/app/(pages)/inventory/items-for-sale/_components/add-item-modal";
 import { SaleCalendar } from "@/app/(pages)/inventory/items-for-sale/_components/sale-calendar";
+import { SaleItemQrPreview } from "@/components/shared/sale-item-qr-preview";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -516,6 +517,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
               <StatusBadge label={viewingItem.status} variant={statusVariant[viewingItem.status] || "green"} />
             </div>
             <div className="p-6 space-y-4">
+              <SaleItemQrPreview itemId={viewingItem.itemId} compact />
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Category</p><p className="text-sm text-text-primary">{viewingItem.category}</p></div>
                 <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-brand-green">{formatPeso(viewingItem.price.toLocaleString())}</p></div>

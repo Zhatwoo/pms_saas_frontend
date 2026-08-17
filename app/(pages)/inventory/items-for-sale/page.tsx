@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { AddItemModal } from "./_components/add-item-modal";
 import { SaleCalendar } from "./_components/sale-calendar";
+import { SaleItemQrPreview } from "@/components/shared/sale-item-qr-preview";
 
 const eyeIcon = (
   <svg
@@ -431,12 +432,15 @@ export default function ItemsForSalePage() {
               </div>
             </div>
             <div className="grid gap-4 p-6 md:grid-cols-[minmax(0,220px)_1fr]">
-              <div className="overflow-hidden rounded-2xl border border-border-main bg-surface-secondary dark:border-white/10 dark:bg-zinc-900">
-                {selectedSaleItem.imageUrl ? (
-                  <img src={selectedSaleItem.imageUrl} alt={selectedSaleItem.itemName} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-sm font-semibold text-text-tertiary">No item image available</div>
-                )}
+              <div className="flex flex-col gap-3">
+                <div className="overflow-hidden rounded-2xl border border-border-main bg-surface-secondary dark:border-white/10 dark:bg-zinc-900">
+                  {selectedSaleItem.imageUrl ? (
+                    <img src={selectedSaleItem.imageUrl} alt={selectedSaleItem.itemName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex min-h-[120px] items-center justify-center px-6 text-center text-sm font-semibold text-text-tertiary">No item image available</div>
+                  )}
+                </div>
+                <SaleItemQrPreview itemId={selectedSaleItem.itemId} compact />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {[["Item ID", selectedSaleItem.itemId],["Category", selectedSaleItem.category],["Branch", selectedSaleItem.branch],["Date Added", selectedSaleItem.availableDate],["Price", formatPeso(selectedSaleItem.price)],["Status", saleStatusLabel(selectedSaleItem.status)],["Branch Location", selectedSaleItem.branchLocation || "N/A"],["Original Pawn ID", selectedSaleItem.originalPawnId || "N/A"]].map(([label, value]) => (
