@@ -325,7 +325,7 @@ export function Sidebar({
         >
           <div
             className={`flex w-full items-center transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
-              isCompact ? "justify-center" : "justify-start gap-3"
+              isCompact ? "justify-center" : "justify-start gap-1"
             }`}
           >
             <button
@@ -344,41 +344,39 @@ export function Sidebar({
                     ? "Expand sidebar"
                     : "Collapse sidebar"
               }
-              className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition hover:bg-pawn-sidebar-light"
+              className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition hover:bg-pawn-sidebar-light ${
+                isCompact ? "mx-auto" : ""
+              }`}
             >
-              <span
-                className={`absolute inset-0 flex items-center justify-center transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
-                  isCompact
-                    ? "translate-x-0 opacity-100"
-                    : "-translate-x-2 opacity-0"
-                }`}
-              >
-                <MenuIcon />
-              </span>
-              <span
-                className={`absolute inset-0 flex items-center justify-center transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
-                  isCompact
-                    ? "translate-x-2 opacity-0"
-                    : "translate-x-0 opacity-100"
-                }`}
-              >
-                <QuickPawnLogo variant="mark" className="h-28 w-28" />
-              </span>
+              <div className={`flex items-center justify-center h-full w-full ${isCompact ? "transform translate-x-1" : ""}`}>
+                <QuickPawnLogo variant="mark" className="h-6 w-6 block drop-shadow-md" />
+              </div>
             </button>
-          <div
-            className={`overflow-hidden whitespace-nowrap text-left transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
-              isCompact
-                ? "max-w-0 -translate-x-2 opacity-0"
-                : "max-w-[180px] translate-x-0 opacity-100"
-            }`}
-          >
-            <p className="text-lg font-bold leading-tight tracking-wide text-white">
-              {APP_SHORT_NAME}
-            </p>
-            <p className="text-xs font-medium leading-tight tracking-wider text-white/60">
-              {APP_TAGLINE}
-            </p>
-          </div>
+
+            <Link
+              href="/dashboard"
+              onClick={() => {
+                if (isMobileOpen) {
+                  onMobileClose();
+                }
+              }}
+              className={`${isCompact ? "mx-auto" : "ml-1"}`}
+            >
+              <div
+                className={`overflow-hidden whitespace-nowrap text-left transition-all duration-100 ease-[cubic-bezier(0.4,0.0,0.2,1)] ${
+                  isCompact
+                    ? "max-w-0 -translate-x-2 opacity-0"
+                    : "max-w-[220px] translate-x-0 opacity-100 pr-2"
+                }`}
+              >
+                <p className="text-base font-semibold leading-tight tracking-wide text-white">
+                  {APP_SHORT_NAME}
+                </p>
+                <p className="text-[11px] font-medium leading-tight tracking-wider text-white/60">
+                  {APP_TAGLINE}
+                </p>
+              </div>
+            </Link>
           {!isCompact && (
             <button
               type="button"

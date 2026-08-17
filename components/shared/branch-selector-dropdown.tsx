@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useBranch } from "@/contexts/branch-context";
 import type { BranchOption } from "@/contexts/branch-context";
+import { toast } from "sonner";
 
 /* ── Icons ──────────────────────────────────────────────── */
 function BuildingIcon({ className = "" }: { className?: string }) {
@@ -152,6 +153,12 @@ export function BranchSelectorDropdown() {
       setSelectedBranch(branch);
       setOpen(false);
       setSearchQuery("");
+      
+      // Show success notification
+      const branchDisplay = branch.id === "__all__" ? "All Branches" : branch.name;
+      toast.success(`Switched to ${branchDisplay}`, {
+        description: branch.location ? `📍 ${branch.location}` : undefined,
+      });
     },
     [setSelectedBranch],
   );
