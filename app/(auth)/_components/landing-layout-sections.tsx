@@ -1687,7 +1687,7 @@ export function LandingLightFooter({
             <p className="leading-relaxed text-white/80">
               <span className="font-semibold text-white">Email:</span>{" "}
               <a href={supportEmailComposeUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
-                quickpawn.pms@gmail.com
+                {footerSupportEmail}
               </a>
             </p>
             <p className="leading-relaxed text-white/80">
