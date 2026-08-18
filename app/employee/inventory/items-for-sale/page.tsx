@@ -24,6 +24,7 @@ interface SaleItem {
   price: number;
   status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
+  imageUrl?: string;
 }
 
 
@@ -497,7 +498,7 @@ export default function EmployeeItemsForSalePage() {
 
       {viewingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md px-4" onClick={() => setViewingItem(null)}>
-          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-border-main bg-surface shadow-2xl scale-in-center" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-border-main bg-surface shadow-2xl scale-in-center" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-brand-green to-brand-green/80 px-5 py-4 sm:px-8 sm:py-6">
               <div className="flex items-center justify-between mb-2">
                 <span className="rounded-full bg-pawn-gold/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-pawn-gold">
@@ -508,24 +509,43 @@ export default function EmployeeItemsForSalePage() {
               <h2 className="text-xl sm:text-2xl font-black text-white">{viewingItem.itemName}</h2>
             </div>
 
-            <div className="space-y-4 p-5 sm:space-y-6 sm:p-8">
-              <div className="grid grid-cols-2 gap-4 sm:gap-6">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Retail Price</p>
-                  <p className="text-lg sm:text-xl font-black text-pawn-gold">&#8369;{viewingItem.price.toLocaleString()}</p>
+            <div className="p-5 sm:p-8">
+              <div className="grid gap-6 md:grid-cols-[minmax(0,200px)_1fr]">
+                <div className="overflow-hidden rounded-2xl border border-border-main bg-surface-secondary flex items-center justify-center min-h-[180px]">
+                  {viewingItem.imageUrl ? (
+                    <img src={viewingItem.imageUrl} alt={viewingItem.itemName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="p-4 text-center text-xs font-semibold text-text-tertiary">No item image available</div>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Date Expired</p>
-                  <p className="text-sm font-bold text-text-primary">{viewingItem.availableDate}</p>
-                </div>
-              </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Retail Price</p>
+                      <p className="text-lg sm:text-xl font-black text-pawn-gold">&#8369;{viewingItem.price.toLocaleString()}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Date Expired</p>
+                      <p className="text-sm font-bold text-text-primary">{viewingItem.availableDate}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Category</p>
+                      <p className="text-sm font-semibold text-text-primary">{viewingItem.category}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Branch</p>
+                      <p className="text-sm font-semibold text-text-primary">{viewingItem.branch}</p>
+                    </div>
+                  </div>
 
-              <div className="border-t border-border-subtle pt-4 sm:pt-6">
-                <p className="mb-2 text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Detailed Description</p>
-                <div className="rounded-xl border border-border-main bg-surface-secondary/70 p-4">
-                  <p className="text-sm font-medium leading-relaxed italic text-text-primary">
-                    &#8220;{viewingItem.description || "Fully authenticated item transitioned from pawn inventory after expiration date."}&#8221;
-                  </p>
+                  <div className="border-t border-border-subtle pt-4">
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-tighter text-text-tertiary">Detailed Description</p>
+                    <div className="rounded-xl border border-border-main bg-surface-secondary/70 p-3">
+                      <p className="text-xs font-medium leading-relaxed italic text-text-primary">
+                        &#8220;{viewingItem.description || "Fully authenticated item transitioned from pawn inventory after expiration date."}&#8221;
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
