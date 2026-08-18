@@ -57,7 +57,9 @@ describe("Sidebar account link", () => {
 
     const profileLink = screen.getByRole("link", { name: "Open profile settings" });
     expect(profileLink).toHaveAttribute("href", "/settings");
-    expect(screen.getByText("Super Admin User")).toBeInTheDocument();
+    const userName = screen.getByText("Super Admin User");
+    expect(userName).toBeInTheDocument();
+    expect(userName).toHaveClass("text-white");
     expect(screen.getByText("Super Admin")).toBeInTheDocument();
   });
 
