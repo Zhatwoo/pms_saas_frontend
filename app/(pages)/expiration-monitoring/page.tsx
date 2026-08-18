@@ -209,12 +209,7 @@ function ExpirationMonitoringPageContent() {
           {toastMessage}
         </div>
       ) : null}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <p className="mt-1 text-sm text-zinc-500">
-            Track contracts nearing expiration and overdue items
-          </p>
-        </div>
+      <div className="flex justify-end">
         <ActionButton
           onClick={handleBlastEmail}
           disabled={isBlastSending}
