@@ -17,6 +17,7 @@ import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { buildQrSheetDocument, escapeHtml, printHtmlDocument } from "@/lib/print-templates";
 import { AddItemModal } from "@/app/(pages)/inventory/items-for-sale/_components/add-item-modal";
 import { SaleCalendar } from "@/app/(pages)/inventory/items-for-sale/_components/sale-calendar";
+import { SaleItemQrPreview } from "@/components/shared/sale-item-qr-preview";
 
 type SaleViewMode = "current" | "calendar" | "history";
 
@@ -525,7 +526,8 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
                     <div className="p-4 text-center text-xs font-semibold text-text-tertiary">No item image available</div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <SaleItemQrPreview itemId={viewingItem.itemId} compact />
+              <div className="grid grid-cols-2 gap-4">
                   <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Category</p><p className="text-sm font-semibold text-text-primary">{viewingItem.category}</p></div>
                   <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-brand-green">{formatPeso(viewingItem.price.toLocaleString())}</p></div>
                   <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Available Date</p><p className="text-sm text-text-primary">{viewingItem.availableDate}</p></div>
