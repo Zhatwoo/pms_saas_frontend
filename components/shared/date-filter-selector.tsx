@@ -1,6 +1,15 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import {
+  buildMonthlyDate,
+  clampMonthlyDate,
+  generateRecentYears,
+  getAvailableMonthsForYear,
+  getCurrentMonthString,
+  monthlyDateToRange,
+  parseMonthlyDate,
+} from "@/lib/date-filter";
 import { PeriodTabs } from "./period-tabs";
 
 interface DateFilterSelectorProps {
@@ -19,11 +28,6 @@ function toLocalYMD(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-}
-
-function getCurrentMonthString() {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function generateRecentWeeks(count = 12) {
@@ -83,15 +87,8 @@ export function DateFilterSelector({
       }
       case "monthly": {
         if (monthlyDate) {
-          const [year, month] = monthlyDate.split("-");
-          const start = new Date(parseInt(year), parseInt(month) - 1, 1);
-          const end = new Date(parseInt(year), parseInt(month), 0); // Last day of month
-          
-          // To format nicely as YYYY-MM-DD in local time
-          const startStr = `${year}-${month}-01`;
-          const endStr = `${year}-${month}-${String(end.getDate()).padStart(2, "0")}`;
-          
-          onDateRangeChange(startStr, endStr);
+          const { startDate, endDate } = monthlyDateToRange(monthlyDate);
+          onDateRangeChange(startDate, endDate);
         }
         break;
       }
@@ -107,10 +104,20 @@ export function DateFilterSelector({
     }
   }, [activePeriod, dailyDate, weeklyId, monthlyDate, yearlyYear, weeks, onDateRangeChange]);
 
-  const years = useMemo(() => {
-    const current = new Date().getFullYear();
-    return Array.from({ length: 5 }, (_, i) => (current - i).toString());
-  }, []);
+  const years = useMemo(() => generateRecentYears(5), []);
+  const { year: selectedMonthYear, month: selectedMonth } = parseMonthlyDate(monthlyDate);
+  const availableMonths = useMemo(
+    () => getAvailableMonthsForYear(selectedMonthYear),
+    [selectedMonthYear],
+  );
+
+  const handleMonthlyYearChange = (nextYear: string) => {
+    setMonthlyDate(clampMonthlyDate(buildMonthlyDate(nextYear, selectedMonth)));
+  };
+
+  const handleMonthlyMonthChange = (nextMonth: string) => {
+    setMonthlyDate(buildMonthlyDate(selectedMonthYear, nextMonth));
+  };
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -164,13 +171,32 @@ export function DateFilterSelector({
         )}
 
         {activePeriod.toLowerCase() === "monthly" && (
-          <input
-            type="month"
-            max={getCurrentMonthString()}
-            value={monthlyDate}
-            onChange={(e) => setMonthlyDate(e.target.value)}
-            className="h-11 w-full rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold sm:w-[10.5rem]"
-          />
+          <div className="flex w-full min-w-0 gap-2 sm:w-auto">
+            <select
+              value={selectedMonth}
+              onChange={(e) => handleMonthlyMonthChange(e.target.value)}
+              aria-label="Select month"
+              className="h-11 min-w-0 flex-1 rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold sm:min-w-[9.5rem]"
+            >
+              {availableMonths.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedMonthYear}
+              onChange={(e) => handleMonthlyYearChange(e.target.value)}
+              aria-label="Select year"
+              className="h-11 w-[6.5rem] shrink-0 rounded-lg border border-border-main bg-surface px-3 text-sm text-text-primary focus:border-pawn-gold focus:outline-none focus:ring-1 focus:ring-pawn-gold"
+            >
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
         )}
 
         {activePeriod.toLowerCase() === "yearly" && (

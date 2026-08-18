@@ -1,3 +1,5 @@
+import { isPublicAuthApiPath } from "@/lib/public-auth-paths";
+
 type ApiRequestInit = RequestInit & {
   suppressAuthExpired?: boolean;
   suppressApiIssueLogging?: boolean;
@@ -117,15 +119,7 @@ class ApiClient {
       ...requestOptions.headers,
     };
 
-    const isPublicPath =
-      path === "/auth/login" ||
-      path === "/auth/logout" ||
-      path === "/auth/register" ||
-      path === "/auth/signup/branches" ||
-      path === "/branches/public" ||
-      path === "/inventory/public/for-sale" ||
-      path === "/devices/request-authorization" ||
-      path === "/contact";
+    const isPublicPath = isPublicAuthApiPath(path);
 
     let res: Response;
     let retryCount = 0;

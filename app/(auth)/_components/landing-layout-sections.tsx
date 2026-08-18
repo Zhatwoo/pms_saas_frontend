@@ -1681,37 +1681,28 @@ export function LandingLightFooter({
       )}
 
       <div className="landing-container-wide relative grid gap-10 md:grid-cols-2 lg:grid-cols-5 uqhd:gap-14">
-        <div className="lg:col-span-1">
-          <div className="flex items-center gap-3">
-            <QuickPawnLogo variant="mark" className="h-28 w-28" />
-            <div>
-              <p className="font-display text-xl font-bold text-white uqhd:text-2xl uhd:text-3xl">{BRAND_CONFIG.shortCompanyName}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gold uqhd:text-xs">{BRAND_CONFIG.tagline}</p>
-            </div>
-          </div>
-          <div className="mt-5 space-y-3 text-sm text-white/70">
-            <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Contact Details</p>
-            <div className="space-y-2">
-              <p className="leading-relaxed text-white/80">
-                <span className="font-semibold text-white">Email:</span>{" "}
-                <a href={supportEmailComposeUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
-                  quickpawn.pms@gmail.com
-                </a>
-              </p>
-              <p className="leading-relaxed text-white/80">
-                <span className="font-semibold text-white">Telephone:</span> 253221002
-              </p>
-              <p className="leading-relaxed text-white/80">
-                <span className="font-semibold text-white">Address:</span>{" "}
-                <a href={footerAddressMapUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
-                  {footerAddress}
-                </a>
-              </p>
-            </div>
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Contact Details</p>
+          <div className="mt-4 space-y-2 text-sm text-white/70">
+            <p className="leading-relaxed text-white/80">
+              <span className="font-semibold text-white">Email:</span>{" "}
+              <a href={supportEmailComposeUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
+                {footerSupportEmail}
+              </a>
+            </p>
+            <p className="leading-relaxed text-white/80">
+              <span className="font-semibold text-white">Telephone:</span> 253221002
+            </p>
+            <p className="leading-relaxed text-white/80">
+              <span className="font-semibold text-white">Address:</span>{" "}
+              <a href={footerAddressMapUrl} target="_blank" rel="noreferrer" className="transition-colors hover:text-brand-gold">
+                {footerAddress}
+              </a>
+            </p>
           </div>
         </div>
 
-        <div>
+        <div className="lg:pl-8">
           <p className="text-[11px] font-black uppercase tracking-widest text-brand-gold">Explore</p>
           <ul className="mt-4 space-y-2 text-sm text-white/65">
             {[
