@@ -68,9 +68,14 @@ export interface DashboardStatData {
 interface DashboardStatsProps {
   data?: DashboardStatData;
   period?: string;
+  onItemsReadyForSaleClick?: () => void;
 }
 
-export function DashboardStats({ data, period }: DashboardStatsProps) {
+export function DashboardStats({
+  data,
+  period,
+  onItemsReadyForSaleClick,
+}: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
@@ -92,6 +97,7 @@ export function DashboardStats({ data, period }: DashboardStatsProps) {
         value={data?.itemsReadyForSale || 0}
         subtitle="No change"
         icon={cartIcon}
+        onClick={onItemsReadyForSaleClick}
       />
       <StatCard
         label={`${period || "Monthly"} Revenue`}
