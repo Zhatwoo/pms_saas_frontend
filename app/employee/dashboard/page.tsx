@@ -136,7 +136,10 @@ export default function EmployeeDashboard() {
             onRedeemedClick={() => router.push(pawnTransactionsPath)}
             onSalesClick={() => router.push(itemsForSalePath)}
           />
-          <DashboardStats data={kpiData} />
+          <DashboardStats
+            data={kpiData}
+            onItemsReadyForSaleClick={() => router.push(itemsForSalePath)}
+          />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <ContractTrendsChart data={contractTrendsData} />
