@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ClockIcon, BellIcon, MenuIcon } from "@/lib/icons";
@@ -12,8 +13,11 @@ import { extractTransactionNoFromText } from "@/lib/pawn-transaction-navigation"
 import {
   addRolePrefixToTargetUrl,
   type ApiNotification,
+  formatDeviceAuthorizationOverview,
+  formatDeviceAuthorizationTitle,
   type HeaderNotification,
   isBranchTransferNotification,
+  isDeviceAuthorizationNotification,
   isFundTransferNotification,
   isInventoryTransferNotification,
   mapNotification,
@@ -21,7 +25,14 @@ import {
 } from "@/lib/notifications";
 import { getNotificationStreamUrl } from "@/lib/notification-stream";
 import { resolveNotificationSoundPath } from "@/lib/notification-sounds";
+import {
+  formatHeaderDate,
+  formatHeaderDateTime,
+  formatHeaderTime,
+} from "@/lib/header-clock";
 import { useAuth } from "@/contexts/auth-context";
+import { getPageDescription, getPageTitle } from "@/lib/page-header-meta";
+import { getProfileSettingsPath } from "@/lib/profile-navigation";
 
 interface HeaderProps {
   userInitials?: string;
@@ -30,52 +41,6 @@ interface HeaderProps {
   hideBranchSelector?: boolean;
   onMenuToggle?: () => void;
   disabled?: boolean;
-}
-
-const MANILA_TZ = "Asia/Manila";
-
-function formatTimeOnly(): string {
-  const now = new Date();
-  return now.toLocaleString("en-US", {
-    timeZone: MANILA_TZ,
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
-
-function formatDateTime(): string {
-  const now = new Date();
-  return now.toLocaleString("en-US", {
-    timeZone: MANILA_TZ,
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function getPageTitle(pathname: string): string {
-  const customTitles: Record<string, string> = {
-    "view_user": "View Customer",
-    "users": "Employees",
-  };
-
-  const segments = pathname.split("/").filter(Boolean);
-  const last = segments[segments.length - 1] || "Dashboard";
-  
-  if (customTitles[last]) {
-    return customTitles[last];
-  }
-
-  return last
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }
 
 export function Header({
@@ -184,15 +149,22 @@ export function Header({
   }, [fetchNotifications]);
 
   useEffect(() => {
-    setTime(formatDateTime());
-    setTimeOnly(formatTimeOnly());
-    setDateOnly(formatDateOnly());
-    const clockInterval = setInterval(() => {
-      setTime(formatDateTime());
-      setTimeOnly(formatTimeOnly());
-      setDateOnly(formatDateOnly());
-    }, 1000);
+    const tickClock = () => {
+      const now = new Date();
+      setTime(formatHeaderDateTime(now));
+      setTimeOnly(formatHeaderTime(now));
+      setDateOnly(formatHeaderDate(now));
+    };
 
+    tickClock();
+    const clockInterval = setInterval(tickClock, 1000);
+
+    return () => {
+      clearInterval(clockInterval);
+    };
+  }, []);
+
+  useEffect(() => {
     void fetchNotifications();
 
     // ─── Custom Event Listener (Bulletproof Fallback) ────────────────────
@@ -287,7 +259,6 @@ export function Header({
     }
 
     return () => {
-      clearInterval(clockInterval);
       if (fallbackInterval) clearInterval(fallbackInterval);
       events?.close();
       window.removeEventListener("transaction_created", handleTransactionCreated);
@@ -295,16 +266,6 @@ export function Header({
       window.removeEventListener("keydown", enableSoundAfterInteraction);
     };
   }, [enableNotificationSound, fetchNotifications, playNotificationSound]);
-
-  function formatDateOnly(): string {
-    const now = new Date();
-    return now.toLocaleString("en-US", {
-      timeZone: MANILA_TZ,
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {
@@ -333,6 +294,7 @@ export function Header({
   }, [isNotificationOpen]);
 
   const title = getPageTitle(pathname || "");
+  const description = getPageDescription(pathname || "");
   const isCustomerDetailPage = (pathname || "").includes("view_user");
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badgeCount = Math.max(notificationCount, unreadCount);
@@ -406,6 +368,8 @@ export function Header({
     router.push(targetPath);
   };
 
+  const profileSettingsPath = getProfileSettingsPath(pathname);
+
   const customerProfileBasePath = pathname.startsWith("/admin")
     ? "/admin/customers/view_user"
     : pathname.startsWith("/employee")
@@ -445,13 +409,20 @@ export function Header({
   const renderNotificationRow = (item: HeaderNotification) => (
     (() => {
       const notificationHref = resolveNotificationHref(item);
+      const isDeviceAuthorization = isDeviceAuthorizationNotification(item);
+      const displayTitle = isDeviceAuthorization
+        ? formatDeviceAuthorizationTitle(item.title)
+        : item.title;
+      const displaySubtitle = isDeviceAuthorization
+        ? formatDeviceAuthorizationOverview(item.subtitle)
+        : item.subtitle;
 
       const content = (
         <>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-text-primary">{item.title}</p>
-              <p className="mt-0.5 text-xs text-text-secondary">{item.subtitle}</p>
+              <p className="truncate text-sm font-semibold text-text-primary">{displayTitle}</p>
+              <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">{displaySubtitle}</p>
             </div>
             {item.unread && (<span className="mt-1 h-2.5 w-2.5 rounded-full" style={{backgroundColor: 'var(--emerald-text)'}}></span>)}
           </div>
@@ -511,6 +482,11 @@ export function Header({
           <h1 className="block max-w-[9rem] truncate text-xs font-bold leading-tight text-text-primary sm:max-w-[10rem] sm:text-sm md:max-w-[12rem] md:text-sm lg:max-w-none lg:text-base xl:text-lg">
             {title}
           </h1>
+          {description && (
+            <p className="max-w-[12rem] text-[10px] leading-snug text-text-tertiary sm:max-w-[14rem] sm:text-xs md:max-w-[16rem] lg:max-w-xs lg:text-sm">
+              {description}
+            </p>
+          )}
           {branchName && (
             <span className="inline-block rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green truncate max-w-[160px]" title={branchName}>
               📍 {branchName}
@@ -612,13 +588,18 @@ export function Header({
           <ThemeToggle />
         </div>
 
-        <div className="hidden md:flex h-9 w-9 overflow-hidden rounded-full bg-pawn-sidebar">
+        <Link
+          href={profileSettingsPath}
+          aria-label="Open profile settings"
+          title="Profile settings"
+          className="hidden md:flex h-9 w-9 shrink-0 overflow-hidden rounded-full bg-pawn-sidebar transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-green"
+        >
           {user?.avatarUrl ? (
             <Image src={user.avatarUrl} alt="User avatar" width={44} height={44} unoptimized className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-base font-semibold text-white">{resolvedInitials}</div>
+            <span className="flex h-full w-full items-center justify-center text-base font-semibold text-white">{resolvedInitials}</span>
           )}
-        </div>
+        </Link>
       </div>
     </header>
   );

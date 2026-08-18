@@ -17,7 +17,12 @@ import { SessionExpiredModal } from "@/components/ui/session-expired-modal";
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string, deviceFingerprint: string) => Promise<User>;
+  login: (
+    email: string,
+    password: string,
+    deviceFingerprint: string,
+    rememberMe?: boolean,
+  ) => Promise<User>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
   updateUser: (user: User) => void;
@@ -230,7 +235,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [clearSessionExpiryTimers]);
 
-  const login = useCallback(async (email: string, password: string, deviceFingerprint: string) => {
+  const login = useCallback(async (
+    email: string,
+    password: string,
+    deviceFingerprint: string,
+    rememberMe = false,
+  ) => {
     const data = await api.post<{ user: User }>(
       "/auth/login",
       { email, password, deviceFingerprint },
@@ -242,7 +252,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error("Unauthorized");
     }
 
-    document.cookie = rememberedSessionCookie(2_592_000);
+    document.cookie = rememberMe
+      ? rememberedSessionCookie(2_592_000)
+      : clearRememberedSessionCookie();
 
     // Save to state and cache
     clearSessionExpiryTimers();

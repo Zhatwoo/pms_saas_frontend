@@ -4,6 +4,17 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  buildRewardPayload,
+  formatPromoDuration,
+  REWARD_AMOUNT_STEP_PRESETS,
+  REWARD_PERCENT_STEP_PRESETS,
+  REWARD_TRANSACTION_STEP_PRESETS,
+  toDateInputValue,
+  validateRewardForm,
+  type RewardFormState,
+} from "@/lib/reward-form";
+import { RewardNumericStepper } from "./reward-numeric-stepper";
 
 /* ──────────────── Types ──────────────── */
 
@@ -17,19 +28,12 @@ interface Reward {
   required_total_amount: number;
   transaction_type: string | null;
   is_active: boolean;
+  promo_start_at: string | null;
+  promo_end_at: string | null;
   created_at: string;
 }
 
-interface RewardForm {
-  name: string;
-  description: string;
-  reward_type: string;
-  reward_value: string;
-  required_transaction_count: string;
-  required_total_amount: string;
-  transaction_type: string;
-  is_active: boolean;
-}
+interface RewardForm extends RewardFormState {}
 
 const EMPTY_FORM: RewardForm = {
   name: "",
@@ -40,6 +44,8 @@ const EMPTY_FORM: RewardForm = {
   required_total_amount: "0",
   transaction_type: "",
   is_active: true,
+  promo_start_at: "",
+  promo_end_at: "",
 };
 
 const REWARD_TYPES = [
@@ -116,6 +122,8 @@ export function RewardsConfiguration() {
       required_total_amount: String(reward.required_total_amount),
       transaction_type: reward.transaction_type ?? "",
       is_active: reward.is_active,
+      promo_start_at: toDateInputValue(reward.promo_start_at),
+      promo_end_at: toDateInputValue(reward.promo_end_at),
     });
     setEditingId(reward.id);
     setIsModalOpen(true);
@@ -124,23 +132,16 @@ export function RewardsConfiguration() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (isSaving) return;
-    if (!form.name.trim()) {
-      toast.error("Reward name is required");
+
+    const validationError = validateRewardForm(form);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
     setIsSaving(true);
     try {
-      const payload = {
-        name: form.name.trim(),
-        description: form.description.trim(),
-        reward_type: form.reward_type,
-        reward_value: Number(form.reward_value) || 0,
-        required_transaction_count: Number(form.required_transaction_count) || 1,
-        required_total_amount: Number(form.required_total_amount) || 0,
-        transaction_type: form.transaction_type || undefined,
-        is_active: form.is_active,
-      };
+      const payload = buildRewardPayload(form);
 
       if (editingId) {
         await api.patch(`/rewards/${editingId}`, payload);
@@ -213,7 +214,10 @@ export function RewardsConfiguration() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rewards.map((reward) => (
+          {rewards.map((reward) => {
+            const promoDuration = formatPromoDuration(reward.promo_start_at, reward.promo_end_at);
+
+            return (
             <div
               key={reward.id}
               className={`group relative rounded-xl border bg-surface p-5 shadow-sm transition-colors hover:border-brand-green/40 hover:bg-surface-raised ${
@@ -271,6 +275,11 @@ export function RewardsConfiguration() {
                     {reward.transaction_type}
                   </span>
                 )}
+                {promoDuration && (
+                  <span className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[10px] font-semibold text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300">
+                    {promoDuration}
+                  </span>
+                )}
               </div>
 
               {/* Value & Actions */}
@@ -301,7 +310,8 @@ export function RewardsConfiguration() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -334,6 +344,18 @@ export function RewardsConfiguration() {
                 />
               </div>
 
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">Short Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  rows={3}
+                  maxLength={500}
+                  className="w-full resize-y rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none transition-colors focus:border-brand-green focus:ring-1 focus:ring-brand-green"
+                  placeholder="Briefly describe this promo for staff and customers"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-text-secondary">Reward Type</label>
@@ -347,45 +369,43 @@ export function RewardsConfiguration() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-text-secondary">
-                    {form.reward_type === "discount" ? "Value (%)" : "Value (₱)"}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={form.reward_value}
-                    onChange={(e) => setForm({ ...form, reward_value: e.target.value })}
-                    className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
-                    required
-                  />
-                </div>
+                <RewardNumericStepper
+                  label={form.reward_type === "discount" ? "Value (%)" : "Value (₱)"}
+                  value={form.reward_value}
+                  onChange={(reward_value) => setForm({ ...form, reward_value })}
+                  presets={
+                    form.reward_type === "discount"
+                      ? REWARD_PERCENT_STEP_PRESETS
+                      : REWARD_AMOUNT_STEP_PRESETS
+                  }
+                  formatMode={form.reward_type === "discount" ? "percent" : "amount"}
+                  min={0}
+                  required
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-text-secondary">Min Transactions</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.required_transaction_count}
-                    onChange={(e) => setForm({ ...form, required_transaction_count: e.target.value })}
-                    className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-text-secondary">Min Amount (₱)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={form.required_total_amount}
-                    onChange={(e) => setForm({ ...form, required_total_amount: e.target.value })}
-                    className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <RewardNumericStepper
+                  label="Min Transactions"
+                  value={form.required_transaction_count}
+                  onChange={(required_transaction_count) =>
+                    setForm({ ...form, required_transaction_count })
+                  }
+                  presets={REWARD_TRANSACTION_STEP_PRESETS}
+                  formatMode="integer"
+                  min={1}
+                  required
+                />
+                <RewardNumericStepper
+                  label="Min Amount (₱)"
+                  value={form.required_total_amount}
+                  onChange={(required_total_amount) =>
+                    setForm({ ...form, required_total_amount })
+                  }
+                  presets={REWARD_AMOUNT_STEP_PRESETS}
+                  formatMode="amount"
+                  min={0}
+                />
               </div>
 
               <div>
@@ -399,6 +419,34 @@ export function RewardsConfiguration() {
                     <option key={tt.value} value={tt.value}>{tt.label}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">Promo Duration</label>
+                <p className="mb-2 text-[11px] text-text-tertiary">
+                  Optional start and end dates for when this promo can be earned.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-text-tertiary">Start Date</label>
+                    <input
+                      type="date"
+                      value={form.promo_start_at}
+                      onChange={(e) => setForm({ ...form, promo_start_at: e.target.value })}
+                      className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-text-tertiary">End Date</label>
+                    <input
+                      type="date"
+                      value={form.promo_end_at}
+                      min={form.promo_start_at || undefined}
+                      onChange={(e) => setForm({ ...form, promo_end_at: e.target.value })}
+                      className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center gap-3">

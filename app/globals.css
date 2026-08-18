@@ -86,11 +86,11 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(11, 93, 59, 0.25); /* brand-green with low opacity */
+  background-color: color-mix(in srgb, var(--brand-green) 25%, transparent);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(11, 93, 59, 0.6);
+  background-color: color-mix(in srgb, var(--brand-green) 60%, transparent);
 }
 
 html.dark {
