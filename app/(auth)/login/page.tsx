@@ -19,7 +19,12 @@ export default function LoginPage() {
 
 function LoginExperience() {
   const searchParams = useSearchParams();
-  const [showLogin, setShowLogin] = useState(false);
+  const [showLogin, setShowLogin] = useState(
+    () =>
+      searchParams.has("redirect") ||
+      searchParams.get("reason") === SESSION_EXPIRED_REASON ||
+      searchParams.has("notice"),
+  );
 
   const hasShownSessionExpiredRef = useRef(false);
   const hasShownNoticeRef = useRef(false);
@@ -70,5 +75,3 @@ function LoginExperience() {
     </>
   );
 }
-
-export const dynamic = "force-dynamic";

@@ -193,6 +193,89 @@ export function isDeviceAuthorizationApiNotification(
   );
 }
 
+export function isDeviceAuthorizationNotification(
+  notification: Pick<HeaderNotification, "category" | "entityType">,
+): boolean {
+  return (
+    notification.category === "Requests" && notification.entityType === "system"
+  );
+}
+
+const ENCRYPTED_VALUE_PATTERN =
+  /^[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+:[A-Za-z0-9+/=]+$/;
+
+function looksEncrypted(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed.includes(":")) return false;
+  return ENCRYPTED_VALUE_PATTERN.test(trimmed);
+}
+
+function extractEmailFromRequestedByLine(line: string): string | null {
+  const match = line.match(/\(([^)]+)\)/);
+  return match?.[1]?.trim() ?? null;
+}
+
+/** Present a concise device-auth overview in the notification bell. */
+export function formatDeviceAuthorizationOverview(message: string): string {
+  const lines = message
+    .split(/\r?\n| · /)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  let device = "";
+  let email = "";
+  let ipAddress = "";
+
+  for (const line of lines) {
+    if (line.startsWith("Device:")) {
+      device = line
+        .replace(/^Device:\s*/i, "")
+        .replace(/\s*\([^)]*\)\s*$/, "")
+        .trim();
+      continue;
+    }
+
+    if (line.startsWith("Email:")) {
+      email = line.replace(/^Email:\s*/i, "").trim();
+      continue;
+    }
+
+    if (line.startsWith("Requested by:")) {
+      const requestedByEmail = extractEmailFromRequestedByLine(line);
+      if (requestedByEmail && !looksEncrypted(requestedByEmail)) {
+        email = requestedByEmail;
+      }
+      continue;
+    }
+
+    if (line.startsWith("IP Address:")) {
+      ipAddress = line.replace(/^IP Address:\s*/i, "").trim();
+    }
+  }
+
+  const parts: string[] = [];
+  if (device) parts.push(`Device: ${device}`);
+  if (email) parts.push(`Email: ${email}`);
+  if (ipAddress) parts.push(`IP Address: ${ipAddress}`);
+
+  return parts.length > 0 ? parts.join(" · ") : message;
+}
+
+/** Hide encrypted requester names from legacy device-auth notification titles. */
+export function formatDeviceAuthorizationTitle(title: string): string {
+  const prefix = "Device Authorization Request from ";
+  if (!title.startsWith(prefix)) {
+    return title;
+  }
+
+  const requesterName = title.slice(prefix.length).trim();
+  if (!requesterName || looksEncrypted(requesterName)) {
+    return "Device Authorization Request";
+  }
+
+  return title;
+}
+
 export function addRolePrefixToTargetUrl(targetUrl: string, role?: Role): string {
   if (!targetUrl.startsWith("/")) return targetUrl;
   if (targetUrl.startsWith("/admin/") || targetUrl.startsWith("/employee/")) {

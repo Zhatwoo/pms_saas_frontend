@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { NavGroup, NavItem, Role } from "@/types";
 import { APP_SHORT_NAME, APP_TAGLINE } from "@/lib/constants";
 import { getRoleLabel } from "@/lib/auth";
+import { getProfileSettingsPath } from "@/lib/profile-navigation";
 import { LogoutIcon, MenuIcon, CloseIcon } from "@/lib/icons";
 import { QuickPawnLogo } from "./quickpawn-logo";
 import { LogoutModal } from "./logout-modal";
@@ -216,6 +217,7 @@ export function Sidebar({
   disabled,
 }: SidebarProps) {
   const pathname = usePathname();
+  const profileSettingsPath = getProfileSettingsPath(pathname);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
@@ -302,6 +304,36 @@ export function Sidebar({
         .toUpperCase()
         .slice(0, 2)
     : "U";
+
+  const userAccountDetails = (
+    <>
+      <div className="flex h-11 w-11 shrink-0 aspect-square overflow-hidden items-center justify-center rounded-full bg-pawn-gold text-base font-bold leading-none text-zinc-900">
+        {userAvatarUrl ? (
+          <img
+            src={userAvatarUrl}
+            alt="User avatar"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          userInitials
+        )}
+      </div>
+      {!isCompact && (
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold text-red-500">
+            {userName || "Current User"}
+          </p>
+          <p className="text-sm uppercase tracking-wide text-white/60">
+            {userRole ? getRoleLabel(userRole) : "Signed In"}
+          </p>
+        </div>
+      )}
+    </>
+  );
+
+  const userAccountClassName = `flex items-center gap-3 rounded-lg bg-white/5 px-3 py-3 ${
+    isCompact ? "justify-center" : ""
+  }`;
 
   return (
     <>
@@ -434,33 +466,24 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-white/10 p-2">
-        <div
-          className={`flex items-center gap-3 rounded-lg bg-white/5 px-3 py-3 ${
-            isCompact ? "justify-center" : ""
-          }`}
-        >
-          <div className="flex h-11 w-11 shrink-0 aspect-square overflow-hidden items-center justify-center rounded-full bg-pawn-gold text-base font-bold leading-none text-zinc-900">
-            {userAvatarUrl ? (
-              <img
-                src={userAvatarUrl}
-                alt="User avatar"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              userInitials
-            )}
+        {disabled ? (
+          <div
+            aria-disabled="true"
+            className={`${userAccountClassName} cursor-not-allowed opacity-60`}
+          >
+            {userAccountDetails}
           </div>
-          {!isCompact && (
-            <div className="min-w-0">
-              <p className="truncate text-base font-semibold text-red-500">
-                {userName || "Current User"}
-              </p>
-              <p className="text-sm uppercase tracking-wide text-white/60">
-                {userRole ? getRoleLabel(userRole) : "Signed In"}
-              </p>
-            </div>
-          )}
-        </div>
+        ) : (
+          <Link
+            href={profileSettingsPath}
+            onClick={() => onNavigate?.()}
+            aria-label="Open profile settings"
+            title={isCompact ? "Profile settings" : undefined}
+            className={`${userAccountClassName} transition-colors hover:bg-pawn-sidebar-light`}
+          >
+            {userAccountDetails}
+          </Link>
+        )}
       </div>
 
       {/* Logout */}
