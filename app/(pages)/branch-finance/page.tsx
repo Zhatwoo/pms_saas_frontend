@@ -586,12 +586,6 @@ export default function BranchFinancePage() {
         </div>
       ) : null}
 
-      <div>
-        <p className="mt-1 text-sm text-text-tertiary">
-          Review branch fund requests, transfer approved funds, and track transfer history from live backend data.
-        </p>
-      </div>
-
       {error ? (
         <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}

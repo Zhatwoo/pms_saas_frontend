@@ -204,12 +204,7 @@ function ExpirationMonitoringPageContent() {
 
   return (
     <div className="space-y-5 relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <p className="mt-1 text-sm text-zinc-500">
-            Track contracts nearing expiration and overdue items
-          </p>
-        </div>
+      <div className="flex justify-end">
         <ActionButton
           disabled={isBlasting || getActiveItems().length === 0}
           onClick={handleEmailBlast}

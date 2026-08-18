@@ -622,11 +622,6 @@ export default function PawnedItemsPage({ viewOnly = false }: { viewOnly?: boole
 
   return (
     <div className="space-y-3 pb-4 text-text-primary -mt-2">
-      <div>
-        <p className="text-sm text-brand-green/60 dark:text-zinc-300">
-          Comprehensive list of all active, redeemed, and expired pawn contracts across your branch.
-        </p>
-      </div>
       <div className={viewOnly ? "flex flex-col items-start gap-4 rounded-lg border border-border-main bg-surface p-5 shadow-lg shadow-black/20 backdrop-blur-sm lg:flex-row lg:items-end lg:justify-between" : "flex flex-col items-start gap-3 rounded-lg border border-border-main bg-surface p-4 shadow-lg shadow-black/20 backdrop-blur-sm lg:flex-row lg:items-end lg:justify-between"}>
         <div className="grid w-full grid-cols-3 items-end gap-3 lg:flex lg:w-auto lg:flex-wrap">
           <div className="order-1 flex min-w-0 flex-col gap-1 lg:order-2">

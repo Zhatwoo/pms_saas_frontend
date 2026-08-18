@@ -294,7 +294,7 @@ export function Header({
   }, [isNotificationOpen]);
 
   const title = getPageTitle(pathname || "");
-  const description = getPageDescription(pathname || "");
+  const description = getPageDescription(pathname || "", { branchName });
   const isCustomerDetailPage = (pathname || "").includes("view_user");
   const unreadCount = notifications.filter((item) => item.unread).length;
   const badgeCount = Math.max(notificationCount, unreadCount);
