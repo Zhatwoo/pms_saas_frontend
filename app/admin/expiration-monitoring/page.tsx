@@ -7,8 +7,7 @@ import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { ActionButton } from "@/components/shared/action-button";
-import { ExpirationStats } from "./_components/expiration-stats";
-import { ExpirationTabs } from "./_components/expiration-tabs";
+import { ExpirationStats, type ExpirationFilterKey } from "./_components/expiration-stats";
 import { ExpirationTable } from "./_components/expiration-table";
 import { RenewModal } from "./_components/expiration-renew-modal";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
@@ -58,7 +57,7 @@ interface ExpirationMonitoringResponse {
 }
 
 function ExpirationMonitoringPageContent() {
-  const [activeTab, setActiveTab] = useState("30days");
+  const [activeTab, setActiveTab] = useState<ExpirationFilterKey>("30days");
   const { selectedBranch, isAllBranches } = useBranch();
   const { user } = useAuth();
   const userRole = user?.role || "employee";
@@ -222,11 +221,11 @@ function ExpirationMonitoringPageContent() {
         </ActionButton>
       </div>
 
-      <ExpirationStats data={stats} isLoading={isLoading} />
-      <ExpirationTabs
+      <ExpirationStats
+        data={stats}
+        isLoading={isLoading}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        counts={stats}
       />
       <ExpirationTable 
         data={getActiveItems()} 

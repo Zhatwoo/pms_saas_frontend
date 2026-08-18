@@ -12,6 +12,7 @@ interface StatCardProps {
   labelClassName?: string;
   valueClassName?: string;
   onClick?: () => void;
+  selected?: boolean;
   loading?: boolean;
 }
 
@@ -50,15 +51,16 @@ export function StatCard({
   labelClassName = "",
   valueClassName = "",
   onClick,
+  selected = false,
   loading = false,
 }: StatCardProps) {
   const classNameValue = `flex flex-col justify-between rounded-lg border border-border-main bg-surface p-5 text-left transition-all duration-300 ${
     onClick ? "cursor-pointer hover:shadow-md hover:border-zinc-300 active:scale-[0.98]" : ""
-  } ${className}`;
+  } ${selected ? "ring-2 ring-pawn-gold shadow-md" : ""} ${className}`;
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={classNameValue}>
+      <button type="button" onClick={onClick} aria-pressed={selected} className={classNameValue}>
         <StatCardContent
           label={label}
           value={value}
