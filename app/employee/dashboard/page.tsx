@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { getPageDescription } from "@/lib/page-header-meta";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
@@ -41,7 +42,9 @@ interface PawnKpisResponse {
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
+  const pathname = usePathname();
   const router = useRouter();
+  const headerDescription = getPageDescription(pathname || "");
   const { selectedBranch, isAllBranches } = useBranch();
   const { isComplete } = useOpeningChecklist();
   const [isLoading, setIsLoading] = useState(true);
@@ -110,16 +113,18 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-brand-green dark:text-text-primary leading-tight">
-          Welcome{user?.fullName ? `, ${user.fullName}` : ""}
-        </h1>
-        <p className="mt-1 text-sm text-text-tertiary">
-          {isAllBranches
-            ? "Overview of all branch performance, transactions, and inventory."
-            : `Showing data for ${selectedBranch.name} — performance, transactions, and inventory.`}
-        </p>
-      </div>
+      {!headerDescription && (
+        <div>
+          <h1 className="text-2xl font-bold text-brand-green dark:text-text-primary leading-tight">
+            Welcome{user?.fullName ? `, ${user.fullName}` : ""}
+          </h1>
+          <p className="mt-1 text-sm text-text-tertiary">
+            {isAllBranches
+              ? "Overview of all branch performance, transactions, and inventory."
+              : `Showing data for ${selectedBranch.name} — performance, transactions, and inventory.`}
+          </p>
+        </div>
+      )}
 
       <AutoResetBanner />
 

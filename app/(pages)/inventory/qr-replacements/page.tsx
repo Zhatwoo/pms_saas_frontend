@@ -325,13 +325,6 @@ export default function QrReplacementRequestsPage() {
   return (
 
     <div className="space-y-4 pt-2 px-6 pb-6">
-
-      
-
-      <p className="text-[13px] font-medium text-text-secondary/80 mb-1">Comprehensive list of all QR replacement requests across all branches.</p>
-
-
-
       {/* Filters Card */}
 
       <div className="flex flex-wrap items-end justify-between gap-3 bg-surface p-3 rounded-lg border border-border-main">

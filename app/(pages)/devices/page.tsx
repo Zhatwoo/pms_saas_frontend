@@ -470,14 +470,7 @@ export default function DevicesPage() {
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-4 text-text-primary sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold text-text-primary sm:text-2xl">Device Management</h1>
-          <p className="mt-1 text-sm text-text-tertiary">
-            Manage authorized devices for {isAllBranches ? "all branches" : selectedBranch.name}
-          </p>
-        </div>
+      <div className="flex justify-end">
         {isSuperAdmin && (
           <ActionButton
             variant="success"

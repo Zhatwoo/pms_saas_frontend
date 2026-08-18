@@ -269,13 +269,7 @@ export default function BranchesPage() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-zinc-400"></p>
-          <p className="mt-1 text-sm text-text-tertiary">
-            Create, edit, and manage all pawnshop branches.
-          </p>
-        </div>
+      <div className="flex items-start justify-end">
         {canCreateBranch && (
           <ActionButton
             variant="warning"
