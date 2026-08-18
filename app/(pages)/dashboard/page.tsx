@@ -112,23 +112,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 lg:max-w-md">
-          <p className="text-sm leading-relaxed text-text-tertiary">
-            Overview of performance, transactions, and inventory.
-          </p>
-        </div>
-        <div className="flex items-center gap-4 lg:shrink-0">
-          <DateFilterSelector
-            periods={periods}
-            activePeriod={activePeriod}
-            onPeriodChange={setActivePeriod}
-            onDateRangeChange={useCallback((start: string | null, end: string | null) => {
-              setStartDate(start);
-              setEndDate(end);
-            }, [])}
-          />
-        </div>
+      <div className="flex justify-end">
+        <DateFilterSelector
+          periods={periods}
+          activePeriod={activePeriod}
+          onPeriodChange={setActivePeriod}
+          onDateRangeChange={useCallback((start: string | null, end: string | null) => {
+            setStartDate(start);
+            setEndDate(end);
+          }, [])}
+        />
       </div>
 
       <AutoResetBanner />

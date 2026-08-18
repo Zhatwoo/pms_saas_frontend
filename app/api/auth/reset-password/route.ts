@@ -2,5 +2,5 @@ import { type NextRequest } from "next/server";
 import { proxyAuthPost } from "@/lib/server/proxy-auth-post";
 
 export async function POST(request: NextRequest) {
-  return proxyAuthPost(request, "/api/auth/complete-onboarding");
+  return proxyAuthPost(request, "/api/auth/reset-password");
 }

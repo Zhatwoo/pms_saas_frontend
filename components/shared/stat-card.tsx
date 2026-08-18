@@ -78,7 +78,7 @@ export function StatCard({
       <div className="mt-2 flex items-center gap-1">
         {change && (
           <span
-            className={`text-sm font-medium ${changeType === "positive" ? "text-green-600" : changeType === "negative" ? "text-red-500" : "text-text-tertiary"}`}
+            className={`text-sm font-medium ${changeType === "positive" ? "text-emerald-text" : changeType === "negative" ? "text-red-500" : "text-text-tertiary"}`}
           >
             {change}
           </span>
