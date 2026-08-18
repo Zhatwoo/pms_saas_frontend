@@ -34,8 +34,6 @@ const boxIcon = (
   </svg>
 );
 
-export type ExpirationFilterKey = "overdue" | "3days" | "7days" | "30days";
-
 interface ExpirationStatsData {
   overdue: number;
   threeDays: number;
@@ -46,72 +44,39 @@ interface ExpirationStatsData {
 interface ExpirationStatsProps {
   data?: ExpirationStatsData;
   isLoading?: boolean;
-  activeTab?: ExpirationFilterKey;
-  onTabChange?: (tab: ExpirationFilterKey) => void;
 }
 
-const CATEGORIES: Array<{
-  key: ExpirationFilterKey;
-  label: string;
-  subtitle: string;
-  borderColor: string;
-  icon: typeof warningIcon;
-  countKey: keyof ExpirationStatsData;
-}> = [
-  {
-    key: "overdue",
-    label: "Overdue",
-    subtitle: "Past maturity date",
-    borderColor: "border-red-500",
-    icon: warningIcon,
-    countKey: "overdue",
-  },
-  {
-    key: "3days",
-    label: "3 Days",
-    subtitle: "Expiring within 3 Days",
-    borderColor: "border-orange-500",
-    icon: boxIcon,
-    countKey: "threeDays",
-  },
-  {
-    key: "7days",
-    label: "7 Days",
-    subtitle: "Expiring within 7 Days",
-    borderColor: "border-yellow-500",
-    icon: boxIcon,
-    countKey: "sevenDays",
-  },
-  {
-    key: "30days",
-    label: "30 Days",
-    subtitle: "Expiring within 30 Days",
-    borderColor: "border-brand-green",
-    icon: boxIcon,
-    countKey: "thirtyDays",
-  },
-];
-
-export function ExpirationStats({
-  data,
-  isLoading,
-  activeTab,
-  onTabChange,
-}: ExpirationStatsProps) {
+export function ExpirationStats({ data, isLoading }: ExpirationStatsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {CATEGORIES.map((category) => (
-        <StatCard
-          key={category.key}
-          label={category.label}
-          value={isLoading ? "..." : (data?.[category.countKey] ?? 0)}
-          subtitle={category.subtitle}
-          icon={category.icon}
-          borderColor={category.borderColor}
-          selected={activeTab === category.key}
-          onClick={onTabChange ? () => onTabChange(category.key) : undefined}
-        />
-      ))}
+      <StatCard
+        label="Overdue"
+        value={isLoading ? "..." : (data?.overdue ?? 0)}
+        subtitle="Past maturity date"
+        icon={warningIcon}
+        borderColor="border-red-500"
+      />
+      <StatCard
+        label="3 Days"
+        value={isLoading ? "..." : (data?.threeDays ?? 0)}
+        subtitle="Expiring within 3 Days"
+        icon={boxIcon}
+        borderColor="border-orange-500"
+      />
+      <StatCard
+        label="7 Days"
+        value={isLoading ? "..." : (data?.sevenDays ?? 0)}
+        subtitle="Expiring within 7 Days"
+        icon={boxIcon}
+        borderColor="border-yellow-500"
+      />
+      <StatCard
+        label="30 Days"
+        value={isLoading ? "..." : (data?.thirtyDays ?? 0)}
+        subtitle="Expiring within 30 Days"
+        icon={boxIcon}
+        borderColor="border-brand-green"
+      />
     </div>
   );
 }
