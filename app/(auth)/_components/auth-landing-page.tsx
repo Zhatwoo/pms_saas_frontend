@@ -54,7 +54,7 @@ const sectionNavLabels: Record<string, string> = {
   "contact-us": "CONTACT",
 };
 
-const requestDemoEmail = "quickpawn.pms@gmail.com";
+const requestDemoEmail = "inquire.quickpawn.pms@gmail.com";
 const supportEmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(requestDemoEmail)}&su=${encodeURIComponent("QuickPawn inquiry")}`;
 
 type LegalModalType = "privacy" | "terms" | null;
@@ -129,7 +129,7 @@ const termsSections = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "quickpawn.pms@gmail.com" },
+      { label: "Email", value: "inquire.quickpawn.pms@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],
@@ -178,7 +178,7 @@ const privacySections = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "quickpawn.pms@gmail.com" },
+      { label: "Email", value: "inquire.quickpawn.pms@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],

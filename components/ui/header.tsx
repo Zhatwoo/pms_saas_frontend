@@ -25,6 +25,11 @@ import {
 } from "@/lib/notifications";
 import { getNotificationStreamUrl } from "@/lib/notification-stream";
 import { resolveNotificationSoundPath } from "@/lib/notification-sounds";
+import {
+  formatHeaderDate,
+  formatHeaderDateTime,
+  formatHeaderTime,
+} from "@/lib/header-clock";
 import { useAuth } from "@/contexts/auth-context";
 import { getPageDescription, getPageTitle } from "@/lib/page-header-meta";
 import { getProfileSettingsPath } from "@/lib/profile-navigation";
@@ -36,33 +41,6 @@ interface HeaderProps {
   hideBranchSelector?: boolean;
   onMenuToggle?: () => void;
   disabled?: boolean;
-}
-
-const MANILA_TZ = "Asia/Manila";
-
-function formatTimeOnly(): string {
-  const now = new Date();
-  return now.toLocaleString("en-US", {
-    timeZone: MANILA_TZ,
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-}
-
-function formatDateTime(): string {
-  const now = new Date();
-  return now.toLocaleString("en-US", {
-    timeZone: MANILA_TZ,
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 export function Header({
@@ -171,15 +149,22 @@ export function Header({
   }, [fetchNotifications]);
 
   useEffect(() => {
-    setTime(formatDateTime());
-    setTimeOnly(formatTimeOnly());
-    setDateOnly(formatDateOnly());
-    const clockInterval = setInterval(() => {
-      setTime(formatDateTime());
-      setTimeOnly(formatTimeOnly());
-      setDateOnly(formatDateOnly());
-    }, 1000);
+    const tickClock = () => {
+      const now = new Date();
+      setTime(formatHeaderDateTime(now));
+      setTimeOnly(formatHeaderTime(now));
+      setDateOnly(formatHeaderDate(now));
+    };
 
+    tickClock();
+    const clockInterval = setInterval(tickClock, 1000);
+
+    return () => {
+      clearInterval(clockInterval);
+    };
+  }, []);
+
+  useEffect(() => {
     void fetchNotifications();
 
     // ─── Custom Event Listener (Bulletproof Fallback) ────────────────────
@@ -274,7 +259,6 @@ export function Header({
     }
 
     return () => {
-      clearInterval(clockInterval);
       if (fallbackInterval) clearInterval(fallbackInterval);
       events?.close();
       window.removeEventListener("transaction_created", handleTransactionCreated);
@@ -282,16 +266,6 @@ export function Header({
       window.removeEventListener("keydown", enableSoundAfterInteraction);
     };
   }, [enableNotificationSound, fetchNotifications, playNotificationSound]);
-
-  function formatDateOnly(): string {
-    const now = new Date();
-    return now.toLocaleString("en-US", {
-      timeZone: MANILA_TZ,
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
 
   useEffect(() => {
     const onMouseDown = (event: MouseEvent) => {

@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
 import { fetchCategories } from "@/lib/categories";
+import { buildItemQrImageUrl } from "@/lib/item-qr";
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -73,11 +74,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       return;
     }
 
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const publicViewUrl = `${baseUrl}/view-ticket/${encodeURIComponent(generatedItemId)}`;
-    const encoded = encodeURIComponent(publicViewUrl);
-    const url = `https://api.qrserver.com/v1/create-qr-code/?data=${encoded}&size=250x250&color=065f46&bgcolor=f0fdf4&margin=2`;
-    setQrUrl(url);
+    setQrUrl(buildItemQrImageUrl(generatedItemId));
   };
 
   const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {

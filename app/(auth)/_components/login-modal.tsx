@@ -8,6 +8,7 @@ import { getDeviceFingerprint } from "@/lib/fingerprint";
 import { api, ApiError } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
 import { QuickPawnLogo } from "@/components/ui/quickpawn-logo";
+import { loadRememberedEmail, persistRememberedEmail } from "@/lib/remember-me";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -146,7 +147,7 @@ const termsSections: LegalSection[] = [
     body: "Inspire Next Global Inc.",
     contactItems: [
       { label: "Name", value: "Inspire Neo" },
-      { label: "Email", value: "quickpawn.pms@gmail.com" },
+      { label: "Email", value: "inquire.quickpawn.pms@gmail.com" },
       { label: "Contact Number", value: "09929718800" },
       { label: "Address", value: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig" },
     ],
@@ -210,6 +211,7 @@ export function LoginModal({ onClose }: LoginModalProps) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -289,6 +291,14 @@ export function LoginModal({ onClose }: LoginModalProps) {
   };
 
   useEffect(() => {
+    const rememberedEmail = loadRememberedEmail();
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  useEffect(() => {
     getDeviceFingerprint()
       .then((fp) => {
         setDeviceFingerprint(fp);
@@ -364,7 +374,8 @@ export function LoginModal({ onClose }: LoginModalProps) {
 
     try {
       const fp = await resolveFingerprint();
-      const user = await login(email, password, fp);
+      const user = await login(email, password, fp, rememberMe);
+      persistRememberedEmail(email, rememberMe);
       const requestedRedirect =
         searchParams.get("reason") === "session-expired"
           ? null
@@ -502,19 +513,31 @@ export function LoginModal({ onClose }: LoginModalProps) {
                       </svg>
                     </button>
                   </div>
-                  <div className="mt-1 sm:mt-2 flex justify-end gap-1 text-[10px] sm:text-xs">
-                    <span className="text-zinc-500">Forgot password?</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setResetEmail(email);
-                        setResetError("");
-                        setView("forgot-password");
-                      }}
-                      className="font-bold text-brand-green hover:underline"
-                    >
-                      Reset here
-                    </button>
+                  <div className="mt-1 sm:mt-2 flex items-center justify-between gap-2 text-[10px] sm:text-xs">
+                    <label htmlFor="remember-me" className="flex cursor-pointer items-center gap-1.5 text-zinc-600">
+                      <input
+                        id="remember-me"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-zinc-300 accent-brand-green"
+                      />
+                      Remember me
+                    </label>
+                    <div className="flex justify-end gap-1">
+                      <span className="text-zinc-500">Forgot password?</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetEmail(email);
+                          setResetError("");
+                          setView("forgot-password");
+                        }}
+                        className="font-bold text-brand-green hover:underline"
+                      >
+                        Reset here
+                      </button>
+                    </div>
                   </div>
                 </div>
 

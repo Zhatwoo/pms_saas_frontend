@@ -59,7 +59,7 @@ export const BRAND_CONFIG: BrandConfig = {
   secondaryColor: "#E8C547",
   accentColor: "#d4a843",
   backgroundColor: "#ffffff",
-  email: "quickpawn.pms@gmail.com",
+  email: "inquire.quickpawn.pms@gmail.com",
   website: "www.example.com",
   address: "6F Alliance Global Tower, Uptown Mall, Bonifacio Global City, Taguig",
   footerText: "Generic Footer",

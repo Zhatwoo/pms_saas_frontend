@@ -19,6 +19,8 @@ interface TransactionDetail {
   items_included: string | null;
   memory_storage: string | null;
   remarks: string | null;
+  listing_type?: "pawn" | "sale";
+  status?: string;
   profile_photo: string | null;
   item_photos: string[];
   id_photo: string | null;
@@ -45,17 +47,22 @@ export default function PublicTicketView() {
 
   const fetchData = useCallback(async () => {
     if (!unitCode) return;
+    const code = Array.isArray(unitCode) ? unitCode[0] : unitCode;
     setIsLoading(true);
     setError(null);
     try {
-      // We use the public endpoint we created in the backend
-      const res = await api.get<TransactionDetail>(`/pawn-tickets/public/${unitCode}`);
+      const res = await api.get<TransactionDetail>(
+        `/pawn-tickets/public/${encodeURIComponent(String(code))}`,
+      );
       if (res) {
-        setData(res);
+        setData({
+          ...res,
+          item_photos: Array.isArray(res.item_photos) ? res.item_photos : [],
+        });
       }
     } catch (err) {
       console.error("Failed to fetch ticket:", err);
-      setError("Pawn ticket not found or no longer available.");
+      setError("Item not found or no longer available.");
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +95,7 @@ export default function PublicTicketView() {
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h1 className="text-xl font-black text-zinc-900 mb-2">Ticket Not Found</h1>
-          <p className="text-zinc-500 text-sm mb-6">{error || "The requested pawn ticket could not be retrieved."}</p>
+          <p className="text-zinc-500 text-sm mb-6">{error || "The requested item could not be retrieved."}</p>
           <button onClick={() => window.location.reload()} className="w-full py-3 bg-brand-green text-white rounded-xl font-bold hover:brightness-110 transition-all">Retry Access</button>
         </div>
       </div>
@@ -113,7 +120,9 @@ export default function PublicTicketView() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
              </div>
              <div>
-                <h2 className="text-sm font-black text-brand-green uppercase tracking-tighter">Official Transaction Record</h2>
+                <h2 className="text-sm font-black text-brand-green uppercase tracking-tighter">
+                  {data.listing_type === "sale" ? "Official Sale Record" : "Official Transaction Record"}
+                </h2>
                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{unitCode}</p>
              </div>
           </div>
@@ -136,7 +145,9 @@ export default function PublicTicketView() {
               <p className="text-sm font-medium text-white/60 uppercase tracking-widest">{data.branch_info?.name || "BGC BRANCH"}</p>
             </div>
             <div className="text-left md:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pawn-gold/60">Pawn Valuation</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pawn-gold/60">
+                {data.listing_type === "sale" ? "Sale Price" : "Pawn Valuation"}
+              </p>
               <p className="text-4xl font-black text-pawn-gold">{formatPeso(data.amount)}</p>
             </div>
           </div>
@@ -146,12 +157,20 @@ export default function PublicTicketView() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <InfoBlock label="Unit Code" value={data.item_id} highlight />
               <InfoBlock label="Category" value={data.category} />
-              <InfoBlock label="Pawn Date" value={data.pawn_date} />
+              <InfoBlock
+                label={data.listing_type === "sale" ? "Date Listed" : "Pawn Date"}
+                value={data.pawn_date}
+              />
               <InfoBlock label="Serial Number" value={data.serial_number || "N/A"} />
               <InfoBlock label="Memory/Storage" value={data.memory_storage || "—"} />
               <InfoBlock label="Condition" value={data.condition || "—"} />
               <InfoBlock label="Items Included" value={data.items_included || "—"} />
-              <InfoBlock label="Status" value="VERIFIED" highlight color="text-brand-green" />
+              <InfoBlock
+                label="Status"
+                value={data.listing_type === "sale" ? (data.status || "AVAILABLE") : "VERIFIED"}
+                highlight
+                color="text-brand-green"
+              />
             </div>
 
             {/* Visual Evidence Section */}
@@ -160,7 +179,7 @@ export default function PublicTicketView() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Primary Item Photo Carousel */}
                   <div className="relative h-[300px] rounded-3xl overflow-hidden border border-zinc-200 bg-zinc-100 shadow-inner group">
-                    {data.item_photos.length > 0 ? (
+                  {data.item_photos.length > 0 ? (
                       <div 
                         className="relative h-full w-full touch-pan-y"
                         onTouchStart={(e) => {
@@ -258,11 +277,11 @@ export default function PublicTicketView() {
                   <div className="space-y-4">
                      <div>
                         <p className="text-[9px] font-bold text-zinc-400 uppercase">Registered Name</p>
-                        <p className="text-lg font-black text-zinc-900 uppercase">{data.customer?.full_name}</p>
+                        <p className="text-lg font-black text-zinc-900 uppercase">{data.customer?.full_name || "N/A"}</p>
                      </div>
                      <div>
                         <p className="text-[9px] font-bold text-zinc-400 uppercase">Primary Address</p>
-                        <p className="text-sm font-medium text-zinc-700 leading-relaxed">{data.customer?.address}</p>
+                        <p className="text-sm font-medium text-zinc-700 leading-relaxed">{data.customer?.address || "N/A"}</p>
                      </div>
                   </div>
                </div>
