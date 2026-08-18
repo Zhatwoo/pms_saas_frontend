@@ -31,6 +31,7 @@ interface SaleItem {
   price: number;
   status: "Available" | "Reserved" | "Sold";
   originalPawnId?: string;
+  imageUrl?: string;
 }
 
 const categoryOptions = [
@@ -508,23 +509,32 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
       {/* ── View Modal ──────────────────────────────────────── */}
       {viewingItem && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4" onClick={() => setViewingItem(null)}>
-          <div className="w-full max-w-lg rounded-xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-brand-green px-6 py-4 flex items-center justify-between">
+          <div className="w-full max-w-2xl rounded-2xl bg-surface shadow-2xl border border-border-main overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-brand-green to-brand-green/90 px-6 py-4 flex items-center justify-between">
               <div>
                 <p className="text-pawn-gold text-[10px] font-bold uppercase tracking-wider">For Sale #{viewingItem.itemId}</p>
                 <h2 className="text-white text-lg font-bold">{viewingItem.itemName}</h2>
               </div>
               <StatusBadge label={viewingItem.status} variant={statusVariant[viewingItem.status] || "green"} />
             </div>
-            <div className="p-6 space-y-4">
-              <SaleItemQrPreview itemId={viewingItem.itemId} compact />
+            <div className="p-6">
+              <div className="grid gap-6 md:grid-cols-[minmax(0,200px)_1fr]">
+                <div className="overflow-hidden rounded-xl border border-border-main bg-surface-secondary flex items-center justify-center min-h-[180px]">
+                  {viewingItem.imageUrl ? (
+                    <img src={viewingItem.imageUrl} alt={viewingItem.itemName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="p-4 text-center text-xs font-semibold text-text-tertiary">No item image available</div>
+                  )}
+                </div>
+                <SaleItemQrPreview itemId={viewingItem.itemId} compact />
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Category</p><p className="text-sm text-text-primary">{viewingItem.category}</p></div>
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-brand-green">{formatPeso(viewingItem.price.toLocaleString())}</p></div>
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Available Date</p><p className="text-sm text-text-primary">{viewingItem.availableDate}</p></div>
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Branch</p><p className="text-sm text-text-primary">{viewingItem.branch}</p></div>
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Origin Pawn ID</p><p className="text-sm text-text-primary">{viewingItem.originalPawnId || "Manual Entry"}</p></div>
-                <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Status</p><p className="text-sm text-text-primary">{viewingItem.status}</p></div>
+                  <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Category</p><p className="text-sm font-semibold text-text-primary">{viewingItem.category}</p></div>
+                  <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Price</p><p className="text-sm font-bold text-brand-green">{formatPeso(viewingItem.price.toLocaleString())}</p></div>
+                  <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Available Date</p><p className="text-sm text-text-primary">{viewingItem.availableDate}</p></div>
+                  <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Branch</p><p className="text-sm text-text-primary">{viewingItem.branch}</p></div>
+                  <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Origin Pawn ID</p><p className="text-sm text-text-primary">{viewingItem.originalPawnId || "Manual Entry"}</p></div>
+                  <div><p className="text-[10px] font-bold text-text-tertiary uppercase">Status</p><p className="text-sm text-text-primary">{viewingItem.status}</p></div>
+                </div>
               </div>
             </div>
             <div className="border-t border-border-main px-6 py-3 flex justify-end bg-surface-secondary">
