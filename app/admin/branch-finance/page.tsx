@@ -384,26 +384,19 @@ export default function AdminBranchFinancePage() {
         </div>
       ) : null}
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="mt-1 text-sm text-text-tertiary">
-            Request fund transfers or expense approvals from Super Admin and monitor status in real time.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setExpenseModalOpen(true)}
-            className="rounded-lg border border-red-700 bg-red-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-700"
-          >
-            Request Approve Expense
-          </button>
-          <button
-            onClick={() => setRequestModalOpen(true)}
-            className="rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
-          >
-            Request Funds
-          </button>
-        </div>
+      <div className="flex items-start justify-end gap-3">
+        <button
+          onClick={() => setExpenseModalOpen(true)}
+          className="rounded-lg border border-red-700 bg-red-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-700"
+        >
+          Request Approve Expense
+        </button>
+        <button
+          onClick={() => setRequestModalOpen(true)}
+          className="rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+        >
+          Request Funds
+        </button>
       </div>
 
       {error ? (

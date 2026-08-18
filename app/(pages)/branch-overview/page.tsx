@@ -320,16 +320,6 @@ export default function BranchOverviewPage() {
       ) : (
         /* ── ALL BRANCHES MODE: Table + Drawer ──────────────── */
         <>
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs text-zinc-400"></p>
-              <p className="mt-1 text-sm text-text-tertiary">
-                Create, edit, and manage all pawnshop branches.
-              </p>
-            </div>
-          </div>
-
           {errorMessage && (
             <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-xs text-red-700">
               {errorMessage}
