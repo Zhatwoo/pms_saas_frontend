@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     const data = await api.post<{ user: User }>(
       "/auth/login",
-      { email, password, deviceFingerprint, rememberMe },
+      { email, password, deviceFingerprint },
     );
 
     const normalizedUser = normalizeUser(data.user);
