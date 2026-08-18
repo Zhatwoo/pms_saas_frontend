@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { ALL_BRANCHES_OPTION, useBranch } from "@/contexts/branch-context";
 import { DateFilterSelector } from "@/components/shared/date-filter-selector";
@@ -42,6 +43,7 @@ interface PawnKpisResponse {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [activePeriod, setActivePeriod] = useState("Monthly");
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
@@ -138,7 +140,11 @@ export default function DashboardPage() {
         <div className="space-y-5">
           <OverallSummaryStats data={overallData} />
 
-          <DashboardStats data={kpiData} period={activePeriod} />
+          <DashboardStats
+            data={kpiData}
+            period={activePeriod}
+            onItemsReadyForSaleClick={() => router.push("/inventory/items-for-sale")}
+          />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <ContractTrendsChart data={contractTrendsData} />
