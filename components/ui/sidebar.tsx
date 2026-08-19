@@ -320,7 +320,7 @@ export function Sidebar({
       </div>
       {!isCompact && (
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-red-500">
+          <p className="truncate text-base font-semibold text-white">
             {userName || "Current User"}
           </p>
           <p className="text-sm uppercase tracking-wide text-white/60">
