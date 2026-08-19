@@ -98,8 +98,13 @@ export interface RewardPayload {
   promo_end_at?: string;
 }
 
+export interface RewardPromoDurationRecord {
+  promo_start_at?: string | null;
+  promo_end_at?: string | null;
+}
+
 export function rewardsApiSupportsPromoDuration(
-  rewards: ReadonlyArray<Record<string, unknown>>,
+  rewards: ReadonlyArray<RewardPromoDurationRecord>,
 ): boolean {
   if (rewards.length === 0) return true;
   return rewards.some(
