@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
+import { SHOP_INFORMATION_NOTICE, SLIP_EDIT_NOTICE } from "@/lib/shop-settings-copy";
 import { useAuth } from "@/contexts/auth-context";
 import { PasswordChangeRequestCard } from "@/components/shared/password-change-request-card";
 import { AvatarPickerModal } from "@/components/shared/avatar-picker-modal";
@@ -2414,7 +2415,7 @@ export default function SettingsPage() {
         <div className="min-w-0 space-y-6">
           {profileToast && (
             <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-              <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
+              <div className="rounded-xl border border-emerald-border bg-emerald-surface px-5 py-3 text-sm font-semibold text-emerald-text shadow-xl">
                 {profileToast}
               </div>
             </div>
@@ -2487,74 +2488,79 @@ export default function SettingsPage() {
 
           {activeTab === "Shop" && (
             <section className="overflow-hidden rounded-xl border border-border-main bg-surface shadow-sm">
-              <div className="border-b border-border-main px-4 py-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
-                  <svg
-                    className="h-4 w-4 text-brand-green"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
-                  Shop Information
-                </h2>
-                {isSuperAdmin && (
-                  <div className="flex items-center gap-2">
-                    {!isShopEditMode ? (
-                      <button
-                        onClick={() => setIsShopEditMode(true)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
-                      >
-                        <svg
-                          className="h-3.5 w-3.5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                        Edit Info
-                      </button>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
+              <div className="border-b border-border-main px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                    <svg
+                      className="h-4 w-4 text-brand-green"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                    Shop Information
+                  </h2>
+                  {isSuperAdmin && (
+                    <div className="flex items-center gap-2">
+                      {!isShopEditMode ? (
                         <button
-                          onClick={handleCancelShopEdit}
-                          className="rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                          onClick={() => setIsShopEditMode(true)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
                         >
-                          Cancel
+                          <svg
+                            className="h-3.5 w-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                          Edit Info
                         </button>
-                        <button
-                          onClick={handleSaveShopEdit}
-                          disabled={isSavingSettings}
-                          className="inline-flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-                        >
-                          {isSavingSettings ? (
-                            <>
-                              <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                              </svg>
-                              Saving...
-                            </>
-                          ) : (
-                            "Save"
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={handleCancelShopEdit}
+                            className="rounded-lg border border-border-main bg-surface-secondary px-3 py-1.5 text-[11px] font-bold text-zinc-700 hover:bg-surface-hover dark:text-zinc-300 transition-all duration-200"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveShopEdit}
+                            disabled={isSavingSettings}
+                            className="inline-flex items-center gap-1 rounded-lg bg-brand-green px-3 py-1.5 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                          >
+                            {isSavingSettings ? (
+                              <>
+                                <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                Saving...
+                              </>
+                            ) : (
+                              "Save"
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <p className="mt-2 rounded-md border border-emerald-border bg-emerald-surface px-3 py-2 text-[11px] leading-relaxed text-emerald-text">
+                  {SHOP_INFORMATION_NOTICE}
+                </p>
               </div>
 
               <div className="space-y-5 px-4 py-4 transition-all duration-300">
@@ -2638,10 +2644,13 @@ export default function SettingsPage() {
                   <h2 className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
                     Slip Edit & Templates
                   </h2>
-                  <span className="rounded-full border border-brand-green/25 bg-brand-green/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-brand-green">
+                  <span className="rounded-full border border-emerald-border bg-emerald-surface px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-text">
                     Super Admin Only
                   </span>
                 </div>
+                <p className="mt-2 rounded-md border border-emerald-border bg-emerald-surface px-3 py-2 text-[11px] leading-relaxed text-emerald-text">
+                  {SLIP_EDIT_NOTICE}
+                </p>
               </div>
 
               <div className="space-y-3 px-3 py-4 sm:px-4">
@@ -3572,7 +3581,7 @@ export default function SettingsPage() {
                 </div>
 
                 {(moaSavedAt || sendStatus === "sent") && (
-                  <div className="rounded-md border border-brand-green/20 bg-brand-green/10 px-3 py-2 text-[10px] text-brand-green">
+                  <div className="rounded-md border border-emerald-border bg-emerald-surface px-3 py-2 text-[10px] text-emerald-text">
                     {moaSavedAt && <span>Template saved: {moaSavedAt}. </span>}
                     {sendStatus === "sent" && <span>Slip template sent to all branches.</span>}
                   </div>
@@ -3630,19 +3639,19 @@ export default function SettingsPage() {
               <p className="mt-1 text-[10px] text-zinc-700 dark:text-zinc-400">Super Admin Settings</p>
               <button
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="mt-3 w-full rounded-lg border border-brand-green/20 bg-brand-green/10 py-2 text-[9px] font-bold uppercase tracking-wider text-brand-green transition-colors hover:bg-brand-green/20 dark:border-brand-green/30 dark:bg-brand-green/15"
+                className="mt-3 w-full rounded-lg border border-emerald-border bg-emerald-surface py-2 text-[9px] font-bold uppercase tracking-wider text-emerald-text transition-colors hover:brightness-110"
               >
                 Change Avatar
               </button>
               {avatarToast && (
-                <p className="mt-2 text-[10px] font-medium text-brand-green">{avatarToast}</p>
+                <p className="mt-2 text-[10px] font-medium text-emerald-text">{avatarToast}</p>
               )}
               <PasswordChangeRequestCard />
-              <div className="mt-4 rounded-xl border border-brand-green/20 bg-brand-green/10 p-4 text-left dark:border-brand-green/30 dark:bg-brand-green/15">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-brand-green">
+              <div className="mt-4 rounded-xl border border-emerald-border bg-emerald-surface p-4 text-left">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-text">
                   Security Restriction
                 </p>
-                <p className="mt-2 text-xs leading-5 text-brand-green">
+                <p className="mt-2 text-xs leading-5 text-emerald-text">
                   System settings are available only to Super Admin users. Updates here affect the shared shop profile and pawnshop policy defaults.
                 </p>
               </div>

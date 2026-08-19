@@ -1,8 +1,14 @@
 "use client";
 
 import { X } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
+import { useMemo, type Dispatch, type SetStateAction } from "react";
 import type { BranchOption } from "@/contexts/branch-context";
+import { formatAmountInput } from "@/lib/currency";
+import {
+  getBranchManagers,
+  getDefaultEscalationOwnerUserId,
+  resolveEscalationOwnerUserId,
+} from "./incident-manager";
 import type {
   IncidentCategory,
   IncidentPriority,
@@ -20,12 +26,15 @@ interface AddIncidentModalProps {
   setFormState: Dispatch<SetStateAction<ManualTicketFormState>>;
   branches: BranchOption[];
   users: UserRecord[];
+  allUsers?: UserRecord[];
   categoryOptions: Array<IncidentOption<IncidentCategory>>;
   priorityOptions: Array<IncidentOption<IncidentPriority>>;
   isLoadingUsers: boolean;
   isSubmitting: boolean;
   canSelectBranch: boolean;
   canSelectUser: boolean;
+  involvedUserName?: string;
+  mode?: "create" | "edit";
   onClose: () => void;
   onSubmit: () => void;
   getUserName: (record: UserRecord | null | undefined) => string;
@@ -36,16 +45,29 @@ export function AddIncidentModal({
   setFormState,
   branches,
   users,
+  allUsers,
   categoryOptions,
   priorityOptions,
   isLoadingUsers,
   isSubmitting,
   canSelectBranch,
   canSelectUser,
+  involvedUserName = "Current user",
+  mode = "create",
   onClose,
   onSubmit,
   getUserName,
 }: AddIncidentModalProps) {
+  const isEditMode = mode === "edit";
+  const managerSource = allUsers ?? users;
+  const branchManagers = useMemo(
+    () => getBranchManagers(managerSource, formState.branchId),
+    [managerSource, formState.branchId],
+  );
+  const selectedManager = branchManagers.find(
+    (record) => record.id === formState.escalationOwnerUserId,
+  );
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-black/45 p-3 sm:p-4">
       <div
@@ -54,9 +76,13 @@ export function AddIncidentModal({
       >
         <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border-subtle px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <h2 className="text-lg font-bold text-text-primary">Create Incident Ticket</h2>
+            <h2 className="text-lg font-bold text-text-primary">
+              {isEditMode ? "Edit Incident Ticket" : "Create Incident Ticket"}
+            </h2>
             <p className="mt-1 text-sm text-text-tertiary">
-              Use this form to report an incident. Your submission will be logged and reviewed by our team.
+              {isEditMode
+                ? "Update the details of your submitted ticket. Changes apply only to tickets you created."
+                : "Use this form to report an incident. Your submission will be logged and reviewed by our team."}
             </p>
           </div>
           <button
@@ -140,13 +166,17 @@ export function AddIncidentModal({
             <span className="text-xs font-bold uppercase tracking-wide text-text-muted">Branch</span>
             <select
               value={formState.branchId}
-              onChange={(event) =>
+              onChange={(event) => {
+                const branchId = event.target.value;
                 setFormState((current) => ({
                   ...current,
-                  branchId: event.target.value,
+                  branchId,
                   userId: "",
-                }))
-              }
+                  escalationOwnerUserId: current.requiresManagerEscalation
+                    ? getDefaultEscalationOwnerUserId(managerSource, branchId)
+                    : "",
+                }));
+              }}
               disabled={!canSelectBranch}
               className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
             >
@@ -158,35 +188,31 @@ export function AddIncidentModal({
             </select>
           </label>
 
-          {canSelectUser ? (
-            <label className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wide text-text-muted">User Involved</span>
-              <select
-                value={formState.userId}
-                onChange={(event) =>
-                  setFormState((current) => ({ ...current, userId: event.target.value }))
-                }
-                className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none"
+          {!isEditMode ? (
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-text-muted">
+                User Involved
+              </span>
+              <div
+                aria-readonly="true"
+                className="w-full cursor-default rounded-lg border border-input-border bg-surface-secondary px-3 py-2.5 text-sm font-medium text-text-primary"
               >
-                <option value="">Use current user</option>
-                {users.filter((record) => record.id).map((record) => (
-                  <option key={record.id ?? record.email} value={record.id}>
-                    {getUserName(record)}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {involvedUserName}
+              </div>
+            </div>
           ) : null}
 
           <label className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wide text-text-muted">Amount Impact</span>
             <input
-              type="number"
-              min="0"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={formState.amountImpact}
               onChange={(event) =>
-                setFormState((current) => ({ ...current, amountImpact: event.target.value }))
+                setFormState((current) => ({
+                  ...current,
+                  amountImpact: formatAmountInput(event.target.value),
+                }))
               }
               placeholder="0.00"
               className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-green focus:outline-none"
@@ -210,25 +236,82 @@ export function AddIncidentModal({
           </label>
 
           {canSelectUser ? (
-            <label className="flex items-start gap-3 rounded-xl border border-border-main bg-surface-secondary/50 px-4 py-3 md:col-span-2">
-              <input
-                type="checkbox"
-                checked={formState.requiresManagerEscalation}
-                onChange={(event) =>
-                  setFormState((current) => ({
-                    ...current,
-                    requiresManagerEscalation: event.target.checked,
-                  }))
-                }
-                className="mt-0.5 h-4 w-4 rounded border-border-main"
-              />
-              <span>
-                <span className="block text-sm font-semibold text-text-primary">Escalate directly to manager</span>
-                <span className="mt-1 block text-xs text-text-tertiary">
-                  This will save the ticket with escalated status and assign a manager if one is available.
+            <div className="space-y-3 md:col-span-2">
+              <label className="flex items-start gap-3 rounded-xl border border-border-main bg-surface-secondary/50 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={formState.requiresManagerEscalation}
+                  onChange={(event) => {
+                    const requiresManagerEscalation = event.target.checked;
+                    setFormState((current) => ({
+                      ...current,
+                      requiresManagerEscalation,
+                      escalationOwnerUserId: requiresManagerEscalation
+                        ? getDefaultEscalationOwnerUserId(
+                            managerSource,
+                            current.branchId,
+                          )
+                        : "",
+                    }));
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-border-main"
+                />
+                <span>
+                  <span className="block text-sm font-semibold text-text-primary">
+                    Escalate directly to manager
+                  </span>
+                  <span className="mt-1 block text-xs text-text-tertiary">
+                    This will save the ticket with escalated status and assign a
+                    manager if one is available.
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+
+              {formState.requiresManagerEscalation ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+                  <span className="text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
+                    Assigned Manager / Approver
+                  </span>
+                  {branchManagers.length === 0 ? (
+                    <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+                      No branch admin is available for this branch. The ticket
+                      will still be escalated without an assignee.
+                    </p>
+                  ) : branchManagers.length === 1 ? (
+                    <p className="mt-2 text-sm font-semibold text-text-primary">
+                      {getUserName(branchManagers[0])}
+                    </p>
+                  ) : (
+                    <select
+                      value={resolveEscalationOwnerUserId(
+                        formState.escalationOwnerUserId,
+                        managerSource,
+                        formState.branchId,
+                      )}
+                      onChange={(event) =>
+                        setFormState((current) => ({
+                          ...current,
+                          escalationOwnerUserId: event.target.value,
+                        }))
+                      }
+                      className="mt-2 w-full rounded-lg border border-input-border bg-input-bg px-3 py-2.5 text-sm text-text-primary focus:border-brand-green focus:outline-none"
+                    >
+                      {branchManagers.map((record) => (
+                        <option key={record.id} value={record.id}>
+                          {getUserName(record)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {selectedManager ? (
+                    <p className="mt-2 text-xs text-text-tertiary">
+                      This manager will be assigned as the approver when the
+                      ticket is saved.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -252,7 +335,11 @@ export function AddIncidentModal({
               disabled={isSubmitting}
               className="rounded-lg border border-brand-green bg-brand-green px-4 py-2 text-sm font-bold text-white transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Saving..." : "Save Ticket"}
+              {isSubmitting
+                ? "Saving..."
+                : isEditMode
+                  ? "Save Changes"
+                  : "Save Ticket"}
             </button>
           </div>
         </div>

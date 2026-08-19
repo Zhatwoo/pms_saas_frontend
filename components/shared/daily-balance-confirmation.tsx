@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
-import { formatPeso } from "@/lib/currency";
+import { formatAmountForInput, formatPeso, parseAmountInput } from "@/lib/currency";
 import { toast } from "sonner";
 import { AddIncidentModal } from "@/app/(pages)/incident-report/_components/add-incident-modal";
+import { getInvolvedUserLabel } from "@/app/(pages)/incident-report/_components/incident-permissions";
 import type {
   IncidentCategory,
   IncidentPriority,
@@ -37,6 +39,7 @@ export function DailyBalanceConfirmation({
   subtitleOverride,
   isLoadingExpectedAmount,
 }: DailyBalanceConfirmationProps) {
+  const { user } = useAuth();
   const { selectedBranch } = useBranch();
   const [confirmedAmount, setConfirmedAmount] = useState("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +55,7 @@ export function DailyBalanceConfirmation({
     amountImpact: "",
     transactionRef: "",
     requiresManagerEscalation: false,
+    escalationOwnerUserId: "",
   }));
 
   useEffect(() => {
@@ -125,9 +129,10 @@ export function DailyBalanceConfirmation({
       priority: amountImpact > 0 ? "high" : "medium",
       branchId: selectedBranch.id,
       userId: "",
-      amountImpact: amountImpact > 0 ? String(amountImpact) : "",
+      amountImpact: amountImpact > 0 ? formatAmountForInput(amountImpact) : "",
       transactionRef: "Starting balance",
       requiresManagerEscalation: amountImpact > 0,
+      escalationOwnerUserId: "",
     });
 
     setIsIncidentReportOpen(true);
@@ -145,7 +150,7 @@ export function DailyBalanceConfirmation({
         priority: incidentForm.priority as IncidentPriority,
         branchId: incidentForm.branchId,
         userId: null,
-        amountImpact: incidentForm.amountImpact ? Number(incidentForm.amountImpact) : null,
+        amountImpact: parseAmountInput(incidentForm.amountImpact),
         transactionRef: incidentForm.transactionRef.trim() || null,
         requiresManagerEscalation: incidentForm.requiresManagerEscalation,
       });
@@ -286,6 +291,7 @@ export function DailyBalanceConfirmation({
           isSubmitting={isIncidentSubmitting}
           canSelectBranch={false}
           canSelectUser={false}
+          involvedUserName={getInvolvedUserLabel(user)}
           onClose={() => setIsIncidentReportOpen(false)}
           onSubmit={handleIncidentSubmit}
           getUserName={() => ""}
