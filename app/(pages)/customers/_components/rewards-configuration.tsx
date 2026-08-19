@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   buildRewardPayload,
   isRewardPromoValidationError,
-  rewardsApiSupportsPromoDuration,
   formatPromoDuration,
   REWARD_AMOUNT_STEP_PRESETS,
   REWARD_PERCENT_STEP_PRESETS,
@@ -89,7 +88,6 @@ export function RewardsConfiguration() {
   const [form, setForm] = useState<RewardForm>(EMPTY_FORM);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [promoDurationSupported, setPromoDurationSupported] = useState(true);
 
   const isSuperAdmin = user?.role === "super_admin";
 
@@ -99,7 +97,6 @@ export function RewardsConfiguration() {
       const data = await api.get<Reward[]>("/rewards");
       const rows = Array.isArray(data) ? data : [];
       setRewards(rows);
-      setPromoDurationSupported(rewardsApiSupportsPromoDuration(rows));
     } catch (err) {
       console.warn("[Rewards] Failed to load:", err);
       setRewards([]);
@@ -148,7 +145,7 @@ export function RewardsConfiguration() {
     setIsSaving(true);
     try {
       const hadPromoDates = Boolean(form.promo_start_at || form.promo_end_at);
-      const payload = buildRewardPayload(form, { includePromo: promoDurationSupported });
+      const payload = buildRewardPayload(form);
 
       const saveReward = async (body: RewardPayload) => {
         if (editingId) {
@@ -165,18 +162,15 @@ export function RewardsConfiguration() {
       } catch (err) {
         const message = err instanceof Error ? err.message : "";
         const canRetryWithoutPromo =
-          promoDurationSupported &&
-          hadPromoDates &&
-          isRewardPromoValidationError(message);
+          hadPromoDates && isRewardPromoValidationError(message);
 
         if (!canRetryWithoutPromo) {
           throw err;
         }
 
-        setPromoDurationSupported(false);
         await saveReward(buildRewardPayload(form, { includePromo: false }));
         toast.warning(
-          "Rule saved, but promo duration was skipped because the production API has not been updated yet. Redeploy the backend to enable promo dates.",
+          "Rule saved, but promo duration was skipped because the API rejected promo dates. Rebuild the backend from the latest main branch to enable promo duration.",
         );
       }
 
@@ -450,39 +444,33 @@ export function RewardsConfiguration() {
                 </select>
               </div>
 
-              {promoDurationSupported ? (
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-text-secondary">Promo Duration</label>
-                  <p className="mb-2 text-[11px] text-text-tertiary">
-                    Optional start and end dates for when this promo can be earned.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-[11px] font-medium text-text-tertiary">Start Date</label>
-                      <input
-                        type="date"
-                        value={form.promo_start_at}
-                        onChange={(e) => setForm({ ...form, promo_start_at: e.target.value })}
-                        className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-[11px] font-medium text-text-tertiary">End Date</label>
-                      <input
-                        type="date"
-                        value={form.promo_end_at}
-                        min={form.promo_start_at || undefined}
-                        onChange={(e) => setForm({ ...form, promo_end_at: e.target.value })}
-                        className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
-                      />
-                    </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-text-secondary">Promo Duration</label>
+                <p className="mb-2 text-[11px] text-text-tertiary">
+                  Optional start and end dates for when this promo can be earned.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-text-tertiary">Start Date</label>
+                    <input
+                      type="date"
+                      value={form.promo_start_at}
+                      onChange={(e) => setForm({ ...form, promo_start_at: e.target.value })}
+                      className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[11px] font-medium text-text-tertiary">End Date</label>
+                    <input
+                      type="date"
+                      value={form.promo_end_at}
+                      min={form.promo_start_at || undefined}
+                      onChange={(e) => setForm({ ...form, promo_end_at: e.target.value })}
+                      className="w-full rounded-lg border border-border-main bg-surface-secondary px-3 py-2 text-sm text-text-primary outline-none"
+                    />
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
-                  Promo duration is unavailable until the backend is redeployed with the latest reward promo update.
-                </div>
-              )}
+              </div>
 
               <div className="flex items-center gap-3">
                 <input
