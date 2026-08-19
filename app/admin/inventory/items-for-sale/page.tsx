@@ -85,7 +85,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   const { selectedBranch, isAllBranches } = useBranch();
   const userRole = user?.role || "employee";
   const isSuperAdmin = userRole === "super_admin";
-  const canEdit = !viewOnly && (userRole === "super_admin" || userRole === "admin");
+  const canEdit = !viewOnly && userRole === "super_admin";
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   useEffect(() => {
     async function load() {
@@ -609,6 +609,8 @@ function formatCurrencyInput(value: string): string {
 function EditSaleItemForm({ item, onClose, onSaved }: { item: SaleItem; onClose: () => void; onSaved: (updated: Partial<SaleItem> & { id: string }) => void }) {
   const [price, setPrice] = useState(item.price ? formatCurrencyInput(String(item.price)) : "");
   const [itemName, setItemName] = useState(item.itemName);
+  const [imageUrl, setImageUrl] = useState<string | null>(item.imageUrl || null);
+  const [imageChanged, setImageChanged] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -616,8 +618,10 @@ function EditSaleItemForm({ item, onClose, onSaved }: { item: SaleItem; onClose:
     setIsSaving(true);
     const numericPrice = Number(price.replace(/,/g, "")) || 0;
     try {
-      await api.patch(`/inventory/for-sale/${item.id}`, { item_name: itemName, price: numericPrice });
-      onSaved({ id: item.id, itemName, price: numericPrice });
+      const payload: { item_name: string; price: number; image_url?: string | null } = { item_name: itemName, price: numericPrice };
+      if (imageChanged) payload.image_url = imageUrl;
+      await api.put(`/inventory/for-sale/${item.id}`, payload);
+      onSaved({ id: item.id, itemName, price: numericPrice, imageUrl: imageUrl || undefined });
       toast.success("Item updated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update item.");
@@ -647,6 +651,14 @@ function EditSaleItemForm({ item, onClose, onSaved }: { item: SaleItem; onClose:
             placeholder="0.00"
             className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"
           />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Item Image</label>
+          <label className="flex h-28 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-brand-green/20 bg-brand-green/5 hover:bg-brand-green/10">
+            {imageUrl ? <img src={imageUrl} alt="Item preview" className="h-full w-full object-cover" /> : <span className="text-xs font-bold text-brand-green">Click to upload an image</span>}
+            <input type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { setImageUrl(reader.result as string); setImageChanged(true); }; reader.readAsDataURL(file); }} />
+          </label>
+          {imageUrl && <button type="button" onClick={() => { setImageUrl(null); setImageChanged(true); }} className="self-start text-xs font-bold text-red-500 hover:text-red-400">Remove image</button>}
         </div>
       </div>
       <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">
