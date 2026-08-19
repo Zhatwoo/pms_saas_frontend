@@ -7,6 +7,9 @@ const CUSTOM_PAGE_TITLES: Record<string, string> = {
 const DASHBOARD_DESCRIPTION =
   "Overview of performance, transactions, and inventory.";
 
+const CUSTOMERS_DESCRIPTION =
+  "Manage and view all registered customer profiles across the organization.";
+
 const PAGE_DESCRIPTIONS: Record<string, string> = {
   "/dashboard": DASHBOARD_DESCRIPTION,
   "/admin/dashboard": DASHBOARD_DESCRIPTION,
@@ -31,6 +34,9 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
     "Easily manage your employees, roles, branch assignments, and system access.",
   "/admin/users":
     "Easily manage your employees, roles, branch assignments, and system access.",
+  "/customers": CUSTOMERS_DESCRIPTION,
+  "/admin/customers": CUSTOMERS_DESCRIPTION,
+  "/employee/customers": CUSTOMERS_DESCRIPTION,
 };
 
 /** Hide redundant branch badge when combined view is already shown in the branch selector. */

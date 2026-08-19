@@ -442,8 +442,15 @@ export default function EmployeeIncidentReportPage() {
       </div>
 
       {errorMessage ? (
-        <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMessage}
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          <span>{errorMessage}</span>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="shrink-0 text-xs font-bold uppercase tracking-wide"
+          >
+            Dismiss
+          </button>
         </div>
       ) : null}
 
