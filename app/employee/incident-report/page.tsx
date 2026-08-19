@@ -310,6 +310,7 @@ export default function EmployeeIncidentReportPage() {
   };
 
   const openEditModal = (ticket: IncidentTicketRow) => {
+    setErrorMessage(null);
     setFormState(ticketToEditableFormState(ticket));
     setTicketToEdit(ticket);
   };
@@ -395,6 +396,7 @@ export default function EmployeeIncidentReportPage() {
 
     setIsSubmitting(false);
     setTicketToEdit(null);
+    setErrorMessage(null);
     setToastMessage("Incident ticket updated.");
     await fetchTickets();
   };
