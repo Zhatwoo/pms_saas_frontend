@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatPeso } from '@/lib/currency';
 import { api } from "@/lib/api";
 import { fetchCategories } from "@/lib/categories";
@@ -13,6 +13,7 @@ import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { AddItemModal } from "./_components/add-item-modal";
 import { SaleCalendar } from "./_components/sale-calendar";
 import { SaleItemQrPreview } from "@/components/shared/sale-item-qr-preview";
+import { toast } from "sonner";
 
 const eyeIcon = (
   <svg
@@ -38,6 +39,14 @@ const plusIcon = (
 );
 
 type ViewMode = "list" | "calendar";
+
+function formatCurrencyInput(value: string): string {
+  const clean = value.replace(/[^0-9.]/g, "");
+  if (!clean) return "";
+  const [whole = "", ...decimal] = clean.split(".");
+  const formattedWhole = (whole.replace(/^0+(?=\d)/, "") || "0").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return decimal.length ? `${formattedWhole}.${decimal.join("").slice(0, 2)}` : formattedWhole;
+}
 
 interface SaleItem {
   id: string;
@@ -158,6 +167,7 @@ export default function ItemsForSalePage() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedSaleItem, setSelectedSaleItem] = useState<SaleItem | null>(null);
+  const [editingSaleItem, setEditingSaleItem] = useState<SaleItem | null>(null);
 
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [category, setCategory] = useState("all");
@@ -390,8 +400,11 @@ export default function ItemsForSalePage() {
                     {user?.role === 'super_admin' ? (
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center">
-                          <button type="button" onClick={() => setSelectedSaleItem(item)} title={`View ${item.itemName}`} aria-label={`View ${item.itemName}`} className="inline-flex items-center justify-center bg-transparent p-0 text-brand-green transition-colors hover:text-brand-green/80 focus:outline-none focus-visible:outline-none">
+                          <button type="button" onClick={(event) => { event.stopPropagation(); setSelectedSaleItem(item); }} title={`View ${item.itemName}`} aria-label={`View ${item.itemName}`} className="inline-flex items-center justify-center bg-transparent p-0 text-brand-green transition-colors hover:text-brand-green/80 focus:outline-none focus-visible:outline-none">
                             {eyeIcon}
+                          </button>
+                          <button type="button" onClick={(event) => { event.stopPropagation(); setEditingSaleItem(item); }} title={`Edit ${item.itemName}`} aria-label={`Edit ${item.itemName}`} className="ml-3 inline-flex items-center justify-center bg-transparent p-0 text-orange-500 transition-colors hover:text-orange-400 focus:outline-none focus-visible:outline-none">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
                           </button>
                         </div>
                       </td>
@@ -458,6 +471,77 @@ export default function ItemsForSalePage() {
           </div>
         </div>
       ) : null}
+
+      {editingSaleItem ? (
+        <EditSaleItemModal
+          item={editingSaleItem}
+          categories={categoriesList}
+          onClose={() => setEditingSaleItem(null)}
+          onSaved={(updated) => {
+            setSaleItems((items) => items.map((item) => item.id === updated.id ? { ...item, ...updated } : item));
+            setEditingSaleItem(null);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function EditSaleItemModal({ item, categories, onClose, onSaved }: {
+  item: SaleItem;
+  categories: string[];
+  onClose: () => void;
+  onSaved: (updated: Pick<SaleItem, "id" | "itemName" | "category" | "price">) => void;
+}) {
+  const [itemName, setItemName] = useState(item.itemName);
+  const [category, setCategory] = useState(item.category);
+  const [price, setPrice] = useState(formatCurrencyInput(String(item.price)));
+  const [imageUrl, setImageUrl] = useState<string | null>(item.imageUrl || null);
+  const [imageChanged, setImageChanged] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const numericPrice = Number(price.replace(/,/g, ""));
+    if (!itemName.trim() || !category.trim() || !Number.isFinite(numericPrice) || numericPrice < 0) {
+      toast.error("Enter an item name, category, and a valid price.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const payload: { item_name: string; category: string; price: number; image_url?: string | null } = {
+        item_name: itemName.trim(),
+        category: category.trim(),
+        price: numericPrice,
+      };
+      if (imageChanged) payload.image_url = imageUrl;
+      await api.put(`/inventory/for-sale/${item.id}`, payload);
+      onSaved({ id: item.id, itemName: itemName.trim(), category: category.trim(), price: numericPrice });
+      toast.success("Item updated.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to update item.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 px-4 py-6 backdrop-blur-sm" onClick={onClose}>
+      <form onSubmit={save} onClick={(event) => event.stopPropagation()} className="w-full max-w-md overflow-hidden rounded-2xl border border-border-main bg-surface shadow-2xl">
+        <div className="bg-gradient-to-r from-brand-green to-brand-green/90 px-6 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-pawn-gold">Edit Item for Sale</p>
+          <h2 className="text-lg font-bold text-white">{item.itemId}</h2>
+        </div>
+        <div className="space-y-4 p-6">
+          <div><label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">QR / Item ID</label><input value={item.itemId} readOnly aria-readonly="true" className="mt-1 w-full cursor-not-allowed rounded-lg border border-input-border bg-surface-secondary px-3 py-2 text-sm text-text-tertiary" /></div>
+          <div><label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Item Name</label><input value={itemName} onChange={(event) => setItemName(event.target.value)} className="mt-1 w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green" /></div>
+          <div><label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Category</label><select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1 w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"><option value={item.category}>{item.category}</option>{categories.filter((name) => name !== item.category).map((name) => <option key={name} value={name}>{name}</option>)}</select></div>
+          <div><label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Item Image</label><div onClick={() => imageInputRef.current?.click()} className="mt-1 flex h-28 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-brand-green/20 bg-brand-green/5 hover:bg-brand-green/10">{imageUrl ? <img src={imageUrl} alt="Item preview" className="h-full w-full object-cover" /> : <span className="text-xs font-bold text-brand-green">Click to upload an image</span>}</div><input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onloadend = () => { setImageUrl(reader.result as string); setImageChanged(true); }; reader.readAsDataURL(file); }} />{imageUrl && <button type="button" onClick={() => { setImageUrl(null); setImageChanged(true); if (imageInputRef.current) imageInputRef.current.value = ""; }} className="mt-2 text-xs font-bold text-red-500 hover:text-red-400">Remove image</button>}</div>
+          <div><label className="text-[10px] font-bold uppercase tracking-wide text-text-tertiary">Price (₱)</label><input type="text" inputMode="decimal" value={price} onChange={(event) => setPrice(formatCurrencyInput(event.target.value))} className="mt-1 w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green" /></div>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border-main bg-surface-secondary px-6 py-3"><button type="button" onClick={onClose} className="rounded-md border border-border-main px-4 py-2 text-xs font-bold text-text-secondary hover:bg-surface-hover">Cancel</button><button type="submit" disabled={isSaving} className="rounded-md bg-brand-green px-4 py-2 text-xs font-bold text-white hover:brightness-110 disabled:opacity-50">{isSaving ? "Saving..." : "Save Changes"}</button></div>
+      </form>
     </div>
   );
 }
