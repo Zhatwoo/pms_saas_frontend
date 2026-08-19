@@ -138,7 +138,13 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-5">
-          <OverallSummaryStats data={overallData} />
+          <OverallSummaryStats
+            data={overallData}
+            onTotalContractsClick={() => router.push("/pawn-transactions")}
+            onActiveClick={() => router.push("/pawn-transactions")}
+            onRedeemedClick={() => router.push("/pawn-transactions")}
+            onSalesClick={() => router.push("/inventory/items-for-sale")}
+          />
 
           <DashboardStats
             data={kpiData}
