@@ -12,5 +12,12 @@ export const PUBLIC_AUTH_API_PATHS = [
 ] as const;
 
 export function isPublicAuthApiPath(path: string): boolean {
-  return PUBLIC_AUTH_API_PATHS.includes(path as (typeof PUBLIC_AUTH_API_PATHS)[number]);
+  const pathname = path.split("?")[0];
+  if (PUBLIC_AUTH_API_PATHS.includes(pathname as (typeof PUBLIC_AUTH_API_PATHS)[number])) {
+    return true;
+  }
+  return (
+    pathname.startsWith("/pawn-tickets/public/") ||
+    pathname.startsWith("/inventory/public/for-sale/")
+  );
 }

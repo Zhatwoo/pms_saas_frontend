@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { Category } from "@/lib/categories";
 import { ApiError } from "@/lib/api";
+import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
@@ -58,13 +59,23 @@ export default function CategoriesSettings() {
     fetchAllCategories();
   }, []);
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    type: "add" | "edit" | "delete";
+    payload?: any;
+  } | null>(null);
+
+  const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) {
       toast.error("Category name is required");
       return;
     }
+    setPendingAction({ type: "add" });
+    setIsPasswordModalOpen(true);
+  };
 
+  const executeAddCategory = async () => {
     setIsSubmitLoading(true);
     try {
       const created = await api.post<Category>("/categories", {
@@ -101,12 +112,16 @@ export default function CategoriesSettings() {
     setEditDesc("");
   };
 
-  const handleSaveEdit = async (id: string) => {
+  const handleSaveEdit = (id: string) => {
     if (!editName.trim()) {
       toast.error("Category name is required");
       return;
     }
+    setPendingAction({ type: "edit", payload: { id } });
+    setIsPasswordModalOpen(true);
+  };
 
+  const executeSaveEdit = async (id: string) => {
     setIsEditLoading(true);
     try {
       const updated = await api.patch<Category>(`/categories/${id}`, {
@@ -129,7 +144,12 @@ export default function CategoriesSettings() {
     }
   };
 
-  const handleDeleteCategory = async (id: string, name: string) => {
+  const handleDeleteCategory = (id: string, name: string) => {
+    setPendingAction({ type: "delete", payload: { id, name } });
+    setIsPasswordModalOpen(true);
+  };
+
+  const executeDeleteCategory = async (id: string, name: string) => {
     setDeletingId(id);
     try {
       await api.delete(`/categories/${id}`);
@@ -143,6 +163,27 @@ export default function CategoriesSettings() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleConfirmPassword = async (password: string) => {
+    try {
+      await api.post("/auth/verify-password", { password });
+    } catch {
+      return false;
+    }
+
+    if (!pendingAction) return false;
+
+    if (pendingAction.type === "add") {
+      await executeAddCategory();
+    } else if (pendingAction.type === "edit") {
+      await executeSaveEdit(pendingAction.payload.id);
+    } else if (pendingAction.type === "delete") {
+      await executeDeleteCategory(pendingAction.payload.id, pendingAction.payload.name);
+    }
+    
+    setPendingAction(null);
+    return true;
   };
 
   return (
@@ -340,6 +381,15 @@ export default function CategoriesSettings() {
           </div>
         )}
       </div>
+
+      <ConfirmPasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+        title="Confirm Category Changes"
+        description="Enter your password to authorize and save these category changes."
+        onConfirm={handleConfirmPassword}
+        isLoading={isSubmitLoading || isEditLoading || deletingId !== null}
+      />
     </section>
   );
 }

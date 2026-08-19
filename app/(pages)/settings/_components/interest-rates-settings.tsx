@@ -6,6 +6,7 @@ import { publishInterestRatesSaved } from "@/contexts/interest-rates-context";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { fetchCategories } from "@/lib/categories";
+import { ConfirmPasswordModal } from "@/components/shared/confirm-password-modal";
 
 export interface InterestRateGroup {
   id: string;
@@ -445,19 +446,29 @@ export function InterestRatesSettings() {
     }
   };
 
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+
   const handleSaveSettings = async () => {
     if (!isAuthorized) {
       toast.error("Only Admins and Super Admins can modify interest rate policies.");
       return;
     }
 
-
-
     // Name validations
     const hasEmptyName = groups.some(g => !g.name.trim());
     if (hasEmptyName) {
       toast.error("Cannot save: Please ensure all groups have a valid name.");
       return;
+    }
+
+    setIsPasswordModalOpen(true);
+  };
+
+  const handleConfirmSave = async (password: string) => {
+    try {
+      await api.post("/auth/verify-password", { password });
+    } catch (error) {
+      return false;
     }
 
     setIsSaving(true);
@@ -472,9 +483,11 @@ export function InterestRatesSettings() {
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
       toast.success("Interest Rate structures updated successfully!");
+      return true;
     } catch (error) {
       console.error(error);
       toast.error("Failed to persist new Interest Rate structures.");
+      return false;
     } finally {
       setIsSaving(false);
     }
