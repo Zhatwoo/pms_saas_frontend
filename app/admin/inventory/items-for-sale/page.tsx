@@ -590,17 +590,34 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
   );
 }
 
+function formatCurrencyInput(value: string): string {
+  const clean = value.replace(/[^0-9.]/g, "");
+  if (!clean) return "";
+
+  const parts = clean.split(".");
+  const integerPart = parts[0] ? parts[0].replace(/^0+(?=\d)/, "") || "0" : "";
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  if (parts.length > 1) {
+    const decimalPart = parts.slice(1).join("").slice(0, 2);
+    return `${formattedInteger || "0"}.${decimalPart}`;
+  }
+
+  return formattedInteger;
+}
+
 function EditSaleItemForm({ item, onClose, onSaved }: { item: SaleItem; onClose: () => void; onSaved: (updated: Partial<SaleItem> & { id: string }) => void }) {
-  const [price, setPrice] = useState(String(item.price));
+  const [price, setPrice] = useState(item.price ? formatCurrencyInput(String(item.price)) : "");
   const [itemName, setItemName] = useState(item.itemName);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    const numericPrice = Number(price.replace(/,/g, "")) || 0;
     try {
-      await api.patch(`/inventory/for-sale/${item.id}`, { item_name: itemName, price: Number(price) });
-      onSaved({ id: item.id, itemName, price: Number(price) });
+      await api.patch(`/inventory/for-sale/${item.id}`, { item_name: itemName, price: numericPrice });
+      onSaved({ id: item.id, itemName, price: numericPrice });
       toast.success("Item updated.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to update item.");
@@ -622,7 +639,14 @@ function EditSaleItemForm({ item, onClose, onSaved }: { item: SaleItem; onClose:
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-bold uppercase text-text-tertiary tracking-wide">Price (₱)</label>
-          <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green" />
+          <input
+            type="text"
+            inputMode="decimal"
+            value={price}
+            onChange={(e) => setPrice(formatCurrencyInput(e.target.value))}
+            placeholder="0.00"
+            className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary outline-none focus:border-brand-green"
+          />
         </div>
       </div>
       <div className="border-t border-border-main px-6 py-3 flex justify-end gap-2 bg-surface-secondary">

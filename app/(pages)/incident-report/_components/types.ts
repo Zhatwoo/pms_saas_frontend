@@ -15,7 +15,8 @@ export type IncidentEventAction =
   | "unassigned"
   | "escalated"
   | "resolved"
-  | "reopened";
+  | "reopened"
+  | "updated";
 
 export interface IncidentTicketEvent {
   id: string;
@@ -74,4 +75,5 @@ export interface ManualTicketFormState {
   amountImpact: string;
   transactionRef: string;
   requiresManagerEscalation: boolean;
+  escalationOwnerUserId: string;
 }

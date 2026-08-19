@@ -1,4 +1,4 @@
-import { getPageDescription, getPageTitle } from "@/lib/page-header-meta";
+import { getPageDescription, getPageTitle, shouldShowBranchBadge } from "@/lib/page-header-meta";
 
 describe("getPageTitle", () => {
   it("returns Dashboard for the root dashboard route", () => {
@@ -7,7 +7,8 @@ describe("getPageTitle", () => {
 
   it("maps custom segment titles", () => {
     expect(getPageTitle("/customers/view_user")).toBe("View Customer");
-    expect(getPageTitle("/users")).toBe("Employees");
+    expect(getPageTitle("/users")).toBe("Employee Management");
+    expect(getPageTitle("/admin/users")).toBe("Employee Management");
     expect(getPageTitle("/devices")).toBe("Device Management");
   });
 });
@@ -47,6 +48,12 @@ describe("getPageDescription", () => {
     expect(getPageDescription("/admin/branch-finance")).toBe(
       "Request fund transfers or expense approvals from Super Admin and monitor status in real time.",
     );
+    expect(getPageDescription("/users")).toBe(
+      "Easily manage your employees, roles, branch assignments, and system access.",
+    );
+    expect(getPageDescription("/admin/users")).toBe(
+      "Easily manage your employees, roles, branch assignments, and system access.",
+    );
   });
 
   it("returns branch-aware device descriptions", () => {
@@ -69,5 +76,20 @@ describe("getPageDescription", () => {
 
   it("does not return a description on unrelated routes", () => {
     expect(getPageDescription("/settings")).toBeNull();
+  });
+});
+
+describe("shouldShowBranchBadge", () => {
+  it("shows the badge for a specific branch", () => {
+    expect(shouldShowBranchBadge("Main Branch")).toBe(true);
+  });
+
+  it("hides the badge for the combined All Branches view", () => {
+    expect(shouldShowBranchBadge("All Branches")).toBe(false);
+  });
+
+  it("hides the badge when branch name is absent", () => {
+    expect(shouldShowBranchBadge(undefined)).toBe(false);
+    expect(shouldShowBranchBadge("")).toBe(false);
   });
 });

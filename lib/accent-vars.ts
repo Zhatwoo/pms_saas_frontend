@@ -100,10 +100,10 @@ export function getAccentCssVars(id: AccentId, isDark: boolean): AccentCssVars {
       ? shadeHex(preset.primary, -0.88)
       : shadeHex(preset.primary, 0.92),
     "--emerald-border": isDark
-      ? shadeHex(preset.primary, -0.58)
+      ? shadeHex(preset.accent, -0.45)
       : shadeHex(preset.primary, 0.68),
     "--emerald-text": isDark
-      ? shadeHex(preset.primary, 0.38)
+      ? preset.accent
       : shadeHex(preset.primary, 0.12),
   };
 }
@@ -127,5 +127,5 @@ export function getAccentBootstrapScript(): string {
     ),
   );
 
-  return `(function(){try{var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');var presets=${presetsJson};var p=presets[a];if(p){var isDark=!!window.__pmsDark;function shade(hex,amount){var n=parseInt(hex.replace('#',''),16);var r=(n>>16)&255,g=(n>>8)&255,b=n&255;function mix(c){return amount>=0?Math.round(c+(255-c)*amount):Math.round(c*(1+amount));}function clamp(v){return Math.max(0,Math.min(255,v));}function toHex(v){return clamp(v).toString(16).padStart(2,'0');}return '#'+toHex(mix(r))+toHex(mix(g))+toHex(mix(b));}var root=document.documentElement.style;root.setProperty('--brand-green',p.primary);root.setProperty('--brand-gold',p.accent);root.setProperty('--pawn-sidebar',p.primary);root.setProperty('--pawn-sidebar-light',shade(p.primary,0.18));root.setProperty('--pawn-gold',p.accent);root.setProperty('--pawn-gold-light',shade(p.accent,0.15));root.setProperty('--pawn-section',shade(p.primary,0.35));root.setProperty('--pawn-content',isDark?shade(p.primary,-0.9):shade(p.primary,0.92));root.setProperty('--emerald-surface',isDark?shade(p.primary,-0.88):shade(p.primary,0.92));root.setProperty('--emerald-border',isDark?shade(p.primary,-0.58):shade(p.primary,0.68));root.setProperty('--emerald-text',isDark?shade(p.primary,0.38):shade(p.primary,0.12));}}catch(e){}})();`;
+  return `(function(){try{var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');var presets=${presetsJson};var p=presets[a];if(p){var isDark=!!window.__pmsDark;function shade(hex,amount){var n=parseInt(hex.replace('#',''),16);var r=(n>>16)&255,g=(n>>8)&255,b=n&255;function mix(c){return amount>=0?Math.round(c+(255-c)*amount):Math.round(c*(1+amount));}function clamp(v){return Math.max(0,Math.min(255,v));}function toHex(v){return clamp(v).toString(16).padStart(2,'0');}return '#'+toHex(mix(r))+toHex(mix(g))+toHex(mix(b));}var root=document.documentElement.style;root.setProperty('--brand-green',p.primary);root.setProperty('--brand-gold',p.accent);root.setProperty('--pawn-sidebar',p.primary);root.setProperty('--pawn-sidebar-light',shade(p.primary,0.18));root.setProperty('--pawn-gold',p.accent);root.setProperty('--pawn-gold-light',shade(p.accent,0.15));root.setProperty('--pawn-section',shade(p.primary,0.35));root.setProperty('--pawn-content',isDark?shade(p.primary,-0.9):shade(p.primary,0.92));root.setProperty('--emerald-surface',isDark?shade(p.primary,-0.88):shade(p.primary,0.92));root.setProperty('--emerald-border',isDark?shade(p.accent,-0.45):shade(p.primary,0.68));root.setProperty('--emerald-text',isDark?p.accent:shade(p.primary,0.12));}}catch(e){}})();`;
 }
