@@ -69,9 +69,16 @@ describe("getPageDescription", () => {
     expect(getPageDescription("/employee/dashboard")).toBeNull();
   });
 
-  it("does not return a description on customer routes", () => {
-    expect(getPageDescription("/customers")).toBeNull();
-    expect(getPageDescription("/admin/customers")).toBeNull();
+  it("returns the customers overview copy on customer routes", () => {
+    expect(getPageDescription("/customers")).toBe(
+      "Manage and view all registered customer profiles across the organization.",
+    );
+    expect(getPageDescription("/admin/customers")).toBe(
+      "Manage and view all registered customer profiles across the organization.",
+    );
+    expect(getPageDescription("/employee/customers")).toBe(
+      "Manage and view all registered customer profiles across the organization.",
+    );
   });
 
   it("does not return a description on unrelated routes", () => {

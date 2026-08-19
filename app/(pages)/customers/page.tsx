@@ -44,12 +44,7 @@ export default function CustomersPage() {
       {/* Tab Content */}
       <div className="min-h-[60vh]">
         {activeTab === "directory" ? (
-          <div className="space-y-4">
-            <p className="text-sm text-text-tertiary">
-              Manage and view all registered customer profiles across the organization.
-            </p>
-            <CustomerTable />
-          </div>
+          <CustomerTable />
         ) : (
           <RewardsConfiguration />
         )}

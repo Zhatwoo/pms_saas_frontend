@@ -9,6 +9,8 @@ import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 10;
+/** Backend ListCustomersDto caps `limit` at 100. */
+const CUSTOMER_FETCH_LIMIT = 100;
 
 interface CustomerApiRecord {
   id: string;
@@ -174,7 +176,7 @@ export function CustomerTable() {
         if (!isAllBranches) {
           queryParams.set("branchId", selectedBranch.id);
         }
-        queryParams.set("limit", "500");
+        queryParams.set("limit", String(CUSTOMER_FETCH_LIMIT));
 
         const response = await api.get<CustomerApiRecord[] | CustomerListResponse>(
           `/customers?${queryParams.toString()}`,
