@@ -3,43 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { api } from "@/lib/api";
 import { BRAND_CONFIG } from "@/lib/brand-config";
 import { formatPeso } from "@/lib/currency";
-
-interface TransactionDetail {
-  id: string;
-  item_id: string;
-  item_name: string;
-  category: string;
-  amount: number;
-  pawn_date: string;
-  serial_number: string | null;
-  condition: string | null;
-  items_included: string | null;
-  memory_storage: string | null;
-  remarks: string | null;
-  listing_type?: "pawn" | "sale";
-  status?: string;
-  profile_photo: string | null;
-  item_photos: string[];
-  id_photo: string | null;
-  id_back_photo: string | null;
-  customer?: {
-    full_name: string;
-    address: string;
-    contact_number: string;
-  };
-  branch_info?: {
-    name: string;
-    location: string;
-    phone: string;
-  };
-}
+import {
+  fetchPublicTicketByCode,
+  type PublicTicketDetail,
+} from "@/lib/public-ticket";
 
 export default function PublicTicketView() {
   const { unitCode } = useParams();
-  const [data, setData] = useState<TransactionDetail | null>(null);
+  const [data, setData] = useState<PublicTicketDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -51,14 +24,9 @@ export default function PublicTicketView() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.get<TransactionDetail>(
-        `/pawn-tickets/public/${encodeURIComponent(String(code))}`,
-      );
+      const res = await fetchPublicTicketByCode(String(code));
       if (res) {
-        setData({
-          ...res,
-          item_photos: Array.isArray(res.item_photos) ? res.item_photos : [],
-        });
+        setData(res);
       }
     } catch (err) {
       console.error("Failed to fetch ticket:", err);
