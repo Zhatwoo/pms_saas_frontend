@@ -46,11 +46,9 @@ describe("getAccentCssVars", () => {
       shadeHex(ACCENT_PRESETS.blue.primary, -0.88),
     );
     expect(blueDark["--emerald-border"]).toBe(
-      shadeHex(ACCENT_PRESETS.blue.primary, -0.58),
+      shadeHex(ACCENT_PRESETS.blue.accent, -0.45),
     );
-    expect(blueDark["--emerald-text"]).toBe(
-      shadeHex(ACCENT_PRESETS.blue.primary, 0.38),
-    );
+    expect(blueDark["--emerald-text"]).toBe(ACCENT_PRESETS.blue.accent);
   });
 
   it("changes derived tokens when the accent preset changes", () => {
@@ -59,6 +57,13 @@ describe("getAccentCssVars", () => {
 
     expect(green["--emerald-border"]).not.toBe(purple["--emerald-border"]);
     expect(green["--pawn-content"]).not.toBe(purple["--pawn-content"]);
+  });
+
+  it("uses accent highlight colors for readable dark-mode callout text", () => {
+    for (const preset of Object.values(ACCENT_PRESETS)) {
+      const dark = getAccentCssVars(preset.id, true);
+      expect(dark["--emerald-text"]).toBe(preset.accent);
+    }
   });
 });
 

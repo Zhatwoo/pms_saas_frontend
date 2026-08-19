@@ -1,16 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { History } from "lucide-react";
+import { History, Pencil } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { ActionButton } from "@/components/shared/action-button";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { formatAmountForInput, parseAmountInput } from "@/lib/currency";
 import { subscribeToIncidentReportNotifications } from "@/lib/notification-stream";
 import { AddIncidentModal } from "@/app/(pages)/incident-report/_components/add-incident-modal";
+import { getIncidentStatusLabel } from "@/app/(pages)/incident-report/_components/incident-labels";
 import { IncidentHistoryModal } from "@/app/(pages)/incident-report/_components/incident-history-modal";
+import {
+  canEditIncidentTicketContent,
+  getInvolvedUserLabel,
+  ticketToEditableFormState,
+} from "@/app/(pages)/incident-report/_components/incident-permissions";
 import type {
   IncidentCategory,
   IncidentPriority,
@@ -112,6 +119,7 @@ function buildInitialFormState(branchId: string): ManualTicketFormState {
     amountImpact: "",
     transactionRef: "",
     requiresManagerEscalation: false,
+    escalationOwnerUserId: "",
   };
 }
 
@@ -131,6 +139,7 @@ export default function EmployeeIncidentReportPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [ticketToEdit, setTicketToEdit] = useState<IncidentTicketRow | null>(null);
   const [ticketToView, setTicketToView] = useState<IncidentTicketRow | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -180,7 +189,7 @@ export default function EmployeeIncidentReportPage() {
       ].join("\n"),
       category: "opening_cash",
       priority: "high",
-      amountImpact: String(Math.abs(variance)),
+      amountImpact: formatAmountForInput(Math.abs(variance)),
       transactionRef: `branch-day-start:${businessDate || "unknown"}`,
     });
     setIsCreateModalOpen(true);
@@ -300,6 +309,16 @@ export default function EmployeeIncidentReportPage() {
     setIsCreateModalOpen(true);
   };
 
+  const openEditModal = (ticket: IncidentTicketRow) => {
+    setFormState(ticketToEditableFormState(ticket));
+    setTicketToEdit(ticket);
+  };
+
+  const closeEditModal = () => {
+    if (isSubmitting) return;
+    setTicketToEdit(null);
+  };
+
   const handleCreateTicket = async () => {
     if (!user?.id) {
       setErrorMessage("Current user profile is missing.");
@@ -323,7 +342,7 @@ export default function EmployeeIncidentReportPage() {
         priority: formState.priority,
         branchId: selectedBranch.id,
         userId: user.id,
-        amountImpact: formState.amountImpact ? Number(formState.amountImpact) : null,
+        amountImpact: parseAmountInput(formState.amountImpact),
         transactionRef: formState.transactionRef.trim() || null,
         requiresManagerEscalation: false,
       });
@@ -339,6 +358,44 @@ export default function EmployeeIncidentReportPage() {
     setIsSubmitting(false);
     setIsCreateModalOpen(false);
     setToastMessage("Incident ticket saved.");
+    await fetchTickets();
+  };
+
+  const handleUpdateTicket = async () => {
+    if (!ticketToEdit) return;
+
+    if (!formState.title.trim() || !formState.summary.trim()) {
+      setToastMessage("Please complete the title and summary.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      await api.fetch(`/incident-tickets/${ticketToEdit.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: formState.title.trim(),
+          summary: formState.summary.trim(),
+          category: formState.category,
+          priority: formState.priority,
+          amountImpact: parseAmountInput(formState.amountImpact),
+          transactionRef: formState.transactionRef.trim() || null,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to update incident ticket:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to update incident ticket.";
+      setErrorMessage(message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setIsSubmitting(false);
+    setTicketToEdit(null);
+    setToastMessage("Incident ticket updated.");
     await fetchTickets();
   };
 
@@ -359,7 +416,7 @@ export default function EmployeeIncidentReportPage() {
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-semibold text-text-primary">My Incident Tickets</h2>
           <p className="text-xs text-text-muted">
-            You can only view incident tickets you have submitted. Submit a new ticket to report any issues or concerns.
+            You can view and edit incident tickets you submitted. Submit a new ticket to report any issues or concerns.
           </p>
         </div>
         <ActionButton variant="primary" onClick={openCreateModal} className="w-full sm:w-auto">
@@ -456,7 +513,7 @@ export default function EmployeeIncidentReportPage() {
                 <span
                   className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadgeClasses(ticket.status)}`}
                 >
-                  {ticket.status.replaceAll("_", " ")}
+                  {getIncidentStatusLabel(ticket.status)}
                 </span>
               </div>
 
@@ -499,7 +556,18 @@ export default function EmployeeIncidentReportPage() {
                 </div>
               </dl>
 
-              <div className="mt-4 flex justify-end border-t border-border-subtle pt-4">
+              <div className="mt-4 flex justify-end gap-2 border-t border-border-subtle pt-4">
+                {canEditIncidentTicketContent(ticket, user?.id) ? (
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(ticket)}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
+                    aria-label={`Edit ${ticket.ticket_no}`}
+                    title="Edit"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setTicketToView(ticket)}
@@ -586,9 +654,21 @@ export default function EmployeeIncidentReportPage() {
                         <span
                           className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadgeClasses(ticket.status)}`}
                         >
-                          {ticket.status.replaceAll("_", " ")}
+                          {getIncidentStatusLabel(ticket.status)}
                         </span>
-                        <button
+                        <div className="flex items-center gap-2">
+                          {canEditIncidentTicketContent(ticket, user?.id) ? (
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(ticket)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
+                              aria-label={`Edit ${ticket.ticket_no}`}
+                              title="Edit"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                          ) : null}
+                          <button
                           type="button"
                           onClick={() => setTicketToView(ticket)}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
@@ -597,6 +677,7 @@ export default function EmployeeIncidentReportPage() {
                         >
                           <History size={15} />
                         </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -607,6 +688,25 @@ export default function EmployeeIncidentReportPage() {
         </table>
         </div>
       </div>
+
+      {ticketToEdit ? (
+        <AddIncidentModal
+          formState={formState}
+          setFormState={setFormState}
+          branches={[selectedBranch]}
+          users={[]}
+          categoryOptions={categoryOptions}
+          priorityOptions={priorityOptions}
+          isLoadingUsers={isLoadingUsers}
+          isSubmitting={isSubmitting}
+          canSelectBranch={false}
+          canSelectUser={false}
+          mode="edit"
+          onClose={closeEditModal}
+          onSubmit={() => void handleUpdateTicket()}
+          getUserName={getUserName}
+        />
+      ) : null}
 
       {isCreateModalOpen ? (
         <AddIncidentModal
@@ -620,6 +720,7 @@ export default function EmployeeIncidentReportPage() {
           isSubmitting={isSubmitting}
           canSelectBranch={false}
           canSelectUser={false}
+          involvedUserName={getInvolvedUserLabel(user)}
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={() => void handleCreateTicket()}
           getUserName={getUserName}
@@ -631,21 +732,28 @@ export default function EmployeeIncidentReportPage() {
             const reportedByUser = ticketToView.reported_by_user_id
               ? userById.get(ticketToView.reported_by_user_id)
               : null;
+            const getUserNameById = (userId: string | null | undefined) => {
+              if (!userId) return "Unknown";
+              if (userId === user?.id) {
+                return user.fullName || user.email || "You";
+              }
+              return getUserName(userById.get(userId));
+            };
 
             return (
               <IncidentHistoryModal
                 ticket={ticketToView}
                 branchName={selectedBranch.name}
-                incidentUserName="Anonymous"
+                incidentUserName={getUserNameById(ticketToView.user_id)}
                 reportedByName={getUserName(reportedByUser)}
-                assignedToName="Anonymous"
-                resolvedByName="Anonymous"
+                assignedToName="Unassigned"
+                resolvedByName="Unassigned"
                 categoryLabel={getCategoryLabel(ticketToView.category)}
                 priorityBadgeClassName={getPriorityBadgeClasses(ticketToView.priority)}
                 statusBadgeClassName={getStatusBadgeClasses(ticketToView.status)}
                 formatDateTime={formatDateTime}
                 formatCurrency={formatCurrency}
-                getUserNameById={() => "Anonymous"}
+                getUserNameById={getUserNameById}
                 onClose={() => setTicketToView(null)}
               />
             );

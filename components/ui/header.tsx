@@ -31,7 +31,7 @@ import {
   formatHeaderTime,
 } from "@/lib/header-clock";
 import { useAuth } from "@/contexts/auth-context";
-import { getPageDescription, getPageTitle } from "@/lib/page-header-meta";
+import { getPageDescription, getPageTitle, shouldShowBranchBadge } from "@/lib/page-header-meta";
 import { getProfileSettingsPath } from "@/lib/profile-navigation";
 
 interface HeaderProps {
@@ -487,8 +487,8 @@ export function Header({
               {description}
             </p>
           )}
-          {branchName && (
-            <span className="inline-block rounded-full bg-brand-green/10 px-2 py-0.5 text-xs font-medium text-brand-green truncate max-w-[160px]" title={branchName}>
+          {shouldShowBranchBadge(branchName) && (
+            <span className="inline-block rounded-full border border-emerald-border bg-emerald-surface px-2 py-0.5 text-xs font-medium text-emerald-text truncate max-w-[160px]" title={branchName}>
               📍 {branchName}
             </span>
           )}

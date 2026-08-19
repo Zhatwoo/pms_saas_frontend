@@ -1,6 +1,6 @@
 const CUSTOM_PAGE_TITLES: Record<string, string> = {
   view_user: "View Customer",
-  users: "Employees",
+  users: "Employee Management",
   devices: "Device Management",
 };
 
@@ -27,7 +27,16 @@ const PAGE_DESCRIPTIONS: Record<string, string> = {
     "Review branch fund requests, transfer approved funds, and track transfer history from live backend data.",
   "/admin/branch-finance":
     "Request fund transfers or expense approvals from Super Admin and monitor status in real time.",
+  "/users":
+    "Easily manage your employees, roles, branch assignments, and system access.",
+  "/admin/users":
+    "Easily manage your employees, roles, branch assignments, and system access.",
 };
+
+/** Hide redundant branch badge when combined view is already shown in the branch selector. */
+export function shouldShowBranchBadge(branchName?: string): boolean {
+  return Boolean(branchName && branchName !== "All Branches");
+}
 
 export interface PageDescriptionContext {
   branchName?: string;

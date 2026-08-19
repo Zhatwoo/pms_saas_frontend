@@ -13,6 +13,22 @@ interface AddItemModalProps {
   onSuccess: () => void;
 }
 
+function formatCurrencyInput(value: string): string {
+  const clean = value.replace(/[^0-9.]/g, "");
+  if (!clean) return "";
+
+  const parts = clean.split(".");
+  const integerPart = parts[0] ? parts[0].replace(/^0+(?=\d)/, "") || "0" : "";
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  if (parts.length > 1) {
+    const decimalPart = parts.slice(1).join("").slice(0, 2);
+    return `${formattedInteger || "0"}.${decimalPart}`;
+  }
+
+  return formattedInteger;
+}
+
 export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) {
   const { branches } = useBranch();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +85,8 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
   }, [isOpen]);
 
   const handleGenerateQR = () => {
-    if (!form.item_name || !form.category || !form.price || !form.branch_id) {
+    const rawPrice = form.price.replace(/,/g, "").trim();
+    if (!form.item_name || !form.category || !rawPrice || !form.branch_id) {
       toast.error("Please fill in all details before generating QR.");
       return;
     }
@@ -92,11 +109,17 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCurrencyInput(e.target.value);
+    setForm(prev => ({ ...prev, price: formatted }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isProcessingRef.current) return;
     
-    if (!form.item_name || !form.category || !form.price || !form.branch_id) {
+    const rawPrice = form.price.replace(/,/g, "").trim();
+    if (!form.item_name || !form.category || !rawPrice || !form.branch_id) {
       toast.error("Please complete all required fields.");
       return;
     }
@@ -121,7 +144,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         item_id: generatedItemId,
         item_name: form.item_name,
         category: form.category,
-        price: Number(form.price),
+        price: Number(rawPrice),
         branch_id: form.branch_id,
         branch: selectedBranch?.name || "Unknown Branch",
         stock_level: Number(form.stock_level),
@@ -184,7 +207,16 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
 
               <div className="space-y-1">
                 <label className="text-[10px] font-bold uppercase text-text-muted">Price (₱)</label>
-                <input required type="number" name="price" value={form.price} onChange={handleChange} className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100" />
+                <input
+                  required
+                  type="text"
+                  inputMode="decimal"
+                  name="price"
+                  value={form.price}
+                  onChange={handlePriceChange}
+                  placeholder="0.00"
+                  className="w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
+                />
               </div>
 
               <div className="space-y-1">

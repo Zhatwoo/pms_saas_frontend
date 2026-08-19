@@ -1,15 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { History } from "lucide-react";
+import { History, Pencil } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { ActionButton } from "@/components/shared/action-button";
 import { useAuth } from "@/contexts/auth-context";
 import { useBranch } from "@/contexts/branch-context";
 import { api } from "@/lib/api";
+import { formatAmountForInput, parseAmountInput } from "@/lib/currency";
 import { subscribeToIncidentReportNotifications } from "@/lib/notification-stream";
 import { AddIncidentModal } from "@/app/(pages)/incident-report/_components/add-incident-modal";
+import { getIncidentStatusLabel } from "@/app/(pages)/incident-report/_components/incident-labels";
+import {
+  canEditIncidentTicketContent,
+  getInvolvedUserLabel,
+  ticketToEditableFormState,
+} from "@/app/(pages)/incident-report/_components/incident-permissions";
 import { IncidentHistoryModal } from "@/app/(pages)/incident-report/_components/incident-history-modal";
 import { ResolveIncidentModal } from "@/app/(pages)/incident-report/_components/resolve-incident-modal";
 import type {
@@ -140,6 +147,7 @@ function buildInitialFormState(branchId: string): ManualTicketFormState {
     amountImpact: "",
     transactionRef: "",
     requiresManagerEscalation: false,
+    escalationOwnerUserId: "",
   };
 }
 
@@ -162,6 +170,7 @@ export default function AdminIncidentReportPage() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [ticketToEdit, setTicketToEdit] = useState<IncidentTicketRow | null>(null);
   const [ticketToResolve, setTicketToResolve] = useState<IncidentTicketRow | null>(null);
   const [ticketToView, setTicketToView] = useState<IncidentTicketRow | null>(null);
   const [resolutionNotes, setResolutionNotes] = useState("");
@@ -213,7 +222,7 @@ export default function AdminIncidentReportPage() {
       ].join("\n"),
       category: "opening_cash",
       priority: "high",
-      amountImpact: String(Math.abs(variance)),
+      amountImpact: formatAmountForInput(Math.abs(variance)),
       transactionRef: `branch-day-start:${businessDate || "unknown"}`,
     });
     setIsCreateModalOpen(true);
@@ -368,6 +377,15 @@ export default function AdminIncidentReportPage() {
     setIsCreateModalOpen(true);
   };
 
+  const openEditModal = (ticket: IncidentTicketRow) => {
+    setFormState(ticketToEditableFormState(ticket));
+    setTicketToEdit(ticket);
+  };
+
+  const closeEditModal = () => {
+    setTicketToEdit(null);
+  };
+
   const getManagerIdForBranch = (branchId: string) => {
     return (
       users.find((record) => getUserBranchId(record) === branchId && record.role === "admin")
@@ -398,9 +416,12 @@ export default function AdminIncidentReportPage() {
         priority: formState.priority,
         branchId: selectedBranch.id,
         userId: formState.userId || user.id,
-        amountImpact: formState.amountImpact ? Number(formState.amountImpact) : null,
+        amountImpact: parseAmountInput(formState.amountImpact),
         transactionRef: formState.transactionRef.trim() || null,
         requiresManagerEscalation: formState.requiresManagerEscalation,
+        ...(formState.requiresManagerEscalation && formState.escalationOwnerUserId
+          ? { escalationOwnerUserId: formState.escalationOwnerUserId }
+          : {}),
       });
     } catch (error) {
       console.error("Failed to create incident ticket:", error);
@@ -414,6 +435,44 @@ export default function AdminIncidentReportPage() {
     setIsSubmitting(false);
     setIsCreateModalOpen(false);
     setToastMessage("Incident ticket saved.");
+    await fetchTickets();
+  };
+
+  const handleUpdateTicket = async () => {
+    if (!ticketToEdit) return;
+
+    if (!formState.title.trim() || !formState.summary.trim()) {
+      setToastMessage("Please complete the title and summary.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      await api.fetch(`/incident-tickets/${ticketToEdit.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          title: formState.title.trim(),
+          summary: formState.summary.trim(),
+          category: formState.category,
+          priority: formState.priority,
+          amountImpact: parseAmountInput(formState.amountImpact),
+          transactionRef: formState.transactionRef.trim() || null,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to update incident ticket:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to update incident ticket.";
+      setErrorMessage(message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    setIsSubmitting(false);
+    setTicketToEdit(null);
+    setToastMessage("Incident ticket updated.");
     await fetchTickets();
   };
 
@@ -646,9 +705,6 @@ export default function AdminIncidentReportPage() {
         ) : (
           filteredTickets.map((ticket) => {
             const incidentUser = ticket.user_id ? userById.get(ticket.user_id) : null;
-            const reportedByUser = ticket.reported_by_user_id
-              ? userById.get(ticket.reported_by_user_id)
-              : null;
             const assignableUsers = users.filter((record) => {
               if (!record.id) return false;
               return record.role === "admin" && getUserBranchId(record) === ticket.branch_id;
@@ -673,7 +729,7 @@ export default function AdminIncidentReportPage() {
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadgeClasses(ticket.status)}`}
                     >
-                      {ticket.status.replaceAll("_", " ")}
+                      {getIncidentStatusLabel(ticket.status)}
                     </span>
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase ${getSourceBadgeClasses(ticket.source)}`}
@@ -701,9 +757,6 @@ export default function AdminIncidentReportPage() {
                     </dt>
                     <dd className="mt-1 text-text-primary">
                       {getPrivateIncidentUserName(incidentUser, user)}
-                    </dd>
-                    <dd className="mt-1 text-xs text-text-muted">
-                      Reported by {getPrivateIncidentUserName(reportedByUser, user)}
                     </dd>
                   </div>
                   <div>
@@ -779,6 +832,17 @@ export default function AdminIncidentReportPage() {
                   >
                     <History size={15} />
                   </button>
+                  {canEditIncidentTicketContent(ticket, user?.id) ? (
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(ticket)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
+                      aria-label={`Edit ${ticket.ticket_no}`}
+                      title="Edit"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                  ) : null}
                   {ticket.status !== "escalated" && ticket.status !== "resolved" ? (
                     <button
                       type="button"
@@ -854,9 +918,6 @@ export default function AdminIncidentReportPage() {
             ) : (
               filteredTickets.map((ticket) => {
                 const incidentUser = ticket.user_id ? userById.get(ticket.user_id) : null;
-                const reportedByUser = ticket.reported_by_user_id
-                  ? userById.get(ticket.reported_by_user_id)
-                  : null;
                 const assignableUsers = users.filter((record) => {
                   if (!record.id) return false;
                   return (
@@ -896,9 +957,6 @@ export default function AdminIncidentReportPage() {
                     <td className="px-4 py-4">
                       <p className="font-medium text-text-primary">
                         {getPrivateIncidentUserName(incidentUser, user)}
-                      </p>
-                      <p className="mt-1 text-xs text-text-muted">
-                        Reported by {getPrivateIncidentUserName(reportedByUser, user)}
                       </p>
                     </td>
                     <td className="px-4 py-4">
@@ -944,7 +1002,7 @@ export default function AdminIncidentReportPage() {
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${getStatusBadgeClasses(ticket.status)}`}
                       >
-                        {ticket.status.replaceAll("_", " ")}
+                        {getIncidentStatusLabel(ticket.status)}
                       </span>
                     </td>
                     <td className="px-4 py-4">
@@ -965,6 +1023,17 @@ export default function AdminIncidentReportPage() {
                         >
                           <History size={15} />
                         </button>
+                        {canEditIncidentTicketContent(ticket, user?.id) ? (
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(ticket)}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-main bg-surface-secondary text-text-secondary transition-colors hover:bg-surface-secondary/80"
+                            aria-label={`Edit ${ticket.ticket_no}`}
+                            title="Edit"
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        ) : null}
                         {ticket.status !== "escalated" && ticket.status !== "resolved" ? (
                           <button
                             type="button"
@@ -1008,18 +1077,40 @@ export default function AdminIncidentReportPage() {
         </div>
       </div>
 
+      {ticketToEdit ? (
+        <AddIncidentModal
+          formState={formState}
+          setFormState={setFormState}
+          branches={[selectedBranch]}
+          users={formUsers}
+          allUsers={users}
+          categoryOptions={categoryOptions}
+          priorityOptions={priorityOptions}
+          isLoadingUsers={isLoadingUsers}
+          isSubmitting={isSubmitting}
+          canSelectBranch={false}
+          canSelectUser={false}
+          mode="edit"
+          onClose={closeEditModal}
+          onSubmit={() => void handleUpdateTicket()}
+          getUserName={getUserName}
+        />
+      ) : null}
+
       {isCreateModalOpen ? (
         <AddIncidentModal
           formState={formState}
           setFormState={setFormState}
           branches={[selectedBranch]}
           users={formUsers}
+          allUsers={users}
           categoryOptions={categoryOptions}
           priorityOptions={priorityOptions}
           isLoadingUsers={isLoadingUsers}
           isSubmitting={isSubmitting}
           canSelectBranch={false}
           canSelectUser={true}
+          involvedUserName={getInvolvedUserLabel(user)}
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={() => void handleCreateTicket()}
           getUserName={getUserName}
