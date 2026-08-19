@@ -4,8 +4,10 @@ import {
   formatPromoDuration,
   formatRewardAmountInput,
   formatRewardIntegerInput,
+  isRewardPromoValidationError,
   normalizeRewardNumericInput,
   parseRewardNumericInput,
+  rewardsApiSupportsPromoDuration,
   toDateInputValue,
   validateRewardForm,
   type RewardFormState,
@@ -38,6 +40,42 @@ describe("reward form helpers", () => {
       promo_start_at: "2026-08-01",
       promo_end_at: "2026-08-31",
     });
+  });
+
+  it("omits promo fields when the API does not support them", () => {
+    expect(buildRewardPayload(baseForm, { includePromo: false })).toEqual({
+      name: "Bronze Tier",
+      description: "Short promo copy",
+      reward_type: "cashback",
+      reward_value: 100,
+      required_transaction_count: 5,
+      required_total_amount: 0,
+      transaction_type: undefined,
+      is_active: true,
+    });
+  });
+
+  it("detects legacy reward APIs without promo duration fields", () => {
+    expect(rewardsApiSupportsPromoDuration([])).toBe(true);
+    expect(
+      rewardsApiSupportsPromoDuration([
+        { id: "1", name: "Legacy", promo_start_at: null, promo_end_at: null },
+      ]),
+    ).toBe(true);
+    expect(
+      rewardsApiSupportsPromoDuration([{ id: "1", name: "Legacy" }]),
+    ).toBe(false);
+  });
+
+  it("detects promo validation errors from older backends", () => {
+    expect(
+      isRewardPromoValidationError(
+        "Validation failed — promo_start_at: property promo_start_at should not exist; promo_end_at: property promo_end_at should not exist",
+      ),
+    ).toBe(true);
+    expect(isRewardPromoValidationError("Validation failed — name: name should not be empty")).toBe(
+      false,
+    );
   });
 
   it("formats promo duration labels", () => {
