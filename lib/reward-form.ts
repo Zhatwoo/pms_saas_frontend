@@ -85,8 +85,41 @@ export function formatPromoDuration(
   return null;
 }
 
-export function buildRewardPayload(form: RewardFormState) {
-  return {
+export interface RewardPayload {
+  name: string;
+  description: string;
+  reward_type: string;
+  reward_value: number;
+  required_transaction_count: number;
+  required_total_amount: number;
+  transaction_type?: string;
+  is_active: boolean;
+  promo_start_at?: string;
+  promo_end_at?: string;
+}
+
+export function rewardsApiSupportsPromoDuration(
+  rewards: ReadonlyArray<Record<string, unknown>>,
+): boolean {
+  if (rewards.length === 0) return true;
+  return rewards.some(
+    (reward) => "promo_start_at" in reward || "promo_end_at" in reward,
+  );
+}
+
+export function isRewardPromoValidationError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    (normalized.includes("promo_start_at") || normalized.includes("promo_end_at")) &&
+    normalized.includes("should not exist")
+  );
+}
+
+export function buildRewardPayload(
+  form: RewardFormState,
+  options?: { includePromo?: boolean },
+) {
+  const payload: RewardPayload = {
     name: form.name.trim(),
     description: form.description.trim(),
     reward_type: form.reward_type,
@@ -96,9 +129,14 @@ export function buildRewardPayload(form: RewardFormState) {
     required_total_amount: parseRewardNumericInput(form.required_total_amount),
     transaction_type: form.transaction_type || undefined,
     is_active: form.is_active,
-    promo_start_at: form.promo_start_at || undefined,
-    promo_end_at: form.promo_end_at || undefined,
   };
+
+  if (options?.includePromo !== false) {
+    if (form.promo_start_at) payload.promo_start_at = form.promo_start_at;
+    if (form.promo_end_at) payload.promo_end_at = form.promo_end_at;
+  }
+
+  return payload;
 }
 
 export function validateRewardForm(form: RewardFormState): string | null {
