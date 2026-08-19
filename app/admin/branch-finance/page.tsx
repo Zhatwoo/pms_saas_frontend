@@ -378,7 +378,7 @@ export default function AdminBranchFinancePage() {
     <div className="space-y-6">
       {toast ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="rounded-xl border border-brand-green/40 bg-brand-green/10 px-5 py-3 text-sm font-semibold text-brand-green shadow-xl">
+          <div className="rounded-xl border border-emerald-border bg-emerald-surface px-5 py-3 text-sm font-semibold text-emerald-text shadow-xl">
             {toast}
           </div>
         </div>

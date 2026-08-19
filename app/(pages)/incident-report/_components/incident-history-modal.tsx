@@ -4,6 +4,7 @@ import {
   Clock,
   FileText,
   GitPullRequestArrow,
+  Pencil,
   RotateCcw,
   ShieldCheck,
   UserMinus,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { IncidentEventAction, IncidentTicketEvent, IncidentTicketRow } from "./types";
+import { getIncidentStatusLabel } from "./incident-labels";
 
 interface IncidentHistoryModalProps {
   ticket: IncidentTicketRow;
@@ -123,7 +125,7 @@ export function IncidentHistoryModal({
               <span
                 className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusBadgeClassName}`}
               >
-                {ticket.status.replaceAll("_", " ")}
+                {getIncidentStatusLabel(ticket.status)}
               </span>
             </div>
             <h2 className="mt-2 text-xl font-bold text-text-primary">{ticket.title}</h2>
@@ -254,7 +256,12 @@ function mapEventToTimelineItem(
     title: actionConfig.title,
     description,
     timestamp: event.created_at,
-    meta: event.action === "reported" ? `Reported by ${actorName}` : `${actorName} • ${branchName}`,
+    meta:
+      event.action === "reported"
+        ? `Reported by ${actorName}`
+        : event.action === "updated"
+          ? `Edited by ${actorName} • ${branchName}`
+          : `${actorName} • ${branchName}`,
     icon: actionConfig.icon,
     tone: actionConfig.tone,
   };
@@ -298,6 +305,12 @@ function getActionConfig(action: IncidentEventAction) {
         icon: <RotateCcw size={16} />,
         tone: "bg-amber-100 text-amber-700",
       };
+    case "updated":
+      return {
+        title: "Ticket edited",
+        icon: <Pencil size={16} />,
+        tone: "bg-sky-100 text-sky-700 dark:bg-sky-950/30 dark:text-sky-300",
+      };
   }
 }
 
@@ -321,6 +334,8 @@ function getEventDescription(
       return "Ticket was resolved.";
     case "reopened":
       return "Ticket was reopened. Resolution records remain attached for audit.";
+    case "updated":
+      return "Ticket details were updated.";
     case "reported":
       return "Ticket was created.";
   }
