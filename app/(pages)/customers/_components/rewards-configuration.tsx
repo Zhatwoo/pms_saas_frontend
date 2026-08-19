@@ -6,11 +6,13 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import {
   buildRewardPayload,
+  isRewardPromoValidationError,
   formatPromoDuration,
   REWARD_AMOUNT_STEP_PRESETS,
   REWARD_PERCENT_STEP_PRESETS,
   REWARD_TRANSACTION_STEP_PRESETS,
   toDateInputValue,
+  type RewardPayload,
   validateRewardForm,
   type RewardFormState,
 } from "@/lib/reward-form";
@@ -93,7 +95,8 @@ export function RewardsConfiguration() {
     setIsLoading(true);
     try {
       const data = await api.get<Reward[]>("/rewards");
-      setRewards(Array.isArray(data) ? data : []);
+      const rows = Array.isArray(data) ? data : [];
+      setRewards(rows);
     } catch (err) {
       console.warn("[Rewards] Failed to load:", err);
       setRewards([]);
@@ -141,14 +144,34 @@ export function RewardsConfiguration() {
 
     setIsSaving(true);
     try {
+      const hadPromoDates = Boolean(form.promo_start_at || form.promo_end_at);
       const payload = buildRewardPayload(form);
 
-      if (editingId) {
-        await api.patch(`/rewards/${editingId}`, payload);
-        toast.success("Reward updated!");
-      } else {
-        await api.post("/rewards", payload);
-        toast.success("Reward created!");
+      const saveReward = async (body: RewardPayload) => {
+        if (editingId) {
+          await api.patch(`/rewards/${editingId}`, body);
+          toast.success("Reward updated!");
+        } else {
+          await api.post("/rewards", body);
+          toast.success("Reward created!");
+        }
+      };
+
+      try {
+        await saveReward(payload);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "";
+        const canRetryWithoutPromo =
+          hadPromoDates && isRewardPromoValidationError(message);
+
+        if (!canRetryWithoutPromo) {
+          throw err;
+        }
+
+        await saveReward(buildRewardPayload(form, { includePromo: false }));
+        toast.warning(
+          "Rule saved, but promo duration was skipped because the API rejected promo dates. Rebuild the backend from the latest main branch to enable promo duration.",
+        );
       }
 
       setIsModalOpen(false);
