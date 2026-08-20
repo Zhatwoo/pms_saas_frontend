@@ -253,6 +253,7 @@ export function BranchProfile({ branch }: BranchProfileProps) {
   const router = useRouter();
   const pathname = usePathname();
   const usersPath = pathname.startsWith("/admin") ? "/admin/users" : "/users";
+  const inventoryPath = pathname.startsWith("/admin") ? "/admin/inventory/pawned-items" : "/inventory/pawned-items";
   const [activeTab, setActiveTab] = useState<TabType>("staff");
   const tabOrder: TabType[] = ["staff", "inventory", "transactions", "logs"];
   const activeIndex = tabOrder.indexOf(activeTab);
@@ -395,10 +396,28 @@ export function BranchProfile({ branch }: BranchProfileProps) {
             forSaleItems: stats.forSaleItems,
           });
 
-          // Categories
-          const pCats = await api.get<{category: string, count: number}[]>(`/inventory/pawned-categories?branch=${branch.id}`).catch(() => []);
-          const mappedCats = pCats.slice(0, 5).map((c, i) => ({
-            name: c.category || "Unknown",
+          // Categories (fetch and merge both active pawned and available sale categories)
+          const [pCats, sCats] = await Promise.all([
+            api.get<{category: string, count: number}[]>(`/inventory/pawned-categories?branch=${branch.id}`).catch(() => []),
+            api.get<{category: string, count: number}[]>(`/inventory/for-sale-categories?branch=${branch.id}`).catch(() => []),
+          ]);
+
+          const catCounts: Record<string, number> = {};
+          for (const c of (pCats || [])) {
+            const name = (c.category || "Uncategorized").trim();
+            catCounts[name] = (catCounts[name] || 0) + Number(c.count || 0);
+          }
+          for (const c of (sCats || [])) {
+            const name = (c.category || "Uncategorized").trim();
+            catCounts[name] = (catCounts[name] || 0) + Number(c.count || 0);
+          }
+
+          const combinedCats = Object.entries(catCounts)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count);
+
+          const mappedCats = combinedCats.map((c, i) => ({
+            name: c.name,
             count: c.count,
             color: getCategoryColor(i)
           }));
@@ -868,7 +887,10 @@ export function BranchProfile({ branch }: BranchProfileProps) {
               </div>
 
               {/* CTA */}
-              <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface py-3 text-sm font-bold text-emerald-text transition-colors hover:bg-emerald-border/20">
+              <button
+                onClick={() => router.push(inventoryPath)}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-border bg-emerald-surface py-3 text-sm font-bold text-emerald-text transition-colors hover:bg-emerald-border/20"
+              >
                 View Full Inventory
                 <IconArrowRight />
               </button>
