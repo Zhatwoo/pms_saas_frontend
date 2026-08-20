@@ -304,7 +304,16 @@ export function AddFundsModal({
               <input
                 type="text"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+                onChange={(e) => {
+                  let val = e.target.value.replace(/[^0-9.]/g, "");
+                  const parts = val.split(".");
+                  if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+                  if (val) {
+                    const [whole, fraction] = val.split(".");
+                    val = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (fraction !== undefined ? "." + fraction : "");
+                  }
+                  setAmount(val);
+                }}
                 placeholder="0.00"
                 className={`w-full rounded-lg border bg-input-bg py-2 pl-8 pr-3 text-sm text-text-primary outline-none placeholder:text-text-muted transition-colors focus:border-pawn-sidebar ${
                   errors.amount ? "border-red-400" : "border-input-border"
