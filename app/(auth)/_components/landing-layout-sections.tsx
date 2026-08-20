@@ -139,59 +139,6 @@ const cloudPoints = [
   "A system designed to support modern business operations",
 ];
 
-const subscriptionPlans = [
-  {
-    name: "Starter",
-    price: "₱2,999",
-    period: "/mo",
-    audience: "For single-branch shops",
-    features: [
-      "1 branch location",
-      "Up to 3 staff accounts",
-      "Inventory & pawn tracking",
-      "Basic daily reports",
-      "Email support",
-    ],
-    cta: "Get started",
-    popular: false,
-    ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT",
-  },
-  {
-    name: "Professional",
-    price: "₱7,999",
-    period: "/mo",
-    audience: "For growing pawnshops",
-    features: [
-      "Up to 5 branch locations",
-      "Unlimited staff accounts",
-      "Full inventory & transactions",
-      "Real-time reporting & audit logs",
-      "Priority support",
-    ],
-    cta: "Start free trial",
-    popular: true,
-    ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT",
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    audience: "For multi-branch networks",
-    features: [
-      "Unlimited branches",
-      "Custom roles & permissions",
-      "Advanced analytics & exports",
-      "Dedicated onboarding",
-      "SLA & account manager",
-    ],
-    cta: "Contact sales",
-    popular: false,
-    ctaTarget: "contact-us" as const,
-    ctaNav: "CONTACT",
-  },
-];
 
 const faqs = [
   {
@@ -1341,17 +1288,46 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/public/plans")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && Array.isArray(data.plans) && data.plans.length > 0) {
-          setPlans(data.plans);
-        }
-      })
-      .catch(() => {
-        // Fallback plans if backend not running
-      })
-      .finally(() => setIsLoading(false));
+    let isMounted = true;
+
+    const fetchPlans = () => {
+      fetch("/api/public/plans", { cache: "no-store" })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch plans");
+          return res.json();
+        })
+        .then((data) => {
+          const rawList = Array.isArray(data?.plans)
+            ? data.plans
+            : Array.isArray(data?.data?.plans)
+            ? data.data.plans
+            : Array.isArray(data?.data)
+            ? data.data
+            : [];
+          if (isMounted && rawList.length > 0) {
+            setPlans(rawList);
+          }
+        })
+        .catch(() => {
+          // Fallback plans if backend not running
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    };
+
+    fetchPlans();
+
+    // Re-fetch on window focus and periodically every 30 seconds for live admin plan updates
+    const interval = setInterval(fetchPlans, 30000);
+    const onFocus = () => fetchPlans();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   const displayPlans = plans.length > 0 ? plans : [
@@ -1446,6 +1422,13 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
     ).values()
   );
 
+  const gridColsClass =
+    displayPlans.length === 1
+      ? "max-w-md md:grid-cols-1"
+      : displayPlans.length === 2
+      ? "max-w-4xl md:grid-cols-2"
+      : "max-w-6xl md:grid-cols-3";
+
   return (
     <section id="pricing" className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
       <div className="mx-auto max-w-6xl text-center reveal-on-scroll">
@@ -1480,7 +1463,7 @@ export function LandingProcessPricing({ onScroll }: { onScroll: ScrollHandler })
       </div>
 
       {/* Pricing Cards Grid */}
-      <div className="mx-auto mt-12 grid max-w-6xl gap-6 overflow-visible md:grid-cols-3 md:items-stretch">
+      <div className={`mx-auto mt-12 grid ${gridColsClass} gap-6 overflow-visible md:items-stretch`}>
         {displayPlans.map((plan, i) => {
           const rawPrice = cycle === "annual" ? plan.annualPrice : plan.monthlyPrice;
           const formattedPrice = rawPrice === 0 ? "---" : `₱${rawPrice.toLocaleString()}`;

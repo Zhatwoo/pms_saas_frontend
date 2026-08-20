@@ -7,8 +7,8 @@ import { useBranch } from "@/contexts/branch-context";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
 import { ExpirationStats } from "./_components/expiration-stats";
-import { ExpirationTabs } from "./_components/expiration-tabs";
 import { ExpirationTable } from "./_components/expiration-table";
+import { ExpirationCategoryFilter } from "@/components/shared/expiration-category-filter";
 import { ActionButton } from "@/components/shared/action-button";
 import { ConfirmActionModal } from "@/components/shared/confirm-action-modal";
 import { subscribeToExpirationAlertNotifications } from "@/lib/notification-stream";
@@ -209,7 +209,13 @@ function ExpirationMonitoringPageContent() {
           {toastMessage}
         </div>
       ) : null}
-      <div className="flex justify-end">
+      <ExpirationStats data={stats} isLoading={isLoading && !hasLoadedData} />
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:justify-end">
+        <ExpirationCategoryFilter
+          value={activeTab}
+          onChange={setActiveTab}
+          counts={stats}
+        />
         <ActionButton
           onClick={handleBlastEmail}
           disabled={isBlastSending}
@@ -220,13 +226,6 @@ function ExpirationMonitoringPageContent() {
           {isBlastSending ? "Sending..." : "Instant Email Blast"}
         </ActionButton>
       </div>
-
-      <ExpirationStats data={stats} isLoading={isLoading && !hasLoadedData} />
-      <ExpirationTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        counts={stats}
-      />
       <ExpirationTable
         data={getActiveItems()}
         isLoading={isLoading && !hasLoadedData}
