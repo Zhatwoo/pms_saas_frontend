@@ -580,6 +580,7 @@ export default function ItemsForSalePage({ viewOnly = false }: { viewOnly?: bool
         <AddItemModal
           isOpen={addModalOpen}
           onClose={() => setAddModalOpen(false)}
+          defaultListingDate={saleViewMode === "calendar" ? selectedDate : null}
           onSuccess={() => {
             setCurrentPage(1);
             setRefreshTick((tick) => tick + 1);
