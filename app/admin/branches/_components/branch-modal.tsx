@@ -20,7 +20,7 @@ interface BranchModalProps {
   existingCount: number;
 }
 
-const statusOptions = ["Active", "Inactive", "Process", "Terminated"];
+const statusOptions = ["Active", "Inactive", "Process", "Terminated", "Under Maintenance"];
 
 function generateBranchId(count: number): string {
   const num = count + 1;
