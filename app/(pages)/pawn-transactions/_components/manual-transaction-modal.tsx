@@ -136,7 +136,13 @@ export function ManualTransactionModal({
                   type="text"
                   value={amount}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9.]/g, "");
+                    let val = e.target.value.replace(/[^0-9.]/g, "");
+                    const parts = val.split(".");
+                    if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+                    if (val) {
+                      const [whole, fraction] = val.split(".");
+                      val = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (fraction !== undefined ? "." + fraction : "");
+                    }
                     setAmount(val);
                   }}
                   placeholder="0.00"
