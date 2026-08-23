@@ -121,7 +121,7 @@ export function BranchTransferAcknowledgement() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="branch-security-title"
-          className="w-full max-w-md rounded-lg border border-amber-400/40 bg-surface-main p-6 text-text-primary shadow-2xl"
+          className="w-full max-w-md rounded-lg border border-amber-400/40 bg-surface p-6 text-text-primary shadow-2xl"
         >
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-300">
             Security Notice
@@ -152,7 +152,7 @@ export function BranchTransferAcknowledgement() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="branch-transfer-title"
-        className="w-full max-w-md rounded-lg border border-brand-green/30 bg-surface-main p-6 text-text-primary shadow-2xl"
+        className="w-full max-w-md rounded-lg border border-brand-green/30 bg-surface p-6 text-text-primary shadow-2xl"
       >
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-green">
           Branch Assignment
