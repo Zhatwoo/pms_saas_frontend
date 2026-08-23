@@ -23,7 +23,7 @@ interface BranchModalProps {
   showMaintainingBalance?: boolean;
 }
 
-const statusOptions = ["Active", "Inactive", "Process", "Terminated"];
+const statusOptions = ["Active", "Inactive", "Process", "Terminated", "Under Maintenance"];
 
 export function BranchModal({
   isOpen,

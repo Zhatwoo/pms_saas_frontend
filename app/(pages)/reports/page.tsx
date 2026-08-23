@@ -10,11 +10,9 @@ import { SalesTrendChart } from "./_components/sales-trend-chart";
 import { DailyReportSection } from "./_components/daily-report-section";
 import { LoadingSpinnerLabel } from "@/components/shared/loading-spinner-label";
 import { ActionButton } from "@/components/shared/action-button";
-import {
-  buildPmsPrintDocument,
-  escapeHtml,
-  printHtmlDocument,
-} from "@/lib/print-templates";
+import { toast } from "sonner";
+import { downloadReportsPdf } from "@/lib/reports-pdf";
+
 const periods = ["Daily", "Weekly", "Monthly", "Yearly"];
 
 const downloadIcon = (
@@ -33,13 +31,6 @@ const downloadIcon = (
     <line x1="12" y1="15" x2="12" y2="3" />
   </svg>
 );
-
-function formatPeso(amount: number) {
-  return `PHP ${amount.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
 
 interface ReportData {
   stats: {
@@ -116,6 +107,7 @@ export default function ReportsPage() {
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { selectedBranch, isAllBranches } = useBranch();
 
   useEffect(() => {
@@ -192,167 +184,24 @@ export default function ReportsPage() {
   const selectionLabel = getSelectionLabel();
   const branchSalesTitle = isAllBranches ? "Per-Branch Sales" : `${selectedBranch.name} Sales`;
 
-  const handleDownloadPDF = async () => {
-    if (!reportData) return;
+  const handleDownloadPDF = () => {
+    if (!reportData || isDownloading) return;
 
+    setIsDownloading(true);
     try {
-      const branchLabel = isAllBranches ? "All Branches" : selectedBranch.name;
-      const stats = reportData.stats;
-      const branchRows = reportData.branchSales
-        .map(
-          (branch) => `
-            <tr>
-              <td>${escapeHtml(branch.name)}</td>
-              <td class="num">${branch.txn}</td>
-              <td class="num">${escapeHtml(formatPeso(branch.sales))}</td>
-              <td class="num">${branch.share}%</td>
-            </tr>`,
-        )
-        .join("");
-
-      const dailyRows = (
-        reportData.dailyReport.isRange
-          ? [
-              ["Opening Balance (Period Start)", formatPeso(reportData.dailyReport.openingBalance)],
-              ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
-              ["Total Cash Out", formatPeso(reportData.dailyReport.totalCashOut)],
-              [
-                "Closing Balance (Period End)",
-                formatPeso(reportData.dailyReport.closingBalance ?? 0),
-              ],
-              [
-                "Period Net Change",
-                formatPeso(reportData.dailyReport.periodNetChange ?? 0),
-              ],
-            ]
-          : [
-              ["Opening Balance", formatPeso(reportData.dailyReport.openingBalance)],
-              ["Total Sales", formatPeso(reportData.dailyReport.totalSales)],
-              ["Total Cash Out", formatPeso(reportData.dailyReport.totalCashOut)],
-              ["Net Total", formatPeso(reportData.dailyReport.netTotal)],
-            ]
-      )
-        .map(
-          ([label, value]) => `
-            <tr>
-              <td>${escapeHtml(label)}</td>
-              <td class="num">${escapeHtml(value)}</td>
-            </tr>`,
-        )
-        .join("");
-      const generatedAt = escapeHtml(
-        new Date().toLocaleString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        }),
-      );
-      const metaHtml = `
-        <p><strong>Generated for:</strong> ${escapeHtml(branchLabel)}</p>
-        <p><strong>Period:</strong> ${escapeHtml(activePeriod)}</p>
-        <p><strong>Date:</strong> ${escapeHtml(selectionLabel)}</p>
-        <p><strong>Generated:</strong> ${generatedAt}</p>`;
-
-      const headerSubtitle = `System Performance Report — ${branchLabel}`;
-
-      let bodyHtml: string;
-      if (isAllBranches) {
-        bodyHtml = `
-            <div class="pms-print-section">
-              <h2>Executive Summary</h2>
-              <div class="pms-summary-grid">
-                <div class="pms-summary-item">
-                  <span class="pms-summary-label">Total Sales Today</span>
-                  <span class="pms-summary-value">${escapeHtml(formatPeso(stats.totalSalesToday))}</span>
-                </div>
-                <div class="pms-summary-item">
-                  <span class="pms-summary-label">Total Transactions</span>
-                  <span class="pms-summary-value">${stats.totalTransactions}</span>
-                </div>
-                <div class="pms-summary-item">
-                  <span class="pms-summary-label">Avg. Per Branch</span>
-                  <span class="pms-summary-value">${escapeHtml(formatPeso(stats.avgPerBranch))}</span>
-                </div>
-                <div class="pms-summary-item">
-                  <span class="pms-summary-label">Active Branches</span>
-                  <span class="pms-summary-value">${stats.activeBranches} / ${stats.totalBranches}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="pms-print-section">
-              <h2>Branch Breakdown</h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Branch</th>
-                    <th class="num">Transactions</th>
-                    <th class="num">Total Sales</th>
-                    <th class="num">Share</th>
-                  </tr>
-                </thead>
-                <tbody>${branchRows || '<tr><td colspan="4" class="empty">No branch sales data available.</td></tr>'}</tbody>
-              </table>
-            </div>
-
-            <div class="pms-print-section">
-              <h2>Daily Sales Report (DSR)</h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    <th class="num">Value</th>
-                  </tr>
-                </thead>
-                <tbody>${dailyRows}</tbody>
-              </table>
-            </div>`;
-      } else {
-        const trendRows = reportData.salesTrend
-          .map(
-            (t) =>
-              `<tr><td>${escapeHtml(t.date)}</td><td class="num">${escapeHtml(formatPeso(t.sales))}</td></tr>`,
-          )
-          .join("");
-
-        bodyHtml = `
-            <div class="pms-print-section">
-              <h2>Daily Sales Report (DSR)</h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Metric</th>
-                    <th class="num">Value</th>
-                  </tr>
-                </thead>
-                <tbody>${dailyRows}</tbody>
-              </table>
-            </div>
-
-            <div class="pms-print-section">
-              <h2>Sales Trend</h2>
-              <table>
-                <thead>
-                  <tr><th>Date</th><th class="num">Sales</th></tr>
-                </thead>
-                <tbody>${trendRows || '<tr><td colspan="2" class="empty">No trend data</td></tr>'}</tbody>
-              </table>
-            </div>`;
-      }
-
-      const html = buildPmsPrintDocument({
-        documentTitle: isAllBranches ? "System Performance Report" : "Branch Performance Report",
-        headerSubtitle,
-        metaHtml,
-        bodyHtml,
+      downloadReportsPdf({
+        reportData,
+        isAllBranches,
+        branchName: isAllBranches ? "All Branches" : selectedBranch.name,
+        period: activePeriod,
+        selectionLabel,
       });
-
-      printHtmlDocument(html);
+      toast.success("PDF downloaded successfully.");
     } catch (err) {
       console.error("PDF Generation failed:", err);
-      alert("Failed to generate PDF. Please check console for details.");
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -373,11 +222,12 @@ export default function ReportsPage() {
         </div>
         <ActionButton 
           onClick={handleDownloadPDF}
+          disabled={!reportData || isDownloading}
           variant="success"
           leftIcon={downloadIcon}
           className="w-full shrink-0 sm:w-auto"
         >
-          Download PDF
+          {isDownloading ? "Downloading..." : "Download PDF"}
         </ActionButton>
       </div>
 

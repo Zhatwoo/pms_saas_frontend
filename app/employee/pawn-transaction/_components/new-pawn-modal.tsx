@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useId, type ChangeEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
@@ -30,9 +30,8 @@ import {
 import {
   isTransactionPasswordError,
   TRANSACTION_PASSWORD_VERIFY_MESSAGE,
-  transactionPasswordErrorClass,
-  transactionPasswordInputClass,
 } from "@/lib/transaction-password";
+import { TransactionPasswordField } from "@/components/shared/transaction-password-field";
 
 const NO_ID_VALUE = "No ID / None";
 const SINGLE_IMAGE_ID_TYPES = new Set(["NBI Clearance", "Police Clearance"]);
@@ -1702,33 +1701,24 @@ export function NewPawnModal({
           <div className="flex items-end gap-2 sm:gap-4 lg:gap-6">
             <div className="flex min-w-0 flex-1 items-end gap-2 sm:gap-4">
               <div className="w-[min(38%,8.5rem)] shrink-0 sm:max-w-[18rem] lg:max-w-[20rem]">
-                <label className="mb-1 ml-1 flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase leading-none tracking-[0.12em] text-brand-green/40 dark:text-pawn-gold md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
-                  <span className="whitespace-nowrap">Security Password</span>
-                  {loggedInUserName && (
-                    <span className="whitespace-nowrap text-brand-green normal-case tracking-normal">
-                      ({loggedInUserName})
-                    </span>
-                  )}
-                </label>
-                <div className={transactionPasswordInputClass(
-                  Boolean(passwordFieldError),
-                  "relative flex h-10 items-center rounded-xl border border-zinc-200 bg-zinc-50 transition-all focus-within:border-brand-green focus-within:ring-4 focus-within:ring-brand-green/10 dark:border-border dark:bg-surface-secondary",
-                )}>
-                  <input
-                    name="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (passwordFieldError) setErrorMessage(null);
-                    }}
-                    placeholder="••••••••"
-                    className="w-full bg-transparent px-3 py-2 text-sm font-bold text-zinc-900 dark:text-white placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
-                  />
-                </div>
-                {passwordFieldError && (
-                  <p className={transactionPasswordErrorClass}>{passwordFieldError}</p>
-                )}
+                <TransactionPasswordField
+                  value={password}
+                  onChange={setPassword}
+                  error={passwordFieldError}
+                  onValueChange={() => {
+                    if (passwordFieldError) setErrorMessage(null);
+                  }}
+                  label={
+                    <label className="flex flex-wrap items-center gap-x-1 text-[8px] font-black uppercase leading-none tracking-[0.12em] text-brand-green/40 dark:text-pawn-gold md:flex-nowrap md:text-[9px] md:tracking-[0.16em]">
+                      <span className="whitespace-nowrap">Security Password</span>
+                      {loggedInUserName && (
+                        <span className="whitespace-nowrap text-brand-green normal-case tracking-normal">
+                          ({loggedInUserName})
+                        </span>
+                      )}
+                    </label>
+                  }
+                />
               </div>
 
               <div className="hidden h-10 w-px shrink-0 bg-zinc-100 dark:bg-surface-hover sm:block" />
@@ -1957,6 +1947,31 @@ function PreviewModal({ src, title, onClose }: { src: string; title: string; onC
   );
 }
 
+const PHOTO_UPLOAD_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/*";
+
+function readImageFileAsDataUrl(
+  file: File,
+  onLoad: (dataUrl: string) => void,
+  onError?: (message: string) => void,
+) {
+  if (!file.type.startsWith("image/")) {
+    onError?.("Please select an image file (JPG, PNG, or HEIC).");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const dataUrl = event.target?.result;
+    if (typeof dataUrl === "string") {
+      onLoad(dataUrl);
+      return;
+    }
+    onError?.("Unable to read the selected image.");
+  };
+  reader.onerror = () => onError?.("Unable to read the selected image.");
+  reader.readAsDataURL(file);
+}
+
 function PhotoUpload({
   label,
   onCapture,
@@ -1972,14 +1987,17 @@ function PhotoUpload({
   frameClassName?: string;
   allowMultipleCapture?: boolean;
 }) {
+  const uploadInputId = useId();
   const [photo, setPhoto] = useState<string | null>(currentPhoto || null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [uploadError, setUploadError] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync with prop
   useEffect(() => {
@@ -2039,30 +2057,76 @@ function PhotoUpload({
     });
   }, [allowMultipleCapture, stopCamera, onCapture]);
 
+  const applyPhoto = useCallback(
+    (dataUrl: string) => {
+      setUploadError("");
+      setPhoto(dataUrl);
+      onCapture?.(dataUrl);
+    },
+    [onCapture],
+  );
+
+  const handleFileUpload = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+
+      readImageFileAsDataUrl(
+        file,
+        (dataUrl) => {
+          applyPhoto(dataUrl);
+          if (!allowMultipleCapture) {
+            stopCamera();
+          }
+        },
+        (message) => setUploadError(message),
+      );
+    },
+    [allowMultipleCapture, applyPhoto, stopCamera],
+  );
+
   const retake = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setUploadError("");
     if (!allowMultipleCapture) {
       setPhoto(null);
-      if (onCapture) onCapture(null);
+      onCapture?.(null);
     }
     openCamera();
   };
 
+  const openUploadPicker = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUploadError("");
+    fileInputRef.current?.click();
+  };
+
   const handleThumbnailClick = () => {
-    if (photo && onPreview) {
+    if (photo && !allowMultipleCapture && onPreview) {
       onPreview(photo);
-    } else {
-      openCamera();
     }
   };
 
+  const actionButtonClass =
+    "rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-wider shadow transition";
+
   return (
     <>
+      <input
+        ref={fileInputRef}
+        id={uploadInputId}
+        type="file"
+        accept={PHOTO_UPLOAD_ACCEPT}
+        className="hidden"
+        onChange={handleFileUpload}
+      />
+
       {/* Thumbnail / Placeholder */}
       <div
         onClick={handleThumbnailClick}
         className={`${frameClassName} rounded-2xl border-2 border-dashed bg-white dark:bg-surface flex flex-col items-center justify-center text-center p-4 transition-all group relative overflow-hidden
-          ${ photo ? "border-pawn-gold cursor-pointer" : "border-zinc-200 dark:border-border hover:border-brand-green hover:bg-brand-green/10 cursor-pointer" }`}
+          ${photo && !allowMultipleCapture ? "border-pawn-gold cursor-pointer" : "border-zinc-200 dark:border-border"}`}
       >
         {photo && !allowMultipleCapture ? (
           <>
@@ -2073,40 +2137,71 @@ function PhotoUpload({
               unoptimized
               className="rounded-2xl object-cover transition-transform group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl gap-2">
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl gap-2 p-3">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (onPreview) onPreview(photo);
+                  onPreview?.(photo);
                 }}
-                className="bg-brand-green text-white font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:brightness-110 transition"
+                className={`${actionButtonClass} bg-brand-green text-white hover:brightness-110`}
               >
                 View Full
               </button>
               <button
                 type="button"
                 onClick={retake}
-                className="bg-white dark:bg-surface text-brand-green font-black text-[10px] uppercase tracking-wider px-3 py-1.5 rounded-lg shadow hover:bg-brand-green/10 transition"
+                className={`${actionButtonClass} bg-white dark:bg-surface text-brand-green hover:bg-brand-green/10`}
               >
                 Retake
+              </button>
+              <button
+                type="button"
+                onClick={openUploadPicker}
+                className={`${actionButtonClass} bg-white/95 text-brand-green hover:bg-brand-green/10 dark:bg-surface dark:text-pawn-gold`}
+              >
+                Upload
               </button>
             </div>
           </>
         ) : (
           <>
-            <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-surface-secondary flex items-center justify-center mb-2 group-hover:bg-brand-green/10 transition-colors">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-400 group-hover:text-brand-green transition-colors">
+            <div className="w-10 h-10 rounded-full bg-zinc-50 dark:bg-surface-secondary flex items-center justify-center mb-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-400">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
               </svg>
             </div>
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-brand-green transition-colors">{label}</p>
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{label}</p>
             {allowMultipleCapture && photo && (
               <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.18em] text-pawn-gold/80">Ready for next shot</p>
             )}
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setUploadError("");
+                  openCamera();
+                }}
+                className={`${actionButtonClass} bg-brand-green text-white hover:brightness-110`}
+              >
+                Take Photo
+              </button>
+              <button
+                type="button"
+                onClick={openUploadPicker}
+                className={`${actionButtonClass} border border-brand-green/20 bg-brand-green/10 text-brand-green hover:bg-brand-green/20 dark:text-pawn-gold`}
+              >
+                Upload
+              </button>
+            </div>
           </>
         )}
       </div>
+
+      {uploadError ? (
+        <p className="mt-1 text-[10px] font-semibold text-red-500">{uploadError}</p>
+      ) : null}
 
       {/* Camera Modal */}
       {cameraOpen && (
@@ -2130,6 +2225,13 @@ function PhotoUpload({
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
                   <p className="text-sm font-bold text-red-300">{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="rounded-xl border border-brand-green/30 bg-brand-green/10 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-brand-green transition hover:bg-brand-green/20"
+                  >
+                    Upload Image Instead
+                  </button>
                 </div>
               ) : (
                 <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
