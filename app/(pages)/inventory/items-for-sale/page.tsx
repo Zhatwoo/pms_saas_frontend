@@ -429,7 +429,12 @@ export default function ItemsForSalePage() {
       {/* ... calendar view and modal unchanged (omitted here for brevity in this new file) */}
       {/* For simplicity the calendar and modal code are preserved in the original file; if you want the full file kept, I can insert the unchanged sections back. */}
       
-      <AddItemModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={() => window.location.reload()} />
+      <AddItemModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        defaultListingDate={viewMode === "calendar" ? selectedDate : null}
+        onSuccess={() => window.location.reload()}
+      />
 
       {selectedSaleItem ? (
         <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 py-6">
