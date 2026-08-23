@@ -6,11 +6,16 @@ import { toast } from "sonner";
 import { useBranch } from "@/contexts/branch-context";
 import { fetchCategories } from "@/lib/categories";
 import { buildItemQrImageUrl } from "@/lib/item-qr";
+import {
+  getTodayListingDate,
+  resolveDefaultListingDate,
+} from "./add-item-listing-date";
 
 interface AddItemModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  defaultListingDate?: string | null;
 }
 
 function formatCurrencyInput(value: string): string {
@@ -29,17 +34,17 @@ function formatCurrencyInput(value: string): string {
   return formattedInteger;
 }
 
-export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) {
+export function AddItemModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  defaultListingDate = null,
+}: AddItemModalProps) {
   const { branches } = useBranch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isProcessingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const listingDate = new Date().toISOString().split("T")[0];
-  const listingDateLabel = new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  });
+  const todayListingDate = getTodayListingDate();
 
   const [form, setForm] = useState({
     item_name: "",
@@ -47,6 +52,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
     price: "",
     branch_id: "",
     stock_level: "1",
+    available_date: todayListingDate,
   });
 
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -69,8 +75,17 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
   const [generatedItemId, setGeneratedItemId] = useState<string>("");
 
   useEffect(() => {
+    const today = getTodayListingDate();
     if (isOpen) {
       setGeneratedItemId(`SALE-${Date.now().toString().slice(-6)}`);
+      setForm({
+        item_name: "",
+        category: "",
+        price: "",
+        branch_id: "",
+        stock_level: "1",
+        available_date: resolveDefaultListingDate(defaultListingDate, today),
+      });
     } else {
       setForm({
         item_name: "",
@@ -78,11 +93,12 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         price: "",
         branch_id: "",
         stock_level: "1",
+        available_date: today,
       });
       setPhotoUrl(null);
       setQrUrl(null);
     }
-  }, [isOpen]);
+  }, [isOpen, defaultListingDate]);
 
   const handleGenerateQR = () => {
     const rawPrice = form.price.replace(/,/g, "").trim();
@@ -124,6 +140,16 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
       return;
     }
 
+    if (!form.available_date) {
+      toast.error("Please select a listing date.");
+      return;
+    }
+
+    if (form.available_date > todayListingDate) {
+      toast.error("Listing date cannot be in the future.");
+      return;
+    }
+
     if (!photoUrl) {
       toast.error("Please add a photo of the item.");
       return;
@@ -149,6 +175,7 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
         branch: selectedBranch?.name || "Unknown Branch",
         stock_level: Number(form.stock_level),
         status: "Available",
+        available_date: form.available_date,
         image_url: photoUrl
       });
 
@@ -230,10 +257,18 @@ export function AddItemModal({ isOpen, onClose, onSuccess }: AddItemModalProps) 
               </div>
 
               <div className="space-y-1 rounded-2xl border border-brand-green/20 bg-brand-green/5 p-3">
-                <label className="text-[10px] font-bold uppercase text-text-muted">Date Listed</label>
-                <div className="mt-1 text-sm font-semibold text-text-primary">{listingDateLabel}</div>
-                <input type="hidden" value={listingDate} readOnly />
-                <p className="text-[10px] leading-relaxed text-text-muted">This is the date the item will be shown as added to Items For Sale.</p>
+                <label htmlFor="available_date" className="text-[10px] font-bold uppercase text-text-muted">Date Listed</label>
+                <input
+                  id="available_date"
+                  required
+                  type="date"
+                  name="available_date"
+                  value={form.available_date}
+                  max={todayListingDate}
+                  onChange={handleChange}
+                  className="mt-1 w-full h-10 rounded-xl border border-border-main bg-surface-secondary px-3 text-sm text-text-primary shadow-sm outline-none transition-all focus:border-brand-green dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100"
+                />
+                <p className="text-[10px] leading-relaxed text-text-muted">Defaults to today. You can backdate this to show the item on a past calendar day.</p>
               </div>
             </div>
 
