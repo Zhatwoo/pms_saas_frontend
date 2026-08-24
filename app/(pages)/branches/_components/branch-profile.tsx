@@ -386,9 +386,24 @@ export function BranchProfile({ branch }: BranchProfileProps) {
     async function loadData() {
       if (activeTab === "inventory") {
         try {
-          // Stats
-          const overviewRes = await api.get<Record<string, { pawnedItems: number; forSaleItems: number; totalValue: number }>>("/branches/overview-stats");
-          const stats = overviewRes[branch.id] || { pawnedItems: 0, forSaleItems: 0, totalValue: 0 };
+          // Stats & Categories from unified overview-stats
+          const overviewRes = await api.get<
+            Record<
+              string,
+              {
+                pawnedItems: number;
+                forSaleItems: number;
+                totalValue: number;
+                categories?: { name: string; count: number }[];
+              }
+            >
+          >("/branches/overview-stats");
+          const stats = overviewRes[branch.id] || {
+            pawnedItems: 0,
+            forSaleItems: 0,
+            totalValue: 0,
+            categories: [],
+          };
           setInvStats({
             totalItems: stats.pawnedItems + stats.forSaleItems,
             totalValue: fmt(stats.totalValue),
@@ -396,32 +411,13 @@ export function BranchProfile({ branch }: BranchProfileProps) {
             forSaleItems: stats.forSaleItems,
           });
 
-          // Categories (fetch and merge both active pawned and available sale categories)
-          const [pCats, sCats] = await Promise.all([
-            api.get<{category: string, count: number}[]>(`/inventory/pawned-categories?branch=${branch.id}`).catch(() => []),
-            api.get<{category: string, count: number}[]>(`/inventory/for-sale-categories?branch=${branch.id}`).catch(() => []),
-          ]);
-
-          const catCounts: Record<string, number> = {};
-          for (const c of (pCats || [])) {
-            const name = (c.category || "Uncategorized").trim();
-            catCounts[name] = (catCounts[name] || 0) + Number(c.count || 0);
-          }
-          for (const c of (sCats || [])) {
-            const name = (c.category || "Uncategorized").trim();
-            catCounts[name] = (catCounts[name] || 0) + Number(c.count || 0);
-          }
-
-          const combinedCats = Object.entries(catCounts)
-            .map(([name, count]) => ({ name, count }))
-            .sort((a, b) => b.count - a.count);
-
-          const mappedCats = combinedCats.map((c, i) => ({
+          // Map categories directly from unified response
+          const categories = (stats.categories || []).map((c, i) => ({
             name: c.name,
             count: c.count,
-            color: getCategoryColor(i)
+            color: getCategoryColor(i),
           }));
-          setInvCategories(mappedCats);
+          setInvCategories(categories);
 
           // Alerts
           const alertsArr = [];
